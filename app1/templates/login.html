@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login</title>
+    <style>
+        body {
+            background: linear-gradient(45deg, #49a09d, #2c8250);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: sans-serif;
+            font-weight: 100;
+            margin: 0;
+        }c
+        .card {
+            width: 100%;
+            max-width: 500px;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        .card-header {
+            background-color: #499b99;
+            color: #fff;
+            padding: 20px;
+            text-align: center;
+            font-size: 24px;
+            position: relative;
+        }
+        .card-body {
+            padding: 30px;
+        }
+        .form-control {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            background-color: rgba(255, 255, 255, 0.8);
+            border: none;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        .form-control:focus {
+            background-color: rgba(255, 255, 255, 1);
+            box-shadow: 0 0 0 0.2rem rgba(85, 96, 143, 0.25);
+            outline: none;
+        }
+        .btn-primary {
+            width: 100%;
+            padding: 10px;
+            background-color: #499b99;
+            color: #fff;
+            font-weight: bold;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .btn-primary:hover {
+            background-color: #4a5579;
+        }
+        ul {
+            color: red;
+            list-style: none;
+            padding: 0;
+            text-align: center;
+            margin-top: 15px; /* Space above the error message */
+        }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <div class="card-header">
+            <h2>Login</h2>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" name="username" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" name="password" class="form-control" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Login</button>
+            </form>
+    
+            {% if messages %}
+                <div class="messages">
+                    {% for message in messages %}
+                        <div class="alert {% if message.tags %}alert-{{ message.tags }}{% endif %}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+</body>
+</html>
