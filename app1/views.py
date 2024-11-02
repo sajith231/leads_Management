@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login as auth_login  # Alias the imported login function
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -6,18 +6,15 @@ from .forms import BranchForm,RequirementForm
 from django.http import JsonResponse
 from django.contrib.auth import logout as auth_logout
 from .forms import UserForm
-from django.contrib import messages
 from .models import Branch, Requirement, User
 from django.shortcuts import get_object_or_404
-from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login as auth_login
-from django.contrib import messages
-from django.contrib.auth.decorators import login_required
-from django.contrib.auth import logout as auth_logout
 from django.contrib.auth.models import User as DjangoUser  # Added this import
 from .forms import BranchForm, RequirementForm, UserForm
-from .models import Branch, Requirement, User
-from django.http import JsonResponse
+from .models import Lead
+from .forms import LeadForm
+
+
 
 def login(request):
     if request.method == "POST":
@@ -229,10 +226,31 @@ def edit_user(request, user_id):
 def user_dashboard(request):
     if 'custom_user_id' in request.session:
         custom_user = User.objects.get(id=request.session['custom_user_id'])
+        leads = Lead.objects.filter(user=custom_user).prefetch_related('requirements')
         return render(request, "user_dashboard.html", {
             "message": f"Welcome, {custom_user.name}!",
-            "user_data": custom_user
+            "user_data": custom_user,
+            "leads": leads
         })
     return render(request, "user_dashboard.html", {
         "message": f"Welcome, {request.user.username}!"
     })
+
+
+
+
+@login_required
+def add_lead(request):
+    if request.method == 'POST':
+        form = LeadForm(request.POST)
+        if form.is_valid():
+            lead = form.save(commit=False)
+            custom_user = User.objects.get(id=request.session['custom_user_id'])
+            lead.user = custom_user
+            lead.save()
+            form.save_m2m()  # Save many-to-many relationships
+            messages.success(request, 'Lead added successfully!')
+            return redirect('user_dashboard')
+    else:
+        form = LeadForm()
+    return render(request, 'add_lead.html', {'form': form})

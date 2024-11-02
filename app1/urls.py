@@ -58,4 +58,8 @@ urlpatterns = [
     path('edit_branch/<int:branch_id>/', views.edit_branch, name='edit_branch'),
     path('edit-requirement/<int:requirement_id>/', views.edit_requirement, name='edit_requirement'),
 
+
+
+    path('add-lead/', views.add_lead, name='add_lead'),
+
 ]

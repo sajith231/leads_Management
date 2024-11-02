@@ -40,3 +40,18 @@ class User(models.Model):
             return user
         except cls.DoesNotExist:
             return None
+        
+
+class Lead(models.Model):
+    firm_name = models.CharField(max_length=200)
+    customer_name = models.CharField(max_length=100)
+    contact_number = models.CharField(max_length=20)
+    location = models.CharField(max_length=200)
+    business_nature = models.CharField(max_length=200)
+    requirements = models.ManyToManyField(Requirement)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.firm_name} - {self.customer_name}"

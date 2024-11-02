@@ -1,21 +1,8 @@
 {% extends 'base.html' %}
 {% load static %}
-
 {% block content %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-</head>
-<body>
-    
 <div class="container mt-5">
     <h1>User Dashboard</h1>
-    <p>Welcome to your dashboard!</p> <button type="button" style="background-color: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-size: 16px; cursor: pointer;">
-        Add leads
-    </button>
     
     {% if messages %}
         {% for message in messages %}
@@ -24,8 +11,53 @@
             </div>
         {% endfor %}
     {% endif %}
+
+    <div class="mb-4">
+        <a href="{% url 'add_lead' %}" class="btn btn-primary">Add Lead</a>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3>My Leads</h3>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Firm Name</th>
+                            <th>Customer Name</th>
+                            <th>Contact Number</th>
+                            <th>Location</th>
+                            <th>Business Nature</th>
+                            <th>Requirements</th>
+                            <th>Created At</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for lead in leads %}
+                            <tr>
+                                <td>{{ lead.firm_name }}</td>
+                                <td>{{ lead.customer_name }}</td>
+                                <td>{{ lead.contact_number }}</td>
+                                <td>{{ lead.location }}</td>
+                                <td>{{ lead.business_nature }}</td>
+                                <td>
+                                    {% for req in lead.requirements.all %}
+                                        <span class="badge bg-primary">{{ req.name }}</span><br>
+                                    {% endfor %}
+                                </td>
+                                <td>{{ lead.created_at|date:"M d, Y" }}</td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="7" class="text-center">No leads found.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 </div>
-    
-</body>
-</html>
 {% endblock %}

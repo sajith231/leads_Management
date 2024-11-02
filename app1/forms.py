@@ -1,7 +1,8 @@
 # forms.py
 
 from django import forms
-from .models import Branch, Requirement
+from .models import Branch, Requirement,Lead
+
 
 class BranchForm(forms.ModelForm):
     class Meta:
@@ -81,3 +82,25 @@ class UserForm(forms.ModelForm):
         if commit:
             user.save()
         return user
+    
+
+
+
+
+class LeadForm(forms.ModelForm):
+    requirements = forms.ModelMultipleChoiceField(
+        queryset=Requirement.objects.all(),
+        widget=forms.CheckboxSelectMultiple,
+        required=True
+    )
+    
+    class Meta:
+        model = Lead
+        fields = ['firm_name', 'customer_name', 'contact_number', 'location', 'business_nature', 'requirements']
+        widgets = {
+            'firm_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter Firm Name'}),
+            'customer_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter Customer Name'}),
+            'contact_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter Contact Number'}),
+            'location': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter Location'}),
+            'business_nature': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter Business Nature'}),
+        }
