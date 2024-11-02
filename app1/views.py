@@ -69,16 +69,6 @@ def admin_dashboard(request):
     return render(request, "admin_dashboard.html")
 
 
-
-
-
-
-
-
-
-
-
-
 @login_required
 def add_branch(request):
     if request.method == 'POST':
@@ -105,6 +95,19 @@ def delete_branch(request, branch_id):
         except Exception as e:
             messages.error(request, f'Error deleting branch: {str(e)}')
     return redirect('all_branches')
+
+@login_required
+def edit_branch(request, branch_id):
+    branch = get_object_or_404(Branch, id=branch_id)
+    if request.method == 'POST':
+        form = BranchForm(request.POST, instance=branch)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Branch "{branch.name}" updated successfully!')
+            return redirect('all_branches')
+    else:
+        form = BranchForm(instance=branch)
+    return render(request, 'edit_branch_modal.html', {'form': form, 'branch': branch})
 
 @login_required
 def add_requirement(request):
@@ -135,6 +138,18 @@ def delete_requirement(request, requirement_id):
             messages.error(request, f'Error deleting requirement: {str(e)}')
     return redirect('all_requirements')
 
+@login_required
+def edit_requirement(request, requirement_id):
+    requirement = get_object_or_404(Requirement, id=requirement_id)
+    if request.method == 'POST':
+        form = RequirementForm(request.POST, instance=requirement)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Requirement "{requirement.name}" updated successfully.')
+            return redirect('all_requirements')
+    else:
+        form = RequirementForm(instance=requirement)
+    return render(request, 'edit_requirement.html', {'form': form, 'requirement': requirement})
 
 
 

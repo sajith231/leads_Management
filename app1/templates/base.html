@@ -178,13 +178,15 @@
     </button>
 
     <div class="sidebar">
-        <div class="menu-item" onclick="toggleMenu()">Master <i class="fas fa-chevron-down"></i></div>
+        {% if user.is_superuser %}
+    <div class="menu-item" onclick="toggleMenu()">Master <i class="fas fa-chevron-down"></i></div>
         
-        <div id="master-menu" class="submenu">
-            <a href="{% url 'all_branches' %}">Branch</a>
-            <a href="{% url 'users_table' %}">Users</a>
-            <a href="{% url 'all_requirements' %}">Requirements</a>
-        </div>
+    <div id="master-menu" class="submenu">
+        <a href="{% url 'all_branches' %}">Branch</a>
+        <a href="{% url 'users_table' %}">Users</a>
+        <a href="{% url 'all_requirements' %}">Requirements</a>
+    </div>
+{% endif %}
     
         <a href="#">Leads</a>
         <a href="{% url 'logout' %}">
