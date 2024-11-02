@@ -9,27 +9,59 @@ from .forms import UserForm
 from django.contrib import messages
 from .models import Branch, Requirement, User
 from django.shortcuts import get_object_or_404
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth import authenticate, login as auth_login
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth import logout as auth_logout
+from django.contrib.auth.models import User as DjangoUser  # Added this import
+from .forms import BranchForm, RequirementForm, UserForm
+from .models import Branch, Requirement, User
+from django.http import JsonResponse
 
 def login(request):
     if request.method == "POST":
-        username = request.POST.get("username")
+        userid = request.POST.get("username")
         password = request.POST.get("password")
-        user = authenticate(request, username=username, password=password)
 
-        if user is not None:
-            auth_login(request, user)
-            if user.is_superuser:
-                return redirect("admin_dashboard")  # Redirect to superuser dashboard
-            else:
-                return redirect("user_dashboard")  # Redirect to regular user dashboard
+        # First try Django's built-in authentication for superuser
+        django_user = authenticate(request, username=userid, password=password)
+        
+        if django_user and django_user.is_superuser:
+            auth_login(request, django_user)
+            return redirect("admin_dashboard")
         else:
-            messages.error(request, "Invalid username or password")
-            return redirect("login")  # Redirect to the login page
+            # Try custom authentication for regular users
+            try:
+                custom_user = User.objects.get(userid=userid, password=password)
+                if custom_user:
+                    # Create or get Django user for session management
+                    django_user, created = DjangoUser.objects.get_or_create(
+                        username=custom_user.userid,
+                        defaults={
+                            'is_staff': False, 
+                            'is_superuser': False,
+                            'password': 'dummy_password'  # This will be replaced
+                        }
+                    )
+                    
+                    if created:
+                        django_user.set_password(password)
+                        django_user.save()
+                    
+                    auth_login(request, django_user)
+                    request.session['custom_user_id'] = custom_user.id
+                    return redirect("user_dashboard")
+            except User.DoesNotExist:
+                messages.error(request, "Invalid username or password")
+                return redirect("login")
 
     return render(request, "login.html")
 
 def logout(request):
     auth_logout(request)
+    if 'custom_user_id' in request.session:
+        del request.session['custom_user_id']
     return redirect("login")
 
 @login_required
@@ -110,8 +142,7 @@ def delete_requirement(request, requirement_id):
 
 
 # In-memory list to store users (you may replace this with a database model in production)
-users_data = []
-
+@login_required
 def add_user(request):
     if request.method == "POST":
         form = UserForm(request.POST)
@@ -181,4 +212,12 @@ def edit_user(request, user_id):
 
 @login_required
 def user_dashboard(request):
-    return render(request, "user_dashboard.html", {"message": f"Welcome, {request.user.username}!"})
+    if 'custom_user_id' in request.session:
+        custom_user = User.objects.get(id=request.session['custom_user_id'])
+        return render(request, "user_dashboard.html", {
+            "message": f"Welcome, {custom_user.name}!",
+            "user_data": custom_user
+        })
+    return render(request, "user_dashboard.html", {
+        "message": f"Welcome, {request.user.username}!"
+    })
