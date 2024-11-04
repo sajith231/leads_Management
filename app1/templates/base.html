@@ -31,17 +31,26 @@
             padding-top: 20px;
             transition: 0.3s;
             z-index: 1000;
+            display: flex;
+            flex-direction: column;
         }
 
         .sidebar a {
-            color: white;
-            padding: 15px;
+            color: #ddd;
+            padding: 10px 15px;
             text-decoration: none;
-            display: block;
+            display: flex;
+            align-items: center;
+            font-size: 1.1em;
+            transition: color 0.3s;
         }
 
         .sidebar a:hover {
-            background-color: #575757;
+            color: #fff;
+        }
+
+        .sidebar a .fas {
+            margin-right: 8px;
         }
 
         .content {
@@ -112,60 +121,23 @@
             border: black 1px solid;
             outline: none;
         }
-        .sidebar {
-    width: 250px;
-    background-color: #333;
-    color: #fff;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-}
 
-.sidebar a {
-    color: #ddd;
-    text-decoration: none;
-    padding: 10px 0;
-    display: flex;
-    align-items: center;
-    font-size: 1.1em;
-    transition: color 0.3s;
-}
+        .submenu {
+            display: none;
+            flex-direction: column;
+            padding-left: 15px;
+            margin-top: 10px;
+        }
 
-.sidebar a:hover {
-    color: #fff;
-}
+        .submenu a {
+            padding: 8px 0;
+            font-size: 1em;
+            color: #bbb;
+        }
 
-.sidebar a .fas {
-    margin-right: 8px;
-}
-
-.menu-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 0;
-    font-size: 1.1em;
-    cursor: pointer;
-}
-
-.submenu {
-    display: none;
-    flex-direction: column;
-    padding-left: 15px;
-    margin-top: 10px;
-}
-
-.submenu a {
-    padding: 8px 0;
-    font-size: 1em;
-    color: #bbb;
-}
-
-.submenu a:hover {
-    color: #fff;
-}
-
+        .submenu a:hover {
+            color: #fff;
+        }
     </style>
 </head>
 
@@ -179,37 +151,34 @@
 
     <div class="sidebar">
         {% if user.is_superuser %}
-    <div class="menu-item" onclick="toggleMenu()">Master <i class="fas fa-chevron-down"></i></div>
-        
-    <div id="master-menu" class="submenu">
-        <a href="{% url 'all_branches' %}">Branch</a>
-        <a href="{% url 'users_table' %}">Users</a>
-        <a href="{% url 'all_requirements' %}">Requirements</a>
-    </div>
-{% endif %}
-    
-        <a href="#">Leads</a>
+            <div  onclick="toggleMenu()">
+                <h5 style="margin-left: 5%; color: white;">Master</h5>
+            </div>
+            <div id="master-menu" class="submenu" style="margin-left: 5%;">
+                <a href="{% url 'all_branches' %}">Branch</a>
+                <a href="{% url 'users_table' %}">Users</a>
+                <a href="{% url 'all_requirements' %}">Requirements</a>
+            </div>
+            <a href="{% url 'all_leads' %}">Leads</a>
+        {% else %}
+           <h5> <a href="{% url 'user_dashboard' %}">Leads</a></h5>
+        {% endif %}
+
         <a href="{% url 'logout' %}">
             <i class="fas fa-sign-out-alt"></i> Logout
         </a>
     </div>
-    
-    <script>
-        function toggleMenu() {
-            const menu = document.getElementById('master-menu');
-            if (menu.style.display === 'none') {
-                menu.style.display = 'block';
-            } else {
-                menu.style.display = 'none';
-            }
-        }
-    </script>
 
     <div class="content">
         {% block content %}{% endblock %}
     </div>
 
     <script>
+        function toggleMenu() {
+            const menu = document.getElementById('master-menu');
+            menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
+        }
+
         function toggleSidebar() {
             const sidebar = document.querySelector('.sidebar');
             const content = document.querySelector('.content');
@@ -226,7 +195,6 @@
                 }
             });
         });
-
     </script>
 </body>
 </html>

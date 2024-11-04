@@ -32,6 +32,8 @@
 
 from django.urls import path
 from . import views
+from .views import edit_lead
+from .views import delete_lead 
 
 urlpatterns = [
     # Authentication
@@ -61,5 +63,8 @@ urlpatterns = [
 
 
     path('add-lead/', views.add_lead, name='add_lead'),
+    path('edit_lead/<int:lead_id>/', edit_lead, name='edit_lead'),
+     path('all-leads/', views.all_leads, name='all_leads'),
+      path('delete_lead/<int:lead_id>/', delete_lead, name='delete_lead'),
 
 ]

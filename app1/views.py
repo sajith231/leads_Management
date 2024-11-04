@@ -26,7 +26,8 @@ def login(request):
         
         if django_user and django_user.is_superuser:
             auth_login(request, django_user)
-            return redirect("admin_dashboard")
+            return redirect("all_leads")
+
         else:
             # Try custom authentication for regular users
             try:
@@ -221,7 +222,6 @@ def edit_user(request, user_id):
 
 
 
-
 @login_required
 def user_dashboard(request):
     if 'custom_user_id' in request.session:
@@ -239,18 +239,66 @@ def user_dashboard(request):
 
 
 
+
+
+
+
+
 @login_required
 def add_lead(request):
     if request.method == 'POST':
-        form = LeadForm(request.POST)
+        form = LeadForm(request.POST, request.FILES)  # Note the request.FILES here
         if form.is_valid():
             lead = form.save(commit=False)
             custom_user = User.objects.get(id=request.session['custom_user_id'])
             lead.user = custom_user
             lead.save()
-            form.save_m2m()  # Save many-to-many relationships
+            form.save_m2m()
             messages.success(request, 'Lead added successfully!')
             return redirect('user_dashboard')
     else:
         form = LeadForm()
     return render(request, 'add_lead.html', {'form': form})
+
+
+@login_required
+def edit_lead(request, lead_id):
+    lead = get_object_or_404(Lead, id=lead_id)
+    if request.method == "POST":
+        form = LeadForm(request.POST, request.FILES, instance=lead)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Lead "{lead.firm_name}" updated successfully!')
+            return redirect('user_dashboard')
+        else:
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        form = LeadForm(instance=lead)
+    return render(request, 'edit_lead.html', {'form': form, 'lead': lead})
+
+@login_required
+def all_leads(request):
+    if request.user.is_superuser:
+        # Get all leads with related user and requirement information
+        leads = Lead.objects.all().select_related('user', 'user__branch').prefetch_related('requirements')
+        return render(request, 'all_leads.html', {'leads': leads})
+    else:
+        messages.error(request, "You don't have permission to view this page.")
+        return redirect('user_dashboard')
+    
+
+
+
+
+@login_required
+def delete_lead(request, lead_id):
+    lead = get_object_or_404(Lead, id=lead_id)
+    if request.method == 'POST':
+        lead_name = lead.firm_name
+        try:
+            lead.delete()
+            messages.success(request, f'Lead "{lead_name}" deleted successfully.')
+        except Exception as e:
+            messages.error(request, f'Error deleting lead: {str(e)}')
+    return redirect('user_dashboard')
+

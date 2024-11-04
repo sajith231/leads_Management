@@ -25,7 +25,7 @@ class UserForm(forms.ModelForm):
     password = forms.CharField(
         widget=forms.PasswordInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Enter Password',
+            'placeholder': 'Enter Password (leave empty to keep current password)',
         }),
         label="Password",
         required=False  # Make password optional
@@ -54,14 +54,19 @@ class UserForm(forms.ModelForm):
         }
         
     def __init__(self, *args, **kwargs):
-        self.edit_mode = kwargs.pop('edit_mode', False)  # Add edit_mode parameter
+        self.edit_mode = kwargs.pop('edit_mode', False)
         super(UserForm, self).__init__(*args, **kwargs)
-        # Make all fields required except password in edit mode
+        
+        # Make all fields required except password
         for field in self.fields:
-            if field == 'password' and self.edit_mode:
+            if field == 'password':
                 self.fields[field].required = False
             else:
                 self.fields[field].required = True
+                
+        # Update password placeholder in edit mode
+        if self.edit_mode:
+            self.fields['password'].widget.attrs['placeholder'] = 'Leave empty to keep current password'
     
     def clean_userid(self):
         userid = self.cleaned_data.get('userid')
@@ -76,9 +81,15 @@ class UserForm(forms.ModelForm):
 
     def save(self, commit=True):
         user = super().save(commit=False)
-        # Only update password if it's provided
+        
+        # Only update password if it's provided in the form
         if self.cleaned_data.get('password'):
             user.password = self.cleaned_data['password']
+        elif self.instance and self.instance.pk:
+            # If this is an edit (instance exists) and no new password provided,
+            # keep the existing password
+            user.password = User.objects.get(pk=self.instance.pk).password
+            
         if commit:
             user.save()
         return user
@@ -87,20 +98,90 @@ class UserForm(forms.ModelForm):
 
 
 
+# forms.py - Update LeadForm
+from django import forms
+from .models import Lead, Requirement
+
+from django import forms
+from .models import Lead, Requirement
+
 class LeadForm(forms.ModelForm):
+    # Add this to make image field optional
+    image = forms.ImageField(required=False)
+    
     requirements = forms.ModelMultipleChoiceField(
         queryset=Requirement.objects.all(),
         widget=forms.CheckboxSelectMultiple,
         required=True
     )
     
+    follow_up_required = forms.ChoiceField(
+        choices=((True, 'Yes'), (False, 'No')),
+        widget=forms.RadioSelect,
+        initial=False
+    )
+    
+    quotation_required = forms.ChoiceField(
+        choices=((True, 'Yes'), (False, 'No')),
+        widget=forms.RadioSelect,
+        initial=False
+    )
+    
+    remarks = forms.CharField(
+    widget=forms.Textarea(attrs={
+        'class': 'form-control', 
+        'placeholder': 'Enter Remarks', 
+        'rows': 3  # Adjust the number of rows as needed
+    }),
+    required=False
+)
+    
     class Meta:
         model = Lead
-        fields = ['firm_name', 'customer_name', 'contact_number', 'location', 'business_nature', 'requirements']
+        fields = [
+            'firm_name', 'customer_name', 'contact_number', 
+            'location', 'business_nature', 'requirements',
+            'follow_up_required', 'quotation_required', 'image', 'remarks'
+        ]
         widgets = {
             'firm_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter Firm Name'}),
             'customer_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter Customer Name'}),
             'contact_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter Contact Number'}),
             'location': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter Location'}),
             'business_nature': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter Business Nature'}),
+            'image': forms.FileInput(attrs={'class': 'form-control'}),
         }
+
+    def clean_follow_up_required(self):
+        return self.cleaned_data['follow_up_required'] == 'True'
+    
+    def clean_quotation_required(self):
+        return self.cleaned_data['quotation_required'] == 'True'
+        
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        
+        # Get the uploaded image from cleaned_data
+        image = self.cleaned_data.get('image')
+        
+        # Only update the image if a new one was uploaded
+        if image:
+            # Delete old image if it exists
+            if instance.image and hasattr(instance.image, 'path'):
+                try:
+                    import os
+                    if os.path.exists(instance.image.path):
+                        os.remove(instance.image.path)
+                except:
+                    pass
+            instance.image = image
+        elif self.instance.pk:
+            # If this is an edit (instance exists) and no new image provided,
+            # keep the existing image by fetching it from the database
+            original = Lead.objects.get(pk=self.instance.pk)
+            instance.image = original.image
+            
+        if commit:
+            instance.save()
+            self.save_m2m()
+        return instance

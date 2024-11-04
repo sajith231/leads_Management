@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="text-center">Edit Lead</h3>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }}">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        {% for field in form %}
+                            <div class="mb-3">
+                                {% if field.name == 'requirements' %}
+                                    <label class="form-label">{{ field.label }}</label>
+                                    <div class="requirements-container">
+                                        {{ field }}
+                                    </div>
+                                {% elif field.name == 'image' %}
+                                    <label class="form-label">{{ field.label }}</label>
+                                    <div class="row">
+                                        <div class="col-md-8">
+                                            {{ field }}
+                                        </div>
+                                        <div class="col-md-4">
+                                            {% if lead.image %}
+                                                <div class="current-image">
+                                                    <img src="{{ lead.image.url }}" 
+                                                         class="img-thumbnail" 
+                                                         alt="Current Image"
+                                                         style="max-height: 100px;">
+                                                    <p class="text-muted small mt-1">Current image</p>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                {% elif field.name in 'follow_up_required,quotation_required' %}
+                                    <label class="form-label">{{ field.label }}</label>
+                                    <div class="radio-options">
+                                        {{ field }}
+                                    </div>
+                                {% else %}
+                                    <label class="form-label">{{ field.label }}</label>
+                                    {{ field }}
+                                {% endif %}
+                                
+                                {% if field.errors %}
+                                    {% for error in field.errors %}
+                                        <div class="text-danger">{{ error }}</div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+
+                        <div class="text-center mt-4">
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                            <a href="{% url 'user_dashboard' %}" class="btn btn-secondary ms-2">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .requirements-container {
+        max-height: 200px;
+        overflow-y: auto;
+        border: 1px solid #dee2e6;
+        padding: 10px;
+        border-radius: 4px;
+    }
+    
+    .requirements-container label {
+        display: block;
+        margin-bottom: 5px;
+    }
+    
+    .radio-options {
+        display: flex;
+        gap: 20px;
+    }
+    
+    .radio-options label {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    
+    .current-image {
+        text-align: center;
+        padding: 10px;
+        background-color: #f8f9fa;
+        border-radius: 4px;
+    }
+</style>
+
+{% block extra_js %}
+<script>
+    // Preview new image before upload
+    document.querySelector('input[type="file"]').addEventListener('change', function(e) {
+        if (this.files && this.files[0]) {
+            const reader = new FileReader();
+            const currentImageDiv = document.querySelector('.current-image');
+            
+            reader.onload = function(e) {
+                if (currentImageDiv) {
+                    const img = currentImageDiv.querySelector('img');
+                    img.src = e.target.result;
+                    currentImageDiv.querySelector('p').textContent = 'Preview of new image';
+                } else {
+                    const newImageDiv = document.createElement('div');
+                    newImageDiv.className = 'current-image';
+                    newImageDiv.innerHTML = `
+                        <img src="${e.target.result}" class="img-thumbnail" alt="New Image Preview" style="max-height: 100px;">
+                        <p class="text-muted small mt-1">Preview of new image</p>
+                    `;
+                    document.querySelector('input[type="file"]').parentNode.appendChild(newImageDiv);
+                }
+            }
+            
+            reader.readAsDataURL(this.files[0]);
+        }
+    });
+</script>
+{% endblock %}
+
+{% endblock %}

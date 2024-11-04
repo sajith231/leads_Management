@@ -52,6 +52,11 @@ class Lead(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    # Add these new fields
+    follow_up_required = models.BooleanField(default=False)
+    quotation_required = models.BooleanField(default=False)
+    image = models.ImageField(upload_to='lead_images/', null=True, blank=True)
+    remarks = models.TextField(blank=True, null=True)  # Added remarks field
 
     def __str__(self):
         return f"{self.firm_name} - {self.customer_name}"
