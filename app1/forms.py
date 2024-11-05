@@ -84,7 +84,7 @@ class UserForm(forms.ModelForm):
         
         # Only update password if it's provided in the form
         if self.cleaned_data.get('password'):
-            user.password = self.cleaned_data['password']
+            user.password = self.cleaned_data['password'] 
         elif self.instance and self.instance.pk:
             # If this is an edit (instance exists) and no new password provided,
             # keep the existing password
@@ -108,38 +108,38 @@ from .models import Lead, Requirement
 class LeadForm(forms.ModelForm):
     # Add this to make image field optional
     image = forms.ImageField(required=False)
-    
+
     requirements = forms.ModelMultipleChoiceField(
         queryset=Requirement.objects.all(),
         widget=forms.CheckboxSelectMultiple,
         required=True
     )
-    
+
     follow_up_required = forms.ChoiceField(
         choices=((True, 'Yes'), (False, 'No')),
         widget=forms.RadioSelect,
         initial=False
     )
-    
+
     quotation_required = forms.ChoiceField(
         choices=((True, 'Yes'), (False, 'No')),
         widget=forms.RadioSelect,
         initial=False
     )
-    
+
     remarks = forms.CharField(
-    widget=forms.Textarea(attrs={
-        'class': 'form-control', 
-        'placeholder': 'Enter Remarks', 
-        'rows': 3  # Adjust the number of rows as needed
-    }),
-    required=False
-)
-    
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'placeholder': 'Enter Remarks',
+            'rows': 3  # Adjust the number of rows as needed
+        }),
+        required=False
+    )
+
     class Meta:
         model = Lead
         fields = [
-            'firm_name', 'customer_name', 'contact_number', 
+            'firm_name', 'customer_name', 'contact_number',
             'location', 'business_nature', 'requirements',
             'follow_up_required', 'quotation_required', 'image', 'remarks'
         ]
@@ -154,34 +154,22 @@ class LeadForm(forms.ModelForm):
 
     def clean_follow_up_required(self):
         return self.cleaned_data['follow_up_required'] == 'True'
-    
+
     def clean_quotation_required(self):
         return self.cleaned_data['quotation_required'] == 'True'
-        
+
     def save(self, commit=True):
         instance = super().save(commit=False)
-        
+
         # Get the uploaded image from cleaned_data
         image = self.cleaned_data.get('image')
-        
+
         # Only update the image if a new one was uploaded
         if image:
-            # Delete old image if it exists
-            if instance.image and hasattr(instance.image, 'path'):
-                try:
-                    import os
-                    if os.path.exists(instance.image.path):
-                        os.remove(instance.image.path)
-                except:
-                    pass
             instance.image = image
-        elif self.instance.pk:
-            # If this is an edit (instance exists) and no new image provided,
-            # keep the existing image by fetching it from the database
-            original = Lead.objects.get(pk=self.instance.pk)
-            instance.image = original.image
-            
+
         if commit:
             instance.save()
             self.save_m2m()
+
         return instance
