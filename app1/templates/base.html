@@ -31,7 +31,7 @@
             padding-top: 20px;
             transition: 0.3s;
             z-index: 1000;
-            display: flex;
+            display: flex; 
             flex-direction: column;
         }
 
@@ -86,18 +86,30 @@
             .hamburger {
                 display: block;
             }
+            .submenu a {
+            padding: 8px 0;
+            font-size: 1em;
+            color: #bbb;
+            margin-left: 10%;
+        }
 
             .sidebar {
                 transform: translateX(-250px);
+                /* width: 100%; */
+                display: flex;
+                justify-content: center;
+                align-items: center;
             }
 
             .sidebar.active {
                 transform: translateX(0);
+                width: 100%;
             }
 
             .content {
                 margin-left: 0;
-                padding-top: 70px;
+                /* padding-top: 70px; */
+                
             }
 
             .content.shifted {
@@ -133,6 +145,7 @@
             padding: 8px 0;
             font-size: 1em;
             color: #bbb;
+            
         }
 
         .submenu a:hover {
@@ -170,6 +183,9 @@
     </div>
 
     <div class="content">
+        <!-- <a href="{% url 'logout' %}" style="display: flex; justify-content: end;">
+            <i class="fas fa-sign-out-alt"></i> Logout
+        </a> -->
         {% block content %}{% endblock %}
     </div>
 

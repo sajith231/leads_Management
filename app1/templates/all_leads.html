@@ -2,8 +2,8 @@
 {% load static %}
 
 {% block content %}
-
-<div class="container mt-5">
+<!-- <div style="display: flex; width: 100%; justify-content: center;"><img src="{% static 'images/imclogo.png' %}" alt="Logo" width="300" height="auto" ></div>
+<div class="container mt-5"> -->
     
 
     {% if messages %}
@@ -13,33 +13,35 @@
             </div>
         {% endfor %}
     {% endif %}
-
-    <div class="card">
+    
+    <div class="card" style="margin-bottom: 10%;">
         <div class="card-header">
             <h3>Company Leads</h3>
         </div>
         <!-- Modal -->
-<div class="modal fade" id="remarksModal" tabindex="-1" aria-labelledby="remarksModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="remarksModalLabel">Full Remarks</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body" id="remarksModalBody">
-                <!-- Full remarks will be displayed here -->
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <div class="modal fade" id="remarksModal" tabindex="-1" aria-labelledby="remarksModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="remarksModalLabel">Full Remarks</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body" id="remarksModalBody">
+                        <!-- Full remarks will be displayed here -->
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
-</div>
+
         <div class="card-body">
             <div class="table-responsive">
                 <table class="table table-striped table-hover">
                     <thead>
                         <tr style="white-space: nowrap;">
+                            <th>No</th> <!-- Column for row numbers -->
                             <th>User</th>
                             <th>Branch</th>
                             <th>Firm Name</th>
@@ -56,8 +58,9 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for lead in leads %}
+                        {% for lead in leads|slice:"::-1" %}
                             <tr>
+                                <td>{{ forloop.counter }}</td>
                                 <td style="white-space: nowrap;">{{ lead.user.name }}</td>
                                 <td style="white-space: nowrap;">{{ lead.user.branch.name }}</td>
                                 <td style="white-space: nowrap;">{{ lead.firm_name }}</td>
@@ -83,12 +86,12 @@
                                 <td>
                                     {% if lead.image %}
                                         <a href="{{ lead.image.url }}" class="image-popup" target="_blank">
-                                            <span style="object-fit: cover;"><img src="{{ lead.image.url }}" 
+                                            <img src="{{ lead.image.url }}" 
                                                  alt="Lead Image" 
                                                  class="img-thumbnail" 
                                                  style="width: 50px; height: 50px; object-fit: cover;"
                                                  data-bs-toggle="tooltip"
-                                                 title="Click to view full image"></span>
+                                                 title="Click to view full image">
                                         </a>
                                     {% else %}
                                         <span class="text-muted">No image</span>
@@ -109,13 +112,11 @@
                                         <span class="text-muted">No remarks</span>
                                     {% endif %}
                                 </td>
-                                
-                                
                                 <td>{{ lead.created_at|date:"M d, Y" }}</td>
                             </tr>
                         {% empty %}
                             <tr>
-                                <td colspan="13" class="text-center">No leads found.</td>
+                                <td colspan="14" class="text-center">No leads found.</td>
                             </tr>
                         {% endfor %}
                     </tbody>
@@ -126,8 +127,8 @@
 </div>
 <script>
     function showRemarks(element) {
-    var remarks = element.getAttribute('data-remarks');
-    document.getElementById('remarksModalBody').innerText = remarks;
-}
+        var remarks = element.getAttribute('data-remarks');
+        document.getElementById('remarksModalBody').innerText = remarks;
+    }
 </script>
 {% endblock %}
