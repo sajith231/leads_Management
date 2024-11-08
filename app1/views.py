@@ -13,6 +13,8 @@ from django.contrib.auth.models import User as DjangoUser  # Added this import
 from .forms import BranchForm, RequirementForm, UserForm
 from .models import Lead
 from .forms import LeadForm
+from django.db.models import Q
+from datetime import datetime, timedelta
 
 
 
@@ -276,16 +278,49 @@ def edit_lead(request, lead_id):
         form = LeadForm(instance=lead)
     return render(request, 'edit_lead.html', {'form': form, 'lead': lead})
 
+
 @login_required
 def all_leads(request):
     if request.user.is_superuser:
-        # Get all leads with related user and requirement information
         leads = Lead.objects.all().select_related('user', 'user__branch').prefetch_related('requirements')
-        return render(request, 'all_leads.html', {'leads': leads})
+
+        # Filter leads based on date range, if provided
+        start_date = request.GET.get('start_date')
+        end_date = request.GET.get('end_date')
+        if start_date and end_date:
+            start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+            end_date = datetime.strptime(end_date, '%Y-%m-%d').date() + timedelta(days=1)  # Add one day to include the end date
+            leads = leads.filter(created_at__gte=start_date, created_at__lt=end_date)
+
+        # Filter leads based on branch, if provided and valid
+        branch_id = request.GET.get('branch')
+        if branch_id and branch_id.isdigit():  # Check if branch_id is a valid number
+            leads = leads.filter(user__branch_id=branch_id)
+
+        # Filter leads based on requirements, if provided and valid
+        requirement_ids = request.GET.getlist('requirements')
+        requirement_ids = [req_id for req_id in requirement_ids if req_id.isdigit()]  # Filter out empty values
+        if requirement_ids:
+            leads = leads.filter(requirements__id__in=requirement_ids).distinct()
+
+        # Filter by firm name, if provided
+        firm_name = request.GET.get('firm_name')
+        if firm_name:
+            leads = leads.filter(firm_name__icontains=firm_name)
+
+        # Get all branches and requirements for the filters
+        branches = Branch.objects.all()
+        requirements = Requirement.objects.all()
+
+        return render(request, 'all_leads.html', {
+            'leads': leads,
+            'branches': branches,
+            'requirements': requirements
+        })
     else:
         messages.error(request, "You don't have permission to view this page.")
         return redirect('user_dashboard')
-    
+
 
 
 

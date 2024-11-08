@@ -21,13 +21,14 @@
         body {
             font-family: Arial, sans-serif;
             margin: 0;
+            
         }
 
         .sidebar {
             width: 250px;
             height: 100vh;
             position: fixed;
-            background-color: #333;
+            background-color: rgb(102, 96, 88);
             padding-top: 20px;
             transition: 0.3s;
             z-index: 1000;
@@ -83,6 +84,10 @@
         }
 
         @media (max-width: 768px) {
+            .logo{
+                
+                margin-bottom: 5%;
+            }
             .hamburger {
                 display: block;
             }
@@ -127,6 +132,9 @@
             .hamburger.active span:nth-child(3) {
                 transform: rotate(-45deg) translate(7px, -7px);
             }
+            .d-flex justify-content-center align-items-center{
+                margin-left: 15%;
+            }
         }
 
         input {
@@ -144,13 +152,15 @@
         .submenu a {
             padding: 8px 0;
             font-size: 1em;
-            color: #bbb;
+            color: white;
+            
             
         }
 
         .submenu a:hover {
-            color: #fff;
+            color: black;
         }
+        
     </style>
 </head>
 
@@ -162,30 +172,49 @@
         <span></span>
     </button>
 
-    <div class="sidebar">
+    <div class="sidebar" >
+        
         {% if user.is_superuser %}
-            <div  onclick="toggleMenu()">
-                <h5 style="margin-left: 5%; color: white;">Master</h5>
+            <div  onclick="toggleMenu()" style="margin-top: -5%;">
+                <div><h5 style="margin-left: 5%; color: white;" class="mainmenu" >
+                    <div style="display: flex;" class="gap-2 align-items-center">
+                        <i class="fas fa-cog"></i> 
+                        <span>Master</span>
+                    </div>
+                </h5></div>
             </div>
             <div id="master-menu" class="submenu" style="margin-left: 5%;">
-                <a href="{% url 'all_branches' %}">Branch</a>
-                <a href="{% url 'users_table' %}">Users</a>
-                <a href="{% url 'all_requirements' %}">Requirements</a>
+                <a href="{% url 'all_branches' %}">
+                    <i class="fas fa-code-branch"></i> Branch
+                </a>
+                <a href="{% url 'users_table' %}">
+                    <i class="fas fa-users"></i> Users
+                </a>
+                <a href="{% url 'all_requirements' %}">
+                    <i class="fas fa-tasks"></i> Requirements
+                </a>
             </div>
-            <a href="{% url 'all_leads' %}">Leads</a>
+            <a href="{% url 'all_leads' %}" style="color: white;">
+                <i class="fas fa-user"></i> Leads
+            </a>
+            
         {% else %}
-           <h5> <a href="{% url 'user_dashboard' %}">Leads</a></h5>
+        <h5 style="margin-top: 2%;">
+             
+            <a href="{% url 'user_dashboard' %}" style="color: white;">
+                <i class="fas fa-user" style="font-size: 15px; margin-right: 5px;"></i> Leads
+            </a>
+            
+        </h5>
         {% endif %}
 
         <a href="{% url 'logout' %}">
-            <i class="fas fa-sign-out-alt"></i> Logout
+            <i class="fas fa-sign-out-alt" style="color: white;"></i><span style="color: white;">Logout</span> 
         </a>
     </div>
 
     <div class="content">
-        <!-- <a href="{% url 'logout' %}" style="display: flex; justify-content: end;">
-            <i class="fas fa-sign-out-alt"></i> Logout
-        </a> -->
+        
         {% block content %}{% endblock %}
     </div>
 
