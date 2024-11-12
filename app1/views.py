@@ -16,7 +16,7 @@ from .forms import LeadForm
 from django.db.models import Q
 from datetime import datetime, timedelta
 from .models import Requirement  # Ensure the correct model is imported
-
+from .models import Lead, SoftwareAmount 
 
 
 def login(request):
@@ -255,13 +255,19 @@ def user_dashboard(request):
 @login_required
 def add_lead(request):
     if request.method == 'POST':
-        form = LeadForm(request.POST, request.FILES)  # Note the request.FILES here
+        form = LeadForm(request.POST, request.FILES)
         if form.is_valid():
             lead = form.save(commit=False)
             custom_user = User.objects.get(id=request.session['custom_user_id'])
             lead.user = custom_user
             lead.save()
             form.save_m2m()
+            
+            # Check if any software was selected
+            selected_software = form.cleaned_data.get('software', [])
+            if selected_software:
+                return redirect('software_amount', lead_id=lead.id)
+            
             messages.success(request, 'Lead added successfully!')
             return redirect('user_dashboard')
     else:
@@ -333,13 +339,60 @@ def all_leads(request):
 
 @login_required
 def delete_lead(request, lead_id):
-    lead = get_object_or_404(Lead, id=lead_id)
     if request.method == 'POST':
+        lead = get_object_or_404(Lead, id=lead_id)
         lead_name = lead.firm_name
+        
         try:
+            # Since SoftwareAmount has a foreign key to Lead with CASCADE,
+            # we don't need to explicitly delete SoftwareAmount records
             lead.delete()
             messages.success(request, f'Lead "{lead_name}" deleted successfully.')
         except Exception as e:
             messages.error(request, f'Error deleting lead: {str(e)}')
+            # Log the error for debugging
+            print(f"Error deleting lead {lead_id}: {str(e)}")
+            
     return redirect('user_dashboard')
 
+
+
+
+@login_required
+def software_amount(request, lead_id):
+    lead = get_object_or_404(Lead, id=lead_id)
+    # Get just the software names for the form
+    software_list = [s.strip() for s in lead.software.split(',') if s.strip()]
+    
+    if request.method == 'POST':
+        try:
+            # Delete existing amounts for this lead
+            SoftwareAmount.objects.filter(lead=lead).delete()
+            
+            # Create new software amounts
+            for software in software_list:
+                amount = request.POST.get(f'amount_{software.replace(" ", "_")}')
+                if amount:
+                    SoftwareAmount.objects.create(
+                        lead=lead,
+                        software_name=software,
+                        amount=float(amount)
+                    )
+            
+            messages.success(request, 'Software amounts saved successfully!')
+            return redirect('user_dashboard')
+        except Exception as e:
+            messages.error(request, f'Error saving software amounts: {str(e)}')
+            return redirect('software_amount', lead_id=lead.id)
+    
+    # Get existing amounts
+    existing_amounts = {
+        sa.software_name: sa.amount 
+        for sa in SoftwareAmount.objects.filter(lead=lead)
+    }
+    
+    return render(request, 'software_amount.html', {
+        'lead': lead,
+        'software_list': software_list,
+        'existing_amounts': existing_amounts
+    })

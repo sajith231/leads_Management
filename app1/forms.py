@@ -160,6 +160,15 @@ class LeadForm(forms.ModelForm):
             'image': forms.FileInput(attrs={'class': 'form-control'}),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # If we have an instance (editing mode), set initial software values
+        if self.instance.pk:
+            # Convert the comma-separated string back to a list
+            initial_software = [s.strip() for s in self.instance.software.split(',') if s.strip()]
+            self.initial['software'] = initial_software
+
     def clean_follow_up_required(self):
         return self.cleaned_data['follow_up_required'] == 'True'
 
@@ -168,8 +177,9 @@ class LeadForm(forms.ModelForm):
 
     def save(self, commit=True):
         instance = super().save(commit=False)
-        instance.software = self.cleaned_data.get('software', [])
-        
+        # Convert software list to a comma-separated string
+        instance.software = ', '.join(self.cleaned_data.get('software', []))
+
         if self.cleaned_data.get('image'):
             instance.image = self.cleaned_data['image']
             

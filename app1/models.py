@@ -60,7 +60,7 @@ class Lead(models.Model):
     ]
 
     SOFTWARE_CHOICES = [
-         # This will be disabled
+        # This will be disabled
         ('TASK', 'TASK'),
         ('B CARE', 'B CARE'),
         ('I CARE', 'I CARE'),
@@ -98,13 +98,39 @@ class Lead(models.Model):
     def __str__(self):
         return f"{self.firm_name} - {self.customer_name}"
 
+    
+    
     def get_software_list(self):
+        """Returns a list of dictionaries containing software names and their amounts"""
         if not self.software:
             return []
-        # Remove any extra whitespace and split by comma
-        return [s.strip() for s in self.software.split(',') if s.strip()]
+        
+        # Get software names from the comma-separated string
+        software_names = [s.strip() for s in self.software.split(',') if s.strip()]
+        
+        # Get all software amounts for this lead
+        amounts = self.software_amounts.all()
+        
+        # Create a list of dictionaries with software names and amounts
+        result = []
+        for software in software_names:
+            amount = next((amt.amount for amt in amounts if amt.software_name == software), None)
+            result.append({
+                'name': software,
+                'amount': amount
+            })
+        return result
     
-    def get_software_display(self):
-        """Returns software as a comma-separated string without brackets"""
-        return ', '.join(self.get_software_list())
     
+class SoftwareAmount(models.Model):
+    lead = models.ForeignKey('Lead', on_delete=models.CASCADE, related_name='software_amounts')
+    software_name = models.CharField(max_length=100)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('lead', 'software_name')
+
+    def __str__(self):
+        return f"{self.software_name} - {self.amount}"

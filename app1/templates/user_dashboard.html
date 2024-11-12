@@ -54,8 +54,13 @@
                                 {% if lead.software %}
                                     {% with software_list=lead.get_software_list %}
                                         {% for software in software_list %}
-                                            {% if not forloop.first %} {% endif %}
-                                            <span class="badge bg-info">{{ software }}</span>
+                                            {% if not forloop.first %}{% endif %}
+                                            <span class="badge bg-info">
+                                                {{ software.name }}
+                                                {% if software.amount %}
+                                                    (₹{{ software.amount|floatformat:2 }})
+                                                {% endif %}
+                                            </span>
                                         {% endfor %}
                                     {% endwith %}
                                 {% else %}
