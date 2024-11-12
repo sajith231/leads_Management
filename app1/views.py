@@ -15,6 +15,7 @@ from .models import Lead
 from .forms import LeadForm
 from django.db.models import Q
 from datetime import datetime, timedelta
+from .models import Requirement  # Ensure the correct model is imported
 
 
 
@@ -124,7 +125,7 @@ def all_requirements(request):
     requirements = Requirement.objects.all()
     return render(request, 'all_requirements.html', {'requirements': requirements})
 
-from .models import Requirement  # Ensure the correct model is imported
+
 
 @login_required
 def delete_requirement(request, requirement_id):
@@ -137,6 +138,11 @@ def delete_requirement(request, requirement_id):
         except Exception as e:
             messages.error(request, f'Error deleting requirement: {str(e)}')
     return redirect('all_requirements')
+
+
+
+
+
 
 @login_required
 def edit_requirement(request, requirement_id):

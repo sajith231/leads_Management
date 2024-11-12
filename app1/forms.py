@@ -106,8 +106,13 @@ from django import forms
 from .models import Lead, Requirement
 
 class LeadForm(forms.ModelForm):
-    # Add this to make image field optional
     image = forms.ImageField(required=False)
+    
+    software = forms.MultipleChoiceField(
+        choices=Lead.SOFTWARE_CHOICES,
+        widget=forms.CheckboxSelectMultiple,
+        required=False
+    )
 
     requirements = forms.ModelMultipleChoiceField(
         queryset=Requirement.objects.all(),
@@ -131,7 +136,7 @@ class LeadForm(forms.ModelForm):
         widget=forms.Textarea(attrs={
             'class': 'form-control',
             'placeholder': 'Enter Remarks',
-            'rows': 3  # Adjust the number of rows as needed
+            'rows': 3
         }),
         required=False
     )
@@ -140,7 +145,7 @@ class LeadForm(forms.ModelForm):
         model = Lead
         fields = [
             'firm_name', 'customer_name', 'contact_number',
-            'location', 'business_nature', 'requirements',
+            'location', 'business_nature', 'software', 'requirements',
             'follow_up_required', 'quotation_required', 'image', 'remarks'
         ]
         widgets = {
@@ -148,7 +153,10 @@ class LeadForm(forms.ModelForm):
             'customer_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter Customer Name'}),
             'contact_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter Contact Number'}),
             'location': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter Location'}),
-            'business_nature': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter Business Nature'}),
+            'business_nature': forms.Select(attrs={
+                'class': 'form-select',
+                'placeholder': 'Select Business Nature'
+            }),
             'image': forms.FileInput(attrs={'class': 'form-control'}),
         }
 
@@ -160,16 +168,12 @@ class LeadForm(forms.ModelForm):
 
     def save(self, commit=True):
         instance = super().save(commit=False)
-
-        # Get the uploaded image from cleaned_data
-        image = self.cleaned_data.get('image')
-
-        # Only update the image if a new one was uploaded
-        if image:
-            instance.image = image
-
+        instance.software = self.cleaned_data.get('software', [])
+        
+        if self.cleaned_data.get('image'):
+            instance.image = self.cleaned_data['image']
+            
         if commit:
             instance.save()
             self.save_m2m()
-
         return instance
