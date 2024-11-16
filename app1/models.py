@@ -61,6 +61,7 @@ class Lead(models.Model):
 
     SOFTWARE_CHOICES = [
         # This will be disabled
+        ('', 'Select'), 
         ('TASK', 'TASK'),
         ('B CARE', 'B CARE'),
         ('I CARE', 'I CARE'),

@@ -234,7 +234,12 @@ def edit_user(request, user_id):
 def user_dashboard(request):
     if 'custom_user_id' in request.session:
         custom_user = User.objects.get(id=request.session['custom_user_id'])
-        leads = Lead.objects.filter(user=custom_user).prefetch_related('requirements')
+        # Add select_related for user and branch, and prefetch_related for requirements
+        leads = Lead.objects.filter(user=custom_user)\
+                          .select_related('user')\
+                          .prefetch_related('requirements')\
+                          .order_by('-created_at')  # Optional: Sort by newest first
+        
         return render(request, "user_dashboard.html", {
             "message": f"Welcome, {custom_user.name}!",
             "user_data": custom_user,
@@ -252,7 +257,7 @@ def user_dashboard(request):
 
 
 
-@login_required
+@login_required 
 def add_lead(request):
     if request.method == 'POST':
         form = LeadForm(request.POST, request.FILES)
@@ -261,12 +266,17 @@ def add_lead(request):
             custom_user = User.objects.get(id=request.session['custom_user_id'])
             lead.user = custom_user
             lead.save()
-            form.save_m2m()
             
-            # Check if any software was selected
-            selected_software = form.cleaned_data.get('software', [])
-            if selected_software:
-                return redirect('software_amount', lead_id=lead.id)
+            # Get the combined requirements from form
+            combined_items = form.cleaned_data.get('combined_requirements', [])
+            
+            # Process requirements
+            requirement_names = [item for item in combined_items 
+                               if item not in dict(Lead.SOFTWARE_CHOICES).values()]
+            
+            # Add requirements
+            requirement_objects = Requirement.objects.filter(name__in=requirement_names)
+            lead.requirements.add(*requirement_objects)
             
             messages.success(request, 'Lead added successfully!')
             return redirect('user_dashboard')

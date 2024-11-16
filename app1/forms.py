@@ -1,8 +1,6 @@
-# forms.py
-
 from django import forms
-from .models import Branch, Requirement,Lead
-
+from .models import Branch, Requirement, Lead, User
+from django.template.loader import render_to_string
 
 class BranchForm(forms.ModelForm):
     class Meta:
@@ -20,7 +18,6 @@ class RequirementForm(forms.ModelForm):
             'name': forms.TextInput(attrs={'placeholder': 'Enter Requirement Name'}),
         }
 
-from .models import Branch, User
 class UserForm(forms.ModelForm):
     password = forms.CharField(
         widget=forms.PasswordInput(attrs={
@@ -28,7 +25,7 @@ class UserForm(forms.ModelForm):
             'placeholder': 'Enter Password (leave empty to keep current password)',
         }),
         label="Password",
-        required=False  # Make password optional
+        required=False
     )
     branch = forms.ModelChoiceField(
         queryset=Branch.objects.all(),
@@ -57,20 +54,17 @@ class UserForm(forms.ModelForm):
         self.edit_mode = kwargs.pop('edit_mode', False)
         super(UserForm, self).__init__(*args, **kwargs)
         
-        # Make all fields required except password
         for field in self.fields:
             if field == 'password':
                 self.fields[field].required = False
             else:
                 self.fields[field].required = True
                 
-        # Update password placeholder in edit mode
         if self.edit_mode:
             self.fields['password'].widget.attrs['placeholder'] = 'Leave empty to keep current password'
     
     def clean_userid(self):
         userid = self.cleaned_data.get('userid')
-        # Check if userid exists but exclude current instance in edit mode
         if self.instance and self.instance.pk:
             if User.objects.filter(userid=userid).exclude(pk=self.instance.pk).exists():
                 raise forms.ValidationError("This User ID already exists. Please choose a different one.")
@@ -82,62 +76,47 @@ class UserForm(forms.ModelForm):
     def save(self, commit=True):
         user = super().save(commit=False)
         
-        # Only update password if it's provided in the form
         if self.cleaned_data.get('password'):
             user.password = self.cleaned_data['password'] 
         elif self.instance and self.instance.pk:
-            # If this is an edit (instance exists) and no new password provided,
-            # keep the existing password
             user.password = User.objects.get(pk=self.instance.pk).password
             
         if commit:
             user.save()
         return user
+
+class CombinedSelectWidget(forms.Widget):
+    template_name = 'widgets/combined_select.html'
     
+    def __init__(self, choices=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.choices = choices or []
 
-
-
-
-# forms.py - Update LeadForm
-from django import forms
-from .models import Lead, Requirement
-
-from django import forms
-from .models import Lead, Requirement
+    def render(self, name, value, attrs=None, renderer=None):
+        if value is None:
+            value = []
+        
+        # Convert value to list if it's a string (for software)
+        if isinstance(value, str):
+            value = [v.strip() for v in value.split(',') if v.strip()]
+            
+        # Get all requirements for choices
+        requirement_choices = [(req.id, req.name) for req in Requirement.objects.all()]
+            
+        context = {
+            'widget': {
+                'name': name,
+                'value': value,
+                'attrs': attrs or {},
+                'choices': requirement_choices,
+                'software_choices': Lead.SOFTWARE_CHOICES,
+            }
+        }
+        return render_to_string(self.template_name, context)
 
 class LeadForm(forms.ModelForm):
-    image = forms.ImageField(required=False)
-    
-    software = forms.MultipleChoiceField(
-        choices=Lead.SOFTWARE_CHOICES,
-        widget=forms.CheckboxSelectMultiple,
-        required=False
-    )
-
-    requirements = forms.ModelMultipleChoiceField(
-        queryset=Requirement.objects.all(),
-        widget=forms.CheckboxSelectMultiple,
-        required=True
-    )
-
-    follow_up_required = forms.ChoiceField(
-        choices=((True, 'Yes'), (False, 'No')),
-        widget=forms.RadioSelect,
-        initial=False
-    )
-
-    quotation_required = forms.ChoiceField(
-        choices=((True, 'Yes'), (False, 'No')),
-        widget=forms.RadioSelect,
-        initial=False
-    )
-
-    remarks = forms.CharField(
-        widget=forms.Textarea(attrs={
-            'class': 'form-control',
-            'placeholder': 'Enter Remarks',
-            'rows': 3
-        }),
+    combined_requirements = forms.CharField(
+        widget=CombinedSelectWidget(),
         required=False
     )
 
@@ -145,45 +124,101 @@ class LeadForm(forms.ModelForm):
         model = Lead
         fields = [
             'firm_name', 'customer_name', 'contact_number',
-            'location', 'business_nature', 'software', 'requirements',
-            'follow_up_required', 'quotation_required', 'image', 'remarks'
-        ]
+            'location', 'business_nature', 'software',
+            'follow_up_required', 'quotation_required', 
+            'image', 'remarks'
+        ]  # Removed 'requirements' from fields
         widgets = {
-            'firm_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter Firm Name'}),
-            'customer_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter Customer Name'}),
-            'contact_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter Contact Number'}),
-            'location': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter Location'}),
+            'firm_name': forms.TextInput(attrs={
+                'class': 'form-control', 
+                'placeholder': 'Enter Firm Name'
+            }),
+            'customer_name': forms.TextInput(attrs={
+                'class': 'form-control', 
+                'placeholder': 'Enter Customer Name'
+            }),
+            'contact_number': forms.TextInput(attrs={
+                'class': 'form-control', 
+                'placeholder': 'Enter Contact Number'
+            }),
+            'location': forms.TextInput(attrs={
+                'class': 'form-control', 
+                'placeholder': 'Enter Location'
+            }),
             'business_nature': forms.Select(attrs={
                 'class': 'form-select',
                 'placeholder': 'Select Business Nature'
             }),
-            'image': forms.FileInput(attrs={'class': 'form-control'}),
+            'software': forms.SelectMultiple(attrs={
+                'class': 'form-select'
+            }),
+            'image': forms.FileInput(attrs={
+                'class': 'form-control'
+            }),
+            'remarks': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3
+            })
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
-        # If we have an instance (editing mode), set initial software values
+        # Populate combined_requirements if editing an existing instance
         if self.instance.pk:
-            # Convert the comma-separated string back to a list
-            initial_software = [s.strip() for s in self.instance.software.split(',') if s.strip()]
-            self.initial['software'] = initial_software
+            software_list = [s.strip() for s in self.instance.software.split(',') if s.strip()]
+            requirement_list = list(self.instance.requirements.values_list('id', flat=True))
+            combined_values = []
+
+            combined_values.extend(software_list)
+            requirement_names = Requirement.objects.filter(id__in=requirement_list).values_list('name', flat=True)
+            combined_values.extend(requirement_names)
+
+            self.initial['combined_requirements'] = ', '.join(combined_values)
 
     def clean_follow_up_required(self):
-        return self.cleaned_data['follow_up_required'] == 'True'
+        return bool(self.cleaned_data['follow_up_required'])
 
     def clean_quotation_required(self):
-        return self.cleaned_data['quotation_required'] == 'True'
+        return bool(self.cleaned_data['quotation_required'])
+
+    def clean_combined_requirements(self):
+        combined = self.cleaned_data.get('combined_requirements', '')
+        if not combined:
+            raise forms.ValidationError("At least one requirement or software must be selected")
+        
+        # Split the comma-separated string into a list
+        items = [item.strip() for item in combined.split(',') if item.strip()]
+        return items
 
     def save(self, commit=True):
         instance = super().save(commit=False)
-        # Convert software list to a comma-separated string
-        instance.software = ', '.join(self.cleaned_data.get('software', []))
-
-        if self.cleaned_data.get('image'):
-            instance.image = self.cleaned_data['image']
-            
+        
+        # Get the combined requirements from cleaned data
+        combined_items = self.cleaned_data.get('combined_requirements', [])
+        
+        # Separate software and requirements
+        software_list = []
+        requirement_names = []
+        
+        software_choices_dict = dict(Lead.SOFTWARE_CHOICES)
+        
+        for item in combined_items:
+            # Check if the item is in SOFTWARE_CHOICES
+            if item in software_choices_dict.values():
+                software_list.append(item)
+            else:
+                requirement_names.append(item)
+        
+        # Save software as comma-separated string
+        instance.software = ', '.join(software_list)
+        
         if commit:
             instance.save()
-            self.save_m2m()
+            
+            # Clear existing requirements and add new ones
+            instance.requirements.clear()
+            requirement_objects = Requirement.objects.filter(name__in=requirement_names)
+            instance.requirements.add(*requirement_objects)
+        
         return instance

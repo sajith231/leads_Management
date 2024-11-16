@@ -166,7 +166,6 @@
                                     {% if lead.software %}
                                         {% with software_list=lead.get_software_list %}
                                             {% for software in software_list %}
-                                                {% if not forloop.first %}{% endif %}
                                                 <span class="badge bg-info">
                                                     {{ software.name }}
                                                     {% if software.amount %}
@@ -175,9 +174,8 @@
                                                 </span>
                                             {% endfor %}
                                         {% endwith %}
-                                    {% else %}
-                                        <span class="text-muted">No software selected</span>
                                     {% endif %}
+                                    
                                 </td>
                                 <td>
                                     {% for req in lead.requirements.all %}
