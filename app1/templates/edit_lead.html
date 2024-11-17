@@ -1,28 +1,266 @@
 {% extends 'base.html' %}
-
 {% block content %}
+
 <div class="container mt-5">
     <h2 class="mb-4">Edit Lead: {{ lead.firm_name }}</h2>
-    <form method="post" enctype="multipart/form-data">
+
+    <form method="POST" enctype="multipart/form-data">
         {% csrf_token %}
-        {% for field in form %}
-            {% if field.name != 'software' %}  <!-- Exclude the software field -->
-                <div class="mb-3">
-                    <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
-                    {{ field }}
-                    {% if field.help_text %}
-                        <div class="form-text">{{ field.help_text }}</div>
-                    {% endif %}
-                    {% for error in field.errors %}
-                        <div class="text-danger small">{{ error }}</div>
-                    {% endfor %}
+        
+        <!-- Basic Fields -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">{{ form.firm_name.label }}</label>
+                        {{ form.firm_name }}
+                        {% if form.firm_name.errors %}
+                            <div class="text-danger small">{{ form.firm_name.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">{{ form.customer_name.label }}</label>
+                        {{ form.customer_name }}
+                        {% if form.customer_name.errors %}
+                            <div class="text-danger small">{{ form.customer_name.errors }}</div>
+                        {% endif %}
+                    </div>
                 </div>
-            {% endif %}
-        {% endfor %}
-        <div class="mt-3">
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">{{ form.contact_number.label }}</label>
+                        {{ form.contact_number }}
+                        {% if form.contact_number.errors %}
+                            <div class="text-danger small">{{ form.contact_number.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">{{ form.location.label }}</label>
+                        {{ form.location }}
+                        {% if form.location.errors %}
+                            <div class="text-danger small">{{ form.location.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">{{ form.business_nature.label }}</label>
+                        {{ form.business_nature }}
+                        {% if form.business_nature.errors %}
+                            <div class="text-danger small">{{ form.business_nature.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">{{ form.image.label }}</label>
+                        {{ form.image }}
+                        {% if form.image.errors %}
+                            <div class="text-danger small">{{ form.image.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Software and Requirements Section -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Software & Requirements</h5>
+            </div>
+            <div class="card-body">
+                {{ form.combined_requirements }}
+                {% if form.combined_requirements.errors %}
+                    <div class="text-danger small">{{ form.combined_requirements.errors }}</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Additional Options -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Additional Options</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-check mb-3">
+                            {{ form.follow_up_required }}
+                            <label class="form-check-label" for="{{ form.follow_up_required.id_for_label }}">
+                                {{ form.follow_up_required.label }}
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-check mb-3">
+                            {{ form.quotation_required }}
+                            <label class="form-check-label" for="{{ form.quotation_required.id_for_label }}">
+                                {{ form.quotation_required.label }}
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">{{ form.remarks.label }}</label>
+                    {{ form.remarks }}
+                    {% if form.remarks.errors %}
+                        <div class="text-danger small">{{ form.remarks.errors }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-between">
             <button type="submit" class="btn btn-primary">Save Changes</button>
             <a href="{% url 'user_dashboard' %}" class="btn btn-secondary">Cancel</a>
         </div>
     </form>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Get existing software amounts
+    const existingAmounts = {
+        {% for amount in lead.software_amounts.all %}
+            "{{ amount.software_name }}": {{ amount.amount }},
+        {% endfor %}
+    };
+
+    // Set existing amounts in input fields
+    function setExistingAmounts() {
+        for (const [software, amount] of Object.entries(existingAmounts)) {
+            const amountInput = document.querySelector(`input[name="amount_${software.replace(/\s+/g, '_')}"]`);
+            if (amountInput) {
+                amountInput.value = amount;
+            }
+        }
+    }
+
+    // Wait a short moment for the form to fully initialize
+    setTimeout(setExistingAmounts, 100);
+
+    // Override the original removeItem function to handle amount fields
+    window.removeItem = function(button, name) {
+        const itemDiv = button.closest('.selected-item');
+        const hiddenInput = document.getElementById(`hidden-${name}`);
+        const itemText = itemDiv.querySelector('span').textContent.trim();
+        
+        // Update hidden input
+        const currentValues = hiddenInput.value.split(',');
+        const newValues = currentValues.filter(v => v.trim() !== itemText);
+        hiddenInput.value = newValues.join(',');
+        
+        // Remove the entire item div (including amount field if present)
+        itemDiv.remove();
+    };
+
+    // Override the original addSelectedItem function
+    window.addSelectedItem = function(name) {
+        const softwareSelect = document.getElementById(`software-select-${name}`);
+        const requirementSelect = document.getElementById(`requirement-select-${name}`);
+        const selectedItems = document.getElementById(`selected-items-${name}`);
+        const hiddenInput = document.getElementById(`hidden-${name}`);
+        
+        let selectedValue = '';
+        let selectedText = '';
+        let isSoftware = false;
+        
+        if (softwareSelect.value) {
+            selectedValue = softwareSelect.value;
+            selectedText = softwareSelect.options[softwareSelect.selectedIndex].text;
+            isSoftware = true;
+        } else if (requirementSelect.value) {
+            selectedValue = requirementSelect.value;
+            selectedText = requirementSelect.options[requirementSelect.selectedIndex].text;
+        }
+        
+        // Check if item already exists
+        const existingItems = hiddenInput.value.split(',').map(item => item.trim());
+        if (existingItems.includes(selectedText)) {
+            alert('This item has already been added.');
+            return;
+        }
+        
+        if (selectedText) {
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'selected-item mb-2';
+            
+            let amountInputHtml = '';
+            if (isSoftware) {
+                const amountId = `amount_${selectedText.replace(/\s+/g, '_')}`;
+                const existingAmount = existingAmounts[selectedText] || '';
+                amountInputHtml = `
+                    <div class="input-group mt-1">
+                        <span class="input-group-text">₹</span>
+                        <input type="number" 
+                               name="${amountId}"
+                               class="form-control form-control-sm software-amount"
+                               placeholder="Enter amount"
+                               step="0.01"
+                               min="0"
+                               value="${existingAmount}">
+                    </div>`;
+            }
+            
+            itemDiv.innerHTML = `
+                <div class="d-flex justify-content-between align-items-start">
+                    <span>${selectedText}</span>
+                    <button type="button" class="btn btn-sm btn-danger ms-2" 
+                            onclick="removeItem(this, '${name}')">×</button>
+                </div>
+                ${amountInputHtml}
+            `;
+            
+            selectedItems.appendChild(itemDiv);
+            
+            // Update hidden input
+            const currentValues = hiddenInput.value ? hiddenInput.value.split(',') : [];
+            currentValues.push(selectedText);
+            hiddenInput.value = currentValues.join(',');
+            
+            // Reset selects
+            softwareSelect.value = '';
+            requirementSelect.value = '';
+        }
+    };
+});
+</script>
+
+<style>
+.selected-item {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 10px;
+    margin-bottom: 8px;
+}
+
+.software-amount {
+    width: 150px;
+}
+
+.card {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.btn-danger {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+}
+</style>
+
 {% endblock %}

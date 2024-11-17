@@ -23,7 +23,7 @@
             <div class="table-responsive">
                 <table class="table table-striped">
                     <thead>
-                        <tr>
+                        <tr style="white-space: nowrap;">
                             <th>No</th>
                             <th>Firm Name</th>
                             <th>Customer Name</th>
@@ -44,11 +44,11 @@
                         {% for lead in leads %}
                         <tr>
                             <td>{{ forloop.counter }}</td>
-                            <td>{{ lead.firm_name }}</td>
-                            <td>{{ lead.customer_name }}</td>
-                            <td>{{ lead.contact_number }}</td>
-                            <td>{{ lead.location }}</td>
-                            <td>{{ lead.business_nature }}</td>
+                            <td style="white-space: nowrap;">{{ lead.firm_name }}</td>
+                            <td style="white-space: nowrap;">{{ lead.customer_name }}</td>
+                            <td style="white-space: nowrap;">{{ lead.contact_number }}</td>
+                            <td style="white-space: nowrap;">{{ lead.location }}</td>
+                            <td style="white-space: nowrap;">{{ lead.business_nature }}</td>
                             <td>
                                 {% if lead.software %}
                                     {% with software_list=lead.get_software_list %}

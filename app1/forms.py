@@ -126,16 +126,38 @@ class CombinedSelectWidget(forms.Widget):
             </div>
             
             <input type="hidden" name="{name}" id="hidden-{name}" value="{','.join(value)}">
-            <div id="software-amounts-container-{name}"></div>
         </div>
         
         <script>
+        document.addEventListener('DOMContentLoaded', function() {{
+            // Initialize the saved amounts map
+            window.savedAmounts = new Map();
+            
+            // Load existing amounts from the page
+            document.querySelectorAll('.software-amount').forEach(input => {{
+                const softwareName = input.getAttribute('data-software');
+                const value = input.value;
+                if (softwareName && value) {{
+                    window.savedAmounts.set(softwareName, value);
+                }}
+            }});
+
+            // Add event listeners to all remove buttons
+            document.querySelectorAll('.remove-item-btn').forEach(btn => {{
+                btn.addEventListener('click', function() {{
+                    const itemContainer = this.closest('.selected-item');
+                    const itemText = itemContainer.querySelector('span').textContent.trim();
+                    const name = '{name}';
+                    removeItem(this, name, true);
+                }});
+            }});
+        }});
+
         function addSelectedItem(name) {{
             const softwareSelect = document.getElementById(`software-select-${{name}}`);
             const requirementSelect = document.getElementById(`requirement-select-${{name}}`);
             const selectedItems = document.getElementById(`selected-items-${{name}}`);
             const hiddenInput = document.getElementById(`hidden-${{name}}`);
-            const amountsContainer = document.getElementById(`software-amounts-container-${{name}}`);
             
             let selectedValue = '';
             let selectedText = '';
@@ -157,13 +179,18 @@ class CombinedSelectWidget(forms.Widget):
                 let amountInputHtml = '';
                 if (isSoftware) {{
                     const amountId = `amount_${{selectedText.replace(/\s+/g, '_')}}`;
+                    const savedAmount = window.savedAmounts ? window.savedAmounts.get(selectedText) : '';
+                    const amountValue = savedAmount || '';
+                    
                     amountInputHtml = `
                         <div class="input-group mt-1">
                             <span class="input-group-text">₹</span>
                             <input type="number" 
                                    name="${{amountId}}"
                                    class="form-control form-control-sm software-amount"
+                                   data-software="${{selectedText}}"
                                    placeholder="Enter amount"
+                                   value="${{amountValue}}"
                                    step="0.01"
                                    min="0">
                         </div>`;
@@ -172,8 +199,8 @@ class CombinedSelectWidget(forms.Widget):
                 itemDiv.innerHTML = `
                     <div class="d-flex justify-content-between align-items-start">
                         <span>${{selectedText}}</span>
-                        <button type="button" class="btn btn-sm btn-danger ms-2" 
-                                onclick="removeItem(this, '${{name}}')">×</button>
+                        <button type="button" class="btn btn-sm btn-danger ms-2 remove-item-btn" 
+                                onclick="removeItem(this, '${{name}}', true)">×</button>
                     </div>
                     ${{amountInputHtml}}
                 `;
@@ -182,8 +209,10 @@ class CombinedSelectWidget(forms.Widget):
                 
                 // Update hidden input
                 const currentValues = hiddenInput.value ? hiddenInput.value.split(',') : [];
-                currentValues.push(selectedText);
-                hiddenInput.value = currentValues.join(',');
+                if (!currentValues.includes(selectedText)) {{
+                    currentValues.push(selectedText);
+                    hiddenInput.value = currentValues.join(',');
+                }}
                 
                 // Reset selects
                 softwareSelect.value = '';
@@ -191,16 +220,25 @@ class CombinedSelectWidget(forms.Widget):
             }}
         }}
         
-        function removeItem(button, name) {{
+        function removeItem(button, name, updateHidden = true) {{
             const itemDiv = button.closest('.selected-item');
             const hiddenInput = document.getElementById(`hidden-${{name}}`);
             const itemText = itemDiv.querySelector('span').textContent.trim();
             
-            // Update hidden input
-            const currentValues = hiddenInput.value.split(',');
-            const newValues = currentValues.filter(v => v.trim() !== itemText);
-            hiddenInput.value = newValues.join(',');
+            if (updateHidden) {{
+                // Update hidden input
+                const currentValues = hiddenInput.value.split(',').map(v => v.trim());
+                const newValues = currentValues.filter(v => v !== itemText);
+                hiddenInput.value = newValues.join(',');
+            }}
             
+            // Remove from saved amounts if it's a software item
+            const amountInput = itemDiv.querySelector('.software-amount');
+            if (amountInput && window.savedAmounts) {{
+                window.savedAmounts.delete(itemText);
+            }}
+            
+            // Remove the item div
             itemDiv.remove();
         }}
         </script>
@@ -233,6 +271,7 @@ class CombinedSelectWidget(forms.Widget):
                         <input type="number" 
                                name="{amount_id}"
                                class="form-control form-control-sm software-amount"
+                               data-software="{item}"
                                placeholder="Enter amount"
                                step="0.01"
                                min="0">
@@ -243,8 +282,8 @@ class CombinedSelectWidget(forms.Widget):
                 <div class="selected-item mb-2">
                     <div class="d-flex justify-content-between align-items-start">
                         <span>{item}</span>
-                        <button type="button" class="btn btn-sm btn-danger ms-2" 
-                                onclick="removeItem(this, '{self.attrs.get('name', '')}')">×</button>
+                        <button type="button" class="btn btn-sm btn-danger ms-2 remove-item-btn" 
+                                onclick="removeItem(this, '{self.attrs.get('name', '')}', true)">×</button>
                     </div>
                     {amount_input}
                 </div>
