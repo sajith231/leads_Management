@@ -109,13 +109,13 @@ class Lead(models.Model):
         # Get software names from the comma-separated string
         software_names = [s.strip() for s in self.software.split(',') if s.strip()]
         
-        # Get all software amounts for this lead
-        amounts = self.software_amounts.all()
+        # Get all software amounts for this lead using prefetch_related
+        amounts = {amt.software_name: amt.amount for amt in self.software_amounts.all()}
         
         # Create a list of dictionaries with software names and amounts
         result = []
         for software in software_names:
-            amount = next((amt.amount for amt in amounts if amt.software_name == software), None)
+            amount = amounts.get(software)
             result.append({
                 'name': software,
                 'amount': amount
@@ -135,3 +135,4 @@ class SoftwareAmount(models.Model):
 
     def __str__(self):
         return f"{self.software_name} - {self.amount}"
+    

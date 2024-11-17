@@ -1,6 +1,7 @@
 from django import forms
-from .models import Branch, Requirement, Lead, User
-from django.template.loader import render_to_string
+from .models import Branch, Requirement, Lead, User, SoftwareAmount
+from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 
 class BranchForm(forms.ModelForm):
     class Meta:
@@ -86,33 +87,176 @@ class UserForm(forms.ModelForm):
         return user
 
 class CombinedSelectWidget(forms.Widget):
-    template_name = 'widgets/combined_select.html'
-    
-    def __init__(self, choices=None, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.choices = choices or []
+    def __init__(self, attrs=None):
+        super().__init__(attrs)
+        self.attrs = attrs or {}
 
     def render(self, name, value, attrs=None, renderer=None):
         if value is None:
             value = []
         
-        # Convert value to list if it's a string (for software)
+        # Convert value to list if it's a string
         if isinstance(value, str):
             value = [v.strip() for v in value.split(',') if v.strip()]
             
         # Get all requirements for choices
         requirement_choices = [(req.id, req.name) for req in Requirement.objects.all()]
+        
+        # Build the HTML structure
+        html = f"""
+        <div class="combined-select-container">
+            <div class="selected-items mb-3" id="selected-items-{name}">
+                {self._render_selected_items(value)}
+            </div>
             
-        context = {
-            'widget': {
-                'name': name,
-                'value': value,
-                'attrs': attrs or {},
-                'choices': requirement_choices,
-                'software_choices': Lead.SOFTWARE_CHOICES,
-            }
-        }
-        return render_to_string(self.template_name, context)
+            <div class="input-group mb-3">
+                <select class="form-select" id="software-select-{name}">
+                    <option value="">Select Software</option>
+                    {self._render_options(Lead.SOFTWARE_CHOICES)}
+                </select>
+                
+                <select class="form-select" id="requirement-select-{name}">
+                    <option value="">Select Requirement</option>
+                    {self._render_options(requirement_choices)}
+                </select>
+                
+                <button type="button" class="btn btn-primary" onclick="addSelectedItem('{name}')">
+                    Add
+                </button>
+            </div>
+            
+            <input type="hidden" name="{name}" id="hidden-{name}" value="{','.join(value)}">
+            <div id="software-amounts-container-{name}"></div>
+        </div>
+        
+        <script>
+        function addSelectedItem(name) {{
+            const softwareSelect = document.getElementById(`software-select-${{name}}`);
+            const requirementSelect = document.getElementById(`requirement-select-${{name}}`);
+            const selectedItems = document.getElementById(`selected-items-${{name}}`);
+            const hiddenInput = document.getElementById(`hidden-${{name}}`);
+            const amountsContainer = document.getElementById(`software-amounts-container-${{name}}`);
+            
+            let selectedValue = '';
+            let selectedText = '';
+            let isSoftware = false;
+            
+            if (softwareSelect.value) {{
+                selectedValue = softwareSelect.value;
+                selectedText = softwareSelect.options[softwareSelect.selectedIndex].text;
+                isSoftware = true;
+            }} else if (requirementSelect.value) {{
+                selectedValue = requirementSelect.value;
+                selectedText = requirementSelect.options[requirementSelect.selectedIndex].text;
+            }}
+            
+            if (selectedText) {{
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'selected-item mb-2';
+                
+                let amountInputHtml = '';
+                if (isSoftware) {{
+                    const amountId = `amount_${{selectedText.replace(/\s+/g, '_')}}`;
+                    amountInputHtml = `
+                        <div class="input-group mt-1">
+                            <span class="input-group-text">₹</span>
+                            <input type="number" 
+                                   name="${{amountId}}"
+                                   class="form-control form-control-sm software-amount"
+                                   placeholder="Enter amount"
+                                   step="0.01"
+                                   min="0">
+                        </div>`;
+                }}
+                
+                itemDiv.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-start">
+                        <span>${{selectedText}}</span>
+                        <button type="button" class="btn btn-sm btn-danger ms-2" 
+                                onclick="removeItem(this, '${{name}}')">×</button>
+                    </div>
+                    ${{amountInputHtml}}
+                `;
+                
+                selectedItems.appendChild(itemDiv);
+                
+                // Update hidden input
+                const currentValues = hiddenInput.value ? hiddenInput.value.split(',') : [];
+                currentValues.push(selectedText);
+                hiddenInput.value = currentValues.join(',');
+                
+                // Reset selects
+                softwareSelect.value = '';
+                requirementSelect.value = '';
+            }}
+        }}
+        
+        function removeItem(button, name) {{
+            const itemDiv = button.closest('.selected-item');
+            const hiddenInput = document.getElementById(`hidden-${{name}}`);
+            const itemText = itemDiv.querySelector('span').textContent.trim();
+            
+            // Update hidden input
+            const currentValues = hiddenInput.value.split(',');
+            const newValues = currentValues.filter(v => v.trim() !== itemText);
+            hiddenInput.value = newValues.join(',');
+            
+            itemDiv.remove();
+        }}
+        </script>
+        
+        <style>
+        .selected-item {{
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            margin-bottom: 8px;
+        }}
+        .software-amount {{
+            width: 150px;
+        }}
+        </style>
+        """
+        return mark_safe(html)
+
+    def _render_selected_items(self, value):
+        items_html = []
+        for item in value:
+            is_software = any(item == choice[1] for choice in Lead.SOFTWARE_CHOICES)
+            amount_input = ''
+            if is_software:
+                amount_id = f"amount_{item.replace(' ', '_')}"
+                amount_input = f"""
+                    <div class="input-group mt-1">
+                        <span class="input-group-text">₹</span>
+                        <input type="number" 
+                               name="{amount_id}"
+                               class="form-control form-control-sm software-amount"
+                               placeholder="Enter amount"
+                               step="0.01"
+                               min="0">
+                    </div>
+                """
+            
+            items_html.append(f"""
+                <div class="selected-item mb-2">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <span>{item}</span>
+                        <button type="button" class="btn btn-sm btn-danger ms-2" 
+                                onclick="removeItem(this, '{self.attrs.get('name', '')}')">×</button>
+                    </div>
+                    {amount_input}
+                </div>
+            """)
+        return '\n'.join(items_html)
+
+    def _render_options(self, choices):
+        options_html = []
+        for value, label in choices:
+            if value:  # Skip empty choice
+                options_html.append(f'<option value="{value}">{label}</option>')
+        return '\n'.join(options_html)
 
 class LeadForm(forms.ModelForm):
     combined_requirements = forms.CharField(
@@ -127,7 +271,7 @@ class LeadForm(forms.ModelForm):
             'location', 'business_nature', 'software',
             'follow_up_required', 'quotation_required', 
             'image', 'remarks'
-        ]  # Removed 'requirements' from fields
+        ]
         widgets = {
             'firm_name': forms.TextInput(attrs={
                 'class': 'form-control', 
@@ -160,11 +304,10 @@ class LeadForm(forms.ModelForm):
                 'rows': 3
             })
         }
-
+    
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
-        # Populate combined_requirements if editing an existing instance
         if self.instance.pk:
             software_list = [s.strip() for s in self.instance.software.split(',') if s.strip()]
             requirement_list = list(self.instance.requirements.values_list('id', flat=True))
@@ -187,38 +330,45 @@ class LeadForm(forms.ModelForm):
         if not combined:
             raise forms.ValidationError("At least one requirement or software must be selected")
         
-        # Split the comma-separated string into a list
         items = [item.strip() for item in combined.split(',') if item.strip()]
         return items
 
     def save(self, commit=True):
         instance = super().save(commit=False)
         
-        # Get the combined requirements from cleaned data
         combined_items = self.cleaned_data.get('combined_requirements', [])
         
-        # Separate software and requirements
         software_list = []
         requirement_names = []
         
         software_choices_dict = dict(Lead.SOFTWARE_CHOICES)
         
         for item in combined_items:
-            # Check if the item is in SOFTWARE_CHOICES
             if item in software_choices_dict.values():
                 software_list.append(item)
             else:
                 requirement_names.append(item)
         
-        # Save software as comma-separated string
         instance.software = ', '.join(software_list)
         
         if commit:
             instance.save()
             
-            # Clear existing requirements and add new ones
+            # Handle requirements
             instance.requirements.clear()
             requirement_objects = Requirement.objects.filter(name__in=requirement_names)
             instance.requirements.add(*requirement_objects)
+            
+            # Handle software amounts
+            SoftwareAmount.objects.filter(lead=instance).delete()
+            for software in software_list:
+                amount_field = f"amount_{software.replace(' ', '_')}"
+                amount = self.data.get(amount_field)
+                if amount:
+                    SoftwareAmount.objects.create(
+                        lead=instance,
+                        software_name=software,
+                        amount=float(amount)
+                    )
         
         return instance

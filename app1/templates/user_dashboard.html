@@ -2,7 +2,6 @@
 {% load static %}
 
 {% block content %}
-<!-- user_dashboard.html -->
 <div class="container mt-5">
     {% if messages %}
         {% for message in messages %}
@@ -22,7 +21,7 @@
         </div>
         <div class="card-body">
             <div class="table-responsive">
-                <table class="table table-striped table-hover">
+                <table class="table table-striped">
                     <thead>
                         <tr>
                             <th>No</th>
@@ -54,12 +53,12 @@
                                 {% if lead.software %}
                                     {% with software_list=lead.get_software_list %}
                                         {% for software in software_list %}
-                                            <span class="badge bg-info mb-1 d-block">
+                                            <div class="badge bg-info mb-1 d-block">
                                                 {{ software.name }}
                                                 {% if software.amount %}
-                                                    <br>(₹{{ software.amount|floatformat:2 }})
+                                                    <span class="amount-display">₹{{ software.amount|floatformat:2 }}</span>
                                                 {% endif %}
-                                            </span>
+                                            </div>
                                         {% endfor %}
                                     {% endwith %}
                                 {% endif %}
@@ -94,7 +93,7 @@
                                 {% if lead.remarks %}
                                     <span class="text-primary remarks-link" 
                                           style="white-space: nowrap; cursor: pointer;"
-                                          data-bs-toggle="modal" 
+                                          data-bs-toggle="modal"
                                           data-bs-target="#remarksModal"
                                           data-remarks="{{ lead.remarks }}">
                                         {{ lead.remarks|truncatechars:10 }}
@@ -107,8 +106,7 @@
                             <td>
                                 <div class="btn-group" role="group">
                                     <a href="{% url 'edit_lead' lead.id %}" class="btn btn-warning btn-sm">Edit</a>
-                                    <a href="{% url 'software_amount' lead.id %}" class="btn btn-info btn-sm">Amount</a>
-                                    <form action="{% url 'delete_lead' lead.id %}" method="post" class="d-inline">
+                                    <form method="post" action="{% url 'delete_lead' lead.id %}" style="display: inline;">
                                         {% csrf_token %}
                                         <button type="submit" class="btn btn-danger btn-sm" 
                                                 onclick="return confirm('Are you sure you want to delete this lead?')">
@@ -120,7 +118,7 @@
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="13" class="text-center">No leads found.</td>
+                            <td colspan="14" class="text-center">No leads found.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -138,7 +136,8 @@
                 <h5 class="modal-title" id="remarksModalLabel">Full Remarks</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body" id="remarksContent"></div>
+            <div class="modal-body" id="remarksContent">
+            </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             </div>
@@ -146,6 +145,25 @@
     </div>
 </div>
 
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .amount-display {
+        margin-left: 5px;
+        font-weight: bold;
+    }
+    .badge {
+        display: inline-block;
+        padding: 0.5em 0.75em;
+        font-size: 0.875em;
+        line-height: 1;
+        text-align: center;
+        white-space: nowrap;
+        vertical-align: baseline;
+        border-radius: 0.25rem;
+    }
+</style>
 {% endblock %}
 
 {% block extra_js %}
@@ -157,12 +175,14 @@ document.addEventListener('DOMContentLoaded', function() {
         return new bootstrap.Tooltip(tooltipTriggerEl)
     });
 
-    // Remarks modal functionality
-    var remarksLinks = document.querySelectorAll('.remarks-link');
-    remarksLinks.forEach(function(link) {
+    // Handle remarks modal
+    const remarksModal = document.getElementById('remarksModal');
+    const remarksContent = document.getElementById('remarksContent');
+    
+    document.querySelectorAll('.remarks-link').forEach(function(link) {
         link.addEventListener('click', function() {
-            var remarks = this.getAttribute('data-remarks');
-            document.getElementById('remarksContent').textContent = remarks;
+            const remarks = this.getAttribute('data-remarks');
+            remarksContent.textContent = remarks;
         });
     });
 });

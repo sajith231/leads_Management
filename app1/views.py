@@ -234,11 +234,11 @@ def edit_user(request, user_id):
 def user_dashboard(request):
     if 'custom_user_id' in request.session:
         custom_user = User.objects.get(id=request.session['custom_user_id'])
-        # Add select_related for user and branch, and prefetch_related for requirements
+        # Add prefetch_related for software_amounts
         leads = Lead.objects.filter(user=custom_user)\
                           .select_related('user')\
-                          .prefetch_related('requirements')\
-                          .order_by('-created_at')  # Optional: Sort by newest first
+                          .prefetch_related('requirements', 'software_amounts')\
+                          .order_by('-created_at')
         
         return render(request, "user_dashboard.html", {
             "message": f"Welcome, {custom_user.name}!",
@@ -277,6 +277,24 @@ def add_lead(request):
             # Add requirements
             requirement_objects = Requirement.objects.filter(name__in=requirement_names)
             lead.requirements.add(*requirement_objects)
+            
+            # Save software amounts
+            software_list = [item for item in combined_items 
+                           if item in dict(Lead.SOFTWARE_CHOICES).values()]
+            
+            for software in software_list:
+                amount_field = f"amount_{software.replace(' ', '_')}"
+                amount = request.POST.get(amount_field)
+                if amount and amount.strip():
+                    try:
+                        SoftwareAmount.objects.create(
+                            lead=lead,
+                            software_name=software,
+                            amount=float(amount)
+                        )
+                    except ValueError:
+                        messages.warning(request, f'Invalid amount for {software}')
+                        continue
             
             messages.success(request, 'Lead added successfully!')
             return redirect('user_dashboard')
