@@ -91,26 +91,30 @@
                             </td>
                             <td>
                                 {% if lead.remarks %}
-                                    <span class="text-primary remarks-link" 
-                                          style="white-space: nowrap; cursor: pointer;"
-                                          data-bs-toggle="modal"
-                                          data-bs-target="#remarksModal"
-                                          data-remarks="{{ lead.remarks }}">
-                                        {{ lead.remarks|truncatechars:10 }}
-                                    </span>
+                                    <div style="max-height: 50px; overflow-y: auto;">
+                                        <span style="color: blue;"
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#remarksModal" 
+                                            data-remarks="{{ lead.remarks|escapejs }}" 
+                                            onclick="showRemarks(this)">
+                                            {{ lead.remarks|truncatechars:10 }}
+                                        </span>
+                                    </div>
                                 {% else %}
                                     <span class="text-muted">No remarks</span>
                                 {% endif %}
                             </td>
-                            <td>{{ lead.created_at|date:"M d, Y" }}</td>
+                            <td style="white-space: nowrap;">{{ lead.created_at|date:"M d, Y" }}</td>
                             <td>
                                 <div class="btn-group" role="group">
-                                    <a href="{% url 'edit_lead' lead.id %}" class="btn btn-warning btn-sm">Edit</a>
+                                    <a href="{% url 'edit_lead' lead.id %}" class="btn btn-warning btn-sm" style="margin-right: 1%;">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
                                     <form method="post" action="{% url 'delete_lead' lead.id %}" style="display: inline;">
                                         {% csrf_token %}
                                         <button type="submit" class="btn btn-danger btn-sm" 
                                                 onclick="return confirm('Are you sure you want to delete this lead?')">
-                                            Delete
+                                            <i class="fas fa-trash-alt"></i>
                                         </button>
                                     </form>
                                 </div>
@@ -130,13 +134,14 @@
 
 <!-- Remarks Modal -->
 <div class="modal fade" id="remarksModal" tabindex="-1" aria-labelledby="remarksModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="remarksModalLabel">Full Remarks</h5>
+                <h5 class="modal-title" id="remarksModalLabel">Remarks</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body" id="remarksContent">
+            <div class="modal-body" id="remarksModalBody" style="white-space: pre-wrap; word-wrap: break-word;">
+                <!-- Remarks content will go here -->
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -145,8 +150,60 @@
     </div>
 </div>
 
+<script>
+    let searchTimer;
+
+    function debounceSearch(event) {
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(() => {
+            autoSubmitForm();
+        }, 600); // Wait 500ms after user stops typing before submitting
+    }
+
+    function toggleFilterButton() {
+        const startDate = document.querySelector('input[name="start_date"]').value;
+        const endDate = document.querySelector('input[name="end_date"]').value;
+        document.getElementById('filterButton').style.display = (startDate || endDate) ? 'inline-block' : 'none';
+    }
+
+    function autoSubmitForm() {
+        document.getElementById('filterForm').submit();
+    }
+
+    function showRemarks(element) {
+        var remarks = element.getAttribute('data-remarks');
+        document.getElementById('remarksModalBody').innerText = remarks;
+    }
+
+    // Initialize tooltips if you're using Bootstrap 5
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+</script>
+
+
 {% endblock %}
 
+
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle remarks modal
+    const remarksModal = document.getElementById('remarksModal');
+    const remarksContent = document.getElementById('remarksModalBody');
+    
+    document.querySelectorAll('.remarks-link').forEach(function(link) {
+        link.addEventListener('click', function() {
+            const remarks = this.getAttribute('data-remarks');
+            remarksContent.textContent = remarks;  // Set the remarks content
+            // Adjust modal height based on content length
+            remarksModal.querySelector('.modal-content').style.height = 'auto';  // Allow height expansion
+        });
+    });
+});
+</script>
 {% block extra_css %}
 <style>
     .amount-display {
@@ -165,26 +222,4 @@
     }
 </style>
 {% endblock %}
-
-{% block extra_js %}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize tooltips
-    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl)
-    });
-
-    // Handle remarks modal
-    const remarksModal = document.getElementById('remarksModal');
-    const remarksContent = document.getElementById('remarksContent');
-    
-    document.querySelectorAll('.remarks-link').forEach(function(link) {
-        link.addEventListener('click', function() {
-            const remarks = this.getAttribute('data-remarks');
-            remarksContent.textContent = remarks;
-        });
-    });
-});
-</script>
 {% endblock %}
