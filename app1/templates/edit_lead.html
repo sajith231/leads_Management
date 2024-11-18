@@ -4,60 +4,82 @@
 {% block content %}
 <div class="container">
     <h2 class="mb-4">Edit Lead: {{ lead.firm_name }}</h2>
-    
+
     <form method="POST" enctype="multipart/form-data">
         {% csrf_token %}
         
         <div class="mb-3">
-            <label for="{{ form.firm_name.id_for_label }}" class="form-label">{{ form.firm_name.label }}</label>
+            {{ form.firm_name.label_tag }}
             {{ form.firm_name }}
             {% if form.firm_name.errors %}
-                <div class="text-danger small">{{ form.firm_name.errors }}</div>
+            <div class="text-danger small">
+                {{ form.firm_name.errors }}
+            </div>
             {% endif %}
         </div>
 
         <div class="mb-3">
-            <label for="{{ form.customer_name.id_for_label }}" class="form-label">{{ form.customer_name.label }}</label>
+            {{ form.customer_name.label_tag }}
             {{ form.customer_name }}
             {% if form.customer_name.errors %}
-                <div class="text-danger small">{{ form.customer_name.errors }}</div>
+            <div class="text-danger small">
+                {{ form.customer_name.errors }}
+            </div>
             {% endif %}
         </div>
 
         <div class="mb-3">
-            <label for="{{ form.contact_number.id_for_label }}" class="form-label">{{ form.contact_number.label }}</label>
+            {{ form.contact_number.label_tag }}
             {{ form.contact_number }}
             {% if form.contact_number.errors %}
-                <div class="text-danger small">{{ form.contact_number.errors }}</div>
+            <div class="text-danger small">
+                {{ form.contact_number.errors }}
+            </div>
             {% endif %}
         </div>
 
         <div class="mb-3">
-            <label for="{{ form.location.id_for_label }}" class="form-label">{{ form.location.label }}</label>
+            {{ form.location.label_tag }}
             {{ form.location }}
             {% if form.location.errors %}
-                <div class="text-danger small">{{ form.location.errors }}</div>
+            <div class="text-danger small">
+                {{ form.location.errors }}
+            </div>
             {% endif %}
         </div>
 
         <div class="mb-3">
-            <label for="{{ form.business_nature.id_for_label }}" class="form-label">{{ form.business_nature.label }}</label>
+            {{ form.district.label_tag }}
+            {{ form.district }}
+            {% if form.district.errors %}
+            <div class="text-danger small">
+                {{ form.district.errors }}
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="mb-3">
+            {{ form.business_nature.label_tag }}
             {{ form.business_nature }}
             {% if form.business_nature.errors %}
-                <div class="text-danger small">{{ form.business_nature.errors }}</div>
+            <div class="text-danger small">
+                {{ form.business_nature.errors }}
+            </div>
             {% endif %}
         </div>
 
         <div class="mb-3">
-            <label for="{{ form.image.id_for_label }}" class="form-label">{{ form.image.label }}</label>
+            {{ form.image.label_tag }}
             {{ form.image }}
             {% if form.image.errors %}
-                <div class="text-danger small">{{ form.image.errors }}</div>
+            <div class="text-danger small">
+                {{ form.image.errors }}
+            </div>
             {% endif %}
             {% if lead.image %}
-                <div class="mt-2">
-                    <img src="{{ lead.image.url }}" alt="Current image" class="img-thumbnail" style="max-width: 200px">
-                </div>
+            <div class="mt-2">
+                <img src="{{ lead.image.url }}" class="img-thumbnail" style="max-width: 200px" alt="Current image">
+            </div>
             {% endif %}
         </div>
 
@@ -68,19 +90,20 @@
                 <div class="requirement-item mb-2">
                     <div class="form-check d-flex align-items-center gap-3">
                         <input type="checkbox" 
-                               class="form-check-input requirement-checkbox" 
                                name="requirements" 
-                               value="{{ requirement.id }}"
-                               id="req_{{ requirement.id }}"
+                               value="{{ requirement.id }}" 
+                               id="requirement_{{ requirement.id }}"
+                               class="form-check-input"
                                {% if requirement in lead.requirements.all %}checked{% endif %}>
-                        <label class="form-check-label" for="req_{{ requirement.id }}">{{ requirement.name }}</label>
+                        <label class="form-check-label" for="requirement_{{ requirement.id }}">
+                            {{ requirement.name }}
+                        </label>
                         <input type="number" 
                                class="form-control form-control-sm requirement-amount" 
-                               style="max-width: 150px;"
-                               name="amount_{{ requirement.id }}"
-                               placeholder="Amount"
+                               data-requirement-id="{{ requirement.id }}"
                                value="{{ existing_amounts|get_item:requirement.id }}"
-                               {% if requirement not in lead.requirements.all %}disabled{% endif %}>
+                               placeholder="Amount"
+                               style="max-width: 150px;">
                     </div>
                 </div>
                 {% endfor %}
@@ -91,23 +114,21 @@
         <div class="d-flex justify-content-start align-items-center gap-3 mb-3">
             <div class="form-check">
                 {{ form.follow_up_required }}
-                <label class="form-check-label" for="{{ form.follow_up_required.id_for_label }}">
-                    {{ form.follow_up_required.label }}
-                </label>
+                {{ form.follow_up_required.label_tag }}
             </div>
             <div class="form-check">
                 {{ form.quotation_required }}
-                <label class="form-check-label" for="{{ form.quotation_required.id_for_label }}">
-                    {{ form.quotation_required.label }}
-                </label>
+                {{ form.quotation_required.label_tag }}
             </div>
         </div>
 
         <div class="mb-3">
-            <label for="{{ form.remarks.id_for_label }}" class="form-label">{{ form.remarks.label }}</label>
+            {{ form.remarks.label_tag }}
             {{ form.remarks }}
             {% if form.remarks.errors %}
-                <div class="text-danger small">{{ form.remarks.errors }}</div>
+            <div class="text-danger small">
+                {{ form.remarks.errors }}
+            </div>
             {% endif %}
         </div>
 
@@ -119,36 +140,22 @@
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Enable/disable amount inputs based on checkbox state
-    const requirementCheckboxes = document.querySelectorAll('.requirement-checkbox');
+document.querySelector('form').addEventListener('submit', function(e) {
+    e.preventDefault();
     
-    requirementCheckboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', function() {
-            const amountInput = this.closest('.requirement-item').querySelector('.requirement-amount');
-            amountInput.disabled = !this.checked;
-            if (!this.checked) {
-                amountInput.value = '';
-            }
-        });
+    // Collect all requirement amounts
+    const amounts = {};
+    document.querySelectorAll('.requirement-amount').forEach(input => {
+        if (input.value) {
+            amounts[input.dataset.requirementId] = input.value;
+        }
     });
-
-    // Handle form submission
-    const form = document.querySelector('form');
-    form.addEventListener('submit', function(e) {
-        const requirementAmounts = {};
-        
-        requirementCheckboxes.forEach(checkbox => {
-            if (checkbox.checked) {
-                const amountInput = checkbox.closest('.requirement-item').querySelector('.requirement-amount');
-                if (amountInput.value) {
-                    requirementAmounts[checkbox.value] = amountInput.value;
-                }
-            }
-        });
-
-        document.getElementById('requirement_amounts_data').value = JSON.stringify(requirementAmounts);
-    });
+    
+    // Set the hidden input value
+    document.getElementById('requirement_amounts_data').value = JSON.stringify(amounts);
+    
+    // Submit the form
+    this.submit();
 });
 </script>
 {% endblock %}

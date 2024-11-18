@@ -73,6 +73,29 @@ class Lead(models.Model):
     quotation_required = models.BooleanField(default=False)
     image = models.ImageField(upload_to='lead_images/', null=True, blank=True)
     remarks = models.TextField(blank=True, null=True)
+    KERALA_DISTRICTS = [
+        ('', 'Select District'),
+        ('alappuzha', 'Alappuzha'),
+        ('ernakulam', 'Ernakulam'),
+        ('idukki', 'Idukki'),
+        ('kannur', 'Kannur'),
+        ('kasaragod', 'Kasaragod'),
+        ('kollam', 'Kollam'),
+        ('kottayam', 'Kottayam'),
+        ('kozhikode', 'Kozhikode'),
+        ('malappuram', 'Malappuram'),
+        ('palakkad', 'Palakkad'),
+        ('pathanamthitta', 'Pathanamthitta'),
+        ('thiruvananthapuram', 'Thiruvananthapuram'),
+        ('thrissur', 'Thrissur'),
+        ('wayanad', 'Wayanad'),
+    ]
+
+    district = models.CharField(
+        max_length=50,
+        choices=KERALA_DISTRICTS,
+        default=''
+    )
 
     def __str__(self):
         return f"{self.firm_name} - {self.customer_name}"

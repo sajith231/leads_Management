@@ -17,7 +17,7 @@ from django.db.models import Q
 from datetime import datetime, timedelta
 from .models import Requirement  # Ensure the correct model is imported
 from .models import Lead
-
+import json
 
 def login(request):
     if request.method == "POST":
@@ -276,27 +276,49 @@ def add_lead(request):
 @login_required
 def edit_lead(request, lead_id):
     lead = get_object_or_404(Lead, id=lead_id)
+    
     if request.method == "POST":
         form = LeadForm(request.POST, request.FILES, instance=lead)
         if form.is_valid():
-            form.save()
-            messages.success(request, f'Lead "{lead.firm_name}" updated successfully!')
+            lead_instance = form.save(commit=False)
+            lead_instance.save()
+            form.save_m2m()
+            
+            # Handle requirement amounts
+            amounts_data = request.POST.get('requirement_amounts_data', '')
+            if amounts_data:
+                try:
+                    amounts = json.loads(amounts_data)
+                    LeadRequirementAmount.objects.filter(lead=lead_instance).delete()
+                    for req_id, amount in amounts.items():
+                        if amount:
+                            LeadRequirementAmount.objects.create(
+                                lead=lead_instance,
+                                requirement_id=int(req_id),
+                                amount=float(amount)
+                            )
+                except Exception as e:
+                    messages.warning(request, f"Error saving requirement amounts: {str(e)}")
+            
+            messages.success(request, f'Lead "{lead_instance.firm_name}" updated successfully!')
             return redirect('user_dashboard')
     else:
         form = LeadForm(instance=lead)
     
-    # Get existing requirement amounts
+    # Get existing requirement amounts - convert all keys to strings
     existing_amounts = {
         str(ra.requirement_id): str(ra.amount)
         for ra in LeadRequirementAmount.objects.filter(lead=lead)
     }
     
-    return render(request, 'edit_lead.html', {
+    context = {
         'form': form,
         'lead': lead,
         'requirements': Requirement.objects.all(),
         'existing_amounts': existing_amounts
-    })
+    }
+    
+    return render(request, 'edit_lead.html', context)
 
 
 @login_required

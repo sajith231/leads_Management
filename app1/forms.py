@@ -129,7 +129,7 @@ class LeadForm(forms.ModelForm):
         model = Lead
         fields = [
             'firm_name', 'customer_name', 'contact_number',
-            'location', 'business_nature', 'requirements',
+            'location', 'district', 'business_nature', 'requirements',  # Added district here
             'follow_up_required', 'quotation_required',
             'image', 'remarks'
         ]
@@ -149,6 +149,9 @@ class LeadForm(forms.ModelForm):
             'location': forms.TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'Enter Location'
+            }),
+            'district': forms.Select(attrs={  # Added district widget
+                'class': 'form-select',
             }),
             'business_nature': forms.Select(attrs={
                 'class': 'form-select',
