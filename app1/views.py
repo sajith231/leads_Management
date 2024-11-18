@@ -10,13 +10,13 @@ from .models import Branch, Requirement, User
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import authenticate, login as auth_login
 from django.contrib.auth.models import User as DjangoUser  # Added this import
-from .forms import BranchForm, RequirementForm, UserForm
+from .forms import BranchForm, RequirementForm, UserForm,LeadRequirementAmount
 from .models import Lead
 from .forms import LeadForm
 from django.db.models import Q
 from datetime import datetime, timedelta
 from .models import Requirement  # Ensure the correct model is imported
-from .models import Lead, SoftwareAmount 
+from .models import Lead
 
 
 def login(request):
@@ -228,26 +228,18 @@ def edit_user(request, user_id):
     return render(request, "edit_user.html", {"form": form, "user": user})
 
 
+from django.db.models import Prefetch
 
-
-@login_required
 def user_dashboard(request):
-    if 'custom_user_id' in request.session:
-        custom_user = User.objects.get(id=request.session['custom_user_id'])
-        # Add prefetch_related for software_amounts
-        leads = Lead.objects.filter(user=custom_user)\
-                          .select_related('user')\
-                          .prefetch_related('requirements', 'software_amounts')\
-                          .order_by('-created_at')
-        
-        return render(request, "user_dashboard.html", {
-            "message": f"Welcome, {custom_user.name}!",
-            "user_data": custom_user,
-            "leads": leads
-        })
-    return render(request, "user_dashboard.html", {
-        "message": f"Welcome, {request.user.username}!"
-    })
+    leads = Lead.objects.prefetch_related(
+        Prefetch('requirement_amounts', queryset=LeadRequirementAmount.objects.all())
+    ).all()
+
+    context = {
+        'leads': leads
+    }
+
+    return render(request, 'user_dashboard.html', context)
 
 
 
@@ -266,41 +258,19 @@ def add_lead(request):
             custom_user = User.objects.get(id=request.session['custom_user_id'])
             lead.user = custom_user
             lead.save()
-            
-            # Get the combined requirements from form
-            combined_items = form.cleaned_data.get('combined_requirements', [])
-            
-            # Process requirements
-            requirement_names = [item for item in combined_items 
-                               if item not in dict(Lead.SOFTWARE_CHOICES).values()]
-            
-            # Add requirements
-            requirement_objects = Requirement.objects.filter(name__in=requirement_names)
-            lead.requirements.add(*requirement_objects)
-            
-            # Save software amounts
-            software_list = [item for item in combined_items 
-                           if item in dict(Lead.SOFTWARE_CHOICES).values()]
-            
-            for software in software_list:
-                amount_field = f"amount_{software.replace(' ', '_')}"
-                amount = request.POST.get(amount_field)
-                if amount and amount.strip():
-                    try:
-                        SoftwareAmount.objects.create(
-                            lead=lead,
-                            software_name=software,
-                            amount=float(amount)
-                        )
-                    except ValueError:
-                        messages.warning(request, f'Invalid amount for {software}')
-                        continue
-            
+            form.save()  # This will handle both m2m and requirement amounts
             messages.success(request, 'Lead added successfully!')
             return redirect('user_dashboard')
     else:
         form = LeadForm()
-    return render(request, 'add_lead.html', {'form': form})
+    
+    # Get all requirements for initial rendering
+    requirements = Requirement.objects.all()
+    return render(request, 'add_lead.html', {
+        'form': form,
+        'requirements': requirements,
+        'existing_amounts': {}  # For edit mode
+    })
 
 
 @login_required
@@ -312,11 +282,21 @@ def edit_lead(request, lead_id):
             form.save()
             messages.success(request, f'Lead "{lead.firm_name}" updated successfully!')
             return redirect('user_dashboard')
-        else:
-            messages.error(request, 'Please correct the errors below.')
     else:
         form = LeadForm(instance=lead)
-    return render(request, 'edit_lead.html', {'form': form, 'lead': lead})
+    
+    # Get existing requirement amounts
+    existing_amounts = {
+        str(ra.requirement_id): str(ra.amount)
+        for ra in LeadRequirementAmount.objects.filter(lead=lead)
+    }
+    
+    return render(request, 'edit_lead.html', {
+        'form': form,
+        'lead': lead,
+        'requirements': Requirement.objects.all(),
+        'existing_amounts': existing_amounts
+    })
 
 
 @login_required
@@ -386,41 +366,3 @@ def delete_lead(request, lead_id):
 
 
 
-@login_required
-def software_amount(request, lead_id):
-    lead = get_object_or_404(Lead, id=lead_id)
-    # Get just the software names for the form
-    software_list = [s.strip() for s in lead.software.split(',') if s.strip()]
-    
-    if request.method == 'POST':
-        try:
-            # Delete existing amounts for this lead
-            SoftwareAmount.objects.filter(lead=lead).delete()
-            
-            # Create new software amounts
-            for software in software_list:
-                amount = request.POST.get(f'amount_{software.replace(" ", "_")}')
-                if amount:
-                    SoftwareAmount.objects.create(
-                        lead=lead,
-                        software_name=software,
-                        amount=float(amount)
-                    )
-            
-            messages.success(request, 'Software amounts saved successfully!')
-            return redirect('user_dashboard')
-        except Exception as e:
-            messages.error(request, f'Error saving software amounts: {str(e)}')
-            return redirect('software_amount', lead_id=lead.id)
-    
-    # Get existing amounts
-    existing_amounts = {
-        sa.software_name: sa.amount 
-        for sa in SoftwareAmount.objects.filter(lead=lead)
-    }
-    
-    return render(request, 'software_amount.html', {
-        'lead': lead,
-        'software_list': software_list,
-        'existing_amounts': existing_amounts
-    })

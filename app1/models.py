@@ -1,4 +1,3 @@
-# models.py
 from django.db import models
 from django.utils import timezone
 from django.contrib.auth.models import AbstractBaseUser
@@ -40,12 +39,10 @@ class User(models.Model):
             return user
         except cls.DoesNotExist:
             return None
-        
-
 
 class Lead(models.Model):
     BUSINESS_NATURE_CHOICES = [
-        ('', 'Select'),  # This will be disabled
+        ('', 'Select'),
         ('supermarket', 'Supermarket'),
         ('textile', 'Textile'),
         ('restaurant', 'Restaurant'),
@@ -59,21 +56,6 @@ class Lead(models.Model):
         ('another', 'Another'),
     ]
 
-    SOFTWARE_CHOICES = [
-        # This will be disabled
-        ('', 'Select'), 
-        ('TASK', 'TASK'),
-        ('B CARE', 'B CARE'),
-        ('I CARE', 'I CARE'),
-        ('SHADE', 'SHADE'),
-        ('VTASK', 'VTASK'),
-        ('MAGNET', 'MAGNET'),
-        ('DINE', 'DINE'),
-        ('STARSTAY', 'STARSTAY'),
-        ('AURIC', 'AURIC'),
-        ('CLUBLOGIC', 'CLUBLOGIC'),
-    ]
-
     firm_name = models.CharField(max_length=200)
     customer_name = models.CharField(max_length=100)
     contact_number = models.CharField(max_length=20)
@@ -82,10 +64,6 @@ class Lead(models.Model):
         max_length=100,
         choices=BUSINESS_NATURE_CHOICES,
         default=''
-    )
-    software = models.CharField(
-        max_length=500,  # Increased to store multiple choices
-        blank=True
     )
     requirements = models.ManyToManyField('Requirement')
     user = models.ForeignKey('User', on_delete=models.CASCADE)
@@ -99,40 +77,13 @@ class Lead(models.Model):
     def __str__(self):
         return f"{self.firm_name} - {self.customer_name}"
 
-    
-    
-    def get_software_list(self):
-        """Returns a list of dictionaries containing software names and their amounts"""
-        if not self.software:
-            return []
-        
-        # Get software names from the comma-separated string
-        software_names = [s.strip() for s in self.software.split(',') if s.strip()]
-        
-        # Get all software amounts for this lead using prefetch_related
-        amounts = {amt.software_name: amt.amount for amt in self.software_amounts.all()}
-        
-        # Create a list of dictionaries with software names and amounts
-        result = []
-        for software in software_names:
-            amount = amounts.get(software)
-            result.append({
-                'name': software,
-                'amount': amount
-            })
-        return result
-    
-    
-class SoftwareAmount(models.Model):
-    lead = models.ForeignKey('Lead', on_delete=models.CASCADE, related_name='software_amounts')
-    software_name = models.CharField(max_length=100)
+class LeadRequirementAmount(models.Model):
+    lead = models.ForeignKey(Lead, on_delete=models.CASCADE, related_name='requirement_amounts')
+    requirement = models.ForeignKey(Requirement, on_delete=models.CASCADE)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        unique_together = ('lead', 'software_name')
+        unique_together = ('lead', 'requirement')
 
     def __str__(self):
-        return f"{self.software_name} - {self.amount}"
-    
+        return f"{self.lead} - {self.requirement}: {self.amount}"

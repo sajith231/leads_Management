@@ -30,7 +30,7 @@
                             <th>Contact Number</th>
                             <th>Location</th>
                             <th>Business Nature</th>
-                            <th>Software</th>
+                           
                             <th>Requirements</th>
                             <th>Follow Up</th>
                             <th>Quotation</th>
@@ -41,7 +41,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for lead in leads %}
+                        {% for lead in leads|slice:"::-1" %}
                         <tr>
                             <td>{{ forloop.counter }}</td>
                             <td style="white-space: nowrap;">{{ lead.firm_name }}</td>
@@ -49,25 +49,36 @@
                             <td style="white-space: nowrap;">{{ lead.contact_number }}</td>
                             <td style="white-space: nowrap;">{{ lead.location }}</td>
                             <td style="white-space: nowrap;">{{ lead.business_nature }}</td>
-                            <td>
-                                {% if lead.software %}
-                                    {% with software_list=lead.get_software_list %}
-                                        {% for software in software_list %}
-                                            <div class="badge bg-info mb-1 d-block">
-                                                {{ software.name }}
-                                                {% if software.amount %}
-                                                    <span class="amount-display">₹{{ software.amount|floatformat:2 }}</span>
-                                                {% endif %}
-                                            </div>
-                                        {% endfor %}
-                                    {% endwith %}
-                                {% endif %}
-                            </td>
+                            
                             <td>
                                 {% for req in lead.requirements.all %}
-                                    <span class="badge bg-primary mb-1 d-block">{{ req.name }}</span>
+                                    <span class="badge bg-primary mb-1 d-block">
+                                        {{ req.name }} - ₹
+                                        {% with amount=None amount_found=False %}
+                                            {% for amount in lead.requirement_amounts.all %}
+                                                {% if amount.requirement == req %}
+                                                    {{ amount.amount }}
+                                                    {% with amount_found=True %}
+                                                    {% endwith %}
+                                                {% endif %}
+                                            {% endfor %}
+                                            {% if amount_found %}
+                                                {{ amount.amount }}
+                                            {% else %}
+                                                0.00
+                                            {% endif %}
+                                        {% endwith %}
+                                    </span>
                                 {% endfor %}
                             </td>
+                            
+                            
+                            
+                            
+                            
+                            
+                            
+                            
                             <td>
                                 <span class="badge {% if lead.follow_up_required %}bg-success{% else %}bg-secondary{% endif %}">
                                     {{ lead.follow_up_required|yesno:"Yes,No" }}
