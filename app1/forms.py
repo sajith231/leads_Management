@@ -119,74 +119,62 @@ class DropdownCheckboxWidget(forms.SelectMultiple):
 
 
 from django import forms
-from .models import Lead, Requirement, LeadRequirementAmount
+from .models import Lead, LeadRequirementAmount
 import json
 
 class LeadForm(forms.ModelForm):
     requirement_amounts_data = forms.CharField(widget=forms.HiddenInput(), required=False)
-    
+    # requirement_remarks = forms.CharField(widget=forms.HiddenInput(), required=False)
+
     class Meta:
         model = Lead
         fields = [
             'firm_name', 'customer_name', 'contact_number',
-            'location', 'district', 'business_nature', 'requirements',  # Added district here
-            'follow_up_required', 'quotation_required',
-            'image', 'remarks'
+            'location', 'district', 'business_nature', 'requirements',
+            'follow_up_required', 'quotation_required', 'image', 'remarks'
         ]
         widgets = {
-            'firm_name': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Enter Firm Name'
-            }),
-            'customer_name': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Enter Customer Name'
-            }),
-            'contact_number': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Enter Contact Number'
-            }),
-            'location': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Enter Location'
-            }),
-            'district': forms.Select(attrs={  # Added district widget
-                'class': 'form-select',
-            }),
-            'business_nature': forms.Select(attrs={
-                'class': 'form-select',
-            }),
-            'requirements': forms.CheckboxSelectMultiple(),
-            'image': forms.FileInput(attrs={
-                'class': 'form-control'
-            }),
-            'remarks': forms.Textarea(attrs={
-                'class': 'form-control',
-                'rows': 3
-            }),
+            'firm_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter Firm Name'}),
+            'customer_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter Customer Name'}),
+            'contact_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter Contact Number'}),
+            'location': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter Location'}),
+            'district': forms.Select(attrs={'class': 'form-select'}),
+            'business_nature': forms.Select(attrs={'class': 'form-select'}),
+            'requirements': DropdownCheckboxWidget(attrs={'class': 'form-select'}),
+            'image': forms.FileInput(attrs={'class': 'form-control'}),
+            'remarks': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'required': False}),
         }
 
     def save(self, commit=True):
         instance = super().save(commit=False)
+        
         if commit:
             instance.save()
             self.save_m2m()
-            
-            # Handle requirement amounts
+
+            # Handle the requirement amounts data
             requirement_amounts = self.cleaned_data.get('requirement_amounts_data', '')
             if requirement_amounts:
-                amounts_data = json.loads(requirement_amounts)
-                
-                # Delete existing amounts
+                try:
+                    amounts_data = json.loads(requirement_amounts)
+                except json.JSONDecodeError:
+                    amounts_data = {}
+
+                # Delete existing LeadRequirementAmount entries for this lead
                 LeadRequirementAmount.objects.filter(lead=instance).delete()
-                
-                # Create new amounts
+
+                # Create new LeadRequirementAmount entries
                 for req_id, amount in amounts_data.items():
-                    if amount:
+                    try:
+                        req_id = int(req_id)
+                        amount = float(amount) if amount else 0.0
+                        
                         LeadRequirementAmount.objects.create(
                             lead=instance,
-                            requirement_id=int(req_id),
-                            amount=float(amount)
+                            requirement_id=req_id,
+                            amount=amount
                         )
-                        
-        return instance
+                    except (ValueError, TypeError):
+                        continue
+
+        return instance 

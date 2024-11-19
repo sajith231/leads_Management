@@ -258,67 +258,67 @@ def add_lead(request):
             custom_user = User.objects.get(id=request.session['custom_user_id'])
             lead.user = custom_user
             lead.save()
-            form.save()  # This will handle both m2m and requirement amounts
-            messages.success(request, 'Lead added successfully!')
-            return redirect('user_dashboard')
+            
+            form.save_m2m()
+            
+            amounts_data = request.POST.get('requirement_amounts_data', '{}')
+            remarks_data = request.POST.get('requirement_remarks_data', '{}')
+            
+            try:
+                amounts = json.loads(amounts_data)
+                remarks = json.loads(remarks_data)
+                
+                for req_id, amount in amounts.items():
+                    LeadRequirementAmount.objects.create(
+                        lead=lead,
+                        requirement_id=int(req_id),
+                        amount=float(amount),
+                        remarks=remarks.get(req_id, '')  # Save remarks for each requirement
+                    )
+                
+                messages.success(request, 'Lead added successfully!')
+                return redirect('user_dashboard')
+                
+            except json.JSONDecodeError:
+                messages.error(request, 'Invalid requirement data format')
+            except (ValueError, TypeError):
+                messages.error(request, 'Invalid amount value')
+            except Exception as e:
+                messages.error(request, f'Error saving lead: {str(e)}')
     else:
         form = LeadForm()
     
-    # Get all requirements for initial rendering
     requirements = Requirement.objects.all()
     return render(request, 'add_lead.html', {
         'form': form,
         'requirements': requirements,
-        'existing_amounts': {}  # For edit mode
+        'existing_amounts': {}
     })
-
 
 @login_required
 def edit_lead(request, lead_id):
     lead = get_object_or_404(Lead, id=lead_id)
-    
     if request.method == "POST":
         form = LeadForm(request.POST, request.FILES, instance=lead)
         if form.is_valid():
-            lead_instance = form.save(commit=False)
-            lead_instance.save()
-            form.save_m2m()
-            
-            # Handle requirement amounts
-            amounts_data = request.POST.get('requirement_amounts_data', '')
-            if amounts_data:
-                try:
-                    amounts = json.loads(amounts_data)
-                    LeadRequirementAmount.objects.filter(lead=lead_instance).delete()
-                    for req_id, amount in amounts.items():
-                        if amount:
-                            LeadRequirementAmount.objects.create(
-                                lead=lead_instance,
-                                requirement_id=int(req_id),
-                                amount=float(amount)
-                            )
-                except Exception as e:
-                    messages.warning(request, f"Error saving requirement amounts: {str(e)}")
-            
-            messages.success(request, f'Lead "{lead_instance.firm_name}" updated successfully!')
+            form.save()
+            messages.success(request, f'Lead "{lead.firm_name}" updated successfully!')
             return redirect('user_dashboard')
     else:
         form = LeadForm(instance=lead)
     
-    # Get existing requirement amounts - convert all keys to strings
+    # Get existing requirement amounts
     existing_amounts = {
         str(ra.requirement_id): str(ra.amount)
         for ra in LeadRequirementAmount.objects.filter(lead=lead)
     }
     
-    context = {
+    return render(request, 'edit_lead.html', {
         'form': form,
         'lead': lead,
         'requirements': Requirement.objects.all(),
         'existing_amounts': existing_amounts
-    }
-    
-    return render(request, 'edit_lead.html', context)
+    })
 
 
 @login_required

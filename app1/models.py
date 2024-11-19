@@ -104,6 +104,7 @@ class LeadRequirementAmount(models.Model):
     lead = models.ForeignKey(Lead, on_delete=models.CASCADE, related_name='requirement_amounts')
     requirement = models.ForeignKey(Requirement, on_delete=models.CASCADE)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
+    remarks = models.TextField(blank=True, null=True)  # Add this field
 
     class Meta:
         unique_together = ('lead', 'requirement')

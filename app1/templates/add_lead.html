@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
-{% load static %}
 {% load custom_filters %}
+{% load static %}
 
 {% block content %}
 <div class="container mt-5">
@@ -8,60 +8,60 @@
         <div class="col-md-8 offset-md-2">
             <div class="card">
                 <div class="card-header">
-                    <h3 class="text-center">
-                        {% if lead %}Edit{% else %}Add New{% endif %} Lead
-                    </h3>
+                    <h3 class="text-center">{% if lead %}Edit{% else %}Add New{% endif %} Lead</h3>
                 </div>
                 <div class="card-body">
                     <form method="POST" enctype="multipart/form-data" id="leadForm">
                         {% csrf_token %}
-                        {{ form.requirement_amounts_data }}
+                        <input type="hidden" name="requirement_amounts_data" id="requirement_amounts_data">
+                        <input type="hidden" name="requirement_remarks_data" id="requirement_remarks_data">
                         
                         {% for field in form %}
                             {% if field.name != 'requirements' and field.name != 'requirement_amounts_data' %}
-                                <div class="mb-3">
-                                    <label>{{ field.label }}</label>
-                                    {{ field }}
-                                    {% if field.errors %}
-                                        <div class="text-danger small">
-                                            {{ field.errors }}
-                                        </div>
-                                    {% endif %}
-                                </div>
+                            <div class="mb-3">
+                                <label class="form-label">{{ field.label }}</label>
+                                {{ field }}
+                                {% if field.errors %}
+                                    <div class="text-danger small">{{ field.errors }}</div>
+                                {% endif %}
+                            </div>
                             {% endif %}
                         {% endfor %}
 
+                        <!-- Model-style requirements dropdown -->
                         <div class="mb-3">
-                            <label>Requirements</label>
-                            <button type="button" id="requirements-dropdown-btn" class="btn btn-secondary">
-                                Select Requirements
-                            </button>
-                            <div id="requirementsContainer" style="display: none; border: 1px solid #ccc; padding: 10px; margin-top: 10px;">
-                                {% for requirement in requirements %}
-                                    <div class="requirement-row mb-2">
-                                        <div class="d-flex align-items-center">
-                                            <div class="form-check">
-                                                <input type="checkbox" 
-                                                       name="requirements" 
-                                                       value="{{ requirement.id }}" 
-                                                       id="req_{{ requirement.id }}"
-                                                       class="form-check-input requirement-checkbox"
-                                                       {% if requirement in form.instance.requirements.all %}checked{% endif %}>
-                                                <label class="form-check-label" for="req_{{ requirement.id }}">
-                                                    {{ requirement.name }}
-                                                </label>
-                                            </div>
-                                            <div class="amount-input ms-3" style="display: none;">
-                                                <input type="number" 
-                                                       class="form-control form-control-sm requirement-amount" 
-                                                       data-requirement="{{ requirement.id }}"
-                                                       placeholder="Enter amount"
-                                                       step="0.01"
-                                                       value="{{ existing_amounts|get_item:requirement.id }}">
-                                            </div>
+                            <label class="form-label">Requirements</label>
+                            <div class="dropdown">
+                                <button class="btn btn-secondary dropdown-toggle w-100" type="button" id="requirementsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Select Requirements
+                                </button>
+                                <div class="dropdown-menu w-100" id="requirementsMenu" >
+                                    {% for requirement in requirements %}
+                                    <div class="dropdown-item d-flex align-items-start" >
+                                        <div class="form-check me-3">
+                                            <input type="checkbox" 
+                                                   class="form-check-input requirement-checkbox" 
+                                                   id="req_{{ requirement.id }}"
+                                                   value="{{ requirement.id }}"
+                                                   name="requirements"
+                                                   {% if requirement in lead.requirements.all %}checked{% endif %}>
+                                            <label class="form-check-label" for="req_{{ requirement.id }}">
+                                                {{ requirement.name }}
+                                            </label>
+                                        </div>
+                                        <div class="requirement-details" style="display: none;" >
+                                            <div style="display: flex;"><input type="number" 
+                                                   class="form-control requirement-amount mb-1" 
+                                                   placeholder="Amount"
+                                                   data-requirement="{{ requirement.id }}"
+                                                   value="{{ existing_amounts|get_item:requirement.id|default:'' }}">
+                                            <textarea class="form-control requirement-remarks" 
+                                                      placeholder="Remarks"
+                                                      data-requirement="{{ requirement.id }}"></textarea></div>
                                         </div>
                                     </div>
-                                {% endfor %}
+                                    {% endfor %}
+                                </div>
                             </div>
                         </div>
 
@@ -69,7 +69,7 @@
                             <button type="submit" class="btn btn-primary">
                                 {% if lead %}Update{% else %}Add{% endif %} Lead
                             </button>
-                            <a href="{% url 'user_dashboard' %}" class="btn btn-secondary">Cancel</a>
+                            <a href="{% url 'user_dashboard' %}" class="btn btn-secondary ms-2">Cancel</a>
                         </div>
                     </form>
                 </div>
@@ -77,63 +77,73 @@
         </div>
     </div>
 </div>
-{% endblock %}
 
-{% block extra_js %}
+<style>
+    .dropdown-menu {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+    .dropdown-item {
+        display: flex;
+        flex-direction: column;
+    }
+    .requirement-details {
+        margin-left: 25px;
+        display: none;
+    }
+</style>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const requirementsDropdownBtn = document.getElementById('requirements-dropdown-btn');
-    const requirementsContainer = document.getElementById('requirementsContainer');
-    const requirementAmountsData = document.querySelector('[name="requirement_amounts_data"]');
-    const checkboxes = document.querySelectorAll('.requirement-checkbox');
-    const amountInputs = document.querySelectorAll('.requirement-amount');
-    
-    // Toggle the dropdown visibility
-    requirementsDropdownBtn.addEventListener('click', function() {
-        if (requirementsContainer.style.display === 'none' || requirementsContainer.style.display === '') {
-            requirementsContainer.style.display = 'block'; // Show the requirements container
-        } else {
-            requirementsContainer.style.display = 'none'; // Hide the requirements container
-        }
-    });
+    const dropdownToggle = document.getElementById('requirementsDropdown');
+    const dropdownMenu = document.getElementById('requirementsMenu');
+    const form = document.getElementById('leadForm');
+    const amountsDataInput = document.getElementById('requirement_amounts_data');
+    const remarksDataInput = document.getElementById('requirement_remarks_data');
 
-    // Initialize amount inputs visibility based on checked requirements
-    checkboxes.forEach(checkbox => {
-        const amountInput = checkbox.closest('.requirement-row').querySelector('.amount-input');
-        if (checkbox.checked) {
-            amountInput.style.display = 'block';
-        }
-    });
-
-    // Handle checkbox changes
-    checkboxes.forEach(checkbox => {
+    // Handle requirement checkbox changes
+    document.querySelectorAll('.requirement-checkbox').forEach(checkbox => {
         checkbox.addEventListener('change', function() {
-            const amountInput = this.closest('.requirement-row').querySelector('.amount-input');
-            amountInput.style.display = this.checked ? 'block' : 'none';
-            updateRequirementAmountsData();
+            const detailsDiv = this.closest('.dropdown-item').querySelector('.requirement-details');
+            detailsDiv.style.display = this.checked ? 'block' : 'none';
+            updateRequirementData();
         });
+
+        // Show details for pre-selected requirements
+        if (checkbox.checked) {
+            checkbox.closest('.dropdown-item').querySelector('.requirement-details').style.display = 'block';
+        }
     });
 
-    // Handle amount input changes
-    amountInputs.forEach(input => {
-        input.addEventListener('input', updateRequirementAmountsData);
+    // Handle amount and remarks changes
+    document.querySelectorAll('.requirement-amount, .requirement-remarks').forEach(input => {
+        input.addEventListener('input', updateRequirementData);
     });
 
-    // Update hidden input with requirement amounts
-    function updateRequirementAmountsData() {
+    function updateRequirementData() {
         const amounts = {};
-        amountInputs.forEach(input => {
-            const reqId = input.dataset.requirement;
-            const checkbox = document.getElementById(`req_${reqId}`);
-            if (checkbox.checked && input.value) {
-                amounts[reqId] = input.value;
+        const remarks = {};
+
+        document.querySelectorAll('.requirement-checkbox:checked').forEach(checkbox => {
+            const reqId = checkbox.value;
+            const amountInput = document.querySelector(`.requirement-amount[data-requirement="${reqId}"]`);
+            const remarksInput = document.querySelector(`.requirement-remarks[data-requirement="${reqId}"]`);
+
+            if (amountInput.value) {
+                amounts[reqId] = parseFloat(amountInput.value);
+            }
+            if (remarksInput.value) {
+                remarks[reqId] = remarksInput.value;
             }
         });
-        requirementAmountsData.value = JSON.stringify(amounts);
+
+        amountsDataInput.value = JSON.stringify(amounts);
+        remarksDataInput.value = JSON.stringify(remarks);
     }
 
     // Initialize with existing data if any
-    updateRequirementAmountsData();
+    updateRequirementData();
 });
 </script>
+
 {% endblock %}
