@@ -301,13 +301,41 @@ def edit_lead(request, lead_id):
     if request.method == "POST":
         form = LeadForm(request.POST, request.FILES, instance=lead)
         if form.is_valid():
-            form.save()
-            messages.success(request, f'Lead "{lead.firm_name}" updated successfully!')
-            return redirect('user_dashboard')
+            lead = form.save()
+            
+            # Handle requirement amounts and remarks
+            amounts_data = request.POST.get('requirement_amounts_data', '{}')
+            remarks_data = request.POST.get('requirement_remarks_data', '{}')
+            
+            try:
+                amounts = json.loads(amounts_data)
+                remarks = json.loads(remarks_data)
+                
+                # Delete existing requirement amounts
+                LeadRequirementAmount.objects.filter(lead=lead).delete()
+                
+                # Create new requirement amounts with remarks
+                for req_id, amount in amounts.items():
+                    LeadRequirementAmount.objects.create(
+                        lead=lead,
+                        requirement_id=int(req_id),
+                        amount=float(amount),
+                        remarks=remarks.get(req_id, '')
+                    )
+                
+                messages.success(request, f'Lead "{lead.firm_name}" updated successfully!')
+                return redirect('user_dashboard')
+                
+            except json.JSONDecodeError:
+                messages.error(request, 'Invalid requirement data format')
+            except (ValueError, TypeError):
+                messages.error(request, 'Invalid amount value')
+            except Exception as e:
+                messages.error(request, f'Error saving lead: {str(e)}')
     else:
         form = LeadForm(instance=lead)
     
-    # Get existing requirement amounts
+    # Get existing requirement amounts and remarks
     existing_amounts = {
         str(ra.requirement_id): str(ra.amount)
         for ra in LeadRequirementAmount.objects.filter(lead=lead)
