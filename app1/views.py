@@ -230,15 +230,23 @@ def edit_user(request, user_id):
 
 from django.db.models import Prefetch
 
+@login_required
 def user_dashboard(request):
-    leads = Lead.objects.prefetch_related(
-        Prefetch('requirement_amounts', queryset=LeadRequirementAmount.objects.all())
-    ).all()
+    # Get the custom user ID from session
+    custom_user_id = request.session.get('custom_user_id')
+    
+    # Fetch only leads for the logged-in user with related data
+    leads = Lead.objects.filter(
+        user_id=custom_user_id
+    ).prefetch_related(
+        'requirements',
+        'requirement_amounts',
+        'requirement_amounts__requirement'
+    ).order_by('-created_at')
 
     context = {
         'leads': leads
     }
-
     return render(request, 'user_dashboard.html', context)
 
 
