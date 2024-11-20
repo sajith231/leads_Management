@@ -59,7 +59,7 @@
 
     @media (max-width: 768px) {
         .input-group > * {
-            display: block;
+            display: flex;
             width: 100%;
             margin-bottom: 10px;
         }
@@ -68,6 +68,10 @@
             width: 100% !important;
             margin-bottom: 10px;
         }
+        .logo{
+            margin-top: 20%;
+        }
+        
     }
 </style>
 
@@ -100,7 +104,7 @@
                         <i class="fas fa-filter"></i> Ok
                     </button>
                 
-                <select name="branch" class="form-select" style="max-width: 200px;margin-left: 2%;" onchange="autoSubmitForm()">
+                <div class="filter" style="display: flex;"><select name="branch" class="form-select" style="max-width: 200px;margin-left: 2%;" onchange="autoSubmitForm()">
                     <option value="">All Branches</option>
                     {% for branch in branches %}
                         <option value="{{ branch.id }}" {% if branch.id|stringformat:"i" == request.GET.branch %}selected{% endif %}>
@@ -116,7 +120,7 @@
                             {{ requirement.name }}
                         </option>
                     {% endfor %}
-                </select>
+                </select></div>
                 
                 
             </div>
