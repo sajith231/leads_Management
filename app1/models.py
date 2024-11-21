@@ -49,6 +49,7 @@ class Lead(models.Model):
         ('retail', 'Retail'),
         ('wholesale', 'Wholesale'),
         ('footware', 'Footware'),
+        ('production', 'production'),
         ('hardware', 'Hardware'),
         ('pharmacy', 'Pharmacy'),
         ('hospital', 'Hospital'),
