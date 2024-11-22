@@ -211,28 +211,28 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Handle remarks modal
-        const remarksModal = document.getElementById('remarksModal');
-        const remarksContent = document.getElementById('remarksModalBody');
-        const requirementRemarksModal = document.getElementById('requirementRemarksModal');
-        const requirementRemarksContent = document.getElementById('requirementRemarksModalBody');
-        
-        // Lead remarks modal click handler
-        document.querySelectorAll('.remarks-link').forEach(function(link) {
-            link.addEventListener('click', function() {
-                const remarks = this.getAttribute('data-remarks');
-                remarksContent.textContent = remarks;  // Set the remarks content for lead
-            });
-        });
-
-        // Requirement remarks modal click handler
-        document.querySelectorAll('.requirement-remarks-link').forEach(function(link) {
-            link.addEventListener('click', function() {
-                const remarks = this.getAttribute('data-remarks');
-                requirementRemarksContent.textContent = remarks;  // Set the requirement remarks content
-            });
+    // Handle remarks modal
+    const remarksModal = document.getElementById('remarksModal');
+    const remarksContent = document.getElementById('remarksModalBody');
+    const requirementRemarksModal = document.getElementById('requirementRemarksModal');
+    const requirementRemarksContent = document.getElementById('requirementRemarksModalBody');
+    
+    // Lead remarks modal click handler
+    document.querySelectorAll('.remarks-link').forEach(function(link) {
+        link.addEventListener('click', function() {
+            const remarks = this.getAttribute('data-remarks').replace(/\\u000A/g, '\n');
+            remarksContent.textContent = remarks;  // Set the remarks content for lead
         });
     });
+
+    // Requirement remarks modal click handler
+    document.querySelectorAll('.requirement-remarks-link').forEach(function(link) {
+        link.addEventListener('click', function() {
+            const remarks = this.getAttribute('data-remarks').replace(/\\u000A/g, '\n');
+            requirementRemarksContent.textContent = remarks;  // Set the requirement remarks content
+        });
+    });
+});
 </script>
 
 {% block extra_css %}
