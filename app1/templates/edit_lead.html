@@ -97,10 +97,11 @@
                     Select Requirements
                 </button>
                 <div>
-                    <ul class="dropdown-menu p-3" aria-labelledby="requirementsDropdown" style="width: 700px;">
+                    <ul class="dropdown-menu p-3" aria-labelledby="requirementsDropdown" 
+                        style="max-width: 100%; width: 700px; max-height: 500px; overflow-y: auto;">
                         {% for requirement in requirements %}
                         <li class="mb-3 border rounded p-2">
-                            <div class="" style="display: grid;grid-template-columns: repeat(3,1fr);place-items: center;width: 100%;">
+                            <div class="d-grid gap-3" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); place-items: center;">
                                 <div class="form-check">
                                     <input type="checkbox" 
                                            name="requirements" 
@@ -110,21 +111,21 @@
                                            id="req_{{ requirement.id }}">
                                     <label class="form-check-label" for="req_{{ requirement.id }}" style="margin-left: 0px;">{{ requirement.name }}</label>
                                 </div>
-                                <div class="d-flex flex-column ">
+                                <div class="d-flex flex-column">
                                     <label class="form-label mb-0">Amount:</label>
                                     <input type="number" 
                                            class="form-control requirement-amount" 
                                            data-requirement-id="{{ requirement.id }}"
                                            value="{{ existing_amounts|get_item:requirement.id|default:'0' }}"
                                            step="0.01" 
-                                           style="width: 100px;">
+                                           style="max-width: 100px;">
                                 </div>
                                 <div class="d-flex flex-column">
                                     <label class="form-label mb-0">Remarks:</label>
                                     <textarea class="form-control requirement-remarks" 
                                               data-requirement-id="{{ requirement.id }}" 
                                               rows="1" 
-                                              style="width: 150px;">{% for amount in lead.requirement_amounts.all %}{% if amount.requirement_id == requirement.id %}{{ amount.remarks }}{% endif %}{% endfor %}</textarea>
+                                              style="max-width: 150px;">{% for amount in lead.requirement_amounts.all %}{% if amount.requirement_id == requirement.id %}{{ amount.remarks }}{% endif %}{% endfor %}</textarea>
                                 </div>
                             </div>
                         </li>
@@ -133,6 +134,7 @@
                 </div>
             </div>
         </div>
+        
         
 
         <!-- Follow-Up and Quotation -->
