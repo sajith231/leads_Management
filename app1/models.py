@@ -46,16 +46,34 @@ class Lead(models.Model):
         ('supermarket', 'Supermarket'),
         ('textile', 'Textile'),
         ('restaurant', 'Restaurant'),
+        ('Agency/Distribution', 'Agency/Distribution'),
         ('retail', 'Retail'),
+        ('Auto Mobiles', 'Auto Mobiles'),
+        ('Bakery', 'Bakery'),
+        ('Boutique', 'Boutique'),
+        ('Hyper Market', 'Hyper Market'),
+        ('Lab', 'Lab'),
+        ('Opticals', 'Opticals'),
+        ('Pharmacy', 'Pharmacy'),
+        ('School', 'School'),
+        ('Hotels/ Resorts', 'Hotels/ Resorts'),
         ('wholesale', 'Wholesale'),
         ('footware', 'Footware'),
-        ('production', 'production'),
+        ('Travels', 'Travels'),
+        ('Jewellery', 'Jewellery'),
+        ('production', 'Production'),
         ('hardware', 'Hardware'),
         ('pharmacy', 'Pharmacy'),
         ('hospital', 'Hospital'),
         ('clinic', 'Clinic'),
         ('another', 'Another'),
     ]
+
+    # Keep 'Select' first and 'Another' last, sort others alphabetically
+    BUSINESS_NATURE_CHOICES = [BUSINESS_NATURE_CHOICES[0]] + sorted(
+        BUSINESS_NATURE_CHOICES[1:-1],  # Exclude 'Select' and 'Another'
+        key=lambda x: x[1].lower()      # Sort alphabetically by display value (case-insensitive)
+    ) + [BUSINESS_NATURE_CHOICES[-1]]  # Append 'Another' at the end
 
     firm_name = models.CharField(max_length=200)
     customer_name = models.CharField(max_length=100)
@@ -74,6 +92,7 @@ class Lead(models.Model):
     quotation_required = models.BooleanField(default=False)
     image = models.ImageField(upload_to='lead_images/', null=True, blank=True)
     remarks = models.TextField(blank=True, null=True)
+    planet_entry = models.BooleanField(default=False)
     KERALA_DISTRICTS = [
         ('', 'Select District'),
         ('alappuzha', 'Alappuzha'),

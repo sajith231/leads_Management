@@ -12,7 +12,40 @@
         </div>
     </div>
 </div>
-
+<style>
+    .badge {
+      display: inline-block;
+      padding: 0.5em 1em;
+      font-size: 0.875rem;
+      font-weight: 600;
+      border-radius: 0.25rem;
+      transition: all 0.3s ease;
+    }
+  
+    .status-badge {
+      min-width: 60px;
+    }
+  
+    .bg-success {
+      background-color: #28a745;
+      color: white;
+    }
+  
+    .bg-secondary {
+      background-color: #6c757d;
+      color: white;
+    }
+  
+    .status-badge:hover {
+      opacity: 0.9;
+      transform: scale(1.05);
+    }
+  
+    .disabled {
+      pointer-events: none;
+      opacity: 0.6;
+    }
+  </style>
 <style>
     .input-group .form-control,
     .input-group .form-select {
@@ -59,7 +92,7 @@
 
     @media (max-width: 768px) {
         .input-group > * {
-            display: flex;
+            display: block;
             width: 100%;
             margin-bottom: 10px;
         }
@@ -112,7 +145,17 @@
                         </option>
                     {% endfor %}
                 </select>
-                
+               
+                <div class="col-md-3">
+                    <select name="user" class="form-select" onchange="this.form.submit()">
+                        <option value="">All Users</option>
+                        {% for user in users %}
+                        <option value="{{ user.id }}" {% if selected_user == user.id|stringformat:"s" %}selected{% endif %}>
+                            {{ user.name }} ({{ user.branch.name }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
                 <select name="requirements" class="form-select" style="max-width: 250px;" onchange="autoSubmitForm()">
                     <option value="">All Requirements</option>
                     {% for requirement in requirements %}
@@ -155,6 +198,7 @@
                             <th>Image</th>
                             <th>Remarks</th>
                             <th>Created At</th>
+                            <th>Planet Entry</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -254,12 +298,26 @@
                                 </td>
                                 
                                 <td>{{ lead.created_at|date:"d-m-y" }}</td>
+                                
+  <!-- Other lead fields -->
+                        <td class="text-center">
+                            <span class="badge status-badge {% if lead.follow_up_required %}bg-success{% else %}bg-secondary{% endif %}"
+                                data-lead-id="{{ lead.id }}"
+                                data-status-type="follow_up_required"
+                                onclick="toggleStatus(this)"
+                                style="cursor: pointer;">
+                                {{ lead.follow_up_required|yesno:"Yes,No" }}
+                            </span>
+                        </td>
+                        
+                        
                             </tr>
                         {% empty %}
                             <tr>
                                 <td colspan="14" class="text-center">No leads found.</td>
                             </tr>
                         {% endfor %}
+                        
                     </tbody>
                 </table>
             </div>
@@ -382,5 +440,139 @@
     });
 });
 </script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+    // Handle remarks modal
+    const remarksModal = document.getElementById('remarksModal');
+    const remarksContent = document.getElementById('remarksModalBody');
+    const requirementRemarksModal = document.getElementById('requirementRemarksModal');
+    const requirementRemarksContent = document.getElementById('requirementRemarksModalBody');
+    
+    // Lead remarks modal click handler
+    document.querySelectorAll('.remarks-link').forEach(function(link) {
+        link.addEventListener('click', function() {
+            const remarks = this.getAttribute('data-remarks').replace(/\\u000A/g, '\n');
+            remarksContent.textContent = remarks;  // Set the remarks content for lead
+        });
+    });
+
+    // Requirement remarks modal click handler
+    document.querySelectorAll('.requirement-remarks-link').forEach(function(link) {
+        link.addEventListener('click', function() {
+            const remarks = this.getAttribute('data-remarks').replace(/\\u000A/g, '\n');
+            requirementRemarksContent.textContent = remarks;  // Set the requirement remarks content
+        });
+    });
+});
+
+$(document).ready(function() {
+    $('.planet-entry-toggle').click(function() {
+        var td = $(this);
+        var leadId = td.data('lead-id');
+        var currentStatus = td.data('current-status');
+        
+        $.ajax({
+            url: '/toggle-planet-entry/',  // Your URL endpoint
+            type: 'POST',
+            data: {
+                'lead_id': leadId,
+                'csrfmiddlewaretoken': getCsrfToken()  // Function to get CSRF token
+            },
+            success: function(response) {
+                if (response.success) {
+                    // Toggle the badge class
+                    var badge = td.find('.badge');
+                    if (currentStatus === 'true') {
+                        badge.removeClass('bg-success').addClass('bg-secondary');
+                        badge.text('No');
+                        td.data('current-status', 'false');
+                    } else {
+                        badge.removeClass('bg-secondary').addClass('bg-success');
+                        badge.text('Yes');
+                        td.data('current-status', 'true');
+                    }
+                }
+            }
+        });
+    });
+});
+
+// Function to get CSRF token
+function getCsrfToken() {
+    return document.querySelector('[name=csrfmiddlewaretoken]').value;
+}
+
+
+
+
+
+</script>
+<script>
+    function getCookie(name) {
+      let cookieValue = null;
+      if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+          const cookie = cookies[i].trim();
+          if (cookie.substring(0, name.length + 1) === (name + '=')) {
+            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+            break;
+          }
+        }
+      }
+      return cookieValue;
+    }
+  
+    async function toggleStatus(element) {
+      // Disable the badge while processing
+      element.classList.add('disabled');
+  
+      const leadId = element.dataset.leadId;
+      const statusType = element.dataset.statusType;
+      const csrfToken = getCookie('csrftoken');
+  
+      try {
+        const response = await fetch('/toggle_status/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken,
+          },
+          body: JSON.stringify({
+            lead_id: leadId,
+            status_type: statusType
+          })
+        });
+  
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success) {
+            // Toggle the visual state
+            const currentState = element.classList.contains('bg-success');
+            if (currentState) {
+              element.classList.remove('bg-success');
+              element.classList.add('bg-secondary');
+              element.textContent = 'No';
+            } else {
+              element.classList.remove('bg-secondary');
+              element.classList.add('bg-success');
+              element.textContent = 'Yes';
+            }
+          } else {
+            console.error('Error:', data.error);
+            alert('Failed to update status. Please try again.');
+          }
+        } else {
+          throw new Error('Network response was not ok');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('Failed to update status. Please try again.');
+      } finally {
+        // Re-enable the badge
+        element.classList.remove('disabled');
+      }
+    }
+  </script>
 
 {% endblock %}

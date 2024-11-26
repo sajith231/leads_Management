@@ -367,17 +367,22 @@ def all_leads(request):
         end_date = request.GET.get('end_date')
         if start_date and end_date:
             start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
-            end_date = datetime.strptime(end_date, '%Y-%m-%d').date() + timedelta(days=1)  # Add one day to include the end date
+            end_date = datetime.strptime(end_date, '%Y-%m-%d').date() + timedelta(days=1)
             leads = leads.filter(created_at__gte=start_date, created_at__lt=end_date)
 
         # Filter leads based on branch, if provided and valid
         branch_id = request.GET.get('branch')
-        if branch_id and branch_id.isdigit():  # Check if branch_id is a valid number
+        if branch_id and branch_id.isdigit():
             leads = leads.filter(user__branch_id=branch_id)
 
-        # Filter leads based on requirements, if provided and valid
+        # Filter leads based on user, if provided and valid
+        user_id = request.GET.get('user')
+        if user_id and user_id.isdigit():
+            leads = leads.filter(user_id=user_id)
+
+        # Filter leads based on requirements
         requirement_ids = request.GET.getlist('requirements')
-        requirement_ids = [req_id for req_id in requirement_ids if req_id.isdigit()]  # Filter out empty values
+        requirement_ids = [req_id for req_id in requirement_ids if req_id.isdigit()]
         if requirement_ids:
             leads = leads.filter(requirements__id__in=requirement_ids).distinct()
 
@@ -386,14 +391,19 @@ def all_leads(request):
         if firm_name:
             leads = leads.filter(firm_name__icontains=firm_name)
 
-        # Get all branches and requirements for the filters
+        # Get all branches, users and requirements for the filters
         branches = Branch.objects.all()
+        users = User.objects.all().select_related('branch')
         requirements = Requirement.objects.all()
 
         return render(request, 'all_leads.html', {
             'leads': leads,
             'branches': branches,
-            'requirements': requirements
+            'users': users,
+            'requirements': requirements,
+            'selected_user': user_id,
+            'selected_branch': branch_id,
+            'selected_requirements': requirement_ids,
         })
     else:
         messages.error(request, "You don't have permission to view this page.")
@@ -422,5 +432,56 @@ def delete_lead(request, lead_id):
     return redirect('user_dashboard')
 
 
+from django.views.decorators.http import require_POST
 
+@require_POST
+def toggle_planet_entry(request):
+    lead_id = request.POST.get('lead_id')
+    try:
+        lead = Lead.objects.get(id=lead_id)
+        lead.planet_entry = not lead.planet_entry
+        lead.save()
+        return JsonResponse({'success': True})
+    except Lead.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Lead not found'})
+    
 
+import json
+
+@require_POST
+def toggle_status(request):
+    try:
+        data = json.loads(request.body)
+        lead_id = data.get('lead_id')
+        status_type = data.get('status_type')
+        
+        # Validate status_type to prevent arbitrary field updates
+        valid_status_fields = ['follow_up_required', 'quotation_required', 'planet_entry']
+        if status_type not in valid_status_fields:
+            return JsonResponse({
+                'success': False,
+                'error': 'Invalid status type'
+            })
+        
+        lead = Lead.objects.get(id=lead_id)
+        
+        # Toggle the specified status
+        current_value = getattr(lead, status_type)
+        setattr(lead, status_type, not current_value)
+        lead.save()
+        
+        return JsonResponse({
+            'success': True,
+            'new_value': getattr(lead, status_type)
+        })
+        
+    except Lead.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'error': 'Lead not found'
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        })
