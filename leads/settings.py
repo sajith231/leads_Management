@@ -29,8 +29,11 @@ SECRET_KEY = 'django-insecure-kh@!%_jbcfj5i8=%6unm-vr7a5es9leoui!d%iqayweh-7zg#)
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
-
-ALLOWED_HOSTS = []
+CSRF_TRUSTED_ORIGINS = [
+    'https://sysmac.co.in',
+    'https://www.sysmac.co.in',
+]
+ALLOWED_HOSTS = ['88.222.215.20','sysmac.co.in','www.sysmac.co.in']
 
 LOGIN_REDIRECT_URL = 'admin_dashboard'
 LOGIN_URL = 'login'

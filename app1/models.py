@@ -131,3 +131,4 @@ class LeadRequirementAmount(models.Model):
 
     def __str__(self):
         return f"{self.lead} - {self.requirement}: {self.amount}"
+# hai
