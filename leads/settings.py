@@ -33,7 +33,7 @@ CSRF_TRUSTED_ORIGINS = [
     'https://sysmac.co.in',
     'https://www.sysmac.co.in',
 ]
-ALLOWED_HOSTS = ['88.222.215.20','sysmac.co.in','www.sysmac.co.in']
+ALLOWED_HOSTS = ['88.222.215.20','sysmac.co.in','www.sysmac.co.in','127.0.0.1']
 
 LOGIN_REDIRECT_URL = 'admin_dashboard'
 LOGIN_URL = 'login'
