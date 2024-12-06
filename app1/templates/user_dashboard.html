@@ -60,9 +60,9 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for lead in leads %}
+                        {% for lead in leads|dictsort:"created_at"|slice:":"|dictsortreversed:"created_at" %}           
                         <tr>
-                            <td>{{ forloop.counter }}</td>
+                            <td>{{ forloop.counter }}</td>     
                             <td style="white-space: nowrap;">{{ lead.firm_name }}</td>
                             <td style="white-space: nowrap;">{{ lead.customer_name }}</td>
                             <td style="white-space: nowrap;">{{ lead.contact_number }}</td>
@@ -70,6 +70,7 @@
                             <td style="white-space: nowrap;">{{ lead.district }}</td>
                             <td style="white-space: nowrap;">{{ lead.business_nature }}</td>
                             <td>
+                                <!-- hai -->
                                 {% for req in lead.requirements.all %}
                                     <div class="badge bg-primary mb-1 d-block">
                                         {{ req.name }} - ₹

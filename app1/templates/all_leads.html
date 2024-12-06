@@ -221,7 +221,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for lead in leads %}
+                        {% for lead in leads|dictsort:"created_at"|slice:":"|dictsortreversed:"created_at" %}
                             <tr>
                                 <td>{{ forloop.counter }}</td>
                                 <td style="white-space: nowrap;">{{ lead.user.name }}</td>
