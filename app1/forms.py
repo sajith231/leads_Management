@@ -136,7 +136,12 @@ class LeadForm(forms.ModelForm):
         widgets = {
             'firm_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter Firm Name'}),
             'customer_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter Customer Name'}),
-            'contact_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter Contact Number'}),
+            'contact_number': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter Contact Number',
+                'type': 'tel'  # Specify the input type as 'tel'
+            }),
+
             'location': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter Location'}),
             'district': forms.Select(attrs={'class': 'form-select'}),
             'business_nature': forms.Select(attrs={'class': 'form-select'}),
