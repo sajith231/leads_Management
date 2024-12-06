@@ -252,6 +252,7 @@
                                                 {% endif %}
                                             {% endwith %}
                                         </span>
+                                        
                                     {% endfor %}
                                 </td>
                                 <td>
@@ -320,12 +321,12 @@
                                 
   <!-- Other lead fields -->
                         <td class="text-center">
-                            <span class="badge status-badge {% if lead.follow_up_required %}bg-success{% else %}bg-secondary{% endif %}"
+                            <span class="badge status-badge {% if lead.follow_up_required %}bg-secondary{% else %}bg-success{% endif %}"
                                 data-lead-id="{{ lead.id }}"
                                 data-status-type="follow_up_required"
                                 onclick="toggleStatus(this)"
                                 style="cursor: pointer;">
-                                {{ lead.follow_up_required|yesno:"Yes,No" }}
+                                {{ lead.follow_up_required|yesno:"Not Enterd,Enterd" }}
                             </span>
                         </td>
                         
@@ -567,15 +568,15 @@ function getCsrfToken() {
           const data = await response.json();
           if (data.success) {
             // Toggle the visual state
-            const currentState = element.classList.contains('bg-success');
+            const currentState = element.classList.contains('bg-secondary');
             if (currentState) {
-              element.classList.remove('bg-success');
-              element.classList.add('bg-secondary');
-              element.textContent = 'No';
-            } else {
               element.classList.remove('bg-secondary');
               element.classList.add('bg-success');
-              element.textContent = 'Yes';
+              element.textContent = 'Enterd';
+            } else {
+              element.classList.remove('bg-success');
+              element.classList.add('bg-secondary');
+              element.textContent = 'Not Enterd';
             }
           } else {
             console.error('Error:', data.error);
