@@ -327,7 +327,7 @@
                                 data-status-type="follow_up_required"
                                 onclick="toggleStatus(this)"
                                 style="cursor: pointer;">
-                                {{ lead.follow_up_required|yesno:"Not Enterd,Enterd" }}
+                                {{ lead.follow_up_required|yesno:"Not Entered,Entered" }}
                             </span>
                         </td>
                         <td>
@@ -587,11 +587,11 @@ function getCsrfToken() {
             if (currentState) {
               element.classList.remove('bg-secondary');
               element.classList.add('bg-success');
-              element.textContent = 'Enterd';
+              element.textContent = 'Entered';
             } else {
               element.classList.remove('bg-success');
               element.classList.add('bg-secondary');
-              element.textContent = 'Not Enterd';
+              element.textContent = 'Not Entered';
             }
           } else {
             console.error('Error:', data.error);
