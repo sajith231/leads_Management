@@ -306,6 +306,10 @@ def add_lead(request):
 @login_required
 def edit_lead(request, lead_id):
     lead = get_object_or_404(Lead, id=lead_id)
+    # Get the referring page
+    referer = request.META.get('HTTP_REFERER', '')
+    is_from_all_leads = 'all_leads' in referer
+    
     if request.method == "POST":
         form = LeadForm(request.POST, request.FILES, instance=lead)
         if form.is_valid():
@@ -332,7 +336,10 @@ def edit_lead(request, lead_id):
                     )
                 
                 messages.success(request, f'Lead "{lead.firm_name}" updated successfully!')
-                return redirect('user_dashboard')
+                # Redirect based on where the request came from
+                if is_from_all_leads:
+                    return redirect('all_leads')
+                return redirect('all_leads')
                 
             except json.JSONDecodeError:
                 messages.error(request, 'Invalid requirement data format')
@@ -353,8 +360,10 @@ def edit_lead(request, lead_id):
         'form': form,
         'lead': lead,
         'requirements': Requirement.objects.all(),
-        'existing_amounts': existing_amounts
+        'existing_amounts': existing_amounts,
+        'is_from_all_leads': is_from_all_leads  # Pass this to the template
     })
+
 
 
 @login_required
@@ -406,7 +415,7 @@ def all_leads(request):
             'selected_requirements': requirement_ids,
         })
     else:
-        messages.error(request, "You don't have permission to view this page.")
+        # messages.error(request, "You don't have permission to view this page.")
         return redirect('user_dashboard')
 
 
@@ -419,16 +428,25 @@ def delete_lead(request, lead_id):
         lead = get_object_or_404(Lead, id=lead_id)
         lead_name = lead.firm_name
         
+        # Get the referring page
+        referer = request.META.get('HTTP_REFERER', '')
+        is_from_all_leads = 'all_leads' in referer
+        
         try:
-            # Since SoftwareAmount has a foreign key to Lead with CASCADE,
-            # we don't need to explicitly delete SoftwareAmount records
             lead.delete()
             messages.success(request, f'Lead "{lead_name}" deleted successfully.')
         except Exception as e:
             messages.error(request, f'Error deleting lead: {str(e)}')
-            # Log the error for debugging
-            print(f"Error deleting lead {lead_id}: {str(e)}")
-            
+        
+        # Redirect based on where the request came from
+        if is_from_all_leads:
+            return redirect('all_leads')
+        return redirect('all_leads')
+    
+    # If not POST, redirect to appropriate page based on referer
+    referer = request.META.get('HTTP_REFERER', '')
+    if 'all_leads' in referer:
+        return redirect('all_leads')
     return redirect('user_dashboard')
 
 
