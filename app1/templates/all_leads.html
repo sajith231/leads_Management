@@ -165,9 +165,9 @@
                     {% endfor %}
                 </select></div> 
                
-                <div class="col-md-3">
-                    <select name="user" class="form-select" onchange="this.form.submit()">
-                        <option value="">All Users</option>
+                <div>
+                    <select name="user" class="form-select" onchange="this.form.submit()" style="width: 200px;">
+                        <option value=""  >All Users</option>
                         {% for user in users %}
                         <option value="{{ user.id }}" {% if selected_user == user.id|stringformat:"s" %}selected{% endif %}>
                             {{ user.name }} ({{ user.branch.name }})
@@ -175,7 +175,7 @@
                         {% endfor %}
                     </select>
                 </div>
-                <select name="requirements" class="form-select" style="max-width: 250px;" onchange="autoSubmitForm()">
+                <select name="requirements" class="form-select" style="max-width: 200px;" onchange="autoSubmitForm()">
                     <option value="">All Requirements</option>
                     {% for requirement in requirements %}
                         <option value="{{ requirement.id }}" {% if requirement.id|stringformat:"i" == request.GET.requirements %}selected{% endif %}>
