@@ -33,7 +33,7 @@
   
     .bg-secondary {
       background-color: #6c757d;
-      color: white;
+      color: white; 
     }
   
     .status-badge:hover {
@@ -182,7 +182,13 @@
                             {{ requirement.name }}
                         </option>
                     {% endfor %}
+                </select>
+                <select name="planet_entry" class="form-select" onchange="this.form.submit()">
+                    <option value="">Planet Entry - All</option>
+                    <option value="true" {% if selected_planet_entry == 'true' %}selected{% endif %}>Entered</option>
+                    <option value="false" {% if selected_planet_entry == 'false' %}selected{% endif %}>Not Entered</option>
                 </select></div>
+                
                 
                 
             </div>
@@ -321,15 +327,17 @@
                                 <td>{{ lead.created_at|date:"d-m-y" }}</td>
                                 
   <!-- Other lead fields -->
-                        <td class="text-center">
-                            <span class="badge status-badge {% if lead.follow_up_required %}bg-secondary{% else %}bg-success{% endif %}"
-                                data-lead-id="{{ lead.id }}"
-                                data-status-type="follow_up_required"
-                                onclick="toggleStatus(this)"
-                                style="cursor: pointer;">
-                                {{ lead.follow_up_required|yesno:"Not Entered,Entered" }}
-                            </span>
-                        </td>
+  <td>
+    <span 
+        class="badge status-badge {% if lead.planet_entry %}bg-success{% else %}bg-secondary{% endif %}"
+        lead-id="{{ lead.id }}"
+        status-type="planet_entry"
+        onclick="toggleStatus(this)"
+        style="cursor: pointer;"
+    >
+        {{ lead.planet_entry|yesno:"Entered,Not Entered" }}
+    </span>
+</td>
                         <td>
                             <div class="btn-group" role="group">
                                 <a href="{% url 'edit_lead' lead.id %}" class="btn btn-warning btn-sm" style="margin-right: 1%;">
@@ -608,6 +616,36 @@ function getCsrfToken() {
         element.classList.remove('disabled');
       }
     }
+  </script>
+
+  <script>
+    function toggleStatus(element) {
+    const leadId = element.getAttribute('lead-id');
+    const statusType = element.getAttribute('status-type');
+    
+    fetch('/toggle_status/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify({
+            lead_id: leadId,
+            status_type: statusType
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            element.classList.toggle('bg-success');
+            element.classList.toggle('bg-secondary');
+            element.textContent = data.new_value ? 'Entered' : 'Not Entered';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
+}
   </script>
 
 {% endblock %}

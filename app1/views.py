@@ -399,6 +399,11 @@ def all_leads(request):
         firm_name = request.GET.get('firm_name')
         if firm_name:
             leads = leads.filter(firm_name__icontains=firm_name)
+        
+
+        planet_entry = request.GET.get('planet_entry')
+        if planet_entry in ['true', 'false']:
+            leads = leads.filter(planet_entry=(planet_entry == 'true'))
 
         # Get all branches, users and requirements for the filters
         branches = Branch.objects.all()
@@ -413,6 +418,7 @@ def all_leads(request):
             'selected_user': user_id,
             'selected_branch': branch_id,
             'selected_requirements': requirement_ids,
+            'selected_planet_entry': planet_entry,  # Add this line
         })
     else:
         # messages.error(request, "You don't have permission to view this page.")
