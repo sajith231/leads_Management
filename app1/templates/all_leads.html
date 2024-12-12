@@ -129,6 +129,11 @@
 
 <div class="row mb-4">
     <div class="col-sm-12">
+        <div class="mb-4">
+            
+            <a href="{% url 'add_lead' %}" class="btn btn-primary mb-3">Add Lead</a>
+            
+        </div>
         <form method="GET" action="{% url 'all_leads' %}" id="filterForm" style="margin-top: 5%;">
             <div class="input-group mb-3">
                 <!-- Search Bar -->
@@ -232,7 +237,7 @@
                             <tr>
                                 <td>{{ forloop.counter }}</td>
                                 <td style="white-space: nowrap;">{{ lead.user.name }}</td>
-                                <td style="white-space: nowrap;">{{ lead.user.branch.name }}</td>
+                                <td style="white-space: nowrap;">{{ lead.user.branch }}</td>
                                 <td style="white-space: nowrap;">{{ lead.firm_name|upper }}</td>
                                 <td style="white-space: nowrap;">{{ lead.customer_name|upper }}</td>
                                 <td style="white-space: nowrap;">{{ lead.contact_number }}</td>

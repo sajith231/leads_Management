@@ -24,34 +24,38 @@ def login(request):
         userid = request.POST.get("username")
         password = request.POST.get("password")
 
-        # First try Django's built-in authentication for superuser
+        # First, try Django's built-in authentication for superusers
         django_user = authenticate(request, username=userid, password=password)
-        
+
         if django_user and django_user.is_superuser:
             auth_login(request, django_user)
             return redirect("all_leads")
 
         else:
-            # Try custom authentication for regular users
+            # Custom user authentication
             try:
-                custom_user = User.objects.get(userid=userid, password=password)
-                if custom_user:
-                    # Create or get Django user for session management
-                    django_user, created = DjangoUser.objects.get_or_create(
-                        username=custom_user.userid,
-                        defaults={
-                            'is_staff': False, 
-                            'is_superuser': False,
-                            'password': 'dummy_password'  # This will be replaced
-                        }
-                    )
-                    
-                    if created:
-                        django_user.set_password(password)
-                        django_user.save()
-                    
-                    auth_login(request, django_user)
-                    request.session['custom_user_id'] = custom_user.id
+                custom_user = User.objects.get(userid=userid, password=password, is_active=True)
+                # Create or retrieve Django user for session management
+                django_user, created = DjangoUser.objects.get_or_create(
+                    username=custom_user.userid,
+                    defaults={
+                        'is_staff': custom_user.user_level == 'admin_level',
+                        'is_superuser': custom_user.user_level == 'admin_level',
+                        'password': 'dummy_password'  # Will be updated below
+                    }
+                )
+
+                if created:
+                    django_user.set_password(password)
+                    django_user.save()
+
+                auth_login(request, django_user)
+                request.session['custom_user_id'] = custom_user.id
+
+                # Redirect based on user level
+                if custom_user.user_level == 'admin_level':
+                    return redirect("all_leads")
+                else:
                     return redirect("user_dashboard")
             except User.DoesNotExist:
                 messages.error(request, "Invalid username or password")
@@ -168,7 +172,6 @@ def add_user(request):
     if request.method == "POST":
         form = UserForm(request.POST)
         
-        # Check if username is admin
         if request.POST.get("userid") == "admin":
             messages.error(request, "The User ID 'admin' is not allowed.")
             return render(request, "add_user.html", {"form": form})
@@ -186,8 +189,9 @@ def add_user(request):
                     messages.error(request, f"{field}: {error}")
     else:
         form = UserForm()
-    
+
     return render(request, "add_user.html", {"form": form})
+
 
 @login_required
 def users_table(request):
@@ -227,7 +231,6 @@ def edit_user(request, user_id):
     
     return render(request, "edit_user.html", {"form": form, "user": user})
 
-
 from django.db.models import Prefetch
 
 @login_required
@@ -259,12 +262,38 @@ def user_dashboard(request):
 
 @login_required 
 def add_lead(request):
+    # Determine the user for lead creation
+    if request.user.is_superuser:
+        # For superuser, find or create an admin-level user
+        try:
+            # Get the logged-in superuser's details for creating the lead
+            current_user = User.objects.filter(
+                userid=request.user.username, 
+                user_level='admin_level'
+            ).first()
+            
+            # If no matching user exists, create one
+            if not current_user:
+                current_user = User.objects.create(
+                    name=request.user.username,  # Use the actual username
+                    userid=request.user.username,
+                    password='default_password',
+                    branch=Branch.objects.first() or Branch.objects.create(name='Default Branch'),
+                    user_level='admin_level'
+                )
+                messages.info(request, "Created an admin user for lead management.")
+        except Exception as e:
+            messages.error(request, f"Error creating admin user: {str(e)}")
+            return redirect('all_leads')
+    else:
+        # For non-superuser, get the user from session
+        current_user = User.objects.get(id=request.session['custom_user_id'])
+
     if request.method == 'POST':
         form = LeadForm(request.POST, request.FILES)
         if form.is_valid():
             lead = form.save(commit=False)
-            custom_user = User.objects.get(id=request.session['custom_user_id'])
-            lead.user = custom_user
+            lead.user = current_user
             lead.save()
             
             form.save_m2m()
@@ -285,7 +314,12 @@ def add_lead(request):
                     )
                 
                 messages.success(request, 'Lead added successfully!')
-                return redirect('user_dashboard')
+                
+                # Redirect based on user level
+                if request.user.is_superuser or current_user.user_level == 'admin_level':
+                    return redirect('all_leads')
+                else:
+                    return redirect('user_dashboard')
                 
             except json.JSONDecodeError:
                 messages.error(request, 'Invalid requirement data format')
@@ -306,9 +340,12 @@ def add_lead(request):
 @login_required
 def edit_lead(request, lead_id):
     lead = get_object_or_404(Lead, id=lead_id)
-    # Get the referring page
-    referer = request.META.get('HTTP_REFERER', '')
-    is_from_all_leads = 'all_leads' in referer
+    
+    # Determine the user type
+    if request.user.is_superuser:
+        current_user = User.objects.filter(userid=request.user.username, user_level='admin_level').first()
+    else:
+        current_user = User.objects.get(id=request.session['custom_user_id'])
     
     if request.method == "POST":
         form = LeadForm(request.POST, request.FILES, instance=lead)
@@ -336,10 +373,12 @@ def edit_lead(request, lead_id):
                     )
                 
                 messages.success(request, f'Lead "{lead.firm_name}" updated successfully!')
-                # Redirect based on where the request came from
-                if is_from_all_leads:
+                
+                # Redirect based on user level
+                if request.user.is_superuser or current_user.user_level == 'admin_level':
                     return redirect('all_leads')
-                return redirect('all_leads')
+                else:
+                    return redirect('user_dashboard')
                 
             except json.JSONDecodeError:
                 messages.error(request, 'Invalid requirement data format')
@@ -361,15 +400,41 @@ def edit_lead(request, lead_id):
         'lead': lead,
         'requirements': Requirement.objects.all(),
         'existing_amounts': existing_amounts,
-        'is_from_all_leads': is_from_all_leads  # Pass this to the template
     })
 
 
 
 @login_required
 def all_leads(request):
-    if request.user.is_superuser:
-        leads = Lead.objects.all().select_related('user', 'user__branch').prefetch_related('requirements')
+    if request.user.is_superuser or request.session.get('custom_user_id'):
+        # Fetch the current user for lead creation
+        if request.user.is_superuser:
+            # For superuser, get the first admin-level user or create one if not exists
+            try:
+                current_user = User.objects.filter(user_level='admin_level').first()
+                if not current_user:
+                    # Create a default admin user
+                    current_user = User.objects.create(
+                        name='System Admin',
+                        userid=request.user.username,
+                        password='default_password',
+                        branch=Branch.objects.first() or Branch.objects.create(name='Default Branch'),
+                        user_level='admin_level'
+                    )
+                    messages.warning(request, "Created a default admin user for lead management.")
+            except Exception as e:
+                messages.error(request, f"Error creating admin user: {str(e)}")
+                current_user = None
+        else:
+            current_user = User.objects.get(id=request.session['custom_user_id'])
+
+        # Fetch leads for the logged-in user or all leads if superuser
+        if request.user.is_superuser:
+            leads = Lead.objects.all()
+        else:
+            leads = Lead.objects.filter(user=current_user)
+
+        leads = leads.select_related('user', 'user__branch').prefetch_related('requirements')
 
         # Filter leads based on date range, if provided
         start_date = request.GET.get('start_date')
@@ -380,11 +445,13 @@ def all_leads(request):
             leads = leads.filter(created_at__gte=start_date, created_at__lt=end_date)
 
         # Filter leads based on branch, if provided and valid
+        branches = Branch.objects.all()  # Add this line to fix the NameError
         branch_id = request.GET.get('branch')
         if branch_id and branch_id.isdigit():
             leads = leads.filter(user__branch_id=branch_id)
 
         # Filter leads based on user, if provided and valid
+        users = User.objects.all().select_related('branch')  # Add this line to fix potential user-related issues
         user_id = request.GET.get('user')
         if user_id and user_id.isdigit():
             leads = leads.filter(user_id=user_id)
@@ -399,16 +466,16 @@ def all_leads(request):
         firm_name = request.GET.get('firm_name')
         if firm_name:
             leads = leads.filter(firm_name__icontains=firm_name)
-        
 
         planet_entry = request.GET.get('planet_entry')
         if planet_entry in ['true', 'false']:
             leads = leads.filter(planet_entry=(planet_entry == 'true'))
 
-        # Get all branches, users and requirements for the filters
-        branches = Branch.objects.all()
-        users = User.objects.all().select_related('branch')
+        # Get all requirements for the filters
         requirements = Requirement.objects.all()
+
+        # Prepare the LeadForm for adding new leads
+        lead_form = LeadForm()
 
         return render(request, 'all_leads.html', {
             'leads': leads,
@@ -418,10 +485,11 @@ def all_leads(request):
             'selected_user': user_id,
             'selected_branch': branch_id,
             'selected_requirements': requirement_ids,
-            'selected_planet_entry': planet_entry,  # Add this line
+            'selected_planet_entry': planet_entry,
+            'lead_form': lead_form,
+            'current_user': current_user,
         })
     else:
-        # messages.error(request, "You don't have permission to view this page.")
         return redirect('user_dashboard')
 
 

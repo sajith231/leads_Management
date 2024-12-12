@@ -41,6 +41,10 @@
                             </thead>
                             <tbody>
                                 {% for user in users %}
+                                {% if not user.is_superuser %}
+                                    
+                                
+
                                 <tr>
                                     <td>{{ forloop.counter }}</td>
                                     <td>{{ user.name }}</td>
@@ -48,6 +52,8 @@
                                     <td>{{ user.password }}</td>
                                     <td>{{ user.branch }}</td>
                                     <td>
+                                        {% endif %}
+                            
                                         <a href="{% url 'edit_user' user.id %}" class="btn btn-warning btn-sm">
                                             <i class="fa fa-edit"></i>
                                         </a>

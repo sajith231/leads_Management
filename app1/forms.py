@@ -2,6 +2,7 @@ from django import forms
 from .models import Branch, Requirement, Lead, User,LeadRequirementAmount
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
+from django.contrib.auth.models import User as DjangoUser
 
 class BranchForm(forms.ModelForm):
     class Meta:
@@ -36,10 +37,10 @@ class UserForm(forms.ModelForm):
             'class': 'form-select'
         })
     )
-    
+
     class Meta:
         model = User
-        fields = ['name', 'userid', 'password', 'branch']
+        fields = ['name', 'userid', 'password', 'branch', 'user_level']
         widgets = {
             'name': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -49,18 +50,21 @@ class UserForm(forms.ModelForm):
                 'class': 'form-control',
                 'placeholder': 'Enter User ID',
             }),
+            'user_level': forms.Select(attrs={
+                'class': 'form-select'
+            })
         }
 
     def __init__(self, *args, **kwargs):
         self.edit_mode = kwargs.pop('edit_mode', False)
         super(UserForm, self).__init__(*args, **kwargs)
-        
+
         for field in self.fields:
             if field == 'password':
                 self.fields[field].required = False
             else:
                 self.fields[field].required = True
-                
+
         if self.edit_mode:
             self.fields['password'].widget.attrs['placeholder'] = 'Leave empty to keep current password'
 
@@ -77,14 +81,36 @@ class UserForm(forms.ModelForm):
     def save(self, commit=True):
         user = super().save(commit=False)
         
+        # Set password if provided
         if self.cleaned_data.get('password'):
             user.password = self.cleaned_data['password']
         elif self.instance and self.instance.pk:
             user.password = User.objects.get(pk=self.instance.pk).password
-            
+
         if commit:
             user.save()
+
+        # Create or update corresponding Django user
+        django_user, created = DjangoUser.objects.get_or_create(
+            username=user.userid,
+            defaults={
+                'is_staff': user.user_level == 'admin_level',
+                'is_superuser': user.user_level == 'admin_level',
+                'password': 'dummy_password'
+            }
+        )
+
+        if created:
+            django_user.set_password(self.cleaned_data.get('password', 'dummy_password'))
+            django_user.save()
+        else:
+            # Update existing Django user attributes
+            django_user.is_staff = user.user_level == 'admin_level'
+            django_user.is_superuser = user.user_level == 'admin_level'
+            django_user.save()
+
         return user
+
 
 from django import forms
 from .models import Lead, Requirement, LeadRequirementAmount

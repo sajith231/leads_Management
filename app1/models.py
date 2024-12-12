@@ -21,24 +21,34 @@ class Requirement(models.Model):
         return self.name
 
 class User(models.Model):
+    USER_LEVEL_CHOICES = [
+        ('normal', 'Normal User'),
+        ('admin_level', 'Admin Level User'),
+    ]
+
     name = models.CharField(max_length=100)
     userid = models.CharField(max_length=100, unique=True)
     password = models.CharField(max_length=100)
     branch = models.ForeignKey(Branch, on_delete=models.CASCADE)
+    user_level = models.CharField(
+        max_length=20,
+        choices=USER_LEVEL_CHOICES,
+        default='normal',
+    )
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)
 
     def __str__(self):
-        return self.name
+        return f"{self.name} ({self.get_user_level_display()})"
 
     @classmethod
     def authenticate(cls, userid, password):
         try:
-            user = cls.objects.get(userid=userid, password=password, is_active=True)
-            return user
+            return cls.objects.get(userid=userid, password=password, is_active=True)
         except cls.DoesNotExist:
             return None
+
 
 class Lead(models.Model):
     BUSINESS_NATURE_CHOICES = [
