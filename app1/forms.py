@@ -24,7 +24,7 @@ class UserForm(forms.ModelForm):
     password = forms.CharField(
         widget=forms.PasswordInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Enter Password (leave empty to keep current password)',
+            'placeholder': 'Enter Password ',
         }),
         label="Password",
         required=False
@@ -157,7 +157,8 @@ class LeadForm(forms.ModelForm):
         fields = [
             'firm_name', 'customer_name', 'contact_number',
             'location', 'district', 'business_nature', 'requirements',
-            'follow_up_required', 'quotation_required', 'image', 'remarks'
+            'follow_up_required', 'quotation_required', 'image', 'remarks',
+            # 'voice_note'
         ]
         widgets = {
             'firm_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter Firm Name'}),
@@ -174,6 +175,7 @@ class LeadForm(forms.ModelForm):
             'requirements': DropdownCheckboxWidget(attrs={'class': 'form-select'}),
             'image': forms.FileInput(attrs={'class': 'form-control'}),
             'remarks': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'required': False}),
+            # 'voice_note': forms.FileInput(attrs={'class': 'form-control', 'accept': 'audio/*'}),
         }
 
     def save(self, commit=True):

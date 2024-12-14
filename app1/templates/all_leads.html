@@ -228,6 +228,7 @@
                             <th>Image</th>
                             <th>Remarks</th>
                             <th>Created At</th>
+                            <th>Voice Note</th>
                             <th>Planet Entry</th>
                             <th>Actions</th>
                         </tr>
@@ -330,6 +331,16 @@
                                 </td>
                                 
                                 <td>{{ lead.created_at|date:"d-m-y" }}</td>
+                                <td>
+                                    {% if lead.voice_note %}
+                                    <audio controls style="max-width: 200px;">
+                                        <source src="{{ lead.voice_note.url }}" type="audio/webm">
+                                        Your browser does not support the audio element.
+                                    </audio>
+                                    {% else %}
+                                    -
+                                    {% endif %}
+                                </td>
                                 
   <!-- Other lead fields -->
   <td>

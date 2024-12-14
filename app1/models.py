@@ -103,6 +103,7 @@ class Lead(models.Model):
     image = models.ImageField(upload_to='lead_images/', null=True, blank=True)
     remarks = models.TextField(blank=True, null=True)
     planet_entry = models.BooleanField(default=False)
+    voice_note = models.FileField(upload_to='voice_notes/', null=True, blank=True)
     KERALA_DISTRICTS = [
         ('', 'Select District'),
         ('alappuzha', 'Alappuzha'),
