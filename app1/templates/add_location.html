@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<h2>Add Location</h2>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-primary">Save</button>
+</form>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const districtSelect = document.querySelector('#id_district');
+        const areaSelect = document.querySelector('#id_area');
+
+        const allAreas = {{ all_areas|safe }}; // Pass all areas from the backend
+
+        districtSelect.addEventListener('change', function () {
+            const districtId = this.value;
+
+            // Clear and populate area dropdown
+            areaSelect.innerHTML = '<option value="">Select Area</option>';
+            allAreas.forEach(area => {
+                if (area.district_id == districtId) {
+                    const option = document.createElement('option');
+                    option.value = area.id;
+                    option.textContent = area.name;
+                    areaSelect.appendChild(option);
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

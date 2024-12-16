@@ -30,7 +30,7 @@
     {% endif %}
 
     <div class="mb-4">
-        <a href="{% url 'add_lead' %}" class="btn btn-primary">Add Lead</a>
+        <a href="{% url 'add_lead' %}" class="btn btn-primary"><i class="fas fa-plus"></i> Add Lead</a>
     </div>
 
     <div class="card">
@@ -46,7 +46,7 @@
                             <th>Firm Name</th>
                             <th>Customer Name</th>
                             <th>Contact Number</th>
-                            <th>Location</th>
+                            <th>Landmark</th>
                             <th>District</th>
                             <th>Business Nature</th>
                             <th>Requirements</th>
@@ -67,11 +67,11 @@
                             <td style="white-space: nowrap;">{{ lead.firm_name }}</td>
                             <td style="white-space: nowrap;">{{ lead.customer_name }}</td>
                             <td style="white-space: nowrap;">{{ lead.contact_number }}</td>
-                            <td style="white-space: nowrap;">{{ lead.location }}</td>
+                            <td style="white-space: nowrap;">{{ lead.landmark }}</td>
                             <td style="white-space: nowrap;">{{ lead.district }}</td>
                             <td style="white-space: nowrap;">{{ lead.business_nature }}</td>
                             <td>
-                                <!-- hai -->
+                                
                                 {% for req in lead.requirements.all %}
                                     <div class="badge bg-primary mb-1 d-block">
                                         {{ req.name }} - ₹

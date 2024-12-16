@@ -131,7 +131,7 @@
     <div class="col-sm-12">
         <div class="mb-4">
             
-            <a href="{% url 'add_lead' %}" class="btn btn-primary mb-3">Add Lead</a>
+            <a href="{% url 'add_lead' %}" class="btn btn-primary mb-3"><i class="fas fa-plus"></i> Add Lead</a>
             
         </div>
         <form method="GET" action="{% url 'all_leads' %}" id="filterForm" style="margin-top: 5%;">
@@ -189,9 +189,10 @@
                     {% endfor %}
                 </select>
                 <select name="planet_entry" class="form-select" onchange="this.form.submit()">
+                    
                     <option value="">Planet Entry - All</option>
-                    <option value="true" {% if selected_planet_entry == 'true' %}selected{% endif %}>Entered</option>
                     <option value="false" {% if selected_planet_entry == 'false' %}selected{% endif %}>Not Entered</option>
+                    <option value="true" {% if selected_planet_entry == 'true' %}selected{% endif %}>Entered</option>
                 </select></div>
                 
                 
@@ -212,13 +213,23 @@
                     <thead>
                         <tr style="white-space: nowrap;">
                             <th>No</th>
-                            <th>User</th>
-                            <th>Branch</th>
+                            <th>Created At</th>
+                            <th>Planet Entry</th>
                             <th>Firm Name</th>
                             <th>Customer Name</th>
                             <th>Contact Number</th>
+                            <th>Landmark</th>
                             <th>Location</th>
+                            <th>Area</th>
                             <th>District</th>
+
+                            <th>User</th>
+                            <th>Branch</th>
+                            
+                            
+                            
+                            
+                           
                             <th>Business Nature</th>
                             
                             <th>Requirements</th>
@@ -227,9 +238,9 @@
                             <th>Quotation</th>
                             <th>Image</th>
                             <th>Remarks</th>
-                            <th>Created At</th>
+                            
                             <th>Voice Note</th>
-                            <th>Planet Entry</th>
+                            
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -237,13 +248,51 @@
                         {% for lead in leads|dictsort:"created_at"|slice:":"|dictsortreversed:"created_at" %}
                             <tr>
                                 <td>{{ forloop.counter }}</td>
-                                <td style="white-space: nowrap;">{{ lead.user.name }}</td>
-                                <td style="white-space: nowrap;">{{ lead.user.branch }}</td>
+                                <td>{{ lead.created_at|date:"d-m-y" }}</td>
+                                <td>
+                                    <span 
+                                        class="badge status-badge {% if lead.planet_entry %}bg-success{% else %}bg-secondary{% endif %}"
+                                        lead-id="{{ lead.id }}"
+                                        status-type="planet_entry"
+                                        onclick="toggleStatus(this)"
+                                        style="cursor: pointer;"
+                                    >
+                                        {{ lead.planet_entry|yesno:"Entered,Not Entered" }}
+                                    </span>
+                                </td>
                                 <td style="white-space: nowrap;">{{ lead.firm_name|upper }}</td>
                                 <td style="white-space: nowrap;">{{ lead.customer_name|upper }}</td>
                                 <td style="white-space: nowrap;">{{ lead.contact_number }}</td>
-                                <td style="white-space: nowrap;">{{ lead.location }}</td>
-                                <td style="white-space: nowrap;">{{ lead.district}}</td>
+                                <td style="white-space: nowrap;">{{ lead.landmark }}</td>
+                                <td>
+                                    {% if lead.location %}
+                                        {{ lead.location.name }}
+                                    {% else %}
+                                        N/A
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if lead.location and lead.location.area %}
+                                        {{ lead.location.area.name }}
+                                    {% else %}
+                                        N/A
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if lead.location and lead.location.district %}
+                                        {{ lead.location.district.name }}
+                                    {% else %}
+                                        N/A
+                                    {% endif %}
+                                </td>
+                                
+                                <td style="white-space: nowrap;">{{ lead.user.name }}</td>
+                                <td style="white-space: nowrap;">{{ lead.user.branch }}</td>
+                                
+                                
+                                
+                                
+                                
                                 <td style="white-space: nowrap;">{{ lead.business_nature }}</td>
                                 
                                 <td>
@@ -330,7 +379,7 @@
                                     {% endif %}
                                 </td>
                                 
-                                <td>{{ lead.created_at|date:"d-m-y" }}</td>
+                                
                                 <td>
                                     {% if lead.voice_note %}
                                     <audio controls style="max-width: 200px;">
@@ -343,17 +392,7 @@
                                 </td>
                                 
   <!-- Other lead fields -->
-  <td>
-    <span 
-        class="badge status-badge {% if lead.planet_entry %}bg-success{% else %}bg-secondary{% endif %}"
-        lead-id="{{ lead.id }}"
-        status-type="planet_entry"
-        onclick="toggleStatus(this)"
-        style="cursor: pointer;"
-    >
-        {{ lead.planet_entry|yesno:"Entered,Not Entered" }}
-    </span>
-</td>
+  
                         <td>
                             <div class="btn-group" role="group">
                                 <a href="{% url 'edit_lead' lead.id %}" class="btn btn-warning btn-sm" style="margin-right: 1%;">

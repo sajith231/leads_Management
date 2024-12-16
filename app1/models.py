@@ -19,6 +19,39 @@ class Requirement(models.Model):
 
     def __str__(self):
         return self.name
+    
+class District(models.Model):
+    name = models.CharField(max_length=100)
+
+    class Meta:
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+class Area(models.Model):
+    name = models.CharField(max_length=100)
+    district = models.ForeignKey(District, on_delete=models.CASCADE, related_name='areas')
+
+    class Meta:
+        ordering = ['name']
+        unique_together = ('name', 'district')  # Ensure unique area names within a district
+
+    def __str__(self):
+        return f"{self.name} ({self.district.name} District)"
+    
+
+class Location(models.Model):
+    name = models.CharField(max_length=100)
+    district = models.ForeignKey(District, on_delete=models.CASCADE, related_name="locations")
+    area = models.ForeignKey(Area, on_delete=models.CASCADE, related_name="locations")
+
+    class Meta:
+        ordering = ['name']
+
+    def __str__(self):
+        return f"{self.name} - {self.area.name} ({self.district.name})"
+
 
 class User(models.Model):
     USER_LEVEL_CHOICES = [
@@ -88,7 +121,7 @@ class Lead(models.Model):
     firm_name = models.CharField(max_length=200)
     customer_name = models.CharField(max_length=100)
     contact_number = models.CharField(max_length=20)
-    location = models.CharField(max_length=200)
+    landmark = models.CharField(max_length=200)
     business_nature = models.CharField(
         max_length=100,
         choices=BUSINESS_NATURE_CHOICES,
@@ -104,29 +137,7 @@ class Lead(models.Model):
     remarks = models.TextField(blank=True, null=True)
     planet_entry = models.BooleanField(default=False)
     voice_note = models.FileField(upload_to='voice_notes/', null=True, blank=True)
-    KERALA_DISTRICTS = [
-        ('', 'Select District'),
-        ('alappuzha', 'Alappuzha'),
-        ('ernakulam', 'Ernakulam'),
-        ('idukki', 'Idukki'),
-        ('kannur', 'Kannur'),
-        ('kasaragod', 'Kasaragod'),
-        ('kollam', 'Kollam'),
-        ('kottayam', 'Kottayam'),
-        ('kozhikode', 'Kozhikode'),
-        ('malappuram', 'Malappuram'),
-        ('palakkad', 'Palakkad'),
-        ('pathanamthitta', 'Pathanamthitta'),
-        ('thiruvananthapuram', 'Thiruvananthapuram'),
-        ('thrissur', 'Thrissur'),
-        ('wayanad', 'Wayanad'),
-    ]
-
-    district = models.CharField(
-        max_length=50,
-        choices=KERALA_DISTRICTS,
-        default=''
-    )
+    location = models.ForeignKey(Location, on_delete=models.SET_NULL, null=True, blank=True, related_name="leads")
 
     def __str__(self):
         return f"{self.firm_name} - {self.customer_name}"

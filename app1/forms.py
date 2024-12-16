@@ -1,5 +1,5 @@
 from django import forms
-from .models import Branch, Requirement, Lead, User,LeadRequirementAmount
+from .models import Branch, Requirement, Lead, User,LeadRequirementAmount,District,Area,Location
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from django.contrib.auth.models import User as DjangoUser
@@ -19,6 +19,15 @@ class RequirementForm(forms.ModelForm):
         widgets = {
             'name': forms.TextInput(attrs={'placeholder': 'Enter Requirement Name'}),
         }
+
+class DistrictForm(forms.ModelForm):
+    class Meta:
+        model = District  # You'll need to create this model first
+        fields = ['name']
+        widgets = {
+            'name': forms.TextInput(attrs={'placeholder': 'Enter District Name', 'class': 'form-control'}),
+        }
+
 
 class UserForm(forms.ModelForm):
     password = forms.CharField(
@@ -156,9 +165,9 @@ class LeadForm(forms.ModelForm):
         model = Lead
         fields = [
             'firm_name', 'customer_name', 'contact_number',
-            'location', 'district', 'business_nature', 'requirements',
+            'landmark','location','business_nature', 'requirements',
             'follow_up_required', 'quotation_required', 'image', 'remarks',
-            # 'voice_note'
+            'voice_note'
         ]
         widgets = {
             'firm_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter Firm Name'}),
@@ -169,13 +178,16 @@ class LeadForm(forms.ModelForm):
                 'type': 'tel'  # Specify the input type as 'tel'
             }),
 
-            'location': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter Location'}),
-            'district': forms.Select(attrs={'class': 'form-select'}),
+            'landmark': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter Landmark'}),
+            
             'business_nature': forms.Select(attrs={'class': 'form-select'}),
             'requirements': DropdownCheckboxWidget(attrs={'class': 'form-select'}),
             'image': forms.FileInput(attrs={'class': 'form-control'}),
             'remarks': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'required': False}),
-            # 'voice_note': forms.FileInput(attrs={'class': 'form-control', 'accept': 'audio/*'}),
+            'voice_note': forms.FileInput(attrs={'class': 'form-control', 'accept': 'audio/*'}),
+            'district': forms.Select(attrs={'class': 'form-select', 'id': 'id_district'}),
+            'location': forms.Select(attrs={'class': 'form-select', 'id': 'id_location'}),
+            
         }
 
     def save(self, commit=True):
@@ -211,3 +223,65 @@ class LeadForm(forms.ModelForm):
                         continue
 
         return instance 
+    
+
+
+
+
+
+
+class AreaForm(forms.ModelForm):
+    district = forms.ModelChoiceField(
+        queryset=District.objects.all(),
+        empty_label="Select District",
+        label="District",
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+
+    class Meta:
+        model = Area
+        fields = ['name', 'district']
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'form-control', 
+                'placeholder': 'Enter Area Name'
+            })
+        }
+
+
+
+
+
+class LocationForm(forms.ModelForm):
+    district = forms.ModelChoiceField(
+        queryset=District.objects.all(),
+        empty_label="Select District",
+        widget=forms.Select(attrs={'class': 'form-select', 'id': 'id_district'})  # Add id for JS
+    )
+    area = forms.ModelChoiceField(
+        queryset=Area.objects.all(),
+        empty_label="Select Area",
+        widget=forms.Select(attrs={'class': 'form-select', 'id': 'id_area'})  # Add id for JS
+    )
+
+    class Meta:
+        model = Location
+        fields = ['name', 'district', 'area']
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter Location Name',
+            }),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Filter areas based on the selected district in POST data
+        if 'district' in self.data:
+            try:
+                district_id = int(self.data.get('district'))
+                self.fields['area'].queryset = Area.objects.filter(district_id=district_id).order_by('name')
+            except (ValueError, TypeError):
+                self.fields['area'].queryset = Area.objects.none()
+        elif self.instance.pk:  # Populate areas if editing an instance
+            self.fields['area'].queryset = self.instance.district.areas.order_by('name')

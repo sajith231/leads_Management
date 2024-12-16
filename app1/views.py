@@ -5,12 +5,12 @@ from django.contrib.auth.decorators import login_required
 from .forms import BranchForm,RequirementForm
 from django.http import JsonResponse
 from django.contrib.auth import logout as auth_logout
-from .forms import UserForm
+from .forms import UserForm,DistrictForm,District
 from .models import Branch, Requirement, User
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import authenticate, login as auth_login
 from django.contrib.auth.models import User as DjangoUser  # Added this import
-from .forms import BranchForm, RequirementForm, UserForm,LeadRequirementAmount
+from .forms import BranchForm, RequirementForm, UserForm,LeadRequirementAmount,AreaForm,LocationForm,Location
 from .models import Lead
 from .forms import LeadForm
 from django.db.models import Q
@@ -406,6 +406,7 @@ def edit_lead(request, lead_id):
 
 @login_required
 def all_leads(request):
+    # Check if the user is a superuser or a normal user
     if request.user.is_superuser or request.session.get('custom_user_id'):
         # Fetch the current user for lead creation
         if request.user.is_superuser:
@@ -434,7 +435,7 @@ def all_leads(request):
         else:
             leads = Lead.objects.filter(user=current_user)
 
-        leads = leads.select_related('user', 'user__branch').prefetch_related('requirements')
+        leads = leads.select_related('user', 'user__branch', 'location', 'location__area', 'location__district').prefetch_related('requirements')
 
         # Filter leads based on date range, if provided
         start_date = request.GET.get('start_date')
@@ -445,13 +446,13 @@ def all_leads(request):
             leads = leads.filter(created_at__gte=start_date, created_at__lt=end_date)
 
         # Filter leads based on branch, if provided and valid
-        branches = Branch.objects.all()  # Add this line to fix the NameError
+        branches = Branch.objects.all()
         branch_id = request.GET.get('branch')
         if branch_id and branch_id.isdigit():
             leads = leads.filter(user__branch_id=branch_id)
 
         # Filter leads based on user, if provided and valid
-        users = User.objects.all().select_related('branch')  # Add this line to fix potential user-related issues
+        users = User.objects.all().select_related('branch')
         user_id = request.GET.get('user')
         if user_id and user_id.isdigit():
             leads = leads.filter(user_id=user_id)
@@ -467,12 +468,16 @@ def all_leads(request):
         if firm_name:
             leads = leads.filter(firm_name__icontains=firm_name)
 
+        # Filter by planet entry status, if provided
         planet_entry = request.GET.get('planet_entry')
         if planet_entry in ['true', 'false']:
             leads = leads.filter(planet_entry=(planet_entry == 'true'))
 
         # Get all requirements for the filters
         requirements = Requirement.objects.all()
+
+        # Get all districts for the dropdown
+        districts = District.objects.all()
 
         # Prepare the LeadForm for adding new leads
         lead_form = LeadForm()
@@ -482,6 +487,7 @@ def all_leads(request):
             'branches': branches,
             'users': users,
             'requirements': requirements,
+            'districts': districts,
             'selected_user': user_id,
             'selected_branch': branch_id,
             'selected_requirements': requirement_ids,
@@ -491,6 +497,7 @@ def all_leads(request):
         })
     else:
         return redirect('user_dashboard')
+
 
 
 
@@ -580,4 +587,175 @@ def toggle_status(request):
     
 
 
+@login_required
+def add_district(request):
+    if request.method == 'POST':
+        form = DistrictForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'District added successfully!')
+            return redirect('all_districts')
+    else:
+        form = DistrictForm()
+    return render(request, 'add_districts.html', {'form': form})
 
+@login_required
+def all_districts(request):
+    districts = District.objects.all()
+    return render(request, 'all_districts.html', {'districts': districts})
+
+@login_required
+def delete_district(request, district_id):
+    if request.method == 'POST':
+        district = get_object_or_404(District, id=district_id)
+        district_name = district.name
+        try:
+            district.delete()
+            messages.success(request, f'District "{district_name}" deleted successfully.')
+        except Exception as e:
+            messages.error(request, f'Error deleting district: {str(e)}')
+    return redirect('all_districts')
+
+@login_required
+def edit_district(request, district_id):
+    district = get_object_or_404(District, id=district_id)
+    if request.method == 'POST':
+        form = DistrictForm(request.POST, instance=district)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'District "{district.name}" updated successfully.')
+            return redirect('all_districts')
+    else:
+        form = DistrictForm(instance=district)
+    return render(request, 'edit_district.html', {'form': form, 'district': district})
+
+
+from .models import Area
+
+
+@login_required
+def add_area(request):
+    if request.method == 'POST':
+        form = AreaForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Area added successfully!')
+            return redirect('all_areas')
+    else:
+        form = AreaForm()
+    return render(request, 'add_area.html', {'form': form})
+
+@login_required
+def all_areas(request):
+    areas = Area.objects.select_related('district').all()
+    return render(request, 'all_areas.html', {'areas': areas})
+
+@login_required
+def delete_area(request, area_id):
+    if request.method == 'POST':
+        area = get_object_or_404(Area, id=area_id)
+        area_name = area.name
+        try:
+            area.delete()
+            messages.success(request, f'Area "{area_name}" deleted successfully.')
+        except Exception as e:
+            messages.error(request, f'Error deleting area: {str(e)}')
+    return redirect('all_areas')
+
+@login_required
+def edit_area(request, area_id):
+    area = get_object_or_404(Area, id=area_id)
+    if request.method == 'POST':
+        form = AreaForm(request.POST, instance=area)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Area "{area.name}" updated successfully.')
+            return redirect('all_areas')
+    else:
+        form = AreaForm(instance=area)
+    return render(request, 'edit_area.html', {'form': form, 'area': area})
+
+
+
+
+
+
+from django.core.serializers.json import DjangoJSONEncoder
+from django.utils.safestring import mark_safe
+import json
+
+@login_required
+def add_location(request):
+    if request.method == 'POST':
+        form = LocationForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Location added successfully!')
+            return redirect('all_locations')
+    else:
+        form = LocationForm()
+
+    # Pass all areas to the template for client-side filtering
+    all_areas = Area.objects.values('id', 'name', 'district_id')
+    all_areas_json = mark_safe(json.dumps(list(all_areas), cls=DjangoJSONEncoder))
+
+    return render(request, 'add_location.html', {
+        'form': form,
+        'all_areas': all_areas_json
+    })
+
+@login_required
+def edit_location(request, location_id):
+    location = get_object_or_404(Location, id=location_id)
+    if request.method == 'POST':
+        form = LocationForm(request.POST, instance=location)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Location "{location.name}" updated successfully!')
+            return redirect('all_locations')
+    else:
+        form = LocationForm(instance=location)
+    return render(request, 'edit_location.html', {'form': form, 'location': location})
+
+@login_required
+def all_locations(request):
+    locations = Location.objects.select_related('district', 'area').all()
+    return render(request, 'all_locations.html', {'locations': locations})
+
+
+
+from django.http import JsonResponse
+from .models import Area
+
+def load_areas(request):
+    district_id = request.GET.get('district_id')  # Get district_id from query parameters
+    if district_id:
+        areas = Area.objects.filter(district_id=district_id).order_by('name')
+        return JsonResponse(list(areas.values('id', 'name')), safe=False)
+    return JsonResponse({'error': 'Invalid district_id'}, status=400)
+
+
+from django.http import JsonResponse
+from .models import Location
+
+def load_locations(request):
+    district_id = request.GET.get('district_id')
+    if district_id:
+        locations = Location.objects.filter(district_id=district_id).select_related('area').order_by('name')
+        return JsonResponse([
+            {
+                'id': location.id,
+                'name': location.name,
+                'area': location.area.name,
+                'district': location.district.name,
+            } for location in locations
+        ], safe=False)
+    return JsonResponse({'error': 'Invalid district_id'}, status=400)
+
+
+@login_required
+def delete_location(request, location_id):
+    location = get_object_or_404(Location, id=location_id)
+    location.delete()
+    messages.success(request, f'Location "{location.name}" deleted successfully!')
+    return redirect('all_locations')

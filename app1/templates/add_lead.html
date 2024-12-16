@@ -17,16 +17,19 @@
                         <input type="hidden" name="requirement_remarks_data" id="requirement_remarks_data">
                         
                         {% for field in form %}
-                            {% if field.name != 'requirements' and field.name != 'requirement_amounts_data' %}
-                            <div class="mb-3">
-                                <label class="form-label">{{ field.label }}</label>
-                                {{ field }}
-                                {% if field.errors %}
-                                    <div class="text-danger small">{{ field.errors }}</div>
-                                {% endif %}
-                            </div>
+                        {% if field.name != 'requirements' and field.name != 'requirement_amounts_data' %}
+                            {% if field.name != 'voice_note' %}
+                                <div class="mb-3">
+                                    <label class="form-label">{{ field.label }}</label>
+                                    {{ field }}
+                                    {% if field.errors %}
+                                        <div class="text-danger small">{{ field.errors }}</div>
+                                    {% endif %}
+                                </div>
                             {% endif %}
-                        {% endfor %}
+                        {% endif %}
+                    {% endfor %}
+                    
 
 
                         <div class="mb-3">
@@ -228,4 +231,5 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     </script>
+    
 {% endblock %}

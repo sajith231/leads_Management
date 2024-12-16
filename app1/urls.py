@@ -5,6 +5,7 @@ from django.urls import path
 from . import views
 from .views import edit_lead
 from .views import delete_lead 
+from .views import load_areas
 
 urlpatterns = [
     # Authentication
@@ -39,5 +40,28 @@ urlpatterns = [
     path('delete_lead/<int:lead_id>/', delete_lead, name='delete_lead'),
     path('toggle-planet-entry/', views.toggle_planet_entry, name='toggle_planet_entry'),
     path('toggle_status/', views.toggle_status, name='toggle_status'),
+
+
+    path('districts/add/', views.add_district, name='add_district'),
+    path('districts/', views.all_districts, name='all_districts'),
+    path('districts/delete/<int:district_id>/', views.delete_district, name='delete_district'),
+    path('districts/edit/<int:district_id>/', views.edit_district, name='edit_district'),
+
+    path('area/add/', views.add_area, name='add_area'),
+    path('area/all/', views.all_areas, name='all_areas'),
+    path('area/delete/<int:area_id>/', views.delete_area, name='delete_area'),
+    path('area/edit/<int:area_id>/', views.edit_area, name='edit_area'),
+
+    path('locations/', views.all_locations, name='all_locations'),
+    path('locations/add/', views.add_location, name='add_location'),
+    path('locations/<int:location_id>/edit/', views.edit_location, name='edit_location'),
+    path('locations/<int:location_id>/delete/', views.delete_location, name='delete_location'),
+    path('ajax/load-areas/', load_areas, name='load_areas'),
+    path('load-locations/', views.load_locations, name='load_locations'),
+    
+
+    
+
+    
 
 ]
