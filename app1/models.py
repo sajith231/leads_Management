@@ -141,6 +141,7 @@ class Lead(models.Model):
 
     def __str__(self):
         return f"{self.firm_name} - {self.customer_name}"
+    
 
 class LeadRequirementAmount(models.Model):
     lead = models.ForeignKey(Lead, on_delete=models.CASCADE, related_name='requirement_amounts')

@@ -47,7 +47,10 @@
                             <th>Customer Name</th>
                             <th>Contact Number</th>
                             <th>Landmark</th>
+                            <th>Location</th>
+                            <th>Area</th>
                             <th>District</th>
+                            
                             <th>Business Nature</th>
                             <th>Requirements</th>
                             <th>Requirements Remarks</th>
@@ -68,10 +71,31 @@
                             <td style="white-space: nowrap;">{{ lead.customer_name }}</td>
                             <td style="white-space: nowrap;">{{ lead.contact_number }}</td>
                             <td style="white-space: nowrap;">{{ lead.landmark }}</td>
-                            <td style="white-space: nowrap;">{{ lead.district }}</td>
+                            <td>
+                                {% if lead.location %}
+                                    {{ lead.location.name }}
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if lead.location and lead.location.area %}
+                                    {{ lead.location.area.name }}
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if lead.location and lead.location.district %}
+                                    {{ lead.location.district.name }}
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </td>
+                            
                             <td style="white-space: nowrap;">{{ lead.business_nature }}</td>
                             <td>
-                                
+                                <!-- hai -->
                                 {% for req in lead.requirements.all %}
                                     <div class="badge bg-primary mb-1 d-block">
                                         {{ req.name }} - ₹
