@@ -5,30 +5,34 @@
 <h2>Add Location</h2>
 <form method="post">
     {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit" class="btn btn-primary">Save</button>
+    <div class="form-group">
+        {{ form.name.label_tag }}
+        {{ form.name }}
+    </div>
+    <div class="form-group">
+        {{ form.area.label_tag }}
+        {{ form.area }}
+    </div>
+    <button type="submit" class="btn btn-primary" style="margin-top: 1%;">Save</button>
 </form>
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        const districtSelect = document.querySelector('#id_district');
         const areaSelect = document.querySelector('#id_area');
-
-        const allAreas = {{ all_areas|safe }}; // Pass all areas from the backend
-
-        districtSelect.addEventListener('change', function () {
-            const districtId = this.value;
-
-            // Clear and populate area dropdown
-            areaSelect.innerHTML = '<option value="">Select Area</option>';
-            allAreas.forEach(area => {
-                if (area.district_id == districtId) {
-                    const option = document.createElement('option');
-                    option.value = area.id;
-                    option.textContent = area.name;
-                    areaSelect.appendChild(option);
-                }
-            });
+        
+        // Display district name dynamically when area is selected
+        areaSelect.addEventListener('change', function () {
+            const selectedArea = this.options[this.selectedIndex];
+            const districtName = selectedArea.getAttribute('data-district');
+            
+            // Optionally, you can display the district name somewhere on the page
+            let districtDisplay = document.getElementById('district-display');
+            if (!districtDisplay) {
+                districtDisplay = document.createElement('div');
+                districtDisplay.id = 'district-display';
+                this.closest('form').insertBefore(districtDisplay, this.closest('.form-group').nextSibling);
+            }
+            districtDisplay.innerHTML = `<strong>District:</strong> ${selectedArea.getAttribute('data-district-name')}`;
         });
     });
 </script>

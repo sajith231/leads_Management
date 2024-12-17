@@ -164,10 +164,9 @@ class LeadForm(forms.ModelForm):
     class Meta:
         model = Lead
         fields = [
-            'firm_name', 'customer_name', 'contact_number',
-            'landmark','location','business_nature', 'requirements',
-            'follow_up_required', 'quotation_required', 'image', 'remarks',
-            'voice_note'
+            'firm_name', 'customer_name', 'contact_number', 'landmark', 
+            'location', 'district', 'area', 'business_nature', 'requirements',
+            'follow_up_required', 'quotation_required', 'image', 'remarks', 'voice_note'
         ]
         widgets = {
             'firm_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter Firm Name'}),
@@ -187,6 +186,8 @@ class LeadForm(forms.ModelForm):
             'voice_note': forms.FileInput(attrs={'class': 'form-control', 'accept': 'audio/*'}),
             'district': forms.Select(attrs={'class': 'form-select', 'id': 'id_district'}),
             'location': forms.Select(attrs={'class': 'form-select', 'id': 'id_location'}),
+            'district': forms.TextInput(attrs={'class': 'form-control', 'id': 'id_district', 'readonly': True}),
+            'area': forms.TextInput(attrs={'class': 'form-control', 'id': 'id_area', 'readonly': True}),
             
         }
 

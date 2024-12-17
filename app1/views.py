@@ -759,3 +759,23 @@ def delete_location(request, location_id):
     location.delete()
     messages.success(request, f'Location "{location.name}" deleted successfully!')
     return redirect('all_locations')
+
+
+
+
+from django.http import JsonResponse
+from .models import Location
+
+def get_location_details(request):
+    location_id = request.GET.get('location_id')
+    if location_id:
+        try:
+            location = Location.objects.get(id=location_id)
+            data = {
+                'district': location.district.name,
+                'area': location.area.name,
+            }
+            return JsonResponse(data)
+        except Location.DoesNotExist:
+            return JsonResponse({'error': 'Location not found'}, status=404)
+    return JsonResponse({'error': 'No location ID provided'}, status=400)

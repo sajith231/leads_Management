@@ -138,6 +138,8 @@ class Lead(models.Model):
     planet_entry = models.BooleanField(default=False)
     voice_note = models.FileField(upload_to='voice_notes/', null=True, blank=True)
     location = models.ForeignKey(Location, on_delete=models.SET_NULL, null=True, blank=True, related_name="leads")
+    district = models.ForeignKey(District, on_delete=models.SET_NULL, null=True, blank=True, related_name="leads")
+    area = models.ForeignKey(Area, on_delete=models.SET_NULL, null=True, blank=True, related_name="leads")
 
     def __str__(self):
         return f"{self.firm_name} - {self.customer_name}"

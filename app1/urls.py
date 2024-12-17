@@ -58,6 +58,8 @@ urlpatterns = [
     path('locations/<int:location_id>/delete/', views.delete_location, name='delete_location'),
     path('ajax/load-areas/', load_areas, name='load_areas'),
     path('load-locations/', views.load_locations, name='load_locations'),
+    path('get-location-details/', views.get_location_details, name='get_location_details'),
+
     
 
     
