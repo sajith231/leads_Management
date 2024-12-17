@@ -186,8 +186,8 @@ class LeadForm(forms.ModelForm):
             'voice_note': forms.FileInput(attrs={'class': 'form-control', 'accept': 'audio/*'}),
             'district': forms.Select(attrs={'class': 'form-select', 'id': 'id_district'}),
             'location': forms.Select(attrs={'class': 'form-select', 'id': 'id_location'}),
-            'district': forms.Select(attrs={'class': 'form-select', 'id': 'id_district'}),
-            'area': forms.Select(attrs={'class': 'form-select', 'id': 'id_area'}),
+            'district': forms.TextInput(attrs={'class': 'form-select', 'id': 'id_district','readonly': True}),
+            'area': forms.TextInput(attrs={'class': 'form-control', 'id': 'id_area', 'readonly': True}),
 
 
             
