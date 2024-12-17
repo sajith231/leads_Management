@@ -6,193 +6,110 @@
     <h2 class="mb-4">Edit Lead: {{ lead.firm_name }}</h2>
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
-        
+
         <!-- Firm Name -->
         <div class="mb-3">
             {{ form.firm_name.label_tag }}
             {{ form.firm_name }}
-            {% if form.firm_name.errors %}
-            <div class="text-danger small">
-                {{ form.firm_name.errors }}
-            </div>
-            {% endif %}
         </div>
 
         <!-- Customer Name -->
         <div class="mb-3">
             {{ form.customer_name.label_tag }}
             {{ form.customer_name }}
-            {% if form.customer_name.errors %}
-            <div class="text-danger small">
-                {{ form.customer_name.errors }}
-            </div>
-            {% endif %}
         </div>
 
         <!-- Contact Number -->
         <div class="mb-3">
             {{ form.contact_number.label_tag }}
             {{ form.contact_number }}
-            {% if form.contact_number.errors %}
-            <div class="text-danger small">
-                {{ form.contact_number.errors }}
-            </div>
-            {% endif %}
         </div>
 
-        <!-- Location -->
+        <!-- Landmark -->
         <div class="mb-3">
-            {{ form.location.label_tag }}
-            {{ form.location }}
-            {% if form.location.errors %}
-            <div class="text-danger small">
-                {{ form.location.errors }}
-            </div>
-            {% endif %}
+            {{ form.landmark.label_tag }}
+            {{ form.landmark }}
         </div>
 
-        <!-- District -->
-        <div class="mb-3">
-            {{ form.district.label_tag }}
-            {{ form.district }}
-            {% if form.district.errors %}
-            <div class="text-danger small">
-                {{ form.district.errors }}
+        <!-- Location, District, and Area -->
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                {{ form.district.label_tag }}
+                {{ form.district }}
             </div>
-            {% endif %}
+            <div class="col-md-4 mb-3">
+                {{ form.area.label_tag }}
+                {{ form.area }}
+            </div>
+            <div class="col-md-4 mb-3">
+                {{ form.location.label_tag }}
+                {{ form.location }}
+            </div>
         </div>
 
         <!-- Business Nature -->
         <div class="mb-3">
             {{ form.business_nature.label_tag }}
             {{ form.business_nature }}
-            {% if form.business_nature.errors %}
-            <div class="text-danger small">
-                {{ form.business_nature.errors }}
-            </div>
-            {% endif %}
         </div>
 
-        <!-- Image -->
+        <!-- Image Preview and Upload -->
         <div class="mb-3">
             {{ form.image.label_tag }}
             {{ form.image }}
-            {% if form.image.errors %}
-            <div class="text-danger small">
-                {{ form.image.errors }}
-            </div>
-            {% endif %}
             {% if lead.image %}
             <div class="mt-2">
-                <img src="{{ lead.image.url }}" alt="Current image" class="img-thumbnail" style="max-width: 200px">
+                <img src="{{ lead.image.url }}" class="img-thumbnail" style="max-width: 150px;">
             </div>
             {% endif %}
         </div>
 
-        <!-- Requirements Dropdown -->
-        <!-- <div class="mb-3">
-            <label class="form-label">Requirements</label>
-            <div class="dropdown">
-                <button class="btn btn-secondary dropdown-toggle" type="button" id="requirementsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                    Select Requirements
-                </button>
-                <div>
-                    <ul class="dropdown-menu p-3" aria-labelledby="requirementsDropdown" 
-                        style="max-width: 100%; width: 700px; max-height: 500px; overflow-y: auto;">
-                        {% for requirement in requirements %}
-                        <li class="mb-3 border rounded p-2">
-                            <div class="d-grid gap-3" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); place-items: center;">
-                                <div class="form-check">
-                                    <input type="checkbox" 
-                                           name="requirements" 
-                                           value="{{ requirement.id }}" 
-                                           {% if requirement in lead.requirements.all %}checked{% endif %} 
-                                           class="form-check-input" 
-                                           id="req_{{ requirement.id }}">
-                                    <label class="form-check-label" for="req_{{ requirement.id }}" style="margin-left: 0px;">{{ requirement.name }}</label>
-                                </div>
-                                <div class="d-flex flex-column">
-                                    <label class="form-label mb-0">Amount:</label>
-                                    <input type="number" 
-                                           class="form-control requirement-amount" 
-                                           data-requirement-id="{{ requirement.id }}"
-                                           value="{{ existing_amounts|get_item:requirement.id|default:'0' }}"
-                                           step="0.01" c
-                                           style="max-width: 100px;">
-                                </div>
-                                <div class="d-flex flex-column">
-                                    <label class="form-label mb-0">Remarks:</label>
-                                    <textarea class="form-control requirement-remarks" 
-                                              data-requirement-id="{{ requirement.id }}" 
-                                              rows="1" 
-                                              style="max-width: 150px;">{% for amount in lead.requirement_amounts.all %}{% if amount.requirement_id == requirement.id %}{{ amount.remarks }}{% endif %}{% endfor %}</textarea>
-                                </div>
-                            </div>
-                        </li>
-                        {% endfor %}
-                    </ul>
-                </div>
-            </div>
-        </div> -->
+        <!-- Requirements -->
         <div class="mb-3">
             <label class="form-label">Requirements</label>
             <div class="dropdown">
-                <button class="btn btn-secondary dropdown-toggle" type="button" id="requirementsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
                     Select Requirements
                 </button>
-                <div>
-                    <ul class="dropdown-menu p-3" aria-labelledby="requirementsDropdown" 
-                        style="max-width: 100%; width: 100%; max-height: 500px; overflow-y: auto;">
-                        {% for requirement in requirements %}
-                        <li class="mb-3 border rounded p-2">
-                            <div class="row g-3 align-items-center">
-                                <!-- Checkbox Section -->
-                                <div class="col-12 col-md-4 text-center">
-                                    <div class="form-check">
-                                        <input type="checkbox" 
-                                               name="requirements" 
-                                               value="{{ requirement.id }}" 
-                                               {% if requirement in lead.requirements.all %}checked{% endif %} 
-                                               class="form-check-input" 
-                                               id="req_{{ requirement.id }}">
-                                        <label class="form-check-label" for="req_{{ requirement.id }}">{{ requirement.name }}</label>
-                                    </div>
-                                </div>
-                                <!-- Amount Section -->
-                                <div class="col-12 col-md-4 text-center">
-                                    <label class="form-label mb-0">Amount:</label>
-                                    <input type="number" 
-                                           class="form-control requirement-amount" 
-                                           data-requirement-id="{{ requirement.id }}"
-                                           value="{{ existing_amounts|get_item:requirement.id|default:'0' }}"
-                                           step="0.01">
-                                </div>
-                                <!-- Remarks Section -->
-                                <div class="col-12 col-md-4 text-center">
-                                    <label class="form-label mb-0">Remarks:</label>
-                                    <textarea class="form-control requirement-remarks" 
-                                              data-requirement-id="{{ requirement.id }}" 
-                                              rows="1">{% for amount in lead.requirement_amounts.all %}{% if amount.requirement_id == requirement.id %}{{ amount.remarks }}{% endif %}{% endfor %}</textarea>
+                <ul class="dropdown-menu p-3" style="max-height: 400px; overflow-y: auto;">
+                    {% for requirement in requirements %}
+                    <li class="mb-3 border rounded p-2">
+                        <div class="row g-3 align-items-center">
+                            <div class="col-4">
+                                <div class="form-check">
+                                    <input type="checkbox" name="requirements" value="{{ requirement.id }}"
+                                           {% if requirement in lead.requirements.all %}checked{% endif %}
+                                           class="form-check-input" id="req_{{ requirement.id }}">
+                                    <label class="form-check-label" for="req_{{ requirement.id }}">{{ requirement.name }}</label>
                                 </div>
                             </div>
-                        </li>
-                        {% endfor %}
-                    </ul>
-                </div>
+                            <div class="col-4">
+                                <label class="form-label mb-0">Amount:</label>
+                                <input type="number" class="form-control requirement-amount"
+                                       data-requirement-id="{{ requirement.id }}"
+                                       value="{{ existing_amounts|get_item:requirement.id|default:'0' }}">
+                            </div>
+                            <div class="col-4">
+                                <label class="form-label mb-0">Remarks:</label>
+                                <textarea class="form-control requirement-remarks" rows="1"
+                                          data-requirement-id="{{ requirement.id }}">{% for ra in lead.requirement_amounts.all %}
+                                          {% if ra.requirement_id == requirement.id %}{{ ra.remarks }}{% endif %}
+                                          {% endfor %}</textarea>
+                            </div>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
             </div>
         </div>
-        
-        
 
         <!-- Follow-Up and Quotation -->
-        <div class="d-flex justify-content-start align-items-center gap-3 mb-3">
+        <div class="d-flex gap-3 mb-3">
             <div class="form-check">
-                {{ form.follow_up_required }}
-                {{ form.follow_up_required.label_tag }}
+                {{ form.follow_up_required }} {{ form.follow_up_required.label_tag }}
             </div>
             <div class="form-check">
-                {{ form.quotation_required }}
-                {{ form.quotation_required.label_tag }}
+                {{ form.quotation_required }} {{ form.quotation_required.label_tag }}
             </div>
         </div>
 
@@ -200,13 +117,9 @@
         <div class="mb-3">
             {{ form.remarks.label_tag }}
             {{ form.remarks }}
-            {% if form.remarks.errors %}
-            <div class="text-danger small">
-                {{ form.remarks.errors }}
-            </div>
-            {% endif %}
         </div>
 
+        <!-- Hidden Inputs for Requirement Data -->
         <input type="hidden" name="requirement_amounts_data" id="requirement_amounts_data">
         <input type="hidden" name="requirement_remarks_data" id="requirement_remarks_data">
 
@@ -218,38 +131,37 @@
     </form>
 </div>
 
+<!-- JavaScript for Requirement Data -->
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     function updateRequirementData() {
         const amounts = {};
         const remarks = {};
-        
+
         document.querySelectorAll('.dropdown-menu li').forEach(item => {
             const checkbox = item.querySelector('input[type="checkbox"]');
             const amountInput = item.querySelector('.requirement-amount');
             const remarksInput = item.querySelector('.requirement-remarks');
-            
+
             if (checkbox.checked) {
-                const reqId = checkbox.value;
-                amounts[reqId] = amountInput.value || '0';
-                remarks[reqId] = remarksInput.value || '';
+                amounts[checkbox.value] = amountInput.value || '0';
+                remarks[checkbox.value] = remarksInput.value || '';
             }
         });
-        
+
         document.getElementById('requirement_amounts_data').value = JSON.stringify(amounts);
         document.getElementById('requirement_remarks_data').value = JSON.stringify(remarks);
     }
 
-    // Add event listeners to checkboxes, amount inputs, and remarks textareas
-    document.querySelectorAll('input[type="checkbox"], .requirement-amount, .requirement-remarks')
+    document.querySelectorAll('.requirement-amount, .requirement-remarks, input[type="checkbox"]')
         .forEach(element => {
-            element.addEventListener('change', updateRequirementData);
             element.addEventListener('input', updateRequirementData);
+            element.addEventListener('change', updateRequirementData);
         });
 
-    // Initialize the hidden fields
     updateRequirementData();
 });
 </script>
 
 {% endblock %}
+

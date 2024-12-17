@@ -469,9 +469,10 @@ def all_leads(request):
             leads = leads.filter(firm_name__icontains=firm_name)
 
         # Filter by planet entry status, if provided
-        planet_entry = request.GET.get('planet_entry')
-        if planet_entry in ['true', 'false']:
-            leads = leads.filter(planet_entry=(planet_entry == 'true'))
+        planet_entry = request.GET.get('planet_entry', 'false')  # Default to 'false'
+        if planet_entry == 'false':
+          leads = leads.filter(planet_entry=False)
+
 
         # Get all requirements for the filters
         requirements = Requirement.objects.all()
