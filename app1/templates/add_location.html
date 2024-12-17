@@ -13,26 +13,24 @@
         {{ form.area.label_tag }}
         {{ form.area }}
     </div>
+    <div id="district-display" class="form-group" style="margin-top: 1%;">
+        <label>District</label>
+        <input type="text" id="district-name" class="form-control" readonly>
+    </div>
     <button type="submit" class="btn btn-primary" style="margin-top: 1%;">Save</button>
 </form>
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const areaSelect = document.querySelector('#id_area');
-        
-        // Display district name dynamically when area is selected
+        const districtInput = document.querySelector('#district-name');
+        const areas = JSON.parse('{{ all_areas|safe }}'); // Load areas from the server
+
+        // Update the district input field when an area is selected
         areaSelect.addEventListener('change', function () {
-            const selectedArea = this.options[this.selectedIndex];
-            const districtName = selectedArea.getAttribute('data-district');
-            
-            // Optionally, you can display the district name somewhere on the page
-            let districtDisplay = document.getElementById('district-display');
-            if (!districtDisplay) {
-                districtDisplay = document.createElement('div');
-                districtDisplay.id = 'district-display';
-                this.closest('form').insertBefore(districtDisplay, this.closest('.form-group').nextSibling);
-            }
-            districtDisplay.innerHTML = `<strong>District:</strong> ${selectedArea.getAttribute('data-district-name')}`;
+            const selectedArea = this.value;
+            const selectedAreaData = areas.find(area => area.id == selectedArea);
+            districtInput.value = selectedAreaData ? selectedAreaData['district__name'] : '';
         });
     });
 </script>

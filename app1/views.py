@@ -692,17 +692,20 @@ def add_location(request):
             form.save()
             messages.success(request, 'Location added successfully!')
             return redirect('all_locations')
+        else:
+            messages.error(request, 'Please correct the errors below.')
     else:
         form = LocationForm()
 
     # Pass all areas to the template for client-side filtering
-    all_areas = Area.objects.values('id', 'name', 'district_id')
+    all_areas = Area.objects.select_related('district').values('id', 'name', 'district_id', 'district__name')
     all_areas_json = mark_safe(json.dumps(list(all_areas), cls=DjangoJSONEncoder))
 
     return render(request, 'add_location.html', {
         'form': form,
-        'all_areas': all_areas_json
+        'all_areas': all_areas_json,
     })
+
 
 @login_required
 def edit_location(request, location_id):

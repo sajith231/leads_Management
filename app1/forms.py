@@ -186,8 +186,10 @@ class LeadForm(forms.ModelForm):
             'voice_note': forms.FileInput(attrs={'class': 'form-control', 'accept': 'audio/*'}),
             'district': forms.Select(attrs={'class': 'form-select', 'id': 'id_district'}),
             'location': forms.Select(attrs={'class': 'form-select', 'id': 'id_location'}),
-            'district': forms.TextInput(attrs={'class': 'form-control', 'id': 'id_district', 'readonly': True}),
-            'area': forms.TextInput(attrs={'class': 'form-control', 'id': 'id_area', 'readonly': True}),
+            'district': forms.Select(attrs={'class': 'form-select', 'id': 'id_district'}),
+            'area': forms.Select(attrs={'class': 'form-select', 'id': 'id_area'}),
+
+
             
         }
 
@@ -254,20 +256,15 @@ class AreaForm(forms.ModelForm):
 
 
 class LocationForm(forms.ModelForm):
-    district = forms.ModelChoiceField(
-        queryset=District.objects.all(),
-        empty_label="Select District",
-        widget=forms.Select(attrs={'class': 'form-select', 'id': 'id_district'})  # Add id for JS
-    )
     area = forms.ModelChoiceField(
-        queryset=Area.objects.all(),
+        queryset=Area.objects.select_related('district').all(),
         empty_label="Select Area",
         widget=forms.Select(attrs={'class': 'form-select', 'id': 'id_area'})  # Add id for JS
     )
 
     class Meta:
         model = Location
-        fields = ['name', 'district', 'area']
+        fields = ['name', 'area']
         widgets = {
             'name': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -275,14 +272,10 @@ class LocationForm(forms.ModelForm):
             }),
         }
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Filter areas based on the selected district in POST data
-        if 'district' in self.data:
-            try:
-                district_id = int(self.data.get('district'))
-                self.fields['area'].queryset = Area.objects.filter(district_id=district_id).order_by('name')
-            except (ValueError, TypeError):
-                self.fields['area'].queryset = Area.objects.none()
-        elif self.instance.pk:  # Populate areas if editing an instance
-            self.fields['area'].queryset = self.instance.district.areas.order_by('name')
+    def save(self, commit=True):
+        # Automatically assign district based on the selected area
+        instance = super().save(commit=False)
+        instance.district = instance.area.district
+        if commit:
+            instance.save()
+        return instance
