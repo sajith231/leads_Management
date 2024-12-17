@@ -468,12 +468,13 @@ def all_leads(request):
         if firm_name:
             leads = leads.filter(firm_name__icontains=firm_name)
 
-        # Filter by planet entry status, if provided
-        planet_entry = request.GET.get('planet_entry')
+       # Filter by planet entry status, if provided
+        planet_entry = request.GET.get('planet_entry', 'false')  # Default to 'false' (Not Entered)
         if planet_entry == 'false':  # Not Entered
             leads = leads.filter(planet_entry=False)
         elif planet_entry == 'true':  # Entered
             leads = leads.filter(planet_entry=True)
+        # If planet_entry is None or other, do not filter
         # If planet_entry is None, do not filter (default behavior)
 
 
@@ -800,3 +801,16 @@ def get_location_details(request):
         return JsonResponse(data)
     except Location.DoesNotExist:
         return JsonResponse({'error': 'Location not found'}, status=404)
+
+
+
+
+
+
+
+
+
+
+
+
+
