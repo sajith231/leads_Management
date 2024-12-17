@@ -469,9 +469,15 @@ def all_leads(request):
             leads = leads.filter(firm_name__icontains=firm_name)
 
         # Filter by planet entry status, if provided
-        planet_entry = request.GET.get('planet_entry', 'false')  # Default to 'false'
-        if planet_entry == 'false':
-          leads = leads.filter(planet_entry=False)
+        planet_entry = request.GET.get('planet_entry')
+        if planet_entry == 'false':  # Not Entered
+            leads = leads.filter(planet_entry=False)
+        elif planet_entry == 'true':  # Entered
+            leads = leads.filter(planet_entry=True)
+        # If planet_entry is None, do not filter (default behavior)
+
+
+
 
 
         # Get all requirements for the filters
@@ -767,19 +773,30 @@ def delete_location(request, location_id):
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+# this is for view fields district and area
 from django.http import JsonResponse
 from .models import Location
 
 def get_location_details(request):
     location_id = request.GET.get('location_id')
-    if location_id:
-        try:
-            location = Location.objects.get(id=location_id)
-            data = {
-                'district': location.district.name,
-                'area': location.area.name,
-            }
-            return JsonResponse(data)
-        except Location.DoesNotExist:
-            return JsonResponse({'error': 'Location not found'}, status=404)
-    return JsonResponse({'error': 'No location ID provided'}, status=400)
+    try:
+        location = Location.objects.get(id=location_id)
+        data = {
+            'district': location.district.id,
+            'area': location.area.id,
+        }
+        return JsonResponse(data)
+    except Location.DoesNotExist:
+        return JsonResponse({'error': 'Location not found'}, status=404)

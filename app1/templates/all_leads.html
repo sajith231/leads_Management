@@ -189,10 +189,12 @@
                     {% endfor %}
                 </select>
                 <select name="planet_entry" class="form-select" onchange="this.form.submit()">
-                    <option value="" {% if not selected_planet_entry %}selected{% endif %}>Planet Entry - All</option>
                     <option value="false" {% if selected_planet_entry == 'false' %}selected{% endif %}>Not Entered</option>
+                    <option value="" {% if not selected_planet_entry %}selected{% endif %}>Planet Entry - All</option>
+                    
                     <option value="true" {% if selected_planet_entry == 'true' %}selected{% endif %}>Entered</option>
-                </select></div>
+                </select>
+                </div>
                 
                 
                 
@@ -262,7 +264,7 @@
                                 <td style="white-space: nowrap;">{{ lead.firm_name|upper }}</td>
                                 <td style="white-space: nowrap;">{{ lead.customer_name|upper }}</td>
                                 <td style="white-space: nowrap;">{{ lead.contact_number }}</td>
-                                <td style="white-space: nowrap;">{{ lead.landmark }}</td>
+                                <td style="white-space: nowrap;">{{ lead.landmark|upper  }}</td>
                                 <td>
                                     {% if lead.location %}
                                         {{ lead.location.name }}

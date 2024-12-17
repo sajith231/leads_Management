@@ -67,10 +67,10 @@
                         {% for lead in leads|dictsort:"created_at"|slice:":"|dictsortreversed:"created_at" %}           
                         <tr>
                             <td>{{ forloop.counter }}</td>     
-                            <td style="white-space: nowrap;">{{ lead.firm_name }}</td>
-                            <td style="white-space: nowrap;">{{ lead.customer_name }}</td>
+                            <td style="white-space: nowrap;">{{ lead.firm_name|upper  }}</td>
+                            <td style="white-space: nowrap;">{{ lead.customer_name|upper  }}</td>
                             <td style="white-space: nowrap;">{{ lead.contact_number }}</td>
-                            <td style="white-space: nowrap;">{{ lead.landmark }}</td>
+                            <td style="white-space: nowrap;">{{ lead.landmark|upper  }}</td>
                             <td>
                                 {% if lead.location %}
                                     {{ lead.location.name }}

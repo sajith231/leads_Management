@@ -258,5 +258,34 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     </script>
+
+<!-- this is for view fields district and area  -->
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const locationField = document.getElementById("id_location");
+        const districtField = document.getElementById("id_district");
+        const areaField = document.getElementById("id_area");
+
+        locationField.addEventListener("change", function () {
+            const locationId = locationField.value;
+            if (locationId) {
+                fetch(`/get-location-details/?location_id=${locationId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.district) {
+                            districtField.value = data.district;
+                        }
+                        if (data.area) {
+                            areaField.value = data.area;
+                        }
+                    })
+                    .catch(error => console.error("Error fetching location details:", error));
+            } else {
+                districtField.value = "";
+                areaField.value = "";
+            }
+        });
+    });
+</script>
     
 {% endblock %}
