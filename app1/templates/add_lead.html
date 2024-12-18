@@ -17,18 +17,52 @@
                         <input type="hidden" name="requirement_remarks_data" id="requirement_remarks_data">
                         
                         {% for field in form %}
-                        {% if field.name != 'requirements' and field.name != 'requirement_amounts_data' %}
-                            {% if field.name != 'voice_note' %}
-                                <div class="mb-3">
-                                    <label class="form-label">{{ field.label }}</label>
-                                    {{ field }}
-                                    {% if field.errors %}
-                                        <div class="text-danger small">{{ field.errors }}</div>
-                                    {% endif %}
-                                </div>
-                            {% endif %}
-                        {% endif %}
-                    {% endfor %}
+    {% if field.name == 'landmark' %}
+        <!-- Render Landmark Field -->
+        <div class="mb-3">
+            <label class="form-label">{{ field.label }}</label>
+            {{ field }}
+            {% if field.errors %}
+                <div class="text-danger small">{{ field.errors }}</div>
+            {% endif %}
+        </div>
+
+        <!-- Render Location, District, and Area fields AFTER Landmark -->
+        <div class="mb-3">
+            <label class="form-label">{{ form.location.label }}</label>
+            {{ form.location }}
+            {% if form.location.errors %}
+                <div class="text-danger small">{{ form.location.errors }}</div>
+            {% endif %}
+        </div>
+        
+        <div class="mb-3">
+            <label class="form-label">{{ form.district.label }}</label>
+            {{ form.district }}
+            {% if form.district.errors %}
+                <div class="text-danger small">{{ form.district.errors }}</div>
+            {% endif %}
+        </div>
+        
+        <div class="mb-3">
+            <label class="form-label">{{ form.area.label }}</label>
+            {{ form.area }}
+            {% if form.area.errors %}
+                <div class="text-danger small">{{ form.area.errors }}</div>
+            {% endif %}
+        </div>
+    {% elif field.name not in 'location district area requirements requirement_amounts_data voice_note' %}
+        <!-- Render all other fields excluding specific ones -->
+        <div class="mb-3">
+            <label class="form-label">{{ field.label }}</label>
+            {{ field }}
+            {% if field.errors %}
+                <div class="text-danger small">{{ field.errors }}</div>
+            {% endif %}
+        </div>
+    {% endif %}
+{% endfor %}
+
                     
 
 

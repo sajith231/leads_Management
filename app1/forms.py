@@ -188,6 +188,7 @@ class LeadForm(forms.ModelForm):
             'location': forms.Select(attrs={'class': 'form-select', 'id': 'id_location','readonly': True}),
             'district': forms.Select(attrs={'class': 'form-select', 'id': 'id_district'}),
             'area': forms.Select(attrs={'class': 'form-select', 'id': 'id_area'}),
+            
 
             # 'district': forms.TextInput(attrs={'class': 'form-select', 'id': 'id_district','readonly': True}),
             # 'area': forms.TextInput(attrs={'class': 'form-control', 'id': 'id_area', 'readonly': True}),
@@ -195,6 +196,7 @@ class LeadForm(forms.ModelForm):
 
             
         }
+    
 
     def save(self, commit=True):
         instance = super().save(commit=False)

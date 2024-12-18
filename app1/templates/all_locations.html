@@ -3,31 +3,36 @@
 
 {% block content %}
 
-<div style="display: flex;justify-content: end;"><a href="{% url 'add_location' %}" class="btn btn-primary">Add Location</a></div>
-<table class="table">
-    <thead>
+<div style="display: flex; justify-content: end; margin-bottom: 20px;">
+    <a href="{% url 'add_location' %}" class="btn btn-primary">Add Location</a>
+</div>
+
+<table class="table" style="width: 100%; border-collapse: collapse; margin-top: 10px; background-color: #f9f9f9;">
+    <thead >
         <tr>
-            <th>Name</th>
-            <th>District</th>
-            <th>Area</th>
-            <th>Actions</th>
+            <th style="padding: 10px; border: 1px solid #ddd;">Name</th>
+            <th style="padding: 10px; border: 1px solid #ddd;">District</th>
+            <th style="padding: 10px; border: 1px solid #ddd;">Area</th>
+            <th style="padding: 10px; border: 1px solid #ddd;">Actions</th>
         </tr>
     </thead>
     <tbody>
         {% for location in locations %}
-        <tr>
-            <td>{{ location.name }}</td>
-            <td>{{ location.district.name }}</td>
-            <td>{{ location.area.name }}</td>
-            <td>
-                <a href="{% url 'edit_location' location.id %}" class="btn btn-warning"><i class="fas fa-edit"></i></a>
-                <a href="{% url 'delete_location' location.id %}" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this location?');"><i class="fas fa-trash-alt"></i></a>
+        <tr style="{% cycle 'background-color: #ffffff;' 'background-color: #f2f2f2;' %}">
+            <td style="padding: 10px; border: 1px solid #ddd; text-transform: uppercase;">{{ location.name }}</td>
+            <td style="padding: 10px; border: 1px solid #ddd; text-transform: uppercase;">{{ location.district.name }}</td>
+            <td style="padding: 10px; border: 1px solid #ddd; text-transform: uppercase;">{{ location.area.name }}</td>
+            <td style="padding: 10px; border: 1px solid #ddd; text-align: center;">
+                <a href="{% url 'edit_location' location.id %}" class="btn btn-warning" style="margin-right: 5px;">
+                    <i class="fas fa-edit"></i>
+                </a>
+                <a href="{% url 'delete_location' location.id %}" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this location?');">
+                    <i class="fas fa-trash-alt"></i>
+                </a>
             </td>
         </tr>
         {% endfor %}
     </tbody>
 </table>
-
-
 
 {% endblock %}

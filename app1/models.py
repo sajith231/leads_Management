@@ -140,6 +140,7 @@ class Lead(models.Model):
     location = models.ForeignKey(Location, on_delete=models.SET_NULL, null=True, blank=True, related_name="leads")
     district = models.ForeignKey(District, on_delete=models.SET_NULL, null=True, blank=True, related_name="leads")
     area = models.ForeignKey(Area, on_delete=models.SET_NULL, null=True, blank=True, related_name="leads")
+    
 
     def __str__(self):
         return f"{self.firm_name} - {self.customer_name}"
