@@ -59,7 +59,15 @@ urlpatterns = [
     path('ajax/load-areas/', load_areas, name='load_areas'),
     path('load-locations/', views.load_locations, name='load_locations'),
     path('get-location-details/', views.get_location_details, name='get_location_details'),
-     path('get-location-details/', views.get_location_details, name='get_location_details'),
+    path('get-location-details/', views.get_location_details, name='get_location_details'),
+
+
+
+    path('add_hardware/', views.add_hardware, name='add_hardware'),
+    path('all_hardwares/', views.all_hardwares, name='all_hardwares'),
+    path('edit_hardware/<int:hardware_id>/', views.edit_hardware, name='edit_hardware'),
+    path('delete_hardware/<int:hardware_id>/', views.delete_hardware, name='delete_hardware'),
+
 
     
 

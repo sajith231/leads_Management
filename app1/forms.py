@@ -1,5 +1,5 @@
 from django import forms
-from .models import Branch, Requirement, Lead, User,LeadRequirementAmount,District,Area,Location
+from .models import Branch, Requirement, Lead, User,LeadRequirementAmount,District,Area,Location,Hardware
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from django.contrib.auth.models import User as DjangoUser
@@ -33,10 +33,10 @@ class UserForm(forms.ModelForm):
     password = forms.CharField(
         widget=forms.PasswordInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Enter Password ',
+            'placeholder': 'Enter Password',
         }),
         label="Password",
-        required=False
+        required=True
     )
     branch = forms.ModelChoiceField(
         queryset=Branch.objects.all(),
@@ -68,9 +68,10 @@ class UserForm(forms.ModelForm):
         self.edit_mode = kwargs.pop('edit_mode', False)
         super(UserForm, self).__init__(*args, **kwargs)
 
+        # Adjust 'required' based on edit_mode
         for field in self.fields:
             if field == 'password':
-                self.fields[field].required = False
+                self.fields[field].required = not self.edit_mode
             else:
                 self.fields[field].required = True
 
@@ -90,9 +91,10 @@ class UserForm(forms.ModelForm):
     def save(self, commit=True):
         user = super().save(commit=False)
         
-        # Set password if provided
-        if self.cleaned_data.get('password'):
-            user.password = self.cleaned_data['password']
+        # Handle password update if it's provided
+        password = self.cleaned_data.get('password')
+        if password:
+            user.password = password
         elif self.instance and self.instance.pk:
             user.password = User.objects.get(pk=self.instance.pk).password
 
@@ -110,7 +112,7 @@ class UserForm(forms.ModelForm):
         )
 
         if created:
-            django_user.set_password(self.cleaned_data.get('password', 'dummy_password'))
+            django_user.set_password(password if password else 'dummy_password')
             django_user.save()
         else:
             # Update existing Django user attributes
@@ -160,13 +162,20 @@ import json
 class LeadForm(forms.ModelForm):
     requirement_amounts_data = forms.CharField(widget=forms.HiddenInput(), required=False)
     # requirement_remarks = forms.CharField(widget=forms.HiddenInput(), required=False)
+    hardware = forms.ModelMultipleChoiceField(
+        queryset=Hardware.objects.all(),
+        required=False,
+        widget=forms.SelectMultiple(attrs={'style': 'display:none;'})
+    )
+    
 
     class Meta:
         model = Lead
         fields = [
             'firm_name', 'customer_name', 'contact_number', 'landmark', 
             'location', 'district', 'area', 'business_nature', 'requirements',
-            'follow_up_required', 'quotation_required', 'image', 'remarks', 'voice_note'
+            # 'hardware',  # Added hardware field
+            'follow_up_required', 'quotation_required', 'image', 'remarks', 'voice_note','hardwares'
         ]
         widgets = {
             'firm_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter Firm Name'}),
@@ -284,3 +293,31 @@ class LocationForm(forms.ModelForm):
         if commit:
             instance.save()
         return instance
+    
+
+
+
+
+
+
+
+class HardwareForm(forms.ModelForm):
+    class Meta:
+        model = Hardware
+        fields = ['name', 'specification', 'price']
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'form-control', 
+                'placeholder': 'Enter Hardware Name'
+            }),
+            'specification': forms.Textarea(attrs={
+                'class': 'form-control', 
+                'placeholder': 'Enter Hardware Specification',
+                'rows': 3
+            }),
+            'price': forms.NumberInput(attrs={
+                'class': 'form-control', 
+                'placeholder': 'Enter Price',
+                'step': '0.01'
+            })
+        }

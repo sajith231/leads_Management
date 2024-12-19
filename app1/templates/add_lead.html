@@ -51,7 +51,8 @@
                 <div class="text-danger small">{{ form.area.errors }}</div>
             {% endif %}
         </div>
-    {% elif field.name not in 'location district area requirements requirement_amounts_data voice_note' %}
+    {% elif field.name not in 'location district area requirements requirement_amounts_data voice_note hardwares' %}
+
         <!-- Render all other fields excluding specific ones -->
         <div class="mb-3">
             <label class="form-label">{{ field.label }}</label>
@@ -121,6 +122,70 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="mb-3">
+                            <label class="form-label">Hardware</label>
+                            <div class="dropdown">
+                                <button 
+                                    class="btn btn-secondary dropdown-toggle w-100" 
+                                    type="button" 
+                                    id="hardwareDropdown" 
+                                    data-bs-toggle="dropdown" 
+                                    aria-expanded="false">
+                                    Select Hardware
+                                </button>
+                                <div class="dropdown-menu w-100" id="hardwareMenu">
+                                    {% for hardware in hardwares %}
+                                    <div class="dropdown-item d-flex align-items-start">
+                                        <div class="form-check me-3">
+                                            <input type="checkbox" 
+                                                   class="form-check-input hardware-checkbox" 
+                                                   id="hw_{{ hardware.id }}" 
+                                                   value="{{ hardware.id }}" 
+                                                   name="hardwares">
+                                            <label class="form-check-label" for="hw_{{ hardware.id }}">
+                                                {{ hardware.name }} ({{ hardware.specification }}) - ₹<span id="price_{{ hardware.id }}">{{ hardware.price }}</span>
+                                            </label>
+                                        </div>
+                                        <!-- <div style="margin-left: auto;">
+                                            <input type="number" 
+                                                   step="0.01" 
+                                                   class="form-control hardware-price" 
+                                                   placeholder="Edit Price" 
+                                                   data-hardware="{{ hardware.id }}" 
+                                                   style="display: none;">
+                                        </div> -->
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <script>
+                            document.addEventListener('DOMContentLoaded', function() {
+                                const hardwareCheckboxes = document.querySelectorAll('.hardware-checkbox');
+                                const priceInputs = document.querySelectorAll('.hardware-price');
+                            
+                                hardwareCheckboxes.forEach(checkbox => {
+                                    checkbox.addEventListener('change', function() {
+                                        const hardwareId = this.value;
+                                        const priceInput = document.querySelector(`.hardware-price[data-hardware="${hardwareId}"]`);
+                                        if (this.checked) {
+                                            priceInput.style.display = 'block';
+                                        } else {
+                                            priceInput.style.display = 'none';
+                                        }
+                                    });
+                                });
+                            
+                                priceInputs.forEach(input => {
+                                    input.addEventListener('input', function() {
+                                        const hardwareId = this.dataset.hardware;
+                                        const priceSpan = document.querySelector(`#price_${hardwareId}`);
+                                        priceSpan.textContent = this.value;
+                                    });
+                                });
+                            });
+                            </script>
                         
                         
                         

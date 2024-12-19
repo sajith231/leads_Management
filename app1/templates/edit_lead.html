@@ -34,16 +34,16 @@
         <!-- Location, District, and Area -->
         <div class="row">
             <div class="col-md-4 mb-3">
-                {{ form.district.label_tag }}
-                {{ form.district }}
+                {{ form.location.label_tag }}
+                {{ form.location }}
             </div>
             <div class="col-md-4 mb-3">
                 {{ form.area.label_tag }}
                 {{ form.area }}
             </div>
             <div class="col-md-4 mb-3">
-                {{ form.location.label_tag }}
-                {{ form.location }}
+                {{ form.district.label_tag }}
+                {{ form.district }}
             </div>
         </div>
 
@@ -92,9 +92,7 @@
                             <div class="col-4">
                                 <label class="form-label mb-0">Remarks:</label>
                                 <textarea class="form-control requirement-remarks" rows="1"
-                                          data-requirement-id="{{ requirement.id }}">{% for ra in lead.requirement_amounts.all %}
-                                          {% if ra.requirement_id == requirement.id %}{{ ra.remarks }}{% endif %}
-                                          {% endfor %}</textarea>
+                                          data-requirement-id="{{ requirement.id }}">{{ existing_amounts|get_item:requirement.id|default:'' }}</textarea>
                             </div>
                         </div>
                     </li>
@@ -103,37 +101,70 @@
             </div>
         </div>
 
-        <!-- Follow-Up and Quotation -->
-        <div class="d-flex gap-3 mb-3">
-            <div class="form-check">
-                {{ form.follow_up_required }} {{ form.follow_up_required.label_tag }}
-            </div>
-            <div class="form-check">
-                {{ form.quotation_required }} {{ form.quotation_required.label_tag }}
-            </div>
-        </div>
-
-        <!-- Remarks -->
+        <!-- Hardware as Dropdown -->
         <div class="mb-3">
-            {{ form.remarks.label_tag }}
-            {{ form.remarks }}
+            <label class="form-label">Hardware</label>
+            <div class="dropdown">
+                <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    Select Hardware
+                </button>
+                <div class="dropdown-menu p-3" style="max-height: 400px; overflow-y: auto;">
+                    {% for hardware in hardwares %}
+                    <div class="dropdown-item d-flex align-items-start">
+                        <div class="form-check me-3">
+                            <input type="checkbox" id="hw_{{ hardware.id }}" name="hardwares" value="{{ hardware.id }}"
+                                   {% if hardware in lead.hardwares.all %}checked{% endif %}
+                                   class="form-check-input hardware-checkbox">
+                            <label for="hw_{{ hardware.id }}" class="form-check-label">{{ hardware.name }} - ₹{{ hardware.price }}</label>
+                        </div>
+                        <!-- <input type="number" class="form-control ms-3 hardware-price" data-hardware-id="{{ hardware.id }}"
+                               value="{{ existing_hardware_amounts|get_item:hardware.id|default:'' }}" style="max-width: 100px;"> -->
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
         </div>
-
-        <!-- Hidden Inputs for Requirement Data -->
-        <input type="hidden" name="requirement_amounts_data" id="requirement_amounts_data">
-        <input type="hidden" name="requirement_remarks_data" id="requirement_remarks_data">
 
         <!-- Buttons -->
         <div class="d-flex gap-2">
             <button type="submit" class="btn btn-primary">Save Changes</button>
             <a href="{% url 'all_leads' %}" class="btn btn-secondary">Cancel</a>
         </div>
+
+        <!-- Hidden Inputs -->
+        <input type="hidden" id="hardware_amounts_data" name="hardware_amounts_data">
+        <input type="hidden" id="requirement_amounts_data" name="requirement_amounts_data">
+        <input type="hidden" id="requirement_remarks_data" name="requirement_remarks_data">
+
     </form>
 </div>
 
-<!-- JavaScript for Requirement Data -->
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    // Update hidden fields with hardware and requirements data
+    function updateHardwareData() {
+        const hardwareData = {};
+        document.querySelectorAll('.hardware-checkbox').forEach(checkbox => {
+            const hardwareId = checkbox.value;
+            const priceInput = document.querySelector(`.hardware-price[data-hardware-id="${hardwareId}"]`);
+            if (checkbox.checked) {
+                hardwareData[hardwareId] = priceInput.value || '0';
+            }
+        });
+        document.getElementById('hardware_amounts_data').value = JSON.stringify(hardwareData);
+    }
+
+    // Event listeners for hardware checkboxes and price inputs
+    document.querySelectorAll('.hardware-checkbox, .hardware-price').forEach(input => {
+        input.addEventListener('input', updateHardwareData);
+        input.addEventListener('change', updateHardwareData);
+    });
+
+    updateHardwareData();
+});
+
+document.addEventListener('DOMContentLoaded', function () {
+    // Update hidden fields with requirement data
     function updateRequirementData() {
         const amounts = {};
         const remarks = {};
@@ -153,6 +184,7 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('requirement_remarks_data').value = JSON.stringify(remarks);
     }
 
+    // Event listeners for requirement inputs
     document.querySelectorAll('.requirement-amount, .requirement-remarks, input[type="checkbox"]')
         .forEach(element => {
             element.addEventListener('input', updateRequirementData);
@@ -164,4 +196,3 @@ document.addEventListener('DOMContentLoaded', function () {
 </script>
 
 {% endblock %}
-

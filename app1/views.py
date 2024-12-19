@@ -10,7 +10,7 @@ from .models import Branch, Requirement, User
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import authenticate, login as auth_login
 from django.contrib.auth.models import User as DjangoUser  # Added this import
-from .forms import BranchForm, RequirementForm, UserForm,LeadRequirementAmount,AreaForm,LocationForm,Location
+from .forms import BranchForm, RequirementForm, UserForm,LeadRequirementAmount,AreaForm,LocationForm,Location,Hardware,HardwareForm
 from .models import Lead
 from .forms import LeadForm
 from django.db.models import Q
@@ -260,22 +260,18 @@ def user_dashboard(request):
 
 
 
-@login_required 
+@login_required
 def add_lead(request):
-    # Determine the user for lead creation
+    """
+    View to add a new lead.
+    """
+    # Determine the current user
     if request.user.is_superuser:
-        # For superuser, find or create an admin-level user
         try:
-            # Get the logged-in superuser's details for creating the lead
-            current_user = User.objects.filter(
-                userid=request.user.username, 
-                user_level='admin_level'
-            ).first()
-            
-            # If no matching user exists, create one
+            current_user = User.objects.filter(userid=request.user.username, user_level='admin_level').first()
             if not current_user:
                 current_user = User.objects.create(
-                    name=request.user.username,  # Use the actual username
+                    name=request.user.username,
                     userid=request.user.username,
                     password='default_password',
                     branch=Branch.objects.first() or Branch.objects.create(name='Default Branch'),
@@ -286,83 +282,93 @@ def add_lead(request):
             messages.error(request, f"Error creating admin user: {str(e)}")
             return redirect('all_leads')
     else:
-        # For non-superuser, get the user from session
         current_user = User.objects.get(id=request.session['custom_user_id'])
 
+    # Handle POST requests
     if request.method == 'POST':
         form = LeadForm(request.POST, request.FILES)
         if form.is_valid():
             lead = form.save(commit=False)
             lead.user = current_user
             lead.save()
-            
-            form.save_m2m()
-            
+            form.save_m2m()  # Save Many-to-Many relationships including hardware
+
+            # Save LeadRequirementAmount and other custom data
             amounts_data = request.POST.get('requirement_amounts_data', '{}')
             remarks_data = request.POST.get('requirement_remarks_data', '{}')
-            
+
             try:
                 amounts = json.loads(amounts_data)
                 remarks = json.loads(remarks_data)
-                
+
                 for req_id, amount in amounts.items():
                     LeadRequirementAmount.objects.create(
                         lead=lead,
                         requirement_id=int(req_id),
                         amount=float(amount),
-                        remarks=remarks.get(req_id, '')  # Save remarks for each requirement
+                        remarks=remarks.get(req_id, '')
                     )
-                
+
                 messages.success(request, 'Lead added successfully!')
-                
-                # Redirect based on user level
                 if request.user.is_superuser or current_user.user_level == 'admin_level':
                     return redirect('all_leads')
                 else:
                     return redirect('user_dashboard')
-                
+
             except json.JSONDecodeError:
                 messages.error(request, 'Invalid requirement data format')
             except (ValueError, TypeError):
                 messages.error(request, 'Invalid amount value')
             except Exception as e:
                 messages.error(request, f'Error saving lead: {str(e)}')
+        else:
+            messages.error(request, 'Please correct the errors below.')
     else:
         form = LeadForm()
-    
+
     requirements = Requirement.objects.all()
+    hardwares = Hardware.objects.all()
+
     return render(request, 'add_lead.html', {
         'form': form,
         'requirements': requirements,
+        'hardwares': hardwares,
         'existing_amounts': {}
     })
 
 @login_required
 def edit_lead(request, lead_id):
+    """
+    View to edit a lead.
+    """
     lead = get_object_or_404(Lead, id=lead_id)
-    
+
     # Determine the user type
     if request.user.is_superuser:
         current_user = User.objects.filter(userid=request.user.username, user_level='admin_level').first()
     else:
         current_user = User.objects.get(id=request.session['custom_user_id'])
-    
+
     if request.method == "POST":
         form = LeadForm(request.POST, request.FILES, instance=lead)
         if form.is_valid():
             lead = form.save()
-            
+
             # Handle requirement amounts and remarks
             amounts_data = request.POST.get('requirement_amounts_data', '{}')
             remarks_data = request.POST.get('requirement_remarks_data', '{}')
-            
+
+            # Handle hardware amounts
+            hardware_data = request.POST.get('hardware_amounts_data', '{}')
+
             try:
+                # Save requirements amounts and remarks
                 amounts = json.loads(amounts_data)
                 remarks = json.loads(remarks_data)
-                
+
                 # Delete existing requirement amounts
                 LeadRequirementAmount.objects.filter(lead=lead).delete()
-                
+
                 # Create new requirement amounts with remarks
                 for req_id, amount in amounts.items():
                     LeadRequirementAmount.objects.create(
@@ -371,35 +377,50 @@ def edit_lead(request, lead_id):
                         amount=float(amount),
                         remarks=remarks.get(req_id, '')
                     )
-                
+
+                # Save hardware data
+                hardware_amounts = json.loads(hardware_data)
+                lead.hardwares.clear()  # Clear existing hardware relationships
+                for hw_id, amount in hardware_amounts.items():
+                    hardware = Hardware.objects.get(id=int(hw_id))
+                    lead.hardwares.add(hardware)
+                    # Optionally store the custom amount (if needed)
+
                 messages.success(request, f'Lead "{lead.firm_name}" updated successfully!')
-                
+
                 # Redirect based on user level
                 if request.user.is_superuser or current_user.user_level == 'admin_level':
                     return redirect('all_leads')
                 else:
                     return redirect('user_dashboard')
-                
+
             except json.JSONDecodeError:
-                messages.error(request, 'Invalid requirement data format')
+                messages.error(request, 'Invalid requirement or hardware data format')
             except (ValueError, TypeError):
-                messages.error(request, 'Invalid amount value')
+                messages.error(request, 'Invalid value in input data')
             except Exception as e:
                 messages.error(request, f'Error saving lead: {str(e)}')
     else:
         form = LeadForm(instance=lead)
-    
+
     # Get existing requirement amounts and remarks
     existing_amounts = {
         str(ra.requirement_id): str(ra.amount)
         for ra in LeadRequirementAmount.objects.filter(lead=lead)
     }
-    
+
+    # Get existing hardware amounts
+    existing_hardware_amounts = {
+        hw.id: hw.price for hw in lead.hardwares.all()
+    }
+
     return render(request, 'edit_lead.html', {
         'form': form,
         'lead': lead,
         'requirements': Requirement.objects.all(),
+        'hardwares': Hardware.objects.all(),
         'existing_amounts': existing_amounts,
+        'existing_hardware_amounts': existing_hardware_amounts,
     })
 
 
@@ -772,20 +793,6 @@ def delete_location(request, location_id):
     return redirect('all_locations')
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 # this is for view fields district and area
 from django.http import JsonResponse
 from .models import Location
@@ -814,3 +821,49 @@ def get_location_details(request):
 
 
 
+
+
+
+
+@login_required
+def add_hardware(request):
+    if request.method == 'POST':
+        form = HardwareForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Hardware added successfully!')
+            return redirect('all_hardwares')
+    else:
+        form = HardwareForm()
+    return render(request, 'add_hardware.html', {'form': form})
+
+@login_required
+def all_hardwares(request):
+    hardwares = Hardware.objects.all()
+    return render(request, 'all_hardwares.html', {'hardwares': hardwares})
+
+@login_required
+def edit_hardware(request, hardware_id):
+    hardware = get_object_or_404(Hardware, id=hardware_id)
+    
+    if request.method == 'POST':
+        form = HardwareForm(request.POST, instance=hardware)
+        if form.is_valid():
+            form.save()
+            return redirect('all_hardwares')  # Redirect to the list of hardwares
+    else:
+        form = HardwareForm(instance=hardware)
+    
+    return render(request, 'edit_hardware.html', {'form': form})
+
+@login_required
+def delete_hardware(request, hardware_id):
+    if request.method == 'POST':
+        hardware = get_object_or_404(Hardware, id=hardware_id)
+        hardware_name = hardware.name
+        try:
+            hardware.delete()
+            messages.success(request, f'Hardware "{hardware_name}" deleted successfully.')
+        except Exception as e:
+            messages.error(request, f'Error deleting hardware: {str(e)}')
+    return redirect('all_hardwares')

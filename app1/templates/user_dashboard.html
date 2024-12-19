@@ -53,6 +53,7 @@
                             
                             <th>Business Nature</th>
                             <th>Requirements</th>
+                            <th>Hardware</th>
                             <th>Requirements Remarks</th>
                             <th>Follow Up</th>
                             <th>Quotation</th>
@@ -113,6 +114,11 @@
                                         {% endwith %}
                                     </div>
                                 {% endfor %}
+                            </td>
+                            <td>
+                                {% for hardware in lead.hardwares.all %}
+                                        <span style="text-wrap-mode:nowrap; background-color:  #007bff;color: white;padding-left: 10px;padding-right: 10px;padding-top: 2px;padding-bottom: 2px;border-radius: 5px;border: none;font-size: 15px;font-weight: 700;displ">{{ hardware.name }} - ₹{{ hardware.price }} </span>
+                                    {% endfor %}
                             </td>
                             <td>
                                 {% for req in lead.requirements.all %}

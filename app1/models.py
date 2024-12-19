@@ -106,7 +106,6 @@ class Lead(models.Model):
         ('Jewellery', 'Jewellery'),
         ('production', 'Production'),
         ('hardware', 'Hardware'),
-        ('pharmacy', 'Pharmacy'),
         ('hospital', 'Hospital'),
         ('clinic', 'Clinic'),
         ('another', 'Another'),
@@ -140,6 +139,7 @@ class Lead(models.Model):
     location = models.ForeignKey(Location, on_delete=models.SET_NULL, null=True, blank=True, related_name="leads")
     district = models.ForeignKey(District, on_delete=models.SET_NULL, null=True, blank=True, related_name="leads")
     area = models.ForeignKey(Area, on_delete=models.SET_NULL, null=True, blank=True, related_name="leads")
+    hardwares = models.ManyToManyField('Hardware', blank=True, related_name='leads')
     
 
     def __str__(self):
@@ -157,3 +157,19 @@ class LeadRequirementAmount(models.Model):
 
     def __str__(self):
         return f"{self.lead} - {self.requirement}: {self.amount}"
+
+
+
+
+
+class Hardware(models.Model):
+    name = models.CharField(max_length=200)
+    specification = models.TextField()
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+
+    class Meta:
+        ordering = ['name']
+
+    def __str__(self):
+        return f"{self.name} (₹{self.price})"
+    

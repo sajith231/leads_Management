@@ -1,10 +1,9 @@
 {% extends 'base.html' %}
 {% block content %}
-
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>All Areas</h2>
-        <a href="{% url 'add_area' %}" class="btn btn-primary">Add New Area</a>
+        <h2>All Hardware</h2>
+        <a href="{% url 'add_hardware' %}" class="btn btn-primary">Add New Hardware</a>
     </div>
 
     {% if messages %}
@@ -18,31 +17,31 @@
     </div>
     {% endif %}
 
-    {% if areas %}
+    {% if hardwares %}
     <div class="table-responsive">
         <table class="table table-striped table-hover">
             <thead>
                 <tr>
                     <th>No.</th>
-                    <th>Area Name</th>
-                    <th>District</th>
+                    <th>Name</th>
+                    <th>Specification</th>
+                    <th>Price</th>
                     <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
-                {% for area in areas %}
+                {% for hardware in hardwares %}
                 <tr>
                     <td>{{ forloop.counter }}</td>
-                    <td>{{ area.name|upper }}</td>
-                    <td>{{ area.district.name|upper }}</td>
+                    <td>{{ hardware.name|upper }}</td>
+                    <td>{{ hardware.specification }}</td>
+                    <td>₹{{ hardware.price }}</td>
                     <td>
-                        <!-- Edit Button Trigger -->
-                        <a href="{% url 'edit_area' area.id %}" class="btn btn-warning btn-sm" style="margin-right: 1%;">
+                        <a href="{% url 'edit_hardware' hardware.id %}" class="btn btn-warning btn-sm" style="margin-right: 1%;">
                             <i class="fas fa-edit"></i>
                         </a>
                         
-                        <!-- Delete Form -->
-                        <form method="post" action="{% url 'delete_area' area.id %}" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this area?');">
+                        <form method="post" action="{% url 'delete_hardware' hardware.id %}" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this hardware?');">
                             {% csrf_token %}
                             <button type="submit" class="btn btn-sm btn-outline-danger">
                                 <i class="fas fa-trash me-1"></i>
@@ -55,8 +54,7 @@
         </table>
     </div>
     {% else %}
-    <div class="alert alert-info">No areas found.</div>
+    <div class="alert alert-info">No hardware found.</div>
     {% endif %}
 </div>
-
 {% endblock %}
