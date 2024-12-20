@@ -35,6 +35,13 @@
                 <div class="text-danger small">{{ form.location.errors }}</div>
             {% endif %}
         </div>
+        <div class="mb-3">
+            <label class="form-label">{{ form.area.label }}</label>
+            {{ form.area }}
+            {% if form.area.errors %}
+                <div class="text-danger small">{{ form.area.errors }}</div>
+            {% endif %}
+        </div>
         
         <div class="mb-3">
             <label class="form-label">{{ form.district.label }}</label>
@@ -44,13 +51,11 @@
             {% endif %}
         </div>
         
-        <div class="mb-3">
-            <label class="form-label">{{ form.area.label }}</label>
-            {{ form.area }}
-            {% if form.area.errors %}
-                <div class="text-danger small">{{ form.area.errors }}</div>
-            {% endif %}
-        </div>
+        
+        
+        
+        
+        
     {% elif field.name not in 'location district area requirements requirement_amounts_data voice_note hardwares' %}
 
         <!-- Render all other fields excluding specific ones -->
