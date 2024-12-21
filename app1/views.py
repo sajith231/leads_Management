@@ -459,15 +459,18 @@ def edit_lead(request, lead_id):
 @login_required
 def all_leads(request):
     """
-    View to display all leads with their associated data.
+    View to display all leads with filtering and user role-based handling.
     """
     current_user = None
+
+    # Determine if the user is a superuser or acting as a custom user
     if request.user.is_superuser or request.session.get('custom_user_id'):
         if request.user.is_superuser:
             current_user = User.objects.filter(user_level='admin_level').first()
         else:
             current_user = User.objects.get(id=request.session['custom_user_id'])
 
+        # Base queryset with necessary prefetching and selecting
         leads = Lead.objects.prefetch_related(
             'hardware_prices', 
             'hardware_prices__hardware', 
@@ -480,7 +483,34 @@ def all_leads(request):
             'location__district'
         )
 
-        # Apply filters (if provided)
+        # Filters
+        filters = {}
+
+        # Planet entry filter (default to False - "Not Entered")
+        planet_entry = request.GET.get('planet_entry', 'false')
+        if planet_entry != '':  # If not "All"
+            filters['planet_entry'] = planet_entry == 'true'
+
+        # Branch filter
+        branch = request.GET.get('branch')
+        if branch:
+            filters['user__branch_id'] = branch
+
+        # User filter
+        user = request.GET.get('user')
+        if user:
+            filters['user_id'] = user
+
+        # Requirements filter
+        requirement = request.GET.get('requirements')
+        if requirement:
+            filters['requirements__id'] = requirement
+
+        # Apply all collected filters
+        if filters:
+            leads = leads.filter(**filters)
+
+        # Date range filter
         start_date = request.GET.get('start_date')
         end_date = request.GET.get('end_date')
         if start_date and end_date:
@@ -491,23 +521,29 @@ def all_leads(request):
             except ValueError:
                 messages.error(request, "Invalid date range provided.")
 
+        # Firm name search
         firm_name = request.GET.get('firm_name')
         if firm_name:
             leads = leads.filter(firm_name__icontains=firm_name)
 
-        branches = Branch.objects.all()
-        requirements = Requirement.objects.all()
-        districts = District.objects.all()
-        users = User.objects.select_related('branch').all()
+        # Order by created_at in descending order
+        leads = leads.order_by('-created_at')
 
-        return render(request, 'all_leads.html', {
+        # Context for rendering
+        context = {
             'leads': leads,
-            'branches': branches,
-            'requirements': requirements,
-            'districts': districts,
-            'users': users,
-        })
+            'branches': Branch.objects.all(),
+            'requirements': Requirement.objects.all(),
+            'districts': District.objects.all(),
+            'users': User.objects.select_related('branch').all(),
+            'selected_user': request.GET.get('user', ''),
+            'selected_planet_entry': planet_entry,
+        }
+
+        return render(request, 'all_leads.html', context)
+
     else:
+        # Redirect non-admin/non-custom users to their dashboard
         return redirect('user_dashboard')
 
 

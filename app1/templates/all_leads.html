@@ -161,37 +161,40 @@
                         <i class="fas fa-filter"></i> Ok
                     </button>
                 
-                <div class="filter" style="display: flex;"><select name="branch" class="form-select" style="max-width: 200px;margin-left: 2%;" onchange="autoSubmitForm()">
-                    <option value="">All Branches</option>
-                    {% for branch in branches %}
-                        <option value="{{ branch.id }}" {% if branch.id|stringformat:"i" == request.GET.branch %}selected{% endif %}>
-                            {{ branch.name }}
-                        </option>
-                    {% endfor %}
-                </select></div> 
+                    <div class="filter-row d-flex gap-3">
+                        <select name="branch" class="form-select">
+                            <option value="">All Branches</option>
+                            {% for branch in branches %}
+                                <option value="{{ branch.id }}" 
+                                        {% if branch.id|stringformat:"i" == request.GET.branch %}selected{% endif %}>
+                                    {{ branch.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
                
-                <div>
-                    <select name="user" class="form-select" onchange="this.form.submit()" style="width: 200px;">
-                        <option value=""  >All Users</option>
-                        {% for user in users %}
-                        <option value="{{ user.id }}" {% if selected_user == user.id|stringformat:"s" %}selected{% endif %}>
-                            {{ user.name }} ({{ user.branch.name }})
-                        </option>
-                        {% endfor %}
-                    </select>
+                        <select name="user" class="form-select" style="">
+                            <option value="">All Users</option>
+                            {% for user in users %}
+                                <option value="{{ user.id }}" 
+                                        {% if selected_user == user.id|stringformat:"s" %}selected{% endif %}>
+                                    {{ user.name }} ({{ user.branch.name }})
+                                </option>
+                            {% endfor %}
+                        </select>
                 </div>
-                <select name="requirements" class="form-select" style="max-width: 200px;" onchange="autoSubmitForm()">
+                <select name="requirements" class="form-select" style="">
                     <option value="">All Requirements</option>
                     {% for requirement in requirements %}
-                        <option value="{{ requirement.id }}" {% if requirement.id|stringformat:"i" == request.GET.requirements %}selected{% endif %}>
+                        <option value="{{ requirement.id }}" 
+                                {% if requirement.id|stringformat:"i" == request.GET.requirements %}selected{% endif %}>
                             {{ requirement.name }}
                         </option>
                     {% endfor %}
                 </select>
                 <select name="planet_entry" class="form-select" onchange="this.form.submit()">
-                    <option value="false" {% if selected_planet_entry == 'false' %}selected{% endif %}>Not Entered</option>
-                    <option value="" {% if not selected_planet_entry %}selected{% endif %}>Planet Entry - All</option>
-                    <option value="true" {% if selected_planet_entry == 'true' %}selected{% endif %}>Entered</option>
+                    <option value="false" selected>Not Entered</option>
+                    <option value="" {% if request.GET.planet_entry == '' %}selected{% endif %}>All</option>
+                    <option value="true" {% if request.GET.planet_entry == 'true' %}selected{% endif %}>Entered</option>
                 </select>
                 
                 </div>
@@ -507,224 +510,6 @@
         border-radius: 0.25rem;
     }
 </style>
-
-<!-- <script>
-    let searchTimer;
-
-    function debounceSearch(event) {
-        clearTimeout(searchTimer);
-        searchTimer = setTimeout(() => {
-            autoSubmitForm();
-        }, 600); // Wait 500ms after user stops typing before submitting
-    }
-
-    function toggleFilterButton() {
-        const startDate = document.querySelector('input[name="start_date"]').value;
-        const endDate = document.querySelector('input[name="end_date"]').value;
-        document.getElementById('filterButton').style.display = (startDate || endDate) ? 'inline-block' : 'none';
-    }
-
-    function autoSubmitForm() {
-        document.getElementById('filterForm').submit();
-    }
-
-    function showRemarks(element) {
-        var remarks = element.getAttribute('data-remarks');
-        document.getElementById('remarksModalBody').innerText = remarks;
-    }
-
-    // Initialize tooltips if you're using Bootstrap 5
-    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl);
-    });
-</script>
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-    // Requirement Remarks Modal Handler
-    var requirementRemarksLinks = document.querySelectorAll('.requirement-remarks-link');
-    var requirementRemarksModal = document.getElementById('requirementRemarksModal');
-    var requirementRemarksModalBody = document.getElementById('requirementRemarksModalBody');
-
-    requirementRemarksLinks.forEach(function(link) {
-        link.addEventListener('click', function(e) {
-            e.preventDefault();
-            var remarks = this.getAttribute('data-remarks');
-            requirementRemarksModalBody.textContent = remarks;
-        });
-    });
-});
-</script>
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-    // Handle remarks modal
-    const remarksModal = document.getElementById('remarksModal');
-    const remarksContent = document.getElementById('remarksModalBody');
-    const requirementRemarksModal = document.getElementById('requirementRemarksModal');
-    const requirementRemarksContent = document.getElementById('requirementRemarksModalBody');
-    
-    // Lead remarks modal click handler
-    document.querySelectorAll('.remarks-link').forEach(function(link) {
-        link.addEventListener('click', function() {
-            const remarks = this.getAttribute('data-remarks').replace(/\\u000A/g, '\n');
-            remarksContent.textContent = remarks;  // Set the remarks content for lead
-        });
-    });
-
-    // Requirement remarks modal click handler
-    document.querySelectorAll('.requirement-remarks-link').forEach(function(link) {
-        link.addEventListener('click', function() {
-            const remarks = this.getAttribute('data-remarks').replace(/\\u000A/g, '\n');
-            requirementRemarksContent.textContent = remarks;  // Set the requirement remarks content
-        });
-    });
-});
-
-$(document).ready(function() {
-    $('.planet-entry-toggle').click(function() {
-        var td = $(this);
-        var leadId = td.data('lead-id');
-        var currentStatus = td.data('current-status');
-        
-        $.ajax({
-            url: '/toggle-planet-entry/',  // Your URL endpoint
-            type: 'POST',
-            data: {
-                'lead_id': leadId,
-                'csrfmiddlewaretoken': getCsrfToken()  // Function to get CSRF token
-            },
-            success: function(response) {
-                if (response.success) {
-                    // Toggle the badge class
-                    var badge = td.find('.badge');
-                    if (currentStatus === 'true') {
-                        badge.removeClass('bg-success').addClass('bg-secondary');
-                        badge.text('No');
-                        td.data('current-status', 'false');
-                    } else {
-                        badge.removeClass('bg-secondary').addClass('bg-success');
-                        badge.text('Yes');
-                        td.data('current-status', 'true');
-                    }
-                }
-            }
-        });
-    });
-});
-
-// Function to get CSRF token
-function getCsrfToken() {
-    return document.querySelector('[name=csrfmiddlewaretoken]').value;
-}
-
-
-
-
-
-</script>
-<script>
-    function getCookie(name) {
-      let cookieValue = null;
-      if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-          const cookie = cookies[i].trim();
-          if (cookie.substring(0, name.length + 1) === (name + '=')) {
-            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-            break;
-          }
-        }
-      }
-      return cookieValue;
-    }
-  
-    async function toggleStatus(element) {
-      // Disable the badge while processing
-      element.classList.add('disabled');
-  
-      const leadId = element.dataset.leadId;
-      const statusType = element.dataset.statusType;
-      const csrfToken = getCookie('csrftoken');
-  
-      try {
-        const response = await fetch('/toggle_status/', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': csrfToken,
-          },
-          body: JSON.stringify({
-            lead_id: leadId,
-            status_type: statusType
-          })
-        });
-  
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success) {
-            // Toggle the visual state
-            const currentState = element.classList.contains('bg-secondary');
-            if (currentState) {
-              element.classList.remove('bg-secondary');
-              element.classList.add('bg-success');
-              element.textContent = 'Entered';
-            } else {
-              element.classList.remove('bg-success');
-              element.classList.add('bg-secondary');
-              element.textContent = 'Not Entered';
-            }
-          } else {
-            console.error('Error:', data.error);
-            alert('Failed to update status. Please try again.');
-          }
-        } else {
-          throw new Error('Network response was not ok');
-        }
-      } catch (error) {
-        console.error('Error:', error);
-        alert('Failed to update status. Please try again.');
-      } finally {
-        // Re-enable the badge
-        element.classList.remove('disabled');
-      }
-    }
-  </script>
-
-  <script>
-    function toggleStatus(element) {
-    const leadId = element.getAttribute('lead-id');
-    const statusType = element.getAttribute('status-type');
-    
-    fetch('/toggle_status/', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-        },
-        body: JSON.stringify({
-            lead_id: leadId,
-            status_type: statusType
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            element.classList.toggle('bg-success');
-            element.classList.toggle('bg-secondary');
-            element.textContent = data.new_value ? 'Entered' : 'Not Entered';
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-    });
-}
-  </script> -->
-
-
-
-
-
-
   <script>
     let searchTimer;
 
@@ -948,5 +733,87 @@ function getCsrfToken() {
 </script>
 
 
+<script>
+    // Function to handle automatic form submission for filters
+function handleFilterChange(event) {
+    const form = document.getElementById('filterForm');
+    const filterButton = document.getElementById('filterButton');
+    
+    // Don't auto-submit if it's a date field change
+    if (event.target.type === 'date') {
+        if (event.target.value) {
+            filterButton.style.display = 'inline-block';
+        } else {
+            const startDate = form.querySelector('input[name="start_date"]').value;
+            const endDate = form.querySelector('input[name="end_date"]').value;
+            if (!startDate && !endDate) {
+                filterButton.style.display = 'none';
+            }
+        }
+        return;
+    }
+    
+    // Submit form for other filter changes
+    form.submit();
+}
 
+// Function to reset filters
+function resetFilters() {
+    const form = document.getElementById('filterForm');
+    
+    // Reset all select elements to their default values
+    form.querySelectorAll('select').forEach(select => {
+        if (select.name === 'planet_entry') {
+            select.value = 'false'; // Set to "Not Entered" by default
+        } else {
+            select.value = ''; // Reset other filters to "All"
+        }
+    });
+    
+    // Reset date inputs
+    form.querySelectorAll('input[type="date"]').forEach(input => {
+        input.value = '';
+    });
+    
+    // Reset search input
+    form.querySelector('input[name="firm_name"]').value = '';
+    
+    // Hide filter button
+    document.getElementById('filterButton').style.display = 'none';
+    
+    // Submit the form
+    form.submit();
+}
+
+// Initialize filters on page load
+document.addEventListener('DOMContentLoaded', function() {
+    // Add event listeners to all filter elements
+    const form = document.getElementById('filterForm');
+    
+    // Add event listeners to select elements
+    form.querySelectorAll('select').forEach(select => {
+        select.addEventListener('change', handleFilterChange);
+    });
+    
+    // Add event listener to search input with debounce
+    const searchInput = form.querySelector('input[name="firm_name"]');
+    let searchTimer;
+    searchInput.addEventListener('input', (event) => {
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(() => handleFilterChange(event), 500);
+    });
+    
+    // Set default value for planet_entry filter if not already set
+    const planetEntrySelect = form.querySelector('select[name="planet_entry"]');
+    if (!planetEntrySelect.value) {
+        planetEntrySelect.value = 'false';
+    }
+    
+    // Initialize filter button visibility
+    const startDate = form.querySelector('input[name="start_date"]').value;
+    const endDate = form.querySelector('input[name="end_date"]').value;
+    document.getElementById('filterButton').style.display = 
+        (startDate || endDate) ? 'inline-block' : 'none';
+});
+</script>
 {% endblock %}
