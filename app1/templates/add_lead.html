@@ -3,6 +3,7 @@
 {% load static %}
 
 {% block content %}
+
 <div class="container mt-5">
     <div class="row">
         <div class="col-md-8 offset-md-2">
@@ -30,6 +31,7 @@
         <!-- Render Location, District, and Area fields AFTER Landmark -->
         <div class="mb-3">
             <label class="form-label">{{ form.location.label }}</label>
+            <input type="text" id="locationSearch" class="form-control" placeholder="Search location..." aria-label="Search location...">
             {{ form.location }}
             {% if form.location.errors %}
                 <div class="text-danger small">{{ form.location.errors }}</div>
@@ -70,8 +72,6 @@
 {% endfor %}
 
                     
-
-
                         <div class="mb-3">
                             <label class="form-label">Voice Note (Optional)</label>
                             <div class="row">
@@ -127,70 +127,173 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label">Hardware</label>
-                            <div class="dropdown">
-                                <button 
-                                    class="btn btn-secondary dropdown-toggle w-100" 
-                                    type="button" 
-                                    id="hardwareDropdown" 
-                                    data-bs-toggle="dropdown" 
-                                    aria-expanded="false">
-                                    Select Hardware
-                                </button>
-                                <div class="dropdown-menu w-100" id="hardwareMenu">
-                                    {% for hardware in hardwares %}
-                                    <div class="dropdown-item d-flex align-items-start">
-                                        <div class="form-check me-3">
-                                            <input type="checkbox" 
-                                                   class="form-check-input hardware-checkbox" 
-                                                   id="hw_{{ hardware.id }}" 
-                                                   value="{{ hardware.id }}" 
-                                                   name="hardwares">
-                                            <label class="form-check-label" for="hw_{{ hardware.id }}">
-                                                {{ hardware.name }} ({{ hardware.specification }}) - ₹<span id="price_{{ hardware.id }}">{{ hardware.price }}</span>
-                                            </label>
-                                        </div>
-                                        <!-- <div style="margin-left: auto;">
-                                            <input type="number" 
-                                                   step="0.01" 
-                                                   class="form-control hardware-price" 
-                                                   placeholder="Edit Price" 
-                                                   data-hardware="{{ hardware.id }}" 
-                                                   style="display: none;">
-                                        </div> -->
+<style>
+    .hardware-price {
+        width: 120px;
+        margin-left: 10px;
+    }
+    
+    .dropdown-item {
+        padding: 0.5rem 1rem;
+    }
+    
+    .hardware-default-price {
+        color: #666;
+        font-size: 0.9em;
+        margin-left: 10px;
+    }
+    
+    #hardwareMenu {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+    
+    .hardware-checkbox:checked + .form-check-label {
+        font-weight: bold;
+    }
+    .requirement-details {
+    margin-left: 25px;
+    display: none;
+    transition: all 0.3s ease-in-out;
+}
+
+    </style>
+                       <div class="mb-3">
+                        <label class="form-label">Hardware</label>
+                        <div class="dropdown">
+                            <button 
+                                class="btn btn-secondary dropdown-toggle w-100" 
+                                type="button" 
+                                id="hardwareDropdown" 
+                                data-bs-toggle="dropdown" 
+                                aria-expanded="false">
+                                Select Hardware
+                            </button>
+                            <div class="dropdown-menu w-100" id="hardwareMenu">
+                                {% for hardware in hardwares %}
+                                <div class="dropdown-item d-flex align-items-center justify-content-between">
+                                    <div class="form-check">
+                                        <input type="checkbox" 
+                                               class="form-check-input hardware-checkbox" 
+                                               id="hw_{{ hardware.id }}" 
+                                               value="{{ hardware.id }}" 
+                                               name="hardwares"
+                                               {% if hardware in lead.hardwares.all %}checked{% endif %}>
+                                        <label class="form-check-label" for="hw_{{ hardware.id }}">
+                                            {{ hardware.name }} <!-- ({{ hardware.specification }}) -->
+                                        </label>
                                     </div>
-                                    {% endfor %}
+                                    <div class="d-flex align-items-center">
+                                        <span class="me-2 hardware-price-container" style="display: none;">
+                                            Default: ₹<span id="default_price_{{ hardware.id }}">{{ hardware.price }}</span>
+                                        </span>
+                                        <input type="number" 
+                                               step="0.01" 
+                                               class="form-control hardware-price" 
+                                               placeholder="Custom Price" 
+                                               data-hardware-id="{{ hardware.id }}" 
+                                               value="{% if hardware in lead.hardwares.all %}{{ lead.hardware_prices.get.custom_price }}{% endif %}"
+                                               style="display: none; width: 120px;">
+                                    </div>
                                 </div>
+                                {% endfor %}
                             </div>
                         </div>
-                        
-                        <script>
-                            document.addEventListener('DOMContentLoaded', function() {
-                                const hardwareCheckboxes = document.querySelectorAll('.hardware-checkbox');
-                                const priceInputs = document.querySelectorAll('.hardware-price');
-                            
-                                hardwareCheckboxes.forEach(checkbox => {
-                                    checkbox.addEventListener('change', function() {
-                                        const hardwareId = this.value;
-                                        const priceInput = document.querySelector(`.hardware-price[data-hardware="${hardwareId}"]`);
-                                        if (this.checked) {
-                                            priceInput.style.display = 'block';
-                                        } else {
-                                            priceInput.style.display = 'none';
-                                        }
-                                    });
-                                });
-                            
-                                priceInputs.forEach(input => {
-                                    input.addEventListener('input', function() {
-                                        const hardwareId = this.dataset.hardware;
-                                        const priceSpan = document.querySelector(`#price_${hardwareId}`);
-                                        priceSpan.textContent = this.value;
-                                    });
-                                });
-                            });
-                            </script>
+                    </div>
+                    <input type="hidden" name="hardware_prices_data" id="hardware_prices_data">
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+    const hardwareCheckboxes = document.querySelectorAll('.hardware-checkbox');
+    const hardwarePrices = {};
+    const hardwarePricesData = document.getElementById('hardware_prices_data');
+
+    // Initialize prices for pre-checked hardware
+    hardwareCheckboxes.forEach(checkbox => {
+        const hardwareId = checkbox.value;
+        const priceInput = document.querySelector(`.hardware-price[data-hardware-id="${hardwareId}"]`);
+        const priceContainer = document.querySelector(`.hardware-price-container`);
+
+        if (checkbox.checked) {
+            // Show price input and default price container when hardware is selected
+            priceInput.style.display = 'block';
+            priceContainer.style.display = 'block';
+
+            if (priceInput.value) {
+                hardwarePrices[hardwareId] = priceInput.value;
+            } else {
+                const defaultPrice = document.querySelector(`#default_price_${hardwareId}`).textContent;
+                priceInput.value = defaultPrice;
+                hardwarePrices[hardwareId] = defaultPrice;
+            }
+        }
+    });
+
+    // Handle checkbox changes
+    hardwareCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const hardwareId = this.value;
+            const priceInput = document.querySelector(`.hardware-price[data-hardware-id="${hardwareId}"]`);
+            // const priceContainer = document.querySelector(`.hardware-price-container`);
+            const priceContainer = checkbox.closest('.dropdown-item').querySelector('.hardware-price-container');
+
+
+            if (this.checked) {
+                // Show price input and default price container when hardware is selected
+                priceInput.style.display = 'block';
+                priceContainer.style.display = 'block';
+                const defaultPrice = document.querySelector(`#default_price_${hardwareId}`).textContent;
+                priceInput.value = defaultPrice;
+                hardwarePrices[hardwareId] = defaultPrice;
+            } else {
+                // Hide price input and remove price when hardware is unselected
+                priceInput.style.display = 'none';
+                priceContainer.style.display = 'none';
+                delete hardwarePrices[hardwareId];
+            }
+            updateHardwarePricesData();
+        });
+    });
+
+    // Handle price input changes
+    document.querySelectorAll('.hardware-price').forEach(input => {
+        input.addEventListener('input', function() {
+            const hardwareId = this.dataset.hardwareId;
+            if (this.value) {
+                hardwarePrices[hardwareId] = this.value;
+            } else {
+                delete hardwarePrices[hardwareId];
+            }
+            updateHardwarePricesData();
+        });
+    });
+
+    function updateHardwarePricesData() {
+        hardwarePricesData.value = JSON.stringify(hardwarePrices);
+    }
+
+    // Initial update of hardware prices data
+    updateHardwarePricesData();
+});
+
+</script>                    
+    
+<!-- CODE FOR LOCATION SEARCH -->
+<script>
+    // JavaScript to filter the location options
+    document.getElementById('locationSearch').addEventListener('input', function () {
+        const searchValue = this.value.toLowerCase();
+        const locationOptions = document.getElementById('id_location').options;
+    
+        for (let i = 0; i < locationOptions.length; i++) {
+            const option = locationOptions[i];
+            if (option.text.toLowerCase().includes(searchValue)) {
+                option.style.display = '';
+            } else {
+                option.style.display = 'none';
+            }
+        }
+    });
+    </script>
                         
                         
                         

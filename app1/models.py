@@ -173,3 +173,14 @@ class Hardware(models.Model):
     def __str__(self):
         return f"{self.name} (₹{self.price})"
     
+class LeadHardwarePrice(models.Model):
+    lead = models.ForeignKey(Lead, on_delete=models.CASCADE, related_name="hardware_prices")
+    hardware = models.ForeignKey(Hardware, on_delete=models.CASCADE)
+    custom_price = models.FloatField()
+
+    class Meta:
+        unique_together = ('lead', 'hardware')  # Enforces one price per lead-hardware combination
+
+    def __str__(self):
+        return f"Lead: {self.lead.firm_name}, Hardware: {self.hardware.name}, Price: ₹{self.custom_price}"
+

@@ -1,5 +1,5 @@
 from django import forms
-from .models import Branch, Requirement, Lead, User,LeadRequirementAmount,District,Area,Location,Hardware
+from .models import Branch, Requirement, Lead, User,LeadRequirementAmount,District,Area,Location,Hardware,LeadHardwarePrice
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from django.contrib.auth.models import User as DjangoUser

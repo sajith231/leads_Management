@@ -320,10 +320,19 @@
                                     {% endfor %}
                                 </td>
                                 <td>
-                                    {% for hardware in lead.hardwares.all %}
-                                        <span style="text-wrap-mode:nowrap; background-color:  #007bff;color: white;padding-left: 10px;padding-right: 10px;padding-top: 2px;padding-bottom: 2px;border-radius: 5px;border: none;font-size: 15px;font-weight: 700;displ">{{ hardware.name }} - ₹{{ hardware.price }} </span>
-                                    {% endfor %}
+                                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                                        {% for hardware_price in lead.hardware_prices.all %}
+                                            <span style="white-space: nowrap; background-color: #007bff; color: white; padding: 5px 10px; border-radius: 5px;">
+                                                {{ hardware_price.hardware.name }} - ₹{{ hardware_price.custom_price }}
+                                            </span>
+                                        {% empty %}
+                                            <span style="color: gray; font-style: italic;">No hardware assigned</span>
+                                        {% endfor %}
+                                    </div>
                                 </td>
+                                
+                                
+                                
                                 <td>
                                     {% for req in lead.requirements.all %}
                                         <div style="display: flex; justify-content: center;">
