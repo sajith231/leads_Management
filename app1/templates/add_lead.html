@@ -31,12 +31,109 @@
         <!-- Render Location, District, and Area fields AFTER Landmark -->
         <div class="mb-3">
             <label class="form-label">{{ form.location.label }}</label>
-            <input type="text" id="locationSearch" class="form-control" placeholder="Search location..." aria-label="Search location...">
+            <div class="location-search-container">
+                <input type="text" id="locationSearch" class="form-control" placeholder="Search location..." autocomplete="off">
+                <div id="locationDropdown" class="location-dropdown">
+                    {% for option in form.location.field.choices %}
+                        {% if option.0 %}
+                            <div class="location-option" data-value="{{ option.0 }}">{{ option.1 }}</div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
             {{ form.location }}
-            {% if form.location.errors %}
-                <div class="text-danger small">{{ form.location.errors }}</div>
-            {% endif %}
         </div>
+        
+        <style>
+        .location-search-container {
+            position: relative;
+        }
+        
+        .location-dropdown {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            max-height: 200px;
+            overflow-y: auto;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+        
+        .location-option {
+            padding: 8px 12px;
+            cursor: pointer;
+        }
+        
+        .location-option:hover {
+            background-color: #f8f9fa;
+        }
+        
+        #id_location {
+            display: none;
+        }
+        </style>
+        
+        <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('locationSearch');
+            const dropdown = document.getElementById('locationDropdown');
+            const locationSelect = document.getElementById('id_location');
+            const options = document.querySelectorAll('.location-option');
+            
+            // Show dropdown when focusing on search input
+            searchInput.addEventListener('focus', function() {
+                dropdown.style.display = 'block';
+            });
+            
+            // Hide dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+                    dropdown.style.display = 'none';
+                }
+            });
+            
+            // Filter locations based on search input
+            searchInput.addEventListener('input', function() {
+                const searchText = this.value.toLowerCase();
+                
+                options.forEach(option => {
+                    const text = option.textContent.toLowerCase();
+                    option.style.display = text.includes(searchText) ? 'block' : 'none';
+                });
+                
+                dropdown.style.display = 'block';
+            });
+            
+            // Handle option selection
+            options.forEach(option => {
+                option.addEventListener('click', function() {
+                    const value = this.dataset.value;
+                    const text = this.textContent;
+                    
+                    searchInput.value = text;
+                    locationSelect.value = value;
+                    dropdown.style.display = 'none';
+                    
+                    // Trigger change event on the hidden select
+                    const event = new Event('change');
+                    locationSelect.dispatchEvent(event);
+                });
+            });
+            
+            // Set initial value if location is pre-selected
+            if (locationSelect.value) {
+                const selectedOption = document.querySelector(`.location-option[data-value="${locationSelect.value}"]`);
+                if (selectedOption) {
+                    searchInput.value = selectedOption.textContent;
+                }
+            }
+        });
+        </script>
         <div class="mb-3">
             <label class="form-label">{{ form.area.label }}</label>
             {{ form.area }}
