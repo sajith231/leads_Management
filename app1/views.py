@@ -345,7 +345,12 @@ def add_lead(request):
                     messages.warning(request, f"Invalid price value for hardware ID {hardware_id}.")
 
                 messages.success(request, 'Lead added successfully!')
-                return redirect('all_leads')
+
+                # Redirect based on user level
+                if current_user.user_level == 'admin_level':
+                    return redirect('all_leads')
+                else:
+                    return redirect('user_dashboard')
 
             except Exception as e:
                 messages.error(request, f"Error saving lead: {str(e)}")
