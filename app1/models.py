@@ -140,6 +140,13 @@ class Lead(models.Model):
     district = models.ForeignKey(District, on_delete=models.SET_NULL, null=True, blank=True, related_name="leads")
     area = models.ForeignKey(Area, on_delete=models.SET_NULL, null=True, blank=True, related_name="leads")
     hardwares = models.ManyToManyField('Hardware', blank=True, related_name='leads')
+    added_latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    added_longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    
+    def get_location_url(self):
+        if self.added_latitude and self.added_longitude:
+            return f"https://www.google.com/maps?q={self.added_latitude},{self.added_longitude}"
+        return None
     
 
     def __str__(self):

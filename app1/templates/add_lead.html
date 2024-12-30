@@ -297,6 +297,25 @@
                             </div>
                         </div>
                     </div>
+                    <input type="hidden" name="location_data" id="location_data">
+                    <script>
+                        document.addEventListener('DOMContentLoaded', function() {
+                            // Get user's location when the page loads
+                            if ("geolocation" in navigator) {
+                                navigator.geolocation.getCurrentPosition(function(position) {
+                                    const locationData = {
+                                        latitude: position.coords.latitude,
+                                        longitude: position.coords.longitude
+                                    };
+                                    document.getElementById('location_data').value = JSON.stringify(locationData);
+                                }, function(error) {
+                                    console.error("Error getting location:", error);
+                                });
+                            }
+                            
+                            // Rest of your existing JavaScript code
+                        });
+                        </script>
                     <input type="hidden" name="hardware_prices_data" id="hardware_prices_data">
 <script>
     document.addEventListener('DOMContentLoaded', function() {

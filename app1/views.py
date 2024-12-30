@@ -295,6 +295,17 @@ def add_lead(request):
             try:
                 lead = form.save(commit=False)
                 lead.user = current_user
+
+                # Get location data from the request
+                location_data = request.POST.get('location_data', '')
+                if location_data:
+                    try:
+                        location = json.loads(location_data)
+                        lead.added_latitude = location.get('latitude')
+                        lead.added_longitude = location.get('longitude')
+                    except json.JSONDecodeError:
+                        messages.warning(request, 'Invalid location data format.')
+
                 lead.save()
                 form.save_m2m()  # Save Many-to-Many relationships
 
@@ -344,7 +355,7 @@ def add_lead(request):
         form = LeadForm()
         form.fields['location'].queryset = Location.objects.all()
 
-    # Fetch all requirements and hardwares for the form
+    # Fetch all requirements and hardware for the form
     requirements = Requirement.objects.all()
     hardwares = Hardware.objects.all()
 
