@@ -61,6 +61,7 @@
                             <th>Remarks</th>
                             <th>Created At</th>
                             <th>Voice Note</th>
+                            <th>Lead Added Place</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -187,6 +188,29 @@
                                 </audio>
                                 {% else %}
                                 -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if lead.added_latitude and lead.added_longitude %}
+                                <a href="{{ lead.get_location_url }}" target="_blank" title="View on Google Maps">
+                                    <i class="fas fa-map-marker-alt shake" style="display: flex; justify-content: center; font-size: x-large;"></i>
+                                </a>
+                                <style>
+                                    @keyframes shake {
+                                        0% { transform: translateX(0); }
+                                        25% { transform: translateX(-2px); }
+                                        50% { transform: translateX(2px); }
+                                        75% { transform: translateX(-2px); }
+                                        100% { transform: translateX(0); }
+                                    }
+
+                                    .shake {
+                                        animation: shake 0.5s infinite;
+                                    }
+
+                                </style>
+                                {% else %}
+                                <i class="fas fa-map-marker-alt" style="display: flex;justify-content: center; font-size: x-large;"></i>
                                 {% endif %}
                             </td>
                             <td>

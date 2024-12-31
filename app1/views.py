@@ -270,6 +270,9 @@ def add_lead(request):
         try:
             current_user = User.objects.filter(userid=request.user.username, user_level='admin_level').first()
             if not current_user:
+
+
+                
                 current_user = User.objects.create(
                     name=request.user.username,
                     userid=request.user.username,
