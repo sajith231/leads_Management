@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h1>Edit Service Entry</h1>
+    <form method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="customer" class="form-label">Customer</label>
+            <input type="text" name="customer" id="customer" class="form-control" value="{{ entry.customer }}" required>
+        </div>
+        <div class="mb-3">
+            <label for="complaint" class="form-label">Complaint</label>
+            <select name="complaint" id="complaint" class="form-select" required>
+                {% for complaint in complaints %}
+                    <option value="{{ complaint.description }}" {% if complaint.description == entry.complaint %}selected{% endif %}>
+                        {{ complaint.description }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="mb-3">
+            <label for="remarks" class="form-label">Remarks</label>
+            <input type="text" name="remarks" id="remarks" class="form-control" value="{{ entry.remarks }}">
+        </div>
+        <div class="mb-3">
+            <label for="place" class="form-label">Place</label>
+            <input type="text" name="place" id="place" class="form-control" value="{{ entry.place }}">
+        </div>
+        <div class="mb-3">
+            <label for="status" class="form-label">Status</label>
+            <select name="status" id="status" class="form-select">
+                <option value="Pending" {% if entry.status == 'Pending' %}selected{% endif %}>Pending</option>
+                <option value="Solved" {% if entry.status == 'Solved' %}selected{% endif %}>Solved</option>
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Update</button>
+        <a href="{% url 'service_entry' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}

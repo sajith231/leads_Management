@@ -5,7 +5,7 @@ from django.urls import path
 from . import views
 from .views import edit_lead
 from .views import delete_lead 
-from .views import load_areas
+from .views import load_areas,toggle_service_status
 
 urlpatterns = [
     # Authentication
@@ -67,6 +67,41 @@ urlpatterns = [
     path('all_hardwares/', views.all_hardwares, name='all_hardwares'),
     path('edit_hardware/<int:hardware_id>/', views.edit_hardware, name='edit_hardware'),
     path('delete_hardware/<int:hardware_id>/', views.delete_hardware, name='delete_hardware'),
+
+
+
+
+    path('add-complaint/', views.add_complaint, name='add_complaint'),
+    path('all-complaints/', views.all_complaints, name='all_complaints'),
+    path('edit_complaint/<int:complaint_id>/', views.edit_complaint, name='edit_complaint'),
+    path('delete_complaint/<int:complaint_id>/', views.delete_complaint, name='delete_complaint'),
+    
+    path('service_log/', views.service_log, name='service_log'),  # View to display the logs
+    path('add_service/', views.add_service_log, name='add_service_log'),  # View to add new service log
+    path('delete_service_log/<int:log_id>/', views.delete_service_log, name='delete_service_log'),
+    path('service_logs/', views.service_log, name='service_log'),  # The name 'service_log' for the list view
+    path('edit_service_log/<int:log_id>/', views.edit_service_log, name='edit_service_log'),
+    path('user-service-log/', views.user_service_log, name='user_service_log'),
+    path('assign-user/<int:log_id>/', views.assign_user, name='assign_user'),
+    path('toggle-service-status/<int:log_id>/', toggle_service_status, name='toggle_service_status'),
+    path('save-assigned-date/<int:log_id>/', views.save_assigned_date, name='save_assigned_date'),
+    path('service-entry/', views.service_entry, name='service_entry'),
+    path('service-entry/add/', views.add_service_entry, name='add_service_entry'),
+    path('service_entry/edit/<int:entry_id>/', views.edit_service_entry, name='edit_service_entry'),
+    path('service_entry/delete/<int:entry_id>/', views.delete_service_entry, name='delete_service_entry'),
+
+    path('user/service-entry/', views.user_service_entry, name='user_service_entry'),
+    path('user/service-entry/add/', views.user_add_service_entry, name='user_add_service_entry'),
+    path('user/service-entry/edit/<int:entry_id>/', views.user_edit_service_entry, name='user_edit_service_entry'),
+    path('user/service-entry/delete/<int:entry_id>/', views.user_delete_service_entry, name='user_delete_service_entry'),
+    
+
+    
+    
+
+    
+
+    
 
 
     

@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h2 style="display: flex; justify-content: center;">Edit Service Log</h2>
+
+    <form method="POST" action="{% url 'edit_service_log' log.id %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+        <div class="form-group">
+            <label for="customer_name">Customer Name:</label>
+            <input type="text" class="form-control" id="customer_name" name="customer_name" value="{{ log.customer_name }}" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="type">Type:</label>
+            <input type="text" class="form-control" id="type" name="type" value="{{ log.type }}" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="complaint">Complaint:</label>
+            <select class="form-control" id="complaint" name="complaint" required>
+                <option value="" disabled {% if not log.complaint %}selected{% endif %}>Select a Complaint</option>
+                {% for complaint in complaints %}
+                    <option value="{{ complaint.id }}" {% if log.complaint and log.complaint.id == complaint.id %}selected{% endif %}>{{ complaint.description }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="remark">Remark:</label>
+            <textarea class="form-control" id="remark" name="remark" required>{{ log.remark }}</textarea>
+        </div>
+        
+        <div class="form-group">
+            <label for="voice_note">Voice Note:</label><br>
+            {% if log.voice_note %}
+                <audio controls>
+                    <source src="{{ log.voice_note.url }}" type="audio/wav">
+                    Your browser does not support the audio element.
+                </audio>
+            {% else %}
+                No voice note available
+            {% endif %}
+            
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="margin-top: 2%;">Save Changes</button>
+    </form>
+    
+    {% if error %}
+        <div class="alert alert-danger" style="margin-top: 20px;">
+            {{ error }}
+        </div>
+    {% endif %}
+{% endblock %}

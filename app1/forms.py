@@ -1,5 +1,5 @@
 from django import forms
-from .models import Branch, Requirement, Lead, User,LeadRequirementAmount,District,Area,Location,Hardware,LeadHardwarePrice
+from .models import Branch, Requirement, Lead, User,LeadRequirementAmount,District,Area,Location,Hardware,LeadHardwarePrice,Complaint
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from django.contrib.auth.models import User as DjangoUser
@@ -321,3 +321,24 @@ class HardwareForm(forms.ModelForm):
                 'step': '0.01'
             })
         }
+
+
+
+
+
+
+
+
+
+class ComplaintForm(forms.ModelForm):
+    class Meta:
+        model = Complaint
+        fields = ['description']
+        widgets = {
+            'description': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter complaint',
+                'rows': 3,
+            }),
+        }
+

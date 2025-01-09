@@ -16,7 +16,7 @@ from .forms import LeadForm
 from django.db.models import Q
 from datetime import datetime, timedelta
 from .models import Requirement  # Ensure the correct model is imported
-from .models import Lead
+from .models import Lead,ServiceEntry
 import json
 
 def login(request):
@@ -852,18 +852,6 @@ def get_location_details(request):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 @login_required
 def add_hardware(request):
     if request.method == 'POST':
@@ -914,7 +902,488 @@ def delete_hardware(request, hardware_id):
 
 
 
+from .models import Complaint
+from .forms import ComplaintForm
+
+def add_complaint(request):
+    if request.method == 'POST':
+        form = ComplaintForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('all_complaints')
+    else:
+        form = ComplaintForm()
+    return render(request, 'add_complaints.html', {'form': form})
+
+def all_complaints(request):
+    complaints = Complaint.objects.all().order_by('created_at')  # Ascending order
+    return render(request, 'all_complaints.html', {'complaints': complaints})
+
+# Edit complaint view
+def edit_complaint(request, complaint_id):
+    complaint = get_object_or_404(Complaint, id=complaint_id)
+    if request.method == 'POST':
+        form = ComplaintForm(request.POST, instance=complaint)
+        if form.is_valid():
+            form.save()
+            return redirect('all_complaints')
+    else:
+        form = ComplaintForm(instance=complaint)
+    return render(request, 'edit_complaint.html', {'form': form})
+
+# Delete complaint view
+def delete_complaint(request, complaint_id):
+    complaint = get_object_or_404(Complaint, id=complaint_id)
+    complaint.delete()
+    return redirect('all_complaints')
 
 
+
+
+from django.http import JsonResponse
+from .models import User, ServiceLog
+
+@login_required
+def assign_user(request, log_id):
+    if request.method == 'POST':
+        user_id = request.POST.get('user_id')
+        assigned_date = request.POST.get('assigned_date')
+        try:
+            service_log = ServiceLog.objects.get(id=log_id)
+            assigned_user = User.objects.get(id=user_id)
+            service_log.assigned_person = assigned_user
+            service_log.assigned_date = assigned_date
+            service_log.save()
+            return JsonResponse({
+                'success': True,
+                'assigned_person': assigned_user.name,
+                'assigned_date': assigned_date
+            })
+        except (ServiceLog.DoesNotExist, User.DoesNotExist):
+            return JsonResponse({'success': False}, status=400)
+    return JsonResponse({'success': False}, status=405)
+
+
+
+@login_required
+def service_log(request):
+    try:
+        current_user = get_current_user(request)
+        
+        # Allow both superusers and admin_level users to access all logs
+        if request.user.is_superuser or current_user.user_level == 'admin_level':
+            logs = ServiceLog.objects.select_related(
+                'added_by', 
+                'complaint', 
+                'assigned_person'
+            ).all()
+            all_users = User.objects.all()
+            
+            return render(request, 'service_log.html', {
+                'logs': logs,
+                'all_users': all_users,
+                'current_user': current_user
+            })
+        else:
+            return redirect('user_service_log')
+            
+    except Exception as e:
+        messages.error(request, f'Error accessing service logs: {str(e)}')
+        return redirect('login')
+
+
+from django.shortcuts import render, get_object_or_404, redirect
+from .models import ServiceLog
+from django.core.exceptions import ValidationError
+
+@login_required
+def edit_service_log(request, log_id):
+    log = get_object_or_404(ServiceLog, id=log_id)
+    complaints = Complaint.objects.all()  # Fetch all complaints
+
+    if request.method == 'POST':
+        # Get the updated data from the request
+        customer_name = request.POST.get('customer_name')
+        log_type = request.POST.get('type')
+        complaint_id = request.POST.get('complaint')
+        remark = request.POST.get('remark')
+        voice_note = request.FILES.get('voice_note')
+
+        # Fetch the complaint instance if it exists
+        complaint = None
+        if complaint_id:
+            complaint = Complaint.objects.filter(id=complaint_id).first()
+
+        try:
+            # Manually update the ServiceLog instance
+            log.customer_name = customer_name
+            log.type = log_type
+            log.complaint = complaint
+            log.remark = remark
+
+            # If a new voice note is uploaded, save it
+            if voice_note:
+                log.voice_note = voice_note
+
+            # Save the updated log
+            log.save()
+
+            return redirect('service_log')  # Redirect to the service log list view (not 'service_log_list')
+
+        except Exception as e:
+            return render(request, 'edit_service_log.html', {'log': log, 'complaints': complaints, 'error': str(e)})
+
+    return render(request, 'edit_service_log.html', {'log': log, 'complaints': complaints})
+
+def delete_service_log(request, log_id):
+    log = get_object_or_404(ServiceLog, id=log_id)
+    log.delete()
+    return redirect('service_log')  # This redirects to the service_log_list view
+
+
+
+
+@login_required
+def user_service_log(request):
+    # Redirect admin users to the admin service log view
+    if request.user.is_superuser:
+        return redirect('service_log')
+    
+    # Get the current user
+    current_user = User.objects.get(id=request.session['custom_user_id'])
+    
+    # Get all service logs, not just the current user's
+    logs = ServiceLog.objects.select_related(
+        'added_by', 
+        'complaint', 
+        'assigned_person'
+    ).all()
+    all_users = User.objects.all()
+    
+    return render(request, 'user_service_log.html', {
+        'logs': logs,
+        'current_user': current_user,  # Pass the current user to the template
+        'all_users': all_users
+    })
+
+
+
+@login_required
+@require_POST
+def toggle_service_status(request, log_id):
+    try:
+        log = ServiceLog.objects.get(id=log_id)
+        # Toggle the status
+        log.status = 'Completed' if log.status == 'Not Completed' else 'Not Completed'
+        log.save()
+        return JsonResponse({
+            'success': True,
+            'status': log.status
+        })
+    except ServiceLog.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'error': 'Log not found'
+        }, status=404)
+
+
+@require_POST
+def save_assigned_date(request, log_id):
+    try:
+        data = json.loads(request.body)
+        log = ServiceLog.objects.get(id=log_id)
+        log.assigned_date = data['assigned_date']
+        log.save()
+        return JsonResponse({'success': True})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+    
+
+
+from .models import ServiceLog
+
+def get_current_user(request):
+    """Helper function to get current user for both superuser and regular users"""
+    if request.user.is_superuser:
+        # Try to get existing admin user first
+        admin_user = User.objects.filter(
+            userid=request.user.username,
+            user_level='admin_level'
+        ).first()
+        
+        # If no admin user exists, create one
+        if not admin_user:
+            default_branch = Branch.objects.first()
+            if not default_branch:
+                default_branch = Branch.objects.create(name='Default Branch')
+                
+            admin_user = User.objects.create(
+                name=request.user.username,
+                userid=request.user.username,
+                password='default_password',  # You might want to set this more securely
+                branch=default_branch,
+                user_level='admin_level'
+            )
+        return admin_user
+    else:
+        return User.objects.get(id=request.session.get('custom_user_id'))
+
+
+
+@login_required
+def add_service_log(request):
+    try:
+        current_user = get_current_user(request)
+        complaints = Complaint.objects.all()
+
+        if request.method == 'POST':
+            customer_name = request.POST.get('customer_name')
+            type = request.POST.get('type')
+            complaint_id = request.POST.get('complaint')
+            remark = request.POST.get('remark')
+            voice_note = request.FILES.get('voice_note')
+
+            complaint = Complaint.objects.get(id=complaint_id)
+
+            service_log = ServiceLog(
+                customer_name=customer_name,
+                type=type,
+                complaint=complaint,
+                remark=remark,
+                voice_note=voice_note,
+                added_by=current_user
+            )
+            service_log.save()
+            
+            messages.success(request, 'Service log added successfully!')
+            
+            # Redirect based on user level
+            if current_user.user_level == 'admin_level' or request.user.is_superuser:
+                return redirect('service_log')
+            else:
+                return redirect('user_service_log')
+                
+        return render(request, 'add_service.html', {'complaints': complaints})
+        
+    except Exception as e:
+        messages.error(request, f'Error adding service log: {str(e)}')
+        return redirect('service_log')
+    
+
+
+from django.shortcuts import render, redirect
+from django.utils import timezone
+from .models import ServiceEntry, User  # Import the custom User model
+from django.contrib.auth.decorators import login_required
+
+@login_required
+def service_entry(request):
+    try:
+        current_user = get_current_user(request)
+        service_entries = ServiceEntry.objects.all().order_by('-date')
+        return render(request, 'service_entry.html', {
+            'service_entries': service_entries,
+            'current_user': current_user
+        })
+    except Exception as e:
+        messages.error(request, f'Error accessing service entries: {str(e)}')
+        return redirect('login')
+
+
+
+@login_required
+def add_service_entry(request):
+    try:
+        current_user = get_current_user(request)
+        complaints = Complaint.objects.all().order_by('created_at')
+
+        if request.method == 'POST':
+            # Get form data
+            customer = request.POST.get('customer')
+            complaint = request.POST.get('complaint')
+            remarks = request.POST.get('remarks')
+            place = request.POST.get('place')
+            status = request.POST.get('status')
+            
+            # Create new service entry
+            service_entry = ServiceEntry.objects.create(
+                date=timezone.now(),
+                customer=customer,
+                complaint=complaint,
+                remarks=remarks,
+                status=status,
+                user=current_user,
+                place=place
+            )
+            
+            messages.success(request, 'Service entry added successfully!')
+            
+            # Redirect based on user level
+            if current_user.user_level == 'admin_level' or request.user.is_superuser:
+                return redirect('service_entry')
+            else:
+                return redirect('user_service_entry')
+        
+        return render(request, 'add_service_entry.html', {
+            'complaints': complaints,
+            'current_user': current_user
+        })
+        
+    except Exception as e:
+        messages.error(request, f'Error adding service entry: {str(e)}')
+        # Redirect based on user level
+        if current_user.user_level == 'admin_level' or request.user.is_superuser:
+            return redirect('service_entry')
+        else:
+            return redirect('user_service_entry')
+
+@login_required
+def edit_service_entry(request, entry_id):
+    entry = get_object_or_404(ServiceEntry, id=entry_id)
+    current_user = get_current_user(request)
+    complaints = Complaint.objects.all().order_by('created_at')
+
+    if request.method == 'POST':
+        entry.customer = request.POST.get('customer')
+        complaint_description = request.POST.get('complaint')
+        entry.complaint = complaint_description
+        entry.remarks = request.POST.get('remarks')
+        entry.place = request.POST.get('place')
+        entry.status = request.POST.get('status')
+        entry.save()
+        
+        # Redirect based on user level
+        if current_user.user_level == 'admin_level' or request.user.is_superuser:
+            return redirect('service_entry')
+        else:
+            return redirect('user_service_entry')
+
+    context = {
+        'entry': entry,
+        'complaints': complaints,
+    }
+    return render(request, 'edit_service_entry.html', context)
+
+
+
+@login_required
+def delete_service_entry(request, entry_id):
+    entry = get_object_or_404(ServiceEntry, id=entry_id)
+    current_user = get_current_user(request)
+    
+    if request.method == 'POST':
+        entry.delete()
+        # Redirect based on user level
+        if current_user.user_level == 'admin_level' or request.user.is_superuser:
+            return redirect('service_entry')
+        else:
+            return redirect('user_service_entry')
+            
+    return render(request, 'confirm_delete.html', {'entry': entry})
+
+
+
+
+@login_required
+def user_service_entry(request):
+    try:
+        current_user = get_current_user(request)
+        # Filter service entries for current user only
+        service_entries = ServiceEntry.objects.filter(user=current_user).order_by('-date')
+        return render(request, 'user_service_entry.html', {
+            'service_entries': service_entries,
+            'current_user': current_user
+        })
+    except Exception as e:
+        messages.error(request, f'Error accessing service entries: {str(e)}')
+        return redirect('login')
+
+
+
+@login_required
+def user_add_service_entry(request):
+    try:
+        current_user = get_current_user(request)
+        complaints = Complaint.objects.all().order_by('created_at')
+
+        if request.method == 'POST':
+            # Get form data
+            customer = request.POST.get('customer')
+            complaint = request.POST.get('complaint')
+            remarks = request.POST.get('remarks')
+            place = request.POST.get('place')
+            status = request.POST.get('status')
+            
+            # Create new service entry for current user
+            service_entry = ServiceEntry.objects.create(
+                date=timezone.now(),
+                customer=customer,
+                complaint=complaint,
+                remarks=remarks,
+                status=status,
+                user=current_user,
+                place=place
+            )
+            
+            messages.success(request, 'Service entry added successfully!')
+            return redirect('user_service_entry')
+        
+        return render(request, 'add_service_entry.html', {
+            'complaints': complaints,
+            'current_user': current_user,
+            'is_user_view': True  # Add this to differentiate user view
+        })
+        
+    except Exception as e:
+        messages.error(request, f'Error adding service entry: {str(e)}')
+        return redirect('user_service_entry')
+
+
+
+# Add user-specific edit and delete views
+@login_required
+def user_edit_service_entry(request, entry_id):
+    # Get entry and verify it belongs to current user
+    entry = get_object_or_404(ServiceEntry, id=entry_id)
+    current_user = get_current_user(request)
+    
+    if entry.user != current_user:
+        messages.error(request, "You don't have permission to edit this entry.")
+        return redirect('user_service_entry')
+    
+    complaints = Complaint.objects.all().order_by('created_at')
+
+    if request.method == 'POST':
+        entry.customer = request.POST.get('customer')
+        complaint_description = request.POST.get('complaint')
+        entry.complaint = complaint_description
+        entry.remarks = request.POST.get('remarks')
+        entry.place = request.POST.get('place')
+        entry.status = request.POST.get('status')
+        entry.save()
+        return redirect('user_service_entry')
+
+    context = {
+        'entry': entry,
+        'complaints': complaints,
+        'is_user_view': True
+    }
+    return render(request, 'edit_service_entry.html', context)
+
+
+
+@login_required
+def user_delete_service_entry(request, entry_id):
+    entry = get_object_or_404(ServiceEntry, id=entry_id)
+    current_user = get_current_user(request)
+    
+    if entry.user != current_user:
+        messages.error(request, "You don't have permission to delete this entry.")
+        return redirect('user_service_entry')
+        
+    if request.method == 'POST':
+        entry.delete()
+        return redirect('user_service_entry')
+    return render(request, 'confirm_delete.html', {'entry': entry, 'is_user_view': True})
 
 

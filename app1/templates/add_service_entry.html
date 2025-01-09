@@ -1,0 +1,46 @@
+{# add_service_entry.html #}
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Add Service Entry</h1>
+    <div class="row">
+        <div class="col-md-6">
+            <form method="POST" action="{% url 'add_service_entry' %}">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="customer" class="form-label">Customer</label>
+                    <input type="text" class="form-control" id="customer" name="customer" required>
+                </div>
+                <div class="mb-3">
+                    <label for="complaint" class="form-label">Complaint</label>
+                    <select class="form-control" id="complaint" name="complaint" required>
+                        <option value="">Select a complaint</option>
+                        {% for complaint in complaints %}
+                            <option value="{{ complaint.description }}">{{ complaint.description }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="remarks" class="form-label">Remarks</label>
+                    <textarea class="form-control" id="remarks" name="remarks" rows="2"></textarea>
+                </div>
+                <div class="mb-3">
+                    <label for="status" class="form-label">Status</label>
+                    <select class="form-control" id="status" name="status" required>
+                        <option value="Pending">Pending</option>
+                        <option value="Solved">Solved</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="place" class="form-label">Place</label>
+                    <input type="text" class="form-control" id="place" name="place" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Submit</button>
+                <a href="{% url 'service_entry' %}" class="btn btn-secondary">Cancel</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

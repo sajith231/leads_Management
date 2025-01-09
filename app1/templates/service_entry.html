@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<style>
+    th {
+        text-transform: uppercase;
+    }
+</style>
+<div class="">
+    <h1 style="display: flex; justify-content: center;">Service Entry</h1>
+    
+    <a href="{% url 'add_service_entry' %}" class="btn btn-primary mb-3">Add new</a>
+
+    <!-- Status Filter -->
+    <div class="mb-3">
+        <label for="statusFilter" class="form-label">Filter by Status:</label>
+        <select id="statusFilter" class="form-select" style="width: 30%;">
+            <option value="all">All Status</option>
+            <option value="Solved">Solved</option>
+            <option value="Pending">Pending</option>
+        </select>
+    </div>
+
+    <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+        <table class="table table-bordered table-striped" id="serviceTable">
+            <thead>
+                <tr>
+                    <th>No</th>
+                    <th>Date</th>
+                    <th>Customer</th>
+                    <th>Complaint</th>
+                    <th>Remarks</th>
+                    <th>Status</th>
+                    <th>Added By</th>
+                    <th>Place</th>
+                    <th>Edit</th>
+                    <th>Delete</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in service_entries %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ entry.date|date:"" }}</td>
+                    <td>{{ entry.customer|upper }}</td>
+                    <td>{{ entry.complaint|upper }}</td>
+                    <td>
+                        <i 
+                            class="fas fa-comment-alt remark-icon" 
+                            style="color: blue; cursor: pointer;display: flex;justify-content: center;" 
+                            data-remark="{{ entry.remarks|escapejs }}"
+                        ></i>
+                    </td>
+                    <td class="status">
+                        <span class="badge {% if entry.status == 'Solved' %}bg-success{% else %}bg-warning{% endif %}">
+                            {{ entry.status|upper }}
+                        </span>
+                    </td>
+                    <td>{{ entry.user.name|upper }}</td>
+                    <td>{{ entry.place|upper }}</td>
+                    <td>
+                        <a href="{% url 'edit_service_entry' entry.id %}" class="btn btn-sm btn-warning">Edit</a>
+                    </td>
+                    <td>
+                        <form action="{% url 'delete_service_entry' entry.id %}" method="post">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="remarkModal" tabindex="-1" aria-labelledby="remarkModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="remarkModalLabel">Remarks</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p id="remarkContent"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const statusFilter = document.getElementById('statusFilter');
+        const tableRows = document.querySelectorAll('#serviceTable tbody tr');
+        const remarkIcons = document.querySelectorAll('.remark-icon');
+        const remarkModal = new bootstrap.Modal(document.getElementById('remarkModal'));
+        const remarkContent = document.getElementById('remarkContent');
+
+        // Function to filter rows by status
+        const filterRowsByStatus = () => {
+            const selectedStatus = statusFilter.value.toLowerCase(); // Lowercase for consistent comparison
+
+            tableRows.forEach(row => {
+                const statusCell = row.querySelector('.status span').textContent.trim().toLowerCase();
+                if (selectedStatus === 'all' || statusCell === selectedStatus) {
+                    row.style.display = ''; // Show row
+                } else {
+                    row.style.display = 'none'; // Hide row
+                }
+            });
+        };
+
+        // Apply filter on dropdown change
+        statusFilter.addEventListener('change', filterRowsByStatus);
+
+        // Show remarks in modal
+        remarkIcons.forEach(icon => {
+            icon.addEventListener('click', function () {
+                const remark = this.getAttribute('data-remark');
+                remarkContent.textContent = remark || 'No remarks available.'; // Fallback if remark is empty
+                remarkModal.show();
+            });
+        });
+
+        // Initial filter application (optional, in case a default filter is needed)
+        filterRowsByStatus();
+    });
+</script>
+
+{% endblock %}

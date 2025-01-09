@@ -23,38 +23,11 @@
         body {
             font-family: Arial, sans-serif;
             margin: 0;
-            
+
+
         }
 
-        .sidebar {
-            width: 250px;
-            height: 100vh;
-            position: fixed;
-            background-color: rgb(123, 98, 82);
-            padding-top: 20px;
-            transition: 0.3s;
-            z-index: 1000;
-            display: flex; 
-            flex-direction: column;
-        }
 
-        .sidebar a {
-            color: #ddd;
-            padding: 10px 15px;
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            font-size: 1.1em;
-            transition: color 0.3s;
-        }
-
-        .sidebar a:hover {
-            color: #fff;
-        }
-
-        .sidebar a .fas {
-            margin-right: 8px;
-        }
 
         .content {
             margin-left: 260px;
@@ -86,37 +59,28 @@
         }
 
         @media (max-width: 768px) {
-            .logo{
-                
+            .logo {
+
                 margin-bottom: 5%;
             }
+
             .hamburger {
                 display: block;
             }
+
             .submenu a {
-            padding: 8px 0;
-            font-size: 1em;
-            color: #bbb;
-            margin-left: 10%;
-        }
-
-            .sidebar {
-                transform: translateX(-250px);
-                /* width: 100%; */
-                display: flex;
-                justify-content: center;
-                align-items: center;
+                padding: 8px 0;
+                font-size: 1em;
+                color: #bbb;
+                margin-left: 10%;
             }
 
-            .sidebar.active {
-                transform: translateX(0);
-                width: 100%;
-            }
+
 
             .content {
                 margin-left: 0;
                 /* padding-top: 70px; */
-                
+
             }
 
             .content.shifted {
@@ -134,7 +98,8 @@
             .hamburger.active span:nth-child(3) {
                 transform: rotate(-45deg) translate(7px, -7px);
             }
-            .d-flex justify-content-center align-items-center{
+
+            .d-flex justify-content-center align-items-center {
                 margin-left: 15%;
             }
         }
@@ -155,15 +120,151 @@
             padding: 8px 0;
             font-size: 1em;
             color: white;
-            
-            
+
+
         }
 
         .submenu a:hover {
             color: black;
         }
-        
     </style>
+    <style>
+        .sidebar {
+            width: 250px;
+            height: 100vh;
+            position: fixed;
+            background-color: rgb(146, 99, 74);
+            padding-top: 20px;
+            transition: all 0.3s ease-in-out;
+            z-index: 1000;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .sidebar a {
+            color: #ddd;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            font-size: 1.1em;
+            transition: all 0.3s ease-in-out;
+            border-radius: 5px;
+            margin: 5px 15px;
+            
+        }
+
+        .sidebar a:hover {
+            color: #fff;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar a .fas {
+            margin-right: 10px;
+            font-size: 1.2em;
+        }
+
+        .submenu {
+            display: none;
+            flex-direction: column;
+            margin-left: 20px;
+            border-left: 2px solid rgba(255, 255, 255, 0.3);
+            padding-left: 10px;
+        }
+
+        .submenu a {
+            color: #ccc;
+            font-size: 1em;
+            margin-bottom: 5px;
+        }
+
+        .submenu a:hover {
+            color: #fff;
+            background-color: rgba(255, 255, 255, 0.05);
+            border-radius: 3px;
+        }
+
+        .hamburger {
+            display: none;
+            position: fixed;
+            top: 20px;
+            left: 15px;
+            z-index: 1001;
+            background: #222;
+            border: none;
+            cursor: pointer;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .hamburger span {
+            display: block;
+            width: 25px;
+            height: 3px;
+            background-color: white;
+            margin: 4px 0;
+            transition: 0.3s;
+        }
+
+        .hamburger.active span:nth-child(1) {
+            transform: rotate(45deg) translate(5px, 5px);
+        }
+
+        .hamburger.active span:nth-child(2) {
+            opacity: 0;
+        }
+
+        .hamburger.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(5px, -5px);
+        }
+        .sideBarMob{
+            margin-top: 8%;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                /* transform: translateX(-250px); */
+                width: 0%;
+                transition: transform 0.3s ease-in-out;
+                /* padding-top: 80px; */
+                display: flex;
+                justify-content: center;
+                flex-direction: column;
+                align-items: center;
+                overflow: hidden;
+
+            }
+            .sideBarMob{
+                margin-top: 2%;
+            }
+            .sidebar.active {
+                width: 100%;
+                /* transform: translateX(0); */
+            }
+            .submenu {
+                display: none;
+                flex-direction: column;
+                margin-left: 100px;
+                border-left: 2px solid rgba(255, 255, 255, 0.3);
+                padding-left: 10px;
+            }
+
+            .hamburger {
+                display: block;
+            }
+
+            .content {
+                margin-left: 0;
+                transition: margin-left 0.3s ease-in-out;
+
+            }
+            
+
+            
+            
+        }
+    </style>
+
+
 </head>
 
 <body>
@@ -172,66 +273,119 @@
         <span></span>
         <span></span>
         <span></span>
-        
+
     </button>
 
-    <div class="sidebar" >
-        
+    <div class="sidebar">
+
         {% if user.is_superuser %}
-            <div  onclick="toggleMenu()" style="margin-top: -5%;">
-                <div><h5 style="margin-left: 5%; color: white;" class="mainmenu" >
+        <div onclick="toggleMenu()" >
+            <div>
+                <h5 style="margin-left: 5%; color: white;" class="mainmenu">
                     <div style="display: flex;" class="gap-2 align-items-center">
-                        <i class="fas fa-cog"></i> 
+                        <i class="fas fa-cog"></i>
                         <span>Master</span>
                     </div>
-                </h5></div>
+                </h5>
             </div>
-            <div id="master-menu" class="submenu" style="margin-left: 5%;">
-                <a href="{% url 'all_branches' %}">
-                    <i class="fas fa-code-branch"></i> Branch
-                </a>
-                <a href="{% url 'users_table' %}">
-                    <i class="fas fa-users"></i> Users
-                </a>
-                <a href="{% url 'all_requirements' %}">
-                    <i class="fas fa-tasks"></i> Requirements
-                </a>
-                <a href="{% url 'all_hardwares' %}">
-                    <i class="fas fa-desktop"></i> Hardware
-                </a>
-                
-                <a href="{% url 'all_districts' %}">
-                    <i class="fas fa-map"></i> District
-                </a>
-                <a href="{% url 'all_areas' %}">
-                    <i class="fas fa-map-marker-alt"></i> Area
-                </a>
-                <a href="{% url 'all_locations' %}">
-                    <i class="fas fa-chart-area"></i> Location
-                </a>
-                
-            </div>
+        </div>
+        <div id="master-menu" class="submenu" >
+            <a href="{% url 'all_branches' %}">
+                <i class="fas fa-code-branch"></i> Branch
+            </a>
+            <a href="{% url 'users_table' %}">
+                <i class="fas fa-users"></i> Users
+            </a>
+            <a href="{% url 'all_requirements' %}">
+                <i class="fas fa-tasks"></i> Requirements
+            </a>
+            <a href="{% url 'all_hardwares' %}">
+                <i class="fas fa-desktop"></i> Hardware
+            </a>
+
+            <a href="{% url 'all_districts' %}">
+                <i class="fas fa-map"></i> District
+            </a>
+            <a href="{% url 'all_areas' %}">
+                <i class="fas fa-map-marker-alt"></i> Area
+            </a>
+            <a href="{% url 'all_locations' %}">
+                <i class="fas fa-chart-area"></i> Location
+            </a>
+            <a href="{% url 'all_complaints' %}">
+                <i class="fas fa-bug"></i> Complaints
+
+            </a>
+
+        </div>
+        <div class="sideBarMob">
             <a href="{% url 'all_leads' %}" style="color: white;">
                 <i class="fas fa-user"></i> Leads
             </a>
-            
-        {% else %}
-        <h5 style="margin-top: 2%;">
-             
-            <a href="{% url 'user_dashboard' %}" style="color: white;">
-                <i class="fas fa-user" style="font-size: 15px; margin-right: 5px;"></i> Leads
-            </a>
-            
-        </h5>
-        {% endif %}
+        </div>
+        <div onclick="toggleServicesMenu()" class="sideBarMob">
+            <div>
+                <h5 style="margin-left: 5%; color: white;" class="mainmenu">
+                    <div style="display: flex;margin-top: 5%;" class="gap-2 align-items-center">
+                        <i class="fas fa-wrench"></i> <span>Services</span>
 
-        <a href="{% url 'logout' %}">
-            <i class="fas fa-sign-out-alt" style="color: white;"></i><span style="color: white;">Logout</span> 
+
+
+
+
+
+                    </div>
+                </h5>
+            </div>
+        </div>
+        <div id="services-menu" class="submenu" style="margin-left: 5%; display: none;">
+            <a href="{% url 'service_log' %}">
+                <i class="fas fa-book"></i> Service Log
+            </a>
+            <a href="{% url 'service_entry' %}">
+                <i class="fas fa-plus-circle"></i> <span style="white-space: nowrap;">Service Entry</span>
+            </a>
+        </div>
+
+
+        {% else %}
+        
+
+            <a href="{% url 'user_dashboard' %}" style="color: white;">
+                <i class="fas fa-user" style="font-size: 15px;"></i> Leads
+            </a>
+            <div onclick="toggleServicesMenu()" class="sideBarMob">
+                <div>
+                    <h5 style="margin-left: 5%; color: white;" class="mainmenu">
+                        <div style="display: flex;" class="gap-2 align-items-center">
+                            <i class="fas fa-wrench"></i> <span>Services</span>
+
+
+
+                        </div>
+                    </h5>
+                </div>
+            </div>
+            <div id="services-menu" class="submenu" style="margin-left: 5%; display: none;">
+                <a href="{% url 'service_log' %}">
+                    <i class="fas fa-book"></i> Service Log
+                </a>
+                <a href="{% url 'user_service_entry' %}">
+                    <i class="fas fa-plus-circle"></i> Service Entry
+                </a>
+            </div>
+
+        
+        {% endif %}
+<div style="margin-top: 2%;">
+        <a href="{% url 'logout' %}" class="sideBarMob" >
+            <i class="fas fa-sign-out-alt" style="color: white;"></i><span style="color: white;">Logout</span>
         </a>
+    </div>
     </div>
 
     <div class="content">
-        
+
         {% block content %}{% endblock %}
     </div>
     <script src="{% static 'js/scripts.js' %}"></script>
@@ -260,5 +414,16 @@
             });
         });
     </script>
+    <script>
+        function toggleServicesMenu() {
+            const menu = document.getElementById("services-menu");
+            if (menu.style.display === "none" || menu.style.display === "") {
+                menu.style.display = "block";
+            } else {
+                menu.style.display = "none";
+            }
+        }
+    </script>
 </body>
+
 </html>

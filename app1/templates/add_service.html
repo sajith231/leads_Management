@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h2 style="display: flex; justify-content: center;">Add Service Log</h2>
+
+    <form method="POST" action="{% url 'add_service_log' %}" enctype="multipart/form-data" style="width: 60%;">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="customer_name">Customer Name:</label>
+            <input type="text" class="form-control" id="customer_name" name="customer_name" required>
+        </div>
+        <!-- <div class="form-group">
+            <label for="type">Type:</label>
+            <input type="text" class="form-control" id="type" name="type" required>
+        </div> -->
+        <div class="form-group">
+            <label for="type">Type:</label>
+            <select class="form-control" id="type" name="type" required>
+                <option value="" disabled selected>Select Type</option>
+                <option value="Software">Software</option>
+                <option value="Hardware">Hardware</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="complaint">Complaint:</label>
+            <select class="form-control" id="complaint" name="complaint" required>
+                <option value="" disabled selected>Select a Complaint</option>
+                {% for complaint in complaints %}
+                    <option value="{{ complaint.id }}">{{ complaint.description }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="remark">Remark:</label>
+            <textarea class="form-control" id="remark" name="remark" ></textarea>
+        </div>
+        <div class="form-group">
+            <label for="voice_note">Voice Note:</label><br>
+            <button type="button" id="startRecording" class="btn btn-success">Start Recording</button>
+            <button type="button" id="stopRecording" class="btn btn-danger" disabled>Stop Recording</button>
+            <div style="margin-top: 3%;"><audio id="audioPlayback" controls></audio></div>
+            <input type="file" id="voice_note" name="voice_note" style="display: none;" accept="audio/*">
+        </div>
+        <button type="submit" class="btn btn-primary" style="margin-top: 2%;">Submit</button>
+    </form>
+
+    <script>
+        let mediaRecorder;
+        let audioChunks = [];
+        let audioBlob;
+        let audioUrl;
+
+        const startButton = document.getElementById('startRecording');
+        const stopButton = document.getElementById('stopRecording');
+        const audioPlayback = document.getElementById('audioPlayback');
+        const voiceNoteInput = document.getElementById('voice_note');
+
+        // Start recording
+        startButton.addEventListener('click', () => {
+            audioChunks = []; // Clear previous recording
+            navigator.mediaDevices.getUserMedia({ audio: true })
+                .then(stream => {
+                    mediaRecorder = new MediaRecorder(stream);
+                    mediaRecorder.ondataavailable = event => {
+                        audioChunks.push(event.data);
+                    };
+                    mediaRecorder.onstop = () => {
+                        audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                        audioUrl = URL.createObjectURL(audioBlob);
+                        audioPlayback.src = audioUrl;
+                        
+                        // Create a File object from the Blob
+                        const audioFile = new File([audioBlob], 'voice_note.wav', { type: 'audio/wav' });
+                        
+                        // Create a FormData object and append the file
+                        const formData = new FormData();
+                        formData.append('voice_note', audioFile);
+                        
+                        // Create a new FileList-like object
+                        const dataTransfer = new DataTransfer();
+                        dataTransfer.items.add(audioFile);
+                        voiceNoteInput.files = dataTransfer.files;
+                    };
+                    mediaRecorder.start();
+                    startButton.disabled = true;
+                    stopButton.disabled = false;
+                })
+                .catch(err => {
+                    console.error('Error accessing microphone:', err);
+                    alert('Error accessing microphone: ' + err);
+                });
+        });
+
+        // Stop recording
+        stopButton.addEventListener('click', () => {
+            mediaRecorder.stop();
+            startButton.disabled = false;
+            stopButton.disabled = true;
+            // Stop all tracks of the stream
+            mediaRecorder.stream.getTracks().forEach(track => track.stop());
+        });
+    </script>
+{% endblock %}
