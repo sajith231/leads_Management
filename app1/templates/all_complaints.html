@@ -22,7 +22,7 @@
         <tbody>
             {% for complaint in complaints %}
             <tr>
-                <td>{{ complaint.id }}</td>
+                <td>{{ forloop.counter }}</td>
                 <td>{{ complaint.description|upper }}</td>
                 <td>
                     <a href="{% url 'edit_complaint' complaint.id %}" class="btn btn-warning btn-sm">Edit</a>
