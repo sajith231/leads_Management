@@ -264,3 +264,50 @@ class Agent(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class CV(models.Model):
+    KERALA_DISTRICTS = [
+        ('Alappuzha', 'Alappuzha'),
+        ('Ernakulam', 'Ernakulam'),
+        ('Idukki', 'Idukki'),
+        ('Kannur', 'Kannur'),
+        ('Kasaragod', 'Kasaragod'),
+        ('Kollam', 'Kollam'),
+        ('Kottayam', 'Kottayam'),
+        ('Kozhikode', 'Kozhikode'),
+        ('Malappuram', 'Malappuram'),
+        ('Palakkad', 'Palakkad'),
+        ('Pathanamthitta', 'Pathanamthitta'),
+        ('Thiruvananthapuram', 'Thiruvananthapuram'),
+        ('Thrissur', 'Thrissur'),
+        ('Wayanad', 'Wayanad'),
+    ]
+
+    name = models.CharField(max_length=255)
+    address = models.TextField()
+    place = models.CharField(max_length=255)
+    district = models.CharField(max_length=255, choices=KERALA_DISTRICTS)
+    education = models.CharField(max_length=255)
+    experience = models.TextField()
+    job_title = models.CharField(max_length=255)
+    dob = models.DateField()
+    remarks = models.TextField(blank=True, null=True)
+    cv_attachment = models.FileField(upload_to='cv_attachments/')
+
+    def __str__(self):
+        return self.name
+    
+
+
+
+
+
+    
+class JobTitle(models.Model):
+    title = models.CharField(max_length=100)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.title

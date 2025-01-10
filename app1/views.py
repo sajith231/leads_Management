@@ -16,7 +16,7 @@ from .forms import LeadForm
 from django.db.models import Q
 from datetime import datetime, timedelta
 from .models import Requirement  # Ensure the correct model is imported
-from .models import Lead,ServiceEntry
+from .models import Lead,ServiceEntry,JobTitle
 import json
 
 def login(request):
@@ -1427,3 +1427,101 @@ def delete_agent(request, agent_id):
     agent = get_object_or_404(Agent, id=agent_id)
     agent.delete()
     return redirect('agent_list')
+
+
+
+from django.shortcuts import render, redirect
+from .models import CV
+
+def cv_management(request):
+    cv_list = CV.objects.all()
+    return render(request, 'cv_management.html', {'cv_list': cv_list})
+
+def add_cv(request):
+    job_titles = JobTitle.objects.all()  # Fetch all job titles
+    if request.method == 'POST':
+        name = request.POST['name']
+        address = request.POST['address']
+        place = request.POST['place']
+        district = request.POST['district']
+        education = request.POST['education']
+        experience = request.POST['experience']
+        job_title = request.POST['job_title']
+        dob = request.POST['dob']
+        remarks = request.POST.get('remarks', '')
+        cv_attachment = request.FILES['cv_attachment']
+        CV.objects.create(
+            name=name, address=address, place=place, district=district,
+            education=education, experience=experience, job_title=job_title,
+            dob=dob, remarks=remarks, cv_attachment=cv_attachment
+        )
+        return redirect('cv_management')
+    return render(request, 'add_cv.html', {'job_titles': job_titles})
+
+
+
+def edit_cv(request, id):
+    cv = get_object_or_404(CV, id=id)
+    job_titles = JobTitle.objects.all()
+    districts = CV.KERALA_DISTRICTS
+
+    if request.method == 'POST':
+        cv.name = request.POST['name']
+        cv.address = request.POST['address']
+        cv.place = request.POST['place']
+        cv.district = request.POST['district']
+        cv.education = request.POST['education']
+        cv.experience = request.POST['experience']
+        cv.job_title = request.POST['job_title']
+        cv.dob = request.POST['dob']
+        cv.remarks = request.POST.get('remarks', '')
+        if 'cv_attachment' in request.FILES:
+            cv.cv_attachment = request.FILES['cv_attachment']
+        cv.save()
+        return redirect('cv_management')
+
+    return render(request, 'edit_cv.html', {'cv': cv, 'job_titles': job_titles, 'districts': districts})
+
+def delete_cv(request, id):
+    """
+    Directly deletes a CV entry and redirects to the CV management page.
+    """
+    cv = get_object_or_404(CV, id=id)
+    if request.method == 'POST':
+        cv.delete()
+    return redirect('cv_management')
+
+
+def job_titles(request):
+    titles = JobTitle.objects.all().order_by('id')
+    return render(request, 'job_titles.html', {'titles': titles})
+
+def add_job_title(request):
+    if request.method == 'POST':
+        title = request.POST.get('job_title')
+        if title:
+            JobTitle.objects.create(title=title)
+            messages.success(request, 'Job title added successfully!')
+            return redirect('job_titles')
+        else:
+            messages.error(request, 'Please enter a job title.')
+    return render(request, 'add_job_title.html')
+
+def edit_job_title(request, title_id):
+    title = get_object_or_404(JobTitle, id=title_id)
+    if request.method == 'POST':
+        new_title = request.POST.get('job_title')
+        if new_title:
+            title.title = new_title
+            title.save()
+            messages.success(request, 'Job title updated successfully!')
+            return redirect('job_titles')
+        else:
+            messages.error(request, 'Please enter a job title.')
+    return render(request, 'edit_job_title.html', {'title': title})
+
+def delete_job_title(request, title_id):
+    title = get_object_or_404(JobTitle, id=title_id)
+    title.delete()
+    messages.success(request, 'Job title deleted successfully!')
+    return redirect('job_titles')

@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    th{
+        text-transform: uppercase;
+    }
+    td,th{
+        white-space: nowrap;
+    }
+</style>
+<div style="overflow: hidden;">
+<div class="">
+    <h2 style="display: flex; justify-content: center; align-items: center; color: BLACK;gap: 10px;">
+        <i class="fa fa-folder-open" style="margin-right: 10px;"></i> CV MANAGEMENT
+
+
+
+
+
+    </h2>
+    
+    
+    
+    <div class="row">
+        <div class="col-12 text-right">
+            <a href="{% url 'add_cv' %}" class="btn btn-primary mb-3">Add New</a>
+        </div>
+        
+        <div class="col-12">
+            <div style="overflow: auto;">
+            <table class="table table-bordered table-hover">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>No</th>
+                        <th>Name</th>
+                        <th>Address</th>
+                        <th>Place</th>
+                        <th>District</th>
+                        <th>Education</th>
+                        <th>Experience</th>
+                        <th>Job Title</th>
+                        <th>DOB</th>
+                        <th>Remarks</th>
+                        <th>CV Attachment</th>
+                        <th>Edit</th>
+                        <th>Delete</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cv in cv_list %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ cv.name|upper }}</td>
+                        <td>{{ cv.address|upper }}</td>
+                        <td>{{ cv.place|upper }}</td>
+                        <td>{{ cv.district|upper }}</td>
+                        <td>{{ cv.education|upper }}</td>
+                        <td>{{ cv.experience|upper }}</td>
+                        <td>{{ cv.job_title|upper }}</td>
+                        <td>{{ cv.dob }}</td>
+                        <td>{{ cv.remarks }}</td>
+                        <td><a href="{{ cv.cv_attachment.url }}" target="_blank"><i class="fa fa-file-alt" style="font-size: x-large;display: flex;justify-content: center;"></i></a></td>
+
+
+                        <td><a href="{% url 'edit_cv' cv.id %}" class="btn btn-warning btn-sm">Edit</a></td>
+                        <td><form method="post" action="{% url 'delete_cv' cv.id %}" style="display: inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                        </form>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="13" class="text-center">No CVs found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table></div>
+        </div>
+    </div>
+</div></div>
+{% endblock %}

@@ -100,6 +100,18 @@ urlpatterns = [
     path('agents/edit/<int:agent_id>/', views.edit_agent, name='edit_agent'),
     path('agents/delete/<int:agent_id>/', views.delete_agent, name='delete_agent'),
 
+    path('cvmanagement/', views.cv_management, name='cv_management'),
+    path('add/', views.add_cv, name='add_cv'),
+    path('edit/<int:id>/', views.edit_cv, name='edit_cv'),
+    path('delete/<int:id>/', views.delete_cv, name='delete_cv'),
+    
+    path('job-titles/', views.job_titles, name='job_titles'),
+    path('add-job-title/', views.add_job_title, name='add_job_title'),
+    path('edit-job-title/<int:title_id>/', views.edit_job_title, name='edit_job_title'),
+    path('delete-job-title/<int:title_id>/', views.delete_job_title, name='delete_job_title'),
+    
+
+    
     
     
 
