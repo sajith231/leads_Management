@@ -1434,8 +1434,22 @@ from django.shortcuts import render, redirect
 from .models import CV
 
 def cv_management(request):
-    cv_list = CV.objects.all()
-    return render(request, 'cv_management.html', {'cv_list': cv_list})
+    # Fetch all job titles for the filter dropdown
+    job_titles = JobTitle.objects.all()
+
+    # If a job title is selected, filter the CV list based on that
+    selected_job_title = request.GET.get('job_title', None)
+    if selected_job_title:
+        cv_list = CV.objects.filter(job_title=selected_job_title)
+    else:
+        cv_list = CV.objects.all()
+
+    return render(request, 'cv_management.html', {
+        'cv_list': cv_list,
+        'job_titles': job_titles,
+        'selected_job_title': selected_job_title
+    })
+
 
 def add_cv(request):
     job_titles = JobTitle.objects.all()  # Fetch all job titles
