@@ -149,7 +149,7 @@
             transition: all 0.3s ease-in-out;
             border-radius: 5px;
             margin: 5px 15px;
-            
+
         }
 
         .sidebar a:hover {
@@ -216,7 +216,8 @@
         .hamburger.active span:nth-child(3) {
             transform: rotate(-45deg) translate(5px, -5px);
         }
-        .sideBarMob{
+
+        .sideBarMob {
             margin-top: 8%;
         }
 
@@ -233,13 +234,16 @@
                 overflow: hidden;
 
             }
-            .sideBarMob{
+
+            .sideBarMob {
                 margin-top: 2%;
             }
+
             .sidebar.active {
                 width: 100%;
                 /* transform: translateX(0); */
             }
+
             .submenu {
                 display: none;
                 flex-direction: column;
@@ -257,10 +261,14 @@
                 transition: margin-left 0.3s ease-in-out;
 
             }
-            
+            #services-menu{
+                padding-left: 5%;
 
-            
-            
+            }
+
+
+
+
         }
     </style>
 
@@ -279,7 +287,7 @@
     <div class="sidebar">
 
         {% if user.is_superuser %}
-        <div onclick="toggleMenu()" >
+        <div onclick="toggleMenu()">
             <div>
                 <h5 style="margin-left: 5%; color: white;" class="mainmenu">
                     <div style="display: flex;" class="gap-2 align-items-center">
@@ -289,7 +297,7 @@
                 </h5>
             </div>
         </div>
-        <div id="master-menu" class="submenu" >
+        <div id="master-menu" class="submenu">
             <a href="{% url 'all_branches' %}">
                 <i class="fas fa-code-branch"></i> Branch
             </a>
@@ -312,6 +320,12 @@
             <a href="{% url 'all_locations' %}">
                 <i class="fas fa-chart-area"></i> Location
             </a>
+            <a href="{% url 'agent_list' %}">
+                <i class="fas fa-binoculars"></i> Agent
+            </a>
+            
+            
+            
             <a href="{% url 'all_complaints' %}">
                 <i class="fas fa-bug"></i> Complaints
 
@@ -349,38 +363,38 @@
 
 
         {% else %}
-        
-
-            <a href="{% url 'user_dashboard' %}" style="color: white;">
-                <i class="fas fa-user" style="font-size: 15px;"></i> Leads
-            </a>
-            <div onclick="toggleServicesMenu()" class="sideBarMob">
-                <div>
-                    <h5 style="margin-left: 5%; color: white;" class="mainmenu">
-                        <div style="display: flex;" class="gap-2 align-items-center">
-                            <i class="fas fa-wrench"></i> <span>Services</span>
 
 
-
-                        </div>
-                    </h5>
-                </div>
-            </div>
-            <div id="services-menu" class="submenu" style="margin-left: 5%; display: none;">
-                <a href="{% url 'service_log' %}">
-                    <i class="fas fa-book"></i> Service Log
-                </a>
-                <a href="{% url 'user_service_entry' %}">
-                    <i class="fas fa-plus-circle"></i> Service Entry
-                </a>
-            </div>
-
-        
-        {% endif %}
-<div style="margin-top: 2%;">
-        <a href="{% url 'logout' %}" class="sideBarMob" >
-            <i class="fas fa-sign-out-alt" style="color: white;"></i><span style="color: white;">Logout</span>
+        <a href="{% url 'user_dashboard' %}" style="color: white;">
+            <i class="fas fa-user" style="font-size: 15px;"></i> Leads
         </a>
+        <div onclick="toggleServicesMenu()" class="sideBarMob">
+            <div>
+                <h5 style="margin-left: 5%; color: white;" class="mainmenu">
+                    <div style="display: flex;" class="gap-2 align-items-center">
+                        <i class="fas fa-wrench"></i> <span>Services</span>
+
+
+
+                    </div>
+                </h5>
+            </div>
+        </div>
+        <div id="services-menu" class="submenu" style="margin-left: 5%; display: none;">
+            <a href="{% url 'service_log' %}">
+                <i class="fas fa-book"></i> Service Log
+            </a>
+            <a href="{% url 'user_service_entry' %}">
+                <i class="fas fa-plus-circle"></i> Service Entry
+            </a>
+        </div>
+
+
+        {% endif %}
+        <di>
+            <a href="{% url 'logout' %}" class="sideBarMob">
+                <i class="fas fa-sign-out-alt" style="color: white; margin-top: 6%;"></i><span style="color: white;margin-top: 6%;">Logout</span>
+            </a>
     </div>
     </div>
 

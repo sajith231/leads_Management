@@ -306,13 +306,12 @@
                 </td>
                 <td>
                     <div class="date-assign-container">
-                        <span style="display: flex;">
-                            <input type="date" class="form-control assign-date" id="assignDate_{{ log.id }}">
-                            <button class="btn-save-date" onclick="saveAssignedDate({{ log.id }})">OK</button>
-                        </span>
+                        <input type="date" class="form-control assign-date" 
+                               id="assignDate_{{ log.id }}" 
+                               onchange="saveAssignedDate({{ log.id }}, this)">
                         {% if log.assigned_date %}
                         <div class="assigned-date-display" id="assignedDateDisplay_{{ log.id }}">
-                            <span style="white-space: nowrap; background-color: #007bff; color: white; padding: 5px 10px; border-radius: 5px;">{{ log.assigned_date|date:"Y-m-d" }}</span>
+                            <span class="date-badge">{{ log.assigned_date|date:"Y-m-d" }}</span>
                         </div>
                         {% endif %}
                     </div>
@@ -358,6 +357,73 @@
     </div>
 </div>
 
+<script>
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function showToast(message) {
+    const toast = document.getElementById('toastNotification');
+    toast.textContent = message;
+    toast.classList.add('show');
+    setTimeout(() => {
+        toast.classList.remove('show');
+    }, 3000);
+}
+
+function saveAssignedDate(logId, inputElement) {
+    const assignedDate = inputElement.value;
+    
+    if (!assignedDate) {
+        return;
+    }
+    
+    fetch(`/save-assigned-date/${logId}/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({ assigned_date: assignedDate })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            let displayElement = document.getElementById(`assignedDateDisplay_${logId}`);
+            
+            if (!displayElement) {
+                const container = inputElement.closest('.date-assign-container');
+                displayElement = document.createElement('div');
+                displayElement.className = 'assigned-date-display';
+                displayElement.id = `assignedDateDisplay_${logId}`;
+                container.appendChild(displayElement);
+            }
+            
+            displayElement.innerHTML = `<span class="date-badge">${assignedDate}</span>`;
+            showToast('Date assigned successfully!');
+        } else {
+            showToast('Failed to save assigned date. Please try again.');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('An error occurred while saving the assigned date.');
+    });
+}
+
+// Rest of your existing JavaScript functions remain the same
+</script>
 
 
 <script>
@@ -465,52 +531,6 @@ document.addEventListener('DOMContentLoaded', function() {
     filterTable();
     document.getElementById('statusFilter').addEventListener('change', filterTable);
 });
-</script>
-<script>
-    function saveAssignedDate(logId) {
-    const dateInput = document.getElementById(`assignDate_${logId}`);
-    const assignedDate = dateInput.value;
-    
-    if (!assignedDate) {
-        alert('Please select a date');
-        return;
-    }
-    
-    fetch(`/save-assigned-date/${logId}/`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCookie('csrftoken')
-        },
-        body: JSON.stringify({ assigned_date: assignedDate })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            let displayElement = document.getElementById(`assignedDateDisplay_${logId}`);
-            
-            if (!displayElement) {
-                const container = dateInput.closest('.date-assign-container');
-                displayElement = document.createElement('div');
-                displayElement.className = 'assigned-date-display';
-                displayElement.id = `assignedDateDisplay_${logId}`;
-                container.appendChild(displayElement);
-            }
-            
-            // Update the display with the new date
-            displayElement.innerHTML = `<span class="date-badge">${assignedDate}</span>`;
-            
-            // Show success message
-            alert('Date assigned successfully!');
-        } else {
-            alert('Failed to save assigned date. Please try again.');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('An error occurred while saving the assigned date.');
-    });
-}
 </script>
 
 

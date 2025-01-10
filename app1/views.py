@@ -1386,4 +1386,44 @@ def user_delete_service_entry(request, entry_id):
         return redirect('user_service_entry')
     return render(request, 'confirm_delete.html', {'entry': entry, 'is_user_view': True})
 
+from django.shortcuts import render, redirect
+from .models import Agent
 
+def agent_list(request):
+    agents = Agent.objects.all()
+    return render(request, 'agent.html', {'agents': agents})
+
+def add_agent(request):
+    if request.method == 'POST':
+        name = request.POST['name']
+        business_type = request.POST['business_type']
+        location = request.POST['location']
+        district = request.POST['district']
+        contact_number = request.POST['contact_number']
+        Agent.objects.create(
+            name=name,
+            business_type=business_type,
+            location=location,
+            district=district,
+            contact_number=contact_number
+        )
+        return redirect('agent_list')
+    return render(request, 'add_agent.html')
+
+
+def edit_agent(request, agent_id):
+    agent = Agent.objects.get(id=agent_id)
+    if request.method == 'POST':
+        agent.name = request.POST['name']
+        agent.business_type = request.POST['business_type']
+        agent.location = request.POST['location']
+        agent.district = request.POST['district']
+        agent.contact_number = request.POST['contact_number']
+        agent.save()
+        return redirect('agent_list')
+    return render(request, 'edit_agent.html', {'agent': agent})
+
+def delete_agent(request, agent_id):
+    agent = get_object_or_404(Agent, id=agent_id)
+    agent.delete()
+    return redirect('agent_list')

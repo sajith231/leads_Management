@@ -94,7 +94,11 @@ urlpatterns = [
     path('user/service-entry/add/', views.user_add_service_entry, name='user_add_service_entry'),
     path('user/service-entry/edit/<int:entry_id>/', views.user_edit_service_entry, name='user_edit_service_entry'),
     path('user/service-entry/delete/<int:entry_id>/', views.user_delete_service_entry, name='user_delete_service_entry'),
-    
+
+    path('agents/', views.agent_list, name='agent_list'),
+    path('agents/add/', views.add_agent, name='add_agent'),
+    path('agents/edit/<int:agent_id>/', views.edit_agent, name='edit_agent'),
+    path('agents/delete/<int:agent_id>/', views.delete_agent, name='delete_agent'),
 
     
     

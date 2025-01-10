@@ -251,3 +251,16 @@ class ServiceEntry(models.Model):
 
     class Meta:
         ordering = ['-date']
+
+
+from django.db import models
+
+class Agent(models.Model):
+    name = models.CharField(max_length=100)
+    business_type = models.CharField(max_length=100)
+    location = models.CharField(max_length=100)
+    district = models.CharField(max_length=100)
+    contact_number = models.CharField(max_length=15)
+
+    def __str__(self):
+        return self.name
