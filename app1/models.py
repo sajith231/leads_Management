@@ -265,7 +265,7 @@ class Agent(models.Model):
     def __str__(self):
         return self.name
 
-class JobTitlee(models.Model):
+class JobTitle(models.Model):
     title = models.CharField(max_length=100)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -301,7 +301,7 @@ class CV(models.Model):
     district = models.CharField(max_length=255, choices=KERALA_DISTRICTS)
     education = models.CharField(max_length=255)
     experience = models.TextField()
-    job_title = models.ForeignKey(JobTitlee, on_delete=models.CASCADE)
+    job_title = models.ForeignKey(JobTitle, on_delete=models.CASCADE)
     dob = models.DateField()
     remarks = models.TextField(blank=True, null=True)
     cv_attachment = models.FileField(upload_to='cv_attachments/')
