@@ -16,7 +16,7 @@ from .forms import LeadForm
 from django.db.models import Q
 from datetime import datetime, timedelta
 from .models import Requirement  # Ensure the correct model is imported
-from .models import Lead,ServiceEntry,JobTitle
+from .models import Lead,ServiceEntry,JobTitlee
 import json
 
 def login(request):
@@ -1434,7 +1434,7 @@ from django.shortcuts import render, redirect
 from .models import CV
 
 def cv_management(request):
-    job_titles = JobTitle.objects.all()
+    job_titles = JobTitlee.objects.all()
     selected_job_title = request.GET.get('job_title')
     
     cv_list = CV.objects.all()
@@ -1456,7 +1456,7 @@ def cv_management(request):
 
 
 def add_cv(request):
-    job_titles = JobTitle.objects.all()  # Fetch all job titles
+    job_titles = JobTitlee.objects.all()  # Fetch all job titles
     if request.method == 'POST':
         try:
             name = request.POST['name']
@@ -1466,7 +1466,7 @@ def add_cv(request):
             education = request.POST['education']
             experience = request.POST['experience']
             job_title_id = request.POST['job_title']  # Get the ID from the form
-            job_title = JobTitle.objects.get(id=job_title_id)  # Get the actual JobTitle instance
+            job_title = JobTitlee.objects.get(id=job_title_id)  # Get the actual JobTitle instance
             dob = request.POST['dob']
             remarks = request.POST.get('remarks', '')
             cv_attachment = request.FILES['cv_attachment']
@@ -1484,7 +1484,7 @@ def add_cv(request):
                 cv_attachment=cv_attachment
             )
             return redirect('cv_management')
-        except JobTitle.DoesNotExist:
+        except JobTitlee.DoesNotExist:
             messages.error(request, 'Invalid job title selected.')
         except Exception as e:
             messages.error(request, f'Error creating CV: {str(e)}')
@@ -1495,7 +1495,7 @@ def add_cv(request):
 
 def edit_cv(request, id):
     cv = get_object_or_404(CV, id=id)
-    job_titles = JobTitle.objects.all()
+    job_titles = JobTitlee.objects.all()
     districts = CV.KERALA_DISTRICTS
 
     if request.method == 'POST':
@@ -1508,7 +1508,7 @@ def edit_cv(request, id):
             cv.experience = request.POST['experience']
             # Get JobTitle instance instead of string
             job_title_id = request.POST['job_title']
-            cv.job_title = JobTitle.objects.get(id=job_title_id)
+            cv.job_title = JobTitlee.objects.get(id=job_title_id)
             cv.dob = request.POST['dob']
             cv.remarks = request.POST.get('remarks', '')
             
@@ -1517,7 +1517,7 @@ def edit_cv(request, id):
             
             cv.save()
             return redirect('cv_management')
-        except JobTitle.DoesNotExist:
+        except JobTitlee.DoesNotExist:
             messages.error(request, 'Invalid job title selected.')
         except Exception as e:
             messages.error(request, f'Error updating CV: {str(e)}')
@@ -1535,14 +1535,14 @@ def delete_cv(request, id):
 
 
 def job_titles(request):
-    titles = JobTitle.objects.all().order_by('id')
+    titles = JobTitlee.objects.all().order_by('id')
     return render(request, 'job_titles.html', {'titles': titles})
 
 def add_job_title(request):
     if request.method == 'POST':
         title = request.POST.get('job_title')
         if title:
-            JobTitle.objects.create(title=title)
+            JobTitlee.objects.create(title=title)
             messages.success(request, 'Job title added successfully!')
             return redirect('job_titles')
         else:
@@ -1550,7 +1550,7 @@ def add_job_title(request):
     return render(request, 'add_job_title.html')
 
 def edit_job_title(request, title_id):
-    title = get_object_or_404(JobTitle, id=title_id)
+    title = get_object_or_404(JobTitlee, id=title_id)
     if request.method == 'POST':
         new_title = request.POST.get('job_title')
         if new_title:
@@ -1563,7 +1563,7 @@ def edit_job_title(request, title_id):
     return render(request, 'edit_job_title.html', {'title': title})
 
 def delete_job_title(request, title_id):
-    title = get_object_or_404(JobTitle, id=title_id)
+    title = get_object_or_404(JobTitlee, id=title_id)
     title.delete()
     messages.success(request, 'Job title deleted successfully!')
     return redirect('job_titles')
