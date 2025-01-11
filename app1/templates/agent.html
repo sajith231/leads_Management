@@ -7,9 +7,33 @@
 </style>
 <div class="container mt-5">
     <h2>Agents List</h2>
-    <div class="d-flex justify-content-end mb-3">
-        <a href="{% url 'add_agent' %}" class="btn btn-primary">Add New</a>
+    
+    <!-- Filter Section -->
+    <div class="row mb-3">
+        <div class="col-md-4">
+            <select class="form-control" id="districtFilter" onchange="filterAgents()">
+                <option value="">All Districts</option>
+                <option value="Alappuzha">Alappuzha</option>
+                <option value="Ernakulam">Ernakulam</option>
+                <option value="Idukki">Idukki</option>
+                <option value="Kannur">Kannur</option>
+                <option value="Kasaragod">Kasaragod</option>
+                <option value="Kollam">Kollam</option>
+                <option value="Kottayam">Kottayam</option>
+                <option value="Kozhikode">Kozhikode</option>
+                <option value="Malappuram">Malappuram</option>
+                <option value="Palakkad">Palakkad</option>
+                <option value="Pathanamthitta">Pathanamthitta</option>
+                <option value="Thiruvananthapuram">Thiruvananthapuram</option>
+                <option value="Thrissur">Thrissur</option>
+                <option value="Wayanad">Wayanad</option>
+            </select>
+        </div>
+        <div class="col-md-8 text-end">
+            <a href="{% url 'add_agent' %}" class="btn btn-primary">Add New</a>
+        </div>
     </div>
+
     <table class="table table-bordered">
         <thead>
             <tr>
@@ -25,7 +49,7 @@
         </thead>
         <tbody>
             {% for agent in agents %}
-            <tr>
+            <tr class="agent-row" data-district="{{ agent.district|upper }}">
                 <td>{{ forloop.counter }}</td>
                 <td>{{ agent.name|upper }}</td>
                 <td>{{ agent.business_type|upper }}</td>
@@ -48,5 +72,23 @@
         </tbody>
     </table>
 </div>
+
+<script>
+function filterAgents() {
+    const selectedDistrict = document.getElementById('districtFilter').value.toUpperCase();
+    const rows = document.getElementsByClassName('agent-row');
+    let counter = 1;
+
+    for (let row of rows) {
+        const districtValue = row.getAttribute('data-district');
+        if (!selectedDistrict || districtValue === selectedDistrict) {
+            row.style.display = '';
+            row.cells[0].textContent = counter++;
+        } else {
+            row.style.display = 'none';
+        }
+    }
+}
+</script>
 
 {% endblock %}

@@ -1434,42 +1434,61 @@ from django.shortcuts import render, redirect
 from .models import CV
 
 def cv_management(request):
-    # Fetch all job titles for the filter dropdown
     job_titles = JobTitle.objects.all()
-
-    # If a job title is selected, filter the CV list based on that
-    selected_job_title = request.GET.get('job_title', None)
+    selected_job_title = request.GET.get('job_title')
+    
+    cv_list = CV.objects.all()
+    
     if selected_job_title:
-        cv_list = CV.objects.filter(job_title=selected_job_title)
-    else:
-        cv_list = CV.objects.all()
-
-    return render(request, 'cv_management.html', {
+        try:
+            cv_list = cv_list.filter(job_title_id=selected_job_title)
+        except ValueError:
+            pass  # Handle invalid ID gracefully
+    
+    context = {
         'cv_list': cv_list,
         'job_titles': job_titles,
-        'selected_job_title': selected_job_title
-    })
+        'selected_job_title': selected_job_title,
+    }
+    
+    return render(request, 'cv_management.html', context)
+
 
 
 def add_cv(request):
     job_titles = JobTitle.objects.all()  # Fetch all job titles
     if request.method == 'POST':
-        name = request.POST['name']
-        address = request.POST['address']
-        place = request.POST['place']
-        district = request.POST['district']
-        education = request.POST['education']
-        experience = request.POST['experience']
-        job_title = request.POST['job_title']
-        dob = request.POST['dob']
-        remarks = request.POST.get('remarks', '')
-        cv_attachment = request.FILES['cv_attachment']
-        CV.objects.create(
-            name=name, address=address, place=place, district=district,
-            education=education, experience=experience, job_title=job_title,
-            dob=dob, remarks=remarks, cv_attachment=cv_attachment
-        )
-        return redirect('cv_management')
+        try:
+            name = request.POST['name']
+            address = request.POST['address']
+            place = request.POST['place']
+            district = request.POST['district']
+            education = request.POST['education']
+            experience = request.POST['experience']
+            job_title_id = request.POST['job_title']  # Get the ID from the form
+            job_title = JobTitle.objects.get(id=job_title_id)  # Get the actual JobTitle instance
+            dob = request.POST['dob']
+            remarks = request.POST.get('remarks', '')
+            cv_attachment = request.FILES['cv_attachment']
+            
+            CV.objects.create(
+                name=name,
+                address=address,
+                place=place,
+                district=district,
+                education=education,
+                experience=experience,
+                job_title=job_title,  # Pass the JobTitle instance
+                dob=dob,
+                remarks=remarks,
+                cv_attachment=cv_attachment
+            )
+            return redirect('cv_management')
+        except JobTitle.DoesNotExist:
+            messages.error(request, 'Invalid job title selected.')
+        except Exception as e:
+            messages.error(request, f'Error creating CV: {str(e)}')
+            
     return render(request, 'add_cv.html', {'job_titles': job_titles})
 
 
@@ -1480,19 +1499,28 @@ def edit_cv(request, id):
     districts = CV.KERALA_DISTRICTS
 
     if request.method == 'POST':
-        cv.name = request.POST['name']
-        cv.address = request.POST['address']
-        cv.place = request.POST['place']
-        cv.district = request.POST['district']
-        cv.education = request.POST['education']
-        cv.experience = request.POST['experience']
-        cv.job_title = request.POST['job_title']
-        cv.dob = request.POST['dob']
-        cv.remarks = request.POST.get('remarks', '')
-        if 'cv_attachment' in request.FILES:
-            cv.cv_attachment = request.FILES['cv_attachment']
-        cv.save()
-        return redirect('cv_management')
+        try:
+            cv.name = request.POST['name']
+            cv.address = request.POST['address']
+            cv.place = request.POST['place']
+            cv.district = request.POST['district']
+            cv.education = request.POST['education']
+            cv.experience = request.POST['experience']
+            # Get JobTitle instance instead of string
+            job_title_id = request.POST['job_title']
+            cv.job_title = JobTitle.objects.get(id=job_title_id)
+            cv.dob = request.POST['dob']
+            cv.remarks = request.POST.get('remarks', '')
+            
+            if 'cv_attachment' in request.FILES:
+                cv.cv_attachment = request.FILES['cv_attachment']
+            
+            cv.save()
+            return redirect('cv_management')
+        except JobTitle.DoesNotExist:
+            messages.error(request, 'Invalid job title selected.')
+        except Exception as e:
+            messages.error(request, f'Error updating CV: {str(e)}')
 
     return render(request, 'edit_cv.html', {'cv': cv, 'job_titles': job_titles, 'districts': districts})
 
