@@ -272,6 +272,10 @@ class JobTitlee(models.Model):
 
     def __str__(self):
         return self.title
+    
+from django.db import models
+
+
 
 class CV(models.Model):
     KERALA_DISTRICTS = [
