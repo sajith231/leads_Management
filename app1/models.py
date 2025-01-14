@@ -55,9 +55,12 @@ class Location(models.Model):
 
 class User(models.Model):
     USER_LEVEL_CHOICES = [
-        ('normal', 'Normal User'),
-        ('admin_level', 'Admin Level User'),
-    ]
+    ('admin', 'Admin'),#updated user_level to admin
+    ('super_admin', 'Super Admin'),#updated admin_level to super_admin
+    ('super_user', 'Super User'),#create as new field
+    ('user', 'User'),#create as new field
+]
+
 
     name = models.CharField(max_length=100)
     userid = models.CharField(max_length=100, unique=True)
@@ -296,13 +299,13 @@ class CV(models.Model):
     ]
     
     name = models.CharField(max_length=255)
-    address = models.TextField(blank=True, null=True)  # Made optional changed model
+    address = models.TextField(blank=True, null=True) 
     place = models.CharField(max_length=255)
     district = models.CharField(max_length=255, choices=KERALA_DISTRICTS)
     education = models.CharField(max_length=255)
     experience = models.TextField()
     job_title = models.ForeignKey(JobTitle, on_delete=models.CASCADE)
-    dob = models.DateField(blank=True, null=True)  # Made optional      changed model
+    dob = models.DateField(blank=True, null=True)  
     remarks = models.TextField(blank=True, null=True)
     cv_attachment = models.FileField(upload_to='cv_attachments/')
 
