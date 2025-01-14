@@ -294,15 +294,15 @@ class CV(models.Model):
         ('Thrissur', 'Thrissur'),
         ('Wayanad', 'Wayanad'),
     ]
-
+    
     name = models.CharField(max_length=255)
-    address = models.TextField()
+    address = models.TextField(blank=True, null=True)  # Made optional changed model
     place = models.CharField(max_length=255)
     district = models.CharField(max_length=255, choices=KERALA_DISTRICTS)
     education = models.CharField(max_length=255)
     experience = models.TextField()
     job_title = models.ForeignKey(JobTitle, on_delete=models.CASCADE)
-    dob = models.DateField()
+    dob = models.DateField(blank=True, null=True)  # Made optional      changed model
     remarks = models.TextField(blank=True, null=True)
     cv_attachment = models.FileField(upload_to='cv_attachments/')
 

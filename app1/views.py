@@ -1456,30 +1456,30 @@ def cv_management(request):
 
 
 def add_cv(request):
-    job_titles = JobTitle.objects.all()  # Fetch all job titles
+    job_titles = JobTitle.objects.all()
     if request.method == 'POST':
         try:
             name = request.POST['name']
-            address = request.POST['address']
+            address = request.POST.get('address', '')  # Optional field
             place = request.POST['place']
             district = request.POST['district']
             education = request.POST['education']
             experience = request.POST['experience']
-            job_title_id = request.POST['job_title']  # Get the ID from the form
-            job_title = JobTitle.objects.get(id=job_title_id)  # Get the actual JobTitle instance
-            dob = request.POST['dob']
+            job_title_id = request.POST['job_title']
+            job_title = JobTitle.objects.get(id=job_title_id)
+            dob = request.POST.get('dob') or None  # Make it None if empty
             remarks = request.POST.get('remarks', '')
             cv_attachment = request.FILES['cv_attachment']
-            
+
             CV.objects.create(
                 name=name,
-                address=address,
+                address=address,  # Will be empty string if not provided
                 place=place,
                 district=district,
                 education=education,
                 experience=experience,
-                job_title=job_title,  # Pass the JobTitle instance
-                dob=dob,
+                job_title=job_title,
+                dob=dob,  # Will be None if not provided
                 remarks=remarks,
                 cv_attachment=cv_attachment
             )
@@ -1488,7 +1488,7 @@ def add_cv(request):
             messages.error(request, 'Invalid job title selected.')
         except Exception as e:
             messages.error(request, f'Error creating CV: {str(e)}')
-            
+    
     return render(request, 'add_cv.html', {'job_titles': job_titles})
 
 
