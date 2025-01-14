@@ -55,8 +55,8 @@ class Location(models.Model):
 
 class User(models.Model):
     USER_LEVEL_CHOICES = [
-        ('normal', 'Normal User'),
-        ('admin_level', 'Admin Level User'),
+        ('normal', 'Normal User'),#changed admin to
+        ('admin_level', 'Admin Level User'),#changed  super_admin to
     ]
 
 
