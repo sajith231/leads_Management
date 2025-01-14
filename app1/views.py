@@ -172,8 +172,8 @@ def add_user(request):
     if request.method == "POST":
         form = UserForm(request.POST)
         
-        if request.POST.get("userid") == "super admin":
-            messages.error(request, "The User ID 'super admin' is not allowed.")
+        if request.POST.get("userid") == "admin":
+            messages.error(request, "The User ID 'admin' is not allowed.")
             return render(request, "add_user.html", {"form": form})
         
         if form.is_valid():

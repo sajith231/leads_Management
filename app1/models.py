@@ -55,11 +55,9 @@ class Location(models.Model):
 
 class User(models.Model):
     USER_LEVEL_CHOICES = [
-    ('admin', 'Admin'),#updated user_level to admin
-    ('super_admin', 'Super Admin'),#updated admin_level to super_admin
-    ('super_user', 'Super User'),#create as new field
-    ('user', 'User'),#create as new field
-]
+        ('normal', 'Normal User'),
+        ('admin_level', 'Admin Level User'),
+    ]
 
 
     name = models.CharField(max_length=100)
