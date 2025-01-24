@@ -54,11 +54,25 @@
                             <tr>
                                 <td>{{ forloop.counter }}</td>
                                 <td>{{ cv.name|upper }}</td>
-                                <td>{{ cv.address|upper }}</td>
+                                <td>
+                                    {{ cv.address|upper|slice:":30" }}<br>
+                                    {{ cv.address|upper|slice:"50:500" }}
+                                </td>
+                                
+                                
                                 <td>{{ cv.place|upper }}</td>
                                 <td>{{ cv.district|upper }}</td>
-                                <td>{{ cv.education|upper }}</td>
-                                <td>{{ cv.experience|upper }}</td>
+                                <td>
+                                    <i class="fas fa-book" style="color: green; display: flex; justify-content: center;font-size: x-large;" 
+                                       data-toggle="modal" data-target="#educationModal" data-education="{{ cv.education }}">
+                                    </i>
+                                </td>
+                                <td>
+                                    <i class="fas fa-briefcase" style="color: orange; display: flex; justify-content: center;font-size: x-large;" 
+                                       data-toggle="modal" data-target="#experienceModal" data-experience="{{ cv.experience }}">
+                                    </i>
+                                </td>
+                                
                                 <td>{{ cv.job_title|upper }}</td>
                                 <td>{{ cv.dob }}</td>
                                 <td>
@@ -112,7 +126,39 @@
         </div>
     </div>
 </div>
+<!-- Modal for Education -->
+<div id="educationModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="educationModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="educationModalLabel">Education Details</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p id="educationText"></p>
+            </div>
+        </div>
+    </div>
+</div>
 
+<!-- Modal for Experience -->
+<div id="experienceModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="experienceModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="experienceModalLabel">Experience Details</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p id="experienceText"></p>
+            </div>
+        </div>
+    </div>
+</div>
 <script>
     $(document).ready(function() {
         // Handle remarks modal
@@ -124,5 +170,32 @@
         });
     });
 </script>
+<script>
+    $(document).ready(function() {
+    // Handle remarks modal
+    $('#remarksModal').on('show.bs.modal', function (event) {
+        var button = $(event.relatedTarget);
+        var remarks = button.data('remarks');
+        var modal = $(this);
+        modal.find('.modal-body #remarksText').text(remarks || 'No remarks available');
+    });
 
+    // Handle education modal
+    $('#educationModal').on('show.bs.modal', function (event) {
+        var button = $(event.relatedTarget);
+        var education = button.data('education');
+        var modal = $(this);
+        modal.find('.modal-body #educationText').text(education || 'No education details available');
+    });
+
+    // Handle experience modal
+    $('#experienceModal').on('show.bs.modal', function (event) {
+        var button = $(event.relatedTarget);
+        var experience = button.data('experience');
+        var modal = $(this);
+        modal.find('.modal-body #experienceText').text(experience || 'No experience details available');
+    });
+});
+
+</script>
 {% endblock %}
