@@ -30,10 +30,10 @@ SECRET_KEY = 'django-insecure-kh@!%_jbcfj5i8=%6unm-vr7a5es9leoui!d%iqayweh-7zg#)
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 CSRF_TRUSTED_ORIGINS = [
-    'https://sysmac.co.in',
-    'https://www.sysmac.co.in',
+    'https://ssm.imcbs.com',
+    
 ]
-ALLOWED_HOSTS = ['88.222.215.20','sysmac.co.in','www.sysmac.co.in','127.0.0.1']
+ALLOWED_HOSTS = ['88.222.215.20','ssm.imcbs.com','127.0.0.1']
 
 LOGIN_REDIRECT_URL = 'admin_dashboard'
 LOGIN_URL = 'login'
@@ -90,7 +90,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'leading_management',
         'USER': 'postgres',
-        'PASSWORD': 'sajith@2003',
+        'PASSWORD': 'info@imc',
         'HOST': 'localhost',
         'PORT': '5432',
     }
