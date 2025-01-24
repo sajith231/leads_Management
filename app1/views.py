@@ -1510,7 +1510,13 @@ def edit_cv(request, id):
             # Get JobTitle instance instead of string
             job_title_id = request.POST['job_title']
             cv.job_title = JobTitle.objects.get(id=job_title_id)
-            cv.dob = request.POST['dob']
+            
+            # Only assign dob if it is provided
+            if 'dob' in request.POST and request.POST['dob']:
+                cv.dob = request.POST['dob']
+            else:
+                cv.dob = None  # Or you can leave it unchanged if needed
+            
             cv.remarks = request.POST.get('remarks', '')
             
             if 'cv_attachment' in request.FILES:
@@ -1524,6 +1530,7 @@ def edit_cv(request, id):
             messages.error(request, f'Error updating CV: {str(e)}')
 
     return render(request, 'edit_cv.html', {'cv': cv, 'job_titles': job_titles, 'districts': districts})
+
 
 def delete_cv(request, id):
     """
