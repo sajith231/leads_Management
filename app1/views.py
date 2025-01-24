@@ -18,7 +18,7 @@ from datetime import datetime, timedelta
 from .models import Requirement  # Ensure the correct model is imported
 from .models import Lead,ServiceEntry,JobTitle
 import json
-
+#hai
 def login(request):
     if request.method == "POST":
         userid = request.POST.get("username")
