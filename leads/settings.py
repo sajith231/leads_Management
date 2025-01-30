@@ -33,7 +33,11 @@ CSRF_TRUSTED_ORIGINS = [
     'https://ssm.imcbs.com',
     
 ]
+<<<<<<< HEAD
 ALLOWED_HOSTS = ['88.222.215.20','ssm.imcbs.com','127.0.0.1']
+=======
+ALLOWED_HOSTS = ['88.222.215.20','ssm.imcbs.com','www.ssm.imcbs.com','127.0.0.1']
+>>>>>>> 052b330 (credentials)
 
 LOGIN_REDIRECT_URL = 'admin_dashboard'
 LOGIN_URL = 'login'
@@ -95,6 +99,16 @@ DATABASES = {
         'PORT': '5432',
     }
 }
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': 'hai',
+#         'USER': 'postgres',
+#         'PASSWORD': 'sajith@2003',
+#         'HOST': 'localhost',
+#         'PORT': '5432',
+#     }
+# }
 
 # DATABASES = {
 #     'default': {

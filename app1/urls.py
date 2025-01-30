@@ -1,11 +1,9 @@
-
-
-
 from django.urls import path
 from . import views
 from .views import edit_lead
 from .views import delete_lead 
 from .views import load_areas,toggle_service_status
+from .views import update_credential_visibility
 
 urlpatterns = [
     # Authentication
@@ -109,11 +107,31 @@ urlpatterns = [
     path('add-job-title/', views.add_job_title, name='add_job_title'),
     path('edit-job-title/<int:title_id>/', views.edit_job_title, name='edit_job_title'),
     path('delete-job-title/<int:title_id>/', views.delete_job_title, name='delete_job_title'),
-    
 
+
+    path('credentials/', views.credentials_view, name='credentials'),
+    path('add-credential/', views.add_credential, name='add_credential'),
+    path('edit-credential/', views.edit_credential, name='edit_credential'),
+    path('delete-credential/', views.delete_credential, name='delete_credential'),
+    path('get_credentials/', views.get_credentials, name='get_credentials'),
     
     
-    
+    path('add_document/', views.add_document, name='add_document'),
+    path('edit_document/<int:document_id>/', views.edit_document, name='edit_document'),
+    path('delete_document/<int:document_id>/', views.delete_document, name='delete_document'),
+
+
+    path('officialdoc/', views.official_documents, name='official_documents'),
+    path('officialdoc/<int:document_id>/', views.officialdoc_detail, name='officialdoc_detail'),
+    path('save_document_credential/', views.save_document_credential, name='save_document_credential'),
+      
+      
+
+    path('edit_document_credential/', views.edit_document_credential, name='edit_document_credential'),
+    path('delete_document_credential/', views.delete_document_credential, name='delete_document_credential'),
+    path('update_credential_visibility/', update_credential_visibility, name='update_credential_visibility'),
+
+
 
     
 

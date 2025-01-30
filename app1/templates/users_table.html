@@ -40,6 +40,7 @@
                                     <th>User ID</th>
                                     <th>Password</th>
                                     <th>Branch</th>
+                                    <th>User Level</th>
                                     <th>Edit</th>
                                     <th>Delete</th>
                                 </tr>
@@ -56,6 +57,17 @@
                                     <td>{{ user.userid }}</td>
                                     <td>{{ user.password }}</td>
                                     <td>{{ user.branch }}</td>
+                                    <td>
+                                        {% if user.user_level == 'normal' %}
+                                            <span class="user-level-badge level-normal">Admin</span>
+                                        {% elif user.user_level == 'admin_level' %}
+                                            <span class="user-level-badge level-admin">Super Admin</span>
+                                        {% elif user.user_level == '3level' %}
+                                            <span class="user-level-badge level-3">User</span>
+                                        {% elif user.user_level == '4level' %}
+                                            <span class="user-level-badge level-4">Superuser</span>
+                                        {% endif %}
+                                    </td>
                                     <td>
                                         {% endif %}
                             

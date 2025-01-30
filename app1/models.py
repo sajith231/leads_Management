@@ -57,6 +57,8 @@ class User(models.Model):
     USER_LEVEL_CHOICES = [
         ('normal', 'Normal User'),#admin
         ('admin_level', 'Admin Level User'),#superadmin
+        ('3level', '3 level'),#added new    USER
+        ('4level', '4 level'),#added new    SUPER USER
 
        
 
@@ -317,6 +319,66 @@ class CV(models.Model):
 
 
 
+from django.contrib.postgres.fields import ArrayField
+from django.db import models
+
+class Credential(models.Model): #CREATED AS NEW
+    name = models.CharField(max_length=255)
+    visibility = ArrayField(
+        models.CharField(max_length=20, choices=[
+            ('all', 'All Users'),
+            ('normal', 'Normal User'),
+            ('admin_level', 'Admin Level User'),
+            ('3level', '3 Level User'),
+            ('4level', '4 Level User')
+        ]),
+        default=list,  # Ensures new instances always get an empty list instead of None
+        blank=True
+    )
+
+    def clean(self):
+        """ Ensure visibility is always stored as a list format """
+        if isinstance(self.visibility, str):  
+            self.visibility = [self.visibility]  # Convert single string to list
+        elif self.visibility is None:
+            self.visibility = []
+        elif isinstance(self.visibility, list):
+            self.visibility = [str(v) for v in self.visibility]  # Ensure all items are strings
+
+    def save(self, *args, **kwargs):
+        """ Apply the cleaning function before saving to enforce correct format """
+        self.clean()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.name
+
+
+    
+
+
+from django.db import models
+
+class OfficialDocument(models.Model): #CREATED AS NEW
+    name = models.CharField(max_length=200)
+    description = models.TextField()
+
+    def __str__(self):
+        return self.name
+
+class DocumentCredential(models.Model):#CREATED AS NEW
+    document = models.ForeignKey(OfficialDocument, on_delete=models.CASCADE)
+    credential = models.ForeignKey(Credential, on_delete=models.CASCADE)
+    url = models.URLField(blank=True, null=True)
+    attachment = models.FileField(upload_to='attachments/', blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    additional_fields = models.JSONField(default=list, blank=True)
+
+    class Meta:
+        unique_together = ('document', 'credential')  # Enforce uniqueness
+
+    def __str__(self):
+        return f"{self.document.name} - {self.credential.name}"
 
 
     

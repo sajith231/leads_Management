@@ -69,16 +69,21 @@
                                 class="{{ form.user_level.css_classes }}" 
                                 style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; background-color: #f9f9f9; font-size: 1rem;">
                                 {% for value, label in form.user_level.field.choices %}
-                                    <option value="{{ value }}" {% if value == form.user_level.value %}selected{% endif %}>
-                                        {% if value == "normal" %}
-                                            Admin
-                                        {% elif value == "admin_level" %}
-                                            Super Admin
-                                        {% else %}
-                                            {{ label }}
-                                        {% endif %}
-                                    </option>
-                                {% endfor %}
+                                <option value="{{ value }}" {% if value == form.user_level.value %}selected{% endif %}>
+                                    {% if value == "normal" %}
+                                        Admin
+                                    {% elif value == "admin_level" %}
+                                        Super Admin
+                                    {% elif value == "3level" %}
+                                        User
+                                    {% elif value == "4level" %}
+                                        Super User
+                                    {% else %}
+                                        {{ label }}
+                                    {% endif %}
+                                </option>
+                            {% endfor %}
+
                             </select>
                             {% if form.user_level.errors %}
                             <div class="invalid-feedback" style="color: red; font-size: 0.9rem; margin-top: 5px;">
