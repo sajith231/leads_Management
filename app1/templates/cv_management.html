@@ -26,6 +26,15 @@
                         </select>
                     </form>
                 </div>
+                <div class="form-group" style="min-width: 200px; margin-right:50% ;">
+                    <form id="interviewStatusFilterForm" method="GET" action="{% url 'cv_management' %}">
+                        <select class="form-control" id="interviewStatusFilter" name="interview_status" onchange="this.form.submit()">
+                            <option value="">All Interview Statuses</option>
+                            <option value="Yes" {% if selected_interview_status == "Yes" %}selected{% endif %}>Interviewed</option>
+                            <option value="No" {% if selected_interview_status == "No" %}selected{% endif %}>Not Interviewed</option>
+                        </select>
+                    </form>
+                </div>
                 <a href="{% url 'add_cv' %}" class="btn btn-primary">Add New</a>
             </div>
             
@@ -45,6 +54,7 @@
                                 <th>DOB</th>
                                 <th>Remarks</th>
                                 <th>CV Attachment</th>
+                                <th>Interview Status</th>
                                 <th>Edit</th>
                                 <th>Delete</th>
                             </tr>
@@ -52,7 +62,7 @@
                         <tbody>
                             {% for cv in cv_list %}
                             <tr>
-                                <td>{{ forloop.counter }}</td>
+                                <td>{{ cv_list.start_index|add:forloop.counter0 }}</td>
                                 <td>{{ cv.name|upper }}</td>
                                 <td>
                                     {{ cv.address|upper|slice:":30" }}<br>
@@ -83,6 +93,23 @@
                                         <i class="fa fa-file-alt" style="font-size: x-large; display: flex; justify-content: center;"></i>
                                     </a>
                                 </td>
+                                <td>
+                                    <button class="btn btn-sm btn-toggle-interview" data-cv-id="{{ cv.id }}" data-status="{{ cv.interview_status|yesno:'Yes,No' }}">
+                                        {{ cv.interview_status|yesno:"Yes,No" }}
+                                    </button>
+                                    <style>
+                                        .btn-toggle-interview[data-status="No"] {
+                                            background-color: grey;
+                                            color: white;
+                                        }
+
+                                        .btn-toggle-interview[data-status="Yes"] {
+                                            background-color: green;
+                                            color: white;
+                                        }
+
+                                    </style>
+                                </td>
                                 <td><a href="{% url 'edit_cv' cv.id %}" class="btn btn-warning btn-sm">Edit</a></td>
                                 <td>
                                     <form method="post" action="{% url 'delete_cv' cv.id %}" style="display: inline;">
@@ -108,6 +135,35 @@
             </div>
         </div>
     </div>
+</div>
+
+<!-- Pagination Controls -->
+<div class="pagination justify-content-center">
+    <ul class="pagination">
+        {% if cv_list.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page=1">&laquo; First</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ cv_list.previous_page_number }}">Previous</a>
+            </li>
+        {% endif %}
+
+        <li class="page-item disabled">
+            <span class="page-link">
+                Page {{ cv_list.number }} of {{ cv_list.paginator.num_pages }}
+            </span>
+        </li>
+
+        {% if cv_list.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ cv_list.next_page_number }}">Next</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ cv_list.paginator.num_pages }}">Last &raquo;</a>
+            </li>
+        {% endif %}
+    </ul>
 </div>
 
 <!-- Modal for Remarks -->
@@ -198,8 +254,76 @@
 });
 
 </script>
-<<<<<<< HEAD
+
+
+
+
+<script>
+    $(document).ready(function() {
+        $('.btn-toggle-interview').click(function() {
+            var button = $(this);
+            var cvId = button.data('cv-id');
+            var currentStatus = button.data('status');
+            var newStatus = currentStatus === 'Yes' ? 'No' : 'Yes';
+
+            $.ajax({
+                url: '{% url "toggle_interview_status" %}',
+                method: 'POST',
+                data: {
+                    'cv_id': cvId,
+                    'new_status': newStatus,
+                    'csrfmiddlewaretoken': '{{ csrf_token }}'
+                },
+                success: function(response) {
+                    if (response.success) {
+                        button.data('status', newStatus);
+                        button.text(newStatus);
+                    }
+                },
+                error: function(response) {
+                    alert('Failed to update interview status.');
+                }
+            });
+        });
+    });
+</script>
+
+
+
+<script>
+     $('.btn-toggle-interview').click(function() {
+            var button = $(this);
+            var cvId = button.data('cv-id');
+            var currentStatus = button.data('status');
+            var newStatus = currentStatus === 'Yes' ? 'No' : 'Yes';
+
+            $.ajax({
+                url: '{% url "toggle_interview_status" %}',
+                method: 'POST',
+                data: {
+                    'cv_id': cvId,
+                    'new_status': newStatus,
+                    'csrfmiddlewaretoken': '{{ csrf_token }}'
+                },
+                success: function(response) {
+                    if (response.success) {
+                        button.data('status', newStatus);
+                        button.text(newStatus);
+
+                        if (newStatus === 'Yes') {
+                            button.css('background-color', 'green').css('color', 'white');
+                        } else {
+                            button.css('background-color', 'grey').css('color', 'white');
+                        }
+                    } else {
+                        alert('Failed to update interview status.');
+                    }
+                },
+                error: function(response) {
+                    alert('Error occurred while updating status.');
+                }
+            });
+        });
+    
+</script>
 {% endblock %}
-=======
-{% endblock %}
->>>>>>> 052b330 (credentials)

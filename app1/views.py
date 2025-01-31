@@ -1430,13 +1430,14 @@ def delete_agent(request, agent_id):
     return redirect('agent_list')
 
 
-
-from django.shortcuts import render, redirect
-from .models import CV
+from django.shortcuts import render
+from django.core.paginator import Paginator
+from .models import CV, JobTitle
 
 def cv_management(request):
     job_titles = JobTitle.objects.all()
     selected_job_title = request.GET.get('job_title')
+    selected_interview_status = request.GET.get('interview_status')
     
     cv_list = CV.objects.all()
     
@@ -1446,10 +1447,22 @@ def cv_management(request):
         except ValueError:
             pass  # Handle invalid ID gracefully
     
+    if selected_interview_status:
+        if selected_interview_status == "Yes":
+            cv_list = cv_list.filter(interview_status=True)
+        elif selected_interview_status == "No":
+            cv_list = cv_list.filter(interview_status=False)
+    
+    # Pagination
+    paginator = Paginator(cv_list, 10)  # Show 10 CVs per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
     context = {
-        'cv_list': cv_list,
+        'cv_list': page_obj,  # Pass the paginated CVs to the template
         'job_titles': job_titles,
         'selected_job_title': selected_job_title,
+        'selected_interview_status': selected_interview_status,
     }
     
     return render(request, 'cv_management.html', context)
@@ -1541,6 +1554,23 @@ def delete_cv(request, id):
         cv.delete()
     return redirect('cv_management')
 
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from .models import CV
+
+@csrf_exempt
+def toggle_interview_status(request):
+    if request.method == 'POST':
+        cv_id = request.POST.get('cv_id')
+        new_status = request.POST.get('new_status') == 'Yes'
+        try:
+            cv = CV.objects.get(id=cv_id)
+            cv.interview_status = new_status
+            cv.save()
+            return JsonResponse({'success': True})
+        except CV.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'CV not found'})
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
 
 def job_titles(request):
     titles = JobTitle.objects.all().order_by('id')

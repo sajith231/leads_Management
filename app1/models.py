@@ -57,8 +57,8 @@ class User(models.Model):
     USER_LEVEL_CHOICES = [
         ('normal', 'Normal User'),#admin
         ('admin_level', 'Admin Level User'),#superadmin
-        ('3level', '3 level'),#added new    USER
-        ('4level', '4 level'),#added new    SUPER USER
+        ('3level', '3 level'),#    USER
+        ('4level', '4 level'), #  SUPER USER
 
        
 
@@ -312,6 +312,7 @@ class CV(models.Model):
     dob = models.DateField(blank=True, null=True)  
     remarks = models.TextField(blank=True, null=True)
     cv_attachment = models.FileField(upload_to='cv_attachments/')
+    interview_status = models.BooleanField(default=False)      #CREATED AS NEW
 
     def __str__(self):
         return self.name
@@ -322,7 +323,7 @@ class CV(models.Model):
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
 
-class Credential(models.Model): #CREATED AS NEW
+class Credential(models.Model): 
     name = models.CharField(max_length=255)
     visibility = ArrayField(
         models.CharField(max_length=20, choices=[
@@ -359,14 +360,14 @@ class Credential(models.Model): #CREATED AS NEW
 
 from django.db import models
 
-class OfficialDocument(models.Model): #CREATED AS NEW
+class OfficialDocument(models.Model):
     name = models.CharField(max_length=200)
     description = models.TextField()
 
     def __str__(self):
         return self.name
 
-class DocumentCredential(models.Model):#CREATED AS NEW
+class DocumentCredential(models.Model):
     document = models.ForeignKey(OfficialDocument, on_delete=models.CASCADE)
     credential = models.ForeignKey(Credential, on_delete=models.CASCADE)
     url = models.URLField(blank=True, null=True)
@@ -381,4 +382,8 @@ class DocumentCredential(models.Model):#CREATED AS NEW
         return f"{self.document.name} - {self.credential.name}"
 
 
-    
+    #CREATED AS NEW
+
+    #CREATED AS NEW
+
+    #CREATED AS NEW
