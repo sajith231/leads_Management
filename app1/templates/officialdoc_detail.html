@@ -145,16 +145,46 @@
     .field-group {
         display: flex;
         gap: 10px;
-        margin-bottom: 10px;
-        align-items: flex-end;
+        margin-bottom: 20px;
+        align-items: flex-start;
     }
 
-    .field-group input {
+    .field-group .form-group {
         flex: 1;
     }
 
     .remove-field-btn {
-        height: 38px;
+        margin-top: 24px;
+    }
+
+    /* Textarea specific styles */
+    .field-value-textarea {
+        width: 100%;
+        min-height: 100px;
+        padding: 8px;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        resize: vertical;
+    }
+
+    /* Form group general styles */
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 500;
+        color: #333;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        font-size: 1rem;
     }
 </style>
 
@@ -186,7 +216,8 @@
             <div class="additional-fields">
                 {% if doc_cred.additional_fields %}
                 {% for field in doc_cred.additional_fields %}
-                <p><strong>{{ field.name }}:</strong> {{ field.value }}</p>
+                <p><strong>{{ field.name }}:</strong> {{ field.value }}
+                </p>
                 {% endfor %}
                 {% else %}
                 <p>-</p>
@@ -249,7 +280,7 @@
 <script>
     function openEditModal(docCredId, credentialId) {
         const modal = document.getElementById('editCredentialModal');
-        const credentialBox = document.querySelector(`.credential-box[data-doc-cred-id="${docCredId}"]`);
+        const credentialBox = document.querySelector(`[data-doc-cred-id="${docCredId}"]`);
         
         // Set both IDs in the hidden inputs
         document.getElementById('editDocCredId').value = docCredId;
@@ -267,9 +298,14 @@
         const additionalFields = credentialBox.querySelectorAll('.additional-fields p');
         additionalFields.forEach(field => {
             if (field.textContent !== '-') {
-                const [name, value] = field.textContent.split(':').map(str => str.trim());
-                if (name && value) {
-                    addFieldGroup(name.replace(/<[^>]*>/g, ''), value);
+                const fieldText = field.textContent.trim();
+                const colonIndex = fieldText.indexOf(':');
+                if (colonIndex !== -1) {
+                    const name = fieldText.substring(0, colonIndex).trim();
+                    const value = fieldText.substring(colonIndex + 1).trim();
+                    if (name && value) {
+                        addFieldGroup(name.replace(/<[^>]*>/g, ''), value);
+                    }
                 }
             }
         });
@@ -296,7 +332,7 @@
             </div>
             <div class="form-group">
                 <label>Field Value</label>
-                <input type="text" class="form-control field-value" value="${value}" placeholder="Enter value">
+                <textarea class="form-control field-value field-value-textarea" placeholder="Enter value">${value}</textarea>
             </div>
             <button type="button" class="btn btn-danger remove-field-btn" onclick="this.parentElement.remove()">
                 Remove
@@ -368,7 +404,7 @@
             .then(response => response.json())
             .then(data => {
                 if (data.status === 'success') {
-                    const credentialBox = document.querySelector(`.credential-box[data-doc-cred-id="${docCredId}"]`);
+                    const credentialBox = document.querySelector(`[data-doc-cred-id="${docCredId}"]`);
                     credentialBox.remove();
                     alert('Credential deleted successfully');
                 } else {

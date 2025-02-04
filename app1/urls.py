@@ -4,7 +4,7 @@ from .views import edit_lead
 from .views import delete_lead 
 from .views import load_areas,toggle_service_status
 from .views import update_credential_visibility,toggle_interview_status
-
+from .views import save_ratings, get_ratings
 
 urlpatterns = [
     # Authentication
@@ -133,6 +133,9 @@ urlpatterns = [
     path('edit_document_credential/', views.edit_document_credential, name='edit_document_credential'),
     path('delete_document_credential/', views.delete_document_credential, name='delete_document_credential'),
     path('update_credential_visibility/', update_credential_visibility, name='update_credential_visibility'),
+     path('save-ratings/<int:cv_id>/', save_ratings, name='save_ratings'),
+    path('get-ratings/<int:cv_id>/', get_ratings, name='get_ratings'),
+    
 
 
 

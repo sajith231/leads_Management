@@ -1,11 +1,39 @@
 {% extends 'base.html' %}
 
+{% load custom_filters %}  <!-- Load the custom filter -->
+
 {% block content %}
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
 <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+<style>
+    .star-rating i {
+    cursor: pointer;
+    color: #ccc;
+    display: inline-block; /* Ensures rotation occurs */
+}
 
+/* Original Blink Effect */
+@keyframes blinkColors {
+    0% { color: #ffcc00; }  /* Yellow */
+    50% { color: #ffcc00; } /* Green */
+    100% { color: #ffcc00; } /* Yellow */
+}
+
+/* Rotation Effect */
+@keyframes rotateStars {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Combined Blink and Rotate Effect */
+.star-rating i.checked {
+    animation: blinkColors 1s infinite, rotateStars 5s infinite linear; /* Rotate & Blink */
+}
+
+
+</style>
 <div style="overflow: hidden;">
     <div class="">
         <h2 style="display: flex; justify-content: center; align-items: center; color: BLACK; gap: 10px;">
@@ -26,7 +54,7 @@
                         </select>
                     </form>
                 </div>
-                <div class="form-group" style="min-width: 200px; margin-right:50% ;">
+                <div class="form-group" style="min-width: 200px; margin-right:60% ;">
                     <form id="interviewStatusFilterForm" method="GET" action="{% url 'cv_management' %}">
                         <select class="form-control" id="interviewStatusFilter" name="interview_status" onchange="this.form.submit()">
                             <option value="">All Interview Statuses</option>
@@ -55,12 +83,13 @@
                                 <th>Remarks</th>
                                 <th>CV Attachment</th>
                                 <th>Interview Status</th>
+                                <th>Result</th>
                                 <th>Edit</th>
                                 <th>Delete</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for cv in cv_list %}
+                            {% for cv in cv_list|sort_by_latest %}  <!-- Apply the custom filter here -->
                             <tr>
                                 <td>{{ cv_list.start_index|add:forloop.counter0 }}</td>
                                 <td>{{ cv.name|upper }}</td>
@@ -68,7 +97,6 @@
                                     {{ cv.address|upper|slice:":30" }}<br>
                                     {{ cv.address|upper|slice:"50:500" }}
                                 </td>
-                                
                                 
                                 <td>{{ cv.place|upper }}</td>
                                 <td>{{ cv.district|upper }}</td>
@@ -93,7 +121,7 @@
                                         <i class="fa fa-file-alt" style="font-size: x-large; display: flex; justify-content: center;"></i>
                                     </a>
                                 </td>
-                                <td>
+                                <td style="display: flex;justify-content: center;">
                                     <button class="btn btn-sm btn-toggle-interview" data-cv-id="{{ cv.id }}" data-status="{{ cv.interview_status|yesno:'Yes,No' }}">
                                         {{ cv.interview_status|yesno:"Yes,No" }}
                                     </button>
@@ -110,6 +138,42 @@
 
                                     </style>
                                 </td>
+                                <td>
+                                    {% if cv.interview_status %}  <!-- Check if interview status is 'Yes' -->
+                                        <button class="btn btn-sm btn-add-rating" data-cv-id="{{ cv.id }}"><i class="fa fa-plus"></i></button>
+                                        <i class="fa fa-eye btn-view-rating" style="cursor: pointer;" data-cv-id="{{ cv.id }}"></i>
+                                    {% endif %}
+                                </td>
+                                <style>
+                                    .btn-add-rating {
+                                    background-color: #007bff;
+                                    color: white;
+                                    border: none;
+                                    padding: 6px 10px;
+                                    border-radius: 4px;
+                                    transition: all 0.3s ease-in-out;
+                                }
+
+                                .btn-add-rating:hover {
+                                    background-color: #0056b3;
+                                    box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.15);
+                                }
+
+                                .btn-view-rating {
+                                    color: #007bff;
+                                    font-size: 16px;
+                                    margin-left: 10px;
+                                    transition: color 0.3s ease-in-out;
+                                }
+
+                                .btn-view-rating:hover {
+                                    color: #0056b3;
+                                    text-shadow: 0px 0px 5px rgba(0, 0, 0, 0.2);
+                                    cursor: pointer;
+                                }
+
+                                </style>
+                                  
                                 <td><a href="{% url 'edit_cv' cv.id %}" class="btn btn-warning btn-sm">Edit</a></td>
                                 <td>
                                     <form method="post" action="{% url 'delete_cv' cv.id %}" style="display: inline;">
@@ -137,6 +201,311 @@
     </div>
 </div>
 
+<style>
+    /* General Modal Styling */
+.modal-content {
+    border-radius: 10px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.modal-header {
+    background-color: #007bff;
+    color: white;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+    padding: 15px;
+}
+
+.modal-title {
+    font-weight: bold;
+}
+
+.modal-body {
+    padding: 20px;
+}
+
+/* Form Styling */
+.form-group {
+    margin-bottom: 20px;
+}
+
+label {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.form-control {
+    border-radius: 5px;
+    border: 1px solid #ccc;
+  
+    width: 100%;
+}
+
+textarea.form-control {
+    resize: vertical;
+    min-height: 100px;
+}
+
+/* Star Rating */
+.star-rating {
+    display: flex;
+    gap: 5px;
+}
+
+.star-rating i {
+    font-size: 24px;
+    color: #ccc;
+    cursor: pointer;
+    transition: color 0.3s;
+}
+
+.star-rating i:hover,
+.star-rating i.active {
+    color: #f39c12;
+}
+
+/* Checkbox Styling */
+input[type="checkbox"] {
+    margin-right: 5px;
+}
+
+/* Buttons */
+.btn-primary {
+    background-color: #007bff;
+    border-color: #007bff;
+    padding: 10px 15px;
+    border-radius: 5px;
+    font-weight: bold;
+    transition: background 0.3s;
+}
+
+.btn-primary:hover {
+    background-color: #0056b3;
+}
+
+.btn-danger {
+    background-color: #dc3545;
+    border-color: #dc3545;
+    padding: 10px 15px;
+    border-radius: 5px;
+    font-weight: bold;
+    transition: background 0.3s;
+}
+
+.btn-danger:hover {
+    background-color: #a71d2a;
+}
+
+/* Voice Recording Section */
+#recordingStatus {
+    font-size: 14px;
+    color: #6c757d;
+    margin-top: 5px;
+}
+
+audio {
+    margin-top: 10px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .modal-dialog {
+        max-width: 90%;
+    }
+}
+</style>
+
+<!-- Modal for Rating Form -->
+<!-- Modal for Rating Form -->
+<div id="ratingModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="ratingModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document" style="width: 100%;max-width: 600px;">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title" id="ratingModalLabel">Add/Edit Ratings</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="ratingForm" >
+                    <!-- Appearance Rating -->
+                    <div class="form-group" >
+                        <label for="appearanceRating">Appearance</label>
+                        <div class="star-rating">
+                            {% for i in "12345" %}
+                                <i class="fa fa-star" data-rating="{{ i }}" onclick="setRating(this, 'appearance')"></i>
+                            {% endfor %}
+                        </div>
+                        <input type="hidden" id="appearanceRating" name="appearanceRating" value="0">
+                    </div>
+                    
+                    <!-- Knowledge Rating -->
+                    <div class="form-group">
+                        <label for="knowledgeRating">Knowledge</label>
+                        <div class="star-rating">
+                            {% for i in "12345" %}
+                                <i class="fa fa-star" data-rating="{{ i }}" onclick="setRating(this, 'knowledge')"></i>
+                            {% endfor %}
+                        </div>
+                        <input type="hidden" id="knowledgeRating" name="knowledgeRating" value="0">
+                    </div>
+                    
+                    <!-- Confidence Rating -->
+                    <div class="form-group">
+                        <label for="confidenceRating">Confidence Level</label>
+                        <div class="star-rating">
+                            {% for i in "12345" %}
+                                <i class="fa fa-star" data-rating="{{ i }}" onclick="setRating(this, 'confidence')"></i>
+                            {% endfor %}
+                        </div>
+                        <input type="hidden" id="confidenceRating" name="confidenceRating" value="0">
+                    </div>
+                    
+                    <!-- Attitude Rating -->
+                    <div class="form-group">
+                        <label for="attitudeRating">Attitude</label>
+                        <div class="star-rating">
+                            {% for i in "12345" %}
+                                <i class="fa fa-star" data-rating="{{ i }}" onclick="setRating(this, 'attitude')"></i>
+                            {% endfor %}
+                        </div>
+                        <input type="hidden" id="attitudeRating" name="attitudeRating" value="0">
+                    </div>
+                    
+                    <!-- Communication Rating -->
+                    <div class="form-group" >
+                        <label for="communicationRating">Communication</label>
+                        <div class="star-rating">
+                            {% for i in "12345" %}
+                                <i class="fa fa-star" data-rating="{{ i }}" onclick="setRating(this, 'communication')"></i>
+                            {% endfor %}
+                        </div>
+                        <input type="hidden" id="communicationRating" name="communicationRating" value="0">
+                    </div>
+                    <label>Languages:</label><br>
+    <input type="checkbox" name="languages[]" value="English"> English
+    <input type="checkbox" name="languages[]" value="Malayalam"> Malayalam
+    <input type="checkbox" name="languages[]" value="Hindi"> Hindi
+    <input type="checkbox" name="languages[]" value="Tamil"> Tamil
+    <br>
+
+    <label>Expected Salary:</label>
+    <input type="number" step="0.01" name="expectedSalary" class="form-control">
+
+    <label>Experience:</label>
+    <input type="text" name="experience" class="form-control">
+
+    <label>Remark:</label>
+    <textarea name="remark" class="form-control"></textarea>
+    
+   <!-- Add Voice Recording Section -->
+   <div class="form-group">
+    <label><i class="fas fa-microphone"></i> Voice Note:</label>
+    <div class="d-flex align-items-center mb-2">
+        <button type="button" id="startRecording" class="btn btn-primary mr-2">
+            <i class="fas fa-microphone"></i> Start Recording
+        </button>
+        <button type="button" id="stopRecording" class="btn btn-danger mr-2" disabled>
+            <i class="fas fa-stop"></i> Stop Recording
+        </button>
+    </div>
+    <div id="recordingStatus" class="text-muted"></div>
+    <audio id="audioPlayback" controls class="mt-2 d-none w-100"></audio>
+    <input type="hidden" name="voice_note" id="voiceNoteData">
+</div>
+                    
+                    <button type="submit" class="btn btn-primary">Save Ratings</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Viewing Ratings -->
+<!-- Modal for Viewing Ratings -->
+<!-- Modal for Viewing Ratings -->
+<div id="viewRatingModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="viewRatingModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="viewRatingModalLabel">View Ratings</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <!-- Star Ratings Section -->
+                        <h6 class="mb-3">Performance Ratings</h6>
+                        <p><strong>Appearance:</strong> 
+                            <span id="viewAppearanceRating"></span>
+                            <span id="viewAppearanceStars" class="star-rating"></span>
+                        </p>
+                        
+                        <p><strong>Knowledge:</strong> 
+                            <span id="viewKnowledgeRating"></span>
+                            <span id="viewKnowledgeStars" class="star-rating"></span>
+                        </p>
+                        
+                        <p><strong>Confidence Level:</strong> 
+                            <span id="viewConfidenceRating"></span>
+                            <span id="viewConfidenceStars" class="star-rating"></span>
+                        </p>
+                        
+                        <p><strong>Attitude:</strong> 
+                            <span id="viewAttitudeRating"></span>
+                            <span id="viewAttitudeStars" class="star-rating"></span>
+                        </p>
+                        
+                        <p><strong>Communication:</strong> 
+                            <span id="viewCommunicationRating"></span>
+                            <span id="viewCommunicationStars" class="star-rating"></span>
+                        </p>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <!-- Additional Details Section -->
+                        
+                        <p><strong>Languages Known:</strong> 
+                            <span id="viewLanguages" class="badge-container"></span>
+                        </p>
+                        
+                        <p><strong>Expected Salary:</strong> 
+                            ₹<span id="viewExpectedSalary"></span>
+                        </p>
+                        
+                        <p><strong>Experience:</strong> 
+                            <span id="viewExperience"></span>
+                        </p>
+                        
+                        <p><strong>Remarks:</strong> 
+                            <span id="viewRemarks" class="text-muted"></span>
+                        </p>
+                        
+                        <div id="voiceNoteContainer" class="mt-3">
+                            <strong>Voice Note:</strong>
+                            <audio id="viewVoiceNote" controls class="d-none w-100">
+                                Your browser does not support the audio element.
+                            </audio>
+                            <p id="noVoiceNote" class="text-muted d-none">No voice note available</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.badge-container .badge {
+    margin-right: 5px;
+    margin-bottom: 5px;
+}
+</style>
 <!-- Pagination Controls -->
 <div class="pagination justify-content-center">
     <ul class="pagination">
@@ -215,6 +584,96 @@
         </div>
     </div>
 </div>
+
+<script>
+    // Add this JavaScript to your template
+let mediaRecorder;
+let audioChunks = [];
+
+// Voice recording functions
+function startRecording() {
+    const startButton = document.getElementById('startRecording');
+    const stopButton = document.getElementById('stopRecording');
+    const statusElement = document.getElementById('recordingStatus');
+    
+    navigator.mediaDevices.getUserMedia({ audio: true })
+        .then(stream => {
+            mediaRecorder = new MediaRecorder(stream);
+            audioChunks = [];
+
+            mediaRecorder.ondataavailable = event => {
+                audioChunks.push(event.data);
+            };
+
+            mediaRecorder.onstop = () => {
+                const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                const audioUrl = URL.createObjectURL(audioBlob);
+                
+                // Show audio playback
+                const audioPlayback = document.getElementById('audioPlayback');
+                audioPlayback.src = audioUrl;
+                audioPlayback.classList.remove('d-none');
+
+                // Convert to base64 for form submission
+                const reader = new FileReader();
+                reader.readAsDataURL(audioBlob);
+                reader.onloadend = () => {
+                    document.getElementById('voiceNoteData').value = reader.result;
+                };
+            };
+
+            mediaRecorder.start();
+            startButton.disabled = true;
+            stopButton.disabled = false;
+            statusElement.textContent = 'Recording...';
+        })
+        .catch(error => {
+            console.error('Error accessing microphone:', error);
+            statusElement.textContent = 'Error accessing microphone';
+        });
+}
+
+function stopRecording() {
+    const startButton = document.getElementById('startRecording');
+    const stopButton = document.getElementById('stopRecording');
+    const statusElement = document.getElementById('recordingStatus');
+
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+        mediaRecorder.stream.getTracks().forEach(track => track.stop());
+        startButton.disabled = false;
+        stopButton.disabled = true;
+        statusElement.textContent = 'Recording stopped';
+    }
+}
+
+// Event listener setup
+document.addEventListener('DOMContentLoaded', function() {
+    const startButton = document.getElementById('startRecording');
+    const stopButton = document.getElementById('stopRecording');
+    
+    startButton.addEventListener('click', startRecording);
+    stopButton.addEventListener('click', stopRecording);
+
+    // Reset recording when modal is closed
+    $('#ratingModal').on('hidden.bs.modal', function() {
+        const audioPlayback = document.getElementById('audioPlayback');
+        const voiceNoteData = document.getElementById('voiceNoteData');
+        const statusElement = document.getElementById('recordingStatus');
+        
+        audioPlayback.classList.add('d-none');
+        voiceNoteData.value = '';
+        statusElement.textContent = '';
+        startButton.disabled = false;
+        stopButton.disabled = true;
+        
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+            mediaRecorder.stop();
+            mediaRecorder.stream.getTracks().forEach(track => track.stop());
+        }
+    });
+});
+</script>
 <script>
     $(document).ready(function() {
         // Handle remarks modal
@@ -255,9 +714,6 @@
 
 </script>
 
-
-
-
 <script>
     $(document).ready(function() {
         $('.btn-toggle-interview').click(function() {
@@ -287,8 +743,6 @@
         });
     });
 </script>
-
-
 
 <script>
      $('.btn-toggle-interview').click(function() {
@@ -326,4 +780,275 @@
         });
     
 </script>
+
+
+
+<script>
+   // Function to set stars based on rating value
+function setRating(star, category) {
+    const rating = parseInt(star.getAttribute('data-rating'));
+    const stars = document.querySelectorAll(`.star-rating i[data-rating][onclick*="${category}"]`);
+    const hiddenInput = document.getElementById(`${category}Rating`);
+
+    hiddenInput.value = rating;
+
+    stars.forEach((s, index) => {
+        s.classList.toggle('checked', index < rating);
+    });
+}
+
+// Load existing ratings into the form
+function loadRatings(cvId) {
+    fetch(`/get-ratings/${cvId}/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Helper to set stars for each category
+                const setStars = (category) => {
+                    const value = data[category];
+                    const stars = document.querySelectorAll(`.star-rating i[data-rating][onclick*="${category}"]`);
+                    stars.forEach(star => {
+                        const starValue = parseInt(star.getAttribute('data-rating'));
+                        star.classList.toggle('checked', starValue <= value);
+                    });
+                    document.getElementById(`${category}Rating`).value = value || 0;
+                };
+
+                setStars('knowledge');
+                setStars('confidence');
+                setStars('attitude');
+                setStars('communication');
+                setStars('appearance');
+
+                // Handle checkboxes for languages
+                document.querySelectorAll('input[name="languages[]"]').forEach(checkbox => {
+                    checkbox.checked = data.languages.includes(checkbox.value);
+                });
+
+                // Set other fields
+                document.querySelector('input[name="expectedSalary"]').value = data.expected_salary || '';
+                document.querySelector('input[name="experience"]').value = data.experience || '';
+                document.querySelector('textarea[name="remark"]').value = data.remark || '';
+            }
+        });
+}
+
+// View ratings
+function viewRatings(cvId) {
+    fetch(`/get-ratings/${cvId}/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Display star ratings
+                document.getElementById('viewKnowledgeRating').textContent = data.knowledge;
+                document.getElementById('viewConfidenceRating').textContent = data.confidence;
+                document.getElementById('viewAttitudeRating').textContent = data.attitude;
+                document.getElementById('viewCommunicationRating').textContent = data.communication;
+                document.getElementById('viewAppearanceRating').textContent = data.appearance;
+
+                displayStars('viewKnowledgeStars', data.knowledge);
+                displayStars('viewConfidenceStars', data.confidence);
+                displayStars('viewAttitudeStars', data.attitude);
+                displayStars('viewCommunicationStars', data.communication);
+                displayStars('viewAppearanceStars', data.appearance);
+
+                // Display languages as badges
+                const languagesContainer = document.getElementById('viewLanguages');
+                languagesContainer.innerHTML = data.languages.map(lang => 
+                    `<span class="badge badge-primary">${lang}</span>`
+                ).join(' ');
+
+                // Display additional details
+                document.getElementById('viewExpectedSalary').textContent = 
+                    data.expected_salary ? parseFloat(data.expected_salary).toLocaleString() : 'Not specified';
+                document.getElementById('viewExperience').textContent = 
+                    data.experience || 'Not specified';
+                document.getElementById('viewRemarks').textContent = 
+                    data.remark || 'No remarks available';
+
+                // Handle voice note display
+                const audioElement = document.getElementById('viewVoiceNote');
+                const noVoiceNoteMessage = document.getElementById('noVoiceNote');
+                
+                if (data.voice_note_url) {
+                    audioElement.src = data.voice_note_url;
+                    audioElement.classList.remove('d-none');
+                    noVoiceNoteMessage.classList.add('d-none');
+                } else {
+                    audioElement.classList.add('d-none');
+                    noVoiceNoteMessage.classList.remove('d-none');
+                }
+
+                $('#viewRatingModal').modal('show');
+            }
+        });
+}
+
+
+
+// Function to display star icons based on the rating
+function displayStars(elementId, rating) {
+    const starContainer = document.getElementById(elementId);
+    starContainer.innerHTML = ''; // Clear any existing stars
+
+    for (let i = 1; i <= 5; i++) {
+        const star = document.createElement('i');
+        star.className = 'fa fa-star';
+        if (i <= rating) {
+            star.classList.add('checked');
+        }
+        starContainer.appendChild(star);
+    }
+}
+
+    // Handle form submission
+document.getElementById('ratingForm').addEventListener('submit', function(event) {
+    event.preventDefault();
+    const cvId = document.getElementById('ratingForm').getAttribute('data-cv-id');
+    const formData = new FormData(this);
+
+    fetch(`/save-ratings/${cvId}/`, {
+        method: 'POST',
+        body: formData,
+        headers: { 'X-CSRFToken': '{{ csrf_token }}' }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Ratings saved successfully!');
+            $('#ratingModal').modal('hide');
+        } else {
+            alert('Failed to save ratings.');
+        }
+    });
+});
+
+    // Handle the "Add" button click
+    $('.btn-add-rating').click(function() {
+        const cvId = $(this).data('cv-id');
+        $('#ratingForm').attr('data-cv-id', cvId);
+        loadRatings(cvId); // Load existing ratings if any
+        $('#ratingModal').modal('show');
+    });
+
+    // Handle the "Eye" icon click
+    $('.btn-view-rating').click(function() {
+        const cvId = $(this).data('cv-id');
+        viewRatings(cvId);
+    });
+</script>
+
+
+<script>
+    let mediaRecorder;
+    let audioChunks = [];
+    
+    document.getElementById('startRecording').addEventListener('click', async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream);
+            
+            mediaRecorder.ondataavailable = (event) => {
+                audioChunks.push(event.data);
+            };
+    
+            mediaRecorder.onstop = () => {
+                const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                const reader = new FileReader();
+                reader.readAsDataURL(audioBlob);
+                reader.onloadend = () => {
+                    document.getElementById('voiceNoteData').value = reader.result;
+                    const audio = document.getElementById('audioPlayback');
+                    audio.src = URL.createObjectURL(audioBlob);
+                    audio.classList.remove('d-none');
+                };
+            };
+    
+            mediaRecorder.start();
+            document.getElementById('startRecording').disabled = true;
+            document.getElementById('stopRecording').disabled = false;
+            document.getElementById('recordingStatus').textContent = 'Recording...';
+            
+        } catch (err) {
+            console.error('Error accessing microphone:', err);
+            alert('Error accessing microphone. Please ensure you have granted microphone permissions.');
+        }
+    });
+    
+    document.getElementById('stopRecording').addEventListener('click', () => {
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+            mediaRecorder.stop();
+            mediaRecorder.stream.getTracks().forEach(track => track.stop());
+            document.getElementById('startRecording').disabled = false;
+            document.getElementById('stopRecording').disabled = true;
+            document.getElementById('recordingStatus').textContent = 'Recording stopped';
+            audioChunks = [];
+        }
+    });
+    
+    // Clear recording when modal is closed
+    $('#ratingModal').on('hidden.bs.modal', function () {
+        document.getElementById('audioPlayback').classList.add('d-none');
+        document.getElementById('voiceNoteData').value = '';
+        document.getElementById('recordingStatus').textContent = '';
+        document.getElementById('startRecording').disabled = false;
+        document.getElementById('stopRecording').disabled = true;
+    });
+    </script>
+
+
+<!-- CODES FOR CLOSING BUTTON -->
+<script>
+    // Add this script to handle modal closing
+$(document).ready(function() {
+    // Handle close button for rating modal
+    $('#ratingModal .close').click(function() {
+        $('#ratingModal').modal('hide');
+        // Reset the form
+        $('#ratingForm')[0].reset();
+        // Reset star ratings
+        $('.star-rating i').removeClass('checked');
+        // Reset audio recording if exists
+        const audioPlayback = document.getElementById('audioPlayback');
+        const voiceNoteData = document.getElementById('voiceNoteData');
+        const statusElement = document.getElementById('recordingStatus');
+        
+        if (audioPlayback) {
+            audioPlayback.classList.add('d-none');
+            audioPlayback.src = '';
+        }
+        if (voiceNoteData) {
+            voiceNoteData.value = '';
+        }
+        if (statusElement) {
+            statusElement.textContent = '';
+        }
+        
+        // Stop any ongoing recording
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+            mediaRecorder.stop();
+            mediaRecorder.stream.getTracks().forEach(track => track.stop());
+        }
+    });
+
+    // Handle close button for view rating modal
+    $('#viewRatingModal .close').click(function() {
+        $('#viewRatingModal').modal('hide');
+        // Reset audio if exists
+        const viewAudio = document.getElementById('viewVoiceNote');
+        if (viewAudio) {
+            viewAudio.pause();
+            viewAudio.src = '';
+        }
+    });
+});
+</script>
 {% endblock %}
+
+
+
+
+
+
+
+

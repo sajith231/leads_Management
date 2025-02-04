@@ -13,3 +13,16 @@ def get_item(dictionary, key):
     return ''
 
 
+
+
+# app1/templatetags/custom_filters.py
+from django import template
+
+register = template.Library()
+
+@register.filter
+def sort_by_latest(cv_list):
+    """
+    Sort the CV list by ID (or any other field) in descending order.
+    """
+    return sorted(cv_list, key=lambda x: x.id, reverse=True)

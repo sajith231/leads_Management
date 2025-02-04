@@ -387,3 +387,24 @@ class DocumentCredential(models.Model):
     #CREATED AS NEW
 
     #CREATED AS NEW
+
+
+
+from django.db import models
+from .models import CV  # Import the CV model if it's not already imported
+
+class Rating(models.Model):
+    cv = models.ForeignKey('CV', on_delete=models.CASCADE)  # Required field
+    knowledge = models.IntegerField(null=True, blank=True)  # Now optional
+    confidence = models.IntegerField(null=True, blank=True)
+    attitude = models.IntegerField(null=True, blank=True)
+    communication = models.IntegerField(null=True, blank=True)
+    appearance = models.IntegerField(null=True, blank=True)
+    languages = models.JSONField(default=list, blank=True)
+    expected_salary = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    experience = models.CharField(max_length=255, blank=True, null=True)
+    remark = models.TextField(blank=True, null=True)
+    voice_note = models.FileField(upload_to='voice_notes/', null=True, blank=True)
+
+    def __str__(self):
+        return f"Ratings for CV: {self.cv.name}"
