@@ -187,6 +187,35 @@
         font-size: 1rem;
     }
 </style>
+<style>
+    .credential-search {
+        margin-right: 10px;
+        padding: 6px 12px;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        width: 160px;
+        transition: all 0.3s ease;
+    }
+
+    .credential-search:focus {
+        width: 200px;
+        outline: none;
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+    }
+
+    .credential-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .no-results {
+        color: #dc3545;
+        font-style: italic;
+        display: none;
+    }
+</style>
 
 <div class="container">
     <h1 style="color: blue;">{{ document.name|upper }}</h1>
@@ -199,15 +228,19 @@
             <div class="credential-header">
                 <h3>{{ doc_cred.credential.name|upper }}</h3>
                 <div class="credential-actions">
+                    <input type="text" 
+                           class="credential-search" 
+                           placeholder="Search fields..."
+                           onkeyup="handleSearch('{{ doc_cred.id }}', this.value)">
                     {% if request.user.is_superuser or user.user_level == 'admin_level' %}
-                        <button class="btn btn-primary edit-credential-btn" 
-                                onclick="openEditModal('{{ doc_cred.id }}', '{{ doc_cred.credential.id }}')">
-                            Edit
-                        </button>
-                        <button class="btn btn-danger delete-credential-btn" 
-                                onclick="deleteCredential('{{ doc_cred.id }}')">
-                            Delete
-                        </button>
+                    <button class="btn btn-primary edit-credential-btn" 
+                            onclick="openEditModal('{{ doc_cred.id }}', '{{ doc_cred.credential.id }}')">
+                        Edit
+                    </button>
+                    <button class="btn btn-danger delete-credential-btn" 
+                            onclick="deleteCredential('{{ doc_cred.id }}')">
+                        Delete
+                    </button>
                     {% endif %}
                 </div>
             </div>
@@ -216,7 +249,8 @@
             <div class="additional-fields">
                 {% if doc_cred.additional_fields %}
                 {% for field in doc_cred.additional_fields %}
-                <p><strong>{{ field.name }}:</strong> {{ field.value }}
+                <p class="field-item" data-field-name="{{ field.name|lower }}">
+                    <strong>{{ field.name }}:</strong> {{ field.value }}
                 </p>
                 {% endfor %}
                 {% else %}
@@ -415,6 +449,34 @@
                 console.error('Error:', error);
                 alert('An unexpected error occurred');
             });
+        }
+    }
+</script>
+
+<script>
+    function handleSearch(docCredId, searchTerm) {
+        const container = document.querySelector(`[data-doc-cred-id="${docCredId}"]`);
+        const fields = container.querySelectorAll('.field-item');
+        const noResults = container.querySelector('.no-results');
+        let visibleCount = 0;
+
+        searchTerm = searchTerm.toLowerCase().trim();
+        
+        fields.forEach(field => {
+            const fieldName = field.dataset.fieldName;
+            if (fieldName.includes(searchTerm)) {
+                field.style.display = 'block';
+                visibleCount++;
+            } else {
+                field.style.display = 'none';
+            }
+        });
+
+        // Show/hide no results message
+        if (visibleCount === 0 && searchTerm.length > 0) {
+            noResults.style.display = 'block';
+        } else {
+            noResults.style.display = 'none';
         }
     }
 </script>

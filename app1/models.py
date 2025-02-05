@@ -312,7 +312,7 @@ class CV(models.Model):
     dob = models.DateField(blank=True, null=True)  
     remarks = models.TextField(blank=True, null=True)
     cv_attachment = models.FileField(upload_to='cv_attachments/')
-    interview_status = models.BooleanField(default=False)      #CREATED AS NEW
+    interview_status = models.BooleanField(default=False)     
 
     def __str__(self):
         return self.name
@@ -333,7 +333,7 @@ class Credential(models.Model):
             ('3level', '3 Level User'),
             ('4level', '4 Level User')
         ]),
-        default=list,  # Ensures new instances always get an empty list instead of None
+        default=list, 
         blank=True
     )
 
@@ -382,11 +382,7 @@ class DocumentCredential(models.Model):
         return f"{self.document.name} - {self.credential.name}"
 
 
-    #CREATED AS NEW
-
-    #CREATED AS NEW
-
-    #CREATED AS NEW
+    
 
 
 
@@ -394,8 +390,8 @@ from django.db import models
 from .models import CV  # Import the CV model if it's not already imported
 
 class Rating(models.Model):
-    cv = models.ForeignKey('CV', on_delete=models.CASCADE)  # Required field
-    knowledge = models.IntegerField(null=True, blank=True)  # Now optional
+    cv = models.ForeignKey('CV', on_delete=models.CASCADE)
+    knowledge = models.IntegerField(null=True, blank=True)  
     confidence = models.IntegerField(null=True, blank=True)
     attitude = models.IntegerField(null=True, blank=True)
     communication = models.IntegerField(null=True, blank=True)
@@ -408,3 +404,12 @@ class Rating(models.Model):
 
     def __str__(self):
         return f"Ratings for CV: {self.cv.name}"
+    
+
+
+
+    #CREATED AS NEW
+
+    #CREATED AS NEW
+
+    #CREATED AS NEW
