@@ -1440,14 +1440,18 @@ def cv_management(request):
     job_titles = JobTitle.objects.all()
     selected_job_title = request.GET.get('job_title')
     selected_interview_status = request.GET.get('interview_status')
+    name_query = request.GET.get('name')
     
     cv_list = CV.objects.all()
+    
+    if name_query:
+        cv_list = cv_list.filter(name__icontains=name_query)
     
     if selected_job_title:
         try:
             cv_list = cv_list.filter(job_title_id=selected_job_title)
         except ValueError:
-            pass  # Handle invalid ID gracefully
+            pass
     
     if selected_interview_status:
         if selected_interview_status == "Yes":
@@ -1455,13 +1459,12 @@ def cv_management(request):
         elif selected_interview_status == "No":
             cv_list = cv_list.filter(interview_status=False)
     
-    # Pagination
-    paginator = Paginator(cv_list, 10)  # Show 10 CVs per page
+    paginator = Paginator(cv_list, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
     context = {
-        'cv_list': page_obj,  # Pass the paginated CVs to the template
+        'cv_list': page_obj,
         'job_titles': job_titles,
         'selected_job_title': selected_job_title,
         'selected_interview_status': selected_interview_status,
@@ -1476,26 +1479,28 @@ def add_cv(request):
     if request.method == 'POST':
         try:
             name = request.POST['name']
-            address = request.POST.get('address', '')  # Optional field
+            address = request.POST.get('address', '')
+            phone_number = request.POST.get('phone_number', '')  # New field
             place = request.POST['place']
             district = request.POST['district']
             education = request.POST['education']
             experience = request.POST['experience']
             job_title_id = request.POST['job_title']
             job_title = JobTitle.objects.get(id=job_title_id)
-            dob = request.POST.get('dob') or None  # Make it None if empty
+            dob = request.POST.get('dob') or None
             remarks = request.POST.get('remarks', '')
             cv_attachment = request.FILES['cv_attachment']
 
             CV.objects.create(
                 name=name,
-                address=address,  # Will be empty string if not provided
+                address=address,
+                phone_number=phone_number,  # New field
                 place=place,
                 district=district,
                 education=education,
                 experience=experience,
                 job_title=job_title,
-                dob=dob,  # Will be None if not provided
+                dob=dob,
                 remarks=remarks,
                 cv_attachment=cv_attachment
             )
@@ -1518,25 +1523,20 @@ def edit_cv(request, id):
         try:
             cv.name = request.POST['name']
             cv.address = request.POST['address']
+            cv.phone_number = request.POST['phone_number']  # New field
             cv.place = request.POST['place']
             cv.district = request.POST['district']
             cv.education = request.POST['education']
             cv.experience = request.POST['experience']
-            # Get JobTitle instance instead of string
             job_title_id = request.POST['job_title']
             cv.job_title = JobTitle.objects.get(id=job_title_id)
-            
-            # Only assign dob if it is provided
             if 'dob' in request.POST and request.POST['dob']:
                 cv.dob = request.POST['dob']
             else:
-                cv.dob = None  # Or you can leave it unchanged if needed
-            
+                cv.dob = None
             cv.remarks = request.POST.get('remarks', '')
-            
             if 'cv_attachment' in request.FILES:
                 cv.cv_attachment = request.FILES['cv_attachment']
-            
             cv.save()
             return redirect('cv_management')
         except JobTitle.DoesNotExist:

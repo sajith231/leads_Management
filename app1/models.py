@@ -304,6 +304,7 @@ class CV(models.Model):
     
     name = models.CharField(max_length=255)
     address = models.TextField(blank=True, null=True) 
+    phone_number = models.CharField(max_length=15, blank=True, null=True)  # CREATED AS NEW
     place = models.CharField(max_length=255)
     district = models.CharField(max_length=255, choices=KERALA_DISTRICTS)
     education = models.CharField(max_length=255)

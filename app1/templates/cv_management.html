@@ -33,6 +33,13 @@
 }
 
 
+    #nameSearch {
+        border-radius: 5px;
+        border: 1px solid #ccc;
+        padding: 6px 12px;
+        width: 100%;
+    }
+
 </style>
 <div style="overflow: hidden;">
     <div class="">
@@ -54,13 +61,19 @@
                         </select>
                     </form>
                 </div>
-                <div class="form-group" style="min-width: 200px; margin-right:60% ;">
+                <div class="form-group" style="min-width: 200px;">
                     <form id="interviewStatusFilterForm" method="GET" action="{% url 'cv_management' %}">
                         <select class="form-control" id="interviewStatusFilter" name="interview_status" onchange="this.form.submit()">
                             <option value="">All Interview Statuses</option>
                             <option value="Yes" {% if selected_interview_status == "Yes" %}selected{% endif %}>Interviewed</option>
                             <option value="No" {% if selected_interview_status == "No" %}selected{% endif %}>Not Interviewed</option>
                         </select>
+                    </form>
+                </div>
+                <!-- Add the Name Search Input Field -->
+                <div class="form-group" style="min-width: 200px;">
+                    <form id="nameSearchForm" method="GET" action="{% url 'cv_management' %}">
+                        <input type="text" class="form-control" id="nameSearch" name="name" placeholder="Search by Name" value="{{ request.GET.name }}">
                     </form>
                 </div>
                 <a href="{% url 'add_cv' %}" class="btn btn-primary">Add New</a>
@@ -74,6 +87,7 @@
                                 <th>No</th>
                                 <th>Name</th>
                                 <th>Address</th>
+                                <th>Phone Number</th>  <!-- New column -->
                                 <th>Place</th>
                                 <th>District</th>
                                 <th>Education</th>
@@ -97,6 +111,7 @@
                                     {{ cv.address|upper|slice:":30" }}<br>
                                     {{ cv.address|upper|slice:"50:500" }}
                                 </td>
+                                <td>{{ cv.phone_number }}</td>
                                 
                                 <td>{{ cv.place|upper }}</td>
                                 <td>{{ cv.district|upper }}</td>
@@ -1043,6 +1058,20 @@ $(document).ready(function() {
     });
 });
 </script>
+<script>
+    $(document).ready(function() {
+        let typingTimer;
+        const delay = 2000; // 2 seconds
+
+        $('#nameSearch').on('input', function() {
+            clearTimeout(typingTimer);
+            typingTimer = setTimeout(function() {
+                $('#nameSearchForm').submit();
+            }, delay);
+        });
+    });
+</script>
+
 {% endblock %}
 
 
