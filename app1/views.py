@@ -18,7 +18,7 @@ from datetime import datetime, timedelta
 from .models import Requirement  # Ensure the correct model is imported
 from .models import Lead,ServiceEntry,JobTitle
 import json
-#hai
+
 def login(request):
     if request.method == "POST":
         userid = request.POST.get("username")
@@ -247,9 +247,10 @@ def user_dashboard(request):
         'requirement_amounts',
         'requirement_amounts__requirement'
     ).order_by('-created_at')
-
+    username = f" {request.user.username}" if request.user.is_authenticated else ""
     context = {
-        'leads': leads
+        'leads': leads,
+        'username': username
     }
     return render(request, 'user_dashboard.html', context)
 
@@ -558,6 +559,7 @@ def all_leads(request):
             'users': User.objects.select_related('branch').all(),
             'selected_user': request.GET.get('user', ''),
             'selected_planet_entry': planet_entry,
+            'username': f" {request.user.username}"
         }
 
         return render(request, 'all_leads.html', context)
