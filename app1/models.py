@@ -282,7 +282,7 @@ class JobTitle(models.Model):
 
 from django.db import models
 
-
+from django.utils.timezone import now
 
 class CV(models.Model):
     KERALA_DISTRICTS = [
@@ -301,7 +301,7 @@ class CV(models.Model):
         ('Thrissur', 'Thrissur'),
         ('Wayanad', 'Wayanad'),
     ]
-    
+    created_date = models.DateTimeField(default=now)
     name = models.CharField(max_length=255)
     address = models.TextField(blank=True, null=True) 
     phone_number = models.CharField(max_length=15, blank=True, null=True)  # CREATED AS NEW

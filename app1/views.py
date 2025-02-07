@@ -1472,7 +1472,7 @@ def cv_management(request):
     
     return render(request, 'cv_management.html', context)
 
-
+from django.utils.timezone import now
 
 def add_cv(request):
     job_titles = JobTitle.objects.all()
@@ -1502,7 +1502,8 @@ def add_cv(request):
                 job_title=job_title,
                 dob=dob,
                 remarks=remarks,
-                cv_attachment=cv_attachment
+                cv_attachment=cv_attachment,
+                created_date=now(),  # Automatically set the current timestamp
             )
             return redirect('cv_management')
         except JobTitle.DoesNotExist:

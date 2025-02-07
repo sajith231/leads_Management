@@ -85,6 +85,7 @@
                         <thead class="">
                             <tr>
                                 <th>No</th>
+                                <th>Created Date</th>
                                 <th>Name</th>
                                 <th>Address</th>
                                 <th>Phone Number</th>  <!-- New column -->
@@ -106,6 +107,7 @@
                             {% for cv in cv_list|sort_by_latest %}  <!-- Apply the custom filter here -->
                             <tr>
                                 <td>{{ cv_list.start_index|add:forloop.counter0 }}</td>
+                                <td>{{ cv.created_date|date:"d-m-Y" }}</td>
                                 <td>{{ cv.name|upper }}</td>
                                 <td>
                                     {{ cv.address|upper|slice:":30" }}<br>
