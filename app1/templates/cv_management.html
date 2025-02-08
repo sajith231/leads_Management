@@ -48,8 +48,9 @@
         </h2>
         
         <div class="row">
-            <div class="col-12 d-flex justify-content-between mb-3">
-                <div class="form-group" style="min-width: 200px;">
+            <div class="col-12 d-flex justify-content-between mb-3 flex-wrap">
+                <!-- Job Title Filter -->
+                <div class="form-group flex-grow-1 mr-2 mb-2" style="min-width: 200px;">
                     <form id="filterForm" method="GET" action="{% url 'cv_management' %}">
                         <select class="form-control" id="jobTitleFilter" name="job_title" onchange="this.form.submit()">
                             <option value="">All Job Titles</option>
@@ -61,7 +62,9 @@
                         </select>
                     </form>
                 </div>
-                <div class="form-group" style="min-width: 200px;">
+        
+                <!-- Interview Status Filter -->
+                <div class="form-group flex-grow-1 mr-2 mb-2" style="min-width: 200px;">
                     <form id="interviewStatusFilterForm" method="GET" action="{% url 'cv_management' %}">
                         <select class="form-control" id="interviewStatusFilter" name="interview_status" onchange="this.form.submit()">
                             <option value="">All Interview Statuses</option>
@@ -70,14 +73,20 @@
                         </select>
                     </form>
                 </div>
-                <!-- Add the Name Search Input Field -->
-                <div class="form-group" style="min-width: 200px;">
+        
+                <!-- Name Search Input Field -->
+                <div class="form-group flex-grow-1 mr-2 mb-2" style="min-width: 200px;">
                     <form id="nameSearchForm" method="GET" action="{% url 'cv_management' %}">
                         <input type="text" class="form-control" id="nameSearch" name="name" placeholder="Search by Name" value="{{ request.GET.name }}">
                     </form>
                 </div>
-                <a href="{% url 'add_cv' %}" class="btn btn-primary">Add New</a>
+        
+                <!-- Add New Button -->
+                <div class="form-group mb-2">
+                    <a href="{% url 'add_cv' %}" class="btn btn-primary">Add New</a>
+                </div>
             </div>
+        </div>
             
             <div class="col-12">
                 <div style="overflow: auto;">
