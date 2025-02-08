@@ -133,8 +133,14 @@ urlpatterns = [
     path('edit_document_credential/', views.edit_document_credential, name='edit_document_credential'),
     path('delete_document_credential/', views.delete_document_credential, name='delete_document_credential'),
     path('update_credential_visibility/', update_credential_visibility, name='update_credential_visibility'),
-     path('save-ratings/<int:cv_id>/', save_ratings, name='save_ratings'),
+    path('save-ratings/<int:cv_id>/', save_ratings, name='save_ratings'),
     path('get-ratings/<int:cv_id>/', get_ratings, name='get_ratings'),
+
+
+    path('business-types/', views.business_type_list, name='business_type_list'),
+    path('business-type/create/', views.create_business_type, name='create_business_type'),
+    path('business-type/<int:id>/update/', views.update_business_type, name='update_business_type'),
+    path('business-type/<int:id>/delete/', views.delete_business_type, name='delete_business_type'),
     
 
 

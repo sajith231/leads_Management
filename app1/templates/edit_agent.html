@@ -10,8 +10,16 @@
             <input type="text" class="form-control" id="name" name="name" value="{{ agent.name }}" required>
         </div>
         <div class="mb-3">
-            <label for="business_type" class="form-label">Business Type</label>
-            <input type="text" class="form-control" id="business_type" name="business_type" value="{{ agent.business_type }}" required>
+            <label for="firm_name" class="form-label">Firm Name</label>
+            <input type="text" class="form-control" id="firm_name" name="firm_name" value="{{ agent.firm_name }}">
+        </div>
+        <div class="mb-3">
+            <select class="form-control" id="business_type" name="business_type" required>
+                <option value="">Select Business Type</option>
+                {% for type in business_types %}
+                    <option value="{{ type.name }}" {% if agent.business_type == type.name %}selected{% endif %}>{{ type.name }}</option>
+                {% endfor %}
+            </select>
         </div>
         <div class="mb-3">
             <label for="location" class="form-label">Location</label>
@@ -40,6 +48,10 @@
         <div class="mb-3">
             <label for="contact_number" class="form-label">Contact Number</label>
             <input type="text" class="form-control" id="contact_number" name="contact_number" value="{{ agent.contact_number }}" required>
+        </div>
+        <div class="mb-3">
+            <label for="remarks" class="form-label">Remarks</label>
+            <textarea class="form-control" id="remarks" name="remarks" rows="3">{{ agent.remarks }}</textarea>
         </div>
         <button type="submit" class="btn btn-primary">Save Changes</button>
     </form>

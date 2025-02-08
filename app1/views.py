@@ -1394,37 +1394,49 @@ from .models import Agent
 
 def agent_list(request):
     agents = Agent.objects.all()
-    return render(request, 'agent.html', {'agents': agents})
+    business_types = BusinessType.objects.all()
+    return render(request, 'agent.html', {'agents': agents, 'business_types': business_types})
 
 def add_agent(request):
+    business_types = BusinessType.objects.all()
     if request.method == 'POST':
         name = request.POST['name']
+        firm_name = request.POST.get('firm_name', '')
         business_type = request.POST['business_type']
         location = request.POST['location']
         district = request.POST['district']
         contact_number = request.POST['contact_number']
+        remarks = request.POST.get('remarks', '')
         Agent.objects.create(
             name=name,
+            firm_name=firm_name,
             business_type=business_type,
             location=location,
             district=district,
-            contact_number=contact_number
+            contact_number=contact_number,
+            remarks=remarks
         )
         return redirect('agent_list')
-    return render(request, 'add_agent.html')
+    return render(request, 'add_agent.html', {'business_types': business_types})
 
+
+from django.shortcuts import get_object_or_404
 
 def edit_agent(request, agent_id):
-    agent = Agent.objects.get(id=agent_id)
+    agent = get_object_or_404(Agent, id=agent_id)
+    business_types = BusinessType.objects.all()
     if request.method == 'POST':
         agent.name = request.POST['name']
+        agent.firm_name = request.POST.get('firm_name', '')
         agent.business_type = request.POST['business_type']
         agent.location = request.POST['location']
         agent.district = request.POST['district']
         agent.contact_number = request.POST['contact_number']
+        agent.remarks = request.POST.get('remarks', '')
         agent.save()
         return redirect('agent_list')
-    return render(request, 'edit_agent.html', {'agent': agent})
+    return render(request, 'edit_agent.html', {'agent': agent, 'business_types': business_types})
+
 
 def delete_agent(request, agent_id):
     agent = get_object_or_404(Agent, id=agent_id)
@@ -2096,3 +2108,51 @@ def get_ratings(request, cv_id):
         return JsonResponse({'success': False, 'error': 'No rating found'})
     
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+
+
+
+
+
+from django.shortcuts import render
+from django.http import JsonResponse
+from django.views.decorators.http import require_http_methods
+import json
+from .models import BusinessType
+
+def business_type_list(request):
+    business_types = BusinessType.objects.all().order_by('-created_at')
+    return render(request, 'business_type.html', {'business_types': business_types})
+
+@require_http_methods(['POST'])
+def create_business_type(request):
+    try:
+        data = json.loads(request.body)
+        business_type = BusinessType.objects.create(name=data['name'])
+        return JsonResponse({'success': True, 'id': business_type.id})
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)})
+
+@require_http_methods(['PUT'])
+def update_business_type(request, id):
+    try:
+        data = json.loads(request.body)
+        business_type = BusinessType.objects.get(id=id)
+        business_type.name = data['name']
+        business_type.save()
+        return JsonResponse({'success': True})
+    except BusinessType.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Business type not found'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)})
+
+@require_http_methods(['DELETE'])
+def delete_business_type(request, id):
+    try:
+        business_type = BusinessType.objects.get(id=id)
+        business_type.delete()
+        return JsonResponse({'success': True})
+    except BusinessType.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Business type not found'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)})

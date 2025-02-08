@@ -1,13 +1,44 @@
 {% extends 'base.html' %}
 {% block content %}
 <style>
-    th{
+    th {
         text-transform: uppercase;
     }
 </style>
-<div class=" mt-5" style="overflow: hidden;">
-    <h2>Agents List</h2>
-    
+<!-- Styling -->
+<style>
+    .modal {
+      position: fixed;
+      z-index: 1;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.4);
+    }
+  
+    .modal-content {
+      background-color: #fff;
+      margin: 15% auto;
+      padding: 20px;
+      width: 300px;
+      border-radius: 8px;
+      text-align: center;
+    }
+  
+    .close-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  color: rgb(0, 0, 0);
+  font-size: 20px;
+  cursor: pointer;
+}
+
+  </style>
+<div class="mt-5" style="overflow: hidden;">
+    <h2 style="text-transform: uppercase;display: flex;justify-content: center;margin-bottom: 2%;">Agents List</h2>
+
     <!-- Filter Section -->
     <div class="row mb-3">
         <div class="col-md-4">
@@ -29,65 +60,93 @@
                 <option value="Wayanad">Wayanad</option>
             </select>
         </div>
-        <div class="col-md-8 text-end">
+        <div class="col-md-4">
+            <select class="form-control" id="businessTypeFilter" onchange="filterAgents()">
+                <option value="">All Business Types</option>
+                {% for type in business_types %}
+                    <option value="{{ type.name|upper }}">{{ type.name|upper }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-4 text-end">
             <a href="{% url 'add_agent' %}" class="btn btn-primary">Add New</a>
         </div>
     </div>
 
-    <div style="overflow: scroll;"><table class="table table-bordered">
-        <thead>
-            <tr>
-                <th>No</th>
-                <th>Name</th>
-                <th>Business Type</th>
-                <th>Location</th>
-                <th>District</th>
-                <th>Contact Number</th>
-                <th>Edit</th>
-                <th>Delete</th>
-            </tr>
-        </thead>
-        <tbody >
-            {% for agent in agents %}
-            <tr class="agent-row" data-district="{{ agent.district|upper }}">
-                <td>{{ forloop.counter }}</td>
-                <td>{{ agent.name|upper }}</td>
-                <td>{{ agent.business_type|upper }}</td>
-                <td>{{ agent.location|upper }}</td>
-                <td>{{ agent.district|upper }}</td>
-                <td>{{ agent.contact_number }}</td>
-                <td><a href="{% url 'edit_agent' agent.id %}" class="btn btn-warning btn-sm">Edit</a></td>
-                <td>
-                    <form action="{% url 'delete_agent' agent.id %}" method="POST" onsubmit="return confirmDelete();">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-danger btn-sm">Delete</button>
-                    </form>
-                </td>
-                
-                <script>
-                function confirmDelete() {
-                    return confirm("Are you sure you want to delete this agent?");
-                }
-                </script>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="8" class="text-center">No agents found.</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table></div>
+    <div style="overflow: scroll;">
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>No</th>
+                    <th>Name</th>
+                    <th>Firm Name</th>
+                    <th>Business Type</th>
+                    <th>Location</th>
+                    <th>District</th>
+                    <th>Contact Number</th>
+                    <th>Remark</th>
+                    <th>Edit</th>
+                    <th>Delete</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for agent in agents %}
+                    <tr class="agent-row" data-district="{{ agent.district|upper }}" data-business-type="{{ agent.business_type|upper }}">
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ agent.name|upper }}</td>
+                        <td>{{ agent.firm_name|default_if_none:''|upper }}</td>
+                        <td>{{ agent.business_type|upper }}</td>
+                        <td>{{ agent.location|upper }}</td>
+                        <td>{{ agent.district|upper }}</td>
+                        <td>{{ agent.contact_number }}</td>
+                        <td  style="display: flex;justify-content: center;">
+                            <i class="fas fa-comment-alt" style="cursor: pointer; color: blue;" 
+                               onclick="showRemark('{{ agent.remarks|default_if_none:'' }}')">
+                            </i>
+                          </td>
+                        <td><a href="{% url 'edit_agent' agent.id %}" class="btn btn-warning btn-sm">Edit</a></td>
+                        <td>
+                            <form action="{% url 'delete_agent' agent.id %}" method="POST" onsubmit="return confirmDelete();">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="10" class="text-center">No agents found.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <!-- Popup Modal -->
+<div id="remarkPopup" class="modal" style="display: none;">
+    <div class="modal-content">
+      <span class="close-btn" onclick="closePopup()">&times;</span>
+      <p id="remarkText"></p>
+    </div>
+  </div>
+    </div>
 </div>
 
 <script>
+function confirmDelete() {
+    return confirm("Are you sure you want to delete this agent?");
+}
+
 function filterAgents() {
     const selectedDistrict = document.getElementById('districtFilter').value.toUpperCase();
+    const selectedBusinessType = document.getElementById('businessTypeFilter').value.toUpperCase();
     const rows = document.getElementsByClassName('agent-row');
     let counter = 1;
 
     for (let row of rows) {
         const districtValue = row.getAttribute('data-district');
-        if (!selectedDistrict || districtValue === selectedDistrict) {
+        const businessTypeValue = row.getAttribute('data-business-type');
+        const matchesDistrict = !selectedDistrict || districtValue === selectedDistrict;
+        const matchesBusinessType = !selectedBusinessType || businessTypeValue === selectedBusinessType;
+
+        if (matchesDistrict && matchesBusinessType) {
             row.style.display = '';
             row.cells[0].textContent = counter++;
         } else {
@@ -96,5 +155,18 @@ function filterAgents() {
     }
 }
 </script>
-
+<script>
+    function showRemark(remark) {
+      if (remark.trim()) {
+        document.getElementById("remarkText").textContent = remark;
+        document.getElementById("remarkPopup").style.display = "block";
+      } else {
+        alert("No remarks available.");
+      }
+    }
+  
+    function closePopup() {
+      document.getElementById("remarkPopup").style.display = "none";
+    }
+  </script>
 {% endblock %}

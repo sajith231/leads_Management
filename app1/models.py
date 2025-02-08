@@ -264,10 +264,12 @@ from django.db import models
 
 class Agent(models.Model):
     name = models.CharField(max_length=100)
+    firm_name = models.CharField(max_length=150, blank=True)  #CREATED AS NEW
     business_type = models.CharField(max_length=100)
     location = models.CharField(max_length=100)
     district = models.CharField(max_length=100)
     contact_number = models.CharField(max_length=15)
+    remarks = models.TextField(blank=True)  #CREATED AS NEW
 
     def __str__(self):
         return self.name
@@ -304,7 +306,7 @@ class CV(models.Model):
     created_date = models.DateTimeField(default=now)
     name = models.CharField(max_length=255)
     address = models.TextField(blank=True, null=True) 
-    phone_number = models.CharField(max_length=15, blank=True, null=True)  # CREATED AS NEW
+    phone_number = models.CharField(max_length=15, blank=True, null=True)  
     place = models.CharField(max_length=255)
     district = models.CharField(max_length=255, choices=KERALA_DISTRICTS)
     education = models.CharField(max_length=255)
@@ -414,3 +416,12 @@ class Rating(models.Model):
     #CREATED AS NEW
 
     #CREATED AS NEW
+
+
+class BusinessType(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.name
