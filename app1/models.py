@@ -264,12 +264,12 @@ from django.db import models
 
 class Agent(models.Model):
     name = models.CharField(max_length=100)
-    firm_name = models.CharField(max_length=150, blank=True)  #CREATED AS NEW
+    firm_name = models.CharField(max_length=150, blank=True)
     business_type = models.CharField(max_length=100)
     location = models.CharField(max_length=100)
     district = models.CharField(max_length=100)
     contact_number = models.CharField(max_length=15)
-    remarks = models.TextField(blank=True)  #CREATED AS NEW
+    remarks = models.TextField(blank=True)
 
     def __str__(self):
         return self.name
@@ -410,14 +410,6 @@ class Rating(models.Model):
     
 
 
-
-    #CREATED AS NEW
-
-    #CREATED AS NEW
-
-    #CREATED AS NEW
-
-
 class BusinessType(models.Model):
     name = models.CharField(max_length=100, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -425,3 +417,13 @@ class BusinessType(models.Model):
 
     def __str__(self):
         return self.name
+    
+
+
+
+
+    #CREATED AS NEW
+
+    #CREATED AS NEW
+
+    #CREATED AS NEW

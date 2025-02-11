@@ -4,9 +4,6 @@
     th {
         text-transform: uppercase;
     }
-</style>
-<!-- Styling -->
-<style>
     .modal {
       position: fixed;
       z-index: 1;
@@ -27,21 +24,24 @@
     }
   
     .close-btn {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  color: rgb(0, 0, 0);
-  font-size: 20px;
-  cursor: pointer;
-}
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      color: rgb(0, 0, 0);
+      font-size: 20px;
+      cursor: pointer;
+    }
+</style>
 
-  </style>
 <div class="mt-5" style="overflow: hidden;">
-    <h2 style="text-transform: uppercase;display: flex;justify-content: center;margin-bottom: 2%;">Agents List</h2>
+    <h2 style="text-transform: uppercase;display: flex;justify-content: center;margin-bottom: 2%;">Address Book</h2>
 
     <!-- Filter Section -->
     <div class="row mb-3">
-        <div class="col-md-4">
+        <div class="col-md-3">
+            <input type="text" class="form-control" id="nameFilter" placeholder="Search by name" onkeyup="filterAgents()">
+        </div>
+        <div class="col-md-3">
             <select class="form-control" id="districtFilter" onchange="filterAgents()">
                 <option value="">All Districts</option>
                 <option value="Alappuzha">Alappuzha</option>
@@ -60,7 +60,7 @@
                 <option value="Wayanad">Wayanad</option>
             </select>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
             <select class="form-control" id="businessTypeFilter" onchange="filterAgents()">
                 <option value="">All Business Types</option>
                 {% for type in business_types %}
@@ -68,7 +68,7 @@
                 {% endfor %}
             </select>
         </div>
-        <div class="col-md-4 text-end">
+        <div class="col-md-3 text-end">
             <a href="{% url 'add_agent' %}" class="btn btn-primary">Add New</a>
         </div>
     </div>
@@ -91,7 +91,7 @@
             </thead>
             <tbody>
                 {% for agent in agents %}
-                    <tr class="agent-row" data-district="{{ agent.district|upper }}" data-business-type="{{ agent.business_type|upper }}">
+                    <tr class="agent-row" data-district="{{ agent.district|upper }}" data-business-type="{{ agent.business_type|upper }}" data-name="{{ agent.name|upper }}">
                         <td>{{ forloop.counter }}</td>
                         <td>{{ agent.name|upper }}</td>
                         <td>{{ agent.firm_name|default_if_none:''|upper }}</td>
@@ -99,11 +99,11 @@
                         <td>{{ agent.location|upper }}</td>
                         <td>{{ agent.district|upper }}</td>
                         <td>{{ agent.contact_number }}</td>
-                        <td  style="display: flex;justify-content: center;">
+                        <td style="display: flex;justify-content: center;">
                             <i class="fas fa-comment-alt" style="cursor: pointer; color: blue;" 
                                onclick="showRemark('{{ agent.remarks|default_if_none:'' }}')">
                             </i>
-                          </td>
+                        </td>
                         <td><a href="{% url 'edit_agent' agent.id %}" class="btn btn-warning btn-sm">Edit</a></td>
                         <td>
                             <form action="{% url 'delete_agent' agent.id %}" method="POST" onsubmit="return confirmDelete();">
@@ -119,13 +119,14 @@
                 {% endfor %}
             </tbody>
         </table>
+
         <!-- Popup Modal -->
-<div id="remarkPopup" class="modal" style="display: none;">
-    <div class="modal-content">
-      <span class="close-btn" onclick="closePopup()">&times;</span>
-      <p id="remarkText"></p>
-    </div>
-  </div>
+        <div id="remarkPopup" class="modal" style="display: none;">
+            <div class="modal-content">
+                <span class="close-btn" onclick="closePopup()">&times;</span>
+                <p id="remarkText"></p>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -135,6 +136,7 @@ function confirmDelete() {
 }
 
 function filterAgents() {
+    const searchText = document.getElementById('nameFilter').value.toUpperCase();
     const selectedDistrict = document.getElementById('districtFilter').value.toUpperCase();
     const selectedBusinessType = document.getElementById('businessTypeFilter').value.toUpperCase();
     const rows = document.getElementsByClassName('agent-row');
@@ -143,10 +145,13 @@ function filterAgents() {
     for (let row of rows) {
         const districtValue = row.getAttribute('data-district');
         const businessTypeValue = row.getAttribute('data-business-type');
+        const nameValue = row.getAttribute('data-name');
+        
+        const matchesName = !searchText || nameValue.includes(searchText);
         const matchesDistrict = !selectedDistrict || districtValue === selectedDistrict;
         const matchesBusinessType = !selectedBusinessType || businessTypeValue === selectedBusinessType;
 
-        if (matchesDistrict && matchesBusinessType) {
+        if (matchesName && matchesDistrict && matchesBusinessType) {
             row.style.display = '';
             row.cells[0].textContent = counter++;
         } else {
@@ -154,19 +159,18 @@ function filterAgents() {
         }
     }
 }
-</script>
-<script>
-    function showRemark(remark) {
-      if (remark.trim()) {
+
+function showRemark(remark) {
+    if (remark.trim()) {
         document.getElementById("remarkText").textContent = remark;
         document.getElementById("remarkPopup").style.display = "block";
-      } else {
+    } else {
         alert("No remarks available.");
-      }
     }
-  
-    function closePopup() {
-      document.getElementById("remarkPopup").style.display = "none";
-    }
-  </script>
+}
+
+function closePopup() {
+    document.getElementById("remarkPopup").style.display = "none";
+}
+</script>
 {% endblock %}
