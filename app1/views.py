@@ -2156,3 +2156,63 @@ def delete_business_type(request, id):
         return JsonResponse({'success': False, 'message': 'Business type not found'})
     except Exception as e:
         return JsonResponse({'success': False, 'message': str(e)})
+    
+
+
+
+
+from django.shortcuts import render, get_object_or_404
+from .models import CV
+
+def offer_letter(request, cv_id):
+    cv = get_object_or_404(CV, id=cv_id)
+    context = {
+        'candidate_name': cv.name,
+        'candidate_address': cv.address,  # Pass the address
+        # Add other fields as needed
+    }
+    return render(request, 'offer_letter.html', context)
+
+
+
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from .models import CV, OfferLetterDetails
+import json
+
+@csrf_exempt
+def save_offer_letter_details(request, cv_id):
+    if request.method == 'POST':
+        try:
+            cv = CV.objects.get(id=cv_id)
+            data = request.POST
+            offer_letter_details, created = OfferLetterDetails.objects.get_or_create(cv=cv)
+            offer_letter_details.position = data.get('position')
+            offer_letter_details.department = data.get('department')
+            offer_letter_details.start_date = data.get('startDate')
+            offer_letter_details.salary = data.get('salary')
+            offer_letter_details.save()
+            return JsonResponse({'success': True})
+        except CV.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'CV not found'})
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+@csrf_exempt
+def get_offer_letter_details(request, cv_id):
+    if request.method == 'GET':
+        try:
+            cv = CV.objects.get(id=cv_id)
+            offer_letter_details = OfferLetterDetails.objects.filter(cv=cv).first()
+            if offer_letter_details:
+                return JsonResponse({
+                    'success': True,
+                    'position': offer_letter_details.position,
+                    'department': offer_letter_details.department,
+                    'startDate': offer_letter_details.start_date,
+                    'salary': offer_letter_details.salary,
+                })
+            else:
+                return JsonResponse({'success': False, 'error': 'No offer letter details found'})
+        except CV.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'CV not found'})
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})

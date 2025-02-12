@@ -5,6 +5,9 @@ from .views import delete_lead
 from .views import load_areas,toggle_service_status
 from .views import update_credential_visibility,toggle_interview_status
 from .views import save_ratings, get_ratings
+from .views import offer_letter,save_offer_letter_details,get_offer_letter_details
+
+
 
 urlpatterns = [
     # Authentication
@@ -141,6 +144,11 @@ urlpatterns = [
     path('business-type/create/', views.create_business_type, name='create_business_type'),
     path('business-type/<int:id>/update/', views.update_business_type, name='update_business_type'),
     path('business-type/<int:id>/delete/', views.delete_business_type, name='delete_business_type'),
+
+    path('offer-letter/<int:cv_id>/', views.offer_letter, name='offer_letter'),
+    path('save-offer-letter-details/<int:cv_id>/', save_offer_letter_details, name='save_offer_letter_details'),
+    path('get-offer-letter-details/<int:cv_id>/', get_offer_letter_details, name='get_offer_letter_details'),
+
     
 
 

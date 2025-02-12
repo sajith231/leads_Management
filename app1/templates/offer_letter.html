@@ -1,0 +1,235 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offer Letter</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        /* A4 size styling */
+        @page {
+            size: A4;
+            margin: 0;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f0f0f0;
+        }
+        .page-container {
+            width: 210mm;
+            min-height: 297mm;
+            margin: 0 auto;
+            background: white;
+            box-sizing: border-box;
+        }
+        .page {
+            width: 210mm;
+            min-height: 297mm;
+            padding: 20mm;
+            margin: 0 auto;
+            background: white;
+            box-sizing: border-box;
+            position: relative;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .header img {
+            width: 150px;
+        }
+        .header h1 {
+            font-size: 18px;
+            margin: 10px 0;
+        }
+        .header p {
+            margin: 5px 0;
+            font-size: 12px;
+        }
+        .content {
+            margin-top: 20px;
+            font-size: 12px;
+            line-height: 1.6;
+            font-family: Arial, sans-serif;
+        }
+        .content h1 {
+            font-size: 18px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .content p {
+            margin: 10px 0;
+        }
+        .content ul, .content ol {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .content ul li, .content ol li {
+            margin: 5px 0;
+        }
+        .footer {
+            position: absolute;
+            bottom: 20mm;
+            width: calc(100% - 40mm);
+            text-align: center;
+            font-size: 10px;
+        }
+        .signature {
+            margin-top: 30px;
+            text-align: right;
+        }
+        .signature p {
+            margin: 5px 0;
+        }
+        /* Download button styling */
+        .download-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            z-index: 1000;
+            font-family: Arial, sans-serif;
+        }
+        .download-button:hover {
+            background-color: #0056b3;
+        }
+        @media print {
+            .download-button {
+                display: none;
+            }
+            body {
+                background: white;
+            }
+            .page {
+                margin: 0;
+                page-break-after: always;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button class="download-button" onclick="downloadPDF()">Download PDF</button>
+    
+    <div id="pdf-content">
+        <!-- Page 1 -->
+        <div class="page">
+            <div class="header" style="display: flex; align-items: center; justify-content: space-between;">
+                <div class="logo">
+                    <img src="{% static 'images/imclogo2.png' %}" alt="Logo" class="img-fluid" style="max-width: 110px; object-fit: contain;">
+                </div>
+                <div class="text" style="text-align: right;font-family: Arial, Helvetica, sans-serif;">
+                    <h1 style="font-size: 18px; margin: 0;">IMC BUSINESS SOLUTIONS</h1>
+                    <p style="margin: 5px 0;text-align: left;">Palakkunnummal Building,</p>
+                    <p style="margin: 5px 0;text-align: left">Near Govt Ayurvedic Hospital,</p>
+                    <p style="margin: 5px 0;text-align: left">Emily, Kalpetta, Wayanad, Kerala - 673122</p>
+                    <p style="margin: 5px 0;text-align: left">info@imcbsglobal.com, 7593820007</p>
+                </div>
+            </div>
+            
+            <div class="content">
+                <p style="display: flex;justify-content: end;">24/01/2025</p>
+                <p>M/s {{ candidate_name }}</p>
+                <p style="white-space: pre-line;">{{ candidate_address }}</p>
+                <h1>JOB OFFER LETTER</h1>
+                <p>Dear {{ candidate_name }},</p>
+                <p style="text-indent: 35px;text-align: justify;">We are pleased to offer you the position of Software Support Executive at IMC Business Solutions. We were thoroughly impressed by your qualifications, experience, and interview performance, and we believe you will make a valuable addition to our team.</p>
+                <p><strong>Job Details:</strong></p>
+                <ul>
+                    <div style="margin-top: 5%;"><li>Job Title: Software Support Executive</li>
+                    <li>Department: Software Support</li>
+                    <li>Reporting to: Administrator</li>
+                    <li>Start Date: 27/01/2025</li>
+                    <li>Timing: 9.30 Am to 5.30 Pm</li>
+                    <li>Salary: INR.6000/- Month (Salary Hike will be considered purely based on performance and Expertise)</li></div>
+                </ul>
+                <div style="margin-top: 10%;"><p><strong>Terms & Conditions:</strong></p>
+                <ol>
+                    <li>You will be bound to work according to the rules and manners (Behaviour, Dress code, Punctuality) of this office.</li>
+                    <li>If you have to resign from this office under any circumstances, work at least 2 months notice period.</li>
+                    <li>You should work at least one year in this office and you should sign a bond paper.</li>
+                    <li>All decisions related to work will be vested in the management.</li>
+                </ol></div>
+            </div>
+            <div class="footer">
+                <p>1 | P a g e</p>
+            </div>
+        </div>
+
+        <!-- Page 2 -->
+        <div class="page">
+            <div class="content">
+                <p>We are excited to have you join our team and look forward to your contributions.</p>
+                <p>We would like you to start work on 27/01/2025 at 9.30 Am. Please report to M/s Nithila, Office Administrator, for documentation and orientation. If this date is not acceptable, please contact me immediately.</p>
+                <p>Please sign the enclosed copy of this letter and return it to me by 27/01/2025 to indicate your acceptance of this offer.</p>
+                <p>We are confident you will be able to make a significant contribution to the success of our Company and look forward to working with you.</p>
+                <div class="signature">
+                    <p>Sincerely,</p>
+                    
+                    <p style="margin-top: 50px;">Naufal K</p>
+                    <p>Managing Partner</p>
+                </div>
+            </div>
+            <div class="footer">
+                <p>2 | P a g e</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function downloadPDF() {
+            // Hide the download button
+            const button = document.querySelector('.download-button');
+            button.style.display = 'none';
+
+            // Get the content element
+            const element = document.getElementById('pdf-content');
+
+            // Configure html2pdf options
+            const opt = {
+                margin: 0,
+                filename: 'offer-letter.pdf',
+                image: { type: 'jpeg', quality: 1 },
+                html2canvas: { 
+                    scale: 2,
+                    useCORS: true,
+                    logging: true,
+                    scrollY: 0,
+                    windowWidth: element.scrollWidth
+                },
+                jsPDF: { 
+                    unit: 'mm', 
+                    format: 'a4', 
+                    orientation: 'portrait'
+                },
+                pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+            };
+
+            // Generate PDF
+            html2pdf()
+                .from(element)
+                .set(opt)
+                .toPdf()
+                .get('pdf')
+                .then(function(pdf) {
+                    const totalPages = pdf.internal.getNumberOfPages();
+                    for (let i = 1; i <= totalPages; i++) {
+                        pdf.setPage(i);
+                    }
+                    return pdf;
+                })
+                .save()
+                .then(function() {
+                    // Show the button again after PDF is generated
+                    button.style.display = 'block';
+                });
+        }
+    </script>
+</body>
+</html>

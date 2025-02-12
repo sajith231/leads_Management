@@ -7,6 +7,7 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
 <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+
 <style>
     .star-rating i {
     cursor: pointer;
@@ -40,6 +41,57 @@
         width: 100%;
     }
 
+
+
+
+/* Container styles */
+.col-12 {
+    position: relative;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+/* Table container styles */
+.col-12 > div {
+    overflow-x: auto;
+    position: relative;
+}
+
+/* Base table styles */
+.table {
+    position: relative;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+/* Make the Name column and its header sticky */
+.table th:nth-child(3),
+.table td:nth-child(3) {
+    position: sticky;
+    left: 0;
+    background-color: white;
+    z-index: 1;
+    /* Add shadow for better visual separation */
+    box-shadow: 2px 0 5px -2px rgba(0, 0, 0, 0.1);
+}
+
+/* Ensure the header has a higher z-index than the body cells */
+.table th:nth-child(3) {
+    z-index: 2;
+    background-color: #f8f9fa;  /* Match your header background color */
+}
+
+/* Maintain borders for sticky column */
+.table th:nth-child(3),
+.table td:nth-child(3) {
+    border-right: 1px solid #dee2e6;  /* Match your table border color */
+}
+
+/* Optional: Add transition for smooth shadow effect on hover */
+.table td:nth-child(3):hover {
+    box-shadow: 2px 0 8px -2px rgba(0, 0, 0, 0.2);
+}
 </style>
 <div style="overflow: hidden;">
     <div class="">
@@ -108,6 +160,8 @@
                                 <th>CV Attachment</th>
                                 <th>Interview Status</th>
                                 <th>Result</th>
+                                <th>Offer Letter Details</th>  <!-- New Header -->
+                                <th>Offer Letter</th>
                                 <th>Edit</th>
                                 <th>Delete</th>
                             </tr>
@@ -199,7 +253,20 @@
                                 }
 
                                 </style>
-                                  
+                                <td>
+                                    <!-- Offer Letter Details Icons -->
+                                    <button class="btn btn-sm btn-add-offer-letter" data-cv-id="{{ cv.id }}"><i class="fa fa-plus"></i></button>
+                                    <i class="fa fa-eye btn-view-offer-letter" style="cursor: pointer;" data-cv-id="{{ cv.id }}"></i>
+                                </td>
+                                 <td>
+                                    <a href="{% url 'offer_letter' cv.id %}">
+                                        <i class="fas fa-file-signature" style="font-size: x-large; display: flex; justify-content: center; color: green; cursor: pointer;"></i>
+                                    </a>
+                                </td>
+                                
+                                
+
+
                                 <td><a href="{% url 'edit_cv' cv.id %}" class="btn btn-warning btn-sm">Edit</a></td>
                                 <td>
                                     <form method="post" action="{% url 'delete_cv' cv.id %}" style="display: inline;">
@@ -347,15 +414,14 @@ audio {
 <div id="ratingModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="ratingModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document" style="width: 100%;max-width: 600px;">
         <div class="modal-content">
-
             <div class="modal-header">
-                <h5 class="modal-title" id="ratingModalLabel">Add/Edit Ratings</h5>
+                <h5 class="modal-title" id="ratingModalLabel">Add/Edit Ratings for <span id="candidateName"></span></h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
             <div class="modal-body">
-                <form id="ratingForm" >
+                <form id="ratingForm">
                     <!-- Appearance Rating -->
                     <div class="form-group" >
                         <label for="appearanceRating">Appearance</label>
@@ -456,12 +522,11 @@ audio {
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="viewRatingModalLabel">View Ratings</h5>
+                <h5 class="modal-title" id="viewRatingModalLabel">View Ratings for <span id="viewCandidateName"></span></h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            
             <div class="modal-body">
                 <div class="row">
                     <div class="col-md-6">
@@ -606,6 +671,42 @@ audio {
             </div>
             <div class="modal-body">
                 <p id="experienceText"></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Offer Letter Details -->
+<div id="offerLetterModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="offerLetterModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="offerLetterModalLabel">Offer Letter Details</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="offerLetterForm">
+                    <input type="hidden" id="cvId" name="cvId">
+                    <div class="form-group">
+                        <label for="position">Position</label>
+                        <input type="text" class="form-control" id="position" name="position">
+                    </div>
+                    <div class="form-group">
+                        <label for="department">Department</label>
+                        <input type="text" class="form-control" id="department" name="department">
+                    </div>
+                    <div class="form-group">
+                        <label for="startDate">Start Date</label>
+                        <input type="date" class="form-control" id="startDate" name="startDate">
+                    </div>
+                    <div class="form-group">
+                        <label for="salary">Salary</label>
+                        <input type="text" class="form-control" id="salary" name="salary">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </form>
             </div>
         </div>
     </div>
@@ -1079,6 +1180,92 @@ $(document).ready(function() {
             typingTimer = setTimeout(function() {
                 $('#nameSearchForm').submit();
             }, delay);
+        });
+    });
+</script>
+<script>
+    // Handle the "Add" button click
+$('.btn-add-rating').click(function() {
+    const cvId = $(this).data('cv-id');
+    const candidateName = $(this).closest('tr').find('td:nth-child(3)').text().trim(); // Get the candidate's name from the table row
+
+    // Set the candidate's name in the modal
+    $('#candidateName').text(candidateName);
+
+    // Load existing ratings if any
+    loadRatings(cvId);
+
+    // Show the modal
+    $('#ratingModal').modal('show');
+});
+
+
+// Handle the "Eye" icon click
+$('.btn-view-rating').click(function() {
+    const cvId = $(this).data('cv-id');
+    const candidateName = $(this).closest('tr').find('td:nth-child(3)').text().trim(); // Get the candidate's name from the table row
+
+    // Set the candidate's name in the modal
+    $('#viewCandidateName').text(candidateName);
+
+    // Load and display the ratings
+    viewRatings(cvId);
+});
+</script>
+
+
+
+
+
+
+<script>
+    $(document).ready(function() {
+        // Handle the "Add" button click for offer letter details
+        $('.btn-add-offer-letter').click(function() {
+            const cvId = $(this).data('cv-id');
+            $('#cvId').val(cvId);
+            $('#offerLetterModal').modal('show');
+        });
+
+        // Handle the "Eye" icon click for viewing offer letter details
+        $('.btn-view-offer-letter').click(function() {
+            const cvId = $(this).data('cv-id');
+            // Fetch the offer letter details for the given CV ID
+            fetch(`/get-offer-letter-details/${cvId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Display the details in a modal or alert
+                        alert(`Position: ${data.position}\nDepartment: ${data.department}\nStart Date: ${data.startDate}\nSalary: ${data.salary}`);
+                    } else {
+                        alert('No offer letter details found.');
+                    }
+                });
+        });
+
+        // Handle form submission
+        $('#offerLetterForm').submit(function(event) {
+            event.preventDefault();
+            const cvId = $('#cvId').val();
+            const formData = $(this).serialize();
+
+            fetch(`/save-offer-letter-details/${cvId}/`, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Offer letter details saved successfully!');
+                    $('#offerLetterModal').modal('hide');
+                } else {
+                    alert('Failed to save offer letter details.');
+                }
+            });
         });
     });
 </script>
