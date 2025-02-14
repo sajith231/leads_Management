@@ -2163,13 +2163,18 @@ def delete_business_type(request, id):
 
 from django.shortcuts import render, get_object_or_404
 from .models import CV
+from django.shortcuts import render, get_object_or_404
+from .models import CV, OfferLetterDetails
 
 def offer_letter(request, cv_id):
     cv = get_object_or_404(CV, id=cv_id)
+    clicked_date = request.GET.get("date", cv.created_date.strftime("%d/%m/%Y"))
+    offer_letter_details = OfferLetterDetails.objects.filter(cv=cv).first()
+
     context = {
         'candidate_name': cv.name,
-        'candidate_address': cv.address,  # Pass the address
-        # Add other fields as needed
+        'candidate_address': cv.address,
+        'offer_letter_details': offer_letter_details,  # Pass the offer letter details to the template
     }
     return render(request, 'offer_letter.html', context)
 

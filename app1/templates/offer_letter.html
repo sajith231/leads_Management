@@ -134,20 +134,21 @@
             </div>
             
             <div class="content">
-                <p style="display: flex;justify-content: end;">24/01/2025</p>
+                <p style="display: flex;justify-content: end;">{{ request.GET.date }}</p>
                 <p>M/s {{ candidate_name }}</p>
                 <p style="white-space: pre-line;">{{ candidate_address }}</p>
                 <h1>JOB OFFER LETTER</h1>
                 <p>Dear {{ candidate_name }},</p>
-                <p style="text-indent: 35px;text-align: justify;">We are pleased to offer you the position of Software Support Executive at IMC Business Solutions. We were thoroughly impressed by your qualifications, experience, and interview performance, and we believe you will make a valuable addition to our team.</p>
+                <p style="text-indent: 35px;text-align: justify;">We are pleased to offer you the position of {% if offer_letter_details %}{{ offer_letter_details.position }}{% else %}{% endif %} 
+                    at IMC Business Solutions. We were thoroughly impressed by your qualifications, experience, and interview performance, and we believe you will make a valuable addition to our team.</p>
                 <p><strong>Job Details:</strong></p>
                 <ul>
-                    <div style="margin-top: 5%;"><li>Job Title: Software Support Executive</li>
-                    <li>Department: Software Support</li>
+                    <div style="margin-top: 5%;"><li>Job Title: {% if offer_letter_details %}{{ offer_letter_details.position }}{% else %}{% endif %} </li>
+                    <li>Department: {% if offer_letter_details %}{{ offer_letter_details.department }}{% else %}{% endif %} </li>
                     <li>Reporting to: Administrator</li>
-                    <li>Start Date: 27/01/2025</li>
+                    <li>Start Date: {% if offer_letter_details %}{{ offer_letter_details.start_date|date:"d/m/Y" }}{% else %}{% endif %}</li>
                     <li>Timing: 9.30 Am to 5.30 Pm</li>
-                    <li>Salary: INR.6000/- Month (Salary Hike will be considered purely based on performance and Expertise)</li></div>
+                    <li>Salary: INR.{% if offer_letter_details %}{{ offer_letter_details.salary }}{% else %}{% endif %}/- Month (Salary Hike will be considered purely based on performance and Expertise)</li></div>
                 </ul>
                 <div style="margin-top: 10%;"><p><strong>Terms & Conditions:</strong></p>
                 <ol>
@@ -166,7 +167,7 @@
         <div class="page">
             <div class="content">
                 <p>We are excited to have you join our team and look forward to your contributions.</p>
-                <p>We would like you to start work on 27/01/2025 at 9.30 Am. Please report to M/s Nithila, Office Administrator, for documentation and orientation. If this date is not acceptable, please contact me immediately.</p>
+                <p>We would like you to start work on {% if offer_letter_details %}{{ offer_letter_details.start_date|date:"d/m/Y" }}{% else %}{% endif %} at 9.30 Am. Please report to M/s Nithila, Office Administrator, for documentation and orientation. If this date is not acceptable, please contact me immediately.</p>
                 <p>Please sign the enclosed copy of this letter and return it to me by 27/01/2025 to indicate your acceptance of this offer.</p>
                 <p>We are confident you will be able to make a significant contribution to the success of our Company and look forward to working with you.</p>
                 <div class="signature">
