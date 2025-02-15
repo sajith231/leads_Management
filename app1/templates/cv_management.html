@@ -259,7 +259,7 @@
                                     <i class="fa fa-eye btn-view-offer-letter" style="cursor: pointer;" data-cv-id="{{ cv.id }}"></i>
                                 </td>
                                 <td>
-                                    <a href="{% url 'offer_letter' cv.id %}?date={{ cv.created_date|date:'d/m/Y' }}">
+                                    <a href="#" class="offer-letter-link" data-cv-id="{{ cv.id }}" data-date="{{ cv.created_date|date:'d/m/Y' }}">
                                         <i class="fas fa-file-signature" style="font-size: x-large; display: flex; justify-content: center; color: green; cursor: pointer;"></i>
                                     </a>
                                 </td>
@@ -1270,7 +1270,23 @@ $('.btn-view-rating').click(function() {
         });
     });
 </script>
+<script>
+    $(document).ready(function() {
+        // Handle the offer letter icon click
+        $('.offer-letter-link').click(function(event) {
+            event.preventDefault(); // Prevent the default link behavior
 
+            const cvId = $(this).data('cv-id');
+            const currentDate = new Date().toLocaleDateString('en-GB'); // Get the current date in dd/mm/yyyy format
+
+            // Construct the URL with the latest date
+            const offerLetterUrl = `{% url 'offer_letter' 0 %}?date=${currentDate}`.replace("0", cvId);
+
+            // Redirect to the offer letter page with the latest date
+            window.location.href = offerLetterUrl;
+        });
+    });
+</script>
 {% endblock %}
 
 
