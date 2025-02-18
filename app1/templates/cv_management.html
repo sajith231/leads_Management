@@ -167,17 +167,13 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {% for cv in cv_list|sort_by_latest %}  <!-- Apply the custom filter here -->
+                            {% for cv in cv_list %}
                             <tr>
                                 <td>{{ cv_list.start_index|add:forloop.counter0 }}</td>
                                 <td>{{ cv.created_date|date:"d-m-Y" }}</td>
                                 <td>{{ cv.name|upper }}</td>
-                                <td>
-                                    {{ cv.address|upper|slice:":30" }}<br>
-                                    {{ cv.address|upper|slice:"50:500" }}
-                                </td>
+                                <td>{{ cv.address|upper|slice:":30" }}<br>{{ cv.address|upper|slice:"50:500" }}</td>
                                 <td>{{ cv.phone_number }}</td>
-                                
                                 <td>{{ cv.place|upper }}</td>
                                 <td>{{ cv.district|upper }}</td>
                                 <td>
@@ -190,7 +186,6 @@
                                        data-toggle="modal" data-target="#experienceModal" data-experience="{{ cv.experience }}">
                                     </i>
                                 </td>
-                                
                                 <td>{{ cv.job_title|upper }}</td>
                                 <td>{{ cv.dob }}</td>
                                 <td>
@@ -205,69 +200,28 @@
                                     <button class="btn btn-sm btn-toggle-interview" data-cv-id="{{ cv.id }}" data-status="{{ cv.interview_status|yesno:'Yes,No' }}">
                                         {{ cv.interview_status|yesno:"Yes,No" }}
                                     </button>
-                                    <style>
-                                        .btn-toggle-interview[data-status="No"] {
-                                            background-color: grey;
-                                            color: white;
-                                        }
-
-                                        .btn-toggle-interview[data-status="Yes"] {
-                                            background-color: green;
-                                            color: white;
-                                        }
-
-                                    </style>
                                 </td>
                                 <td>
-                                    {% if cv.interview_status %}  <!-- Check if interview status is 'Yes' -->
+                                    {% if cv.interview_status %}
                                         <button class="btn btn-sm btn-add-rating" data-cv-id="{{ cv.id }}"><i class="fa fa-plus"></i></button>
-                                        <i class="fa fa-eye btn-view-rating" style="cursor: pointer;" data-cv-id="{{ cv.id }}"></i>
+                                        {% if cv.rating_set.exists %}
+                                            <i class="fa fa-eye btn-view-rating" style="cursor: pointer;" data-cv-id="{{ cv.id }}"></i>
+                                        {% endif %}
                                     {% endif %}
                                 </td>
-                                <style>
-                                    .btn-add-rating {
-                                    background-color: #007bff;
-                                    color: white;
-                                    border: none;
-                                    padding: 6px 10px;
-                                    border-radius: 4px;
-                                    transition: all 0.3s ease-in-out;
-                                }
-
-                                .btn-add-rating:hover {
-                                    background-color: #0056b3;
-                                    box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.15);
-                                }
-
-                                .btn-view-rating {
-                                    color: #007bff;
-                                    font-size: 16px;
-                                    margin-left: 10px;
-                                    transition: color 0.3s ease-in-out;
-                                }
-
-                                .btn-view-rating:hover {
-                                    color: #0056b3;
-                                    text-shadow: 0px 0px 5px rgba(0, 0, 0, 0.2);
-                                    cursor: pointer;
-                                }
-
-                                </style>
                                 <td>
-                                    <!-- Offer Letter Details Icons -->
-                                    <button class="btn btn-sm btn-add-offer-letter" data-cv-id="{{ cv.id }}"><i class="fa fa-plus"></i></button>
-                                    <i class="fa fa-eye btn-view-offer-letter" style="cursor: pointer;" data-cv-id="{{ cv.id }}"></i>
+                                    {% if cv.interview_status %}
+                                        <button class="btn btn-sm btn-add-offer-letter" data-cv-id="{{ cv.id }}"><i class="fa fa-plus"></i></button>
+                                        <i class="fa fa-eye btn-view-offer-letter" style="cursor: pointer;" data-cv-id="{{ cv.id }}"></i>
+                                    {% endif %}
                                 </td>
                                 <td>
-                                    <a href="#" class="offer-letter-link" data-cv-id="{{ cv.id }}" data-date="{{ cv.created_date|date:'d/m/Y' }}">
-                                        <i class="fas fa-file-signature" style="font-size: x-large; display: flex; justify-content: center; color: green; cursor: pointer;"></i>
-                                    </a>
+                                    {% if cv.interview_status %}
+                                        <a href="#" class="offer-letter-link" data-cv-id="{{ cv.id }}" data-date="{{ cv.created_date|date:'d/m/Y' }}">
+                                            <i class="fas fa-file-signature" style="font-size: x-large; display: flex; justify-content: center; color: green; cursor: pointer;"></i>
+                                        </a>
+                                    {% endif %}
                                 </td>
-                                
-                                
-                                
-
-
                                 <td><a href="{% url 'edit_cv' cv.id %}" class="btn btn-warning btn-sm">Edit</a></td>
                                 <td>
                                     <form method="post" action="{% url 'delete_cv' cv.id %}" style="display: inline;">
@@ -288,7 +242,6 @@
                             </tr>
                             {% endfor %}
                         </tbody>
-                    </table>
                 </div>
             </div>
         </div>

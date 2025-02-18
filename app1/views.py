@@ -19,6 +19,8 @@ from .models import Requirement  # Ensure the correct model is imported
 from .models import Lead,ServiceEntry,JobTitle
 import json
 
+
+
 def login(request):
     if request.method == "POST":
         userid = request.POST.get("username")
@@ -1454,7 +1456,8 @@ def cv_management(request):
     selected_interview_status = request.GET.get('interview_status')
     name_query = request.GET.get('name')
     
-    cv_list = CV.objects.all()
+    # Start with ordered queryset - newest first
+    cv_list = CV.objects.all().order_by('-created_date')
     
     if name_query:
         cv_list = cv_list.filter(name__icontains=name_query)
@@ -2221,3 +2224,151 @@ def get_offer_letter_details(request, cv_id):
         except CV.DoesNotExist:
             return JsonResponse({'success': False, 'error': 'CV not found'})
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+
+
+
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.http import HttpResponse
+from .models import Employee, Attachment
+from django.core.files.storage import FileSystemStorage
+
+def employee_management(request):
+    employees = Employee.objects.all()
+    return render(request, 'employee_management.html', {'employees': employees})
+
+from django.shortcuts import render, redirect
+from .models import Employee, Attachment, CV
+
+def add_employee(request):
+    cvs = CV.objects.all()
+    if request.method == "POST":
+        name = request.POST['name']
+        photo = request.FILES['photo']
+        address = request.POST.get('address', '')  # New field
+        phone_personal = request.POST['phone_personal']
+        phone_residential = request.POST['phone_residential']
+        place = request.POST['place']
+        district = request.POST['district']
+        education = request.POST['education']
+        experience = request.POST['experience']
+        job_title = request.POST['job_title']
+        joining_date = request.POST['joining_date']
+        dob = request.POST['dob']
+        
+        employee = Employee.objects.create(
+            name=name, 
+            photo=photo, 
+            address=address,  # New field
+            phone_personal=phone_personal, 
+            phone_residential=phone_residential, 
+            place=place, 
+            district=district, 
+            education=education, 
+            experience=experience, 
+            job_title=job_title, 
+            joining_date=joining_date, 
+            dob=dob
+        )
+
+        for file in request.FILES.getlist('attachments'):
+            Attachment.objects.create(employee=employee, file=file)
+
+        return redirect('employee_management')
+    
+    return render(request, 'add_employee.html', {'cvs': cvs})
+
+
+def delete_employee(request, emp_id):
+    employee = get_object_or_404(Employee, id=emp_id)
+    employee.delete()
+    return redirect('employee_management')
+
+from django.shortcuts import render, redirect, get_object_or_404
+from .models import Employee, Attachment
+def edit_employee(request, emp_id):
+    employee = get_object_or_404(Employee, id=emp_id)
+    
+    if request.method == "POST":
+        employee.name = request.POST['name']
+        if 'photo' in request.FILES:
+            employee.photo = request.FILES['photo']
+        employee.address = request.POST.get('address', '')  # New field
+        employee.phone_personal = request.POST['phone_personal']
+        employee.phone_residential = request.POST['phone_residential']
+        employee.place = request.POST['place']
+        employee.district = request.POST['district']
+        employee.education = request.POST['education']
+        employee.experience = request.POST['experience']
+        employee.job_title = request.POST['job_title']
+        
+        # Format the dates properly
+        joining_date = request.POST['joining_date']
+        dob = request.POST['dob']
+        
+        # Only update if dates are provided
+        if joining_date:
+            employee.joining_date = joining_date
+        if dob:
+            employee.dob = dob
+            
+        employee.save()
+        
+        # Handling multiple attachments
+        for file in request.FILES.getlist('attachments'):
+            Attachment.objects.create(employee=employee, file=file)
+            
+        return redirect('employee_management')
+    
+    # Format dates for the template
+    context = {
+        'employee': employee,
+        'joining_date': employee.joining_date.strftime('%Y-%m-%d'),
+        'dob': employee.dob.strftime('%Y-%m-%d')
+    }
+    
+    return render(request, 'edit_employee.html', context)
+
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+from .models import Employee
+
+def save_experience_certificate_details(request, employee_id):
+    if request.method == "POST":
+        employee = get_object_or_404(Employee, id=employee_id)
+        start_date = request.POST.get("start_date")
+        end_date = request.POST.get("end_date")
+
+        # Save data to the employee model
+        employee.experience_start_date = start_date
+        employee.experience_end_date = end_date
+        employee.save()
+
+        return JsonResponse({
+            "success": True,
+            "employee": {
+                "name": employee.name,
+                "address": employee.address,
+                "phone_personal": employee.phone_personal,
+                "phone_residential": employee.phone_residential,
+                "job_title": employee.job_title,
+                "joining_date": employee.joining_date.strftime("%Y-%m-%d"),
+                "dob": employee.dob.strftime("%Y-%m-%d"),
+                "experience_start_date": employee.experience_start_date,
+                "experience_end_date": employee.experience_end_date,
+            }
+        })
+
+    return JsonResponse({"success": False, "error": "Invalid request"})
+
+
+def experience_certificate(request, employee_id):
+    employee = get_object_or_404(Employee, id=employee_id)
+    clicked_date = request.GET.get("date", employee.joining_date.strftime("%d/%m/%Y"))
+
+    context = {
+        'employee': employee,
+        'clicked_date': clicked_date,
+    }
+    return render(request, 'experience_certificate.html', context)

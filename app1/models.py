@@ -421,13 +421,6 @@ class BusinessType(models.Model):
 
 
 
-
-    #CREATED AS NEW
-
-    #CREATED AS NEW
-
-    #CREATED AS NEW
-
 from django.db import models
 from .models import CV
 
@@ -440,3 +433,36 @@ class OfferLetterDetails(models.Model):
 
     def __str__(self):
         return f"Offer Letter Details for {self.cv.name}"
+    
+
+
+    #CREATED AS NEW
+
+    #CREATED AS NEW
+
+    #CREATED AS NEW
+
+
+class Employee(models.Model):
+    name = models.CharField(max_length=100)
+    photo = models.ImageField(upload_to='employees/')
+    address = models.CharField(max_length=255, blank=True, null=True)  # New field
+    phone_personal = models.CharField(max_length=15)
+    phone_residential = models.CharField(max_length=15, blank=True, null=True)
+    place = models.CharField(max_length=100)
+    district = models.CharField(max_length=100)
+    education = models.CharField(max_length=100)
+    experience = models.CharField(max_length=100, blank=True, null=True)
+    job_title = models.CharField(max_length=100)
+    joining_date = models.DateField()
+    dob = models.DateField()
+    experience_start_date = models.DateField(blank=True, null=True)
+    experience_end_date = models.DateField(blank=True, null=True)
+
+class Attachment(models.Model):
+    employee = models.ForeignKey(Employee, related_name='attachments', on_delete=models.CASCADE)
+    file = models.FileField(upload_to='employee_attachments/')
+
+
+
+

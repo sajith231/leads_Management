@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="">
+    <h2 style="display: flex;justify-content: center;">Edit Employee</h2>
+    <form action="{% url 'edit_employee' employee.id %}" method="post" enctype="multipart/form-data" style="width: 60%;margin-left: 20%;">
+        {% csrf_token %}
+        
+        <div class="mb-3">
+            <label class="form-label">Name</label>
+            <input type="text" name="name" class="form-control" value="{{ employee.name }}" required>
+        </div>
+        
+        <div class="mb-3">
+            <label class="form-label">Photo</label><br>
+            <img src="{{ employee.photo.url }}" width="50" height="50" alt="Photo">
+            <input type="file" name="photo" class="form-control">
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Address</label>
+            <select name="address" class="form-control">
+                <option value="" disabled>Select District</option>
+                <option value="Thiruvananthapuram" {% if employee.address == "Thiruvananthapuram" %}selected{% endif %}>Thiruvananthapuram</option>
+                <option value="Kollam" {% if employee.address == "Kollam" %}selected{% endif %}>Kollam</option>
+                <option value="Pathanamthitta" {% if employee.address == "Pathanamthitta" %}selected{% endif %}>Pathanamthitta</option>
+                <option value="Alappuzha" {% if employee.address == "Alappuzha" %}selected{% endif %}>Alappuzha</option>
+                <option value="Kottayam" {% if employee.address == "Kottayam" %}selected{% endif %}>Kottayam</option>
+                <option value="Idukki" {% if employee.address == "Idukki" %}selected{% endif %}>Idukki</option>
+                <option value="Ernakulam" {% if employee.address == "Ernakulam" %}selected{% endif %}>Ernakulam</option>
+                <option value="Thrissur" {% if employee.address == "Thrissur" %}selected{% endif %}>Thrissur</option>
+                <option value="Palakkad" {% if employee.address == "Palakkad" %}selected{% endif %}>Palakkad</option>
+                <option value="Malappuram" {% if employee.address == "Malappuram" %}selected{% endif %}>Malappuram</option>
+                <option value="Kozhikode" {% if employee.address == "Kozhikode" %}selected{% endif %}>Kozhikode</option>
+                <option value="Wayanad" {% if employee.address == "Wayanad" %}selected{% endif %}>Wayanad</option>
+                <option value="Kannur" {% if employee.address == "Kannur" %}selected{% endif %}>Kannur</option>
+                <option value="Kasaragod" {% if employee.address == "Kasaragod" %}selected{% endif %}>Kasaragod</option>
+            </select>
+        </div>
+        
+
+        <div class="mb-3">
+            <label class="form-label">Phone (Personal)</label>
+            <input type="text" name="phone_personal" class="form-control" value="{{ employee.phone_personal }}" required>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Phone (Residential)</label>
+            <input type="text" name="phone_residential" class="form-control" value="{{ employee.phone_residential }}">
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Place</label>
+            <input type="text" name="place" class="form-control" value="{{ employee.place }}" required>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">District</label>
+            <input type="text" name="district" class="form-control" value="{{ employee.district }}" required>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Education</label>
+            <input type="text" name="education" class="form-control" value="{{ employee.education }}">
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Experience</label>
+            <input type="text" name="experience" class="form-control" value="{{ employee.experience }}">
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Job Titile</label>
+            <input type="text" name="job_title" class="form-control" value="{{ employee.job_title }}" required>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Joining Date</label>
+            <input type="date" name="joining_date" class="form-control" value="{{ joining_date }}" required>
+        </div>
+        
+        <div class="mb-3">
+            <label class="form-label">Date of Birth</label>
+            <input type="date" name="dob" class="form-control" value="{{ dob }}" required>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Attachments</label><br>
+            {% for attachment in employee.attachments.all %}
+                <a href="{{ attachment.file.url }}" target="_blank">View</a><br>
+            {% endfor %}
+            <input type="file" name="attachments" class="form-control" multiple>
+        </div>
+
+        <button type="submit" class="btn btn-success">Update Employee</button>
+    </form>
+</div>
+{% endblock %}

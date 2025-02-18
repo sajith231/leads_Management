@@ -1,0 +1,176 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Experience Certificate</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- Include html2pdf library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f4f4f4;
+            font-family: Arial, sans-serif;
+            
+        }
+
+        .certificate-container {
+            width: 21cm;
+            height: 29.7cm;
+            background-color: #fff;
+            padding: 2cm;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            box-sizing: border-box;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2cm;
+        }
+
+        .logo {
+            width: 100px;
+            height: auto;
+            margin-bottom: 10px;
+        }
+
+        .company-info p {
+            margin: 5px 0;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .content {
+            text-align: left;
+        }
+
+        .date {
+            text-align: right;
+            font-size: 14px;
+            margin-bottom: 1cm;
+        }
+
+        h1 {
+            font-size: 20px;
+            text-align: center;
+            margin-bottom: 1cm;
+            text-decoration: underline;
+        }
+
+        .main-text {
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 1cm;
+            text-align: justify;
+        }
+
+        .signature {
+            text-align: right;
+            margin-top: 2cm;
+        }
+
+        .signature p {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+
+        .signature strong {
+            font-weight: bold;
+        }
+
+        /* Download button styling */
+        .download-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .download-button:hover {
+            background-color: #0056b3;
+        }
+        .certificate-container {
+    width: 794px; /* A4 width */
+    height: 1123px; /* A4 height */
+}
+
+
+
+    </style>
+</head>
+<body>
+    <div class="certificate-container">
+        <div class="header">
+            <div class="company-info" style="display: flex;">
+                <div class="logo">
+                    <img src="{% static 'images/imclogo2.png' %}" alt="Logo" class="img-fluid" style="max-width: 110px; object-fit: contain;">
+                </div>
+                <div style="margin-left: 50%; text-align: left;">
+                    <p>Palakkunnummal Building</p>
+                    <p>Near Govt Ayurvedic Hospital</p>
+                    <p style="white-space: nowrap;">Emily, Kalpetta, Wayanad, Kerala - 673122</p>
+                    <p>imcsolution@yahoo.com, 75938 20007</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="content">
+            <p class="date">Date: {{ request.GET.date }}</p>
+            <h1>TO WHOMSOEVER IT MAY CONCERN</h1>
+            <p class="main-text">
+                This is to certify that Mr. {{ employee.name }},  {{ employee.address }}, worked as a {{ employee.job_title }} at IMC BUSINESS SOLUTIONS from {{ employee.experience_start_date }} to {{ employee.experience_end_date }}.
+            </p>
+            <p class="main-text">
+                It was noted that Mr. {{ employee.name }} is capable of taking up any level of responsibility with the right sense of attitude and seriousness required for the job. His level of dedication and sincerity towards his work were found to be good.
+            </p>
+            <p class="main-text">
+                He is leaving our organization on his own account. We wish him all success in his future career.
+            </p>
+            <div class="signature">
+                <p>For IMC BUSINESS SOLUTIONS</p>
+                <p style="margin-top: 50px;">Naufal K</p>
+                <p>Managing Director</p>
+                <p>9946545535</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Download Button -->
+    <button class="download-button" onclick="downloadAsPDF()">Download as PDF</button>
+
+    <script>
+        function downloadAsPDF() {
+            const element = document.querySelector('.certificate-container');
+    
+            const options = {
+                margin: [0, 0, 0, 0], // Reduce margins to prevent shifting
+                filename: 'Experience_Certificate.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 3, useCORS: true, letterRendering: true },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                pagebreak: { mode: ['avoid-all', 'css', 'legacy'] } // Prevents unwanted page breaks
+            };
+    
+            html2pdf().from(element).set(options).toPdf().get('pdf').then(function (pdf) {
+                pdf.setPage(1);
+                pdf.save('Experience_Certificate.pdf');
+            });
+        }
+    </script>
+    
+</body>
+</html>

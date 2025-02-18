@@ -6,7 +6,9 @@ from .views import load_areas,toggle_service_status
 from .views import update_credential_visibility,toggle_interview_status
 from .views import save_ratings, get_ratings
 from .views import offer_letter,save_offer_letter_details,get_offer_letter_details
-
+from .views import employee_management, add_employee,edit_employee,delete_employee
+from .views import experience_certificate
+from .views import experience_certificate, save_experience_certificate_details 
 
 
 urlpatterns = [
@@ -148,6 +150,17 @@ urlpatterns = [
     path('offer-letter/<int:cv_id>/', views.offer_letter, name='offer_letter'),
     path('save-offer-letter-details/<int:cv_id>/', save_offer_letter_details, name='save_offer_letter_details'),
     path('get-offer-letter-details/<int:cv_id>/', get_offer_letter_details, name='get_offer_letter_details'),
+
+    path('employee_management/', employee_management, name='employee_management'),
+    path('add_employee/', add_employee, name='add_employee'),
+    path('edit_employee/<int:emp_id>/', edit_employee, name='edit_employee'),  # 🔥 Fixing the issue
+    path('delete_employee/<int:emp_id>/', delete_employee, name='delete_employee'),
+
+    
+
+     path('save_experience_certificate_details/<int:employee_id>/', save_experience_certificate_details, name='save_experience_certificate_details'),
+    path('experience_certificate/<int:employee_id>/', views.experience_certificate, name='experience_certificate'),
+    
 
     
 
