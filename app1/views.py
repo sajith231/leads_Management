@@ -1631,386 +1631,6 @@ def delete_job_title(request, title_id):
 
 
 
-from django.shortcuts import render
-from django.http import JsonResponse
-from .models import Credential
-
-def credentials_view(request):
-    credentials = Credential.objects.all()
-    return render(request, 'credentials.html', {'credentials': credentials})
-
-def add_credential(request):
-    if request.method == 'POST':
-        name = request.POST.get('name')
-        # Set 'all' as the default visibility
-        credential = Credential.objects.create(name=name, visibility=['all'])
-        credentials_count = Credential.objects.count()
-        return JsonResponse({
-            'id': credential.id,
-            'name': credential.name,
-            'count': credentials_count,
-            'edit': False,
-            'visibility': credential.visibility  # Return visibility for frontend
-        })
-
-def edit_credential(request):
-    if request.method == 'POST':
-        credential_id = request.POST.get('id')
-        name = request.POST.get('name')
-        credential = Credential.objects.get(id=credential_id)
-        credential.name = name
-        credential.save()
-        return JsonResponse({
-            'id': credential.id,
-            'name': credential.name,
-            'edit': True,
-            'visibility': credential.visibility  # Return visibility for frontend
-        })
-
-def delete_credential(request):
-    if request.method == 'POST':
-        credential_id = request.POST.get('id')
-        Credential.objects.filter(id=credential_id).delete()
-        return JsonResponse({'success': True})
-
-def update_credential_visibility(request):
-    if request.method == 'POST':
-        credential_id = request.POST.get('credential_id')
-        visibility = request.POST.getlist('visibility[]')  # Get list of selected roles
-        credential = Credential.objects.get(id=credential_id)
-        credential.visibility = visibility
-        credential.save()
-        return JsonResponse({'message': 'Visibility updated successfully!'})
-    return JsonResponse({'error': 'Invalid request'}, status=400)
-
-def get_credentials(request):
-    credentials = Credential.objects.values('id', 'name', 'visibility')
-    return JsonResponse({'credentials': list(credentials)})
-
-
-from django.shortcuts import render, get_object_or_404
-from .models import OfficialDocument
-from django.http import JsonResponse
-from django.views.decorators.http import require_http_methods
-from django.views.decorators.csrf import csrf_protect
-
-def official_documents(request):
-    """
-    View to display all official documents
-    """
-    documents = OfficialDocument.objects.all()
-    return render(request, 'officialdoc.html', {'documents': documents})
-@csrf_protect
-@require_http_methods(["POST"])
-def add_document(request):
-    """
-    View to add a new document
-    """
-    name = request.POST.get('name')
-
-    if not name:
-        return JsonResponse({
-            'status': 'error', 
-            'message': 'Name is required'
-        }, status=400)
-
-    try:
-        new_doc = OfficialDocument.objects.create(
-            name=name, 
-            description=request.POST.get('description', '')  # Description is optional now
-        )
-        return JsonResponse({
-            'status': 'success',
-            'message': 'Document added successfully',
-            'document': {
-                'id': new_doc.id,
-                'name': new_doc.name,
-                'description': new_doc.description
-            }
-        })
-    except Exception as e:
-        return JsonResponse({
-            'status': 'error', 
-            'message': str(e)
-        }, status=500)
-
-
-@csrf_protect
-@require_http_methods(["POST"])
-def edit_document(request, document_id):
-    """
-    View to edit an existing document
-    """
-    document = get_object_or_404(OfficialDocument, id=document_id)
-    
-    name = request.POST.get('name')
-    description = request.POST.get('description')
-
-    if not name or not description:
-        return JsonResponse({
-            'status': 'error', 
-            'message': 'Name and description are required'
-        }, status=400)
-
-    try:
-        document.name = name
-        document.description = description
-        document.save()
-
-        return JsonResponse({
-            'status': 'success',
-            'message': 'Document updated successfully',
-            'document': {
-                'id': document.id,
-                'name': document.name,
-                'description': document.description
-            }
-        })
-    except Exception as e:
-        return JsonResponse({
-            'status': 'error', 
-            'message': str(e)
-        }, status=500)
-
-@csrf_protect
-@require_http_methods(["POST"])
-def delete_document(request, document_id):
-    """
-    View to delete an existing document
-    """
-    try:
-        document = get_object_or_404(OfficialDocument, id=document_id)
-        document.delete()
-        return JsonResponse({
-            'status': 'success',
-            'message': 'Document deleted successfully'
-        })
-    except Exception as e:
-        return JsonResponse({
-            'status': 'error', 
-            'message': str(e)
-        }, status=500)
-    
-
-
-
-from django.shortcuts import render, get_object_or_404
-from django.http import JsonResponse
-from django.views.decorators.http import require_http_methods
-from django.views.decorators.csrf import csrf_protect
-from .models import OfficialDocument, Credential, DocumentCredential
-from django.core.files.storage import default_storage
-
-from django.shortcuts import render, get_object_or_404
-from .models import OfficialDocument, DocumentCredential
-
-
-
-
-
-
-# In app1/management/commands/remove_duplicate_credentials.py
-
-from django.core.management.base import BaseCommand
-from app1.models import DocumentCredential
-from django.db.models import Count
-
-class Command(BaseCommand):
-    help = 'Removes duplicate DocumentCredential entries'
-
-    def handle(self, *args, **kwargs):
-        # Find duplicates
-        duplicates = (
-            DocumentCredential.objects.values('document', 'credential')
-            .annotate(count=Count('id'))
-            .filter(count__gt=1)
-        )
-
-        for duplicate in duplicates:
-            document_id = duplicate['document']
-            credential_id = duplicate['credential']
-            
-            # Get all duplicates for the document-credential pair
-            records = DocumentCredential.objects.filter(
-                document_id=document_id,
-                credential_id=credential_id
-            ).order_by('created_at')
-
-            # Keep the latest record and delete the rest
-            records.exclude(id=records.last().id).delete()
-
-        self.stdout.write(self.style.SUCCESS('Successfully removed duplicate credentials'))
-@csrf_protect
-@csrf_protect
-@require_http_methods(["POST"])
-def save_document_credential(request):
-    try:
-        document_id = request.POST.get('document_id')
-        credential_id = request.POST.get('credential_id')
-        url = request.POST.get('url', None)
-        attachment = request.FILES.get('attachment', None)
-
-        # Process additional fields
-        new_additional_fields = []
-        for key, value in request.POST.items():
-            if key.startswith('additional_fields[') and key.endswith('][name]'):
-                index = key.split('[')[1].split(']')[0]
-                field_name = value
-                field_value_key = f'additional_fields[{index}][value]'
-                field_value = request.POST.get(field_value_key, '')
-
-                if field_name and field_value:
-                    new_additional_fields.append({'name': field_name, 'value': field_value})
-
-        # Retrieve the document and credential instances
-        document = get_object_or_404(OfficialDocument, id=document_id)
-        credential = get_object_or_404(Credential, id=credential_id)
-
-        # Get or create the DocumentCredential instance
-        doc_credential, created = DocumentCredential.objects.get_or_create(
-            document=document,
-            credential=credential,
-            defaults={
-                'url': url or '',
-                'attachment': attachment,
-                'additional_fields': new_additional_fields,
-            }
-        )
-
-        if not created:
-            # If instance exists, update fields while preserving existing additional fields
-            if url:
-                doc_credential.url = url
-            if attachment:
-                doc_credential.attachment = attachment
-            
-            # Merge existing and new additional fields
-            existing_fields = doc_credential.additional_fields or []
-            
-            # Create a dictionary of existing fields for easy lookup
-            existing_fields_dict = {field['name']: field['value'] for field in existing_fields}
-            
-            # Update existing fields and add new ones
-            for new_field in new_additional_fields:
-                existing_fields_dict[new_field['name']] = new_field['value']
-            
-            # Convert back to list format
-            merged_fields = [{'name': name, 'value': value} 
-                           for name, value in existing_fields_dict.items()]
-            
-            doc_credential.additional_fields = merged_fields
-            doc_credential.save()
-
-        return JsonResponse({
-            'status': 'success',
-            'message': 'Credential saved successfully.'
-        })
-
-    except Exception as e:
-        return JsonResponse({'status': 'error', 'message': str(e)})
-    
-
-@require_http_methods(["POST"])
-def edit_document_credential(request):
-    try:
-        doc_cred_id = request.POST.get('doc_cred_id')
-        url = request.POST.get('url', '')
-        attachment = request.FILES.get('attachment', None)
-        
-        # Get the document credential instance
-        doc_cred = get_object_or_404(DocumentCredential, id=doc_cred_id)
-        
-        # Update fields
-        doc_cred.url = url
-        if attachment:
-            doc_cred.attachment = attachment
-            
-        # Process additional fields
-        additional_fields = []
-        for key, value in request.POST.items():
-            if key.startswith('additional_fields[') and key.endswith('][name]'):
-                index = key.split('[')[1].split(']')[0]
-                field_name = value
-                field_value_key = f'additional_fields[{index}][value]'
-                field_value = request.POST.get(field_value_key, '')
-                
-                if field_name and field_value:
-                    additional_fields.append({'name': field_name, 'value': field_value})
-        
-        doc_cred.additional_fields = additional_fields
-        doc_cred.save()
-        
-        return JsonResponse({'status': 'success'})
-    except Exception as e:
-        return JsonResponse({'status': 'error', 'message': str(e)})
-
-@require_http_methods(["POST"])
-def delete_document_credential(request):
-    try:
-        data = json.loads(request.body)
-        doc_cred_id = data.get('doc_cred_id')
-        
-        # Get and delete the document credential
-        doc_cred = get_object_or_404(DocumentCredential, id=doc_cred_id)
-        doc_cred.delete()
-        
-        return JsonResponse({'status': 'success'})
-    except Exception as e:
-        return JsonResponse({'status': 'error', 'message': str(e)})
-    
-
-
-
-from django.views.decorators.csrf import csrf_exempt
-from django.http import JsonResponse
-from .models import Credential
-
-@csrf_exempt
-def update_credential_visibility(request):
-    if request.method == 'POST':
-        credential_id = request.POST.get('credential_id')
-        visibility = request.POST.getlist('visibility[]')  # Get list of selected user types
-
-        try:
-            credential = Credential.objects.get(id=credential_id)
-            credential.visibility = visibility
-            credential.save()
-            return JsonResponse({'message': 'Visibility updated successfully.'})
-        except Credential.DoesNotExist:
-            return JsonResponse({'error': 'Credential not found'}, status=404)
-    return JsonResponse({'error': 'Invalid request'}, status=400)
-
-
-from django.contrib.auth.models import User as DjangoUser
-from .models import User as CustomUser, OfficialDocument, DocumentCredential
-@login_required
-def officialdoc_detail(request, document_id):
-    document = get_object_or_404(OfficialDocument, id=document_id)
-
-    # Check if the user is a superuser
-    if request.user.is_superuser:
-        user_level = 'admin_level'
-    else:
-        try:
-            custom_user = CustomUser.objects.get(userid=request.user.username)
-            user_level = custom_user.user_level
-        except CustomUser.DoesNotExist:
-            user_level = 'normal'  # Default to normal if not found
-
-    # Filter credentials based on user level
-    document_credentials = DocumentCredential.objects.filter(document=document)
-    filtered_credentials = [
-        doc_cred for doc_cred in document_credentials
-        if user_level in doc_cred.credential.visibility or 'all' in doc_cred.credential.visibility
-    ]
-
-    return render(request, 'officialdoc_detail.html', {
-        'document': document,
-        'filtered_credentials': filtered_credentials,
-    })
-
-
-
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from .models import CV, Rating
@@ -2372,3 +1992,275 @@ def experience_certificate(request, employee_id):
         'clicked_date': clicked_date,
     }
     return render(request, 'experience_certificate.html', context)
+
+
+
+
+
+
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.http import JsonResponse
+from .models import Document
+
+def document_list(request):
+    documents = Document.objects.all()
+    return render(request, 'document.html', {'documents': documents})
+
+def add_document(request):
+    if request.method == "POST":
+        name = request.POST.get('name')
+        description = request.POST.get('description', '')
+        if name:
+            Document.objects.create(name=name, description=description)
+        return JsonResponse({"message": "Document added successfully"})
+    return JsonResponse({"error": "Invalid request"}, status=400)
+
+def edit_document(request, id):
+    document = get_object_or_404(Document, id=id)
+    if request.method == "POST":
+        document.name = request.POST.get('name')
+        document.description = request.POST.get('description', '')
+        document.save()
+        return JsonResponse({"message": "Document updated successfully"})
+    return JsonResponse({"error": "Invalid request"}, status=400)
+
+def delete_document(request, id):
+    document = get_object_or_404(Document, id=id)
+    document.delete()
+    return JsonResponse({"message": "Document deleted successfully"})
+
+
+
+
+
+from django.http import JsonResponse
+from django.shortcuts import render
+from .models import Document, DocumentSetting
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+import json
+from .models import DocumentSetting, Document
+
+def get_document_settings(request, doc_id):
+    settings = DocumentSetting.objects.filter(document_id=doc_id).values('id', 'name', 'url')
+    return JsonResponse({"settings": list(settings)})
+
+
+
+@csrf_exempt
+def add_document_setting(request):
+    if request.method == 'POST':
+        try:
+            document_id = request.POST.get("document_id")
+            name = request.POST.get("name")
+            url = request.POST.get("url", "")
+            attachment = request.FILES.get("attachment")
+
+            document = Document.objects.get(id=document_id)
+            new_setting = DocumentSetting.objects.create(
+                document=document,
+                name=name,
+                url=url,
+                attachment=attachment
+            )
+
+            return JsonResponse({
+                'status': 'success', 
+                'message': 'Setting added', 
+                'setting': {'id': new_setting.id, 'name': new_setting.name}
+            })
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'error': str(e)}, status=500)
+    return JsonResponse({'status': 'error', 'error': 'Invalid request'}, status=400)
+
+
+
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+from django.views.decorators.http import require_http_methods
+from django.views.decorators.csrf import csrf_protect
+from .models import DocumentSetting
+from django.views.decorators.http import require_http_methods
+
+@require_http_methods(["POST"])  # Remove @csrf_protect
+def delete_document_setting(request, setting_id):
+    try:
+        setting = get_object_or_404(DocumentSetting, id=setting_id)
+        setting_info = {
+            'id': setting.id,
+            'name': setting.name,
+            'document_id': setting.document.id
+        }
+        setting.delete()
+        return JsonResponse({
+            "status": "success",
+            "message": f"Setting '{setting_info['name']}' deleted successfully",
+            "data": setting_info
+        })
+    except DocumentSetting.DoesNotExist:
+        return JsonResponse({"status": "error", "error": "Setting not found"}, status=404)
+    except Exception as e:
+        return JsonResponse({"status": "error", "error": str(e)}, status=500)
+    
+@csrf_exempt
+def edit_document_setting(request, setting_id):
+    if request.method == "POST":
+        try:
+            setting = get_object_or_404(DocumentSetting, id=setting_id)
+            setting.name = request.POST.get("name")
+            setting.url = request.POST.get("url")
+
+            attachment = request.FILES.get("attachment")
+            if attachment:
+                setting.attachment = attachment
+
+            setting.save()
+
+            return JsonResponse({"status": "success", "message": "Setting updated"})
+        except Exception as e:
+            return JsonResponse({"status": "error", "error": str(e)}, status=500)
+
+    return JsonResponse({"status": "error", "error": "Invalid request"}, status=400)
+
+
+
+
+
+
+def document_detail(request, doc_id):
+    document = get_object_or_404(Document, id=doc_id)
+    return render(request, 'document_detail.html', {'document': document})
+
+from django.shortcuts import render, get_object_or_404
+from django.http import JsonResponse
+from .models import Document, DocumentSetting, DocumentSettingField
+import json
+
+def save_document_settings(request, doc_id):
+    if request.method == 'POST':
+        try:
+            document = get_object_or_404(Document, id=doc_id)
+            setting_id = request.POST.get('setting_id')
+            url = request.POST.get('url')
+            attachment = request.FILES.get('attachment')
+            fields = json.loads(request.POST.get('fields', '[]'))
+
+            if setting_id:
+                setting = get_object_or_404(DocumentSetting, id=setting_id)
+            else:
+                setting = DocumentSetting(document=document, name="New Setting")
+            
+            setting.url = url
+            if attachment:
+                setting.attachment = attachment
+            setting.save()
+
+            # Track existing field IDs to determine which need to be deleted
+            existing_field_ids = list(setting.fields.values_list('id', flat=True))
+            processed_field_ids = []
+
+            # Process field updates
+            for index, field_data in enumerate(fields):
+                field_id = field_data.get('id')
+                
+                if field_id and field_id.isdigit():  # This is an existing field
+                    try:
+                        field = DocumentSettingField.objects.get(id=field_id)
+                        field.field_name = field_data.get('name')
+                        field.field_value = field_data.get('value')
+                        field.purpose = field_data.get('purpose')
+                        
+                        # Get new attachment if available
+                        new_attachment_key = field_data.get('new_attachment')
+                        if new_attachment_key and new_attachment_key in request.FILES:
+                            field.attachment = request.FILES[new_attachment_key]
+                        
+                        field.save()
+                        processed_field_ids.append(int(field_id))
+                    except DocumentSettingField.DoesNotExist:
+                        # Field doesn't exist, create a new one
+                        field_id = None
+                
+                if not field_id or not field_id.isdigit():  # This is a new field
+                    # Get the attachment using the unique key
+                    attachment_key = field_data.get('new_attachment')
+                    field_attachment = request.FILES.get(attachment_key) if attachment_key else None
+                    
+                    DocumentSettingField.objects.create(
+                        setting=setting,
+                        field_name=field_data.get('name'),
+                        field_value=field_data.get('value'),
+                        purpose=field_data.get('purpose'),
+                        attachment=field_attachment
+                    )
+            
+            # Delete fields that were not included in the update
+            fields_to_delete = set(existing_field_ids) - set(processed_field_ids)
+            if fields_to_delete:
+                DocumentSettingField.objects.filter(id__in=fields_to_delete).delete()
+
+            return JsonResponse({
+                "status": "success",
+                "message": "Settings saved successfully!"
+            })
+
+        except Exception as e:
+            return JsonResponse({
+                "status": "error",
+                "message": str(e)
+            }, status=500)
+
+    return JsonResponse({
+        "status": "error",
+        "message": "Invalid request method"
+    }, status=400)
+
+
+
+
+from django.http import JsonResponse
+from .models import DocumentSetting, DocumentSettingField
+
+def get_document_setting_fields(request, setting_id):
+    setting = DocumentSetting.objects.get(id=setting_id)
+    fields = setting.fields.all()
+
+    field_list = [
+        {
+            'id': field.id,
+            'name': field.field_name,  # Make sure key names match exactly
+            'value': field.field_value,
+            'purpose': field.purpose,
+            'attachment': field.attachment.url if field.attachment else None,
+        }
+        for field in fields
+    ]
+
+    return JsonResponse({'fields': field_list})
+
+
+
+
+from django.http import FileResponse, Http404
+from django.views.decorators.clickjacking import xframe_options_sameorigin
+
+@xframe_options_sameorigin
+def view_attachment(request, setting_id=None, field_id=None):
+    try:
+        if setting_id:
+            obj = get_object_or_404(DocumentSetting, id=setting_id)
+            file = obj.attachment
+        elif field_id:
+            obj = get_object_or_404(DocumentSettingField, id=field_id)
+            file = obj.attachment
+        else:
+            raise Http404("No attachment specified")
+
+        if not file:
+            raise Http404("No attachment found")
+
+        response = FileResponse(file.open())
+        return response
+    except Exception as e:
+        raise Http404(f"Error accessing file: {str(e)}")

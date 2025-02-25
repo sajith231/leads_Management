@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<a href="{% url 'document_list' %}" class="btn btn-secondary">Back to Documents</a>
+<div class="container mt-4">
+    <h2>{{ document.name }}</h2>
+    <p>{{ document.description }}</p>
+
+    <h3>Documentation Details:</h3>
+    {% for setting in document.settings.all %}
+    <div class="card mb-3">
+        <div class="card-header">
+            <h4>{{ setting.name }}</h4>
+        </div>
+        <div class="card-body">
+            {% if setting.attachment %}
+            <p>
+                <strong>Attachment:</strong>
+                <button class="btn btn-link" onclick="showAttachment('{% url 'view_setting_attachment' setting_id=setting.id %}', '{{ setting.name }}')">
+                    View
+                </button>
+                <a href="{{ setting.attachment.url }}" class="btn btn-link" download>Download</a>
+            </p>
+            {% endif %}
+            {% if setting.url %}
+            <p><strong>URL:</strong> <a href="{{ setting.url }}">{{ setting.url }}</a></p>
+            {% endif %}
+
+            {% if setting.fields.all %}
+            <h5>Headings:</h5>
+            <div class="field-box-container">
+                {% for field in setting.fields.all %}
+                <div class="field-box">
+                    <p><strong>Name:</strong> {{ field.field_name }}</p>
+                    <p><strong>Value:</strong> {{ field.field_value }}</p>
+                    <p><strong>Purpose:</strong> {{ field.purpose }}</p>
+                    <p>
+                        <strong>Attachment:</strong>
+                        {% if field.attachment %}
+                        <button class="btn btn-link" onclick="showAttachment('{% url 'view_field_attachment' field_id=field.id %}', '{{ field.field_name }}')">
+                            View
+                        </button>
+                        <a href="{{ field.attachment.url }}" class="btn btn-link" download>Download</a>
+                        {% else %}
+                        <span class="text-muted">No attachment</span>
+                        {% endif %}
+                    </p>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% empty %}
+    <p>No settings configured</p>
+    {% endfor %}
+</div>
+
+<!-- Attachment Viewer Modal -->
+<div class="modal fade" id="attachmentModal" tabindex="-1" aria-labelledby="attachmentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="attachmentModalLabel">View Attachment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div class="iframe-container">
+                    <iframe id="attachmentViewer" style="width: 100%; height: 100%; border: none;"></iframe>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+</div>
+
+<style>
+    .field-box-container {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .field-box {
+        background-color: #f8f9fa;
+        padding: 10px;
+        border-radius: 5px;
+        border: 1px solid #ddd;
+    }
+    .iframe-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 80vh;
+    background-color: #f8f9fa;
+}
+
+#attachmentViewer {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+</style>
+
+<script>
+function showAttachment(url, title) {
+    const modal = new bootstrap.Modal(document.getElementById('attachmentModal'));
+    const viewer = document.getElementById('attachmentViewer');
+    const modalTitle = document.getElementById('attachmentModalLabel');
+    
+    modalTitle.textContent = `View Attachment: ${title}`;
+    viewer.src = url;
+    
+    modal.show();
+}
+</script>
+{% endblock %}

@@ -115,6 +115,7 @@ class Lead(models.Model):
         ('hardware', 'Hardware'),
         ('hospital', 'Hospital'),
         ('clinic', 'Clinic'),
+        ('real estate', 'Real Estate'),
         ('another', 'Another'),
     ]
 
@@ -320,9 +321,7 @@ class CV(models.Model):
     def __str__(self):
         return self.name
     
-
-
-
+    
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
 
@@ -385,9 +384,6 @@ class DocumentCredential(models.Model):
         return f"{self.document.name} - {self.credential.name}"
 
 
-    
-
-
 
 from django.db import models
 from .models import CV  # Import the CV model if it's not already imported
@@ -436,17 +432,13 @@ class OfferLetterDetails(models.Model):
     
 
 
-    #CREATED AS NEW
 
-    #CREATED AS NEW
-
-    #CREATED AS NEW
 
 
 class Employee(models.Model):
     name = models.CharField(max_length=100)
     photo = models.ImageField(upload_to='employees/')
-    address = models.CharField(max_length=255, blank=True, null=True)  # New field
+    address = models.CharField(max_length=255, blank=True, null=True) 
     phone_personal = models.CharField(max_length=15)
     phone_residential = models.CharField(max_length=15, blank=True, null=True)
     place = models.CharField(max_length=100)
@@ -466,3 +458,43 @@ class Attachment(models.Model):
 
 
 
+    #CREATED AS NEW
+
+    #CREATED AS NEW
+
+    #CREATED AS NEW
+
+
+
+
+
+
+    
+
+from django.db import models
+
+class Document(models.Model):
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return self.name
+
+class DocumentSetting(models.Model):
+    document = models.ForeignKey(Document, on_delete=models.CASCADE, related_name="settings")
+    name = models.CharField(max_length=255)
+    attachment = models.FileField(upload_to='document_attachments/', blank=True, null=True)
+    url = models.URLField(blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.document.name} - {self.name}"
+
+class DocumentSettingField(models.Model):
+    setting = models.ForeignKey(DocumentSetting, on_delete=models.CASCADE, related_name="fields")
+    field_name = models.CharField(max_length=255)
+    field_value = models.TextField()
+    purpose = models.TextField()
+    attachment = models.FileField(upload_to='field_attachments/', blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.setting.name} - {self.field_name}"

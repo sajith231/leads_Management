@@ -152,12 +152,14 @@
                                 <th>Phone Number</th>  <!-- New column -->
                                 <th>Place</th>
                                 <th>District</th>
+                                <th>CV Attachment</th>
+                                <th>Job Title</th>
                                 <th>Education</th>
                                 <th>Experience</th>
-                                <th>Job Title</th>
+                                
                                 <th>DOB</th>
                                 <th>Remarks</th>
-                                <th>CV Attachment</th>
+                                
                                 <th>Interview Status</th>
                                 <th>Result</th>
                                 <th>Offer Letter Details</th>  <!-- New Header -->
@@ -177,6 +179,12 @@
                                 <td>{{ cv.place|upper }}</td>
                                 <td>{{ cv.district|upper }}</td>
                                 <td>
+                                    <a href="{{ cv.cv_attachment.url }}" target="_blank">
+                                        <i class="fa fa-file-alt" style="font-size: x-large; display: flex; justify-content: center;"></i>
+                                    </a>
+                                </td>
+                                <td>{{ cv.job_title|upper }}</td>
+                                <td>
                                     <i class="fas fa-book" style="color: green; display: flex; justify-content: center;font-size: x-large;" 
                                        data-toggle="modal" data-target="#educationModal" data-education="{{ cv.education }}">
                                     </i>
@@ -186,16 +194,12 @@
                                        data-toggle="modal" data-target="#experienceModal" data-experience="{{ cv.experience }}">
                                     </i>
                                 </td>
-                                <td>{{ cv.job_title|upper }}</td>
+                                
                                 <td>{{ cv.dob }}</td>
                                 <td>
                                     <i class="fas fa-comment-alt" style="color: blue;display: flex;justify-content: center;" data-toggle="modal" data-target="#remarksModal" data-remarks="{{ cv.remarks }}"></i>
                                 </td>
-                                <td>
-                                    <a href="{{ cv.cv_attachment.url }}" target="_blank">
-                                        <i class="fa fa-file-alt" style="font-size: x-large; display: flex; justify-content: center;"></i>
-                                    </a>
-                                </td>
+                                
                                 <td style="display: flex;justify-content: center;">
                                     <button class="btn btn-sm btn-toggle-interview" data-cv-id="{{ cv.id }}" data-status="{{ cv.interview_status|yesno:'Yes,No' }}">
                                         {{ cv.interview_status|yesno:"Yes,No" }}

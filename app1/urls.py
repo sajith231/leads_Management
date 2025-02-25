@@ -3,12 +3,16 @@ from . import views
 from .views import edit_lead
 from .views import delete_lead 
 from .views import load_areas,toggle_service_status
-from .views import update_credential_visibility,toggle_interview_status
+from .views import toggle_interview_status
 from .views import save_ratings, get_ratings
 from .views import offer_letter,save_offer_letter_details,get_offer_letter_details
 from .views import employee_management, add_employee,edit_employee,delete_employee
 from .views import experience_certificate
-from .views import experience_certificate, save_experience_certificate_details 
+from .views import experience_certificate, save_experience_certificate_details ,document_list,DocumentSetting,add_document,add_document_setting,edit_document,delete_document,get_document_settings
+
+from .views import add_document_setting, get_document_settings, delete_document_setting
+from .views import document_detail,save_document_settings
+from .views import get_document_setting_fields
 
 
 urlpatterns = [
@@ -116,28 +120,16 @@ urlpatterns = [
     path('edit-job-title/<int:title_id>/', views.edit_job_title, name='edit_job_title'),
     path('delete-job-title/<int:title_id>/', views.delete_job_title, name='delete_job_title'),
 
-    #CREDENTIAL URLS
-    path('credentials/', views.credentials_view, name='credentials'),
-    path('add-credential/', views.add_credential, name='add_credential'),
-    path('edit-credential/', views.edit_credential, name='edit_credential'),
-    path('delete-credential/', views.delete_credential, name='delete_credential'),
-    path('get_credentials/', views.get_credentials, name='get_credentials'),
     
     
-    path('add_document/', views.add_document, name='add_document'),
-    path('edit_document/<int:document_id>/', views.edit_document, name='edit_document'),
-    path('delete_document/<int:document_id>/', views.delete_document, name='delete_document'),
 
 
-    path('officialdoc/', views.official_documents, name='official_documents'),
-    path('officialdoc/<int:document_id>/', views.officialdoc_detail, name='officialdoc_detail'),
-    path('save_document_credential/', views.save_document_credential, name='save_document_credential'),
+
       
       
 
-    path('edit_document_credential/', views.edit_document_credential, name='edit_document_credential'),
-    path('delete_document_credential/', views.delete_document_credential, name='delete_document_credential'),
-    path('update_credential_visibility/', update_credential_visibility, name='update_credential_visibility'),
+
+
     path('save-ratings/<int:cv_id>/', save_ratings, name='save_ratings'),
     path('get-ratings/<int:cv_id>/', get_ratings, name='get_ratings'),
 
@@ -160,6 +152,25 @@ urlpatterns = [
 
      path('save_experience_certificate_details/<int:employee_id>/', save_experience_certificate_details, name='save_experience_certificate_details'),
     path('experience_certificate/<int:employee_id>/', views.experience_certificate, name='experience_certificate'),
+
+
+    path('documents/', document_list, name='document_list'),
+    path('documents/add/', add_document, name='add_document'),
+    path('documents/edit/<int:id>/', edit_document, name='edit_document'),
+    path('documents/delete/<int:id>/', delete_document, name='delete_document'),
+    path('documents/settings/add/', add_document_setting, name='add_document_setting'),
+    path('documents/settings/get/<int:doc_id>/', get_document_settings, name='get_document_settings'),
+    path('settings/delete/<int:setting_id>/', views.delete_document_setting, name='delete_document_setting'),
+
+    path('documents/<int:doc_id>/', document_detail, name='document_detail'),
+    path('settings/edit/<int:setting_id>/', views.edit_document_setting, name='edit_document_setting'),
+     path('documents/settings/save/<int:doc_id>/', save_document_settings, name='save_document_settings'),
+
+     path('documents/settings/fields/get/<int:setting_id>/', get_document_setting_fields, name='get_document_setting_fields'),
+      path('attachment/setting/<int:setting_id>/', views.view_attachment, name='view_setting_attachment'),
+    path('attachment/field/<int:field_id>/', views.view_attachment, name='view_field_attachment'),
+
+
     
 
     
