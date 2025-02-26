@@ -2301,6 +2301,63 @@ from .models import CV
 
 @login_required
 def make_offer_letter(request):
-    cv_list = CV.objects.filter(interview_status=True) 
-    return render(request, 'make_offer_letter.html', {'cv_list': cv_list})
+    selected_candidates = CV.objects.filter(selected=True)  # Fetch only selected candidates
+    return render(request, 'make_offer_letter.html', {"cv_list": selected_candidates})
+
+
+
+
+
+
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from .models import CV
+
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from .models import CV
+
+@csrf_exempt
+def update_cv_selection(request):
+    if request.method == "POST":
+        cv_id = request.POST.get("cv_id")
+        action = request.POST.get("action")  # "select" or "reject"
+
+        try:
+            cv = CV.objects.get(id=cv_id)
+            cv.selected = True if action == "select" else False
+            cv.save()
+            
+            return JsonResponse({"success": True, "selected": cv.selected})
+        except CV.DoesNotExist:
+            return JsonResponse({"success": False, "error": "CV not found"})
+
+    return JsonResponse({"success": False, "error": "Invalid request"})
+
+
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+import json
+from .models import CV
+
+@csrf_exempt
+@require_POST
+def toggle_selected_status(request):
+    try:
+        data = json.loads(request.body)
+        cv_id = data.get('cv_id')
+
+        if not cv_id:
+            return JsonResponse({'success': False, 'error': 'No CV ID provided'})
+
+        cv = CV.objects.get(id=cv_id)
+        cv.selected = not cv.selected  # Toggle the status
+        cv.save()
+
+        return JsonResponse({'success': True, 'selected': cv.selected})
+    except CV.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'CV not found'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
 

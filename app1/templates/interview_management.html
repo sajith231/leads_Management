@@ -130,8 +130,13 @@
                                     {% endif %}
                                 </td>
                                 <td>
-                                    <button class="status-btn status-reject" data-cv-id="{{ cv.id }}" onclick="toggleStatus(this)">Reject</button>
+                                    <button class="status-btn {% if cv.selected %}status-selected{% else %}status-reject{% endif %}" 
+                                        data-cv-id="{{ cv.id }}" onclick="toggleStatus(this)">
+                                        {% if cv.selected %}Selected{% else %}Reject{% endif %}
+                                    </button>
                                 </td>
+                                
+                                
                             </tr>
                             {% empty %}
                             <tr>
@@ -405,21 +410,33 @@
 
     // Function to toggle status button between Reject and Selected
     function toggleStatus(button) {
-        const cvId = button.getAttribute('data-cv-id');
-        
-        if (button.classList.contains('status-reject')) {
-            // Change to Selected
-            button.classList.remove('status-reject');
-            button.classList.add('status-selected');
-            button.textContent = 'Selected';
-            saveStatus(cvId, 'selected');
-        } else {
-            // Change to Reject
-            button.classList.remove('status-selected');
-            button.classList.add('status-reject');
-            button.textContent = 'Reject';
-            saveStatus(cvId, 'reject');
-        }
+        let cvId = button.getAttribute("data-cv-id");
+
+        fetch("/toggle-selected-status/", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": "{{ csrf_token }}"
+            },
+            body: JSON.stringify({ cv_id: cvId })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                if (data.selected) {
+                    button.classList.remove("status-reject");
+                    button.classList.add("status-selected");
+                    button.textContent = "Selected";
+                } else {
+                    button.classList.remove("status-selected");
+                    button.classList.add("status-reject");
+                    button.textContent = "Reject";
+                }
+            } else {
+                alert("Error: " + data.error);
+            }
+        })
+        .catch(error => console.error("Error:", error));
     }
 
     // Function to save status to localStorage
@@ -616,4 +633,56 @@
         $("#ratingModal, #viewRatingModal").modal("hide");
     });
 </script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        document.querySelectorAll(".status-btn").forEach(button => {
+            button.addEventListener("click", function() {
+                let cvId = this.getAttribute("data-cv-id");
+                let buttonElement = this;
+
+                fetch("{% url 'toggle_selected_status' %}", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": getCookie("csrftoken")
+                    },
+                    body: JSON.stringify({ cv_id: cvId })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        if (data.selected) {
+                            buttonElement.classList.remove("status-reject");
+                            buttonElement.classList.add("status-selected");
+                            buttonElement.textContent = "Selected";
+                        } else {
+                            buttonElement.classList.remove("status-selected");
+                            buttonElement.classList.add("status-reject");
+                            buttonElement.textContent = "Reject";
+                        }
+                    } else {
+                        alert("Error: " + data.error);
+                    }
+                })
+                .catch(error => console.error("Error:", error));
+            });
+        });
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                let cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    let cookie = cookies[i].trim();
+                    if (cookie.startsWith(name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    });
+</script>
+
 {% endblock %}

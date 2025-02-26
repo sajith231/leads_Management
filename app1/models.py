@@ -317,7 +317,8 @@ class CV(models.Model):
     remarks = models.TextField(blank=True, null=True)
     cv_attachment = models.FileField(upload_to='cv_attachments/')
     interview_status = models.BooleanField(default=False)
-    interview_date = models.DateTimeField(null=True, blank=True)  # New field 
+    interview_date = models.DateTimeField(null=True, blank=True)  
+    selected = models.BooleanField(default=False)  # New field 
      
 
     def __str__(self):
@@ -457,11 +458,11 @@ class Employee(models.Model):
     dob = models.DateField()
     experience_start_date = models.DateField(blank=True, null=True)
     experience_end_date = models.DateField(blank=True, null=True)
-    bank_account_number = models.CharField(max_length=20, blank=True, null=True)  # New field
-    ifsc_code = models.CharField(max_length=20, blank=True, null=True)  # New field
-    bank_name = models.CharField(max_length=100, blank=True, null=True)  # New field
-    branch = models.CharField(max_length=100, blank=True, null=True)  # New field
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')  # New field
+    bank_account_number = models.CharField(max_length=20, blank=True, null=True)  
+    ifsc_code = models.CharField(max_length=20, blank=True, null=True)  
+    bank_name = models.CharField(max_length=100, blank=True, null=True)
+    branch = models.CharField(max_length=100, blank=True, null=True)  
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')  
 
 class Attachment(models.Model):
     employee = models.ForeignKey(Employee, related_name='attachments', on_delete=models.CASCADE)
