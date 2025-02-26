@@ -129,12 +129,11 @@
                                         {% endif %}
                                     {% endif %}
                                 </td>
-                                <td>
-                                    <button class="status-btn {% if cv.selected %}status-selected{% else %}status-reject{% endif %}" 
-                                        data-cv-id="{{ cv.id }}" onclick="toggleStatus(this)">
-                                        {% if cv.selected %}Selected{% else %}Reject{% endif %}
-                                    </button>
-                                </td>
+                               <td> <button class="status-btn {% if cv.selected %}status-selected{% else %}status-reject{% endif %}" 
+    data-cv-id="{{ cv.id }}" onclick="toggleStatus(this)">
+    {% if cv.selected %}Selected{% else %}Reject{% endif %}
+</button></td>
+
                                 
                                 
                             </tr>
@@ -386,6 +385,7 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
 
+
 <script>
     $(document).ready(function() {
         $('#educationModal').on('show.bs.modal', function (event) {
@@ -408,36 +408,59 @@
         initializeStatusButtons();
     });
 
-    // Function to toggle status button between Reject and Selected
     function toggleStatus(button) {
-        let cvId = button.getAttribute("data-cv-id");
-
-        fetch("/toggle-selected-status/", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "X-CSRFToken": "{{ csrf_token }}"
-            },
-            body: JSON.stringify({ cv_id: cvId })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                if (data.selected) {
-                    button.classList.remove("status-reject");
-                    button.classList.add("status-selected");
-                    button.textContent = "Selected";
-                } else {
-                    button.classList.remove("status-selected");
-                    button.classList.add("status-reject");
-                    button.textContent = "Reject";
-                }
+    let cvId = button.getAttribute("data-cv-id");
+    
+    // Send AJAX request to Django backend
+    fetch("/toggle-selected-status/", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCookie("csrftoken")
+        },
+        body: JSON.stringify({ cv_id: cvId })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update UI based on the response from the server
+            if (data.selected) {
+                button.classList.remove("status-reject");
+                button.classList.add("status-selected");
+                button.textContent = "Selected";
             } else {
-                alert("Error: " + data.error);
+                button.classList.remove("status-selected");
+                button.classList.add("status-reject");
+                button.textContent = "Reject";
             }
-        })
-        .catch(error => console.error("Error:", error));
+            
+            // Also update localStorage for temporary client-side reference
+            saveStatus(cvId, data.selected ? 'selected' : 'reject');
+        } else {
+            alert("Error: " + data.error);
+        }
+    })
+    .catch(error => {
+        console.error("Error:", error);
+        alert("Failed to update selection status. Please try again.");
+    });
+}
+
+// Helper function to get CSRF token from cookies
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        let cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            let cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
     }
+    return cookieValue;
+}
 
     // Function to save status to localStorage
     function saveStatus(cvId, status) {

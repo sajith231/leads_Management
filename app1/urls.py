@@ -176,6 +176,8 @@ path('interview-management/', interview_management, name='interview_management')
 path('make-offer-letter/', views.make_offer_letter, name='make_offer_letter'),
  path("update_cv_selection/", update_cv_selection, name="update_cv_selection"),
  path('toggle-selected-status/', toggle_selected_status, name='toggle_selected_status'),
+ path('toggle-cv-status/', views.toggle_cv_status, name='toggle_cv_status'),
+ 
 
 
 

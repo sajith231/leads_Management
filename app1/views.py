@@ -2361,3 +2361,20 @@ def toggle_selected_status(request):
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
 
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from .models import CV
+
+@csrf_exempt
+def toggle_cv_status(request):
+    if request.method == 'POST':
+        cv_id = request.POST.get('cv_id')
+        selected = request.POST.get('selected') == 'true'
+        try:
+            cv = CV.objects.get(id=cv_id)
+            cv.selected = selected
+            cv.save()
+            return JsonResponse({'success': True, 'new_status': cv.selected})
+        except CV.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'CV not found'})
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
