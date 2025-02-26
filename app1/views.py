@@ -1584,6 +1584,10 @@ def toggle_interview_status(request):
         try:
             cv = CV.objects.get(id=cv_id)
             cv.interview_status = new_status
+            if new_status:  # If status is set to "Yes", update the interview date
+                cv.interview_date = timezone.now()
+            else:  # If status is set to "No", clear the interview date
+                cv.interview_date = None
             cv.save()
             return JsonResponse({'success': True})
         except CV.DoesNotExist:
@@ -1862,11 +1866,10 @@ from django.shortcuts import render, redirect
 from .models import Employee, Attachment, CV
 
 def add_employee(request):
-    cvs = CV.objects.all()
     if request.method == "POST":
         name = request.POST['name']
         photo = request.FILES['photo']
-        address = request.POST.get('address', '')  # New field
+        address = request.POST.get('address', '')
         phone_personal = request.POST['phone_personal']
         phone_residential = request.POST['phone_residential']
         place = request.POST['place']
@@ -1876,20 +1879,31 @@ def add_employee(request):
         job_title = request.POST['job_title']
         joining_date = request.POST['joining_date']
         dob = request.POST['dob']
-        
+        bank_account_number = request.POST.get('bank_account_number', '')
+        ifsc_code = request.POST.get('ifsc_code', '')
+        bank_name = request.POST.get('bank_name', '')
+        branch = request.POST.get('branch', '')
+        status = request.POST.get("status")  # Capture the status field
+
         employee = Employee.objects.create(
-            name=name, 
-            photo=photo, 
-            address=address,  # New field
-            phone_personal=phone_personal, 
-            phone_residential=phone_residential, 
-            place=place, 
-            district=district, 
-            education=education, 
-            experience=experience, 
-            job_title=job_title, 
-            joining_date=joining_date, 
-            dob=dob
+            name=name,
+            photo=photo,
+            address=address,
+            phone_personal=phone_personal,
+            phone_residential=phone_residential,
+            place=place,
+            district=district,
+            education=education,
+            experience=experience,
+            job_title=job_title,
+            joining_date=joining_date,
+            dob=dob,
+            bank_account_number=bank_account_number,
+            ifsc_code=ifsc_code,
+            bank_name=bank_name,
+            branch=branch,
+            status=status,  # Save status
+            
         )
 
         for file in request.FILES.getlist('attachments'):
@@ -1897,7 +1911,9 @@ def add_employee(request):
 
         return redirect('employee_management')
     
-    return render(request, 'add_employee.html', {'cvs': cvs})
+    return render(request, 'add_employee.html', {'cvs': CV.objects.all()})
+
+
 
 
 def delete_employee(request, emp_id):
@@ -1905,8 +1921,15 @@ def delete_employee(request, emp_id):
     employee.delete()
     return redirect('employee_management')
 
+
+
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import Employee, Attachment
+
+
+
+
+
 def edit_employee(request, emp_id):
     employee = get_object_or_404(Employee, id=emp_id)
     
@@ -1914,7 +1937,7 @@ def edit_employee(request, emp_id):
         employee.name = request.POST['name']
         if 'photo' in request.FILES:
             employee.photo = request.FILES['photo']
-        employee.address = request.POST.get('address', '')  # New field
+        employee.address = request.POST.get('address', '')
         employee.phone_personal = request.POST['phone_personal']
         employee.phone_residential = request.POST['phone_residential']
         employee.place = request.POST['place']
@@ -1922,26 +1945,21 @@ def edit_employee(request, emp_id):
         employee.education = request.POST['education']
         employee.experience = request.POST['experience']
         employee.job_title = request.POST['job_title']
-        
-        # Format the dates properly
-        joining_date = request.POST['joining_date']
-        dob = request.POST['dob']
-        
-        # Only update if dates are provided
-        if joining_date:
-            employee.joining_date = joining_date
-        if dob:
-            employee.dob = dob
-            
+        employee.joining_date = request.POST['joining_date']
+        employee.dob = request.POST['dob']
+        employee.bank_account_number = request.POST.get('bank_account_number', '')
+        employee.ifsc_code = request.POST.get('ifsc_code', '')
+        employee.bank_name = request.POST.get('bank_name', '')
+        employee.branch = request.POST.get('branch', '')
+        employee.status = request.POST.get("status")  # Update status field
+
         employee.save()
-        
-        # Handling multiple attachments
+
         for file in request.FILES.getlist('attachments'):
             Attachment.objects.create(employee=employee, file=file)
-            
+
         return redirect('employee_management')
     
-    # Format dates for the template
     context = {
         'employee': employee,
         'joining_date': employee.joining_date.strftime('%Y-%m-%d'),
@@ -2264,3 +2282,25 @@ def view_attachment(request, setting_id=None, field_id=None):
         return response
     except Exception as e:
         raise Http404(f"Error accessing file: {str(e)}")
+    
+
+
+def interview_management(request):
+    # Filter CVs with interview status "Yes"
+    cv_list = CV.objects.filter(interview_status=True).order_by('-created_date')
+    
+    context = {
+        'cv_list': cv_list,
+    }
+    
+    return render(request, 'interview_management.html', context)
+
+
+
+from .models import CV
+
+@login_required
+def make_offer_letter(request):
+    cv_list = CV.objects.filter(interview_status=True) 
+    return render(request, 'make_offer_letter.html', {'cv_list': cv_list})
+

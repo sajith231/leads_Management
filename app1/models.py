@@ -316,7 +316,9 @@ class CV(models.Model):
     dob = models.DateField(blank=True, null=True)  
     remarks = models.TextField(blank=True, null=True)
     cv_attachment = models.FileField(upload_to='cv_attachments/')
-    interview_status = models.BooleanField(default=False)     
+    interview_status = models.BooleanField(default=False)
+    interview_date = models.DateTimeField(null=True, blank=True)  # New field 
+     
 
     def __str__(self):
         return self.name
@@ -436,6 +438,11 @@ class OfferLetterDetails(models.Model):
 
 
 class Employee(models.Model):
+    STATUS_CHOICES = [
+        ('active', 'Active'),
+        ('inactive', 'Inactive'),
+        ('on_leave', 'On Leave'),
+    ]
     name = models.CharField(max_length=100)
     photo = models.ImageField(upload_to='employees/')
     address = models.CharField(max_length=255, blank=True, null=True) 
@@ -450,23 +457,15 @@ class Employee(models.Model):
     dob = models.DateField()
     experience_start_date = models.DateField(blank=True, null=True)
     experience_end_date = models.DateField(blank=True, null=True)
+    bank_account_number = models.CharField(max_length=20, blank=True, null=True)  # New field
+    ifsc_code = models.CharField(max_length=20, blank=True, null=True)  # New field
+    bank_name = models.CharField(max_length=100, blank=True, null=True)  # New field
+    branch = models.CharField(max_length=100, blank=True, null=True)  # New field
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')  # New field
 
 class Attachment(models.Model):
     employee = models.ForeignKey(Employee, related_name='attachments', on_delete=models.CASCADE)
     file = models.FileField(upload_to='employee_attachments/')
-
-
-
-
-    #CREATED AS NEW
-
-    #CREATED AS NEW
-
-    #CREATED AS NEW
-
-
-
-
 
 
     
@@ -498,3 +497,11 @@ class DocumentSettingField(models.Model):
 
     def __str__(self):
         return f"{self.setting.name} - {self.field_name}"
+    
+
+
+    #CREATED AS NEW
+
+    #CREATED AS NEW
+
+    #CREATED AS NEW

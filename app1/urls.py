@@ -13,6 +13,7 @@ from .views import experience_certificate, save_experience_certificate_details ,
 from .views import add_document_setting, get_document_settings, delete_document_setting
 from .views import document_detail,save_document_settings
 from .views import get_document_setting_fields
+from .views import interview_management,make_offer_letter
 
 
 urlpatterns = [
@@ -168,7 +169,13 @@ urlpatterns = [
 
      path('documents/settings/fields/get/<int:setting_id>/', get_document_setting_fields, name='get_document_setting_fields'),
       path('attachment/setting/<int:setting_id>/', views.view_attachment, name='view_setting_attachment'),
-    path('attachment/field/<int:field_id>/', views.view_attachment, name='view_field_attachment'),
+
+path('interview-management/', interview_management, name='interview_management'),
+path('make-offer-letter/', views.make_offer_letter, name='make_offer_letter'),
+
+
+
+    
 
 
     

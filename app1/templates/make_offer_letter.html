@@ -1,0 +1,294 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+<link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+
+<style>
+    /* Add the same CSS styles from cv_management.html */
+    .star-rating i {
+        cursor: pointer;
+        color: #ccc;
+        display: inline-block; /* Ensures rotation occurs */
+    }
+
+    /* Original Blink Effect */
+    @keyframes blinkColors {
+        0% { color: #ffcc00; }  /* Yellow */
+        50% { color: #ffcc00; } /* Green */
+        100% { color: #ffcc00; } /* Yellow */
+    }
+
+    /* Rotation Effect */
+    @keyframes rotateStars {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    /* Combined Blink and Rotate Effect */
+    .star-rating i.checked {
+        animation: blinkColors 1s infinite, rotateStars 5s infinite linear; /* Rotate & Blink */
+    }
+
+    #nameSearch {
+        border-radius: 5px;
+        border: 1px solid #ccc;
+        padding: 6px 12px;
+        width: 100%;
+    }
+
+    /* Container styles */
+    .col-12 {
+        position: relative;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+    }
+
+    /* Table container styles */
+    .col-12 > div {
+        overflow-x: auto;
+        position: relative;
+    }
+
+    /* Base table styles */
+    .table {
+        position: relative;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    /* Make the Name column and its header sticky */
+    .table th:nth-child(3),
+    .table td:nth-child(3) {
+        position: sticky;
+        left: 0;
+        background-color: white;
+        z-index: 1;
+        /* Add shadow for better visual separation */
+        box-shadow: 2px 0 5px -2px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Ensure the header has a higher z-index than the body cells */
+    .table th:nth-child(3) {
+        z-index: 2;
+        background-color: #f8f9fa;  /* Match your header background color */
+    }
+
+    /* Maintain borders for sticky column */
+    .table th:nth-child(3),
+    .table td:nth-child(3) {
+        border-right: 1px solid #dee2e6;  /* Match your table border color */
+    }
+
+    /* Optional: Add transition for smooth shadow effect on hover */
+    .table td:nth-child(3):hover {
+        box-shadow: 2px 0 8px -2px rgba(0, 0, 0, 0.2);
+    }
+</style>
+
+<div style="overflow: hidden;">
+    <div class="">
+        <h2 style="display: flex; justify-content: center; align-items: center; color: BLACK; gap: 10px;">
+            <i class="fa fa-folder-open" style="margin-right: 10px;"></i> OFFER LETTER MANAGEMENT
+        </h2>
+        
+        <div class="row">
+            <div class="col-12 d-flex justify-content-between mb-3 flex-wrap">
+                <!-- Name Search Input Field -->
+                <div class="form-group flex-grow-1 mr-2 mb-2" style="min-width: 200px;">
+                    <form id="nameSearchForm" method="GET" action="{% url 'make_offer_letter' %}">
+                        <input type="text" class="form-control" id="nameSearch" name="name" placeholder="Search by Name" value="{{ request.GET.name }}">
+                    </form>
+                </div>
+            </div>
+        </div>
+            
+        <div class="col-12">
+            <div style="overflow: auto;">
+                <table class="table table-bordered table-hover" id="offerLetterTable">
+                    <thead class="">
+                        <tr>
+                            <th>No</th>
+                            <th>Interview Date</th>
+                            <th>Name</th>
+                            <th>Address</th>
+                            <th>Phone Number</th>
+                            <th>Place</th>
+                            <th>District</th>
+                            <th>CV Attachment</th>
+                            <th>Job Title</th>
+                            <th>Education</th>
+                            <th>Experience</th>
+                            <th>DOB</th>
+                            <th>Remarks</th>
+                            <th>Offer Letter Details</th>
+                            <th>Offer Letter</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cv in cv_list %}
+                        <tr data-cv-id="{{ cv.id }}">
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ cv.interview_date|date:"d-m-Y" }}</td> 
+                            <td>{{ cv.name|upper }}</td>
+                            <td>{{ cv.address|upper }}</td>
+                            <td>{{ cv.phone_number }}</td>
+                            <td>{{ cv.place|upper }}</td>
+                            <td>{{ cv.district|upper }}</td>
+                            <td>
+                                <a href="{{ cv.cv_attachment.url }}" target="_blank" class="btn btn-info btn-sm">
+                                    <i class="fa fa-file-alt"></i> View CV
+                                </a>
+                            </td>
+                            <td>{{ cv.job_title|upper }}</td>
+                            <td>{{ cv.education }}</td>
+                            <td>{{ cv.experience }}</td>
+                            <td>{{ cv.dob }}</td>
+                            <td>{{ cv.remarks }}</td>
+                            <td>
+                                <button class="btn btn-success btn-sm btn-add-offer-letter" data-cv-id="{{ cv.id }}">
+                                    <i class="fa fa-plus"></i> Add Details
+                                </button>
+                                <button class="btn btn-primary btn-sm btn-view-offer-letter" data-cv-id="{{ cv.id }}">
+                                    <i class="fa fa-eye"></i> View Details
+                                </button>
+                            </td>
+                            <td>
+                                <a href="#" class="btn btn-warning btn-sm offer-letter-link" data-cv-id="{{ cv.id }}">
+                                    <i class="fas fa-file-signature"></i> Generate
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="15" class="text-center text-danger">No candidates with "Yes" interview status.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Offer Letter Modal -->
+<div class="modal fade" id="offerLetterModal" tabindex="-1" role="dialog" aria-labelledby="offerLetterModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="offerLetterModalLabel">Add Offer Letter Details</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="offerLetterForm">
+                    <input type="hidden" id="cvId" name="cv_id">
+                    <div class="form-group">
+                        <label for="position">Position</label>
+                        <input type="text" class="form-control" id="position" name="position">
+                    </div>
+                    <div class="form-group">
+                        <label for="department">Department</label>
+                        <input type="text" class="form-control" id="department" name="department">
+                    </div>
+                    <div class="form-group">
+                        <label for="startDate">Start Date</label>
+                        <input type="date" class="form-control" id="startDate" name="startDate">
+                    </div>
+                    <div class="form-group">
+                        <label for="salary">Salary</label>
+                        <input type="text" class="form-control" id="salary" name="salary">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function() {
+        // Function to filter candidates based on status
+        function filterSelectedCandidates() {
+            const statuses = JSON.parse(localStorage.getItem('candidateStatuses')) || {};
+            $('#offerLetterTable tbody tr').each(function() {
+                const cvId = $(this).data('cv-id');
+                if (statuses[cvId] === 'selected') {
+                    $(this).show();
+                } else {
+                    $(this).hide();
+                }
+            });
+        }
+
+        // Call the filter function on page load
+        filterSelectedCandidates();
+
+        // Handle the "Add" button click for offer letter details
+        $('.btn-add-offer-letter').click(function() {
+            const cvId = $(this).data('cv-id');
+            $('#cvId').val(cvId);
+            $('#offerLetterModal').modal('show');
+        });
+
+        // Handle the "Eye" icon click for viewing offer letter details
+        $('.btn-view-offer-letter').click(function() {
+            const cvId = $(this).data('cv-id');
+            // Fetch the offer letter details for the given CV ID
+            fetch(`/get-offer-letter-details/${cvId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Display the details in a modal or alert
+                        alert(`Position: ${data.position}\nDepartment: ${data.department}\nStart Date: ${data.startDate}\nSalary: ${data.salary}`);
+                    } else {
+                        alert('No offer letter details found.');
+                    }
+                });
+        });
+
+        // Handle form submission
+        $('#offerLetterForm').submit(function(event) {
+            event.preventDefault();
+            const cvId = $('#cvId').val();
+            const formData = $(this).serialize();
+
+            fetch(`/save-offer-letter-details/${cvId}/`, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Offer letter details saved successfully!');
+                    $('#offerLetterModal').modal('hide');
+                } else {
+                    alert('Failed to save offer letter details.');
+                }
+            });
+        });
+
+        // Handle the offer letter icon click
+        $('.offer-letter-link').click(function(event) {
+            event.preventDefault(); // Prevent the default link behavior
+
+            const cvId = $(this).data('cv-id');
+            const currentDate = new Date().toLocaleDateString('en-GB'); // Get the current date in dd/mm/yyyy format
+
+            // Construct the URL with the latest date
+            const offerLetterUrl = `{% url 'offer_letter' 0 %}?date=${currentDate}`.replace("0", cvId);
+
+            // Redirect to the offer letter page with the latest date
+            window.location.href = offerLetterUrl;
+        });
+    });
+</script>
+
+{% endblock %}

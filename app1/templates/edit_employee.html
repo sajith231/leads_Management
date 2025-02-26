@@ -76,6 +76,33 @@
             {% endfor %}
             <input type="file" name="attachments" class="form-control" multiple>
         </div>
+        <div class="mb-3">
+            <label class="form-label">Bank Account Number</label>
+            <input type="text" name="bank_account_number" class="form-control" value="{{ employee.bank_account_number }}">
+        </div>
+        
+        <div class="mb-3">
+            <label class="form-label">IFSC Code</label>
+            <input type="text" name="ifsc_code" class="form-control" value="{{ employee.ifsc_code }}">
+        </div>
+        
+        <div class="mb-3">
+            <label class="form-label">Bank Name</label>
+            <input type="text" name="bank_name" class="form-control" value="{{ employee.bank_name }}">
+        </div>
+        
+        <div class="mb-3">
+            <label class="form-label">Branch</label>
+            <input type="text" name="branch" class="form-control" value="{{ employee.branch }}">
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Status</label>
+            <select name="status" class="form-control" required>
+                <option value="active" {% if employee.status == 'active' %}selected{% endif %}>Active</option>
+                <option value="inactive" {% if employee.status == 'inactive' %}selected{% endif %}>Inactive</option>
+                <option value="on_leave" {% if employee.status == 'on_leave' %}selected{% endif %}>On Leave</option>
+            </select>
+        </div>
 
         <button type="submit" class="btn btn-success">Update Employee</button>
     </form>

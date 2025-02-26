@@ -1,0 +1,619 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+
+<style>
+    .table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .table th, .table td {
+        padding: 8px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+    }
+    .table th {
+        background-color: #f2f2f2;
+    }
+    .table tr:hover {
+        background-color: #f5f5f5;
+    }
+    
+    /* Status button styles */
+    .status-btn {
+        padding: 5px 10px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: bold;
+        border: none;
+        transition: all 0.3s ease;
+    }
+    .status-reject {
+        background-color: #dc3545;
+        color: white;
+    }
+    .status-selected {
+        background-color: #28a745;
+        color: white;
+    }
+</style>
+<style>
+    .star-rating i {
+        cursor: pointer;
+        color: #ccc;
+        display: inline-block;
+    }
+
+    @keyframes blinkColors {
+        0% { color: #ffcc00; }
+        50% { color: #ffcc00; }
+        100% { color: #ffcc00; }
+    }
+
+    @keyframes rotateStars {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .star-rating i.checked {
+        animation: blinkColors 1s infinite, rotateStars 5s infinite linear;
+    }
+</style>
+<div style="overflow: hidden;">
+    <div class="">
+        <h2 style="display: flex; justify-content: center; align-items: center; color: BLACK; gap: 10px;">
+            <i class="fa fa-folder-open" style="margin-right: 10px;"></i> INTERVIEW MANAGEMENT
+        </h2>
+        
+        <div class="row">
+            <div class="col-12">
+                <div style="overflow: auto;">
+                    <table class="table table-bordered table-hover" style="margin-top: 3%;">
+                        <thead>
+                            <tr>
+                                <th>No</th>
+                                <th>Interview Date</th>
+                                <th>Name</th>
+                                <th>Address</th>
+                                <th>Phone Number</th>
+                                <th>Place</th>
+                                <th>District</th>
+                                <th>CV Attachment</th>
+                                <th>Job Title</th>
+                                <th>Education</th>
+                                <th>Experience</th>
+                                <th>DOB</th>
+                                <th>Remarks</th>
+                                <th>Result</th>
+                                <th>Status</th>  <!-- Added Status column -->
+                            </tr>
+                        </thead>
+                        
+                        <tbody>
+                            {% for cv in cv_list %}
+                            <tr>
+                                <td>{{ forloop.counter }}</td>
+                                <td>{{ cv.interview_date|date:"d-m-Y" }}</td>
+                                <td>{{ cv.name|upper }}</td>
+                                <td>{{ cv.address|upper|slice:":30" }}<br>{{ cv.address|upper|slice:"50:500" }}</td>
+                                <td>{{ cv.phone_number }}</td>
+                                <td>{{ cv.place|upper }}</td>
+                                <td>{{ cv.district|upper }}</td>
+                                <td>
+                                    <a href="{{ cv.cv_attachment.url }}" target="_blank">
+                                        <i class="fa fa-file-alt" style="font-size: x-large; display: flex; justify-content: center;"></i>
+                                    </a>
+                                </td>
+                                <td>{{ cv.job_title|upper }}</td>
+                                <td>
+                                    <i class="fas fa-book" style="color: green; display: flex; justify-content: center;font-size: x-large;" 
+                                       data-toggle="modal" data-target="#educationModal" data-education="{{ cv.education }}">
+                                    </i>
+                                </td>
+                                <td>
+                                    <i class="fas fa-briefcase" style="color: orange; display: flex; justify-content: center;font-size: x-large;" 
+                                       data-toggle="modal" data-target="#experienceModal" data-experience="{{ cv.experience }}">
+                                    </i>
+                                </td>
+                                <td>{{ cv.dob }}</td>
+                                <td>
+                                    <i class="fas fa-comment-alt" style="color: blue;display: flex;justify-content: center;" data-toggle="modal" data-target="#remarksModal" data-remarks="{{ cv.remarks }}"></i>
+                                </td>
+                                <td>
+                                    {% if cv.interview_status %}
+                                        <button class="btn btn-sm btn-add-rating" data-cv-id="{{ cv.id }}"><i class="fa fa-plus"></i></button>
+                                        {% if cv.rating_set.exists %}
+                                            <i class="fa fa-eye btn-view-rating" style="cursor: pointer;" data-cv-id="{{ cv.id }}"></i>
+                                        {% endif %}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <button class="status-btn status-reject" data-cv-id="{{ cv.id }}" onclick="toggleStatus(this)">Reject</button>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="15" class="text-center">
+                                    No CVs found with interview status "Yes".
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- interview_management.html -->
+<!-- Modal for Rating Form -->
+<div id="ratingModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="ratingModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document" style="width: 100%;max-width: 600px;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="ratingModalLabel">Add/Edit Ratings for <span id="candidateName"></span></h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="ratingForm">
+                    <!-- Appearance Rating -->
+                    <div class="form-group">
+                        <label for="appearanceRating">Appearance</label>
+                        <div class="star-rating">
+                            {% for i in "12345" %}
+                                <i class="fa fa-star" data-rating="{{ i }}" onclick="setRating(this, 'appearance')"></i>
+                            {% endfor %}
+                        </div>
+                        <input type="hidden" id="appearanceRating" name="appearanceRating" value="0">
+                    </div>
+                    
+                    <!-- Knowledge Rating -->
+                    <div class="form-group">
+                        <label for="knowledgeRating">Knowledge</label>
+                        <div class="star-rating">
+                            {% for i in "12345" %}
+                                <i class="fa fa-star" data-rating="{{ i }}" onclick="setRating(this, 'knowledge')"></i>
+                            {% endfor %}
+                        </div>
+                        <input type="hidden" id="knowledgeRating" name="knowledgeRating" value="0">
+                    </div>
+                    
+                    <!-- Confidence Rating -->
+                    <div class="form-group">
+                        <label for="confidenceRating">Confidence Level</label>
+                        <div class="star-rating">
+                            {% for i in "12345" %}
+                                <i class="fa fa-star" data-rating="{{ i }}" onclick="setRating(this, 'confidence')"></i>
+                            {% endfor %}
+                        </div>
+                        <input type="hidden" id="confidenceRating" name="confidenceRating" value="0">
+                    </div>
+                    
+                    <!-- Attitude Rating -->
+                    <div class="form-group">
+                        <label for="attitudeRating">Attitude</label>
+                        <div class="star-rating">
+                            {% for i in "12345" %}
+                                <i class="fa fa-star" data-rating="{{ i }}" onclick="setRating(this, 'attitude')"></i>
+                            {% endfor %}
+                        </div>
+                        <input type="hidden" id="attitudeRating" name="attitudeRating" value="0">
+                    </div>
+                    
+                    <!-- Communication Rating -->
+                    <div class="form-group">
+                        <label for="communicationRating">Communication</label>
+                        <div class="star-rating">
+                            {% for i in "12345" %}
+                                <i class="fa fa-star" data-rating="{{ i }}" onclick="setRating(this, 'communication')"></i>
+                            {% endfor %}
+                        </div>
+                        <input type="hidden" id="communicationRating" name="communicationRating" value="0">
+                    </div>
+                    <label>Languages:</label><br>
+                    <input type="checkbox" name="languages[]" value="English"> English
+                    <input type="checkbox" name="languages[]" value="Malayalam"> Malayalam
+                    <input type="checkbox" name="languages[]" value="Hindi"> Hindi
+                    <input type="checkbox" name="languages[]" value="Tamil"> Tamil
+                    <br>
+
+                    <label>Expected Salary:</label>
+                    <input type="number" step="0.01" name="expectedSalary" class="form-control">
+
+                    <label>Experience:</label>
+                    <input type="text" name="experience" class="form-control">
+
+                    <label>Remark:</label>
+                    <textarea name="remark" class="form-control"></textarea>
+                    
+                    <!-- Add Voice Recording Section -->
+                    <div class="form-group">
+                        <label><i class="fas fa-microphone"></i> Voice Note:</label>
+                        <div class="d-flex align-items-center mb-2">
+                            <button type="button" id="startRecording" class="btn btn-primary mr-2">
+                                <i class="fas fa-microphone"></i> Start Recording
+                            </button>
+                            <button type="button" id="stopRecording" class="btn btn-danger mr-2" disabled>
+                                <i class="fas fa-stop"></i> Stop Recording
+                            </button>
+                        </div>
+                        <div id="recordingStatus" class="text-muted"></div>
+                        <audio id="audioPlayback" controls class="mt-2 d-none w-100"></audio>
+                        <input type="hidden" name="voice_note" id="voiceNoteData">
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">Save Ratings</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- interview_management.html -->
+<!-- Modal for Viewing Ratings -->
+<div id="viewRatingModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="viewRatingModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="viewRatingModalLabel">View Ratings for <span id="viewCandidateName"></span></h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <!-- Star Ratings Section -->
+                        <h6 class="mb-3">Performance Ratings</h6>
+                        <p><strong>Appearance:</strong> 
+                            <span id="viewAppearanceRating"></span>
+                            <span id="viewAppearanceStars" class="star-rating"></span>
+                        </p>
+                        
+                        <p><strong>Knowledge:</strong> 
+                            <span id="viewKnowledgeRating"></span>
+                            <span id="viewKnowledgeStars" class="star-rating"></span>
+                        </p>
+                        
+                        <p><strong>Confidence Level:</strong> 
+                            <span id="viewConfidenceRating"></span>
+                            <span id="viewConfidenceStars" class="star-rating"></span>
+                        </p>
+                        
+                        <p><strong>Attitude:</strong> 
+                            <span id="viewAttitudeRating"></span>
+                            <span id="viewAttitudeStars" class="star-rating"></span>
+                        </p>
+                        
+                        <p><strong>Communication:</strong> 
+                            <span id="viewCommunicationRating"></span>
+                            <span id="viewCommunicationStars" class="star-rating"></span>
+                        </p>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <!-- Additional Details Section -->
+                        
+                        <p><strong>Languages Known:</strong> 
+                            <span id="viewLanguages" class="badge-container"></span>
+                        </p>
+                        
+                        <p><strong>Expected Salary:</strong> 
+                            ₹<span id="viewExpectedSalary"></span>
+                        </p>
+                        
+                        <p><strong>Experience:</strong> 
+                            <span id="viewExperience"></span>
+                        </p>
+                        
+                        <p><strong>Remarks:</strong> 
+                            <span id="viewRemarks" class="text-muted"></span>
+                        </p>
+                        
+                        <div id="voiceNoteContainer" class="mt-3">
+                            <strong>Voice Note:</strong>
+                            <audio id="viewVoiceNote" controls class="d-none w-100">
+                                Your browser does not support the audio element.
+                            </audio>
+                            <p id="noVoiceNote" class="text-muted d-none">No voice note available</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Modal for Education -->
+<div id="educationModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="educationModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="educationModalLabel">Education Details</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p id="educationText"></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Experience -->
+<div id="experienceModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="experienceModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="experienceModalLabel">Experience Details</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p id="experienceText"></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Remarks -->
+<div id="remarksModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="remarksModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="remarksModalLabel">Remarks</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p id="remarksText"></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    $(document).ready(function() {
+        $('#educationModal').on('show.bs.modal', function (event) {
+            var button = $(event.relatedTarget);
+            var education = button.data('education');
+            $(this).find('.modal-body #educationText').text(education || 'No education details available');
+        });
+        $('#experienceModal').on('show.bs.modal', function (event) {
+            var button = $(event.relatedTarget);
+            var experience = button.data('experience');
+            $(this).find('.modal-body #experienceText').text(experience || 'No experience details available');
+        });
+        $('#remarksModal').on('show.bs.modal', function (event) {
+            var button = $(event.relatedTarget);
+            var remarks = button.data('remarks');
+            $(this).find('.modal-body #remarksText').text(remarks || 'No remarks available');
+        });
+
+        // Initialize candidate status from localStorage if it exists
+        initializeStatusButtons();
+    });
+
+    // Function to toggle status button between Reject and Selected
+    function toggleStatus(button) {
+        const cvId = button.getAttribute('data-cv-id');
+        
+        if (button.classList.contains('status-reject')) {
+            // Change to Selected
+            button.classList.remove('status-reject');
+            button.classList.add('status-selected');
+            button.textContent = 'Selected';
+            saveStatus(cvId, 'selected');
+        } else {
+            // Change to Reject
+            button.classList.remove('status-selected');
+            button.classList.add('status-reject');
+            button.textContent = 'Reject';
+            saveStatus(cvId, 'reject');
+        }
+    }
+
+    // Function to save status to localStorage
+    function saveStatus(cvId, status) {
+        // Get existing statuses or initialize empty object
+        let statuses = JSON.parse(localStorage.getItem('candidateStatuses')) || {};
+        
+        // Update status for this candidate
+        statuses[cvId] = status;
+        
+        // Save back to localStorage
+        localStorage.setItem('candidateStatuses', JSON.stringify(statuses));
+    }
+
+    // Function to initialize status buttons from localStorage
+    function initializeStatusButtons() {
+        // Get saved statuses
+        const statuses = JSON.parse(localStorage.getItem('candidateStatuses')) || {};
+        
+        // Apply saved statuses to buttons
+        document.querySelectorAll('.status-btn').forEach(button => {
+            const cvId = button.getAttribute('data-cv-id');
+            
+            if (statuses[cvId] === 'selected') {
+                button.classList.remove('status-reject');
+                button.classList.add('status-selected');
+                button.textContent = 'Selected';
+            } else {
+                button.classList.remove('status-selected');
+                button.classList.add('status-reject');
+                button.textContent = 'Reject';
+            }
+        });
+    }
+</script>
+
+<script>
+    // Function to set stars based on rating value
+    function setRating(star, category) {
+        const rating = parseInt(star.getAttribute('data-rating'));
+        const stars = document.querySelectorAll(`.star-rating i[data-rating][onclick*="${category}"]`);
+        const hiddenInput = document.getElementById(`${category}Rating`);
+
+        hiddenInput.value = rating;
+
+        stars.forEach((s, index) => {
+            s.classList.toggle('checked', index < rating);
+        });
+    }
+
+    // Load existing ratings into the form
+    function loadRatings(cvId) {
+        fetch(`/get-ratings/${cvId}/`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Helper to set stars for each category
+                    const setStars = (category) => {
+                        const value = data[category];
+                        const stars = document.querySelectorAll(`.star-rating i[data-rating][onclick*="${category}"]`);
+                        stars.forEach(star => {
+                            const starValue = parseInt(star.getAttribute('data-rating'));
+                            star.classList.toggle('checked', starValue <= value);
+                        });
+                        document.getElementById(`${category}Rating`).value = value || 0;
+                    };
+
+                    setStars('knowledge');
+                    setStars('confidence');
+                    setStars('attitude');
+                    setStars('communication');
+                    setStars('appearance');
+
+                    // Handle checkboxes for languages
+                    document.querySelectorAll('input[name="languages[]"]').forEach(checkbox => {
+                        checkbox.checked = data.languages.includes(checkbox.value);
+                    });
+
+                    // Set other fields
+                    document.querySelector('input[name="expectedSalary"]').value = data.expected_salary || '';
+                    document.querySelector('input[name="experience"]').value = data.experience || '';
+                    document.querySelector('textarea[name="remark"]').value = data.remark || '';
+                }
+            });
+    }
+
+    // View ratings
+    function viewRatings(cvId) {
+        fetch(`/get-ratings/${cvId}/`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Display star ratings
+                    document.getElementById('viewKnowledgeRating').textContent = data.knowledge;
+                    document.getElementById('viewConfidenceRating').textContent = data.confidence;
+                    document.getElementById('viewAttitudeRating').textContent = data.attitude;
+                    document.getElementById('viewCommunicationRating').textContent = data.communication;
+                    document.getElementById('viewAppearanceRating').textContent = data.appearance;
+
+                    displayStars('viewKnowledgeStars', data.knowledge);
+                    displayStars('viewConfidenceStars', data.confidence);
+                    displayStars('viewAttitudeStars', data.attitude);
+                    displayStars('viewCommunicationStars', data.communication);
+                    displayStars('viewAppearanceStars', data.appearance);
+
+                    // Display languages as badges
+                    const languagesContainer = document.getElementById('viewLanguages');
+                    languagesContainer.innerHTML = data.languages.map(lang => 
+                        `<span class="badge badge-primary">${lang}</span>`
+                    ).join(' ');
+
+                    // Display additional details
+                    document.getElementById('viewExpectedSalary').textContent = 
+                        data.expected_salary ? parseFloat(data.expected_salary).toLocaleString() : 'Not specified';
+                    document.getElementById('viewExperience').textContent = 
+                        data.experience || 'Not specified';
+                    document.getElementById('viewRemarks').textContent = 
+                        data.remark || 'No remarks available';
+
+                    // Handle voice note display
+                    const audioElement = document.getElementById('viewVoiceNote');
+                    const noVoiceNoteMessage = document.getElementById('noVoiceNote');
+                    
+                    if (data.voice_note_url) {
+                        audioElement.src = data.voice_note_url;
+                        audioElement.classList.remove('d-none');
+                        noVoiceNoteMessage.classList.add('d-none');
+                    } else {
+                        audioElement.classList.add('d-none');
+                        noVoiceNoteMessage.classList.remove('d-none');
+                    }
+
+                    $('#viewRatingModal').modal('show');
+                }
+            });
+    }
+
+    // Function to display star icons based on the rating
+    function displayStars(elementId, rating) {
+        const starContainer = document.getElementById(elementId);
+        starContainer.innerHTML = ''; // Clear any existing stars
+
+        for (let i = 1; i <= 5; i++) {
+            const star = document.createElement('i');
+            star.className = 'fa fa-star';
+            if (i <= rating) {
+                star.classList.add('checked');
+            }
+            starContainer.appendChild(star);
+        }
+    }
+
+    // Handle form submission
+    document.getElementById('ratingForm').addEventListener('submit', function(event) {
+        event.preventDefault();
+        const cvId = document.getElementById('ratingForm').getAttribute('data-cv-id');
+        const formData = new FormData(this);
+
+        fetch(`/save-ratings/${cvId}/`, {
+            method: 'POST',
+            body: formData,
+            headers: { 'X-CSRFToken': '{{ csrf_token }}' }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Ratings saved successfully!');
+                $('#ratingModal').modal('hide');
+            } else {
+                alert('Failed to save ratings.');
+            }
+        });
+    });
+
+    // Handle the "Add" button click
+    $('.btn-add-rating').click(function() {
+        const cvId = $(this).data('cv-id');
+        $('#ratingForm').attr('data-cv-id', cvId);
+        loadRatings(cvId); // Load existing ratings if any
+        $('#ratingModal').modal('show');
+    });
+
+    // Handle the "Eye" icon click
+    $('.btn-view-rating').click(function() {
+        const cvId = $(this).data('cv-id');
+        viewRatings(cvId);
+    });
+
+    $(".close").click(function() {
+        $(this).closest(".modal").modal("hide");
+    });
+
+    $(".close").on("click", function() {
+        $("#ratingModal, #viewRatingModal").modal("hide");
+    });
+</script>
+{% endblock %}
