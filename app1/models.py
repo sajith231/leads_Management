@@ -317,8 +317,8 @@ class CV(models.Model):
     remarks = models.TextField(blank=True, null=True)
     cv_attachment = models.FileField(upload_to='cv_attachments/')
     interview_status = models.BooleanField(default=False)
-    interview_date = models.DateTimeField(null=True, blank=True)  ###### selected = models.BooleanField(default=False)  DELETE THIS MODEL FROM CV
-    selected = models.BooleanField(default=False)  # Add this field
+    interview_date = models.DateTimeField(null=True, blank=True)  
+    selected = models.BooleanField(default=False)  
      
 
     def __str__(self):

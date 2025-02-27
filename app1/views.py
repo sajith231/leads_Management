@@ -1812,43 +1812,62 @@ from django.views.decorators.csrf import csrf_exempt
 from .models import CV, OfferLetterDetails
 import json
 
-@csrf_exempt
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+from .models import OfferLetterDetails, CV
+
 def save_offer_letter_details(request, cv_id):
     if request.method == 'POST':
         try:
-            cv = CV.objects.get(id=cv_id)
-            data = request.POST
-            offer_letter_details, created = OfferLetterDetails.objects.get_or_create(cv=cv)
-            offer_letter_details.position = data.get('position')
-            offer_letter_details.department = data.get('department')
-            offer_letter_details.start_date = data.get('startDate')
-            offer_letter_details.salary = data.get('salary')
-            offer_letter_details.save()
+            cv = get_object_or_404(CV, id=cv_id)
+            offer_details, created = OfferLetterDetails.objects.get_or_create(cv=cv)
+            
+            offer_details.position = request.POST.get('position', '')
+            offer_details.department = request.POST.get('department', '')
+            offer_details.start_date = request.POST.get('startDate', None)
+            offer_details.salary = request.POST.get('salary', '')
+            offer_details.save()
+            
             return JsonResponse({'success': True})
         except CV.DoesNotExist:
             return JsonResponse({'success': False, 'error': 'CV not found'})
-    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+    return JsonResponse({'success': False, 'error': 'Invalid request'})
 
-@csrf_exempt
+
+
 def get_offer_letter_details(request, cv_id):
-    if request.method == 'GET':
-        try:
-            cv = CV.objects.get(id=cv_id)
-            offer_letter_details = OfferLetterDetails.objects.filter(cv=cv).first()
-            if offer_letter_details:
-                return JsonResponse({
-                    'success': True,
-                    'position': offer_letter_details.position,
-                    'department': offer_letter_details.department,
-                    'startDate': offer_letter_details.start_date,
-                    'salary': offer_letter_details.salary,
-                })
-            else:
-                return JsonResponse({'success': False, 'error': 'No offer letter details found'})
-        except CV.DoesNotExist:
-            return JsonResponse({'success': False, 'error': 'CV not found'})
-    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+    try:
+        offer_details = OfferLetterDetails.objects.get(cv_id=cv_id)
+        return JsonResponse({
+            'success': True,
+            'position': offer_details.position,
+            'department': offer_details.department,
+            'start_date': offer_details.start_date.strftime('%Y-%m-%d') if offer_details.start_date else '',
+            'salary': offer_details.salary
+        })
+    except OfferLetterDetails.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Offer letter details not found'})
 
+
+from django.shortcuts import render, get_object_or_404
+from .models import CV, OfferLetterDetails
+
+def generate_offer_letter(request, cv_id):
+    # Fetch the CV and associated Offer Letter details
+    cv = get_object_or_404(CV, id=cv_id)
+    
+    try:
+        offer_letter_details = OfferLetterDetails.objects.get(cv=cv)
+    except OfferLetterDetails.DoesNotExist:
+        offer_letter_details = None
+    
+    # Pass data to the offer letter template
+    context = {
+        'candidate_name': cv.name.upper(),
+        'candidate_address': cv.address.upper(),
+        'offer_letter_details': offer_letter_details,
+    }
+    return render(request, 'offer_letter.html', context)
 
 
 

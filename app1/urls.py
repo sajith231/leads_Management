@@ -143,6 +143,7 @@ urlpatterns = [
 
     path('offer-letter/<int:cv_id>/', views.offer_letter, name='offer_letter'),
     path('save-offer-letter-details/<int:cv_id>/', save_offer_letter_details, name='save_offer_letter_details'),
+
     path('get-offer-letter-details/<int:cv_id>/', get_offer_letter_details, name='get_offer_letter_details'),
 
     path('employee_management/', employee_management, name='employee_management'),
@@ -152,7 +153,7 @@ urlpatterns = [
 
     
 
-     path('save_experience_certificate_details/<int:employee_id>/', save_experience_certificate_details, name='save_experience_certificate_details'),
+    path('save_experience_certificate_details/<int:employee_id>/', save_experience_certificate_details, name='save_experience_certificate_details'),
     path('experience_certificate/<int:employee_id>/', views.experience_certificate, name='experience_certificate'),
 
 
@@ -166,17 +167,20 @@ urlpatterns = [
 
     path('documents/<int:doc_id>/', document_detail, name='document_detail'),
     path('settings/edit/<int:setting_id>/', views.edit_document_setting, name='edit_document_setting'),
-     path('documents/settings/save/<int:doc_id>/', save_document_settings, name='save_document_settings'),
+    path('documents/settings/save/<int:doc_id>/', save_document_settings, name='save_document_settings'),
 
-     path('documents/settings/fields/get/<int:setting_id>/', get_document_setting_fields, name='get_document_setting_fields'),
-      path('attachment/setting/<int:setting_id>/', views.view_attachment, name='view_setting_attachment'),
+    path('documents/settings/fields/get/<int:setting_id>/', get_document_setting_fields, name='get_document_setting_fields'),
+    path('attachment/setting/<int:setting_id>/', views.view_attachment, name='view_setting_attachment'),
 
-path('interview-management/', interview_management, name='interview_management'),
-path('make-offer-letter/', views.make_offer_letter, name='make_offer_letter'),
+    path('interview-management/', interview_management, name='interview_management'),
+    path('make-offer-letter/', views.make_offer_letter, name='make_offer_letter'),
 
-path('toggle-selection-status/', toggle_selection_status, name='toggle_selection_status'),
+    path('toggle-selection-status/', toggle_selection_status, name='toggle_selection_status'),
+    path('generate_offer_letter/<int:cv_id>/', views.generate_offer_letter, name='generate_offer_letter'),
 
- 
+    path('save_offer_letter_details/<int:cv_id>/', views.save_offer_letter_details, name='save_offer_letter_details'),
+    path('get_offer_letter_details/<int:cv_id>/', views.get_offer_letter_details, name='get_offer_letter_details'),
+    path('generate_offer_letter/<int:cv_id>/', views.generate_offer_letter, name='generate_offer_letter'),
 
 
 
