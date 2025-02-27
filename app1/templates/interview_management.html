@@ -68,7 +68,21 @@
         </h2>
         
         <div class="row">
+            <div class="col-md-4">
+                <div class="input-group">
+                    <input type="text" id="nameFilter" class="form-control" placeholder="Search by name...">
+                    <div class="input-group-append">
+                        <!-- <button class="btn btn-outline-secondary" type="button" id="clearFilter">
+                            Clear
+                        </button> -->
+                    </div>
+                </div>
+            </div>
+            
             <div class="col-12">
+                <div class="row mb-3">
+   
+</div>
                 <div style="overflow: auto;">
                     <table class="table table-bordered table-hover" style="margin-top: 3%;">
                         <thead>
@@ -663,6 +677,22 @@ function getCookie(name) {
     $(".close").on("click", function() {
         $("#ratingModal, #viewRatingModal").modal("hide");
     });
+</script>
+<script>
+    // Name filter functionality
+$(document).ready(function() {
+$("#nameFilter").on("keyup", function() {
+var value = $(this).val().toLowerCase();
+$("tbody tr").filter(function() {
+$(this).toggle($(this).children("td:nth-child(3)").text().toLowerCase().indexOf(value) > -1)
+});
+});
+
+$("#clearFilter").on("click", function() {
+$("#nameFilter").val("");
+$("tbody tr").show();
+});
+});
 </script>
 
 {% endblock %}

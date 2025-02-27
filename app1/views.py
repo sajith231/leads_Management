@@ -2346,3 +2346,9 @@ def toggle_selection_status(request):
         else:
             messages.error(request, 'Invalid form submission.')
     return redirect('interview_management')  # Redirect back to the interview management page
+
+
+@login_required
+def make_experience_certificate(request):
+    employees = Employee.objects.all()
+    return render(request, 'make_experience_certificate.html', {'employees': employees})
