@@ -2308,73 +2308,22 @@ def make_offer_letter(request):
 
 
 
-
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
+from django.shortcuts import redirect, get_object_or_404
+from django.contrib import messages
+from .forms import CVSelectionForm
 from .models import CV
 
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from .models import CV
-
-@csrf_exempt
-def update_cv_selection(request):
-    if request.method == "POST":
-        cv_id = request.POST.get("cv_id")
-        action = request.POST.get("action")  # "select" or "reject"
-
-        try:
-            cv = CV.objects.get(id=cv_id)
-            cv.selected = True if action == "select" else False
-            cv.save()
-            
-            return JsonResponse({"success": True, "selected": cv.selected})
-        except CV.DoesNotExist:
-            return JsonResponse({"success": False, "error": "CV not found"})
-
-    return JsonResponse({"success": False, "error": "Invalid request"})
-
-
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_POST
-import json
-from .models import CV
-
-@csrf_exempt
-@require_POST
-def toggle_selected_status(request):
-    try:
-        data = json.loads(request.body)
-        cv_id = data.get('cv_id')
-
-        if not cv_id:
-            return JsonResponse({'success': False, 'error': 'No CV ID provided'})
-
-        cv = CV.objects.get(id=cv_id)
-        cv.selected = not cv.selected  # Toggle the status
-        cv.save()
-
-        return JsonResponse({'success': True, 'selected': cv.selected})
-    except CV.DoesNotExist:
-        return JsonResponse({'success': False, 'error': 'CV not found'})
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)})
-
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from .models import CV
-
-@csrf_exempt
-def toggle_cv_status(request):
+@login_required
+def toggle_selection_status(request):
     if request.method == 'POST':
-        cv_id = request.POST.get('cv_id')
-        selected = request.POST.get('selected') == 'true'
-        try:
-            cv = CV.objects.get(id=cv_id)
+        form = CVSelectionForm(request.POST)
+        if form.is_valid():
+            cv_id = form.cleaned_data['cv_id']
+            selected = form.cleaned_data['selected']
+            cv = get_object_or_404(CV, id=cv_id)
             cv.selected = selected
             cv.save()
-            return JsonResponse({'success': True, 'new_status': cv.selected})
-        except CV.DoesNotExist:
-            return JsonResponse({'success': False, 'error': 'CV not found'})
-    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+            messages.success(request, f'Status updated for {cv.name}.')
+        else:
+            messages.error(request, 'Invalid form submission.')
+    return redirect('interview_management')  # Redirect back to the interview management page

@@ -345,3 +345,10 @@ class ComplaintForm(forms.ModelForm):
 
 
 
+# forms.py
+from django import forms
+from .models import CV
+
+class CVSelectionForm(forms.Form):
+    cv_id = forms.IntegerField(widget=forms.HiddenInput())
+    selected = forms.BooleanField(required=False, widget=forms.HiddenInput())

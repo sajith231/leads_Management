@@ -87,6 +87,7 @@
                                 <th>DOB</th>
                                 <th>Remarks</th>
                                 <th>Result</th>
+                               
                                 <th>Status</th>  <!-- Added Status column -->
                             </tr>
                         </thead>
@@ -129,10 +130,17 @@
                                         {% endif %}
                                     {% endif %}
                                 </td>
-                               <td> <button class="status-btn {% if cv.selected %}status-selected{% else %}status-reject{% endif %}" 
-    data-cv-id="{{ cv.id }}" onclick="toggleStatus(this)">
-    {% if cv.selected %}Selected{% else %}Reject{% endif %}
-</button></td>
+                                <td>
+                                    <form method="post" action="{% url 'toggle_selection_status' %}" style="display: inline;">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="cv_id" value="{{ cv.id }}">
+                                        <input type="hidden" name="selected" value="{% if cv.selected %}0{% else %}1{% endif %}">
+                                        <button type="submit" class="btn btn-sm {% if cv.selected %}btn-success{% else %}btn-danger{% endif %}">
+                                            {% if cv.selected %}Selected{% else %}Reject{% endif %}
+                                        </button>
+                                    </form>
+                                </td>
+                               
 
                                 
                                 
@@ -654,57 +662,6 @@ function getCookie(name) {
 
     $(".close").on("click", function() {
         $("#ratingModal, #viewRatingModal").modal("hide");
-    });
-</script>
-<script>
-    document.addEventListener("DOMContentLoaded", function() {
-        document.querySelectorAll(".status-btn").forEach(button => {
-            button.addEventListener("click", function() {
-                let cvId = this.getAttribute("data-cv-id");
-                let buttonElement = this;
-
-                fetch("{% url 'toggle_selected_status' %}", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-CSRFToken": getCookie("csrftoken")
-                    },
-                    body: JSON.stringify({ cv_id: cvId })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        if (data.selected) {
-                            buttonElement.classList.remove("status-reject");
-                            buttonElement.classList.add("status-selected");
-                            buttonElement.textContent = "Selected";
-                        } else {
-                            buttonElement.classList.remove("status-selected");
-                            buttonElement.classList.add("status-reject");
-                            buttonElement.textContent = "Reject";
-                        }
-                    } else {
-                        alert("Error: " + data.error);
-                    }
-                })
-                .catch(error => console.error("Error:", error));
-            });
-        });
-
-        function getCookie(name) {
-            let cookieValue = null;
-            if (document.cookie && document.cookie !== '') {
-                let cookies = document.cookie.split(';');
-                for (let i = 0; i < cookies.length; i++) {
-                    let cookie = cookies[i].trim();
-                    if (cookie.startsWith(name + '=')) {
-                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                        break;
-                    }
-                }
-            }
-            return cookieValue;
-        }
     });
 </script>
 

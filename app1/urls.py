@@ -14,8 +14,7 @@ from .views import add_document_setting, get_document_settings, delete_document_
 from .views import document_detail,save_document_settings
 from .views import get_document_setting_fields
 from .views import interview_management,make_offer_letter
-from .views import update_cv_selection
-from .views import toggle_selected_status
+from .views import toggle_selection_status
 
 
 urlpatterns = [
@@ -174,9 +173,9 @@ urlpatterns = [
 
 path('interview-management/', interview_management, name='interview_management'),
 path('make-offer-letter/', views.make_offer_letter, name='make_offer_letter'),
- path("update_cv_selection/", update_cv_selection, name="update_cv_selection"),
- path('toggle-selected-status/', toggle_selected_status, name='toggle_selected_status'),
- path('toggle-cv-status/', views.toggle_cv_status, name='toggle_cv_status'),
+
+path('toggle-selection-status/', toggle_selection_status, name='toggle_selection_status'),
+
  
 
 
