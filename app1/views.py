@@ -2352,3 +2352,10 @@ def toggle_selection_status(request):
 def make_experience_certificate(request):
     employees = Employee.objects.all()
     return render(request, 'make_experience_certificate.html', {'employees': employees})
+
+
+
+@login_required
+def make_salary_certificate(request):
+    employees = Employee.objects.all()
+    return render(request, 'make_salary_certificate.html', {'employees': employees})

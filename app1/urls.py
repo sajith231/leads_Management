@@ -184,6 +184,7 @@ urlpatterns = [
     path('generate_offer_letter/<int:cv_id>/', views.generate_offer_letter, name='generate_offer_letter'),
 
      path('make-experience-certificate/', views.make_experience_certificate, name='make_experience_certificate'),
+     path('make-salary-certificate/', views.make_salary_certificate, name='make_salary_certificate'),
 
 
 

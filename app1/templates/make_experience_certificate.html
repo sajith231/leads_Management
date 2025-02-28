@@ -131,6 +131,7 @@
                             <i class="fa fa-file-pdf" style="font-size: x-large; color: red; display: flex; justify-content: center;"></i>
                         </a>
                     </td>
+
                 </tr>
                 {% empty %}
                 <tr>
@@ -229,5 +230,11 @@
             }
         }
     });
+</script>
+<script>
+    function setCurrentDate(link) {
+        const currentDate = new Date().toLocaleDateString('en-GB'); // Format: dd/mm/yyyy
+        link.href = link.href.split('?')[0] + '?date=' + currentDate;
+    }
 </script>
 {% endblock %}

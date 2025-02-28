@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="">
+    <h2 style="display: flex; justify-content: center; gap: 10px;">
+        <i class="fas fa-file-invoice-dollar"></i> MAKE SALARY CERTIFICATE
+    </h2>
+
+    <!-- Name Search Filter -->
+    <div class="mb-3">
+        <input type="text" id="searchInput" class="form-control" placeholder="Search by Name...">
+    </div>
+
+    <div style="overflow-x: auto; white-space: nowrap; max-width: 100%;">
+        <table class="table table-bordered" style="min-width: 1200px;">
+            <thead>
+                <tr>
+                    <th>No</th>
+                    <th class="sticky-name">Name</th>
+                    <th>Photo</th>
+                    <th>Address</th>
+                    <th>Phone (Personal)</th>
+                    <th>Phone (Residential)</th>
+                    <th>Place</th>
+                    <th>District</th>
+                    <th>Education</th>
+                    <th>Experience</th>
+                    <th>Job Title</th>
+                    <th>Joining Date</th>
+                    <th>DOB</th>
+                    <th>Attachments</th>
+                    <th>Add Salary details</th>
+                    <th>Salary Certificate</th>
+                </tr>
+            </thead>
+            <tbody id="employeeTable">
+                {% for employee in employees %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td class="sticky-name employee-name">{{ employee.name }}</td>
+                    <td>
+                        <a href="#" data-bs-toggle="modal" data-bs-target="#photoModal{{ employee.id }}">
+                            <img src="{{ employee.photo.url }}" width="50" height="50" alt="Photo">
+                        </a>
+
+                        <!-- Bootstrap Modal for Image -->
+                        <div class="modal fade" id="photoModal{{ employee.id }}" tabindex="-1" aria-labelledby="photoModalLabel" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="photoModalLabel">Employee Photo</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body text-center">
+                                        <img src="{{ employee.photo.url }}" class="img-fluid" alt="Employee Photo">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>{{ employee.address }}</td>
+                    <td>{{ employee.phone_personal }}</td>
+                    <td>{{ employee.phone_residential }}</td>
+                    <td>{{ employee.place }}</td>
+                    <td>{{ employee.district }}</td>
+                    <td>
+                        <a href="#" data-bs-toggle="modal" data-bs-target="#educationModal{{ employee.id }}">
+                            <i class="fas fa-graduation-cap" style="cursor: pointer; color: green; display: flex; justify-content: center;"></i>
+                        </a>
+                    
+                        <!-- Bootstrap Modal -->
+                        <div class="modal fade" id="educationModal{{ employee.id }}" tabindex="-1" aria-labelledby="educationModalLabel" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="educationModalLabel">Education Details</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        {{ employee.education }}
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                    
+                    <td>
+                        <a href="#" data-bs-toggle="modal" data-bs-target="#experienceModal{{ employee.id }}">
+                            <i class="fas fa-suitcase" style="cursor: pointer; color: blue; display: flex; justify-content: center;"></i>
+                        </a>
+
+                        <!-- Bootstrap Modal -->
+                        <div class="modal fade" id="experienceModal{{ employee.id }}" tabindex="-1" aria-labelledby="experienceModalLabel" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="experienceModalLabel">Experience Details</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        {{ employee.experience }}
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                    
+                    <td>{{ employee.job_title }}</td>
+                    <td>{{ employee.joining_date }}</td>
+                    <td>{{ employee.dob }}</td>
+                    <td>
+                        {% for attachment in employee.attachments.all %}
+                            <a href="{{ attachment.file.url }}" target="_blank">View</a><br>
+                        {% endfor %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="14" class="text-center">No employees found</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- JavaScript for Filtering -->
+<script>
+    document.getElementById("searchInput").addEventListener("keyup", function() {
+        let filter = this.value.toLowerCase();
+        let rows = document.querySelectorAll("#employeeTable tr");
+
+        rows.forEach(row => {
+            let nameCell = row.querySelector(".employee-name");
+            if (nameCell) {
+                let name = nameCell.textContent.toLowerCase();
+                if (name.includes(filter)) {
+                    row.style.display = "";
+                } else {
+                    row.style.display = "none";
+                }
+            }
+        });
+    });
+</script>
+
+<style>
+    .sticky-name {
+        position: sticky;
+        left: 0;
+        background: white;
+        z-index: 2;
+    }
+    thead .sticky-name {
+        background: #f8f9fa; /* Light grey for header */
+    }
+    tbody .sticky-name {
+        background: white; /* Keep background white */
+    }
+</style>
+
+{% endblock %}
