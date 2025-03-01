@@ -20,9 +20,10 @@
     <title>Leading Management</title>
     <style>
         th {
-            text-transform: uppercase;
-            font-weight: 500;
-        }
+    text-transform: capitalize;
+    font-weight: 500;
+}
+
 
         td,
         th {
@@ -352,60 +353,7 @@
         <div class="sidebar">
 
             {% if user.is_superuser %}
-            <div onclick="toggleMenu()">
-                <div>
-                    <h5 style="margin-left: 5%; color: white;" class="mainmenu">
-                        <div style="display: flex;" class="gap-2 align-items-center">
-                            <i class="fas fa-cog"></i>
-                            <span>Master</span>
-                        </div>
-                    </h5>
-                </div>
-            </div>
-
-            <div id="master-menu" class="submenu">
-                <a href="{% url 'all_branches' %}">
-                    <i class="fas fa-code-branch"></i> Branch
-                </a>
-                <a href="{% url 'users_table' %}">
-                    <i class="fas fa-users"></i> Users
-                </a>
-                <a href="{% url 'all_requirements' %}">
-                    <i class="fas fa-tasks"></i> Requirements
-                </a>
-                <a href="{% url 'all_hardwares' %}">
-                    <i class="fas fa-desktop"></i> Hardware
-                </a>
-
-                <a href="{% url 'all_districts' %}">
-                    <i class="fas fa-map"></i> District
-                </a>
-                <a href="{% url 'all_areas' %}">
-                    <i class="fas fa-map-marker-alt"></i> Area
-                </a>
-                <a href="{% url 'all_locations' %}">
-                    <i class="fas fa-chart-area"></i> Location
-                </a>
-
-
-
-                <a href="{% url 'business_type_list' %}">
-                    <i class="fas fa-binoculars"></i> Bussness Type
-                </a>
-                <a href="{% url 'job_titles' %}" class="nav-link">
-                    <i class="fas fa-search"></i>Job Title
-                </a>
-
-
-
-
-                <a href="{% url 'all_complaints' %}">
-                    <i class="fas fa-bug"></i> Complaints
-                    <!-- Add another icon -->
-                </a>
-
-
-            </div>
+           
 
             <div onclick="toggleAdminMenu()">
                 <div>
@@ -430,23 +378,7 @@
 
 
 
-            <div onclick="toggleMarketingMenu()">
-                <div>
-                    <h5 style="margin-left: 5%; color: white;" class="mainmenu">
-                        <div style="display: flex;" class="gap-2 align-items-center">
-                            <span style="margin-top: 5%;display: flex;align-items: center;gap: 10px;"><i
-                                    class="fas fa-bullhorn"></i>
-                                <span>Marketing</span></span>
-                        </div>
-                    </h5>
-                </div>
-            </div>
-
-            <div id="marketing-menu" class="submenu" style="display: none; margin-left: 5%;">
-                <a href="{% url 'all_leads' %}">
-                    <i class="fas fa-user"></i> Leads
-                </a>
-            </div>
+            
             <div onclick="toggleHRMenu()">
                 <div>
                     <h5 style="margin-left: 5%; color: white;" class="mainmenu">
@@ -479,15 +411,32 @@
                     <i class="fas fa-user-check"></i> Attendance
                 </a>
                 
-                <a href="{% url 'make_salary_certificate' %}">
+                <a href="">
                     <i class="fas fa-file-invoice-dollar"></i> Salary Certificate
                 </a>
-                
+                <!-- #{% url 'make_salary_certificate' %} -->
                 <a href="{% url 'make_experience_certificate' %}">
                     <i class="fas fa-award"></i> Experience Certificate
                 </a>
                 
                 
+            </div>
+            <div onclick="toggleMarketingMenu()">
+                <div>
+                    <h5 style="margin-left: 5%; color: white;" class="mainmenu">
+                        <div style="display: flex;" class="gap-2 align-items-center">
+                            <span style="margin-top: 5%;display: flex;align-items: center;gap: 10px;"><i
+                                    class="fas fa-bullhorn"></i>
+                                <span>Marketing</span></span>
+                        </div>
+                    </h5>
+                </div>
+            </div>
+
+            <div id="marketing-menu" class="submenu" style="display: none; margin-left: 5%;">
+                <a href="{% url 'all_leads' %}">
+                    <i class="fas fa-user"></i> Leads
+                </a>
             </div>
             <div onclick="toggleServicesMenu()" class="sideBarMob">
                 <div>
@@ -512,6 +461,66 @@
                 <a href="{% url 'service_entry' %}">
                     <i class="fas fa-plus-circle"></i> <span style="white-space: nowrap;">Service Entry</span>
                 </a>
+            </div>
+            <div onclick="toggleMenu()">
+                <div>
+                    <h5 style="margin-left: 5%; color: white;" class="mainmenu">
+                        <div style="display: flex;margin-top: 6%;" class="gap-2 align-items-center">
+                            <i class="fas fa-cog"></i>
+                            <span>Master</span>
+                        </div>
+                    </h5>
+                </div>
+            </div>
+
+            <div id="master-menu" class="submenu">
+                <a href="{% url 'all_districts' %}">
+                    <i class="fas fa-map"></i> District
+                </a>
+                <a href="{% url 'all_areas' %}">
+                    <i class="fas fa-map-marker-alt"></i> Area
+                </a>
+                <a href="{% url 'all_locations' %}">
+                    <i class="fas fa-chart-area"></i> Location
+                </a>
+                <a href="{% url 'all_requirements' %}">
+                    <i class="fas fa-tasks"></i> Requirements
+                </a>
+                <a href="{% url 'business_type_list' %}">
+                    <i class="fas fa-binoculars"></i> Bussness Type
+                </a>
+                <a href="{% url 'job_titles' %}" class="nav-link">
+                    <i class="fas fa-search"></i>Job Title
+                </a>
+                <a href="{% url 'all_hardwares' %}">
+                    <i class="fas fa-desktop"></i> Hardware
+                </a>
+                <a href="{% url 'all_complaints' %}">
+                    <i class="fas fa-bug"></i> Complaints
+                    <!-- Add another icon -->
+                </a>
+                <a href="{% url 'all_branches' %}">
+                    <i class="fas fa-code-branch"></i> Branch
+                </a>
+                <a href="{% url 'users_table' %}">
+                    <i class="fas fa-users"></i> Users
+                </a>
+                
+                
+
+                
+
+
+
+                
+                
+
+
+
+
+                
+
+
             </div>
 
 
@@ -556,6 +565,7 @@
             {% endif %}
 
         </div>
+        
     </div>
 
     <div class="content">

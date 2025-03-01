@@ -3,8 +3,25 @@
 
 {% block content %}
 <style>
-    th{
-        text-transform: uppercase;
+    th {
+    text-transform: capitalize;
+}
+
+    .password-field {
+        display: flex;
+        align-items: center;
+    }
+    .password-field input {
+        border: none;
+        background: none;
+        width: 100px;
+    }
+    .password-field input:focus {
+        outline: none;
+    }
+    .toggle-password {
+        cursor: pointer;
+        margin-left: 5px;
     }
 </style>
 <div class="container-fluid mt-4">
@@ -48,14 +65,18 @@
                             <tbody>
                                 {% for user in users %}
                                 {% if not user.is_superuser %}
-                                    
-                                
-
                                 <tr>
                                     <td>{{ forloop.counter }}</td>
                                     <td>{{ user.name }}</td>
                                     <td>{{ user.userid }}</td>
-                                    <td>{{ user.password }}</td>
+                                    <td>
+                                        <div class="password-field">
+                                            <input type="password" value="********" readonly class="password-input" id="password-{{ user.id }}">
+                                            <span class="toggle-password" onclick="togglePasswordVisibility('password-{{ user.id }}', '{{ user.password }}')">
+                                                <i class="fa fa-eye"></i>
+                                            </span>
+                                        </div>
+                                    </td>
                                     <td>{{ user.branch }}</td>
                                     <td>
                                         {% if user.user_level == 'normal' %}
@@ -69,8 +90,6 @@
                                         {% endif %}
                                     </td>
                                     <td>
-                                        {% endif %}
-                            
                                         <a href="{% url 'edit_user' user.id %}" class="btn btn-warning btn-sm">
                                             <i class="fa fa-edit"></i>
                                         </a>
@@ -85,6 +104,7 @@
                                         </form>
                                     </td>
                                 </tr>
+                                {% endif %}
                                 {% endfor %}
                             </tbody>
                         </table>
@@ -100,4 +120,17 @@
         </div>
     </div>
 </div>
+
+<script>
+    function togglePasswordVisibility(inputId, password) {
+        const passwordInput = document.getElementById(inputId);
+        if (passwordInput.type === "password") {
+            passwordInput.type = "text";
+            passwordInput.value = password;
+        } else {
+            passwordInput.type = "password";
+            passwordInput.value = "********";
+        }
+    }
+</script>
 {% endblock %}
