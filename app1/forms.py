@@ -29,6 +29,10 @@ class DistrictForm(forms.ModelForm):
         }
 
 
+from django import forms
+from .models import User, Branch
+from django.contrib.auth.models import User as DjangoUser
+
 class UserForm(forms.ModelForm):
     password = forms.CharField(
         widget=forms.PasswordInput(attrs={
@@ -38,6 +42,7 @@ class UserForm(forms.ModelForm):
         label="Password",
         required=True
     )
+    
     branch = forms.ModelChoiceField(
         queryset=Branch.objects.all(),
         empty_label="Select Branch",
@@ -47,9 +52,15 @@ class UserForm(forms.ModelForm):
         })
     )
 
+    image = forms.ImageField(
+        required=False,
+        widget=forms.FileInput(attrs={'class': 'form-control'})
+    )
+    
+
     class Meta:
         model = User
-        fields = ['name', 'userid', 'password', 'branch', 'user_level']
+        fields = ['name', 'userid', 'password', 'branch', 'user_level', 'image']  # Include image field
         widgets = {
             'name': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -72,6 +83,8 @@ class UserForm(forms.ModelForm):
         for field in self.fields:
             if field == 'password':
                 self.fields[field].required = not self.edit_mode
+            elif field == 'image':
+                self.fields[field].required = False  # Keep image field optional
             else:
                 self.fields[field].required = True
 
@@ -121,6 +134,7 @@ class UserForm(forms.ModelForm):
             django_user.save()
 
         return user
+
 
 
 from django import forms

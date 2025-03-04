@@ -75,6 +75,7 @@ class User(models.Model):
         choices=USER_LEVEL_CHOICES,
         default='normal',
     )
+    image = models.ImageField(upload_to='user_images/', null=True, blank=True)  # CREATED AS NEW
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)

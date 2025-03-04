@@ -169,32 +169,46 @@ def edit_requirement(request, requirement_id):
 
 
 # In-memory list to store users (you may replace this with a database model in production)
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from .forms import UserForm
+
+
+
 @login_required
 def add_user(request):
     if request.method == "POST":
-        form = UserForm(request.POST)
-        
+        form = UserForm(request.POST, request.FILES)  # Process submitted form data
+
+        # Prevent using "admin" as a User ID
         if request.POST.get("userid") == "admin":
             messages.error(request, "The User ID 'admin' is not allowed.")
             return render(request, "add_user.html", {"form": form})
-        
+
         if form.is_valid():
             try:
-                user = form.save()
+                user = form.save(commit=False)  # Create a user instance but don't save yet
+                
+                # Handle the optional image field
+                if "image" in request.FILES:
+                    user.image = request.FILES["image"]  # Assign uploaded image
+                
+                user.save()  # Save the user to the database
+
                 messages.success(request, f"User '{user.name}' created successfully!")
                 return redirect("users_table")
             except Exception as e:
                 messages.error(request, f"Error creating user: {str(e)}")
         else:
+            # Display form errors as messages
             for field, errors in form.errors.items():
                 for error in errors:
                     messages.error(request, f"{field}: {error}")
     else:
-        form = UserForm()
+        form = UserForm()  # Initialize an empty form for GET requests
 
     return render(request, "add_user.html", {"form": form})
-
-
 
 @login_required
 def users_table(request):
@@ -218,11 +232,12 @@ def delete_user(request, user_id):
 
 
 @login_required
+@login_required
 def edit_user(request, user_id):
     user = get_object_or_404(User, id=user_id)
     
     if request.method == "POST":
-        form = UserForm(request.POST, instance=user, edit_mode=True)
+        form = UserForm(request.POST, request.FILES, instance=user, edit_mode=True)  # Include request.FILES
         if form.is_valid():
             form.save()
             messages.success(request, f"User '{user.name}' updated successfully!")
@@ -233,6 +248,7 @@ def edit_user(request, user_id):
         form = UserForm(instance=user, edit_mode=True)
     
     return render(request, "edit_user.html", {"form": form, "user": user})
+
 
 from django.db.models import Prefetch
 
@@ -255,6 +271,8 @@ def user_dashboard(request):
         'username': username
     }
     return render(request, 'user_dashboard.html', context)
+
+
 
 
 
@@ -2359,3 +2377,15 @@ def make_experience_certificate(request):
 def make_salary_certificate(request):
     employees = Employee.objects.all()
     return render(request, 'make_salary_certificate.html', {'employees': employees})
+
+
+
+
+
+def base_context(request):
+    user_image = None
+    if request.user.is_authenticated:
+        custom_user = User.objects.filter(userid=request.user.username).first()
+        if custom_user and custom_user.image:
+            user_image = custom_user.image.url  # Get the image URL
+    return {'user_image': user_image}

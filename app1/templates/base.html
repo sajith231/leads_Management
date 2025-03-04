@@ -19,6 +19,7 @@
 
     <title>Leading Management</title>
     <style>
+       
         th {
     text-transform: capitalize;
     font-weight: 500;
@@ -125,6 +126,7 @@
             .d-flex justify-content-center align-items-center {
                 margin-left: 15%;
             }
+            
         }
 
         input {
@@ -243,6 +245,9 @@
         .sideBarMob {
             margin-top: 8%;
         }
+        .UserCredentials{
+            display: flex; align-items: center; gap: 10px;
+        }
 
         @media (max-width: 768px) {
             .sidebar {
@@ -293,6 +298,9 @@
             #master-menu {
                 margin-right: 15%;
             }
+            .UserCredentials{
+                display: none;
+            }
 
 
 
@@ -337,11 +345,59 @@
 </head>
 
 <body>
-    <div style="position: relative;">
-        <a href="{% url 'logout' %}" class="" style="position: absolute;top: 10px;right: 10px;padding-left: 20px;padding-right: 20px;padding-top: 5px;padding-bottom: 5px;border-radius: 10px;text-decoration: none;background-color:rgb(221, 0, 0);color: #fff;">
-            <i class="fas fa-sign-out-alt"></i>
-            <span>Logout</span>
+    
+    <div style="position: absolute; top: 10px; right: 10px; display: flex; align-items: center; gap: 10px;">
+        {% if user.is_authenticated %}
+            <div class="UserCredentials">
+                {% if user_image %}
+                    <img src="{{ user_image }}" alt="Profile Image" 
+                         style="width: 40px; height: 40px; border-radius: 50%;">
+                    <div class="username">
+                        <span style="color: black; font-weight: bold;">{{ user_name }}</span>
+                    </div>
+                {% else %}
+                    <div class="username">
+                        <span style="color: black; font-weight: bold;">{{ user_name }}</span>
+                    </div>
+                {% endif %}
+            </div>
+        {% endif %}
+        
+        <a href="{% url 'logout' %}" style="padding: 5px 20px; border-radius: 10px; text-decoration: none;
+                   background-color: rgb(221, 0, 0); color: #fff;">
+            <i class="fas fa-sign-out-alt"></i> Logout
         </a>
+    </div>
+    
+    <style>
+         .username {
+  font-family: 'Roboto', 'Open Sans', Arial, sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  color: #202124;
+  letter-spacing: 0.1px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  background-color: #f1f3f4;
+  display: inline-block;
+  margin: 4px 0;
+}
+
+/* Hover effect */
+.username:hover {
+  background-color: #e8eaed;
+  box-shadow: 0 1px 2px rgba(60, 64, 67, 0.3);
+  transition: all 0.2s ease;
+}
+
+/* For a verified or premium style */
+.username.verified {
+  border-left: 3px solid #1a73e8;
+}
+    </style>
+    
+    
+        
         <!-- Hamburger Menu Button -->
         <button class="hamburger" onclick="toggleSidebar()">
             <span></span>
@@ -465,7 +521,7 @@
             <div onclick="toggleMenu()">
                 <div>
                     <h5 style="margin-left: 5%; color: white;" class="mainmenu">
-                        <div style="display: flex;margin-top: 6%;" class="gap-2 align-items-center">
+                        <div style="display: flex;margin-top: 7%;" class="gap-2 align-items-center">
                             <i class="fas fa-cog"></i>
                             <span>Master</span>
                         </div>
@@ -527,9 +583,15 @@
             {% else %}
 
 
-            <a href="{% url 'user_dashboard' %}" style="color: white;">
-                <i class="fas fa-user" style="font-size: 15px;"></i> Leads
-            </a>
+            <div onclick="toggleUserMenu()">
+                <h5 class="mainmenu" style="color: white;margin-left: 7%;">
+                    <i class="fas fa-bullhorn"></i> <span style="margin-left: 1%;">Marketing</span>
+                </h5>
+            </div>
+            <div id="user-menu" class="submenu">
+                <a href="{% url 'user_dashboard' %}"><i class="fas fa-user"></i> Leads</a>
+            </div>
+        
             <div class="sideBarMob">
                 <div class="sideBarMob">
                     <a href="{% url 'document_list' %}" style="color: white;">
@@ -654,6 +716,12 @@
             menu.style.display = (menu.style.display === "block") ? "none" : "block";
         }
     </script>
+<script>
+    function toggleUserMenu() {
+        var menu = document.getElementById('user-menu');
+        menu.style.display = (menu.style.display === 'none' || menu.style.display === '') ? 'block' : 'none';
+    }
+</script>
 
 
 
