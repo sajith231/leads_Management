@@ -161,6 +161,7 @@
                                 
                                 <th>DOB</th>
                                 <th>Remarks</th>
+                                <th>CV Source</th>
                                 
                                 <th>Interview Status</th>
                                 <!-- <th>Result</th>
@@ -209,6 +210,15 @@
                                 <td>
                                     <i class="fas fa-comment-alt" style="color: blue;display: flex;justify-content: center;" data-toggle="modal" data-target="#remarksModal" data-remarks="{{ cv.remarks }}"></i>
                                 </td>
+                                <td>
+                                    {% if cv.agent %}
+                                        {{ cv.agent.name }} ({{ cv.agent.firm_name }})
+                                    {% else %}
+                                        DIRECT
+                                    {% endif %}
+                                </td>
+                                
+                                
                                 
                                 <td style="display: flex;justify-content: center;">
                                     <button class="btn btn-sm btn-toggle-interview" data-cv-id="{{ cv.id }}" data-status="{{ cv.interview_status|yesno:'Yes,No' }}">

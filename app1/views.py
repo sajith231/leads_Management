@@ -1518,12 +1518,17 @@ from django.contrib.auth.decorators import login_required
 from django.utils.timezone import now
 from .models import CV, JobTitle
 
+from django.utils.timezone import now
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from .models import CV, JobTitle, Agent  # Ensure correct imports
+
 @login_required
 def add_cv(request):
     if request.method == "POST":
         phone_number = request.POST.get('phone_number')
 
-        # Check if the phone number already exists
         if CV.objects.filter(phone_number=phone_number).exists():
             messages.error(request, 'Duplicate phone number is not allowed.')
             return redirect('add_cv')
@@ -1541,9 +1546,10 @@ def add_cv(request):
             dob = request.POST.get('dob') or None
             remarks = request.POST.get('remarks', '')
             cv_attachment = request.FILES['cv_attachment']
+            agent_id = request.POST.get('agent')
 
-            # Save CV with logged-in user as `created_by`
-            CV.objects.create(
+            # Create CV instance (without agent initially)
+            cv = CV.objects.create(
                 name=name,
                 address=address,
                 phone_number=phone_number,
@@ -1556,8 +1562,17 @@ def add_cv(request):
                 remarks=remarks,
                 cv_attachment=cv_attachment,
                 created_date=now(),
-                created_by=request.user  # Track the logged-in user
+                created_by=request.user
             )
+
+            # Assign agent after CV creation
+            if agent_id:
+                try:
+                    agent = Agent.objects.get(id=agent_id)
+                    cv.agent = agent
+                    cv.save()
+                except Agent.DoesNotExist:
+                    messages.error(request, 'Invalid agent selected.')
 
             messages.success(request, 'CV added successfully!')
             return redirect('cv_management')
@@ -1567,8 +1582,14 @@ def add_cv(request):
         except Exception as e:
             messages.error(request, f'Error creating CV: {str(e)}')
 
+    # Add job titles and agents to context
     job_titles = JobTitle.objects.all()
-    return render(request, 'add_cv.html', {'job_titles': job_titles})
+    agents = Agent.objects.all()
+    return render(request, 'add_cv.html', {
+        'job_titles': job_titles,
+        'agents': agents
+    })
+
 
 
 

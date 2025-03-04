@@ -80,6 +80,15 @@
                     <textarea class="form-control" id="remarks" name="remarks"></textarea>
                 </div>
                 <div class="form-group">
+                    <label for="agent">CV From (Optional)</label>
+                    <select class="form-control" id="agent" name="agent">
+                        <option value="">Direct</option>
+                        {% for agent in agents %}
+                            <option value="{{ agent.id }}">{{ agent.name|upper }} ({{ agent.firm_name|default_if_none:'N/A'|upper }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
                     <label for="cv_attachment">CV Attachment</label>
                     <input type="file" class="form-control-file" id="cv_attachment" name="cv_attachment" accept="*/*" required>
                 </div>
