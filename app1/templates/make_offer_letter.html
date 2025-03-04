@@ -24,6 +24,21 @@
 
         }
     }
+
+
+    
+    .table-container {
+  overflow-x: auto; /* Enables horizontal scrolling */
+  max-width: 100%;
+}
+
+.sticky-name {
+  position: sticky;
+  left: 0;
+  background-color: white; /* Ensures readability */
+  z-index: 10; /* Keeps it above other table cells */
+  border-right: 1px solid #ddd; /* Optional styling */
+}
 </style>
 <div class="allbody">
 <div class="mt-2">
@@ -34,7 +49,7 @@
             <thead>
                 <tr>
                     <th>Interview Date</th>
-                    <th>Name</th>
+                    <th class="sticky-name">Name</th>
                     <th>Address</th>
                     <th>Phone Number</th>
                     <th>Place</th>
@@ -54,7 +69,7 @@
                 {% if cv.selected %}
                 <tr data-cv-id="{{ cv.id }}">
                     <td>{{ cv.interview_date|date:"d-m-Y" }}</td>
-                    <td>{{ cv.name|upper }}</td>
+                    <td class="sticky-name" style="background-color: white;">{{ cv.name|upper }}</td>
                     <td>{{ cv.address|upper }}</td>
                     <td>{{ cv.phone_number }}</td>
                     <td>{{ cv.place|upper }}</td>

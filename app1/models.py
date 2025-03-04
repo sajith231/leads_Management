@@ -320,7 +320,7 @@ class CV(models.Model):
     interview_status = models.BooleanField(default=False)
     interview_date = models.DateTimeField(null=True, blank=True)  
     selected = models.BooleanField(default=False)  
-    created_by = models.ForeignKey(get_user_model(), on_delete=models.SET_NULL, null=True, blank=True, related_name="created_cvs") #CREATED AS NEW
+    created_by = models.ForeignKey(get_user_model(), on_delete=models.SET_NULL, null=True, blank=True, related_name="created_cvs") 
      
 
     def __str__(self):

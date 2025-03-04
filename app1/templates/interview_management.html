@@ -60,6 +60,25 @@
     .star-rating i.checked {
         animation: blinkColors 1s infinite, rotateStars 5s infinite linear;
     }
+
+
+
+
+
+
+    .table-container {
+  overflow-x: auto; /* Enables horizontal scrolling */
+  max-width: 100%;
+}
+
+.sticky-name {
+  position: sticky;
+  left: 0;
+  background-color: white; /* Ensures readability */
+  z-index: 10; /* Keeps it above other table cells */
+  border-right: 1px solid #ddd; /* Optional styling */
+}
+
 </style>
 <div style="overflow: hidden;">
     <div class="">
@@ -89,7 +108,7 @@
                             <tr>
                                 <th>No</th>
                                 <th>Interview Date</th>
-                                <th>Name</th>
+                                <th class="sticky-name">Name</th>
                                 <th>Address</th>
                                 <th>Phone Number</th>
                                 <th>Place</th>
@@ -111,7 +130,7 @@
                             <tr>
                                 <td>{{ forloop.counter }}</td>
                                 <td>{{ cv.interview_date|date:"d-m-Y" }}</td>
-                                <td>{{ cv.name|upper }}</td>
+                                <td class="sticky-name" style="background-color: white;">{{ cv.name|upper }}</td>
                                 <td>{{ cv.address|upper|slice:":30" }}<br>{{ cv.address|upper|slice:"50:500" }}</td>
                                 <td>{{ cv.phone_number }}</td>
                                 <td>{{ cv.place|upper }}</td>
