@@ -1478,7 +1478,8 @@ def cv_management(request):
     cv_list = CV.objects.all().order_by('-created_date')
     
     if name_query:
-        cv_list = cv_list.filter(name__icontains=name_query)
+        # Search by name or phone number
+        cv_list = cv_list.filter(Q(name__icontains=name_query) | Q(phone_number__icontains=name_query))
     
     if selected_job_title:
         try:
@@ -1507,13 +1508,30 @@ def cv_management(request):
 
 from django.utils.timezone import now
 
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from .models import CV
+
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.utils.timezone import now
+from .models import CV, JobTitle
+
+@login_required
 def add_cv(request):
-    job_titles = JobTitle.objects.all()
-    if request.method == 'POST':
+    if request.method == "POST":
+        phone_number = request.POST.get('phone_number')
+
+        # Check if the phone number already exists
+        if CV.objects.filter(phone_number=phone_number).exists():
+            messages.error(request, 'Duplicate phone number is not allowed.')
+            return redirect('add_cv')
+
         try:
+            # Retrieve form data
             name = request.POST['name']
             address = request.POST.get('address', '')
-            phone_number = request.POST.get('phone_number', '')  # New field
             place = request.POST['place']
             district = request.POST['district']
             education = request.POST['education']
@@ -1524,10 +1542,11 @@ def add_cv(request):
             remarks = request.POST.get('remarks', '')
             cv_attachment = request.FILES['cv_attachment']
 
+            # Save CV with logged-in user as `created_by`
             CV.objects.create(
                 name=name,
                 address=address,
-                phone_number=phone_number,  # New field
+                phone_number=phone_number,
                 place=place,
                 district=district,
                 education=education,
@@ -1536,15 +1555,21 @@ def add_cv(request):
                 dob=dob,
                 remarks=remarks,
                 cv_attachment=cv_attachment,
-                created_date=now(),  # Automatically set the current timestamp
+                created_date=now(),
+                created_by=request.user  # Track the logged-in user
             )
+
+            messages.success(request, 'CV added successfully!')
             return redirect('cv_management')
+
         except JobTitle.DoesNotExist:
             messages.error(request, 'Invalid job title selected.')
         except Exception as e:
             messages.error(request, f'Error creating CV: {str(e)}')
-    
+
+    job_titles = JobTitle.objects.all()
     return render(request, 'add_cv.html', {'job_titles': job_titles})
+
 
 
 

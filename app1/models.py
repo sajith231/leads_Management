@@ -75,7 +75,7 @@ class User(models.Model):
         choices=USER_LEVEL_CHOICES,
         default='normal',
     )
-    image = models.ImageField(upload_to='user_images/', null=True, blank=True)  # CREATED AS NEW
+    image = models.ImageField(upload_to='user_images/', null=True, blank=True)  
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)
@@ -285,7 +285,7 @@ class JobTitle(models.Model):
         return self.title
 
 from django.db import models
-
+from django.contrib.auth import get_user_model
 from django.utils.timezone import now
 
 class CV(models.Model):
@@ -320,6 +320,7 @@ class CV(models.Model):
     interview_status = models.BooleanField(default=False)
     interview_date = models.DateTimeField(null=True, blank=True)  
     selected = models.BooleanField(default=False)  
+    created_by = models.ForeignKey(get_user_model(), on_delete=models.SET_NULL, null=True, blank=True, related_name="created_cvs") #CREATED AS NEW
      
 
     def __str__(self):

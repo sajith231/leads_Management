@@ -130,7 +130,7 @@
                 <!-- Name Search Input Field -->
                 <div class="form-group flex-grow-1 mr-2 mb-2" style="min-width: 200px;">
                     <form id="nameSearchForm" method="GET" action="{% url 'cv_management' %}">
-                        <input type="text" class="form-control" id="nameSearch" name="name" placeholder="Search by Name" value="{{ request.GET.name }}">
+                        <input type="text" class="form-control" id="nameSearch" name="name" placeholder="Search by Name and Phone Number" value="{{ request.GET.name }}">
                     </form>
                 </div>
         
@@ -148,7 +148,7 @@
                             <tr>
                                 <th>No</th>
                                 <th>Created Date</th>
-                                <!-- <th>Created User</th> -->
+                                <th>Created User</th>
                                 <th>Name</th>
                                 <th>Address</th>
                                 <th>Phone Number</th>  <!-- New column -->
@@ -175,7 +175,14 @@
                             <tr>
                                 <td>{{ cv_list.start_index|add:forloop.counter0 }}</td>
                                 <td>{{ cv.created_date|date:"d-m-Y" }}</td>
-                                <!-- <td></td> -->
+                                <td>
+                                    {% if cv.created_by %}
+                                        {{ cv.created_by.username }}
+                                    {% else %}
+                                        None
+                                    {% endif %}
+                                </td>
+                                
                                 <td>{{ cv.name|upper }}</td>
                                 <td>{{ cv.address|upper|slice:":30" }}<br>{{ cv.address|upper|slice:"50:500" }}</td>
                                 <td>{{ cv.phone_number }}</td>
