@@ -1951,12 +1951,16 @@ def generate_offer_letter(request, cv_id):
         offer_letter_details = OfferLetterDetails.objects.get(cv=cv)
     except OfferLetterDetails.DoesNotExist:
         offer_letter_details = None
-    
+
+    # Get the current date
+    today_date = now().strftime('%d-%m-%Y')  # Format: dd-mm-yyyy
+
     # Pass data to the offer letter template
     context = {
         'candidate_name': cv.name.upper(),
         'candidate_address': cv.address.upper(),
         'offer_letter_details': offer_letter_details,
+        'today_date': today_date,  # Pass the date to the template
     }
     return render(request, 'offer_letter.html', context)
 

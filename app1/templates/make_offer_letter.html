@@ -93,9 +93,11 @@
                         </button>
                     </td>
                     <td>
-                        <a href="#" class="btn btn-warning btn-sm offer-letter-link" data-cv-id="{{ cv.id }}">
+                        <a href="/generate_offer_letter/{{ cv.id }}/" class="btn btn-warning btn-sm">
                             <i class="fas fa-file-signature"></i> Generate
                         </a>
+                        
+                        
                     </td>
                 </tr>
                 {% endif %}
@@ -146,81 +148,102 @@
 </div>
 </div>
 <script>
-  $(document).ready(function() {
-    // Handle offer letter details modal
-    $('.btn-add-offer-letter').click(function() {
-        var cvId = $(this).data('cv-id');
-        $('#cvId').val(cvId);
-        // Clear form fields when adding new details
-        $('#position').val('');
-        $('#department').val('');
-        $('#startDate').val('');
-        $('#salary').val('');
-        $('#offerLetterModal').modal('show');
+    $(document).ready(function() {
+      // Handle offer letter details modal
+      $('.btn-add-offer-letter').click(function() {
+          var cvId = $(this).data('cv-id');
+          if (!cvId) {
+              alert("Error: Candidate ID is missing!");
+              return;
+          }
+          $('#cvId').val(cvId);
+          // Clear form fields when adding new details
+          $('#position').val('');
+          $('#department').val('');
+          $('#startDate').val('');
+          $('#salary').val('');
+          $('#offerLetterModal').modal('show');
+      });
+  
+      // Handle view offer letter details
+      $('.btn-view-offer-letter').click(function() {
+          var cvId = $(this).data('cv-id');
+          if (!cvId) {
+              alert("Error: Candidate ID is missing!");
+              return;
+          }
+  
+          // Fetch offer letter details using AJAX
+          $.ajax({
+              url: `/get_offer_letter_details/${cvId}/`,
+              type: 'GET',
+              success: function(response) {
+                  if (response.success) {
+                      $('#cvId').val(cvId); // Make sure the ID is set
+                      $('#position').val(response.position);
+                      $('#department').val(response.department);
+                      $('#startDate').val(response.start_date);
+                      $('#salary').val(response.salary);
+                      $('#offerLetterModal').modal('show');
+                  } else {
+                      alert('No offer letter details found.');
+                  }
+              },
+              error: function() {
+                  alert('Error fetching offer letter details.');
+              }
+          });
+      });
+  
+      // Handle generating offer letter
+      $('.offer-letter-link').click(function(event) {
+          event.preventDefault();
+          var cvId = $(this).attr('data-cv-id');  // Use attr() instead of data()
+          
+          if (!cvId || cvId === "undefined") {
+              alert("Error: Candidate ID is missing!");
+              return;
+          }
+  
+          window.location.href = `/generate_offer_letter/${cvId}/`;
+      });
+  
+      // Enable CSRF token for Django security
+      $.ajaxSetup({
+          headers: { "X-CSRFToken": "{{ csrf_token }}" }
+      });
+  
+      // Handle form submission for adding offer letter details
+      $('#offerLetterForm').submit(function(event) {
+          event.preventDefault();
+          var cvId = $('#cvId').val();
+          
+          if (!cvId) {
+              alert("Error: Candidate ID is missing!");
+              return;
+          }
+  
+          var formData = $(this).serialize();
+  
+          $.ajax({
+              url: `/save_offer_letter_details/${cvId}/`,  // Ensure this matches your URL pattern
+              type: 'POST',
+              data: formData,
+              success: function(response) {
+                  if (response.success) {
+                      alert('Offer letter details saved successfully.');
+                      $('#offerLetterModal').modal('hide');
+                  } else {
+                      alert('Failed to save details: ' + (response.error || 'Unknown error'));
+                  }
+              },
+              error: function(xhr) {
+                  alert('Error saving offer letter details: ' + xhr.statusText);
+              }
+          });
+      });
     });
-
-    // Handle view offer letter details
-    $('.btn-view-offer-letter').click(function() {
-        var cvId = $(this).data('cv-id');
-
-        // Fetch offer letter details using AJAX
-        $.ajax({
-            url: `/get_offer_letter_details/${cvId}/`,
-            type: 'GET',
-            success: function(response) {
-                if (response.success) {
-                    $('#cvId').val(cvId); // Make sure the ID is set
-                    $('#position').val(response.position);
-                    $('#department').val(response.department);
-                    $('#startDate').val(response.start_date);
-                    $('#salary').val(response.salary);
-                    $('#offerLetterModal').modal('show');
-                } else {
-                    alert('No offer letter details found.');
-                }
-            },
-            error: function() {
-                alert('Error fetching offer letter details.');
-            }
-        });
-    });
-
-    // Handle generating offer letter
-    $('.offer-letter-link').click(function(event) {
-        event.preventDefault();
-        var cvId = $(this).data('cv-id');
-        window.location.href = `/generate_offer_letter/${cvId}/`;
-    });
-
-    // Enable CSRF token for Django security
-    $.ajaxSetup({
-        headers: { "X-CSRFToken": "{{ csrf_token }}" }
-    });
-
-    // Handle form submission for adding offer letter details
-    $('#offerLetterForm').submit(function(event) {
-        event.preventDefault();
-        var cvId = $('#cvId').val();
-        var formData = $(this).serialize();
-
-        $.ajax({
-            url: `/save_offer_letter_details/${cvId}/`,  // Ensure this matches your URL pattern
-            type: 'POST',
-            data: formData,
-            success: function(response) {
-                if (response.success) {
-                    alert('Offer letter details saved successfully.');
-                    $('#offerLetterModal').modal('hide');
-                } else {
-                    alert('Failed to save details: ' + (response.error || 'Unknown error'));
-                }
-            },
-            error: function(xhr) {
-                alert('Error saving offer letter details: ' + xhr.statusText);
-            }
-        });
-    });
-});
-</script>
+  </script>
+  
 
 {% endblock %}
