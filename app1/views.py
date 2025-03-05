@@ -66,10 +66,18 @@ def login(request):
     return render(request, "login.html")
 
 def logout(request):
-    auth_logout(request)
+    # Clear the session data
+    request.session.flush()
+    
+    # Ensure 'custom_user_id' is removed if it exists
     if 'custom_user_id' in request.session:
         del request.session['custom_user_id']
-    return redirect("login")
+    
+    # Logout the user
+    auth_logout(request)
+    
+    # Redirect to the login page after logout
+    return redirect('login')
 
 @login_required
 def admin_dashboard(request):

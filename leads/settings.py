@@ -58,6 +58,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+
+    'app1.middleware.NoCacheMiddleware',  # Add this line for logout issue
     
 ]
 MEDIA_ROOT= os.path.join(BASE_DIR,'media')
