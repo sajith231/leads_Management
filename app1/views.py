@@ -1717,6 +1717,16 @@ from django.core.files import File
 import os
 from django.utils import timezone
 
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from .models import CV, Rating, InterviewTakenBy
+import json
+import base64
+import tempfile
+from django.core.files import File
+import os
+from django.utils import timezone
+
 @csrf_exempt
 def save_ratings(request, cv_id):
     if request.method == 'POST':
@@ -1764,10 +1774,13 @@ def save_ratings(request, cv_id):
             os.unlink(temp_file_path)
 
         rating.save()
+
+        # Create an entry in InterviewTakenBy model
+        InterviewTakenBy.objects.create(cv=cv, created_by=request.user)
+
         return JsonResponse({'success': True})
     
     return JsonResponse({'success': False})
-
 
 
 @csrf_exempt
@@ -1801,7 +1814,21 @@ def get_ratings(request, cv_id):
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
 
 
+from django.http import JsonResponse
+from .models import InterviewTakenBy
 
+def get_interview_taken_by(request, cv_id):
+    try:
+        interview_taken_by = InterviewTakenBy.objects.filter(cv_id=cv_id).latest('created_at')
+        return JsonResponse({
+            'success': True,
+            'username': interview_taken_by.created_by.username
+        })
+    except InterviewTakenBy.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'error': 'No interview taken by information found'
+        })
 
 
 
