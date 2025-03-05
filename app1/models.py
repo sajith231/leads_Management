@@ -409,7 +409,6 @@ class Rating(models.Model):
     experience = models.CharField(max_length=255, blank=True, null=True)
     remark = models.TextField(blank=True, null=True)
     voice_note = models.FileField(upload_to='voice_notes/', null=True, blank=True)
-    created_by = models.ForeignKey(get_user_model(), on_delete=models.SET_NULL, null=True, blank=True)  # CREATED AS NEW
 
     def __str__(self):
         return f"Ratings for CV: {self.cv.name}"

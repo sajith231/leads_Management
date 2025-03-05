@@ -300,8 +300,6 @@
 
 <!-- interview_management.html -->
 <!-- Modal for Viewing Ratings -->
-<!-- Modal for Viewing Ratings -->
-<!-- Modal for Viewing Ratings -->
 <div id="viewRatingModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="viewRatingModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
@@ -345,8 +343,6 @@
                     <div class="col-md-6">
                         <!-- Additional Details Section -->
                         
-
-                        
                         <p><strong>Languages Known:</strong> 
                             <span id="viewLanguages" class="badge-container"></span>
                         </p>
@@ -361,9 +357,6 @@
                         
                         <p><strong>Remarks:</strong> 
                             <span id="viewRemarks" class="text-muted"></span>
-                        </p>
-                        <p><strong>Interview taken by:</strong> 
-                            <span id="viewInterviewTakenBy"></span>  <!-- Add this line -->
                         </p>
                         
                         <div id="voiceNoteContainer" class="mt-3">
@@ -595,61 +588,55 @@ function getCookie(name) {
     }
 
     // View ratings
-    // View ratings
-// View ratings
-function viewRatings(cvId) {
-    fetch(`/get-ratings/${cvId}/`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Display star ratings
-                document.getElementById('viewKnowledgeRating').textContent = data.knowledge;
-                document.getElementById('viewConfidenceRating').textContent = data.confidence;
-                document.getElementById('viewAttitudeRating').textContent = data.attitude;
-                document.getElementById('viewCommunicationRating').textContent = data.communication;
-                document.getElementById('viewAppearanceRating').textContent = data.appearance;
+    function viewRatings(cvId) {
+        fetch(`/get-ratings/${cvId}/`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Display star ratings
+                    document.getElementById('viewKnowledgeRating').textContent = data.knowledge;
+                    document.getElementById('viewConfidenceRating').textContent = data.confidence;
+                    document.getElementById('viewAttitudeRating').textContent = data.attitude;
+                    document.getElementById('viewCommunicationRating').textContent = data.communication;
+                    document.getElementById('viewAppearanceRating').textContent = data.appearance;
 
-                displayStars('viewKnowledgeStars', data.knowledge);
-                displayStars('viewConfidenceStars', data.confidence);
-                displayStars('viewAttitudeStars', data.attitude);
-                displayStars('viewCommunicationStars', data.communication);
-                displayStars('viewAppearanceStars', data.appearance);
+                    displayStars('viewKnowledgeStars', data.knowledge);
+                    displayStars('viewConfidenceStars', data.confidence);
+                    displayStars('viewAttitudeStars', data.attitude);
+                    displayStars('viewCommunicationStars', data.communication);
+                    displayStars('viewAppearanceStars', data.appearance);
 
-                // Display languages as badges
-                const languagesContainer = document.getElementById('viewLanguages');
-                languagesContainer.innerHTML = data.languages.map(lang => 
-                    `<span class="badge badge-primary">${lang}</span>`
-                ).join(' ');
+                    // Display languages as badges
+                    const languagesContainer = document.getElementById('viewLanguages');
+                    languagesContainer.innerHTML = data.languages.map(lang => 
+                        `<span class="badge badge-primary">${lang}</span>`
+                    ).join(' ');
 
-                // Display additional details
-                document.getElementById('viewExpectedSalary').textContent = 
-                    data.expected_salary ? parseFloat(data.expected_salary).toLocaleString() : 'Not specified';
-                document.getElementById('viewExperience').textContent = 
-                    data.experience || 'Not specified';
-                document.getElementById('viewRemarks').textContent = 
-                    data.remark || 'No remarks available';
+                    // Display additional details
+                    document.getElementById('viewExpectedSalary').textContent = 
+                        data.expected_salary ? parseFloat(data.expected_salary).toLocaleString() : 'Not specified';
+                    document.getElementById('viewExperience').textContent = 
+                        data.experience || 'Not specified';
+                    document.getElementById('viewRemarks').textContent = 
+                        data.remark || 'No remarks available';
 
-                // Display the username who added the ratings
-                const username = data.username || 'Unknown';
-                document.getElementById('viewInterviewTakenBy').textContent = ` ${username}`;
+                    // Handle voice note display
+                    const audioElement = document.getElementById('viewVoiceNote');
+                    const noVoiceNoteMessage = document.getElementById('noVoiceNote');
+                    
+                    if (data.voice_note_url) {
+                        audioElement.src = data.voice_note_url;
+                        audioElement.classList.remove('d-none');
+                        noVoiceNoteMessage.classList.add('d-none');
+                    } else {
+                        audioElement.classList.add('d-none');
+                        noVoiceNoteMessage.classList.remove('d-none');
+                    }
 
-                // Handle voice note display
-                const audioElement = document.getElementById('viewVoiceNote');
-                const noVoiceNoteMessage = document.getElementById('noVoiceNote');
-                
-                if (data.voice_note_url) {
-                    audioElement.src = data.voice_note_url;
-                    audioElement.classList.remove('d-none');
-                    noVoiceNoteMessage.classList.add('d-none');
-                } else {
-                    audioElement.classList.add('d-none');
-                    noVoiceNoteMessage.classList.remove('d-none');
+                    $('#viewRatingModal').modal('show');
                 }
-
-                $('#viewRatingModal').modal('show');
-            }
-        });
-}
+            });
+    }
 
     // Function to display star icons based on the rating
     function displayStars(elementId, rating) {
