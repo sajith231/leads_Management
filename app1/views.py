@@ -2458,10 +2458,15 @@ def make_experience_certificate(request):
 
 
 
-@login_required
+from django.utils import timezone
+
 def make_salary_certificate(request):
     employees = Employee.objects.all()
-    return render(request, 'make_salary_certificate.html', {'employees': employees})
+    current_date = timezone.now().strftime("%d/%m/%Y")  # Format the date as DD/MM/YYYY
+    return render(request, 'make_salary_certificate.html', {
+        'employees': employees,
+        'current_date': current_date
+    })
 
 
 
@@ -2474,3 +2479,81 @@ def base_context(request):
         if custom_user and custom_user.image:
             user_image = custom_user.image.url  # Get the image URL
     return {'user_image': user_image}
+
+
+
+
+from django.shortcuts import render, get_object_or_404
+from .models import User
+from .models import Employee  # Ensure Employee is imported
+
+from django.shortcuts import render, get_object_or_404
+from num2words import num2words
+from .models import Employee
+
+
+
+from django.shortcuts import render, get_object_or_404
+from django.utils import timezone
+from .models import Employee
+
+def salary_certificate(request, employee_id):
+    employee = get_object_or_404(Employee, id=employee_id)
+    clicked_date = request.GET.get("date", timezone.now().strftime("%d/%m/%Y"))  # Default to current date if not provided
+    salary_details = getattr(employee, "salary_details", None)
+
+    if salary_details and salary_details.salary:
+        salary_words = num2words(salary_details.salary, lang="en_IN") + " Rupees Only"
+    else:
+        salary_words = "Zero Rupees Only"
+
+    return render(request, "salary_certificate.html", {
+        "employee": employee,
+        "salary_words": salary_words,
+        "clicked_date": clicked_date  # Pass the clicked date to the template
+    })
+
+
+
+
+
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from .models import EmployeeSalary, Employee  # Ensure Employee is imported
+
+@csrf_exempt
+def add_salary_details(request):
+    if request.method == "POST":
+        employee_id = request.POST.get("employee_id")
+        joining_date = request.POST.get("joining_date")
+        salary = request.POST.get("salary")
+
+        try:
+            employee = Employee.objects.get(id=employee_id)
+            salary_details, created = EmployeeSalary.objects.get_or_create(employee=employee)
+            salary_details.joining_date = joining_date
+            salary_details.salary = salary
+            salary_details.save()
+
+            return JsonResponse({"success": True})
+        except Employee.DoesNotExist:
+            return JsonResponse({"success": False, "error": "Employee not found"})
+        except Exception as e:
+            return JsonResponse({"success": False, "error": str(e)})
+
+    return JsonResponse({"success": False, "error": "Invalid request"})
+
+
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+from .models import EmployeeSalary, Employee  # Ensure Employee is imported
+
+def get_salary_details(request, employee_id):
+    try:
+        salary_details = EmployeeSalary.objects.get(employee_id=employee_id)
+        return JsonResponse({
+            "joining_date": salary_details.joining_date.strftime("%Y-%m-%d") if salary_details.joining_date else "",
+            "salary": str(salary_details.salary),
+        })
+    except EmployeeSalary.DoesNotExist:
+        return JsonResponse({"error": "No salary details found"}, status=404)

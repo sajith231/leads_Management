@@ -14,7 +14,8 @@ from .views import add_document_setting, get_document_settings, delete_document_
 from .views import document_detail,save_document_settings
 from .views import get_document_setting_fields
 from .views import interview_management,make_offer_letter
-from .views import toggle_selection_status,view_attachment
+from .views import toggle_selection_status,view_attachment,salary_certificate
+from .views import add_salary_details, get_salary_details
 
 
 urlpatterns = [
@@ -184,8 +185,17 @@ urlpatterns = [
     path('get_offer_letter_details/<int:cv_id>/', views.get_offer_letter_details, name='get_offer_letter_details'),
     path('generate_offer_letter/<int:cv_id>/', views.generate_offer_letter, name='generate_offer_letter'),
 
-     path('make-experience-certificate/', views.make_experience_certificate, name='make_experience_certificate'),
-     path('make-salary-certificate/', views.make_salary_certificate, name='make_salary_certificate'),
+    path('make-experience-certificate/', views.make_experience_certificate, name='make_experience_certificate'),
+    path('make-salary-certificate/', views.make_salary_certificate, name='make_salary_certificate'),
+
+    path('salary-certificate/<int:employee_id>/', views.salary_certificate, name='salary_certificate'),
+    path("add_salary_details/", add_salary_details, name="add_salary_details"),
+    path("get_salary_details/<int:employee_id>/", get_salary_details, name="get_salary_details"),
+    
+    
+    
+
+
 
 
 

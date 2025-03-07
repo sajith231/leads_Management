@@ -1,0 +1,171 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Salary Certificate</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <style>
+        /* A4 size styling */
+        @page {
+            size: A4;
+            margin: 0;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
+        }
+        .page-container {
+            width: 210mm;
+            min-height: 297mm;
+            margin: 0 auto;
+            background: white;
+            box-sizing: border-box;
+        }
+        .page {
+            width: 210mm;
+            min-height: 297mm;
+            padding: 20mm;
+            margin: 0 auto;
+            background: white;
+            box-sizing: border-box;
+            position: relative;
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 3px solid rgba(0, 0, 0, 0.559);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .content {
+            font-size: 16px;
+            line-height: 1.6;
+        }
+        .content p {
+            margin: 15px 0;
+        }
+        .signature {
+            margin-top: 50px;
+            text-align: right;
+        }
+        .footer {
+            position: absolute;
+            bottom: 20px;
+            width: calc(100% - 40mm);
+            text-align: center;
+            font-size: 12px;
+        }
+        .download-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            z-index: 1000;
+        }
+        @media print {
+            .download-button {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button class="download-button" onclick="downloadPDF()">Download PDF</button>
+
+    <div id="pdf-content">
+        <div class="page">
+            <div class="header">
+                <div class="logo">
+                    <img src="{% static 'images/imclogo2.png' %}" alt="Logo" style="max-width: 110px;">
+                </div>
+                <div class="text" style="text-align:left;">
+                    <h1 style="font-size: 18px; margin: 0;">IMC BUSINESS SOLUTIONS</h1>
+                    <p style="margin: 5px 0; margin-top: 10px;">
+                        <i class="fa fa-map-marker"></i> Palakkunnummal Building, Kalpetta, Wayanad-673121
+                    </p>
+                    <p style="margin: 5px 0; margin-top: 10px;">
+                        <i class="fa fa-phone"></i> 7593820007, 7593820005, 7306197537
+                    </p>
+                    <p style="margin: 5px 0; margin-top: 10px;">
+                        <i class="fa fa-globe"></i> www.imcbs.com 
+                        <span style="margin-left: 15px;">
+                            <i class="fa fa-envelope"></i> info@imcbsglobal.com
+                        </span>
+                    </p>
+                </div>
+            </div>
+
+            <div class="content">
+                <p style="text-align: right;">Date: <span id="certificateDate">{{ request.GET.date }}</span></p>
+                <h2 style="display: flex;justify-content: center;text-decoration: underline;">To whom it may concern</h2>
+                
+                <p style="text-indent: 35px;text-align: justify;">
+                    This is to certify that Mr./Ms. <strong>{{ employee.name }}</strong>, 
+                    residing at {{ employee.address }}, has been employed with us 
+                    since <strong>{{ employee.salary_details.joining_date }}</strong>, serving as 
+                    a <strong>{{ employee.job_title }}</strong>.
+                </p>
+
+                <p style="margin-top: 20px;">
+                    His/Her monthly salary, including all allowances and benefits, is 
+                    <strong>INR {{ employee.salary_details.salary }}/-</strong> 
+                    ({{ salary_words }}) per month.
+                </p>
+                
+
+                <p style="margin-top: 20px;">
+                    For verification and other legitimate purposes, the issuance of this 
+                    certification is upon the request of the employee.
+                </p>
+
+                <p style="margin-top: 30px;">Thank you.</p>
+
+                <div class="signature">
+                    <p>Mr. Naufal K</p>
+                    <p>Managing Partner</p>
+                    <p>IMC BUSINESS SOLUTIONS</p>
+                </div>
+            </div>
+
+            <div class="footer">
+                <p>1 | P a g e</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function downloadPDF() {
+            const button = document.querySelector('.download-button');
+            button.style.display = 'none';
+
+            const element = document.getElementById('pdf-content');
+            const opt = {
+                margin: 0,
+                filename: 'salary-certificate.pdf',
+                image: { type: 'jpeg', quality: 1 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            html2pdf()
+                .from(element)
+                .set(opt)
+                .save()
+                .then(() => {
+                    button.style.display = 'block';
+                });
+        }
+    </script>
+</body>
+</html>

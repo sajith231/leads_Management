@@ -522,3 +522,16 @@ class DocumentSettingField(models.Model):
     #CREATED AS NEW
 
     #CREATED AS NEW
+
+from django.db import models
+from .models import Employee
+
+class EmployeeSalary(models.Model):
+    employee = models.OneToOneField(Employee, on_delete=models.CASCADE, related_name='salary_details')
+    joining_date = models.DateField(null=True, blank=True)
+    salary = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.employee.name} - {self.salary}"
+
+

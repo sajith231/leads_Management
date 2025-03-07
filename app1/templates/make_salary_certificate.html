@@ -2,6 +2,8 @@
 {% load static %}
 
 {% block content %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
 <div class="">
     <h2 style="display: flex; justify-content: center; gap: 10px;">
         <i class="fas fa-file-invoice-dollar"></i> MAKE SALARY CERTIFICATE
@@ -30,7 +32,7 @@
                     <th>Joining Date</th>
                     <th>DOB</th>
                     <th>Attachments</th>
-                    <th>Add Salary details</th>
+                    <th>Add details</th>
                     <th>Salary Certificate</th>
                 </tr>
             </thead>
@@ -120,6 +122,19 @@
                             <a href="{{ attachment.file.url }}" target="_blank">View</a><br>
                         {% endfor %}
                     </td>
+                    <td style="display: flex; justify-content: center; gap: 10px;">
+                        <i class="fa fa-plus" onclick="openSalaryModal({{ employee.id }})"></i>
+                        <i class="fa fa-eye" onclick="viewSalaryDetails({{ employee.id }})"></i>
+                    </td>
+                    
+                    
+                    <td>
+                        <a href="{% url 'salary_certificate' employee.id %}?date={{ current_date }}" title="Generate Salary Certificate">
+                            <span style="font-size: x-large;display: flex;justify-content: center;"><i class="fas fa-file-pdf"></i></span>
+                        </a>
+                    </td>
+                    
+                    
                 </tr>
                 {% empty %}
                 <tr>
@@ -130,6 +145,35 @@
         </table>
     </div>
 </div>
+
+
+
+<!-- Modal -->
+<div class="modal fade" id="salaryModal" tabindex="-1" aria-labelledby="salaryModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="salaryModalLabel">Add/Edit Salary Details</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="salaryForm">
+            <input type="hidden" id="employeeId">
+            <div class="mb-3">
+              <label for="joiningDate" class="form-label">Joining Date</label>
+              <input type="date" class="form-control" id="joiningDate" required>
+            </div>
+            <div class="mb-3">
+              <label for="salaryAmount" class="form-label">Salary (INR)</label>
+              <input type="number" class="form-control" id="salaryAmount" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Save</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+  
 
 <!-- JavaScript for Filtering -->
 <script>
@@ -166,4 +210,59 @@
     }
 </style>
 
+
+
+
+
+
+<script>
+    function openSalaryModal(employeeId) {
+    $("#employeeId").val(employeeId);
+    
+    $.get(`/get_salary_details/${employeeId}/`, function(data) {
+        $("#joiningDate").val(data.joining_date || "");
+        $("#salaryAmount").val(data.salary || "");
+    }).fail(function() {
+        $("#joiningDate").val("");
+        $("#salaryAmount").val("");
+    });
+
+    $("#salaryModal").modal("show");
+}
+
+$("#salaryForm").submit(function(e) {
+    e.preventDefault();
+    let employeeId = $("#employeeId").val();
+    let joiningDate = $("#joiningDate").val();
+    let salary = $("#salaryAmount").val();
+
+    $.post("/add_salary_details/", {
+        employee_id: employeeId,
+        joining_date: joiningDate,
+        salary: salary,
+        csrfmiddlewaretoken: "{{ csrf_token }}"
+    }, function(response) {
+        if (response.success) {
+            alert("Salary details saved successfully!");
+            $("#salaryModal").modal("hide");
+            // Optionally, refresh the table or update the UI here
+        } else {
+            alert("Failed to save salary details: " + response.error);
+        }
+    }).fail(function() {
+        alert("Failed to save salary details.");
+    });
+});
+
+function viewSalaryDetails(employeeId) {
+    $.get(`/get_salary_details/${employeeId}/`, function(data) {
+        alert(`Joining Date: ${data.joining_date}\nSalary: INR ${data.salary}`);
+    }).fail(function() {
+        alert("No salary details found.");
+    });
+}
+    </script>
+    
+
+    
 {% endblock %}
