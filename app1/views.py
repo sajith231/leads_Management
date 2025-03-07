@@ -2407,24 +2407,39 @@ def view_attachment(request, setting_id=None, field_id=None):
     
 
 
+from django.core.paginator import Paginator
+from django.shortcuts import render
+from .models import CV
+
+@login_required
 def interview_management(request):
-    # Filter CVs with interview status "Yes"
-    cv_list = CV.objects.filter(interview_status=True).order_by('-created_date')
-    
-    context = {
-        'cv_list': cv_list,
-    }
-    
-    return render(request, 'interview_management.html', context)
+    cv_list = CV.objects.filter(interview_status=True).order_by('-interview_date')
+
+    paginator = Paginator(cv_list, 10)  # Show 10 CVs per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'interview_management.html', {'cv_list': page_obj})
+
 
 
 
 from .models import CV
 
+from django.core.paginator import Paginator
+from django.shortcuts import render
+from .models import CV
+
 @login_required
 def make_offer_letter(request):
-    selected_candidates = CV.objects.filter(selected=True)  # Fetch only selected candidates
-    return render(request, 'make_offer_letter.html', {"cv_list": selected_candidates})
+    cv_list = CV.objects.filter(selected=True).order_by('-interview_date')
+
+    paginator = Paginator(cv_list, 10)  # Show 10 CVs per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'make_offer_letter.html', {'cv_list': page_obj})
+
 
 
 
