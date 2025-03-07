@@ -2557,3 +2557,5 @@ def get_salary_details(request, employee_id):
         })
     except EmployeeSalary.DoesNotExist:
         return JsonResponse({"error": "No salary details found"}, status=404)
+    
+

@@ -298,13 +298,6 @@
             #master-menu {
                 margin-right: 45%;
             }
-            .UserCredentials{
-                display: none;
-            }
-            
-
-
-
 
         }
     </style>
@@ -341,7 +334,32 @@
             /* Scrollbar track color */
         }
     </style>
-
+<style>
+    .user-popup {
+        position: absolute;
+        top: 60px; /* Adjust based on your layout */
+        right: 10px;
+        background-color: white;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        padding: 10px;
+        display: none;
+        z-index: 1000;
+    }
+    .user-popup a {
+        display: block;
+        padding: 8px 12px;
+        color: #333;
+        text-decoration: none;
+    }
+    .user-popup a:hover {
+        background-color: #f1f1f1;
+    }
+    .user-popup.active {
+        display: block;
+    }
+</style>
 
 </head>
 
@@ -349,25 +367,84 @@
     
     <div style="position: absolute; top: 10px; right: 10px; display: flex; align-items: center; gap: 10px;">
         {% if user.is_authenticated %}
-            <div class="UserCredentials">
+            <div class="UserCredentials" onclick="toggleUserPopup()">
                 {% if user_image %}
                     <img src="{{ user_image }}" alt="Profile Image" 
-                         style="width: 40px; height: 40px; border-radius: 50%;">
+                         style="width: 40px; height: 40px; border-radius: 50%; cursor: pointer;">
                     <div class="username">
-                        <span style="color: black; font-weight: bold;">{{ user_name }}</span>
+                        <span style="color: black; font-weight: bold; cursor: pointer;">{{ user_name }}</span>
                     </div>
                 {% else %}
                     <div class="username">
-                        <span style="color: black; font-weight: bold;">{{ user_name }}</span>
+                        <span style="color: black; font-weight: bold; cursor: pointer;">{{ user_name }}</span>
                     </div>
                 {% endif %}
             </div>
         {% endif %}
+        <!-- User Popup -->
+        <div id="userPopup" class="user-popup">
+            
+            {% if user_image %}
+                    <div style="display: block;"><div style="margin-top: 10%;"><img src="{{ user_image }}" alt="Profile Image" 
+                         style="width: 40px; height: 40px; border-radius: 50%; cursor: pointer;"></div>
+                    <div class="username" >
+                        <span style="color: black; font-weight: bold; cursor: pointer;">Hello,{{ user_name }}</span>
+                    </div></div>
+                {% else %}
+                    <div class="username" style="margin-top: 15%;">
+                        <span style="color: black; font-weight: bold; cursor: pointer;">Hello,{{ user_name }}</span>
+                    </div>
+                {% endif %}
+            <a href="{% url 'logout' %}" class="logout-btn" style="background-color: rgb(240, 6, 6);">
+                <i class="fas fa-sign-out-alt"></i><span style="color: white;"> Logout</span>
+            </a>
+        </div>
+<style>
+    .user-popup {
+    width: 300px;
+    height: 200px;
+    background: whitesmoke;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px green;
+    padding: 15px;
+    text-align: center;
+    border: 1px solid #ddd;
+}
+
+.user-greeting {
+    font-size: 16px;
+    font-weight: 500;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.logout-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 12px;
+    background: #dc3545;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 5px;
+    font-size: 14px;
+    transition: background 0.3s ease;
+    margin-top: 150px;
+    margin-right: 30%;
+}
+
+.logout-btn i {
+    margin-right: 8px;
+    
+}
+
+
+
+</style>        
         
-        <a href="{% url 'logout' %}" style="padding: 5px 20px; border-radius: 10px; text-decoration: none;
-                   background-color: rgb(221, 0, 0); color: #fff;">
-            <i class="fas fa-sign-out-alt"></i> Logout
-        </a>
+</div>
+        
+        
     </div>
     
     <style>
@@ -780,7 +857,21 @@
         });
     });
 </script>
+<script>
+    function toggleUserPopup() {
+        const popup = document.getElementById('userPopup');
+        popup.classList.toggle('active');
+    }
 
+    // Close the popup when clicking outside of it
+    document.addEventListener('click', function(event) {
+        const popup = document.getElementById('userPopup');
+        const userCredentials = document.querySelector('.UserCredentials');
+        if (!userCredentials.contains(event.target) && !popup.contains(event.target)) {
+            popup.classList.remove('active');
+        }
+    });
+</script>
 </body>
 
 </html>

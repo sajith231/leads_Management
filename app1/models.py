@@ -517,11 +517,7 @@ class DocumentSettingField(models.Model):
     
 
 
-    #CREATED AS NEW
-
-    #CREATED AS NEW
-
-    #CREATED AS NEW
+    
 
 from django.db import models
 from .models import Employee
@@ -535,3 +531,8 @@ class EmployeeSalary(models.Model):
         return f"{self.employee.name} - {self.salary}"
 
 
+    #CREATED AS NEW
+
+    #CREATED AS NEW
+
+    #CREATED AS NEW
