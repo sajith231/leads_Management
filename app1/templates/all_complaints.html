@@ -1,9 +1,17 @@
 {% extends 'base.html' %}
 {% block content %}
+<style>
+    @media (max-width: 768px) {
+        .allbody{
+            margin-top: 15%;
 
+        }}
+       
+</style>
+<div class="allbody">
 <div class="container mt-4">
-    <h2 style="display: flex;justify-content: center;">All Complaints</h2>
-    <a href="{% url 'add_complaint' %}" class="btn btn-primary mb-4" style="margin-left: 80%;">Add Complaint</a>
+    <h2 style="display: flex;justify-content: center;white-space: nowrap;">All Complaints</h2>
+    <a href="{% url 'add_complaint' %}" class="btn btn-primary mb-4" style="margin-left: 80%;white-space: nowrap;">Add New</a>
     {% if complaints %}
     <table class="table table-bordered">
         <thead>
@@ -37,5 +45,5 @@
     {% else %}
     <p>No complaints found.</p>
     {% endif %}
-</div>
+</div></div>
 {% endblock %}

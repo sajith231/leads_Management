@@ -84,7 +84,7 @@ class User(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='active')  # CREATED AS NEW
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='active') 
 
 
     def __str__(self):
