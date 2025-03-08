@@ -60,7 +60,7 @@ class UserForm(forms.ModelForm):
 
     class Meta:
         model = User
-        fields = ['name', 'userid', 'password', 'branch', 'user_level', 'image']  # Include image field
+        fields = ['name', 'userid', 'password', 'branch', 'user_level', 'image','status']  # Include image field
         widgets = {
             'name': forms.TextInput(attrs={
                 'class': 'form-control',

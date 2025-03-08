@@ -108,6 +108,23 @@
                         </div>
                     {% endif %}
                 </div>
+                <div class="mb-3">
+                    <label for="id_status" class="form-label">User Status</label>
+                    <select id="id_status" name="{{ form.status.html_name }}" class="form-select">
+                        {% for value, label in form.status.field.choices %}
+                        <option value="{{ value }}" {% if value == form.status.value %}selected{% endif %}>
+                            {{ label }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    {% if form.status.errors %}
+                    <div class="invalid-feedback d-block">
+                        {{ form.status.errors|join:", " }}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                
 
                 <!-- Action Buttons -->
                 <div class="d-grid gap-2 d-md-flex justify-content-md-end">

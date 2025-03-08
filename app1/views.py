@@ -36,7 +36,13 @@ def login(request):
         else:
             # Custom user authentication
             try:
-                custom_user = User.objects.get(userid=userid, password=password, is_active=True)
+                custom_user = User.objects.get(userid=userid, password=password)
+
+                # Check if the user is inactive
+                if custom_user.status == 'inactive':
+                    messages.error(request, "Your account is inactive. Please contact the admin.")
+                    return redirect("login")
+
                 # Create or retrieve Django user for session management
                 django_user, created = DjangoUser.objects.get_or_create(
                     username=custom_user.userid,
@@ -59,11 +65,13 @@ def login(request):
                     return redirect("all_leads")
                 else:
                     return redirect("user_dashboard")
+
             except User.DoesNotExist:
                 messages.error(request, "Invalid username or password")
                 return redirect("login")
 
     return render(request, "login.html")
+
 
 def logout(request):
     # Clear the session data
@@ -243,18 +251,25 @@ def delete_user(request, user_id):
 @login_required
 def edit_user(request, user_id):
     user = get_object_or_404(User, id=user_id)
-    
+
     if request.method == "POST":
-        form = UserForm(request.POST, request.FILES, instance=user, edit_mode=True)  # Include request.FILES
+        form = UserForm(request.POST, request.FILES, instance=user, edit_mode=True)
         if form.is_valid():
-            form.save()
+            user = form.save(commit=False)
+
+            # Handle password update
+            password = form.cleaned_data.get("password")
+            if password:
+                user.password = password  # Directly saving password (ensure hashing if needed)
+
+            user.save()
             messages.success(request, f"User '{user.name}' updated successfully!")
             return redirect("users_table")
         else:
             messages.error(request, "Please correct the errors below.")
     else:
         form = UserForm(instance=user, edit_mode=True)
-    
+
     return render(request, "edit_user.html", {"form": form, "user": user})
 
 

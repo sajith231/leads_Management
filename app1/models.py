@@ -54,6 +54,10 @@ class Location(models.Model):
 
 
 class User(models.Model):
+    STATUS_CHOICES = [
+        ('active', 'Active'),
+        ('inactive', 'Inactive'),
+    ]
     USER_LEVEL_CHOICES = [
         ('normal', 'Normal User'),#admin
         ('admin_level', 'Admin Level User'),#superadmin
@@ -80,6 +84,8 @@ class User(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='active')  # CREATED AS NEW
+
 
     def __str__(self):
         return f"{self.name} ({self.get_user_level_display()})"

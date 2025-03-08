@@ -65,6 +65,7 @@
                                     <th>Password</th>
                                     <th>Branch</th>
                                     <th>User Level</th>
+                                    <th>Status</th>
                                     <th>Edit</th>
                                     <th>Delete</th>
                                 </tr>
@@ -106,6 +107,14 @@
                                             <span class="user-level-badge level-5">Branch User</span>
                                         {% endif %}
                                     </td>
+                                    <td>
+                                        {% if user.status == 'active' %}
+                                            <span class="badge bg-success">Active</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">Inactive</span>
+                                        {% endif %}
+                                    </td>
+                                    
                                     <td>
                                         <a href="{% url 'edit_user' user.id %}" class="btn btn-warning btn-sm">
                                             <i class="fa fa-edit"></i>
