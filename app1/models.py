@@ -461,6 +461,11 @@ class Employee(models.Model):
         ('inactive', 'Inactive'),
         ('on_leave', 'On Leave'),
     ]
+    ORGANIZATION_CHOICES = [
+        ('', 'Select Organization'),  # Optional blank choice
+        ('IMC', 'IMC'),
+        ('SYSMAC', 'SYSMAC'),
+    ]
     name = models.CharField(max_length=100)
     photo = models.ImageField(upload_to='employees/')
     address = models.CharField(max_length=255, blank=True, null=True) 
@@ -471,6 +476,7 @@ class Employee(models.Model):
     education = models.CharField(max_length=100)
     experience = models.CharField(max_length=100, blank=True, null=True)
     job_title = models.CharField(max_length=100)
+    organization = models.CharField(max_length=10, choices=ORGANIZATION_CHOICES, blank=True, null=True)  # Optional field
     joining_date = models.DateField()
     dob = models.DateField()
     experience_start_date = models.DateField(blank=True, null=True)

@@ -58,6 +58,14 @@
             <label class="form-label">Job Titile</label>
             <input type="text" name="job_title" class="form-control" value="{{ employee.job_title }}" required>
         </div>
+        <div class="mb-3">
+            <label class="form-label">Organization</label>
+            <select name="organization" class="form-control">
+                <option value="" {% if not employee.organization %}selected{% endif %}>Select Organization</option>
+                <option value="IMC" {% if employee.organization == "IMC" %}selected{% endif %}>IMC</option>
+                <option value="SYSMAC" {% if employee.organization == "SYSMAC" %}selected{% endif %}>SYSMAC</option>
+            </select>
+        </div>
 
         <div class="mb-3">
             <label class="form-label">Joining Date</label>

@@ -1999,6 +1999,7 @@ def add_employee(request):
         education = request.POST['education']
         experience = request.POST['experience']
         job_title = request.POST['job_title']
+        organization = request.POST.get("organization")  # Get organization
         joining_date = request.POST['joining_date']
         dob = request.POST['dob']
         bank_account_number = request.POST.get('bank_account_number', '')
@@ -2018,6 +2019,7 @@ def add_employee(request):
             education=education,
             experience=experience,
             job_title=job_title,
+            organization=organization,  # Save organization
             joining_date=joining_date,
             dob=dob,
             bank_account_number=bank_account_number,
@@ -2048,47 +2050,51 @@ def delete_employee(request, emp_id):
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import Employee, Attachment
 
-
-
-
-
+@login_required
 def edit_employee(request, emp_id):
     employee = get_object_or_404(Employee, id=emp_id)
-    
+
     if request.method == "POST":
         employee.name = request.POST['name']
+        
+        # Handle photo update
         if 'photo' in request.FILES:
             employee.photo = request.FILES['photo']
+
+        # Update employee details
         employee.address = request.POST.get('address', '')
         employee.phone_personal = request.POST['phone_personal']
-        employee.phone_residential = request.POST['phone_residential']
+        employee.phone_residential = request.POST.get('phone_residential', '')
         employee.place = request.POST['place']
         employee.district = request.POST['district']
         employee.education = request.POST['education']
-        employee.experience = request.POST['experience']
+        employee.experience = request.POST.get('experience', '')
         employee.job_title = request.POST['job_title']
+        employee.organization = request.POST.get('organization', '')  # Save organization
         employee.joining_date = request.POST['joining_date']
         employee.dob = request.POST['dob']
         employee.bank_account_number = request.POST.get('bank_account_number', '')
         employee.ifsc_code = request.POST.get('ifsc_code', '')
         employee.bank_name = request.POST.get('bank_name', '')
         employee.branch = request.POST.get('branch', '')
-        employee.status = request.POST.get("status")  # Update status field
+        employee.status = request.POST.get("status")
 
         employee.save()
 
+        # Handle multiple attachments
         for file in request.FILES.getlist('attachments'):
             Attachment.objects.create(employee=employee, file=file)
 
         return redirect('employee_management')
-    
+
     context = {
         'employee': employee,
         'joining_date': employee.joining_date.strftime('%Y-%m-%d'),
-        'dob': employee.dob.strftime('%Y-%m-%d')
+        'dob': employee.dob.strftime('%Y-%m-%d'),
     }
-    
+
     return render(request, 'edit_employee.html', context)
+
 
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
