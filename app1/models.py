@@ -446,6 +446,7 @@ class OfferLetterDetails(models.Model):
     department = models.CharField(max_length=255, blank=True, null=True)
     start_date = models.DateField(blank=True, null=True)
     salary = models.CharField(max_length=255, blank=True, null=True)
+    notice_period = models.PositiveIntegerField(default=0)  # Add this line
 
     def __str__(self):
         return f"Offer Letter Details for {self.cv.name}"

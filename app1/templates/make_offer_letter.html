@@ -168,6 +168,10 @@
                         <label for="salary">Salary</label>
                         <input type="text" class="form-control" id="salary" name="salary">
                     </div>
+                    <div class="form-group">
+                        <label for="noticePeriod">Notice Period (in days)</label>
+                        <input type="number" class="form-control" id="noticePeriod" name="noticePeriod" value="0">
+                    </div>
                     <button type="submit" class="btn btn-primary">Save</button>
                 </form>
             </div>
@@ -195,33 +199,35 @@
   
       // Handle view offer letter details
       $('.btn-view-offer-letter').click(function() {
-          var cvId = $(this).data('cv-id');
-          if (!cvId) {
-              alert("Error: Candidate ID is missing!");
-              return;
-          }
-  
-          // Fetch offer letter details using AJAX
-          $.ajax({
-              url: `/get_offer_letter_details/${cvId}/`,
-              type: 'GET',
-              success: function(response) {
-                  if (response.success) {
-                      $('#cvId').val(cvId); // Make sure the ID is set
-                      $('#position').val(response.position);
-                      $('#department').val(response.department);
-                      $('#startDate').val(response.start_date);
-                      $('#salary').val(response.salary);
-                      $('#offerLetterModal').modal('show');
-                  } else {
-                      alert('No offer letter details found.');
-                  }
-              },
-              error: function() {
-                  alert('Error fetching offer letter details.');
-              }
-          });
-      });
+    var cvId = $(this).data('cv-id');
+    if (!cvId) {
+        alert("Error: Candidate ID is missing!");
+        return;
+    }
+
+    $.ajax({
+        url: `/get_offer_letter_details/${cvId}/`,  // Fetch offer letter details
+        type: 'GET',
+        success: function(response) {
+            if (response.success) {
+                $('#cvId').val(cvId);
+                $('#position').val(response.position);
+                $('#department').val(response.department);
+                $('#startDate').val(response.start_date);
+                $('#salary').val(response.salary);
+                $('#noticePeriod').val(response.notice_period || 2);  // Ensure notice period is displayed
+
+                $('#offerLetterModal').modal('show');
+            } else {
+                alert('No offer letter details found.');
+            }
+        },
+        error: function() {
+            alert('Error fetching offer letter details.');
+        }
+    });
+});
+
   
       // Handle generating offer letter
       $('.offer-letter-link').click(function(event) {

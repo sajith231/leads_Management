@@ -1915,37 +1915,58 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from .models import OfferLetterDetails, CV
 
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+from .models import CV, OfferLetterDetails
+import json
+
 def save_offer_letter_details(request, cv_id):
     if request.method == 'POST':
         try:
             cv = get_object_or_404(CV, id=cv_id)
             offer_details, created = OfferLetterDetails.objects.get_or_create(cv=cv)
-            
-            offer_details.position = request.POST.get('position', '')
-            offer_details.department = request.POST.get('department', '')
+
+            # Retrieve form data safely
+            offer_details.position = request.POST.get('position', '').strip()
+            offer_details.department = request.POST.get('department', '').strip()
             offer_details.start_date = request.POST.get('startDate', None)
-            offer_details.salary = request.POST.get('salary', '')
+            offer_details.salary = request.POST.get('salary', '').strip()
+            offer_details.notice_period = request.POST.get('noticePeriod', 2)  # Default to 2 days
+
+            # Save the offer letter details
             offer_details.save()
-            
+
             return JsonResponse({'success': True})
+        
         except CV.DoesNotExist:
             return JsonResponse({'success': False, 'error': 'CV not found'})
+        
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    
     return JsonResponse({'success': False, 'error': 'Invalid request'})
+
 
 
 
 def get_offer_letter_details(request, cv_id):
     try:
-        offer_details = OfferLetterDetails.objects.get(cv_id=cv_id)
+        offer_details = get_object_or_404(OfferLetterDetails, cv_id=cv_id)
+
         return JsonResponse({
             'success': True,
             'position': offer_details.position,
             'department': offer_details.department,
             'start_date': offer_details.start_date.strftime('%Y-%m-%d') if offer_details.start_date else '',
-            'salary': offer_details.salary
+            'salary': offer_details.salary,
+            'notice_period': offer_details.notice_period  # Now includes notice period
         })
+
     except OfferLetterDetails.DoesNotExist:
         return JsonResponse({'success': False, 'error': 'Offer letter details not found'})
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
 
 
 from django.shortcuts import render, get_object_or_404
