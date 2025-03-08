@@ -59,6 +59,7 @@ class User(models.Model):
         ('admin_level', 'Admin Level User'),#superadmin
         ('3level', '3 level'),#    USER
         ('4level', '4 level'), #  SUPER USER
+        ('5level', '5 level'),  # BRANCH USER
 
        
 
