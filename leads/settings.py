@@ -114,16 +114,7 @@ DATABASES = {
 #     }
 # }
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': 'myr',
-#         'USER': 'postgres',
-#         'PASSWORD': 'sajith@2003',
-#         'HOST': 'localhost',
-#         'PORT': '5432',
-#     }
-# }
+
 
 # DATABASES = {
 #     'default': {
@@ -179,4 +170,3 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 
-# hai
