@@ -49,7 +49,7 @@ def login(request):
                     defaults={
                         'is_staff': custom_user.user_level == 'admin_level',
                         'is_superuser': custom_user.user_level == 'admin_level',
-                        'password': 'dummy_password'  # Will be updated below
+                        'password': 'dummy_password'  
                     }
                 )
 
@@ -60,17 +60,19 @@ def login(request):
                 auth_login(request, django_user)
                 request.session['custom_user_id'] = custom_user.id
 
-                # Redirect based on user level
-                if custom_user.user_level == 'admin_level':
+                # Redirect admin users to all_leads page
+                if custom_user.user_level == 'normal':
                     return redirect("all_leads")
-                else:
-                    return redirect("user_dashboard")
+
+                # Redirect other users to the user dashboard
+                return redirect("user_dashboard")
 
             except User.DoesNotExist:
                 messages.error(request, "Invalid username or password")
                 return redirect("login")
 
     return render(request, "login.html")
+
 
 
 def logout(request):
@@ -315,9 +317,6 @@ def add_lead(request):
         try:
             current_user = User.objects.filter(userid=request.user.username, user_level='admin_level').first()
             if not current_user:
-
-
-                
                 current_user = User.objects.create(
                     name=request.user.username,
                     userid=request.user.username,
@@ -328,7 +327,7 @@ def add_lead(request):
                 messages.info(request, "Created an admin user for lead management.")
         except Exception as e:
             messages.error(request, f"Error creating admin user: {str(e)}")
-            return redirect('all_leads')
+            return redirect('all_leads')  # Redirect super admin to a different page
     else:
         try:
             current_user = User.objects.get(id=request.session['custom_user_id'])
@@ -394,10 +393,12 @@ def add_lead(request):
 
                 messages.success(request, 'Lead added successfully!')
 
-                # Redirect based on user level
-                if current_user.user_level == 'admin_level':
+                # Redirect based on user type
+                if request.user.is_superuser:  # Redirect super admin
                     return redirect('all_leads')
-                else:
+                elif current_user.user_level == 'normal':  # Redirect admin (normal user)
+                    return redirect('all_leads')
+                else:  # Redirect all other users
                     return redirect('user_dashboard')
 
             except Exception as e:
@@ -417,6 +418,7 @@ def add_lead(request):
         'requirements': requirements,
         'hardwares': hardwares,
     })
+
 
 
 
@@ -2455,7 +2457,8 @@ from .models import CV
 
 @login_required
 def interview_management(request):
-    cv_list = CV.objects.filter(interview_status=True).order_by('-interview_date')
+    cv_list = CV.objects.filter(interview_status=True).order_by('-interview_date', '-created_date')  
+    # Ordering by interview_date first, then by created_date (latest first)
 
     paginator = Paginator(cv_list, 10)  # Show 10 CVs per page
     page_number = request.GET.get('page')
@@ -2616,3 +2619,5 @@ def get_salary_details(request, employee_id):
         return JsonResponse({"error": "No salary details found"}, status=404)
     
 
+def user_control(request):
+    return render(request, 'user_control.html')

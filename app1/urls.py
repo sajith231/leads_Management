@@ -191,6 +191,7 @@ urlpatterns = [
     path('salary-certificate/<int:employee_id>/', views.salary_certificate, name='salary_certificate'),
     path("add_salary_details/", add_salary_details, name="add_salary_details"),
     path("get_salary_details/<int:employee_id>/", get_salary_details, name="get_salary_details"),
+    path('user-control/', views.user_control, name='user_control'),
     
     
     
