@@ -215,7 +215,7 @@ function addField(docId) {
     container.appendChild(newField);
 }
 
-    function saveSettings(docId) {
+function saveSettings(docId) {
     const settingId = document.getElementById(`setting-select-${docId}`).value;
     const url = document.querySelector(`#setting-details-${docId} .url-input`).value;
     const attachment = document.querySelector(`#setting-details-${docId} .file-input`).files[0];
@@ -263,7 +263,8 @@ function addField(docId) {
     .then(data => {
         if (data.status === 'success') {
             alert('Settings saved successfully!');
-            document.getElementById(`settings-fields-${docId}`).style.display = 'none';
+            // Refresh the page after showing the success message
+            window.location.reload();
         } else {
             alert('Error saving settings: ' + data.message);
         }
