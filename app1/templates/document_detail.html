@@ -6,54 +6,55 @@
     <h2>{{ document.name }}</h2>
     <p>{{ document.description }}</p>
 
-    <h3>Documentation Details:</h3>
+   <div style="display: flex;"> <h3>Documentation Details:</h3>
+   <span style="width: 55%;margin-left: 20%;"><input type="text" id="searchField" class="form-control mb-3" placeholder="Search by Name..." onkeyup="filterFields()"></span></div>
     {% for setting in document.settings.all %}
-    <div class="card mb-3">
-        <div class="card-header">
-            <h4>{{ setting.name }}</h4>
-        </div>
-        <div class="card-body">
-            {% if setting.attachment %}
-            <p>
-                <strong>Attachment:</strong>
-                <button class="btn btn-link" onclick="showAttachment('{% url 'view_setting_attachment' setting_id=setting.id %}', '{{ setting.name }}')">
-                    View
-                </button>
-                <a href="{{ setting.attachment.url }}" class="btn btn-link" download>Download</a>
-            </p>
-            {% endif %}
-            {% if setting.url %}
-            <p><strong>URL:</strong> <a href="{{ setting.url }}">{{ setting.url }}</a></p>
-            {% endif %}
-
-            {% if setting.fields.all %}
-            <h5>Headings:</h5>
-            <div class="field-box-container">
-                {% for field in setting.fields.all %}
-                <div class="field-box">
-                    <p><strong>Name:</strong> {{ field.field_name }}</p>
-                    <p><strong>Value:</strong> {{ field.field_value }}</p>
-                    <p><strong>Purpose:</strong> {{ field.purpose }}</p>
-                    <p>
-                        <strong>Attachment:</strong>
-                        {% if field.attachment %}
-                        <button class="btn btn-link" onclick="showAttachment('{% url 'view_field_attachment' field_id=field.id %}', '{{ field.field_name }}')">
-                            View
-                        </button>
-                        <a href="{{ field.attachment.url }}" class="btn btn-link" download>Download</a>
-                        {% else %}
-                        <span class="text-muted">No attachment</span>
-                        {% endif %}
-                    </p>
-                </div>
-                {% endfor %}
-            </div>
-            {% endif %}
-        </div>
+<div class="card mb-3">
+    <div class="card-header">
+        <h4>{{ setting.name }}</h4>
     </div>
-    {% empty %}
-    <p>No settings configured</p>
-    {% endfor %}
+    <div class="card-body">
+        {% if setting.attachment %}
+        <p>
+            <strong>Attachment:</strong>
+            <button class="btn btn-link" onclick="showAttachment('{% url 'view_setting_attachment' setting_id=setting.id %}', '{{ setting.name }}')">
+                View
+            </button>
+            <a href="{{ setting.attachment.url }}" class="btn btn-link" download>Download</a>
+        </p>
+        {% endif %}
+        {% if setting.url %}
+        <p><strong>URL:</strong> <a href="{{ setting.url }}">{{ setting.url }}</a></p>
+        {% endif %}
+
+        {% if setting.fields.all %}
+        <h5>Headings:</h5>
+        <div class="field-box-container">
+            {% for field in setting.fields.all %}
+            <div class="field-box field-item">
+                <p><strong>Name:</strong> <span class="field-name">{{ field.field_name }}</span></p>
+                <p><strong>Value:</strong> {{ field.field_value }}</p>
+                <p><strong>Purpose:</strong> {{ field.purpose }}</p>
+                <p>
+                    <strong>Attachment:</strong>
+                    {% if field.attachment %}
+                    <button class="btn btn-link" onclick="showAttachment('{% url 'view_field_attachment' field_id=field.id %}', '{{ field.field_name }}')">
+                        View
+                    </button>
+                    <a href="{{ field.attachment.url }}" class="btn btn-link" download>Download</a>
+                    {% else %}
+                    <span class="text-muted">No attachment</span>
+                    {% endif %}
+                </p>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% empty %}
+<p>No settings configured</p>
+{% endfor %}
 </div>
 
 <!-- Attachment Viewer Modal -->
@@ -115,4 +116,21 @@ function showAttachment(url, title) {
     modal.show();
 }
 </script>
+
+
+<script>
+    function filterFields() {
+        let input = document.getElementById("searchField").value.toLowerCase();
+        let fieldBoxes = document.querySelectorAll(".field-item");
+    
+        fieldBoxes.forEach(box => {
+            let fieldName = box.querySelector(".field-name").textContent.toLowerCase();
+            if (fieldName.includes(input)) {
+                box.style.display = "block";
+            } else {
+                box.style.display = "none";
+            }
+        });
+    }
+    </script>
 {% endblock %}
