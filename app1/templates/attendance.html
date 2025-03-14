@@ -1,0 +1,264 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid py-4" style="margin-top: 2%;">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header bg-light">
+                    <h4 class="mb-0">Add Attendance</h4>
+                </div>
+                <div class="card-body">
+                    <form id="attendanceForm">
+                        <div class="row mb-4">
+                            <div class="col-md-4 mb-3">
+                                <label for="date" class="form-label">Date</label>
+                                <input type="date" class="form-control" id="date" name="date" value="{% now 'Y-m-d' %}" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="department" class="form-label">Department</label>
+                                <select class="form-select" id="department" name="department" required>
+                                    <option value="" selected disabled>Select Department</option>
+                                    <option value="HR">HR</option>
+                                    <option value="IT">IT</option>
+                                    <option value="Marketing">Marketing</option>
+                                    <option value="Finance">Finance</option>
+                                    <option value="Operations">Operations</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="bulkAction" class="form-label">Bulk Action</label>
+                                <select class="form-select" id="bulkAction">
+                                    <option value="" selected>Select Status</option>
+                                    <option value="present">Mark All Present</option>
+                                    <option value="absent">Mark All Absent</option>
+                                    <option value="halfday">Mark All Half Day</option>
+                                    <option value="leave">Mark All On Leave</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-hover table-bordered">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Employee ID</th>
+                                        <th>Name</th>
+                                        <th>Department</th>
+                                        <th>Status</th>
+                                        <th>Check-In Time</th>
+                                        <th>Check-Out Time</th>
+                                        <th>Notes</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Sample data - would be populated dynamically in a real app -->
+                                    <tr>
+                                        <td>EMP001</td>
+                                        <td>John Doe</td>
+                                        <td>IT</td>
+                                        <td>
+                                            <select class="form-select form-select-sm status-select">
+                                                <option value="present">Present</option>
+                                                <option value="absent">Absent</option>
+                                                <option value="halfday">Half Day</option>
+                                                <option value="leave">Leave</option>
+                                            </select>
+                                        </td>
+                                        <td><input type="time" class="form-control form-control-sm" value="09:00"></td>
+                                        <td><input type="time" class="form-control form-control-sm" value="18:00"></td>
+                                        <td><input type="text" class="form-control form-control-sm" placeholder="Notes"></td>
+                                    </tr>
+                                    <tr>
+                                        <td>EMP002</td>
+                                        <td>Jane Smith</td>
+                                        <td>HR</td>
+                                        <td>
+                                            <select class="form-select form-select-sm status-select">
+                                                <option value="present">Present</option>
+                                                <option value="absent">Absent</option>
+                                                <option value="halfday">Half Day</option>
+                                                <option value="leave">Leave</option>
+                                            </select>
+                                        </td>
+                                        <td><input type="time" class="form-control form-control-sm" value="09:15"></td>
+                                        <td><input type="time" class="form-control form-control-sm" value="17:45"></td>
+                                        <td><input type="text" class="form-control form-control-sm" placeholder="Notes"></td>
+                                    </tr>
+                                    <tr>
+                                        <td>EMP003</td>
+                                        <td>Robert Johnson</td>
+                                        <td>Marketing</td>
+                                        <td>
+                                            <select class="form-select form-select-sm status-select">
+                                                <option value="present">Present</option>
+                                                <option value="absent">Absent</option>
+                                                <option value="halfday" selected>Half Day</option>
+                                                <option value="leave">Leave</option>
+                                            </select>
+                                        </td>
+                                        <td><input type="time" class="form-control form-control-sm" value="09:30"></td>
+                                        <td><input type="time" class="form-control form-control-sm" value="13:30"></td>
+                                        <td><input type="text" class="form-control form-control-sm" value="Doctor's appointment"></td>
+                                    </tr>
+                                    <tr>
+                                        <td>EMP004</td>
+                                        <td>Emily Clark</td>
+                                        <td>Finance</td>
+                                        <td>
+                                            <select class="form-select form-select-sm status-select">
+                                                <option value="present">Present</option>
+                                                <option value="absent">Absent</option>
+                                                <option value="halfday">Half Day</option>
+                                                <option value="leave" selected>Leave</option>
+                                            </select>
+                                        </td>
+                                        <td><input type="time" class="form-control form-control-sm" disabled></td>
+                                        <td><input type="time" class="form-control form-control-sm" disabled></td>
+                                        <td><input type="text" class="form-control form-control-sm" value="Annual leave"></td>
+                                    </tr>
+                                    <tr>
+                                        <td>EMP005</td>
+                                        <td>Michael Wilson</td>
+                                        <td>Operations</td>
+                                        <td>
+                                            <select class="form-select form-select-sm status-select">
+                                                <option value="present">Present</option>
+                                                <option value="absent" selected>Absent</option>
+                                                <option value="halfday">Half Day</option>
+                                                <option value="leave">Leave</option>
+                                            </select>
+                                        </td>
+                                        <td><input type="time" class="form-control form-control-sm" disabled></td>
+                                        <td><input type="time" class="form-control form-control-sm" disabled></td>
+                                        <td><input type="text" class="form-control form-control-sm" value="No notification"></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <div class="float-end">
+                                    <button type="button" class="btn btn-secondary me-2">Cancel</button>
+                                    <button type="button" class="btn btn-primary">Save Attendance</button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Today's Summary</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-3">
+                            <div class="p-3 bg-success bg-opacity-25 rounded mb-2">
+                                <h3>18</h3>
+                            </div>
+                            <p>Present</p>
+                        </div>
+                        <div class="col-3">
+                            <div class="p-3 bg-danger bg-opacity-25 rounded mb-2">
+                                <h3>3</h3>
+                            </div>
+                            <p>Absent</p>
+                        </div>
+                        <div class="col-3">
+                            <div class="p-3 bg-warning bg-opacity-25 rounded mb-2">
+                                <h3>2</h3>
+                            </div>
+                            <p>Half Day</p>
+                        </div>
+                        <div class="col-3">
+                            <div class="p-3 bg-info bg-opacity-25 rounded mb-2">
+                                <h3>5</h3>
+                            </div>
+                            <p>Leave</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-outline-primary" type="button">
+                            <i class="fas fa-file-export me-2"></i>Export Attendance Report
+                        </button>
+                        <button class="btn btn-outline-secondary" type="button">
+                            <i class="fas fa-clock me-2"></i>View Late Arrivals
+                        </button>
+                        <button class="btn btn-outline-dark" type="button">
+                            <i class="fas fa-calendar-alt me-2"></i>Monthly Attendance Overview
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Handle bulk action dropdown
+        document.getElementById('bulkAction').addEventListener('change', function() {
+            const value = this.value;
+            if (value) {
+                const statusSelects = document.querySelectorAll('.status-select');
+                statusSelects.forEach(select => {
+                    select.value = value;
+                    
+                    // Handle time inputs based on status
+                    const row = select.closest('tr');
+                    const timeInputs = row.querySelectorAll('input[type="time"]');
+                    
+                    if (value === 'absent' || value === 'leave') {
+                        timeInputs.forEach(input => {
+                            input.disabled = true;
+                            input.value = '';
+                        });
+                    } else {
+                        timeInputs.forEach(input => {
+                            input.disabled = false;
+                        });
+                    }
+                });
+            }
+        });
+        
+        // Handle individual status changes
+        document.querySelectorAll('.status-select').forEach(select => {
+            select.addEventListener('change', function() {
+                const row = this.closest('tr');
+                const timeInputs = row.querySelectorAll('input[type="time"]');
+                
+                if (this.value === 'absent' || this.value === 'leave') {
+                    timeInputs.forEach(input => {
+                        input.disabled = true;
+                        input.value = '';
+                    });
+                } else {
+                    timeInputs.forEach(input => {
+                        input.disabled = false;
+                    });
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}
+{% endblock %}

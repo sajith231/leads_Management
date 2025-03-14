@@ -58,7 +58,10 @@ def login(request):
                     django_user.save()
 
                 auth_login(request, django_user)
+
+                # Move these lines here after custom_user is assigned
                 request.session['custom_user_id'] = custom_user.id
+                request.session['user_level'] = custom_user.user_level  
 
                 # Redirect admin users to all_leads page
                 if custom_user.user_level == 'normal':
@@ -72,6 +75,7 @@ def login(request):
                 return redirect("login")
 
     return render(request, "login.html")
+
 
 
 
@@ -2621,3 +2625,8 @@ def get_salary_details(request, employee_id):
 
 def user_control(request):
     return render(request, 'user_control.html')
+
+
+
+def attendance(request):
+    return render(request, 'attendance.html')

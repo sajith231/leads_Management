@@ -541,9 +541,9 @@
                     <i class="fas fa-users"></i> Employee Management
                 </a>
                 
-                <a href="">
+                <!-- <a href="{% url 'attendance' %}">
                     <i class="fas fa-user-check"></i> Attendance
-                </a>
+                </a> -->
                 
                 <a href="{% url 'make_salary_certificate' %}">
                     <i class="fas fa-file-invoice-dollar"></i> Salary Certificate
@@ -667,9 +667,10 @@
                 </h5>
             </div>
             <div id="user-menu" class="submenu">
-                    <a href="{% url 'all_leads' %}"><i class="fas fa-user"></i> Leads</a>
+                <a href="{% if request.session.user_level == '3level' or request.session.user_level == '5level' %}{% url 'user_dashboard' %}{% else %}{% url 'all_leads' %}{% endif %}">
+                    <i class="fas fa-user"></i> Leads
+                </a>
             </div>
-            
             <div onclick="toggleHRMenu()">
                 <div>
                     <h5 style="margin-left: 5%; color: white;" class="mainmenu">
