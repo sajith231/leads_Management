@@ -132,7 +132,52 @@
                 </div>
             </div>
         </div>
-    </div></div>
+    </div>
+
+    <!-- Add this modal after the statistics cards section -->
+    <div class="modal fade" id="attendanceDetailsModal" tabindex="-1" aria-labelledby="attendanceDetailsModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="attendanceDetailsModalLabel">Attendance Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="attendanceForm">
+                        <div class="mb-3">
+                            <label class="form-label">Employee Name</label>
+                            <input type="text" class="form-control" id="employeeName" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Date</label>
+                            <div class="form-control" id="attendanceDate" readonly></div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Status</label>
+                            <select class="form-select" id="attendanceStatus">
+                                <option value="full">Full Day</option>
+                                <option value="half">Half Day</option>
+                                <option value="leave">Leave</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Punch In Time</label>
+                            <div class="form-control" id="punchInDisplay">Not punched in</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Punch Out Time</label>
+                            <div class="form-control" id="punchOutDisplay">Not punched out</div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="saveAttendance()">Save changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div></div>
 
     <!-- Attendance Table -->
     <div style="overflow: scroll;">
@@ -361,10 +406,18 @@
                     icon.setAttribute('data-bs-placement', 'top');
                 }
                 
-                // Remove the click handler for manual attendance changes
+                // Add click handler for attendance markers
                 if (!isFuture) {
                     icon.setAttribute('onmouseover', "this.style.transform='scale(1.2)'");
                     icon.setAttribute('onmouseout', "this.style.transform='scale(1)'");
+                    
+                    // Add click event listener with correct date handling
+                    icon.onclick = function() {
+                        const employeeName = row.children[1].textContent;
+                        // Create date string in YYYY-MM-DD format without timezone issues
+                        const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                        showAttendanceModal(employeeId, employeeName, dateStr, this);
+                    };
                 }
                 
                 td.appendChild(icon);
@@ -414,6 +467,18 @@
             if (state === 'full') fullDays++;
             if (state === 'half') halfDays++;
             if (state === 'leave') leaves++;
+
+            // Add click handler for attendance markers
+            if (!marker.closest('.future-day')) {
+                marker.style.cursor = 'pointer';
+                marker.onclick = function() {
+                    const row = this.closest('tr');
+                    const employeeId = row.getAttribute('data-employee-id');
+                    const employeeName = row.children[1].textContent;
+                    const date = new Date(year, month - 1, parseInt(this.closest('td').previousElementSibling.textContent));
+                    showAttendanceModal(employeeId, employeeName, date.toISOString().split('T')[0], this);
+                };
+            }
         });
 
         const totalDays = markers.length;
@@ -527,6 +592,168 @@
             alert('Failed to punch in');
         });
     });
+
+    // Add these new functions after updateAttendanceTable function
+    function showAttendanceModal(employeeId, employeeName, date, icon) {
+        const modal = new bootstrap.Modal(document.getElementById('attendanceDetailsModal'));
+        const form = document.getElementById('attendanceForm');
+        const nameInput = document.getElementById('employeeName');
+        const dateDisplay = document.getElementById('attendanceDate');
+        const statusSelect = document.getElementById('attendanceStatus');
+        const punchInDisplay = document.getElementById('punchInDisplay');
+        const punchOutDisplay = document.getElementById('punchOutDisplay');
+
+        // Set employee name
+        nameInput.value = employeeName;
+        
+        // Parse the date string directly (format: YYYY-MM-DD)
+        const [year, month, day] = date.split('-').map(Number);
+        // Create date object for midnight on the target date
+        const displayDate = new Date(year, month - 1, day);
+        dateDisplay.textContent = displayDate.toLocaleDateString('en-US', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+
+        // Get current status from icon
+        const currentState = icon.getAttribute('data-state');
+        statusSelect.value = currentState || 'initial';
+
+        // Get attendance data from Django template context
+        const attendanceData = JSON.parse('{{ attendance_data|safe }}');
+        const dayData = attendanceData[employeeId] && attendanceData[employeeId][parseInt(day)];
+
+        if (dayData) {
+            // Display punch in time if exists
+            if (dayData.punch_in && dayData.punch_in !== 'None') {
+                const punchInDate = new Date(dayData.punch_in);
+                punchInDisplay.textContent = punchInDate.toLocaleTimeString('en-US', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true
+                });
+            } else {
+                punchInDisplay.textContent = 'Not punched in';
+            }
+
+            // Display punch out time if exists
+            if (dayData.punch_out && dayData.punch_out !== 'None') {
+                const punchOutDate = new Date(dayData.punch_out);
+                punchOutDisplay.textContent = punchOutDate.toLocaleTimeString('en-US', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true
+                });
+            } else {
+                punchOutDisplay.textContent = 'Not punched out';
+            }
+        } else {
+            punchInDisplay.textContent = 'Not punched in';
+            punchOutDisplay.textContent = 'Not punched out';
+        }
+
+        // Store current icon element for later use
+        form.setAttribute('data-icon-element', icon.outerHTML);
+        form.setAttribute('data-employee-id', employeeId);
+        form.setAttribute('data-date', date);
+
+        modal.show();
+    }
+
+    function saveAttendance() {
+        const form = document.getElementById('attendanceForm');
+        const employeeId = form.getAttribute('data-employee-id');
+        const date = form.getAttribute('data-date');
+        const status = document.getElementById('attendanceStatus').value;
+
+        // Format the date string for the request
+        const formattedDate = new Date(date);
+        const day = formattedDate.getDate();
+
+        // Show loading toast
+        const loadingToast = showToast('Saving attendance...', 'info');
+
+        // Get the existing attendance data
+        const attendanceData = JSON.parse('{{ attendance_data|safe }}');
+        const dayData = attendanceData[employeeId] && attendanceData[employeeId][day];
+
+        fetch('/save_attendance/' + employeeId + '/' + day + '/' + status + '/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify({
+                punch_in: dayData ? dayData.punch_in : null,
+                punch_out: dayData ? dayData.punch_out : null
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                // Update the attendance cell with existing punch times
+                updateAttendanceCell(employeeId, day, status, 
+                    dayData ? dayData.punch_in : '', 
+                    dayData ? dayData.punch_out : '');
+                showToast('Attendance saved successfully!', 'success');
+                
+                // Close the modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('attendanceDetailsModal'));
+                modal.hide();
+            } else {
+                showToast('Error saving attendance: ' + data.message, 'error');
+            }
+        })
+        .catch(error => {
+            showToast('Error saving attendance: ' + error, 'error');
+            console.error('Error:', error);
+        })
+        .finally(() => {
+            if (loadingToast) {
+                loadingToast.close();
+            }
+        });
+    }
+
+    // Add toast notification styles
+    const toastStyles = document.createElement('style');
+    toastStyles.textContent = `
+        .toast.success { background-color: #d4edda; }
+        .toast.error { background-color: #f8d7da; }
+        .toast.info { background-color: #cce5ff; }
+    `;
+    document.head.appendChild(toastStyles);
+
+    // Helper function to show toast notifications
+    function showToast(message, type = 'info') {
+        const toast = document.createElement('div');
+        toast.className = `toast position-fixed top-0 end-0 m-3 ${type}`;
+        toast.style.zIndex = '1050';
+        toast.innerHTML = `
+            <div class="toast-header">
+                <strong class="me-auto">${type.charAt(0).toUpperCase() + type.slice(1)}</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body">
+                ${message}
+            </div>
+        `;
+        document.body.appendChild(toast);
+        
+        const bsToast = new bootstrap.Toast(toast, {
+            autohide: true,
+            delay: 3000
+        });
+        bsToast.show();
+        
+        toast.addEventListener('hidden.bs.toast', () => {
+            toast.remove();
+        });
+        
+        return bsToast;
+    }
 </script>
 {% endif %}
 {% endblock %}

@@ -2718,44 +2718,61 @@ def attendance(request):
 
 @csrf_exempt
 def save_attendance(request, employee_id, day, status):
-    if request.method == 'POST':
-        try:
-            employee = Employee.objects.get(id=employee_id)
-            today = timezone.now()
-            date = today.replace(day=int(day))
-            
-            # Get or create attendance record for this date
-            attendance, created = Attendance.objects.get_or_create(
-                employee=employee,
-                date=date,
-                defaults={
-                    'day': int(day),  # Set the day field
-                    'status': status,
-                    'punch_in': timezone.now() if status in ['half', 'full'] else None,
-                    'punch_out': timezone.now() if status == 'full' else None
-                }
-            )
-            
-            if not created:
-                # Update existing record
-                attendance.status = status
-                attendance.day = int(day)  # Ensure day field is set
-                if status in ['half', 'full']:
-                    if not attendance.punch_in:
-                        attendance.punch_in = timezone.now()
-                if status == 'full':
-                    if not attendance.punch_out:
-                        attendance.punch_out = timezone.now()
-                attendance.save()
-            
-            return JsonResponse({'success': True})
-            
-        except Employee.DoesNotExist:
-            return JsonResponse({'success': False, 'error': 'Employee not found'})
-        except Exception as e:
-            return JsonResponse({'success': False, 'error': str(e)})
-            
-    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+    try:
+        # Parse request body for punch in/out times
+        data = json.loads(request.body)
+        punch_in = data.get('punch_in')
+        punch_out = data.get('punch_out')
+
+        # Get the current month and year
+        today = datetime.now()
+        year = today.year
+        month = today.month
+
+        # Get or create attendance record
+        employee = Employee.objects.get(id=employee_id)
+        attendance_date = datetime(year, month, int(day))
+        
+        attendance, created = Attendance.objects.get_or_create(
+            employee=employee,
+            date=attendance_date,
+            defaults={
+                'status': status,
+                'punch_in': punch_in,
+                'punch_out': punch_out
+            }
+        )
+
+        if not created:
+            attendance.status = status
+            attendance.punch_in = punch_in
+            attendance.punch_out = punch_out
+            attendance.save()
+
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Attendance saved successfully',
+            'data': {
+                'status': attendance.status,
+                'punch_in': attendance.punch_in,
+                'punch_out': attendance.punch_out
+            }
+        })
+    except Employee.DoesNotExist:
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Employee not found'
+        }, status=404)
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Invalid JSON data'
+        }, status=400)
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        }, status=500)
 
 @login_required
 def attendance_user(request):
