@@ -1,264 +1,532 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="container-fluid py-4" style="margin-top: 2%;">
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card shadow">
-                <div class="card-header bg-light">
-                    <h4 class="mb-0">Add Attendance</h4>
-                </div>
-                <div class="card-body">
-                    <form id="attendanceForm">
-                        <div class="row mb-4">
-                            <div class="col-md-4 mb-3">
-                                <label for="date" class="form-label">Date</label>
-                                <input type="date" class="form-control" id="date" name="date" value="{% now 'Y-m-d' %}" required>
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label for="department" class="form-label">Department</label>
-                                <select class="form-select" id="department" name="department" required>
-                                    <option value="" selected disabled>Select Department</option>
-                                    <option value="HR">HR</option>
-                                    <option value="IT">IT</option>
-                                    <option value="Marketing">Marketing</option>
-                                    <option value="Finance">Finance</option>
-                                    <option value="Operations">Operations</option>
-                                </select>
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label for="bulkAction" class="form-label">Bulk Action</label>
-                                <select class="form-select" id="bulkAction">
-                                    <option value="" selected>Select Status</option>
-                                    <option value="present">Mark All Present</option>
-                                    <option value="absent">Mark All Absent</option>
-                                    <option value="halfday">Mark All Half Day</option>
-                                    <option value="leave">Mark All On Leave</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="table-responsive">
-                            <table class="table table-hover table-bordered">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>Employee ID</th>
-                                        <th>Name</th>
-                                        <th>Department</th>
-                                        <th>Status</th>
-                                        <th>Check-In Time</th>
-                                        <th>Check-Out Time</th>
-                                        <th>Notes</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <!-- Sample data - would be populated dynamically in a real app -->
-                                    <tr>
-                                        <td>EMP001</td>
-                                        <td>John Doe</td>
-                                        <td>IT</td>
-                                        <td>
-                                            <select class="form-select form-select-sm status-select">
-                                                <option value="present">Present</option>
-                                                <option value="absent">Absent</option>
-                                                <option value="halfday">Half Day</option>
-                                                <option value="leave">Leave</option>
-                                            </select>
-                                        </td>
-                                        <td><input type="time" class="form-control form-control-sm" value="09:00"></td>
-                                        <td><input type="time" class="form-control form-control-sm" value="18:00"></td>
-                                        <td><input type="text" class="form-control form-control-sm" placeholder="Notes"></td>
-                                    </tr>
-                                    <tr>
-                                        <td>EMP002</td>
-                                        <td>Jane Smith</td>
-                                        <td>HR</td>
-                                        <td>
-                                            <select class="form-select form-select-sm status-select">
-                                                <option value="present">Present</option>
-                                                <option value="absent">Absent</option>
-                                                <option value="halfday">Half Day</option>
-                                                <option value="leave">Leave</option>
-                                            </select>
-                                        </td>
-                                        <td><input type="time" class="form-control form-control-sm" value="09:15"></td>
-                                        <td><input type="time" class="form-control form-control-sm" value="17:45"></td>
-                                        <td><input type="text" class="form-control form-control-sm" placeholder="Notes"></td>
-                                    </tr>
-                                    <tr>
-                                        <td>EMP003</td>
-                                        <td>Robert Johnson</td>
-                                        <td>Marketing</td>
-                                        <td>
-                                            <select class="form-select form-select-sm status-select">
-                                                <option value="present">Present</option>
-                                                <option value="absent">Absent</option>
-                                                <option value="halfday" selected>Half Day</option>
-                                                <option value="leave">Leave</option>
-                                            </select>
-                                        </td>
-                                        <td><input type="time" class="form-control form-control-sm" value="09:30"></td>
-                                        <td><input type="time" class="form-control form-control-sm" value="13:30"></td>
-                                        <td><input type="text" class="form-control form-control-sm" value="Doctor's appointment"></td>
-                                    </tr>
-                                    <tr>
-                                        <td>EMP004</td>
-                                        <td>Emily Clark</td>
-                                        <td>Finance</td>
-                                        <td>
-                                            <select class="form-select form-select-sm status-select">
-                                                <option value="present">Present</option>
-                                                <option value="absent">Absent</option>
-                                                <option value="halfday">Half Day</option>
-                                                <option value="leave" selected>Leave</option>
-                                            </select>
-                                        </td>
-                                        <td><input type="time" class="form-control form-control-sm" disabled></td>
-                                        <td><input type="time" class="form-control form-control-sm" disabled></td>
-                                        <td><input type="text" class="form-control form-control-sm" value="Annual leave"></td>
-                                    </tr>
-                                    <tr>
-                                        <td>EMP005</td>
-                                        <td>Michael Wilson</td>
-                                        <td>Operations</td>
-                                        <td>
-                                            <select class="form-select form-select-sm status-select">
-                                                <option value="present">Present</option>
-                                                <option value="absent" selected>Absent</option>
-                                                <option value="halfday">Half Day</option>
-                                                <option value="leave">Leave</option>
-                                            </select>
-                                        </td>
-                                        <td><input type="time" class="form-control form-control-sm" disabled></td>
-                                        <td><input type="time" class="form-control form-control-sm" disabled></td>
-                                        <td><input type="text" class="form-control form-control-sm" value="No notification"></td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        
-                        <div class="row mt-4">
-                            <div class="col-12">
-                                <div class="float-end">
-                                    <button type="button" class="btn btn-secondary me-2">Cancel</button>
-                                    <button type="button" class="btn btn-primary">Save Attendance</button>
-                                </div>
-                            </div>
-                        </div>
-                    </form>
+{% csrf_token %}
+{% if request.user.role == 'User' or request.user.role == 'Branch User' %}
+    <script>
+        window.location.href = "{% url 'attendance_user' %}";
+    </script>
+{% else %}
+<div class="allbody" style="overflow: hidden;">
+<div class="container-fluid py-4">
+    <!-- Header Section with Filters -->
+    <div class="card shadow-sm mb-4" style="width: 95%;">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-12">
+                    <h2 class="card-title text-center mb-0">Attendance Management</h2>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="row">
-        <div class="col-md-6 mb-4">
-            <div class="card shadow">
-                <div class="card-header bg-light">
-                    <h5 class="mb-0">Today's Summary</h5>
+    <!-- Calendar Filter Section -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Select Month</label>
+                    <input type="month" class="form-control" id="monthFilter" 
+                           value="{{ current_month|default:'' }}" 
+                           onchange="updateAttendanceTable(this.value)">
                 </div>
+                <div class="col-md-4">
+                    <label class="form-label">Department</label>
+                    <select class="form-select" id="departmentFilter" onchange="filterEmployees()">
+                        <option value="">All Departments</option>
+                        <option value="IT">IT</option>
+                        <option value="HR">HR</option>
+                        <option value="Finance">Finance</option>
+                        <option value="Marketing">Marketing</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Job Title</label>
+                    <select class="form-select" id="jobTitleFilter" onchange="filterEmployees()">
+                        <option value="">All Positions</option>
+                        <option value="Manager">Manager</option>
+                        <option value="Developer">Developer</option>
+                        <option value="Designer">Designer</option>
+                        <option value="Analyst">Analyst</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card shadow-sm bg-primary text-white">
                 <div class="card-body">
-                    <div class="row text-center">
-                        <div class="col-3">
-                            <div class="p-3 bg-success bg-opacity-25 rounded mb-2">
-                                <h3>18</h3>
-                            </div>
-                            <p>Present</p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-subtitle mb-2">Overall Attendance</h6>
+                            <h3 class="card-title mb-0" id="overallAttendance">0%</h3>
                         </div>
-                        <div class="col-3">
-                            <div class="p-3 bg-danger bg-opacity-25 rounded mb-2">
-                                <h3>3</h3>
-                            </div>
-                            <p>Absent</p>
-                        </div>
-                        <div class="col-3">
-                            <div class="p-3 bg-warning bg-opacity-25 rounded mb-2">
-                                <h3>2</h3>
-                            </div>
-                            <p>Half Day</p>
-                        </div>
-                        <div class="col-3">
-                            <div class="p-3 bg-info bg-opacity-25 rounded mb-2">
-                                <h3>5</h3>
-                            </div>
-                            <p>Leave</p>
-                        </div>
+                        <i class="fas fa-chart-line fa-2x opacity-50"></i>
                     </div>
                 </div>
             </div>
         </div>
-        
-        <div class="col-md-6 mb-4">
-            <div class="card shadow">
-                <div class="card-header bg-light">
-                    <h5 class="mb-0">Quick Actions</h5>
-                </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm bg-success text-white">
                 <div class="card-body">
-                    <div class="d-grid gap-2">
-                        <button class="btn btn-outline-primary" type="button">
-                            <i class="fas fa-file-export me-2"></i>Export Attendance Report
-                        </button>
-                        <button class="btn btn-outline-secondary" type="button">
-                            <i class="fas fa-clock me-2"></i>View Late Arrivals
-                        </button>
-                        <button class="btn btn-outline-dark" type="button">
-                            <i class="fas fa-calendar-alt me-2"></i>Monthly Attendance Overview
-                        </button>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-subtitle mb-2">Full Days</h6>
+                            <h3 class="card-title mb-0" id="fullDaysCount">0</h3>
+                        </div>
+                        <i class="fas fa-calendar-check fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-subtitle mb-2">Half Days</h6>
+                            <h3 class="card-title mb-0" id="halfDaysCount">0</h3>
+                        </div>
+                        <i class="fas fa-calendar-minus fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm bg-danger text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-subtitle mb-2">Leaves</h6>
+                            <h3 class="card-title mb-0" id="leavesCount">0</h3>
+                        </div>
+                        <i class="fas fa-calendar-times fa-2x opacity-50"></i>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-{% block extra_js %}
+    <!-- Legend Section -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <div class="d-flex gap-4">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-star text-success me-2"></i>
+                    <span>Full Day</span>
+                </div>
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-star-half-alt text-warning me-2"></i>
+                    <span>Half Day</span>
+                </div>
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-star text-danger me-2"></i>
+                    <span>Leave</span>
+                </div>
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-star text-secondary me-2"></i>
+                    <span>Not Marked</span>
+                </div>
+            </div>
+        </div>
+    </div></div>
+
+    <!-- Attendance Table -->
+    <div style="overflow: scroll;">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <table class="table table-hover table-bordered">
+                    <thead class="table-light">
+                        <tr>
+                            <th rowspan="3" class="align-middle">No</th>
+                            <th rowspan="3" class="align-middle">Name</th>
+                            <th rowspan="3" class="align-middle">User ID</th>
+                            <th rowspan="3" class="align-middle">Job Title</th>
+                            <th id="daysHeader" colspan="31" class="text-center">Days of Month</th>
+                            <th rowspan="3" class="align-middle">Attendance %</th>
+                        </tr>
+                        <tr id="dayNumbers">
+                            <!-- Day numbers will be populated by JavaScript -->
+                        </tr>
+                        <tr id="dayNames">
+                            <!-- Day names will be populated by JavaScript -->
+                        </tr>
+                    </thead>
+                    <tbody id="attendanceBody">
+                        {% for employee in employees %}
+                        <tr data-employee-id="{{ employee.id }}">
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ employee.name }}</td>
+                            <td>{{ employee.user.userid|default:'' }}</td>
+                            <td>{{ employee.job_title }}</td>
+                            <!-- Individual cells for each day will be populated by JavaScript -->
+                            <td class="attendance-percentage">0%</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div></div>
+
+<!-- Add Font Awesome for icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+
+<!-- Custom CSS -->
+<style>
+    .card {
+        border-radius: 10px;
+        border: none;
+        transition: all 0.3s ease;
+    }
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    }
+    .table {
+        width: 100%;
+        margin-bottom: 0;
+    }
+    .table th {
+        background-color: #f8f9fa;
+        font-weight: 600;
+        white-space: nowrap;
+        min-width: 40px;
+    }
+    .table td {
+        white-space: nowrap;
+        min-width: 40px;
+    }
+    .attendance-marker {
+        transition: all 0.3s ease;
+    }
+    .attendance-marker:hover {
+        opacity: 0.8;
+    }
+    .form-select, .form-control {
+        border-radius: 8px;
+    }
+    .btn {
+        border-radius: 8px;
+        padding: 0.5rem 1rem;
+    }
+    .current-day {
+        background-color: #e8f4ff !important;
+    }
+    .weekend {
+        background-color: #f8f9fa;
+    }
+    .future-day {
+        background-color: #f5f5f5;
+        pointer-events: none;
+    }
+    .future-day i {
+        opacity: 0.5;
+    }
+    
+    /* .table th:nth-child(1) { min-width: 50px; } 
+    .table th:nth-child(2) { min-width: 150px; } 
+    .table th:nth-child(3) { min-width: 100px; }  */
+    /* .table th:nth-child(4) { min-width: 120px; }  */
+    /* .table th:last-child { min-width: 100px; }   */
+</style>
+
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Handle bulk action dropdown
-        document.getElementById('bulkAction').addEventListener('change', function() {
-            const value = this.value;
-            if (value) {
-                const statusSelects = document.querySelectorAll('.status-select');
-                statusSelects.forEach(select => {
-                    select.value = value;
-                    
-                    // Handle time inputs based on status
-                    const row = select.closest('tr');
-                    const timeInputs = row.querySelectorAll('input[type="time"]');
-                    
-                    if (value === 'absent' || value === 'leave') {
-                        timeInputs.forEach(input => {
-                            input.disabled = true;
-                            input.value = '';
-                        });
-                    } else {
-                        timeInputs.forEach(input => {
-                            input.disabled = false;
-                        });
-                    }
-                });
-            }
-        });
+    // Get days in month helper function
+    function getDaysInMonth(year, month) {
+        return new Date(year, month, 0).getDate();
+    }
+
+    // Get month name helper function
+    function getMonthName(date) {
+        return new Intl.DateTimeFormat('en-US', { month: 'long' }).format(date);
+    }
+
+    function updateAttendanceTable(selectedDate) {
+        if (!selectedDate) {
+            const now = new Date();
+            selectedDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        }
+
+        const [year, month] = selectedDate.split('-');
+        const daysInMonth = getDaysInMonth(year, month);
+        const currentDate = new Date();
+        const selectedMonthDate = new Date(year, month - 1);
         
-        // Handle individual status changes
-        document.querySelectorAll('.status-select').forEach(select => {
-            select.addEventListener('change', function() {
-                const row = this.closest('tr');
-                const timeInputs = row.querySelectorAll('input[type="time"]');
+        // Update table header
+        const daysHeader = document.getElementById('daysHeader');
+        daysHeader.setAttribute('colspan', daysInMonth);
+        
+        // Update day numbers and names rows
+        const dayNumbersRow = document.getElementById('dayNumbers');
+        const dayNamesRow = document.getElementById('dayNames');
+        dayNumbersRow.innerHTML = '';
+        dayNamesRow.innerHTML = '';
+        
+        const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        
+        for (let day = 1; day <= daysInMonth; day++) {
+            const date = new Date(year, month - 1, day);
+            const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+            const isFuture = date > currentDate;
+            const isToday = date.toDateString() === currentDate.toDateString();
+            
+            // Add day number
+            const thNumber = document.createElement('th');
+            thNumber.className = `text-center${isWeekend ? ' weekend' : ''}${isToday ? ' current-day' : ''}`;
+            thNumber.textContent = day;
+            dayNumbersRow.appendChild(thNumber);
+            
+            // Add day name
+            const thName = document.createElement('th');
+            thName.className = `text-center${isWeekend ? ' weekend' : ''}${isToday ? ' current-day' : ''}`;
+            thName.textContent = dayNames[date.getDay()];
+            thName.style.fontSize = '0.8rem';
+            dayNamesRow.appendChild(thName);
+        }
+
+        // Update attendance cells for each employee
+        document.querySelectorAll('#attendanceBody tr').forEach(row => {
+            // Remove any existing day cells (except the fixed columns)
+            const fixedCells = Array.from(row.children).slice(0, 4);
+            const percentageCell = row.children[row.children.length - 1];
+            row.innerHTML = '';
+            
+            // Add back the fixed cells
+            fixedCells.forEach(cell => row.appendChild(cell));
+            
+            // Get employee ID from the data attribute
+            const employeeId = row.getAttribute('data-employee-id');
+            
+            // Add attendance cells for each day
+            for (let day = 1; day <= daysInMonth; day++) {
+                const date = new Date(year, month - 1, day);
+                const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+                const isFuture = date > currentDate;
+                const isToday = date.toDateString() === currentDate.toDateString();
                 
-                if (this.value === 'absent' || this.value === 'leave') {
-                    timeInputs.forEach(input => {
-                        input.disabled = true;
-                        input.value = '';
-                    });
-                } else {
-                    timeInputs.forEach(input => {
-                        input.disabled = false;
-                    });
+                const td = document.createElement('td');
+                td.className = `text-center${isWeekend ? ' weekend' : ''}${isToday ? ' current-day' : ''}${isFuture ? ' future-day' : ''}`;
+                
+                const icon = document.createElement('i');
+                icon.className = 'fas fa-star attendance-marker';
+                
+                // Get attendance status from Django template context
+                const attendanceData = JSON.parse('{{ attendance_data|safe }}');
+                let state = 'initial';
+                let iconColor = '#ccc';
+                let tooltipText = '';
+                
+                if (attendanceData[employeeId] && attendanceData[employeeId][day]) {
+                    const dayData = attendanceData[employeeId][day];
+                    state = dayData.status;
+                    
+                    // Set icon class and color based on status
+                    switch(state) {
+                        case 'full':
+                            icon.className = 'fas fa-star text-success';
+                            iconColor = '#198754';
+                            tooltipText = `Full Day (In: ${dayData.punch_in}, Out: ${dayData.punch_out})`;
+                            break;
+                        case 'half':
+                            icon.className = 'fas fa-star-half-alt text-warning';
+                            iconColor = '#ffc107';
+                            tooltipText = `Half Day (In: ${dayData.punch_in})`;
+                            break;
+                        case 'leave':
+                            icon.className = 'fas fa-star text-danger';
+                            iconColor = '#dc3545';
+                            tooltipText = 'Leave';
+                            break;
+                        default:
+                            icon.className = 'fas fa-star text-secondary';
+                            iconColor = '#ccc';
+                            tooltipText = 'Not Marked';
+                    }
                 }
-            });
+                
+                icon.setAttribute('data-state', state);
+                icon.style.cursor = 'pointer';
+                icon.style.color = iconColor;
+                icon.style.transition = 'all 0.3s ease';
+                
+                // Add tooltip
+                if (tooltipText) {
+                    icon.setAttribute('title', tooltipText);
+                    icon.setAttribute('data-bs-toggle', 'tooltip');
+                    icon.setAttribute('data-bs-placement', 'top');
+                }
+                
+                // Remove the click handler for manual attendance changes
+                if (!isFuture) {
+                    icon.setAttribute('onmouseover', "this.style.transform='scale(1.2)'");
+                    icon.setAttribute('onmouseout', "this.style.transform='scale(1)'");
+                }
+                
+                td.appendChild(icon);
+                row.appendChild(td);
+            }
+            
+            // Add back the percentage cell
+            row.appendChild(percentageCell);
+            
+            // Update attendance percentage for this row
+            updateAttendancePercentage(row);
+        });
+
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+
+        updateAttendanceStats();
+    }
+
+    function updateAttendancePercentage(row) {
+        const markers = row.querySelectorAll('.attendance-marker:not(.future-day .attendance-marker)');
+        let fullDays = 0;
+        let halfDays = 0;
+        
+        markers.forEach(marker => {
+            const state = marker.getAttribute('data-state');
+            if (state === 'full') fullDays++;
+            if (state === 'half') halfDays += 0.5;
+        });
+
+        const totalDays = markers.length;
+        const percentage = ((fullDays + halfDays) / totalDays * 100).toFixed(1);
+        row.querySelector('.attendance-percentage').textContent = `${percentage}%`;
+    }
+
+    function updateAttendanceStats() {
+        const markers = document.querySelectorAll('.attendance-marker:not(.future-day .attendance-marker)');
+        let fullDays = 0;
+        let halfDays = 0;
+        let leaves = 0;
+
+        markers.forEach(marker => {
+            const state = marker.getAttribute('data-state');
+            if (state === 'full') fullDays++;
+            if (state === 'half') halfDays++;
+            if (state === 'leave') leaves++;
+        });
+
+        const totalDays = markers.length;
+        const overallPercentage = ((fullDays + (halfDays * 0.5)) / totalDays * 100).toFixed(1);
+
+        document.getElementById('overallAttendance').textContent = `${overallPercentage}%`;
+        document.getElementById('fullDaysCount').textContent = fullDays;
+        document.getElementById('halfDaysCount').textContent = halfDays;
+        document.getElementById('leavesCount').textContent = leaves;
+    }
+
+    function filterEmployees() {
+        const department = document.getElementById('departmentFilter').value.toLowerCase();
+        const jobTitle = document.getElementById('jobTitleFilter').value.toLowerCase();
+        
+        const rows = document.querySelectorAll('#attendanceBody tr');
+        
+        rows.forEach(row => {
+            const deptMatch = !department || row.children[3].textContent.toLowerCase().includes(department);
+            const jobMatch = !jobTitle || row.children[3].textContent.toLowerCase().includes(jobTitle);
+            
+            row.style.display = (deptMatch && jobMatch) ? '' : 'none';
+        });
+    }
+
+    // Initialize the table with current month on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        const now = new Date();
+        const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        document.getElementById('monthFilter').value = currentMonth;
+        updateAttendanceTable(currentMonth);
+    });
+
+    // Add this function to update a single attendance cell
+    function updateAttendanceCell(employeeId, day, status, punchIn, punchOut) {
+        const row = document.querySelector(`tr[data-employee-id="${employeeId}"]`);
+        if (!row) return;
+        
+        // Find the cell for this day (add 4 to account for the fixed columns)
+        const cell = row.children[day + 3];
+        if (!cell) return;
+        
+        const icon = cell.querySelector('.attendance-marker');
+        if (!icon) return;
+        
+        let iconClass = 'fas fa-star text-secondary';
+        let iconColor = '#ccc';
+        let tooltipText = 'Not Marked';
+        
+        switch(status) {
+            case 'full':
+                iconClass = 'fas fa-star text-success';
+                iconColor = '#198754';
+                tooltipText = `Full Day (In: ${punchIn}, Out: ${punchOut})`;
+                break;
+            case 'half':
+                iconClass = 'fas fa-star-half-alt text-warning';
+                iconColor = '#ffc107';
+                tooltipText = `Half Day (In: ${punchIn})`;
+                break;
+            case 'leave':
+                iconClass = 'fas fa-star text-danger';
+                iconColor = '#dc3545';
+                tooltipText = 'Leave';
+                break;
+        }
+        
+        icon.className = iconClass;
+        icon.style.color = iconColor;
+        icon.setAttribute('data-state', status);
+        
+        // Update tooltip
+        icon.setAttribute('title', tooltipText);
+        icon.setAttribute('data-bs-toggle', 'tooltip');
+        icon.setAttribute('data-bs-placement', 'top');
+        
+        // Refresh tooltip
+        const tooltip = bootstrap.Tooltip.getInstance(icon);
+        if (tooltip) {
+            tooltip.dispose();
+        }
+        new bootstrap.Tooltip(icon);
+        
+        // Update attendance percentage
+        updateAttendancePercentage(row);
+        updateAttendanceStats();
+    }
+
+    // Add this code to the punch-in click handler
+    document.getElementById('punchInBtn').addEventListener('click', function() {
+        fetch('/punch_in/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update the attendance star
+                updateAttendanceCell(data.employee_id, parseInt(data.day), data.status, data.punch_in, null);
+                
+                // Show success message
+                alert('Punched in successfully!');
+            } else {
+                alert(data.error || 'Failed to punch in');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to punch in');
         });
     });
 </script>
-{% endblock %}
+{% endif %}
 {% endblock %}

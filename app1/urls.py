@@ -15,7 +15,8 @@ from .views import document_detail,save_document_settings
 from .views import get_document_setting_fields
 from .views import interview_management,make_offer_letter
 from .views import toggle_selection_status,view_attachment,salary_certificate
-from .views import add_salary_details, get_salary_details
+from .views import add_salary_details, get_salary_details,save_attendance
+from .views import update_setting_positions
 
 
 urlpatterns = [
@@ -167,7 +168,9 @@ urlpatterns = [
     path('documents/settings/get/<int:doc_id>/', get_document_settings, name='get_document_settings'),
     path('settings/delete/<int:setting_id>/', views.delete_document_setting, name='delete_document_setting'),
 
-    path('documents/<int:doc_id>/', document_detail, name='document_detail'),
+    path('document/<int:doc_id>/', document_detail, name='document_detail'),
+    path('update_setting_positions/<int:doc_id>/', update_setting_positions, name='update_setting_positions'),
+    path('update_field_positions/<int:setting_id>/', views.update_field_positions, name='update_field_positions'),
     path('settings/edit/<int:setting_id>/', views.edit_document_setting, name='edit_document_setting'),
     path('documents/settings/save/<int:doc_id>/', save_document_settings, name='save_document_settings'),
 
@@ -195,6 +198,11 @@ urlpatterns = [
 
 
     path('attendance/', views.attendance, name='attendance'),
+    path('attendance_user/', views.attendance_user, name='attendance_user'),
+    path('save_attendance/<int:employee_id>/<int:day>/<str:status>/', save_attendance, name='save_attendance'),
+    path('punch_in/', views.punch_in, name='punch_in'),
+    path('punch_out/', views.punch_out, name='punch_out'),
+    path('get_attendance_status/', views.get_attendance_status, name='get_attendance_status'),
     
     
     

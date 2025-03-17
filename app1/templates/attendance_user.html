@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+            <h3 class="mb-0">Daily Attendance</h3>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">Today's Status</h5>
+                            <div id="punchStatus">
+                                <p class="mb-2">Punch In: <span id="punchInTime">Not punched in yet</span></p>
+                                <p class="mb-2">Punch In Location: <span id="punchInLocation">Not punched in yet</span></p>
+                                <p class="mb-2">Punch Out: <span id="punchOutTime">Not punched out yet</span></p>
+                                <p class="mb-2">Punch Out Location: <span id="punchOutLocation">Not punched out yet</span></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="d-flex justify-content-center align-items-center h-100">
+                        <button class="btn btn-success btn-lg mx-2" onclick="handlePunch('in')" id="punchInBtn">
+                            <i class="fas fa-sign-in-alt"></i> Punch In
+                        </button>
+                        <button class="btn btn-danger btn-lg mx-2" onclick="handlePunch('out')" id="punchOutBtn">
+                            <i class="fas fa-sign-out-alt"></i> Punch Out
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function formatTime(date) {
+    return date.toLocaleTimeString('en-US', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: true 
+    });
+}
+
+function handlePunch(action) {
+    const url = action === 'in' ? "{% url 'punch_in' %}" : "{% url 'punch_out' %}";
+    const now = new Date();
+    
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            if (action === 'in') {
+                document.getElementById('punchInTime').textContent = formatTime(now);
+                document.getElementById('punchInBtn').disabled = true;
+            } else {
+                document.getElementById('punchOutTime').textContent = formatTime(now);
+                document.getElementById('punchOutBtn').disabled = true;
+            }
+            alert(`Punched ${action.toUpperCase()} successfully!`);
+        } else {
+            alert(`Error: ${data.error}`);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again.');
+    });
+}
+
+// Check current attendance status on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const now = new Date();
+    const today = now.toISOString().split('T')[0];
+    
+    fetch(`/get_attendance_status/?date=${today}`)
+    .then(response => response.json())
+    .then(data => {
+        if (data.punch_in) {
+            document.getElementById('punchInTime').textContent = new Date(data.punch_in).toLocaleTimeString();
+            document.getElementById('punchInBtn').disabled = true;
+        }
+        if (data.punch_out) {
+            document.getElementById('punchOutTime').textContent = new Date(data.punch_out).toLocaleTimeString();
+            document.getElementById('punchOutBtn').disabled = true;
+        }
+    })
+    .catch(error => console.error('Error:', error));
+});
+</script>
+
+<style>
+.card {
+    border: none;
+    border-radius: 15px;
+}
+.card-header {
+    border-radius: 15px 15px 0 0 !important;
+}
+.btn {
+    border-radius: 10px;
+    padding: 12px 30px;
+    font-weight: 600;
+}
+.btn i {
+    margin-right: 8px;
+}
+#punchStatus {
+    font-size: 1.1rem;
+}
+#punchStatus p {
+    margin-bottom: 15px;
+}
+#punchStatus span {
+    font-weight: 600;
+    color: #666;
+}
+</style>
+{% endblock %}

@@ -460,7 +460,7 @@ class OfferLetterDetails(models.Model):
 
 
 
-
+from django.core.exceptions import ValidationError
 
 class Employee(models.Model):
     STATUS_CHOICES = [
@@ -474,6 +474,7 @@ class Employee(models.Model):
         ('SYSMAC', 'SYSMAC'),
     ]
     name = models.CharField(max_length=100)
+    user = models.ForeignKey("User", on_delete=models.SET_NULL, null=True, blank=True) # CREATED AS NEW
     photo = models.ImageField(upload_to='employees/')
     address = models.CharField(max_length=255, blank=True, null=True) 
     phone_personal = models.CharField(max_length=15)
@@ -494,6 +495,16 @@ class Employee(models.Model):
     branch = models.CharField(max_length=100, blank=True, null=True)  
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')  
 
+    def clean(self):
+        """ Ensure the selected User ID is unique. """
+        if self.user and Employee.objects.exclude(id=self.id).filter(user=self.user).exists():
+            raise ValidationError(f"User ID {self.user.userid} is already assigned to another employee.")
+    
+    def save(self, *args, **kwargs):
+        self.clean()  # Run validation before saving
+        super().save(*args, **kwargs)
+
+
 class Attachment(models.Model):
     employee = models.ForeignKey(Employee, related_name='attachments', on_delete=models.CASCADE)
     file = models.FileField(upload_to='employee_attachments/')
@@ -511,13 +522,27 @@ class Document(models.Model):
         return self.name
 
 class DocumentSetting(models.Model):
-    document = models.ForeignKey(Document, on_delete=models.CASCADE, related_name="settings")
-    name = models.CharField(max_length=255)
-    attachment = models.FileField(upload_to='document_attachments/', blank=True, null=True)
+    document = models.ForeignKey(Document, on_delete=models.CASCADE, related_name='settings')
+    name = models.CharField(max_length=100)
     url = models.URLField(blank=True, null=True)
+    attachment = models.FileField(upload_to='document_settings/', blank=True, null=True)
+    position = models.IntegerField(default=0) #CREATED AS NEW
 
     def __str__(self):
-        return f"{self.document.name} - {self.name}"
+        return self.name
+
+    def save(self, *args, **kwargs):
+        if self.position == 0:  # If position is not set
+            # Get the highest position number for this document
+            max_position = DocumentSetting.objects.filter(
+                document=self.document
+            ).aggregate(models.Max('position'))['position__max']
+            # Set the new position to be one more than the highest
+            self.position = (max_position or 0) + 1
+        super().save(*args, **kwargs)
+
+    class Meta:
+        ordering = ['position']
 
 class DocumentSettingField(models.Model):
     setting = models.ForeignKey(DocumentSetting, on_delete=models.CASCADE, related_name="fields")
@@ -525,13 +550,23 @@ class DocumentSettingField(models.Model):
     field_value = models.TextField()
     purpose = models.TextField()
     attachment = models.FileField(upload_to='field_attachments/', blank=True, null=True)
+    position = models.IntegerField(default=0)
 
     def __str__(self):
         return f"{self.setting.name} - {self.field_name}"
-    
 
+    def save(self, *args, **kwargs):
+        if self.position == 0:  # If position is not set
+            # Get the highest position number for this setting
+            max_position = DocumentSettingField.objects.filter(
+                setting=self.setting
+            ).aggregate(models.Max('position'))['position__max']
+            # Set the new position to be one more than the highest
+            self.position = (max_position or 0) + 1
+        super().save(*args, **kwargs)
 
-    
+    class Meta:
+        ordering = ['position']
 
 from django.db import models
 from .models import Employee
@@ -550,3 +585,29 @@ class EmployeeSalary(models.Model):
     #CREATED AS NEW
 
     #CREATED AS NEW
+
+
+
+from django.db import models
+from .models import Employee
+
+class Attendance(models.Model):
+    ATTENDANCE_CHOICES = [
+        ('initial', 'Initial'),
+        ('full', 'Full Day'),
+        ('half', 'Half Day'),
+        ('leave', 'Leave'),
+    ]
+
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name='attendances')
+    day = models.IntegerField()  # Day of the month (1-31)
+    status = models.CharField(max_length=10, choices=ATTENDANCE_CHOICES, default='initial')
+    date = models.DateField(auto_now_add=True)  # Date when the attendance was recorded
+    punch_in = models.DateTimeField(null=True, blank=True)
+    punch_out = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        unique_together = ('employee', 'day', 'date')  # Ensure no duplicate entries for the same day
+
+    def __str__(self):
+        return f"{self.employee.name} - Day {self.day} - {self.get_status_display()}"

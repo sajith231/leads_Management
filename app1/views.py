@@ -18,6 +18,10 @@ from datetime import datetime, timedelta
 from .models import Requirement  # Ensure the correct model is imported
 from .models import Lead,ServiceEntry,JobTitle
 import json
+from django.utils import timezone
+from .models import Employee, Attendance
+from django.db import transaction
+from django.db import models
 
 
 
@@ -2022,16 +2026,26 @@ from django.http import HttpResponse
 from .models import Employee, Attachment
 from django.core.files.storage import FileSystemStorage
 
+
+
+@login_required
 def employee_management(request):
-    employees = Employee.objects.all()
-    return render(request, 'employee_management.html', {'employees': employees})
+    employees = Employee.objects.select_related("user").all()
+    return render(request, "employee_management.html", {"employees": employees})
+
 
 from django.shortcuts import render, redirect
 from .models import Employee, Attachment, CV
+from django.shortcuts import render, redirect
+from .models import Employee, User, Attachment, CV
 
+@login_required
 def add_employee(request):
+    users = User.objects.all()  # Fetch all users for the dropdown
+    
     if request.method == "POST":
         name = request.POST['name']
+        user_id = request.POST.get("user_id")  # Capture selected user ID
         photo = request.FILES['photo']
         address = request.POST.get('address', '')
         phone_personal = request.POST['phone_personal']
@@ -2041,17 +2055,18 @@ def add_employee(request):
         education = request.POST['education']
         experience = request.POST['experience']
         job_title = request.POST['job_title']
-        organization = request.POST.get("organization")  # Get organization
+        organization = request.POST.get("organization")
         joining_date = request.POST['joining_date']
         dob = request.POST['dob']
         bank_account_number = request.POST.get('bank_account_number', '')
         ifsc_code = request.POST.get('ifsc_code', '')
         bank_name = request.POST.get('bank_name', '')
         branch = request.POST.get('branch', '')
-        status = request.POST.get("status")  # Capture the status field
+        status = request.POST.get("status")
 
         employee = Employee.objects.create(
             name=name,
+            user=User.objects.get(id=user_id) if user_id else None,  # Assign selected user
             photo=photo,
             address=address,
             phone_personal=phone_personal,
@@ -2061,15 +2076,14 @@ def add_employee(request):
             education=education,
             experience=experience,
             job_title=job_title,
-            organization=organization,  # Save organization
+            organization=organization,
             joining_date=joining_date,
             dob=dob,
             bank_account_number=bank_account_number,
             ifsc_code=ifsc_code,
             bank_name=bank_name,
             branch=branch,
-            status=status,  # Save status
-            
+            status=status,
         )
 
         for file in request.FILES.getlist('attachments'):
@@ -2077,7 +2091,8 @@ def add_employee(request):
 
         return redirect('employee_management')
     
-    return render(request, 'add_employee.html', {'cvs': CV.objects.all()})
+    return render(request, 'add_employee.html', {'users': users, 'cvs': CV.objects.all()})
+
 
 
 
@@ -2091,51 +2106,57 @@ def delete_employee(request, emp_id):
 
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import Employee, Attachment
+from django.contrib import messages
 
 @login_required
 def edit_employee(request, emp_id):
     employee = get_object_or_404(Employee, id=emp_id)
+    users = User.objects.exclude(employee__isnull=False).union(User.objects.filter(id=employee.user.id if employee.user else None))  # Exclude already assigned users
 
     if request.method == "POST":
-        employee.name = request.POST['name']
+        user_id = request.POST.get("user_id")
+        selected_user = User.objects.get(id=user_id) if user_id else None
         
-        # Handle photo update
-        if 'photo' in request.FILES:
-            employee.photo = request.FILES['photo']
+        # Ensure User ID is unique
+        if selected_user and Employee.objects.exclude(id=employee.id).filter(user=selected_user).exists():
+            messages.error(request, f"User ID {selected_user.userid} is already assigned to another employee.")
+            return redirect("edit_employee", emp_id=emp_id)
 
-        # Update employee details
-        employee.address = request.POST.get('address', '')
-        employee.phone_personal = request.POST['phone_personal']
-        employee.phone_residential = request.POST.get('phone_residential', '')
-        employee.place = request.POST['place']
-        employee.district = request.POST['district']
-        employee.education = request.POST['education']
-        employee.experience = request.POST.get('experience', '')
-        employee.job_title = request.POST['job_title']
-        employee.organization = request.POST.get('organization', '')  # Save organization
-        employee.joining_date = request.POST['joining_date']
-        employee.dob = request.POST['dob']
-        employee.bank_account_number = request.POST.get('bank_account_number', '')
-        employee.ifsc_code = request.POST.get('ifsc_code', '')
-        employee.bank_name = request.POST.get('bank_name', '')
-        employee.branch = request.POST.get('branch', '')
+        # Update employee fields
+        employee.user = selected_user
+        employee.name = request.POST["name"]
+        if "photo" in request.FILES:
+            employee.photo = request.FILES["photo"]
+        employee.address = request.POST.get("address", "")
+        employee.phone_personal = request.POST["phone_personal"]
+        employee.phone_residential = request.POST.get("phone_residential", "")
+        employee.place = request.POST["place"]
+        employee.district = request.POST["district"]
+        employee.education = request.POST["education"]
+        employee.experience = request.POST.get("experience", "")
+        employee.job_title = request.POST["job_title"]
+        employee.organization = request.POST.get("organization", "")
+        employee.joining_date = request.POST["joining_date"]
+        employee.dob = request.POST["dob"]
+        employee.bank_account_number = request.POST.get("bank_account_number", "")
+        employee.ifsc_code = request.POST.get("ifsc_code", "")
+        employee.bank_name = request.POST.get("bank_name", "")
+        employee.branch = request.POST.get("branch", "")
         employee.status = request.POST.get("status")
 
         employee.save()
-
-        # Handle multiple attachments
-        for file in request.FILES.getlist('attachments'):
-            Attachment.objects.create(employee=employee, file=file)
-
-        return redirect('employee_management')
+        messages.success(request, "Employee updated successfully.")
+        return redirect("employee_management")
 
     context = {
-        'employee': employee,
-        'joining_date': employee.joining_date.strftime('%Y-%m-%d'),
-        'dob': employee.dob.strftime('%Y-%m-%d'),
+        "employee": employee,
+        "users": users,  # Pass only available users
+        "joining_date": employee.joining_date.strftime("%Y-%m-%d"),
+        "dob": employee.dob.strftime("%Y-%m-%d"),
     }
 
-    return render(request, 'edit_employee.html', context)
+    return render(request, "edit_employee.html", context)
+
 
 
 from django.http import JsonResponse
@@ -2317,7 +2338,17 @@ def edit_document_setting(request, setting_id):
 
 
 def document_detail(request, doc_id):
-    document = get_object_or_404(Document, id=doc_id)
+    document = get_object_or_404(Document.objects.prefetch_related(
+        models.Prefetch(
+            'settings',
+            queryset=DocumentSetting.objects.order_by('position').prefetch_related(
+                models.Prefetch(
+                    'fields',
+                    queryset=DocumentSettingField.objects.order_by('position')
+                )
+            )
+        )
+    ), id=doc_id)
     return render(request, 'document_detail.html', {'document': document})
 
 from django.shortcuts import render, get_object_or_404
@@ -2627,6 +2658,349 @@ def user_control(request):
     return render(request, 'user_control.html')
 
 
+from django.shortcuts import render
+from .models import Employee
 
 def attendance(request):
-    return render(request, 'attendance.html')
+    # Get all employees with their related user data
+    employees = Employee.objects.select_related('user').all()
+    
+    # Get the current month and year
+    today = timezone.now()
+    current_month = today.month
+    current_year = today.year
+    
+    # Get all attendance records for the current month
+    attendance_records = Attendance.objects.filter(
+        date__year=current_year,
+        date__month=current_month
+    ).select_related('employee')
+    
+    # Create a dictionary to store attendance data
+    attendance_data = {}
+    for record in attendance_records:
+        employee_id = str(record.employee_id)  # Convert to string for JSON serialization
+        if employee_id not in attendance_data:
+            attendance_data[employee_id] = {}
+        
+        # Convert the date to day of month for the key
+        day = str(record.date.day)
+        
+        # Determine attendance status
+        status = 'initial'
+        if record.punch_in and record.punch_out:
+            status = 'full'
+        elif record.punch_in:
+            status = 'half'
+        elif record.status == 'leave':
+            status = 'leave'
+        
+        # Store the attendance data for this day
+        attendance_data[employee_id][day] = {
+            'status': status,
+            'punch_in': record.punch_in.strftime('%H:%M:%S') if record.punch_in else None,
+            'punch_out': record.punch_out.strftime('%H:%M:%S') if record.punch_out else None
+        }
+    
+    # Calculate days in current month
+    days_in_month = (today.replace(day=1) + timezone.timedelta(days=32)).replace(day=1).day - 1
+    
+    context = {
+        'employees': employees,
+        'attendance_data': json.dumps(attendance_data),
+        'current_month': today.strftime('%B %Y'),
+        'days_in_month': days_in_month,
+        'today': today.day,
+        'range': range(1, days_in_month + 1)
+    }
+    
+    return render(request, 'attendance.html', context)
+
+@csrf_exempt
+def save_attendance(request, employee_id, day, status):
+    if request.method == 'POST':
+        try:
+            employee = Employee.objects.get(id=employee_id)
+            today = timezone.now()
+            date = today.replace(day=int(day))
+            
+            # Get or create attendance record for this date
+            attendance, created = Attendance.objects.get_or_create(
+                employee=employee,
+                date=date,
+                defaults={
+                    'day': int(day),  # Set the day field
+                    'status': status,
+                    'punch_in': timezone.now() if status in ['half', 'full'] else None,
+                    'punch_out': timezone.now() if status == 'full' else None
+                }
+            )
+            
+            if not created:
+                # Update existing record
+                attendance.status = status
+                attendance.day = int(day)  # Ensure day field is set
+                if status in ['half', 'full']:
+                    if not attendance.punch_in:
+                        attendance.punch_in = timezone.now()
+                if status == 'full':
+                    if not attendance.punch_out:
+                        attendance.punch_out = timezone.now()
+                attendance.save()
+            
+            return JsonResponse({'success': True})
+            
+        except Employee.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'Employee not found'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+            
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+@login_required
+def attendance_user(request):
+    return render(request, 'attendance_user.html')
+
+from django.utils import timezone
+
+@login_required
+def punch_in(request):
+    if request.method == 'POST':
+        try:
+            # Get the custom user from session
+            custom_user_id = request.session.get('custom_user_id')
+            if not custom_user_id:
+                return JsonResponse({'success': False, 'error': 'User session not found'})
+            
+            # Get the custom user
+            custom_user = User.objects.get(id=custom_user_id)
+            
+            # Get the employee associated with the custom user
+            employee = Employee.objects.get(user=custom_user)
+            now = timezone.now()
+            today = now.date()
+            
+            # Try to get existing attendance record for today
+            try:
+                attendance = Attendance.objects.get(
+                    employee=employee,
+                    date=today,
+                    day=today.day
+                )
+                # If record exists but no punch-in, update it
+                if not attendance.punch_in:
+                    attendance.punch_in = now
+                    attendance.status = 'half'
+                    attendance.save()
+                else:
+                    return JsonResponse({
+                        'success': False,
+                        'error': 'Already punched in for today'
+                    })
+            except Attendance.DoesNotExist:
+                # Create new attendance record
+                attendance = Attendance.objects.create(
+                    employee=employee,
+                    date=today,
+                    day=today.day,
+                    status='half',
+                    punch_in=now
+                )
+            except Attendance.MultipleObjectsReturned:
+                # Handle case of multiple records
+                # Get the latest record
+                attendance = Attendance.objects.filter(
+                    employee=employee,
+                    date=today,
+                    day=today.day
+                ).order_by('-created_at').first()
+                
+                if not attendance.punch_in:
+                    attendance.punch_in = now
+                    attendance.status = 'half'
+                    attendance.save()
+                else:
+                    return JsonResponse({
+                        'success': False,
+                        'error': 'Already punched in for today'
+                    })
+            
+            # Return the updated attendance status and time
+            return JsonResponse({
+                'success': True,
+                'status': 'half',
+                'punch_in': now.strftime('%H:%M:%S'),
+                'employee_id': str(employee.id),
+                'day': str(now.day)
+            })
+            
+        except User.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'User not found'})
+        except Employee.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'No employee record found for this user'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    return JsonResponse({'success': False, 'error': 'Invalid request'})
+
+@login_required
+def punch_out(request):
+    if request.method == 'POST':
+        try:
+            # Get the custom user from session
+            custom_user_id = request.session.get('custom_user_id')
+            if not custom_user_id:
+                return JsonResponse({'success': False, 'error': 'User session not found'})
+            
+            # Get the custom user
+            custom_user = User.objects.get(id=custom_user_id)
+            
+            # Get the employee associated with the custom user
+            employee = Employee.objects.get(user=custom_user)
+            now = timezone.now()
+            today = now.date()
+            
+            # Get today's attendance record and update punch-out time
+            attendance = Attendance.objects.get(
+                employee=employee,
+                date=today,
+                day=today.day  # Add the day field to make the query more specific
+            )
+            
+            if attendance.punch_in:  # Only update if already punched in
+                attendance.punch_out = now
+                attendance.status = 'full'  # Set to full day when punching out
+                attendance.save()
+                return JsonResponse({'success': True})
+            else:
+                return JsonResponse({'success': False, 'error': 'Must punch in before punching out'})
+            
+        except Attendance.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'No attendance record found for today'})
+        except User.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'User not found'})
+        except Employee.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'No employee record found for this user'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    return JsonResponse({'success': False, 'error': 'Invalid request'})
+
+@login_required
+def get_attendance_status(request):
+    try:
+        date_str = request.GET.get('date')
+        date = timezone.datetime.strptime(date_str, '%Y-%m-%d').date()
+        
+        # Get the custom user from session
+        custom_user_id = request.session.get('custom_user_id')
+        if not custom_user_id:
+            return JsonResponse({'error': 'User session not found'}, status=400)
+        
+        # Get the custom user
+        custom_user = User.objects.get(id=custom_user_id)
+        
+        # Get the employee associated with the custom user
+        employee = Employee.objects.get(user=custom_user)
+        attendance = Attendance.objects.filter(
+            employee=employee,
+            date=date
+        ).first()
+        
+        if attendance:
+            return JsonResponse({
+                'punch_in': attendance.punch_in.isoformat() if attendance.punch_in else None,
+                'punch_out': attendance.punch_out.isoformat() if attendance.punch_out else None
+            })
+        return JsonResponse({'punch_in': None, 'punch_out': None})
+    except User.DoesNotExist:
+        return JsonResponse({'error': 'User not found'}, status=400)
+    except Employee.DoesNotExist:
+        return JsonResponse({'error': 'No employee record found for this user'}, status=400)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)
+
+@csrf_exempt
+def update_setting_positions(request, doc_id):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            positions = data.get('positions', [])
+            
+            # Get the document
+            document = get_object_or_404(Document, id=doc_id)
+            
+            # Update positions for each setting
+            with transaction.atomic():  # Use transaction to ensure all updates succeed or none do
+                for position, setting_id in enumerate(positions, start=1):  # Start from 1
+                    DocumentSetting.objects.filter(
+                        id=setting_id,
+                        document=document  # Ensure setting belongs to this document
+                    ).update(position=position)
+            
+            # Return the updated order
+            settings = DocumentSetting.objects.filter(document=document).order_by('position')
+            return JsonResponse({
+                'status': 'success',
+                'positions': list(settings.values('id', 'position'))
+            })
+        except Exception as e:
+            return JsonResponse({
+                'status': 'error',
+                'message': str(e)
+            }, status=500)
+    return JsonResponse({
+        'status': 'error',
+        'message': 'Invalid request'
+    }, status=400)
+
+@csrf_exempt
+def update_field_positions(request, setting_id):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            positions = data.get('positions', [])
+            
+            # Get the setting
+            setting = get_object_or_404(DocumentSetting, id=setting_id)
+            
+            # Update positions for each field
+            with transaction.atomic():  # Use transaction to ensure all updates succeed or none do
+                for position, field_id in enumerate(positions, start=1):  # Start from 1
+                    DocumentSettingField.objects.filter(
+                        id=field_id,
+                        setting=setting  # Ensure field belongs to this setting
+                    ).update(position=position)
+            
+            # Return the updated order
+            fields = DocumentSettingField.objects.filter(setting=setting).order_by('position')
+            return JsonResponse({
+                'status': 'success',
+                'positions': list(fields.values('id', 'position'))
+            })
+        except json.JSONDecodeError as e:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Invalid JSON data'
+            }, status=400)
+        except Exception as e:
+            return JsonResponse({
+                'status': 'error',
+                'message': str(e)
+            }, status=500)
+    return JsonResponse({
+        'status': 'error',
+        'message': 'Invalid request method'
+    }, status=405)
+
+def document_detail(request, doc_id):
+    document = get_object_or_404(Document.objects.prefetch_related(
+        models.Prefetch(
+            'settings',
+            queryset=DocumentSetting.objects.order_by('position').prefetch_related(
+                models.Prefetch(
+                    'fields',
+                    queryset=DocumentSettingField.objects.order_by('position')
+                )
+            )
+        )
+    ), id=doc_id)
+    return render(request, 'document_detail.html', {'document': document})
