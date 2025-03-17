@@ -371,12 +371,14 @@
                 {% if user_image %}
                     <img src="{{ user_image }}" alt="Profile Image" 
                          style="width: 40px; height: 40px; border-radius: 50%; cursor: pointer;">
-                    <div class="username">
-                        <span style="color: black; font-weight: bold; cursor: pointer;">{{ user_name }}</span>
-                    </div>
+                    
                 {% else %}
                     <div class="username">
-                        <span style="color: black; font-weight: bold; cursor: pointer;">{{ user_name }}</span>
+                        <img src="{{ user_image }}" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';" 
+     alt="Profile Image" style="width: 40px; height: 40px; border-radius: 50%; cursor: pointer;">
+
+<i class="fa fa-user-circle" style="font-size: 40px; display: none;"></i>
+
                     </div>
                 {% endif %}
             </div>

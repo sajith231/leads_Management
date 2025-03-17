@@ -7,6 +7,7 @@
         window.location.href = "{% url 'attendance_user' %}";
     </script>
 {% else %}
+<meta name="csrf-token" content="{{ csrf_token }}">
 <div class="allbody" style="overflow: hidden;">
 <div class="container-fluid py-4">
     <!-- Header Section with Filters -->
@@ -207,16 +208,61 @@
                             <td>{{ employee.name }}</td>
                             <td>{{ employee.user.userid|default:'' }}</td>
                             <td>{{ employee.job_title }}</td>
-                            <!-- Individual cells for each day will be populated by JavaScript -->
+                            
+                            {% for day in days_of_month %}
+                            <td class="text-center">
+                                <i class="fas fa-star attendance-marker text-secondary"
+                                   data-employee-id="{{ employee.id }}"
+                                   data-date="{{ day }}"
+                                   data-bs-toggle="modal"
+                                   data-bs-target="#attendanceModal"
+                                   onclick="openAttendanceModal(this)">
+                                </i>
+                            </td>
+                            {% endfor %}
+                    
                             <td class="attendance-percentage">0%</td>
                         </tr>
                         {% endfor %}
                     </tbody>
+                    
+                    
                 </table>
             </div>
         </div>
     </div>
-</div></div>
+</div>
+<div class="modal fade" id="attendanceModal" tabindex="-1" aria-labelledby="attendanceModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="attendanceModalLabel">Edit Attendance</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="attendanceForm">
+                    <input type="hidden" id="attendanceUserId">
+                    <input type="hidden" id="attendanceDate">
+                    <div class="mb-3">
+                        <label class="form-label">Status</label>
+                        <select class="form-select" id="attendanceStatus">
+                            <option value="full">Full Day</option>
+                            <option value="half">Half Day</option>
+                            <option value="leave">Leave</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="saveAttendance()">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+</div>
 
 <!-- Add Font Awesome for icons -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
@@ -279,7 +325,42 @@
     /* .table th:nth-child(4) { min-width: 120px; }  */
     /* .table th:last-child { min-width: 100px; }   */
 </style>
-
+<script>
+    function openAttendanceModal(element) {
+        let userId = element.getAttribute("data-employee-id");
+        let date = element.getAttribute("data-date");
+    
+        document.getElementById("attendanceUserId").value = userId;
+        document.getElementById("attendanceDate").value = date;
+    }
+    
+    function saveAttendance() {
+        let userId = document.getElementById("attendanceUserId").value;
+        let date = document.getElementById("attendanceDate").value;
+        let status = document.getElementById("attendanceStatus").value;
+    
+        fetch("/update_attendance/", {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": "{{ csrf_token }}",
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ user_id: userId, date: date, status: status })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert("Attendance updated!");
+                location.reload();
+            } else {
+                alert("Error: " + data.error);
+            }
+        })
+        .catch(error => console.error("Error:", error));
+    }
+    </script>
+    
+    
 <script>
     // Get days in month helper function
     function getDaysInMonth(year, month) {
@@ -632,6 +713,7 @@
                 punchInDisplay.textContent = punchInDate.toLocaleTimeString('en-US', {
                     hour: '2-digit',
                     minute: '2-digit',
+                    second: '2-digit',
                     hour12: true
                 });
             } else {
@@ -644,6 +726,7 @@
                 punchOutDisplay.textContent = punchOutDate.toLocaleTimeString('en-US', {
                     hour: '2-digit',
                     minute: '2-digit',
+                    second: '2-digit',
                     hour12: true
                 });
             } else {

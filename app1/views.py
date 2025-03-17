@@ -2698,8 +2698,8 @@ def attendance(request):
         # Store the attendance data for this day
         attendance_data[employee_id][day] = {
             'status': status,
-            'punch_in': record.punch_in.strftime('%H:%M:%S') if record.punch_in else None,
-            'punch_out': record.punch_out.strftime('%H:%M:%S') if record.punch_out else None
+            'punch_in': record.punch_in.isoformat() if record.punch_in else None,
+            'punch_out': record.punch_out.isoformat() if record.punch_out else None
         }
     
     # Calculate days in current month
@@ -3057,3 +3057,30 @@ def delete_reminder_type(request, id):
     reminder = get_object_or_404(ReminderType, id=id)
     reminder.delete()
     return redirect('reminder_type')
+
+
+
+
+
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from .models import Attendance, User
+import json
+
+@csrf_exempt
+def update_attendance(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            user_id = data.get("user_id")
+            date = data.get("date")
+            status = data.get("status")
+
+            attendance, created = Attendance.objects.get_or_create(user_id=user_id, date=date)
+            attendance.status = status
+            attendance.save()
+
+            return JsonResponse({"success": True, "message": "Attendance updated successfully!"})
+        except Exception as e:
+            return JsonResponse({"success": False, "error": str(e)})
+    return JsonResponse({"success": False, "error": "Invalid request"})
