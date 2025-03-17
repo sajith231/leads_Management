@@ -462,6 +462,7 @@ class OfferLetterDetails(models.Model):
 
 from django.core.exceptions import ValidationError
 
+
 class Employee(models.Model):
     STATUS_CHOICES = [
         ('active', 'Active'),
