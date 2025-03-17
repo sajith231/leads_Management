@@ -526,7 +526,7 @@ class DocumentSetting(models.Model):
     name = models.CharField(max_length=100)
     url = models.URLField(blank=True, null=True)
     attachment = models.FileField(upload_to='document_settings/', blank=True, null=True)
-    position = models.IntegerField(default=0) #CREATED AS NEW
+    position = models.IntegerField(default=0) 
 
     def __str__(self):
         return self.name
@@ -611,3 +611,46 @@ class Attendance(models.Model):
 
     def __str__(self):
         return f"{self.employee.name} - Day {self.day} - {self.get_status_display()}"
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+from django.db import models
+
+class ReminderType(models.Model):
+    name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.name

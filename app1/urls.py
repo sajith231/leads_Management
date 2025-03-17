@@ -18,6 +18,7 @@ from .views import toggle_selection_status,view_attachment,salary_certificate
 from .views import add_salary_details, get_salary_details,save_attendance
 from .views import update_setting_positions
 
+from .views import reminder_type_view, add_reminder_type, edit_reminder_type, delete_reminder_type
 
 urlpatterns = [
     # Authentication
@@ -203,6 +204,18 @@ urlpatterns = [
     path('punch_in/', views.punch_in, name='punch_in'),
     path('punch_out/', views.punch_out, name='punch_out'),
     path('get_attendance_status/', views.get_attendance_status, name='get_attendance_status'),
+
+
+
+
+
+
+
+
+    path('reminder-types/', reminder_type_view, name='reminder_type'),
+    path('add-reminder-type/', add_reminder_type, name='add_reminder_type'),
+    path('edit-reminder-type/<int:id>/', edit_reminder_type, name='edit_reminder_type'),
+    path('delete-reminder-type/<int:id>/', delete_reminder_type, name='delete_reminder_type'),
     
     
     

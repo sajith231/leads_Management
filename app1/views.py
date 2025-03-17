@@ -3004,3 +3004,39 @@ def document_detail(request, doc_id):
         )
     ), id=doc_id)
     return render(request, 'document_detail.html', {'document': document})
+
+
+
+
+
+
+
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.http import JsonResponse
+from .models import ReminderType
+
+def reminder_type_view(request):
+    reminders = ReminderType.objects.all()
+    return render(request, 'reminder_type.html', {'reminders': reminders})
+
+def add_reminder_type(request):
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        ReminderType.objects.create(name=name)
+        return JsonResponse({'success': True})
+    return JsonResponse({'success': False})
+
+def edit_reminder_type(request, id):
+    reminder = get_object_or_404(ReminderType, id=id)
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        reminder.name = name
+        reminder.save()
+        return JsonResponse({'success': True})
+    return JsonResponse({'success': False})
+
+def delete_reminder_type(request, id):
+    reminder = get_object_or_404(ReminderType, id=id)
+    reminder.delete()
+    return redirect('reminder_type')
