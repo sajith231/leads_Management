@@ -2042,27 +2042,27 @@ from .models import Employee, User, Attachment, CV
 @login_required
 def add_employee(request):
     users = User.objects.all()  # Fetch all users for the dropdown
-    
+
     if request.method == "POST":
         name = request.POST['name']
         user_id = request.POST.get("user_id")  # Capture selected user ID
-        photo = request.FILES['photo']
+        photo = request.FILES.get('photo')
         address = request.POST.get('address', '')
         phone_personal = request.POST['phone_personal']
-        phone_residential = request.POST['phone_residential']
+        phone_residential = request.POST.get('phone_residential', '')
         place = request.POST['place']
         district = request.POST['district']
         education = request.POST['education']
-        experience = request.POST['experience']
+        experience = request.POST.get('experience', '')
         job_title = request.POST['job_title']
-        organization = request.POST.get("organization")
+        organization = request.POST.get("organization", "")
         joining_date = request.POST['joining_date']
         dob = request.POST['dob']
         bank_account_number = request.POST.get('bank_account_number', '')
         ifsc_code = request.POST.get('ifsc_code', '')
         bank_name = request.POST.get('bank_name', '')
         branch = request.POST.get('branch', '')
-        status = request.POST.get("status")
+        status = request.POST.get("status", "active")
 
         employee = Employee.objects.create(
             name=name,
@@ -2086,11 +2086,13 @@ def add_employee(request):
             status=status,
         )
 
+        # Handle multiple file uploads
         for file in request.FILES.getlist('attachments'):
             Attachment.objects.create(employee=employee, file=file)
 
+        messages.success(request, "Employee added successfully.")
         return redirect('employee_management')
-    
+
     return render(request, 'add_employee.html', {'users': users, 'cvs': CV.objects.all()})
 
 
@@ -2111,15 +2113,19 @@ from django.contrib import messages
 @login_required
 def edit_employee(request, emp_id):
     employee = get_object_or_404(Employee, id=emp_id)
-    users = User.objects.exclude(employee__isnull=False).union(User.objects.filter(id=employee.user.id if employee.user else None))  # Exclude already assigned users
+
+    # Get users who are not assigned to another employee OR the current employee's user
+    users = User.objects.exclude(employee__isnull=False).union(
+        User.objects.filter(id=employee.user.id if employee.user else None)
+    )
 
     if request.method == "POST":
         user_id = request.POST.get("user_id")
         selected_user = User.objects.get(id=user_id) if user_id else None
-        
+
         # Ensure User ID is unique
         if selected_user and Employee.objects.exclude(id=employee.id).filter(user=selected_user).exists():
-            messages.error(request, f"User ID {selected_user.userid} is already assigned to another employee.")
+            messages.error(request, f"User '{selected_user.name}' is already assigned to another employee.")
             return redirect("edit_employee", emp_id=emp_id)
 
         # Update employee fields
@@ -2142,7 +2148,7 @@ def edit_employee(request, emp_id):
         employee.ifsc_code = request.POST.get("ifsc_code", "")
         employee.bank_name = request.POST.get("bank_name", "")
         employee.branch = request.POST.get("branch", "")
-        employee.status = request.POST.get("status")
+        employee.status = request.POST.get("status", "active")
 
         employee.save()
         messages.success(request, "Employee updated successfully.")
