@@ -298,6 +298,9 @@
             #master-menu {
                 margin-right: 45%;
             }
+            .submenu1{
+                text-align: center;
+            }
 
         }
     </style>
@@ -487,270 +490,227 @@
         </button>
 
         <div class="sidebar">
-
-            {% if user.is_superuser %}
-           
-
-            <div onclick="toggleAdminMenu()">
-                <div>
-                    <h5 style="margin-left: 5%; color: white;" class="mainmenu">
-                        <div style="display: flex;" class="gap-2 align-items-center">
-                            <span style="margin-top: 5%;display: flex;align-items: center;gap: 10px;">
-                                <i class="fas fa-tools"></i>
-                                <span>Administration</span></span>
-                        </div>
-                    </h5>
+            {% if request.session.user_level == 'admin' or user.is_superuser %}
+                <!-- Admin/Superuser Sidebar -->
+                <div onclick="toggleAdminMenu()">
+                    <div>
+                        <h5 style="margin-left: 5%; color: white;" class="mainmenu">
+                            <div style="display: flex;" class="gap-2 align-items-center">
+                                <span style="margin-top: 5%;display: flex;align-items: center;gap: 10px;">
+                                    <i class="fas fa-tools"></i>
+                                    <span>Administration</span>
+                                </span>
+                            </div>
+                        </h5>
+                    </div>
                 </div>
-            </div>
-
-            <div id="admin-menu" class="submenu" style="display: none; margin-left: 5%;">
-                <a href="{% url 'agent_list' %}">
-                    <i class="fas fa-binoculars"></i> Address Book
-                </a>
-                <a href="{% url 'document_list' %}">
-                    <i class="fas fa-scroll"></i> Documentations
-                </a>
-            </div>
-
-
-
-            
-            <div onclick="toggleHRMenu()">
-                <div>
-                    <h5 style="margin-left: 5%; color: white;" class="mainmenu">
-                        <div style="display: flex;" class="gap-2 align-items-center">
-                            <span style="margin-top: 5%;display: flex;align-items: center;gap: 10px;"><i class="fas fa-users-cog"></i>
-
-                                <span>HR</span></span>
-                        </div>
-                    </h5>
-                </div>
-            </div>
-
-            <div id="hr-menu" class="submenu" style="display: none; margin-left: 5%;">
-                <a href="{% url 'cv_management' %}">
-                    <i class="fas fa-file-contract"></i> CV Management
-                </a>
-                <a href="{% url 'interview_management' %}">
-                    <i class="fas fa-user-tie"></i> Interview Management
-                </a>
-                
-                
-                <a href="{% url 'make_offer_letter' %}">
-                    <i class="fas fa-file-signature"></i> Offer Letter
-                </a>
-                <a href="{% url 'employee_management' %}">
-                    <i class="fas fa-users"></i> Employee Management
-                </a>
-                
-                <!-- <a href="{% if request.session.user_level == '3level' %}{% url 'attendance_user' %}{% else %}{% url 'attendance' %}{% endif %}">
-                    <i class="fas fa-user-check"></i> Attendance
-                </a> -->
-                
-                <a href="{% url 'make_salary_certificate' %}">
-                    <i class="fas fa-file-invoice-dollar"></i> Salary Certificate
-                </a>
-                <!-- #{% url 'make_salary_certificate' %} -->
-                <a href="{% url 'make_experience_certificate' %}">
-                    <i class="fas fa-award"></i> Experience Certificate
-                </a>
-                
-                
-            </div>
-            <div onclick="toggleMarketingMenu()">
-                <div>
-                    <h5 style="margin-left: 5%; color: white;" class="mainmenu">
-                        <div style="display: flex;" class="gap-2 align-items-center">
-                            <span style="margin-top: 5%;display: flex;align-items: center;gap: 10px;"><i
-                                    class="fas fa-bullhorn"></i>
-                                <span>Marketing</span></span>
-                        </div>
-                    </h5>
-                </div>
-            </div>
-
-            <div id="marketing-menu" class="submenu" style="display: none; margin-left: 5%;">
-                <a href="{% url 'all_leads' %}">
-                    <i class="fas fa-user"></i> Leads
-                </a>
-            </div>
-            <div onclick="toggleServicesMenu()" class="sideBarMob">
-                <div>
-                    <h5 style="margin-left: 5%; color: white;" class="mainmenu">
-                        <div style="display: flex;margin-top: 5%;" class="gap-2 align-items-center">
-                            <i class="fas fa-wrench"></i> <span>Services</span>
-
-
-
-
-
-
-                        </div>
-                    </h5>
-                </div>
-            </div>
-
-            <div id="services-menu" class="submenu" style="margin-left: 5%; display: none;">
-                <a href="{% url 'service_log' %}">
-                    <i class="fas fa-book"></i> Service Log
-                </a>
-                <a href="{% url 'service_entry' %}">
-                    <i class="fas fa-plus-circle"></i> <span style="white-space: nowrap;">Service Entry</span>
-                </a>
-            </div>
-            <div onclick="toggleMenu()">
-                <div>
-                    <h5 style="margin-left: 5%; color: white;" class="mainmenu">
-                        <div style="display: flex;margin-top: 7%;" class="gap-2 align-items-center">
-                            <i class="fas fa-cog"></i>
-                            <span>Master</span>
-                        </div>
-                    </h5>
-                </div>
-            </div>
-
-            <div id="master-menu" class="submenu" class="submenuofmaster">
-                <a href="{% url 'all_districts' %}">
-                    <i class="fas fa-map"></i> District
-                </a>
-                <a href="{% url 'all_areas' %}">
-                    <i class="fas fa-map-marker-alt"></i> Area
-                </a>
-                <a href="{% url 'all_locations' %}">
-                    <i class="fas fa-chart-area"></i> Location
-                </a>
-                <a href="{% url 'all_requirements' %}">
-                    <i class="fas fa-tasks"></i> Requirements
-                </a>
-                <a href="{% url 'business_type_list' %}">
-                    <i class="fas fa-binoculars"></i> Bussness Type
-                </a>
-                <a href="{% url 'job_titles' %}" class="nav-link">
-                    <i class="fas fa-search"></i>Job Title
-                </a>
-                <a href="{% url 'all_hardwares' %}">
-                    <i class="fas fa-desktop"></i> Hardware
-                </a>
-                <a href="{% url 'all_complaints' %}">
-                    <i class="fas fa-bug"></i> Complaints
-                    <!-- Add another icon -->
-                </a>
-                <a href="{% url 'all_branches' %}">
-                    <i class="fas fa-code-branch"></i> Branch
-                </a>
-                <a href="{% url 'users_table' %}">
-                    <i class="fas fa-users"></i> Users 
-                </a>
-
-                <!-- <a href="{% url 'reminder_type' %}">
-                    <i class="fas fa-users"></i> Reminder Types
-                </a> -->
-
-                
-                
-                
-
-                
-
-
-
-                
-                
-
-
-
-
-                
-
-
-            </div>
-
-
-            {% else %}
-
-
-            <div onclick="toggleUserMenu()">
-                <h5 class="mainmenu" style="color: white;margin-left: 7%;">
-                    <i class="fas fa-bullhorn"></i> <span style="margin-left: 1%;">Marketing</span>
-                </h5>
-            </div>
-            <div id="user-menu" class="submenu">
-                <a href="{% if request.session.user_level == '3level' or request.session.user_level == '5level' %}{% url 'user_dashboard' %}{% else %}{% url 'all_leads' %}{% endif %}">
-                    <i class="fas fa-user"></i> Leads
-                </a>
-            </div>
-            <div onclick="toggleHRMenu()">
-                <div>
-                    <h5 style="margin-left: 5%; color: white;" class="mainmenu">
-                        <div style="display: flex;" class="gap-2 align-items-center">
-                            <span style="margin-top: 5%;display: flex;align-items: center;gap: 10px;"><i class="fas fa-users-cog"></i>
-
-                                <span>HR</span></span>
-                        </div>
-                    </h5>
-                </div>
-            </div>
-
-            <div id="hr-menu" class="submenu" style="display: none; margin-left: 5%;">
-                <a href="{% url 'cv_management' %}">
-                    <i class="fas fa-file-contract"></i> CV Management
-                </a>
-                <a href="{% url 'interview_management' %}">
-                    <i class="fas fa-user-tie"></i> Interview Management
-                </a>
-                
-                
-                
-                <a href="{% url 'employee_management' %}">
-                    <i class="fas fa-users"></i> Employee Management
-                </a>
-                
-                <!-- <a href="{% if request.session.user_level == '3level' %}{% url 'attendance_user' %}{% else %}{% url 'attendance' %}{% endif %}">
-                    <i class="fas fa-user-check"></i> Attendance
-                </a> -->
-                
-                
-                
-                
-            </div>
         
-            <div class="sideBarMob">
-                <div class="sideBarMob">
-                    <a href="{% url 'document_list' %}" style="color: white;">
-                        <i class="fas fa-scroll"></i> Official Documents
-                    </a>
+                <div id="admin-menu" class="submenu" style="display: none; margin-left: 5%;">
+                    <a href="{% url 'agent_list' %}"><i class="fas fa-binoculars"></i> Address Book</a>
+                    <a href="{% url 'document_list' %}"><i class="fas fa-scroll"></i> Documentations</a>
                 </div>
-
-            </div>
-            <div onclick="toggleServicesMenu()" class="sideBarMob">
-                <div>
-                    <h5 style="margin-left: 5%; color: white;" class="mainmenu">
-                        <div style="display: flex;" class="gap-2 align-items-center">
-                            <i class="fas fa-wrench"></i> <span>Services</span>
-
-
-
-                        </div>
+        
+                <!-- HR Menu -->
+                <div onclick="toggleHRMenu()">
+                    <div>
+                        <h5 style="margin-left: 5%; color: white;" class="mainmenu">
+                            <div style="display: flex;" class="gap-2 align-items-center">
+                                <span style="margin-top: 5%;display: flex;align-items: center;gap: 10px;">
+                                    <i class="fas fa-users-cog"></i>
+                                    <span>HR</span>
+                                </span>
+                            </div>
+                        </h5>
+                    </div>
+                </div>
+        
+                <div id="hr-menu" class="submenu" style="display: none; margin-left: 5%;">
+                    <!-- Full HR options for admin -->
+                    <a href="{% url 'cv_management' %}"><i class="fas fa-file-contract"></i> CV Management</a>
+                    <a href="{% url 'interview_management' %}"><i class="fas fa-user-tie"></i> Interview Management</a>
+                    <a href="{% url 'make_offer_letter' %}"><i class="fas fa-file-signature"></i> Offer Letter</a>
+                    <a href="{% url 'employee_management' %}"><i class="fas fa-users"></i> Employee Management</a>
+                    <!-- <a href="{% url 'attendance' %}"><i class="fas fa-user-check"></i> Attendance</a> -->
+                    <a href="{% url 'make_salary_certificate' %}"><i class="fas fa-file-invoice-dollar"></i> Salary Certificate</a>
+                    <a href="{% url 'make_experience_certificate' %}"><i class="fas fa-award"></i> Experience Certificate</a>
+                </div>
+        
+                <!-- Marketing Menu -->
+                <div onclick="toggleMarketingMenu()">
+                    <div>
+                        <h5 style="margin-left: 5%; color: white;" class="mainmenu">
+                            <div style="display: flex;" class="gap-2 align-items-center">
+                                <span style="margin-top: 5%;display: flex;align-items: center;gap: 10px;">
+                                    <i class="fas fa-bullhorn"></i>
+                                    <span>Marketing</span>
+                                </span>
+                            </div>
+                        </h5>
+                    </div>
+                </div>
+        
+                <div id="marketing-menu" class="submenu" style="display: none; margin-left: 5%;">
+                    <a href="{% url 'all_leads' %}"><i class="fas fa-user"></i> Leads</a>
+                </div>
+        
+                <!-- Services Menu -->
+                <div onclick="toggleServicesMenu()" class="sideBarMob">
+                    <div>
+                        <h5 style="margin-left: 5%; color: white;" class="mainmenu">
+                            <div style="display: flex;margin-top: 5%;" class="gap-2 align-items-center">
+                                <i class="fas fa-wrench"></i> <span>Services</span>
+                            </div>
+                        </h5>
+                    </div>
+                </div>
+        
+                <div id="services-menu" class="submenu" style="margin-left: 5%; display: none;">
+                    <a href="{% url 'service_log' %}"><i class="fas fa-book"></i> Service Log</a>
+                    <a href="{% url 'service_entry' %}"><i class="fas fa-plus-circle"></i> Service Entry</a>
+                </div>
+        
+                <!-- Master Menu -->
+                <div onclick="toggleMenu()">
+                    <div>
+                        <h5 style="margin-left: 5%; color: white;" class="mainmenu">
+                            <div style="display: flex;margin-top: 7%;" class="gap-2 align-items-center">
+                                <i class="fas fa-cog"></i>
+                                <span>Master</span>
+                            </div>
+                        </h5>
+                    </div>
+                </div>
+        
+                <div id="master-menu" class="submenu">
+                    <!-- Full master menu options -->
+                    <a href="{% url 'all_districts' %}"><i class="fas fa-map"></i> District</a>
+                    <a href="{% url 'all_areas' %}"><i class="fas fa-map-marker-alt"></i> Area</a>
+                    <a href="{% url 'all_locations' %}"><i class="fas fa-chart-area"></i> Location</a>
+                    <a href="{% url 'all_requirements' %}"><i class="fas fa-tasks"></i> Requirements</a>
+                    <a href="{% url 'business_type_list' %}"><i class="fas fa-binoculars"></i> Business Type</a>
+                    <a href="{% url 'job_titles' %}"><i class="fas fa-search"></i> Job Title</a>
+                    <a href="{% url 'all_hardwares' %}"><i class="fas fa-desktop"></i> Hardware</a>
+                    <a href="{% url 'all_complaints' %}"><i class="fas fa-bug"></i> Complaints</a>
+                    <a href="{% url 'all_branches' %}"><i class="fas fa-code-branch"></i> Branch</a>
+                    <a href="{% url 'users_table' %}"><i class="fas fa-users"></i> Users</a>
+                    <!-- <a href="{% url 'reminder_type' %}"><i class="fas fa-users"></i> Reminder Types</a> -->
+                </div>
+        
+            {% elif request.session.user_level == 'normal' %}
+                <!-- Normal User Sidebar -->
+                <div onclick="toggleAdminMenu()">
+                    <div>
+                        <h5 style="margin-left: 5%; color: white;margin-bottom: 18px;" class="mainmenu">
+                            <div style="display: flex;" class="gap-2 align-items-center">
+                                <span style="display: flex;align-items: center;gap: 10px;">
+                                    <i class="fas fa-tools"></i>
+                                    <span>Administration</span>
+                                </span>
+                            </div>
+                        </h5>
+                    </div>
+                </div>
+        
+                <div id="admin-menu" class="submenu" style="display: none; margin-left: 5%;">
+                    <a href="{% url 'agent_list' %}"><i class="fas fa-binoculars"></i> Address Book</a>
+                    <a href="{% url 'document_list' %}"><i class="fas fa-scroll"></i> Documentations</a>
+                </div>
+        
+                <!-- Marketing Menu -->
+                <div onclick="toggleUserMenu()">
+                    <h5 class="mainmenu" style="color: white;margin-left: 7%;">
+                        <div style="display: flex;gap: 10px;"><i class="fas fa-bullhorn"></i> <span style="margin-left: 1%;">Marketing</span></div>
                     </h5>
                 </div>
-            </div>
-
-            <div id="services-menu" class="submenu" style="margin-left: 5%; display: none;">
-                <a href="{% url 'service_log' %}">
-                    <i class="fas fa-book"></i> Service Log
-                </a>
-                <a href="{% url 'user_service_entry' %}">
-                    <i class="fas fa-plus-circle"></i> Service Entry
-                </a>
-            </div>
-
-
-
+                <div id="user-menu" class="submenu" style="margin-right: 50%;">
+                    <a href="{% url 'all_leads' %}"><i class="fas fa-user"></i> Leads</a>
+                </div>
+        
+                <!-- HR Menu -->
+                <div onclick="toggleHRMenu()">
+                    <div>
+                        <h5 style="margin-left: 5%; color: white;" class="mainmenu">
+                            <div style="display: flex;" class="gap-2 align-items-center">
+                                <span style="margin-top: 5%;display: flex;align-items: center;gap: 10px;">
+                                    <i class="fas fa-users-cog"></i>
+                                    <span>HR</span>
+                                </span>
+                            </div>
+                        </h5>
+                    </div>
+                </div>
+        
+                <div id="hr-menu" class="submenu" style="display: none; margin-left: 5%;">
+                    <a href="{% url 'cv_management' %}"><i class="fas fa-file-contract"></i> CV Management</a>
+                    <a href="{% url 'interview_management' %}"><i class="fas fa-user-tie"></i> Interview Management</a>
+                    <a href="{% url 'employee_management' %}"><i class="fas fa-users"></i> Employee Management</a>
+                    <!-- <a href="{% url 'attendance' %}"><i class="fas fa-user-check"></i> Attendance</a> -->
+                </div>
+        
+                <!-- Services Menu -->
+                <div onclick="toggleServicesMenu()" class="sideBarMob">
+                    <div>
+                        <h5 style="margin-left: 5%; color: white;" class="mainmenu">
+                            <div style="display: flex;" class="gap-2 align-items-center">
+                                <i class="fas fa-wrench"></i> <span>Services</span>
+                            </div>
+                        </h5>
+                    </div>
+                </div>
+        
+                <div id="services-menu" class="submenu" style="margin-left: 5%; display: none;">
+                    <a href="{% url 'service_log' %}"><i class="fas fa-book"></i> Service Log</a>
+                    <a href="{% url 'user_service_entry' %}"><i class="fas fa-plus-circle"></i> Service Entry</a>
+                </div>
+        
+            {% elif request.session.user_level == '3level' %}
+        
+                <!-- Marketing Menu -->
+                <div onclick="toggleUserMenu()">
+                    <h5 class="mainmenu" style="color: white;margin-left: 7%;">
+                        <div style="display: flex;gap: 5px;"><i class="fas fa-bullhorn"></i> <span style="margin-left: 1%;">Marketing</span></div>
+                    </h5>
+                </div>
+                <div id="user-menu" class="submenu" style="margin-right: 50%;">
+                    <a href="{% url 'user_dashboard' %}"><i class="fas fa-user"></i> Leads</a>
+                </div>
+        
+                <!-- HR Menu -->
+                <div onclick="toggleHRMenu()">
+                    <div>
+                        <h5 style="margin-left: 5%; color: white;" class="mainmenu">
+                            <div style="display: flex;" class="gap-2 align-items-center">
+                                <span style="margin-top: 5%;display: flex;align-items: center;gap: 10px;">
+                                    <i class="fas fa-users-cog"></i>
+                                    <span>HR</span>
+                                </span>
+                            </div>
+                        </h5>
+                    </div>
+                </div>
+        
+                <div id="hr-menu" class="submenu" style="display: none; margin-left: 5%;">
+                    <!-- <a href="{% url 'attendance_user' %}"><i class="fas fa-user-check"></i> Attendance</a> -->
+                </div>
+        
+                <!-- Services Menu -->
+                <div onclick="toggleServicesMenu()" class="sideBarMob">
+                    <div>
+                        <h5 style="margin-left: 5%; color: white;" class="mainmenu">
+                            <div style="display: flex;margin-top: 5%;" class="gap-2 align-items-center">
+                                <i class="fas fa-wrench"></i> <span>Services</span>
+                            </div>
+                        </h5>
+                    </div>
+                </div>
+        
+                <div id="services-menu" class="submenu" style="margin-left: 5%; display: none;">
+                    <a href="{% url 'service_log' %}"><i class="fas fa-book"></i> Service Log</a>
+                    <a href="{% url 'service_entry' %}"><i class="fas fa-plus-circle"></i> Service Entry</a>
+                </div>
+        
             {% endif %}
-
         </div>
-        
-    </div>
 
     <div class="content">
         <di>
