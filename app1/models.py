@@ -465,7 +465,6 @@ from django.core.exceptions import ValidationError
 from django.db import models
 
 
-User = get_user_model()  # Correct way to reference the User model
 
 class Employee(models.Model):
     STATUS_CHOICES = [
@@ -479,7 +478,7 @@ class Employee(models.Model):
         ('SYSMAC', 'SYSMAC'),
     ]
     name = models.CharField(max_length=100)
-    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True) # CREATED AS NEW
+    user = models.ForeignKey("User", on_delete=models.SET_NULL, null=True, blank=True) # CREATED AS NEW
     photo = models.ImageField(upload_to='employees/')
     address = models.CharField(max_length=255, blank=True, null=True) 
     phone_personal = models.CharField(max_length=15)
