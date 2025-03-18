@@ -475,7 +475,7 @@ class Employee(models.Model):
         ('SYSMAC', 'SYSMAC'),
     ]
     name = models.CharField(max_length=100)
-    user = models.ForeignKey("User", on_delete=models.SET_NULL, null=True, blank=True) # CREATED AS NEW
+    user = models.ForeignKey("User", on_delete=models.SET_NULL, null=True, blank=True) 
     photo = models.ImageField(upload_to='employees/')
     address = models.CharField(max_length=255, blank=True, null=True) 
     phone_personal = models.CharField(max_length=15)
