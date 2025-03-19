@@ -2659,13 +2659,15 @@ def user_control(request):
 
 
 from django.shortcuts import render
-from .models import Employee
+from django.utils import timezone
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+import json
+from .models import Employee, Attendance
 
 def attendance(request):
-    # Get all employees with their related user data
     employees = Employee.objects.select_related('user').all()
     
-    # Get the current month and year
     today = timezone.now()
     current_month = today.month
     current_year = today.year
@@ -2675,36 +2677,29 @@ def attendance(request):
         date__year=current_year,
         date__month=current_month
     ).select_related('employee')
-    
+
     # Create a dictionary to store attendance data
     attendance_data = {}
     for record in attendance_records:
         employee_id = str(record.employee_id)  # Convert to string for JSON serialization
         if employee_id not in attendance_data:
             attendance_data[employee_id] = {}
-        
-        # Convert the date to day of month for the key
+
         day = str(record.date.day)
         
         # Determine attendance status
-        status = 'initial'
-        if record.punch_in and record.punch_out:
-            status = 'full'
-        elif record.punch_in:
-            status = 'half'
-        elif record.status == 'leave':
-            status = 'leave'
-        
-        # Store the attendance data for this day
+        status = record.status if record.status else 'initial'
+
         attendance_data[employee_id][day] = {
             'status': status,
             'punch_in': record.punch_in.isoformat() if record.punch_in else None,
             'punch_out': record.punch_out.isoformat() if record.punch_out else None
         }
-    
-    # Calculate days in current month
-    days_in_month = (today.replace(day=1) + timezone.timedelta(days=32)).replace(day=1).day - 1
-    
+
+    # Calculate total days in current month
+    from calendar import monthrange
+    days_in_month = monthrange(current_year, current_month)[1]
+
     context = {
         'employees': employees,
         'attendance_data': json.dumps(attendance_data),
@@ -2713,8 +2708,9 @@ def attendance(request):
         'today': today.day,
         'range': range(1, days_in_month + 1)
     }
-    
+
     return render(request, 'attendance.html', context)
+
 
 @csrf_exempt
 def save_attendance(request, employee_id, day, status):
@@ -3062,25 +3058,30 @@ def delete_reminder_type(request, id):
 
 
 
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from .models import Attendance, User
-import json
-
 @csrf_exempt
 def update_attendance(request):
     if request.method == "POST":
         try:
             data = json.loads(request.body)
-            user_id = data.get("user_id")
+            employee_id = data.get("employee_id")
             date = data.get("date")
             status = data.get("status")
 
-            attendance, created = Attendance.objects.get_or_create(user_id=user_id, date=date)
-            attendance.status = status
-            attendance.save()
+            if not employee_id or not date or not status:
+                return JsonResponse({"success": False, "error": "Missing required fields"})
 
-            return JsonResponse({"success": True, "message": "Attendance updated successfully!"})
+            attendance, created = Attendance.objects.get_or_create(
+                employee_id=employee_id, date=date, defaults={"status": status}
+            )
+
+            if not created:
+                attendance.status = status
+                attendance.save()
+
+            return JsonResponse({"success": True, "status": status})
         except Exception as e:
             return JsonResponse({"success": False, "error": str(e)})
+
     return JsonResponse({"success": False, "error": "Invalid request"})
+
+

@@ -204,7 +204,8 @@ urlpatterns = [
     path('punch_in/', views.punch_in, name='punch_in'),
     path('punch_out/', views.punch_out, name='punch_out'),
     path('get_attendance_status/', views.get_attendance_status, name='get_attendance_status'),
-    path('update_attendance/', update_attendance, name='update_attendance'),
+    path('update_attendance/', views.update_attendance, name='update_attendance'),
+
     
 
 

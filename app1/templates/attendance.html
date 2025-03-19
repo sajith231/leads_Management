@@ -1,5 +1,4 @@
 {% extends 'base.html' %}
-
 {% block content %}
 {% csrf_token %}
 {% if request.user.role == 'User' or request.user.role == 'Branch User' %}
@@ -32,15 +31,25 @@
                            onchange="updateAttendanceTable(this.value)">
                 </div>
                 <div class="col-md-4">
-                    <label class="form-label">Department</label>
-                    <select class="form-select" id="departmentFilter" onchange="filterEmployees()">
-                        <option value="">All Departments</option>
-                        <option value="IT">IT</option>
-                        <option value="HR">HR</option>
-                        <option value="Finance">Finance</option>
-                        <option value="Marketing">Marketing</option>
-                    </select>
+                    <label class="form-label">Search by Name</label>
+                    <input type="text" class="form-control" id="nameFilter" onkeyup="filterEmployees()" placeholder="Enter name">
                 </div>
+                
+                <script>
+                    function filterEmployees() {
+                        let input = document.getElementById("nameFilter").value.toLowerCase();
+                        let employees = document.getElementsByClassName("employee-row");
+                
+                        for (let i = 0; i < employees.length; i++) {
+                            let name = employees[i].getAttribute("data-name").toLowerCase();
+                            if (name.includes(input)) {
+                                employees[i].style.display = "";
+                            } else {
+                                employees[i].style.display = "none";
+                            }
+                        }
+                    }
+                </script>
                 <div class="col-md-4">
                     <label class="form-label">Job Title</label>
                     <select class="form-select" id="jobTitleFilter" onchange="filterEmployees()">
@@ -56,7 +65,7 @@
     </div>
 
     <!-- Statistics Cards -->
-    <div class="row g-3 mb-4">
+    <!-- <div class="row g-3 mb-4">
         <div class="col-md-3">
             <div class="card shadow-sm bg-primary text-white">
                 <div class="card-body">
@@ -109,7 +118,7 @@
                 </div>
             </div>
         </div>
-    </div>
+    </div> -->
 
     <!-- Legend Section -->
     <div class="card shadow-sm mb-4">
@@ -190,7 +199,7 @@
                             <th rowspan="3" class="align-middle">No</th>
                             <th rowspan="3" class="align-middle">Name</th>
                             <th rowspan="3" class="align-middle">User ID</th>
-                            <th rowspan="3" class="align-middle">Job Title</th>
+                            <!-- <th rowspan="3" class="align-middle">Job Title</th> -->
                             <th id="daysHeader" colspan="31" class="text-center">Days of Month</th>
                             <th rowspan="3" class="align-middle">Attendance %</th>
                         </tr>
@@ -207,13 +216,18 @@
                             <td>{{ forloop.counter }}</td>
                             <td>{{ employee.name }}</td>
                             <td>{{ employee.user.userid|default:'' }}</td>
-                            <td>{{ employee.job_title }}</td>
-                            
+                            <!-- <td>{{ employee.job_title }}</td> -->
+                    
                             {% for day in days_of_month %}
                             <td class="text-center">
-                                <i class="fas fa-star attendance-marker text-secondary"
+                                <i class="fas fa-star attendance-marker 
+                                    {% if employee.attendance_status == 'full' %}text-success
+                                    {% elif employee.attendance_status == 'half' %}text-warning
+                                    {% elif employee.attendance_status == 'leave' %}text-danger
+                                    {% else %}text-secondary{% endif %}"
                                    data-employee-id="{{ employee.id }}"
                                    data-date="{{ day }}"
+                                   data-status="{{ employee.attendance_status }}"
                                    data-bs-toggle="modal"
                                    data-bs-target="#attendanceModal"
                                    onclick="openAttendanceModal(this)">
@@ -227,6 +241,7 @@
                     </tbody>
                     
                     
+                    
                 </table>
             </div>
         </div>
@@ -236,22 +251,21 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="attendanceModalLabel">Edit Attendance</h5>
+                <h5 class="modal-title">Edit Attendance</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form id="attendanceForm">
-                    <input type="hidden" id="attendanceUserId">
-                    <input type="hidden" id="attendanceDate">
-                    <div class="mb-3">
-                        <label class="form-label">Status</label>
-                        <select class="form-select" id="attendanceStatus">
-                            <option value="full">Full Day</option>
-                            <option value="half">Half Day</option>
-                            <option value="leave">Leave</option>
-                        </select>
-                    </div>
-                </form>
+                <input type="hidden" id="attendanceUserId">
+                <input type="hidden" id="attendanceDate">
+                <div class="mb-3">
+                    <label class="form-label">Status</label>
+                    <select class="form-select" id="attendanceStatus">
+                        <option value="full">Full Day</option>
+                        <option value="half">Half Day</option>
+                        <option value="leave">Leave</option>
+                        <option value="initial">Not Marked</option>
+                    </select>
+                </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -260,6 +274,7 @@
         </div>
     </div>
 </div>
+
 
 
 </div>
@@ -326,6 +341,11 @@
     /* .table th:last-child { min-width: 100px; }   */
 </style>
 <script>
+    
+</script>
+
+
+<script>
     function openAttendanceModal(element) {
         let userId = element.getAttribute("data-employee-id");
         let date = element.getAttribute("data-date");
@@ -338,20 +358,47 @@
         let userId = document.getElementById("attendanceUserId").value;
         let date = document.getElementById("attendanceDate").value;
         let status = document.getElementById("attendanceStatus").value;
-    
+
         fetch("/update_attendance/", {
             method: "POST",
             headers: {
                 "X-CSRFToken": "{{ csrf_token }}",
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({ user_id: userId, date: date, status: status })
+            body: JSON.stringify({ employee_id: userId, date: date, status: status })
         })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
                 alert("Attendance updated!");
-                location.reload();
+
+                // Close the modal
+                var modal = new bootstrap.Modal(document.getElementById('attendanceModal'));
+                modal.hide();
+
+                // Find the star icon for this employee and date
+                let starIcon = document.querySelector(
+                    `i.attendance-marker[data-employee-id="${userId}"][data-date="${date}"]`
+                );
+
+                // Update the star icon class based on the status
+                if (starIcon) {
+                    starIcon.classList.remove("text-success", "text-warning", "text-danger", "text-secondary");
+
+                    if (status === "full") {
+                        starIcon.classList.add("text-success");
+                    } else if (status === "half") {
+                        starIcon.classList.add("text-warning");
+                    } else if (status === "leave") {
+                        starIcon.classList.add("text-danger");
+                    } else {
+                        starIcon.classList.add("text-secondary");
+                    }
+
+                    // Update the data-status attribute so next time it loads correctly
+                    starIcon.setAttribute("data-status", status);
+                }
+
             } else {
                 alert("Error: " + data.error);
             }
