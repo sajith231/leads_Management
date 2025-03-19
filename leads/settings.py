@@ -78,7 +78,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'app1.context_processors.user_info',  # ✅ Correct function
-                'app1.views.base_context_processor',
+                
                 
                 
 
