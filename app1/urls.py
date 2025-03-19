@@ -219,6 +219,19 @@ urlpatterns = [
     path('add-reminder-type/', add_reminder_type, name='add_reminder_type'),
     path('edit-reminder-type/<int:id>/', edit_reminder_type, name='edit_reminder_type'),
     path('delete-reminder-type/<int:id>/', delete_reminder_type, name='delete_reminder_type'),
+
+
+
+
+    path('reminders/', views.reminders, name='reminders'),
+    path("add-reminder/", views.add_reminder, name="add_reminder"),
+    path('reminders/add/', views.add_reminder, name='add_reminder'),
+    path('reminder/edit/<int:reminder_id>/', views.edit_reminder, name='edit_reminder'),
+    path('reminders/delete/<int:reminder_id>/', views.delete_reminder, name='delete_reminder'),
+
+
+
+
     
     
     

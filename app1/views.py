@@ -3085,3 +3085,275 @@ def update_attendance(request):
     return JsonResponse({"success": False, "error": "Invalid request"})
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+# reminder related views functions start here(
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+import logging
+from .models import Reminder, Employee, ReminderType
+
+logger = logging.getLogger(__name__)
+
+
+
+# remainder pge views functions
+@login_required
+def reminders(request):
+    """View for displaying all reminders with sequential numbering."""
+    # Change from '-entry_date' (descending) to 'entry_date' (ascending)
+    reminders_list = Reminder.objects.all().prefetch_related('responsible_persons').order_by('entry_date')
+    
+    # Prepare data for template with responsible persons explicitly added and sequential numbering
+    reminders_data = []
+    for index, reminder in enumerate(reminders_list, start=1):
+        responsible_people = [{"id": p.id, "name": p.name} for p in reminder.responsible_persons.all()]
+        
+        reminders_data.append({
+            "display_no": index,  # Sequential display number
+            "no": reminder.no,    # Original ID for database operations
+            "entry_date": reminder.entry_date,
+            "reminder_type": reminder.reminder_type,
+            "remark": reminder.remark,
+            "remind_date": reminder.remind_date,
+            "responsible_people": responsible_people
+        })
+    
+    return render(request, "reminder.html", {
+        "reminders": reminders_data,
+        "reminder_types": ReminderType.objects.all()
+    })
+
+
+
+
+# adding remainder views function
+@login_required
+def add_reminder(request):
+    """View for adding a new reminder with multiple responsible employees."""
+    # Get all reminder types
+    reminder_types = ReminderType.objects.all()
+    
+    try:
+        # Fetch active employees with relevant fields, grouped by organization
+        employees = Employee.objects.select_related('user').filter(
+            status='active'
+        ).order_by('organization', 'name')
+        
+        logger.info(f"Found {employees.count()} active employees")
+    except Exception as e:
+        logger.error(f"Error fetching employees: {e}")
+        employees = []
+    
+    if request.method == "POST":
+        reminder_type_id = request.POST.get("reminder_type")
+        remark = request.POST.get("remark")
+        remind_date = request.POST.get("remind_date")
+        responsible_ids = request.POST.getlist("responsible_persons[]")
+        
+        logger.info(f"Form data: Type={reminder_type_id}, Date={remind_date}, Responsible IDs={responsible_ids}")
+        
+        if reminder_type_id and remind_date:
+            try:
+                reminder_type = ReminderType.objects.get(id=reminder_type_id)
+                
+                # Create the reminder
+                reminder = Reminder.objects.create(
+                    reminder_type=reminder_type,
+                    remark=remark,
+                    remind_date=remind_date
+                )
+                
+                # Assign responsible employees if selected
+                if responsible_ids:
+                    for emp_id in responsible_ids:
+                        if emp_id:  # Check if the ID is not empty
+                            try:
+                                responsible_employee = Employee.objects.get(id=emp_id)
+                                reminder.responsible_persons.add(responsible_employee)
+                                logger.info(f"Assigned employee {responsible_employee.name} to reminder {reminder.no}")
+                            except Employee.DoesNotExist:
+                                logger.warning(f"Employee with ID {emp_id} not found")
+                
+                logger.info(f"Successfully created reminder #{reminder.no}")
+                messages.success(request, f"Reminder successfully created")
+                return redirect("reminders")
+            except Exception as e:
+                logger.error(f"Error creating reminder: {e}")
+                # Pass the error to the template
+                form_data = request.POST.dict()
+                form_data['responsible_persons'] = request.POST.getlist("responsible_persons[]")
+                return render(request, "add_reminder.html", {
+                    "employees": employees,
+                    "reminder_types": reminder_types,
+                    "error": str(e),
+                    "form_data": form_data
+                })
+        else:
+            error = "Reminder type and remind date are required."
+            return render(request, "add_reminder.html", {
+                "employees": employees,
+                "reminder_types": reminder_types,
+                "error": error,
+                "form_data": request.POST.dict()
+            })
+    
+    # For GET requests
+    return render(request, "add_reminder.html", {
+        "employees": employees,
+        "reminder_types": reminder_types
+    })
+
+
+
+
+
+
+
+
+
+# edit remainder views functions
+@login_required
+def edit_reminder(request, reminder_id):
+    """View for editing an existing reminder with multiple responsible employees."""
+    try:
+        reminder = Reminder.objects.get(no=reminder_id)
+    except Reminder.DoesNotExist:
+        logger.error(f"Reminder #{reminder_id} not found")
+        messages.error(request, f"Reminder #{reminder_id} not found")
+        return redirect("reminders")
+    
+    # Get all reminder types
+    reminder_types = ReminderType.objects.all()
+    
+    # Get all active employees
+    try:
+        employees = Employee.objects.select_related('user').filter(
+            status='active'
+        ).order_by('organization', 'name')
+        
+        logger.info(f"Found {employees.count()} active employees")
+    except Exception as e:
+        logger.error(f"Error fetching employees: {e}")
+        employees = []
+    
+    if request.method == "POST":
+        reminder_type_id = request.POST.get("reminder_type")
+        remark = request.POST.get("remark")
+        remind_date = request.POST.get("remind_date")
+        responsible_ids = request.POST.getlist("responsible_persons[]")
+        
+        logger.info(f"Form data: Type={reminder_type_id}, Date={remind_date}, Responsible IDs={responsible_ids}")
+        
+        if reminder_type_id and remind_date:
+            try:
+                reminder_type = ReminderType.objects.get(id=reminder_type_id)
+                
+                # Update the reminder
+                reminder.reminder_type = reminder_type
+                reminder.remark = remark
+                reminder.remind_date = remind_date
+                reminder.save()
+                
+                # Clear existing relations and add new ones
+                reminder.responsible_persons.clear()
+                
+                # Assign responsible employees if selected
+                if responsible_ids:
+                    for emp_id in responsible_ids:
+                        if emp_id:  # Check if the ID is not empty
+                            try:
+                                responsible_employee = Employee.objects.get(id=emp_id)
+                                reminder.responsible_persons.add(responsible_employee)
+                                logger.info(f"Assigned employee {responsible_employee.name} to reminder {reminder.no}")
+                            except Employee.DoesNotExist:
+                                logger.warning(f"Employee with ID {emp_id} not found")
+                
+                logger.info(f"Successfully updated reminder #{reminder.no}")
+                messages.success(request, f"Reminder #{reminder.no} was updated successfully")
+                return redirect("reminders")
+            except Exception as e:
+                logger.error(f"Error updating reminder: {e}")
+                # Pass the error to the template
+                return render(request, "edit_reminder.html", {
+                    "reminder": reminder,
+                    "employees": employees,
+                    "reminder_types": reminder_types,
+                    "error": str(e)
+                })
+        else:
+            error = "Reminder type and remind date are required."
+            return render(request, "edit_reminder.html", {
+                "reminder": reminder,
+                "employees": employees,
+                "reminder_types": reminder_types,
+                "error": error
+            })
+    
+    # For GET requests
+    return render(request, "edit_reminder.html", {
+        "reminder": reminder,
+        "employees": employees,
+        "reminder_types": reminder_types
+    })
+
+
+
+
+
+# delete remainder views function
+@login_required
+def delete_reminder(request, reminder_id):
+    """View for deleting a reminder."""
+    reminder = get_object_or_404(Reminder, no=reminder_id)
+    
+    try:
+        reminder_no = reminder.no  # Store the no for the message
+        reminder.delete()
+        logger.info(f"Successfully deleted reminder #{reminder_no}")
+        messages.success(request, f"Reminder #{reminder_no} was deleted successfully")
+    except Exception as e:
+        logger.error(f"Error deleting reminder: {e}")
+        messages.error(request, f"Error deleting reminder: {e}")
+    
+    return redirect("reminders")
+
+
+
+# adding indication based on remaind date
+from django.contrib.auth.decorators import login_required
+from django.utils import timezone
+from django.urls import reverse  # Add this import
+
+@login_required
+def base_context_processor(request):
+    """Context processor to add reminder count to all templates."""
+    # Get current date
+    today = timezone.now().date()
+    
+    # Count reminders that are due today or in the past
+    active_reminders_count = Reminder.objects.filter(remind_date__lte=today).count()
+    
+    # Check if we're currently on the reminders page
+    is_reminders_page = request.path == reverse('reminders')
+    
+    return {
+        'active_reminders_count': active_reminders_count,
+        'is_reminders_page': is_reminders_page
+    }
+
+
+# reminder related functions end here )

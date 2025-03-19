@@ -479,7 +479,28 @@
 }
     </style>
     
-    
+    <style>
+        .reminder-link {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .reminder-badge {
+            position: absolute;
+            top: -5px;
+            right: -10px;
+            background-color: #ff3547;
+            color: white;
+            border-radius: 50%;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+            font-weight: bold;
+            min-width: 1.5rem;
+            text-align: center;
+            margin-right: 70px;
+            margin-top: 15px;
+        }
+    </style>    
         
         <!-- Hamburger Menu Button -->
         <button class="hamburger" onclick="toggleSidebar()">
@@ -508,6 +529,13 @@
                 <div id="admin-menu" class="submenu" style="display: none; margin-left: 5%;">
                     <a href="{% url 'agent_list' %}"><i class="fas fa-binoculars"></i> Address Book</a>
                     <a href="{% url 'document_list' %}"><i class="fas fa-scroll"></i> Documentations</a>
+                    <a href="{% url 'reminders' %}" class="reminder-link">
+                        <i class="fas fa-scroll"></i> Reminders
+                        {% if active_reminders_count > 0 %}
+                            <span class="reminder-badge">{{ active_reminders_count }}</span>
+                        {% endif %}
+                    </a>
+
                 </div>
         
                 <!-- HR Menu -->
@@ -530,7 +558,7 @@
                     <a href="{% url 'interview_management' %}"><i class="fas fa-user-tie"></i> Interview Management</a>
                     <a href="{% url 'make_offer_letter' %}"><i class="fas fa-file-signature"></i> Offer Letter</a>
                     <a href="{% url 'employee_management' %}"><i class="fas fa-users"></i> Employee Management</a>
-                    <a href="{% url 'attendance' %}"><i class="fas fa-user-check"></i> Attendance</a>
+                    <!-- <a href="{% url 'attendance' %}"><i class="fas fa-user-check"></i> Attendance</a> -->
                     <a href="{% url 'make_salary_certificate' %}"><i class="fas fa-file-invoice-dollar"></i> Salary Certificate</a>
                     <a href="{% url 'make_experience_certificate' %}"><i class="fas fa-award"></i> Experience Certificate</a>
                 </div>
@@ -644,8 +672,8 @@
                     <a href="{% url 'cv_management' %}"><i class="fas fa-file-contract"></i> CV Management</a>
                     <a href="{% url 'interview_management' %}"><i class="fas fa-user-tie"></i> Interview Management</a>
                     <a href="{% url 'employee_management' %}"><i class="fas fa-users"></i> Employee Management</a>
-                    <a href="{% url 'attendance' %}"><i class="fas fa-user-check"></i> Attendance</a>
-                    <a href="{% url 'attendance_user' %}"><i class="fas fa-user-check"></i> Punch in / Punch out</a>
+                    <!-- <a href="{% url 'attendance' %}"><i class="fas fa-user-check"></i> Attendance</a>
+                    <a href="{% url 'attendance_user' %}"><i class="fas fa-user-check"></i> Punch in / Punch out</a> -->
                 </div>
         
                 <!-- Services Menu -->
@@ -691,7 +719,7 @@
                 </div>
         
                 <div id="hr-menu" class="submenu" style="display: none; margin-left: 5%;">
-                    <a href="{% url 'attendance_user' %}"><i class="fas fa-user-check"></i> Attendance</a>
+                    <!-- <a href="{% url 'attendance_user' %}"><i class="fas fa-user-check"></i> Attendance</a> -->
                 </div>
         
                 <!-- Services Menu -->

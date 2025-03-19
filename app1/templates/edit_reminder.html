@@ -1,0 +1,181 @@
+{% extends 'base.html' %}
+{% block content %}
+    <style>
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .error {
+            color: red;
+            margin-bottom: 15px;
+        }
+        select {
+            width: 100%;
+            max-width: 500px;
+            padding: 8px;
+        }
+        .helper-text {
+            font-size: 0.8em;
+            color: #666;
+            margin-top: 3px;
+        }
+        .responsible-person-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .remove-person {
+            margin-left: 10px;
+            background-color: #ff4444;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+        .add-person {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 5px 10px;
+            margin-bottom: 15px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h2>Edit Reminder #{{ reminder.no }}</h2>
+    
+    {% if error %}
+    <div class="error">
+        <p><strong>Error:</strong> {{ error }}</p>
+    </div>
+    {% endif %}
+
+    <form method="post">
+        {% csrf_token %}
+        
+        <div class="form-group">
+            <label for="reminder_type">Reminder Type:</label>
+            <select name="reminder_type" id="reminder_type" required>
+                <option value="">-- Select Reminder Type --</option>
+                {% if reminder_types %}
+                    {% for type in reminder_types %}
+                        <option value="{{ type.id }}" {% if reminder.reminder_type.id == type.id %}selected{% endif %}>
+                            {{ type.name }}
+                        </option>
+                    {% endfor %}
+                {% else %}
+                    <option value="" disabled>No reminder types available</option>
+                {% endif %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="remark">Remark:</label>
+            <textarea name="remark" id="remark" rows="4" style="width: 100%; max-width: 500px;">{{ reminder.remark }}</textarea>
+        </div>
+
+        <div class="form-group">
+            <label>Responsible Persons:</label>
+            <div class="responsible-persons-container">
+                {% if reminder.responsible_persons.all %}
+                    {% for resp in reminder.responsible_persons.all %}
+                        <div class="responsible-person-row">
+                            <select name="responsible_persons[]" class="responsible-person-select">
+                                <option value="">-- Select Employee --</option>
+                                {% for emp in employees %}
+                                    <option value="{{ emp.id }}" {% if resp.id == emp.id %}selected{% endif %}>
+                                        {{ emp.name }} - {{ emp.job_title }} ({{ emp.organization|default:'N/A' }})
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <button type="button" class="remove-person" {% if forloop.first and reminder.responsible_persons.count == 1 %}style="display: none;"{% endif %}>X</button>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="responsible-person-row">
+                        <select name="responsible_persons[]" class="responsible-person-select">
+                            <option value="">-- Select Employee --</option>
+                            {% for emp in employees %}
+                                <option value="{{ emp.id }}">
+                                    {{ emp.name }} - {{ emp.job_title }} ({{ emp.organization|default:'N/A' }})
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <button type="button" class="remove-person" style="display: none;">X</button>
+                    </div>
+                {% endif %}
+            </div>
+            <button type="button" class="add-person">Add Another Person</button>
+        </div>
+
+        <div class="form-group">
+            <label for="remind_date">Remind Date:</label>
+            <input type="date" name="remind_date" id="remind_date" required value="{{ reminder.remind_date|date:'Y-m-d' }}">
+        </div>
+
+        <button type="submit">Update Reminder</button>
+    </form>
+
+    <div style="margin-top: 20px;">
+        <a href="{% url 'reminders' %}">Back to Reminders</a>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const container = document.querySelector('.responsible-persons-container');
+            const addButton = document.querySelector('.add-person');
+            
+            // Function to add a new person row
+            addButton.addEventListener('click', function() {
+                const rows = document.querySelectorAll('.responsible-person-row');
+                if (rows.length > 0) {
+                    const newRow = rows[0].cloneNode(true);
+                    newRow.querySelector('select').value = '';
+                    
+                    // Show remove button for all rows
+                    const removeButtons = document.querySelectorAll('.remove-person');
+                    removeButtons.forEach(btn => {
+                        btn.style.display = 'block';
+                    });
+                    newRow.querySelector('.remove-person').style.display = 'block';
+                    
+                    // Add event listener to remove button
+                    newRow.querySelector('.remove-person').addEventListener('click', function() {
+                        newRow.remove();
+                        
+                        // Hide remove button if only one row remains
+                        const currentRows = document.querySelectorAll('.responsible-person-row');
+                        if (currentRows.length === 1) {
+                            currentRows[0].querySelector('.remove-person').style.display = 'none';
+                        }
+                    });
+                    
+                    container.appendChild(newRow);
+                }
+            });
+            
+            // Add event listeners to all remove buttons
+            document.querySelectorAll('.remove-person').forEach(button => {
+                button.addEventListener('click', function() {
+                    const rows = document.querySelectorAll('.responsible-person-row');
+                    if (rows.length > 1) {
+                        this.closest('.responsible-person-row').remove();
+                        
+                        // Hide remove button if only one row remains
+                        if (rows.length === 2) {
+                            document.querySelector('.remove-person').style.display = 'none';
+                        }
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+{% endblock %}

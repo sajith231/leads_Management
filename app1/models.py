@@ -579,6 +579,39 @@ class EmployeeSalary(models.Model):
 
     def __str__(self):
         return f"{self.employee.name} - {self.salary}"
+    
+
+from django.db import models
+
+class ReminderType(models.Model):
+    name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.name
+
+
+
+
+
+
+
+class Reminder(models.Model):
+    no = models.IntegerField(primary_key=True, editable=False)  # Changed from AutoField
+    reminder_type = models.ForeignKey(ReminderType, on_delete=models.CASCADE)
+    remark = models.TextField(blank=True, null=True)
+    responsible_persons = models.ManyToManyField('Employee', related_name='reminders', blank=True)
+    remind_date = models.DateField()
+    entry_date = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        # If this is a new instance (no primary key yet), assign the next number
+        if not self.no:  # Changed from 'if not self.pk'
+            max_no = Reminder.objects.aggregate(models.Max('no')).get('no__max') or 0
+            self.no = max_no + 1
+        super().save(*args, **kwargs)
+
+    def _str_(self):
+        return f"Reminder {self.no}: {self.reminder_type}"
 
 
     #CREATED AS NEW
@@ -648,10 +681,3 @@ class Attendance(models.Model):
 
 
 
-from django.db import models
-
-class ReminderType(models.Model):
-    name = models.CharField(max_length=255)
-
-    def __str__(self):
-        return self.name
