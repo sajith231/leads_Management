@@ -175,8 +175,16 @@
                             <div class="form-control" id="punchInDisplay">Not punched in</div>
                         </div>
                         <div class="mb-3">
+                            <label class="form-label">Punch In Location</label>
+                            <div class="form-control" id="punchInLocationDisplay">Not punched in</div>
+                        </div>
+                        <div class="mb-3">
                             <label class="form-label">Punch Out Time</label>
                             <div class="form-control" id="punchOutDisplay">Not punched out</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Punch Out Location</label>
+                            <div class="form-control" id="punchOutLocationDisplay">Not punched out</div>
                         </div>
                     </form>
                 </div>
@@ -247,29 +255,54 @@
         </div>
     </div>
 </div>
-<div class="modal fade" id="attendanceModal" tabindex="-1" aria-labelledby="attendanceModalLabel" aria-hidden="true">
+<!-- attendance.html -->
+
+<div class="modal fade" id="attendanceDetailsModal" tabindex="-1" aria-labelledby="attendanceDetailsModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Edit Attendance</h5>
+                <h5 class="modal-title" id="attendanceDetailsModalLabel">Attendance Details</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <input type="hidden" id="attendanceUserId">
-                <input type="hidden" id="attendanceDate">
-                <div class="mb-3">
-                    <label class="form-label">Status</label>
-                    <select class="form-select" id="attendanceStatus">
-                        <option value="full">Full Day</option>
-                        <option value="half">Half Day</option>
-                        <option value="leave">Leave</option>
-                        <option value="initial">Not Marked</option>
-                    </select>
-                </div>
+                <form id="attendanceForm">
+                    <div class="mb-3">
+                        <label class="form-label">Employee Name</label>
+                        <input type="text" class="form-control" id="employeeName" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Date</label>
+                        <div class="form-control" id="attendanceDate" readonly></div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Status</label>
+                        <select class="form-select" id="attendanceStatus">
+                            <option value="full">Full Day</option>
+                            <option value="half">Half Day</option>
+                            <option value="leave">Leave</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Punch In Time</label>
+                        <div class="form-control" id="punchInDisplay">Not punched in</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Punch In Location</label>
+                        <div class="form-control" id="punchInLocationDisplay">Not punched in</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Punch Out Time</label>
+                        <div class="form-control" id="punchOutDisplay">Not punched out</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Punch Out Location</label>
+                        <div class="form-control" id="punchOutLocationDisplay">Not punched out</div>
+                    </div>
+                </form>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary" onclick="saveAttendance()">Save</button>
+                <button type="button" class="btn btn-primary" onclick="saveAttendance()">Save changes</button>
             </div>
         </div>
     </div>
@@ -723,74 +756,82 @@
 
     // Add these new functions after updateAttendanceTable function
     function showAttendanceModal(employeeId, employeeName, date, icon) {
-        const modal = new bootstrap.Modal(document.getElementById('attendanceDetailsModal'));
-        const form = document.getElementById('attendanceForm');
-        const nameInput = document.getElementById('employeeName');
-        const dateDisplay = document.getElementById('attendanceDate');
-        const statusSelect = document.getElementById('attendanceStatus');
-        const punchInDisplay = document.getElementById('punchInDisplay');
-        const punchOutDisplay = document.getElementById('punchOutDisplay');
+    const modal = new bootstrap.Modal(document.getElementById('attendanceDetailsModal'));
+    const form = document.getElementById('attendanceForm');
+    const nameInput = document.getElementById('employeeName');
+    const dateDisplay = document.getElementById('attendanceDate');
+    const statusSelect = document.getElementById('attendanceStatus');
+    const punchInDisplay = document.getElementById('punchInDisplay');
+    const punchInLocationDisplay = document.getElementById('punchInLocationDisplay');
+    const punchOutDisplay = document.getElementById('punchOutDisplay');
+    const punchOutLocationDisplay = document.getElementById('punchOutLocationDisplay');
 
-        // Set employee name
-        nameInput.value = employeeName;
-        
-        // Parse the date string directly (format: YYYY-MM-DD)
-        const [year, month, day] = date.split('-').map(Number);
-        // Create date object for midnight on the target date
-        const displayDate = new Date(year, month - 1, day);
-        dateDisplay.textContent = displayDate.toLocaleDateString('en-US', {
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        });
+    // Set employee name
+    nameInput.value = employeeName;
+    
+    // Parse the date string directly (format: YYYY-MM-DD)
+    const [year, month, day] = date.split('-').map(Number);
+    // Create date object for midnight on the target date
+    const displayDate = new Date(year, month - 1, day);
+    dateDisplay.textContent = displayDate.toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
 
-        // Get current status from icon
-        const currentState = icon.getAttribute('data-state');
-        statusSelect.value = currentState || 'initial';
+    // Get current status from icon
+    const currentState = icon.getAttribute('data-state');
+    statusSelect.value = currentState || 'initial';
 
-        // Get attendance data from Django template context
-        const attendanceData = JSON.parse('{{ attendance_data|safe }}');
-        const dayData = attendanceData[employeeId] && attendanceData[employeeId][parseInt(day)];
+    // Get attendance data from Django template context
+    const attendanceData = JSON.parse('{{ attendance_data|safe }}');
+    const dayData = attendanceData[employeeId] && attendanceData[employeeId][parseInt(day)];
 
-        if (dayData) {
-            // Display punch in time if exists
-            if (dayData.punch_in && dayData.punch_in !== 'None') {
-                const punchInDate = new Date(dayData.punch_in);
-                punchInDisplay.textContent = punchInDate.toLocaleTimeString('en-US', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    second: '2-digit',
-                    hour12: true
-                });
-            } else {
-                punchInDisplay.textContent = 'Not punched in';
-            }
-
-            // Display punch out time if exists
-            if (dayData.punch_out && dayData.punch_out !== 'None') {
-                const punchOutDate = new Date(dayData.punch_out);
-                punchOutDisplay.textContent = punchOutDate.toLocaleTimeString('en-US', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    second: '2-digit',
-                    hour12: true
-                });
-            } else {
-                punchOutDisplay.textContent = 'Not punched out';
-            }
+    if (dayData) {
+        // Display punch in time if exists
+        if (dayData.punch_in && dayData.punch_in !== 'None') {
+            const punchInDate = new Date(dayData.punch_in);
+            punchInDisplay.textContent = punchInDate.toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: true
+            });
+            punchInLocationDisplay.textContent = dayData.punch_in_location || 'Unknown Location';
         } else {
             punchInDisplay.textContent = 'Not punched in';
-            punchOutDisplay.textContent = 'Not punched out';
+            punchInLocationDisplay.textContent = 'Not punched in';
         }
 
-        // Store current icon element for later use
-        form.setAttribute('data-icon-element', icon.outerHTML);
-        form.setAttribute('data-employee-id', employeeId);
-        form.setAttribute('data-date', date);
-
-        modal.show();
+        // Display punch out time if exists
+        if (dayData.punch_out && dayData.punch_out !== 'None') {
+            const punchOutDate = new Date(dayData.punch_out);
+            punchOutDisplay.textContent = punchOutDate.toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: true
+            });
+            punchOutLocationDisplay.textContent = dayData.punch_out_location || 'Unknown Location';
+        } else {
+            punchOutDisplay.textContent = 'Not punched out';
+            punchOutLocationDisplay.textContent = 'Not punched out';
+        }
+    } else {
+        punchInDisplay.textContent = 'Not punched in';
+        punchInLocationDisplay.textContent = 'Not punched in';
+        punchOutDisplay.textContent = 'Not punched out';
+        punchOutLocationDisplay.textContent = 'Not punched out';
     }
+
+    // Store current icon element for later use
+    form.setAttribute('data-icon-element', icon.outerHTML);
+    form.setAttribute('data-employee-id', employeeId);
+    form.setAttribute('data-date', date);
+
+    modal.show();
+}
 
     function saveAttendance() {
         const form = document.getElementById('attendanceForm');

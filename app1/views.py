@@ -2775,70 +2775,51 @@ def attendance_user(request):
     return render(request, 'attendance_user.html')
 
 from django.utils import timezone
+# views.py
 
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+import json
+from django.utils import timezone
+from .models import Attendance, Employee
+from django.contrib.auth.decorators import login_required
+
+@csrf_exempt
 @login_required
 def punch_in(request):
     if request.method == 'POST':
         try:
-            # Get the custom user from session
+            data = json.loads(request.body)
             custom_user_id = request.session.get('custom_user_id')
             if not custom_user_id:
                 return JsonResponse({'success': False, 'error': 'User session not found'})
             
-            # Get the custom user
             custom_user = User.objects.get(id=custom_user_id)
-            
-            # Get the employee associated with the custom user
             employee = Employee.objects.get(user=custom_user)
             now = timezone.now()
             today = now.date()
             
-            # Try to get existing attendance record for today
-            try:
-                attendance = Attendance.objects.get(
-                    employee=employee,
-                    date=today,
-                    day=today.day
-                )
-                # If record exists but no punch-in, update it
-                if not attendance.punch_in:
-                    attendance.punch_in = now
-                    attendance.status = 'half'
-                    attendance.save()
-                else:
-                    return JsonResponse({
-                        'success': False,
-                        'error': 'Already punched in for today'
-                    })
-            except Attendance.DoesNotExist:
-                # Create new attendance record
-                attendance = Attendance.objects.create(
-                    employee=employee,
-                    date=today,
-                    day=today.day,
-                    status='half',
-                    punch_in=now
-                )
-            except Attendance.MultipleObjectsReturned:
-                # Handle case of multiple records
-                # Get the latest record
-                attendance = Attendance.objects.filter(
-                    employee=employee,
-                    date=today,
-                    day=today.day
-                ).order_by('-created_at').first()
-                
-                if not attendance.punch_in:
-                    attendance.punch_in = now
-                    attendance.status = 'half'
-                    attendance.save()
-                else:
-                    return JsonResponse({
-                        'success': False,
-                        'error': 'Already punched in for today'
-                    })
+            attendance, created = Attendance.objects.get_or_create(
+                employee=employee,
+                date=today,
+                day=today.day,
+                defaults={
+                    'punch_in': now,
+                    'punch_in_location': data.get('location_name'),
+                    'punch_in_latitude': data.get('latitude'),
+                    'punch_in_longitude': data.get('longitude'),
+                    'status': 'half'
+                }
+            )
             
-            # Return the updated attendance status and time
+            if not created:
+                attendance.punch_in = now
+                attendance.punch_in_location = data.get('location_name')
+                attendance.punch_in_latitude = data.get('latitude')
+                attendance.punch_in_longitude = data.get('longitude')
+                attendance.status = 'half'
+                attendance.save()
+            
             return JsonResponse({
                 'success': True,
                 'status': 'half',
@@ -2846,56 +2827,44 @@ def punch_in(request):
                 'employee_id': str(employee.id),
                 'day': str(now.day)
             })
-            
-        except User.DoesNotExist:
-            return JsonResponse({'success': False, 'error': 'User not found'})
-        except Employee.DoesNotExist:
-            return JsonResponse({'success': False, 'error': 'No employee record found for this user'})
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)})
     return JsonResponse({'success': False, 'error': 'Invalid request'})
 
+@csrf_exempt
 @login_required
 def punch_out(request):
     if request.method == 'POST':
         try:
-            # Get the custom user from session
+            data = json.loads(request.body)
             custom_user_id = request.session.get('custom_user_id')
             if not custom_user_id:
                 return JsonResponse({'success': False, 'error': 'User session not found'})
             
-            # Get the custom user
             custom_user = User.objects.get(id=custom_user_id)
-            
-            # Get the employee associated with the custom user
             employee = Employee.objects.get(user=custom_user)
             now = timezone.now()
             today = now.date()
             
-            # Get today's attendance record and update punch-out time
             attendance = Attendance.objects.get(
                 employee=employee,
                 date=today,
-                day=today.day  # Add the day field to make the query more specific
+                day=today.day
             )
             
-            if attendance.punch_in:  # Only update if already punched in
-                attendance.punch_out = now
-                attendance.status = 'full'  # Set to full day when punching out
-                attendance.save()
-                return JsonResponse({'success': True})
-            else:
-                return JsonResponse({'success': False, 'error': 'Must punch in before punching out'})
+            attendance.punch_out = now
+            attendance.punch_out_location = data.get('location_name')
+            attendance.punch_out_latitude = data.get('latitude')
+            attendance.punch_out_longitude = data.get('longitude')
+            attendance.status = 'full'
+            attendance.save()
             
-        except Attendance.DoesNotExist:
-            return JsonResponse({'success': False, 'error': 'No attendance record found for today'})
-        except User.DoesNotExist:
-            return JsonResponse({'success': False, 'error': 'User not found'})
-        except Employee.DoesNotExist:
-            return JsonResponse({'success': False, 'error': 'No employee record found for this user'})
+            return JsonResponse({'success': True})
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)})
     return JsonResponse({'success': False, 'error': 'Invalid request'})
+
+# views.py
 
 @login_required
 def get_attendance_status(request):
@@ -2903,15 +2872,11 @@ def get_attendance_status(request):
         date_str = request.GET.get('date')
         date = timezone.datetime.strptime(date_str, '%Y-%m-%d').date()
         
-        # Get the custom user from session
         custom_user_id = request.session.get('custom_user_id')
         if not custom_user_id:
             return JsonResponse({'error': 'User session not found'}, status=400)
         
-        # Get the custom user
         custom_user = User.objects.get(id=custom_user_id)
-        
-        # Get the employee associated with the custom user
         employee = Employee.objects.get(user=custom_user)
         attendance = Attendance.objects.filter(
             employee=employee,
@@ -2921,13 +2886,15 @@ def get_attendance_status(request):
         if attendance:
             return JsonResponse({
                 'punch_in': attendance.punch_in.isoformat() if attendance.punch_in else None,
-                'punch_out': attendance.punch_out.isoformat() if attendance.punch_out else None
+                'punch_out': attendance.punch_out.isoformat() if attendance.punch_out else None,
+                'punch_in_location': attendance.punch_in_location,
+                'punch_out_location': attendance.punch_out_location,
+                'punch_in_latitude': str(attendance.punch_in_latitude) if attendance.punch_in_latitude else None,
+                'punch_in_longitude': str(attendance.punch_in_longitude) if attendance.punch_in_longitude else None,
+                'punch_out_latitude': str(attendance.punch_out_latitude) if attendance.punch_out_latitude else None,
+                'punch_out_longitude': str(attendance.punch_out_longitude) if attendance.punch_out_longitude else None,
             })
         return JsonResponse({'punch_in': None, 'punch_out': None})
-    except User.DoesNotExist:
-        return JsonResponse({'error': 'User not found'}, status=400)
-    except Employee.DoesNotExist:
-        return JsonResponse({'error': 'No employee record found for this user'}, status=400)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=400)
 

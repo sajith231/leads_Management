@@ -625,6 +625,12 @@ class Reminder(models.Model):
 from django.db import models
 from .models import Employee
 
+# models.py
+
+from django.db import models
+from django.contrib.auth import get_user_model
+from django.utils import timezone
+
 class Attendance(models.Model):
     ATTENDANCE_CHOICES = [
         ('initial', 'Initial'),
@@ -633,12 +639,18 @@ class Attendance(models.Model):
         ('leave', 'Leave'),
     ]
 
-    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name='attendances')
+    employee = models.ForeignKey('Employee', on_delete=models.CASCADE, related_name='attendances')
     day = models.IntegerField()  # Day of the month (1-31)
     status = models.CharField(max_length=10, choices=ATTENDANCE_CHOICES, default='initial')
     date = models.DateField(auto_now_add=True)  # Date when the attendance was recorded
     punch_in = models.DateTimeField(null=True, blank=True)
     punch_out = models.DateTimeField(null=True, blank=True)
+    punch_in_location = models.CharField(max_length=255, null=True, blank=True)
+    punch_out_location = models.CharField(max_length=255, null=True, blank=True)
+    punch_in_latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    punch_in_longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    punch_out_latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    punch_out_longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
 
     class Meta:
         unique_together = ('employee', 'day', 'date')  # Ensure no duplicate entries for the same day

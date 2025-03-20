@@ -14,9 +14,9 @@
                             <h5 class="card-title">Today's Status</h5>
                             <div id="punchStatus">
                                 <p class="mb-2">Punch In: <span id="punchInTime">Not punched in yet</span></p>
-                                <p class="mb-2">Punch In Location: <span id="punchInLocation">Not punched in yet</span></p>
+                                <p class="mb-2">Punch In Location: <a id="punchInLocationLink" href="#" target="_blank"><span id="punchInLocation">Not punched in yet</span></a></p>
                                 <p class="mb-2">Punch Out: <span id="punchOutTime">Not punched out yet</span></p>
-                                <p class="mb-2">Punch Out Location: <span id="punchOutLocation">Not punched out yet</span></p>
+                                <p class="mb-2">Punch Out Location: <a id="punchOutLocationLink" href="#" target="_blank"><span id="punchOutLocation">Not punched out yet</span></a></p>
                             </div>
                         </div>
                     </div>
@@ -45,39 +45,80 @@ function formatTime(date) {
     });
 }
 
+function getLocation(callback) {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition((position) => {
+            const latitude = position.coords.latitude;
+            const longitude = position.coords.longitude;
+            fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`)
+                .then(response => response.json())
+                .then(data => {
+                    callback({
+                        latitude: latitude,
+                        longitude: longitude,
+                        location_name: data.locality || data.city || data.principalSubdivision || 'Unknown Location'
+                    });
+                });
+        }, (error) => {
+            console.error('Error getting location:', error);
+            callback({
+                latitude: null,
+                longitude: null,
+                location_name: 'Unknown Location'
+            });
+        });
+    } else {
+        callback({
+            latitude: null,
+            longitude: null,
+            location_name: 'Unknown Location'
+        });
+    }
+}
+
 function handlePunch(action) {
-    const url = action === 'in' ? "{% url 'punch_in' %}" : "{% url 'punch_out' %}";
-    const now = new Date();
-    
-    fetch(url, {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': '{{ csrf_token }}',
-            'Content-Type': 'application/json'
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            if (action === 'in') {
-                document.getElementById('punchInTime').textContent = formatTime(now);
-                document.getElementById('punchInBtn').disabled = true;
+    getLocation((location) => {
+        const url = action === 'in' ? "{% url 'punch_in' %}" : "{% url 'punch_out' %}";
+        const now = new Date();
+        
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                latitude: location.latitude,
+                longitude: location.longitude,
+                location_name: location.location_name
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                if (action === 'in') {
+                    document.getElementById('punchInTime').textContent = formatTime(now);
+                    document.getElementById('punchInLocation').textContent = location.location_name;
+                    document.getElementById('punchInLocationLink').href = `https://www.google.com/maps?q=${location.latitude},${location.longitude}`;
+                    document.getElementById('punchInBtn').disabled = true;
+                } else {
+                    document.getElementById('punchOutTime').textContent = formatTime(now);
+                    document.getElementById('punchOutLocation').textContent = location.location_name;
+                    document.getElementById('punchOutLocationLink').href = `https://www.google.com/maps?q=${location.latitude},${location.longitude}`;
+                    document.getElementById('punchOutBtn').disabled = true;
+                }
+                alert(`Punched ${action.toUpperCase()} successfully!`);
             } else {
-                document.getElementById('punchOutTime').textContent = formatTime(now);
-                document.getElementById('punchOutBtn').disabled = true;
+                alert(`Error: ${data.error}`);
             }
-            alert(`Punched ${action.toUpperCase()} successfully!`);
-        } else {
-            alert(`Error: ${data.error}`);
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('An error occurred. Please try again.');
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred. Please try again.');
+        });
     });
 }
 
-// Check current attendance status on page load
 document.addEventListener('DOMContentLoaded', function() {
     const now = new Date();
     const today = now.toISOString().split('T')[0];
@@ -87,10 +128,14 @@ document.addEventListener('DOMContentLoaded', function() {
     .then(data => {
         if (data.punch_in) {
             document.getElementById('punchInTime').textContent = new Date(data.punch_in).toLocaleTimeString();
+            document.getElementById('punchInLocation').textContent = data.punch_in_location || 'Unknown Location';
+            document.getElementById('punchInLocationLink').href = data.punch_in_latitude && data.punch_in_longitude ? `https://www.google.com/maps?q=${data.punch_in_latitude},${data.punch_in_longitude}` : '#';
             document.getElementById('punchInBtn').disabled = true;
         }
         if (data.punch_out) {
             document.getElementById('punchOutTime').textContent = new Date(data.punch_out).toLocaleTimeString();
+            document.getElementById('punchOutLocation').textContent = data.punch_out_location || 'Unknown Location';
+            document.getElementById('punchOutLocationLink').href = data.punch_out_latitude && data.punch_out_longitude ? `https://www.google.com/maps?q=${data.punch_out_latitude},${data.punch_out_longitude}` : '#';
             document.getElementById('punchOutBtn').disabled = true;
         }
     })
