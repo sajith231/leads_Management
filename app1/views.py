@@ -3080,18 +3080,24 @@ logger = logging.getLogger(__name__)
 # remainder pge views functions
 @login_required
 def reminders(request):
-    """View for displaying all reminders with sequential numbering."""
-    # Change from '-entry_date' (descending) to 'entry_date' (ascending)
+    """View for displaying filtered reminders."""
+    start_date = request.GET.get("start_date")
+    end_date = request.GET.get("end_date")
+
     reminders_list = Reminder.objects.all().prefetch_related('responsible_persons').order_by('entry_date')
-    
-    # Prepare data for template with responsible persons explicitly added and sequential numbering
+
+    if start_date and end_date:
+        reminders_list = reminders_list.filter(remind_date__range=[start_date, end_date])
+    elif start_date:
+        reminders_list = reminders_list.filter(remind_date=start_date)
+
+    # Prepare data for template
     reminders_data = []
     for index, reminder in enumerate(reminders_list, start=1):
         responsible_people = [{"id": p.id, "name": p.name} for p in reminder.responsible_persons.all()]
-        
         reminders_data.append({
-            "display_no": index,  # Sequential display number
-            "no": reminder.no,    # Original ID for database operations
+            "display_no": index,
+            "no": reminder.no,
             "entry_date": reminder.entry_date,
             "reminder_type": reminder.reminder_type,
             "remark": reminder.remark,
@@ -3103,6 +3109,7 @@ def reminders(request):
         "reminders": reminders_data,
         "reminder_types": ReminderType.objects.all()
     })
+
 
 
 
