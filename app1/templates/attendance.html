@@ -257,6 +257,7 @@
 </div>
 <!-- attendance.html -->
 
+<!-- Add this modal after the statistics cards section -->
 <div class="modal fade" id="attendanceDetailsModal" tabindex="-1" aria-labelledby="attendanceDetailsModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -288,7 +289,11 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Punch In Location</label>
-                        <div class="form-control" id="punchInLocationDisplay">Not punched in</div>
+                        <div class="form-control" id="punchInLocationDisplay">
+                            <a id="punchInLocationLink" href="#" target="_blank">
+                                <span id="punchInLocation">Not punched in</span>
+                            </a>
+                        </div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Punch Out Time</label>
@@ -296,7 +301,11 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Punch Out Location</label>
-                        <div class="form-control" id="punchOutLocationDisplay">Not punched out</div>
+                        <div class="form-control" id="punchOutLocationDisplay">
+                            <a id="punchOutLocationLink" href="#" target="_blank">
+                                <span id="punchOutLocation">Not punched out</span>
+                            </a>
+                        </div>
                     </div>
                 </form>
             </div>
@@ -366,6 +375,15 @@
     .future-day i {
         opacity: 0.5;
     }
+    /* Add this to your existing CSS */
+#punchInLocationLink, #punchOutLocationLink {
+    color: #007bff;
+    text-decoration: none;
+}
+
+#punchInLocationLink:hover, #punchOutLocationLink:hover {
+    text-decoration: underline;
+}
     
     /* .table th:nth-child(1) { min-width: 50px; } 
     .table th:nth-child(2) { min-width: 150px; } 
@@ -762,16 +780,17 @@
     const dateDisplay = document.getElementById('attendanceDate');
     const statusSelect = document.getElementById('attendanceStatus');
     const punchInDisplay = document.getElementById('punchInDisplay');
-    const punchInLocationDisplay = document.getElementById('punchInLocationDisplay');
+    const punchInLocationDisplay = document.getElementById('punchInLocation');
+    const punchInLocationLink = document.getElementById('punchInLocationLink');
     const punchOutDisplay = document.getElementById('punchOutDisplay');
-    const punchOutLocationDisplay = document.getElementById('punchOutLocationDisplay');
+    const punchOutLocationDisplay = document.getElementById('punchOutLocation');
+    const punchOutLocationLink = document.getElementById('punchOutLocationLink');
 
     // Set employee name
     nameInput.value = employeeName;
-    
+
     // Parse the date string directly (format: YYYY-MM-DD)
     const [year, month, day] = date.split('-').map(Number);
-    // Create date object for midnight on the target date
     const displayDate = new Date(year, month - 1, day);
     dateDisplay.textContent = displayDate.toLocaleDateString('en-US', {
         weekday: 'long',
@@ -798,10 +817,19 @@
                 second: '2-digit',
                 hour12: true
             });
-            punchInLocationDisplay.textContent = dayData.punch_in_location || 'Unknown Location';
+
+            // Set punch-in location and link
+            if (dayData.punch_in_location && dayData.punch_in_latitude && dayData.punch_in_longitude) {
+                punchInLocation.textContent = dayData.punch_in_location;
+                punchInLocationLink.href = `https://www.google.com/maps?q=${dayData.punch_in_latitude},${dayData.punch_in_longitude}`;
+            } else {
+                punchInLocation.textContent = 'Unknown Location';
+                punchInLocationLink.href = '#';
+            }
         } else {
             punchInDisplay.textContent = 'Not punched in';
-            punchInLocationDisplay.textContent = 'Not punched in';
+            punchInLocation.textContent = 'Not punched in';
+            punchInLocationLink.href = '#';
         }
 
         // Display punch out time if exists
@@ -813,16 +841,27 @@
                 second: '2-digit',
                 hour12: true
             });
-            punchOutLocationDisplay.textContent = dayData.punch_out_location || 'Unknown Location';
+
+            // Set punch-out location and link
+            if (dayData.punch_out_location && dayData.punch_out_latitude && dayData.punch_out_longitude) {
+                punchOutLocation.textContent = dayData.punch_out_location;
+                punchOutLocationLink.href = `https://www.google.com/maps?q=${dayData.punch_out_latitude},${dayData.punch_out_longitude}`;
+            } else {
+                punchOutLocation.textContent = 'Unknown Location';
+                punchOutLocationLink.href = '#';
+            }
         } else {
             punchOutDisplay.textContent = 'Not punched out';
-            punchOutLocationDisplay.textContent = 'Not punched out';
+            punchOutLocation.textContent = 'Not punched out';
+            punchOutLocationLink.href = '#';
         }
     } else {
         punchInDisplay.textContent = 'Not punched in';
-        punchInLocationDisplay.textContent = 'Not punched in';
+        punchInLocation.textContent = 'Not punched in';
+        punchInLocationLink.href = '#';
         punchOutDisplay.textContent = 'Not punched out';
-        punchOutLocationDisplay.textContent = 'Not punched out';
+        punchOutLocation.textContent = 'Not punched out';
+        punchOutLocationLink.href = '#';
     }
 
     // Store current icon element for later use
