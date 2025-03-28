@@ -34,91 +34,13 @@
                     <label class="form-label">Search by Name</label>
                     <input type="text" class="form-control" id="nameFilter" onkeyup="filterEmployees()" placeholder="Enter name">
                 </div>
-                
-                <script>
-                    function filterEmployees() {
-                        let input = document.getElementById("nameFilter").value.toLowerCase();
-                        let employees = document.getElementsByClassName("employee-row");
-                
-                        for (let i = 0; i < employees.length; i++) {
-                            let name = employees[i].getAttribute("data-name").toLowerCase();
-                            if (name.includes(input)) {
-                                employees[i].style.display = "";
-                            } else {
-                                employees[i].style.display = "none";
-                            }
-                        }
-                    }
-                </script>
-                <div class="col-md-4">
-                    <label class="form-label">Job Title</label>
-                    <select class="form-select" id="jobTitleFilter" onchange="filterEmployees()">
-                        <option value="">All Positions</option>
-                        <option value="Manager">Manager</option>
-                        <option value="Developer">Developer</option>
-                        <option value="Designer">Designer</option>
-                        <option value="Analyst">Analyst</option>
-                    </select>
+                <div class="col-md-5">
+                    <button class="btn btn-primary">Add Holiday</button>
                 </div>
+                
             </div>
         </div>
     </div>
-
-    <!-- Statistics Cards -->
-    <!-- <div class="row g-3 mb-4">
-        <div class="col-md-3">
-            <div class="card shadow-sm bg-primary text-white">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="card-subtitle mb-2">Overall Attendance</h6>
-                            <h3 class="card-title mb-0" id="overallAttendance">0%</h3>
-                        </div>
-                        <i class="fas fa-chart-line fa-2x opacity-50"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card shadow-sm bg-success text-white">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="card-subtitle mb-2">Full Days</h6>
-                            <h3 class="card-title mb-0" id="fullDaysCount">0</h3>
-                        </div>
-                        <i class="fas fa-calendar-check fa-2x opacity-50"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card shadow-sm bg-warning text-white">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="card-subtitle mb-2">Half Days</h6>
-                            <h3 class="card-title mb-0" id="halfDaysCount">0</h3>
-                        </div>
-                        <i class="fas fa-calendar-minus fa-2x opacity-50"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card shadow-sm bg-danger text-white">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="card-subtitle mb-2">Leaves</h6>
-                            <h3 class="card-title mb-0" id="leavesCount">0</h3>
-                        </div>
-                        <i class="fas fa-calendar-times fa-2x opacity-50"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div> -->
 
     <!-- Legend Section -->
     <div class="card shadow-sm mb-4">
@@ -129,13 +51,18 @@
                     <span>Full Day</span>
                 </div>
                 <div class="d-flex align-items-center">
-                    <i class="fas fa-star-half-alt text-warning me-2"></i>
+                    <i class="fas fa-star-half-alt text-success me-2"></i>
                     <span>Half Day</span>
                 </div>
                 <div class="d-flex align-items-center">
                     <i class="fas fa-star text-danger me-2"></i>
                     <span>Leave</span>
                 </div>
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-star text-warning me-2"></i>
+                    <span>Holiday</span> 
+                </div>
+                
                 <div class="d-flex align-items-center">
                     <i class="fas fa-star text-secondary me-2"></i>
                     <span>Not Marked</span>
@@ -144,49 +71,71 @@
         </div>
     </div>
 
-    <!-- Add this modal after the statistics cards section -->
+    <!-- Attendance Details Modal -->
     <div class="modal fade" id="attendanceDetailsModal" tabindex="-1" aria-labelledby="attendanceDetailsModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
-                <div class="modal-header">
+                <div class="modal-header bg-primary text-white">
                     <h5 class="modal-title" id="attendanceDetailsModalLabel">Attendance Details</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="attendanceForm">
-                        <div class="mb-3">
-                            <label class="form-label">Employee Name</label>
-                            <input type="text" class="form-control" id="employeeName" readonly>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Employee Name</label>
+                                <input type="text" class="form-control" id="employeeName" readonly>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Date</label>
+                                <div class="form-control" id="attendanceDate" readonly></div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Status</label>
+                                <select class="form-select" id="attendanceStatus">
+                                    <option value="full">Full Day</option>
+                                    <option value="half">Half Day</option>
+                                    <option value="leave">Leave</option>
+                                    <option value="not">Not Marked</option>
+                                </select>
+                            </div>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label">Date</label>
-                            <div class="form-control" id="attendanceDate" readonly></div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header bg-light">
+                                    <h6 class="mb-0">Punch Details</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">Punch In Time</label>
+                                        <div class="form-control" id="punchInDisplay">Not punched in</div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">Punch In Location</label>
+                                        <div class="form-control">
+                                            <a id="punchInLocationLink" href="#" target="_blank" class="text-decoration-none">
+                                                <span id="punchInLocation">Not available</span>
+                                                <i class="fas fa-external-link-alt ms-2"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">Punch Out Time</label>
+                                        <div class="form-control" id="punchOutDisplay">Not punched out</div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">Punch Out Location</label>
+                                        <div class="form-control">
+                                            <a id="punchOutLocationLink" href="#" target="_blank" class="text-decoration-none">
+                                                <span id="punchOutLocation">Not available</span>
+                                                <i class="fas fa-external-link-alt ms-2"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label">Status</label>
-                            <select class="form-select" id="attendanceStatus">
-                                <option value="full">Full Day</option>
-                                <option value="half">Half Day</option>
-                                <option value="leave">Leave</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Punch In Time</label>
-                            <div class="form-control" id="punchInDisplay">Not punched in</div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Punch In Location</label>
-                            <div class="form-control" id="punchInLocationDisplay">Not punched in</div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Punch Out Time</label>
-                            <div class="form-control" id="punchOutDisplay">Not punched out</div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Punch Out Location</label>
-                            <div class="form-control" id="punchOutLocationDisplay">Not punched out</div>
-                        </div>
-                    </form>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -195,7 +144,6 @@
             </div>
         </div>
     </div>
-</div></div>
 
     <!-- Attendance Table -->
     <div style="overflow: scroll;">
@@ -207,9 +155,7 @@
                             <th rowspan="3" class="align-middle">No</th>
                             <th rowspan="3" class="align-middle">Name</th>
                             <th rowspan="3" class="align-middle">User ID</th>
-                            <!-- <th rowspan="3" class="align-middle">Job Title</th> -->
                             <th id="daysHeader" colspan="31" class="text-center">Days of Month</th>
-                            <th rowspan="3" class="align-middle">Attendance %</th>
                         </tr>
                         <tr id="dayNumbers">
                             <!-- Day numbers will be populated by JavaScript -->
@@ -220,105 +166,31 @@
                     </thead>
                     <tbody id="attendanceBody">
                         {% for employee in employees %}
-                        <tr data-employee-id="{{ employee.id }}">
+                        <tr class="employee-row" data-employee-id="{{ employee.id }}" data-name="{{ employee.name }}">
                             <td>{{ forloop.counter }}</td>
                             <td>{{ employee.name }}</td>
                             <td>{{ employee.user.userid|default:'' }}</td>
-                            <!-- <td>{{ employee.job_title }}</td> -->
-                    
                             {% for day in days_of_month %}
                             <td class="text-center">
-                                <i class="fas fa-star attendance-marker 
-                                    {% if employee.attendance_status == 'full' %}text-success
-                                    {% elif employee.attendance_status == 'half' %}text-warning
-                                    {% elif employee.attendance_status == 'leave' %}text-danger
-                                    {% else %}text-secondary{% endif %}"
+                                <i class="fas fa-star text-secondary"
                                    data-employee-id="{{ employee.id }}"
-                                   data-date="{{ day }}"
-                                   data-status="{{ employee.attendance_status }}"
-                                   data-bs-toggle="modal"
-                                   data-bs-target="#attendanceModal"
-                                   onclick="openAttendanceModal(this)">
+                                   data-date="{{ current_year }}-{{ current_month }}-{{ day }}"
+                                   data-state="initial"
+                                   data-bs-toggle="tooltip"
+                                   data-bs-placement="top"
+                                   title="Click to edit"
+                                   onclick="showAttendanceModal('{{ employee.id }}', '{{ employee.name }}', '{{ current_year }}-{{ current_month }}-{{ day }}', this)">
                                 </i>
                             </td>
                             {% endfor %}
-                    
-                            <td class="attendance-percentage">0%</td>
                         </tr>
                         {% endfor %}
                     </tbody>
-                    
-                    
-                    
                 </table>
             </div>
         </div>
     </div>
 </div>
-<!-- attendance.html -->
-
-<!-- Add this modal after the statistics cards section -->
-<div class="modal fade" id="attendanceDetailsModal" tabindex="-1" aria-labelledby="attendanceDetailsModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="attendanceDetailsModalLabel">Attendance Details</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <form id="attendanceForm">
-                    <div class="mb-3">
-                        <label class="form-label">Employee Name</label>
-                        <input type="text" class="form-control" id="employeeName" readonly>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Date</label>
-                        <div class="form-control" id="attendanceDate" readonly></div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Status</label>
-                        <select class="form-select" id="attendanceStatus">
-                            <option value="full">Full Day</option>
-                            <option value="half">Half Day</option>
-                            <option value="leave">Leave</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Punch In Time</label>
-                        <div class="form-control" id="punchInDisplay">Not punched in</div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Punch In Location</label>
-                        <div class="form-control" id="punchInLocationDisplay">
-                            <a id="punchInLocationLink" href="#" target="_blank">
-                                <span id="punchInLocation">Not punched in</span>
-                            </a>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Punch Out Time</label>
-                        <div class="form-control" id="punchOutDisplay">Not punched out</div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Punch Out Location</label>
-                        <div class="form-control" id="punchOutLocationDisplay">
-                            <a id="punchOutLocationLink" href="#" target="_blank">
-                                <span id="punchOutLocation">Not punched out</span>
-                            </a>
-                        </div>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary" onclick="saveAttendance()">Save changes</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-
-
 </div>
 
 <!-- Add Font Awesome for icons -->
@@ -375,101 +247,40 @@
     .future-day i {
         opacity: 0.5;
     }
-    /* Add this to your existing CSS */
-#punchInLocationLink, #punchOutLocationLink {
-    color: #007bff;
-    text-decoration: none;
-}
-
-#punchInLocationLink:hover, #punchOutLocationLink:hover {
-    text-decoration: underline;
-}
-    
-    /* .table th:nth-child(1) { min-width: 50px; } 
-    .table th:nth-child(2) { min-width: 150px; } 
-    .table th:nth-child(3) { min-width: 100px; }  */
-    /* .table th:nth-child(4) { min-width: 120px; }  */
-    /* .table th:last-child { min-width: 100px; }   */
+    #punchInLocationLink, #punchOutLocationLink {
+        color: #007bff;
+        text-decoration: none;
+    }
+    #punchInLocationLink:hover, #punchOutLocationLink:hover {
+        text-decoration: underline;
+    }
 </style>
-<script>
-    
-</script>
-
 
 <script>
-    function openAttendanceModal(element) {
-        let userId = element.getAttribute("data-employee-id");
-        let date = element.getAttribute("data-date");
-    
-        document.getElementById("attendanceUserId").value = userId;
-        document.getElementById("attendanceDate").value = date;
-    }
-    
-    function saveAttendance() {
-        let userId = document.getElementById("attendanceUserId").value;
-        let date = document.getElementById("attendanceDate").value;
-        let status = document.getElementById("attendanceStatus").value;
+    // Global variables to track current month/year
+    let currentYear, currentMonth;
 
-        fetch("/update_attendance/", {
-            method: "POST",
-            headers: {
-                "X-CSRFToken": "{{ csrf_token }}",
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ employee_id: userId, date: date, status: status })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert("Attendance updated!");
-
-                // Close the modal
-                var modal = new bootstrap.Modal(document.getElementById('attendanceModal'));
-                modal.hide();
-
-                // Find the star icon for this employee and date
-                let starIcon = document.querySelector(
-                    `i.attendance-marker[data-employee-id="${userId}"][data-date="${date}"]`
-                );
-
-                // Update the star icon class based on the status
-                if (starIcon) {
-                    starIcon.classList.remove("text-success", "text-warning", "text-danger", "text-secondary");
-
-                    if (status === "full") {
-                        starIcon.classList.add("text-success");
-                    } else if (status === "half") {
-                        starIcon.classList.add("text-warning");
-                    } else if (status === "leave") {
-                        starIcon.classList.add("text-danger");
-                    } else {
-                        starIcon.classList.add("text-secondary");
-                    }
-
-                    // Update the data-status attribute so next time it loads correctly
-                    starIcon.setAttribute("data-status", status);
-                }
-
-            } else {
-                alert("Error: " + data.error);
-            }
-        })
-        .catch(error => console.error("Error:", error));
-    }
-    </script>
-    
-    
-<script>
     // Get days in month helper function
     function getDaysInMonth(year, month) {
         return new Date(year, month, 0).getDate();
     }
 
-    // Get month name helper function
-    function getMonthName(date) {
-        return new Intl.DateTimeFormat('en-US', { month: 'long' }).format(date);
+    // Filter employees by name
+    function filterEmployees() {
+        let input = document.getElementById("nameFilter").value.toLowerCase();
+        let employees = document.getElementsByClassName("employee-row");
+        
+        for (let i = 0; i < employees.length; i++) {
+            let name = employees[i].getAttribute("data-name").toLowerCase();
+            if (name.includes(input)) {
+                employees[i].style.display = "";
+            } else {
+                employees[i].style.display = "none";
+            }
+        }
     }
 
+    // Update attendance table based on selected month
     function updateAttendanceTable(selectedDate) {
         if (!selectedDate) {
             const now = new Date();
@@ -477,6 +288,8 @@
         }
 
         const [year, month] = selectedDate.split('-');
+        currentYear = year;
+        currentMonth = month;
         const daysInMonth = getDaysInMonth(year, month);
         const currentDate = new Date();
         const selectedMonthDate = new Date(year, month - 1);
@@ -516,8 +329,7 @@
         // Update attendance cells for each employee
         document.querySelectorAll('#attendanceBody tr').forEach(row => {
             // Remove any existing day cells (except the fixed columns)
-            const fixedCells = Array.from(row.children).slice(0, 4);
-            const percentageCell = row.children[row.children.length - 1];
+            const fixedCells = Array.from(row.children).slice(0, 3); // Changed from 4 to 3 since we removed the percentage column
             row.innerHTML = '';
             
             // Add back the fixed cells
@@ -538,64 +350,21 @@
                 
                 const icon = document.createElement('i');
                 icon.className = 'fas fa-star attendance-marker';
-                
-                // Get attendance status from Django template context
-                const attendanceData = JSON.parse('{{ attendance_data|safe }}');
-                let state = 'initial';
-                let iconColor = '#ccc';
-                let tooltipText = '';
-                
-                if (attendanceData[employeeId] && attendanceData[employeeId][day]) {
-                    const dayData = attendanceData[employeeId][day];
-                    state = dayData.status;
-                    
-                    // Set icon class and color based on status
-                    switch(state) {
-                        case 'full':
-                            icon.className = 'fas fa-star text-success';
-                            iconColor = '#198754';
-                            tooltipText = `Full Day (In: ${dayData.punch_in}, Out: ${dayData.punch_out})`;
-                            break;
-                        case 'half':
-                            icon.className = 'fas fa-star-half-alt text-warning';
-                            iconColor = '#ffc107';
-                            tooltipText = `Half Day (In: ${dayData.punch_in})`;
-                            break;
-                        case 'leave':
-                            icon.className = 'fas fa-star text-danger';
-                            iconColor = '#dc3545';
-                            tooltipText = 'Leave';
-                            break;
-                        default:
-                            icon.className = 'fas fa-star text-secondary';
-                            iconColor = '#ccc';
-                            tooltipText = 'Not Marked';
-                    }
-                }
-                
-                icon.setAttribute('data-state', state);
+                icon.setAttribute('data-employee-id', employeeId);
+                icon.setAttribute('data-date', `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`);
+                icon.setAttribute('data-state', 'initial');
                 icon.style.cursor = 'pointer';
-                icon.style.color = iconColor;
-                icon.style.transition = 'all 0.3s ease';
-                
-                // Add tooltip
-                if (tooltipText) {
-                    icon.setAttribute('title', tooltipText);
-                    icon.setAttribute('data-bs-toggle', 'tooltip');
-                    icon.setAttribute('data-bs-placement', 'top');
-                }
+                icon.style.color = '#ccc';
                 
                 // Add click handler for attendance markers
                 if (!isFuture) {
                     icon.setAttribute('onmouseover', "this.style.transform='scale(1.2)'");
                     icon.setAttribute('onmouseout', "this.style.transform='scale(1)'");
                     
-                    // Add click event listener with correct date handling
+                    // Add click event listener
                     icon.onclick = function() {
                         const employeeName = row.children[1].textContent;
-                        // Create date string in YYYY-MM-DD format without timezone issues
-                        const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                        showAttendanceModal(employeeId, employeeName, dateStr, this);
+                        showAttendanceModal(employeeId, employeeName, this.getAttribute('data-date'), this);
                     };
                 }
                 
@@ -603,11 +372,8 @@
                 row.appendChild(td);
             }
             
-            // Add back the percentage cell
-            row.appendChild(percentageCell);
-            
-            // Update attendance percentage for this row
-            updateAttendancePercentage(row);
+            // Load attendance data for this employee and month
+            loadAttendanceData(employeeId, year, month);
         });
 
         // Initialize tooltips
@@ -615,121 +381,58 @@
         var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
             return new bootstrap.Tooltip(tooltipTriggerEl);
         });
-
-        updateAttendanceStats();
     }
 
-    function updateAttendancePercentage(row) {
-        const markers = row.querySelectorAll('.attendance-marker:not(.future-day .attendance-marker)');
-        let fullDays = 0;
-        let halfDays = 0;
-        
-        markers.forEach(marker => {
-            const state = marker.getAttribute('data-state');
-            if (state === 'full') fullDays++;
-            if (state === 'half') halfDays += 0.5;
-        });
-
-        const totalDays = markers.length;
-        const percentage = ((fullDays + halfDays) / totalDays * 100).toFixed(1);
-        row.querySelector('.attendance-percentage').textContent = `${percentage}%`;
+    // Load attendance data for an employee and month
+    function loadAttendanceData(employeeId, year, month) {
+        fetch(`/get_attendance_data/?employee_id=${employeeId}&year=${year}&month=${month}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.attendance) {
+                    Object.entries(data.attendance).forEach(([day, record]) => {
+                        const icon = document.querySelector(`i[data-employee-id="${employeeId}"][data-date="${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}"]`);
+                        if (icon) {
+                            updateAttendanceIcon(icon, record.status, record.punch_in, record.punch_out);
+                        }
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error loading attendance data:', error);
+            });
     }
 
-    function updateAttendanceStats() {
-        const markers = document.querySelectorAll('.attendance-marker:not(.future-day .attendance-marker)');
-        let fullDays = 0;
-        let halfDays = 0;
-        let leaves = 0;
-
-        markers.forEach(marker => {
-            const state = marker.getAttribute('data-state');
-            if (state === 'full') fullDays++;
-            if (state === 'half') halfDays++;
-            if (state === 'leave') leaves++;
-
-            // Add click handler for attendance markers
-            if (!marker.closest('.future-day')) {
-                marker.style.cursor = 'pointer';
-                marker.onclick = function() {
-                    const row = this.closest('tr');
-                    const employeeId = row.getAttribute('data-employee-id');
-                    const employeeName = row.children[1].textContent;
-                    const date = new Date(year, month - 1, parseInt(this.closest('td').previousElementSibling.textContent));
-                    showAttendanceModal(employeeId, employeeName, date.toISOString().split('T')[0], this);
-                };
-            }
-        });
-
-        const totalDays = markers.length;
-        const overallPercentage = ((fullDays + (halfDays * 0.5)) / totalDays * 100).toFixed(1);
-
-        document.getElementById('overallAttendance').textContent = `${overallPercentage}%`;
-        document.getElementById('fullDaysCount').textContent = fullDays;
-        document.getElementById('halfDaysCount').textContent = halfDays;
-        document.getElementById('leavesCount').textContent = leaves;
-    }
-
-    function filterEmployees() {
-        const department = document.getElementById('departmentFilter').value.toLowerCase();
-        const jobTitle = document.getElementById('jobTitleFilter').value.toLowerCase();
-        
-        const rows = document.querySelectorAll('#attendanceBody tr');
-        
-        rows.forEach(row => {
-            const deptMatch = !department || row.children[3].textContent.toLowerCase().includes(department);
-            const jobMatch = !jobTitle || row.children[3].textContent.toLowerCase().includes(jobTitle);
-            
-            row.style.display = (deptMatch && jobMatch) ? '' : 'none';
-        });
-    }
-
-    // Initialize the table with current month on page load
-    document.addEventListener('DOMContentLoaded', function() {
-        const now = new Date();
-        const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-        document.getElementById('monthFilter').value = currentMonth;
-        updateAttendanceTable(currentMonth);
-    });
-
-    // Add this function to update a single attendance cell
-    function updateAttendanceCell(employeeId, day, status, punchIn, punchOut) {
-        const row = document.querySelector(`tr[data-employee-id="${employeeId}"]`);
-        if (!row) return;
-        
-        // Find the cell for this day (add 4 to account for the fixed columns)
-        const cell = row.children[day + 3];
-        if (!cell) return;
-        
-        const icon = cell.querySelector('.attendance-marker');
-        if (!icon) return;
-        
-        let iconClass = 'fas fa-star text-secondary';
+    // Update attendance icon based on status
+    function updateAttendanceIcon(icon, status, punchIn, punchOut) {
+        let iconClass = 'fas fa-star';
         let iconColor = '#ccc';
         let tooltipText = 'Not Marked';
         
         switch(status) {
             case 'full':
-                iconClass = 'fas fa-star text-success';
+                iconClass = 'fas fa-star';
                 iconColor = '#198754';
-                tooltipText = `Full Day (In: ${punchIn}, Out: ${punchOut})`;
+                tooltipText = `Full Day (In: ${punchIn ? new Date(punchIn).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'N/A'}, Out: ${punchOut ? new Date(punchOut).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'N/A'})`;
                 break;
             case 'half':
-                iconClass = 'fas fa-star-half-alt text-warning';
-                iconColor = '#ffc107';
-                tooltipText = `Half Day (In: ${punchIn})`;
+                iconClass = 'fas fa-star-half-alt';
+                iconColor = '#198754';
+                tooltipText = `Half Day (In: ${punchIn ? new Date(punchIn).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'N/A'})`;
                 break;
             case 'leave':
-                iconClass = 'fas fa-star text-danger';
+                iconClass = 'fas fa-star';
                 iconColor = '#dc3545';
                 tooltipText = 'Leave';
                 break;
+            default:
+                iconClass = 'fas fa-star';
+                iconColor = '#ccc';
+                tooltipText = 'Not Marked';
         }
         
         icon.className = iconClass;
         icon.style.color = iconColor;
         icon.setAttribute('data-state', status);
-        
-        // Update tooltip
         icon.setAttribute('title', tooltipText);
         icon.setAttribute('data-bs-toggle', 'tooltip');
         icon.setAttribute('data-bs-placement', 'top');
@@ -740,230 +443,191 @@
             tooltip.dispose();
         }
         new bootstrap.Tooltip(icon);
-        
-        // Update attendance percentage
-        updateAttendancePercentage(row);
-        updateAttendanceStats();
     }
 
-    // Add this code to the punch-in click handler
-    document.getElementById('punchInBtn').addEventListener('click', function() {
-        fetch('/punch_in/', {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Update the attendance star
-                updateAttendanceCell(data.employee_id, parseInt(data.day), data.status, data.punch_in, null);
-                
-                // Show success message
-                alert('Punched in successfully!');
-            } else {
-                alert(data.error || 'Failed to punch in');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Failed to punch in');
-        });
-    });
-
-    // Add these new functions after updateAttendanceTable function
+    // Show attendance modal
     function showAttendanceModal(employeeId, employeeName, date, icon) {
-    const modal = new bootstrap.Modal(document.getElementById('attendanceDetailsModal'));
-    const form = document.getElementById('attendanceForm');
-    const nameInput = document.getElementById('employeeName');
-    const dateDisplay = document.getElementById('attendanceDate');
-    const statusSelect = document.getElementById('attendanceStatus');
-    const punchInDisplay = document.getElementById('punchInDisplay');
-    const punchInLocationDisplay = document.getElementById('punchInLocation');
-    const punchInLocationLink = document.getElementById('punchInLocationLink');
-    const punchOutDisplay = document.getElementById('punchOutDisplay');
-    const punchOutLocationDisplay = document.getElementById('punchOutLocation');
-    const punchOutLocationLink = document.getElementById('punchOutLocationLink');
+        const modal = new bootstrap.Modal(document.getElementById('attendanceDetailsModal'));
+        const nameInput = document.getElementById('employeeName');
+        const dateDisplay = document.getElementById('attendanceDate');
+        const statusSelect = document.getElementById('attendanceStatus');
+        const punchInDisplay = document.getElementById('punchInDisplay');
+        const punchInLocation = document.getElementById('punchInLocation');
+        const punchInLocationLink = document.getElementById('punchInLocationLink');
+        const punchOutDisplay = document.getElementById('punchOutDisplay');
+        const punchOutLocation = document.getElementById('punchOutLocation');
+        const punchOutLocationLink = document.getElementById('punchOutLocationLink');
 
-    // Set employee name
-    nameInput.value = employeeName;
+        // Store references for later use
+        modal._element.setAttribute('data-employee-id', employeeId);
+        modal._element.setAttribute('data-date', date);
+        modal._element.setAttribute('data-icon-element', icon.outerHTML);
 
-    // Parse the date string directly (format: YYYY-MM-DD)
-    const [year, month, day] = date.split('-').map(Number);
-    const displayDate = new Date(year, month - 1, day);
-    dateDisplay.textContent = displayDate.toLocaleDateString('en-US', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-    });
+        // Set employee name
+        nameInput.value = employeeName;
+        nameInput.setAttribute('data-id', employeeId);
 
-    // Get current status from icon
-    const currentState = icon.getAttribute('data-state');
-    statusSelect.value = currentState || 'initial';
+        // Format the date nicely
+        const [year, month, day] = date.split('-');
+        const displayDate = new Date(year, month - 1, day);
+        dateDisplay.textContent = displayDate.toLocaleDateString('en-US', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
 
-    // Get attendance data from Django template context
-    const attendanceData = JSON.parse('{{ attendance_data|safe }}');
-    const dayData = attendanceData[employeeId] && attendanceData[employeeId][parseInt(day)];
+        // Get current status from icon
+        const currentState = icon.getAttribute('data-state') || 'initial';
+        statusSelect.value = currentState;
 
-    if (dayData) {
-        // Display punch in time if exists
-        if (dayData.punch_in && dayData.punch_in !== 'None') {
-            const punchInDate = new Date(dayData.punch_in);
-            punchInDisplay.textContent = punchInDate.toLocaleTimeString('en-US', {
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit',
-                hour12: true
+        // Fetch attendance details for this employee and date
+        fetch(`/get_attendance_status/?employee_id=${employeeId}&date=${date}`)
+            .then(response => response.json())
+            .then(data => {
+                // Set Punch In details
+                if (data.punch_in) {
+                    const punchInTime = new Date(data.punch_in);
+                    punchInDisplay.textContent = punchInTime.toLocaleTimeString('en-US', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: true
+                    });
+
+                    if (data.punch_in_location && data.punch_in_location !== 'Unknown Location') {
+                        punchInLocation.textContent = data.punch_in_location;
+                        if (data.punch_in_latitude && data.punch_in_longitude) {
+                            punchInLocationLink.href = `https://www.google.com/maps?q=${data.punch_in_latitude},${data.punch_in_longitude}`;
+                        } else {
+                            punchInLocationLink.href = '#';
+                        }
+                    } else {
+                        punchInLocation.textContent = 'Not available';
+                        punchInLocationLink.href = '#';
+                    }
+                } else {
+                    punchInDisplay.textContent = 'Not punched in';
+                    punchInLocation.textContent = 'Not available';
+                    punchInLocationLink.href = '#';
+                }
+
+                // Set Punch Out details
+                if (data.punch_out) {
+                    const punchOutTime = new Date(data.punch_out);
+                    punchOutDisplay.textContent = punchOutTime.toLocaleTimeString('en-US', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: true
+                    });
+
+                    if (data.punch_out_location && data.punch_out_location !== 'Unknown Location') {
+                        punchOutLocation.textContent = data.punch_out_location;
+                        if (data.punch_out_latitude && data.punch_out_longitude) {
+                            punchOutLocationLink.href = `https://www.google.com/maps?q=${data.punch_out_latitude},${data.punch_out_longitude}`;
+                        } else {
+                            punchOutLocationLink.href = '#';
+                        }
+                    } else {
+                        punchOutLocation.textContent = 'Not available';
+                        punchOutLocationLink.href = '#';
+                    }
+                } else {
+                    punchOutDisplay.textContent = 'Not punched out';
+                    punchOutLocation.textContent = 'Not available';
+                    punchOutLocationLink.href = '#';
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching attendance details:', error);
+                punchInDisplay.textContent = 'Error loading data';
+                punchOutDisplay.textContent = 'Error loading data';
             });
 
-            // Set punch-in location and link
-            if (dayData.punch_in_location && dayData.punch_in_latitude && dayData.punch_in_longitude) {
-                punchInLocation.textContent = dayData.punch_in_location;
-                punchInLocationLink.href = `https://www.google.com/maps?q=${dayData.punch_in_latitude},${dayData.punch_in_longitude}`;
-            } else {
-                punchInLocation.textContent = 'Unknown Location';
-                punchInLocationLink.href = '#';
-            }
-        } else {
-            punchInDisplay.textContent = 'Not punched in';
-            punchInLocation.textContent = 'Not punched in';
-            punchInLocationLink.href = '#';
-        }
-
-        // Display punch out time if exists
-        if (dayData.punch_out && dayData.punch_out !== 'None') {
-            const punchOutDate = new Date(dayData.punch_out);
-            punchOutDisplay.textContent = punchOutDate.toLocaleTimeString('en-US', {
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit',
-                hour12: true
-            });
-
-            // Set punch-out location and link
-            if (dayData.punch_out_location && dayData.punch_out_latitude && dayData.punch_out_longitude) {
-                punchOutLocation.textContent = dayData.punch_out_location;
-                punchOutLocationLink.href = `https://www.google.com/maps?q=${dayData.punch_out_latitude},${dayData.punch_out_longitude}`;
-            } else {
-                punchOutLocation.textContent = 'Unknown Location';
-                punchOutLocationLink.href = '#';
-            }
-        } else {
-            punchOutDisplay.textContent = 'Not punched out';
-            punchOutLocation.textContent = 'Not punched out';
-            punchOutLocationLink.href = '#';
-        }
-    } else {
-        punchInDisplay.textContent = 'Not punched in';
-        punchInLocation.textContent = 'Not punched in';
-        punchInLocationLink.href = '#';
-        punchOutDisplay.textContent = 'Not punched out';
-        punchOutLocation.textContent = 'Not punched out';
-        punchOutLocationLink.href = '#';
+        modal.show();
     }
 
-    // Store current icon element for later use
-    form.setAttribute('data-icon-element', icon.outerHTML);
-    form.setAttribute('data-employee-id', employeeId);
-    form.setAttribute('data-date', date);
-
-    modal.show();
-}
-
+    // Save attendance changes
     function saveAttendance() {
-        const form = document.getElementById('attendanceForm');
-        const employeeId = form.getAttribute('data-employee-id');
-        const date = form.getAttribute('data-date');
+        const modal = document.getElementById('attendanceDetailsModal');
+        const employeeId = document.getElementById('employeeName').getAttribute('data-id');
+        const date = modal.getAttribute('data-date');
         const status = document.getElementById('attendanceStatus').value;
+        const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content");
 
-        // Format the date string for the request
-        const formattedDate = new Date(date);
-        const day = formattedDate.getDate();
-
-        // Show loading toast
-        const loadingToast = showToast('Saving attendance...', 'info');
-
-        // Get the existing attendance data
-        const attendanceData = JSON.parse('{{ attendance_data|safe }}');
-        const dayData = attendanceData[employeeId] && attendanceData[employeeId][day];
-
-        fetch('/save_attendance/' + employeeId + '/' + day + '/' + status + '/', {
-            method: 'POST',
+        fetch("{% url 'update_attendance_status' %}", {
+            method: "POST",
             headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                "X-CSRFToken": csrfToken,
+                "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                punch_in: dayData ? dayData.punch_in : null,
-                punch_out: dayData ? dayData.punch_out : null
+                employee_id: employeeId,
+                date: date,
+                status: status
             })
         })
         .then(response => response.json())
         .then(data => {
-            if (data.status === 'success') {
-                // Update the attendance cell with existing punch times
-                updateAttendanceCell(employeeId, day, status, 
-                    dayData ? dayData.punch_in : '', 
-                    dayData ? dayData.punch_out : '');
-                showToast('Attendance saved successfully!', 'success');
+            if (data.success) {
+                // Update the icon in the table
+                const icon = document.querySelector(`i[data-employee-id="${employeeId}"][data-date="${date}"]`);
+                if (icon) {
+                    // Remove all status classes
+                    icon.classList.remove(
+                        "text-success", 
+                        "text-warning", 
+                        "text-danger", 
+                        "text-secondary",
+                        "fa-star",
+                        "fa-star-half-alt",
+                        "fa-times-circle"
+                    );
+                    
+                    // Set new classes based on status
+                    if (status === "full") {
+                        icon.classList.add("text-success", "fa-star");
+                        icon.setAttribute("data-state", "full");
+                    } else if (status === "half") {
+                        icon.classList.add("text-success", "fa-star-half-alt");
+                        icon.setAttribute("data-state", "half");
+                    } else if (status === "leave") {
+                        icon.classList.add("text-danger", "fa-times-circle");
+                        icon.setAttribute("data-state", "leave");
+                    } else {
+                        icon.classList.add("text-secondary", "fa-star");
+                        icon.setAttribute("data-state", "initial");
+                    }
+                    
+                    // Update tooltip
+                    const tooltip = bootstrap.Tooltip.getInstance(icon);
+                    if (tooltip) {
+                        tooltip.dispose();
+                    }
+                    new bootstrap.Tooltip(icon);
+                }
                 
                 // Close the modal
-                const modal = bootstrap.Modal.getInstance(document.getElementById('attendanceDetailsModal'));
-                modal.hide();
+                bootstrap.Modal.getInstance(modal).hide();
+                
+                // Show success message
+                alert("Attendance status updated successfully!");
             } else {
-                showToast('Error saving attendance: ' + data.message, 'error');
+                alert("Error updating attendance: " + (data.error || "Unknown error"));
             }
         })
         .catch(error => {
-            showToast('Error saving attendance: ' + error, 'error');
-            console.error('Error:', error);
-        })
-        .finally(() => {
-            if (loadingToast) {
-                loadingToast.close();
-            }
+            console.error("Error:", error);
+            alert("Something went wrong. Please try again.");
         });
     }
 
-    // Add toast notification styles
-    const toastStyles = document.createElement('style');
-    toastStyles.textContent = `
-        .toast.success { background-color: #d4edda; }
-        .toast.error { background-color: #f8d7da; }
-        .toast.info { background-color: #cce5ff; }
-    `;
-    document.head.appendChild(toastStyles);
-
-    // Helper function to show toast notifications
-    function showToast(message, type = 'info') {
-        const toast = document.createElement('div');
-        toast.className = `toast position-fixed top-0 end-0 m-3 ${type}`;
-        toast.style.zIndex = '1050';
-        toast.innerHTML = `
-            <div class="toast-header">
-                <strong class="me-auto">${type.charAt(0).toUpperCase() + type.slice(1)}</strong>
-                <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
-            </div>
-            <div class="toast-body">
-                ${message}
-            </div>
-        `;
-        document.body.appendChild(toast);
-        
-        const bsToast = new bootstrap.Toast(toast, {
-            autohide: true,
-            delay: 3000
-        });
-        bsToast.show();
-        
-        toast.addEventListener('hidden.bs.toast', () => {
-            toast.remove();
-        });
-        
-        return bsToast;
-    }
+    // Initialize the table with current month on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        const now = new Date();
+        const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        document.getElementById('monthFilter').value = currentMonth;
+        updateAttendanceTable(currentMonth);
+    });
 </script>
 {% endif %}
 {% endblock %}

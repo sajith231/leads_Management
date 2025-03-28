@@ -674,7 +674,7 @@
                     <a href="{% url 'interview_management' %}"><i class="fas fa-user-tie"></i> Interview Management</a>
                     <a href="{% url 'employee_management' %}"><i class="fas fa-users"></i> Employee Management</a>
                     <!-- <a href="{% url 'attendance' %}"><i class="fas fa-user-check"></i> Attendance</a> -->
-                    <a href="{% url 'attendance_user' %}"><i class="fas fa-user-check"></i> Punch in / Punch out</a>
+                    <!-- <a href="{% url 'attendance_user' %}"><i class="fas fa-user-check"></i> Punch in / Punch out</a> -->
                 </div>
         
                 <!-- Services Menu -->
@@ -693,7 +693,7 @@
                     <a href="{% url 'user_service_entry' %}"><i class="fas fa-plus-circle"></i> Service Entry</a>
                 </div>
         
-            {% elif request.session.user_level == '3level' %}
+            {% elif request.session.user_level == '3level' or request.session.user_level == '5level' %}
         
                 <!-- Marketing Menu -->
                 <div onclick="toggleUserMenu()">

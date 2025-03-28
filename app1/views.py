@@ -2865,38 +2865,166 @@ def punch_out(request):
     return JsonResponse({'success': False, 'error': 'Invalid request'})
 
 # views.py
+from django.http import JsonResponse
+from django.utils.timezone import localtime
+from .models import Attendance, Employee
+from django.contrib.auth.decorators import login_required
+from datetime import datetime
+
+from django.http import JsonResponse
+from django.utils.timezone import localtime
+from .models import Attendance, Employee
+from django.contrib.auth.decorators import login_required
+from datetime import datetime
 
 @login_required
 def get_attendance_status(request):
+    employee_id = request.GET.get('employee_id')
+    date_str = request.GET.get('date')
+
     try:
-        date_str = request.GET.get('date')
-        date = timezone.datetime.strptime(date_str, '%Y-%m-%d').date()
-        
-        custom_user_id = request.session.get('custom_user_id')
-        if not custom_user_id:
-            return JsonResponse({'error': 'User session not found'}, status=400)
-        
-        custom_user = User.objects.get(id=custom_user_id)
-        employee = Employee.objects.get(user=custom_user)
-        attendance = Attendance.objects.filter(
-            employee=employee,
-            date=date
-        ).first()
-        
+        employee = Employee.objects.get(id=employee_id)
+        date = datetime.strptime(date_str, '%Y-%m-%d').date()
+
+        attendance = Attendance.objects.filter(employee=employee, date=date).first()
+
         if attendance:
             return JsonResponse({
-                'punch_in': attendance.punch_in.isoformat() if attendance.punch_in else None,
-                'punch_out': attendance.punch_out.isoformat() if attendance.punch_out else None,
-                'punch_in_location': attendance.punch_in_location,
-                'punch_out_location': attendance.punch_out_location,
+                'punch_in': localtime(attendance.punch_in).isoformat() if attendance.punch_in else None,
+                'punch_out': localtime(attendance.punch_out).isoformat() if attendance.punch_out else None,
+                'punch_in_location': attendance.punch_in_location if attendance.punch_in_location else 'Not available',
+                'punch_out_location': attendance.punch_out_location if attendance.punch_out_location else 'Not available',
                 'punch_in_latitude': str(attendance.punch_in_latitude) if attendance.punch_in_latitude else None,
                 'punch_in_longitude': str(attendance.punch_in_longitude) if attendance.punch_in_longitude else None,
                 'punch_out_latitude': str(attendance.punch_out_latitude) if attendance.punch_out_latitude else None,
                 'punch_out_longitude': str(attendance.punch_out_longitude) if attendance.punch_out_longitude else None,
             })
-        return JsonResponse({'punch_in': None, 'punch_out': None})
+        return JsonResponse({
+            'punch_in': None,
+            'punch_out': None,
+            'punch_in_location': 'Not available',
+            'punch_out_location': 'Not available'
+        })
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=400)
+
+from django.http import JsonResponse
+from django.views.decorators.http import require_GET
+from .models import Attendance, Employee
+from datetime import datetime
+
+@require_GET
+def get_attendance_data(request):
+    employee_id = request.GET.get('employee_id')
+    year = request.GET.get('year')
+    month = request.GET.get('month')
+
+    try:
+        employee = Employee.objects.get(id=employee_id)
+        attendance_records = Attendance.objects.filter(
+            employee=employee,
+            date__year=year,
+            date__month=month
+        )
+
+        attendance_data = {}
+        for record in attendance_records:
+            day = record.date.day
+            attendance_data[day] = {
+                'status': record.status if record.status else 'initial',
+                'punch_in': record.punch_in.isoformat() if record.punch_in else None,
+                'punch_out': record.punch_out.isoformat() if record.punch_out else None,
+                'punch_in_location': record.punch_in_location if record.punch_in_location else None,
+                'punch_out_location': record.punch_out_location if record.punch_out_location else None
+            }
+
+        return JsonResponse({
+            'success': True,
+            'attendance': attendance_data
+        })
+    except Employee.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'error': 'Employee not found'
+        }, status=404)
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
+from .models import Attendance, Employee
+import json
+
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.dateparse import parse_date
+import json
+from .models import Attendance, Employee
+
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.dateparse import parse_date
+import json
+from .models import Attendance, Employee
+
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+import json
+from .models import Attendance, Employee
+
+@csrf_exempt
+def update_attendance_status(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            employee_id = data.get("employee_id")
+            date_str = data.get("date")
+            status = data.get("status")
+
+            if not all([employee_id, date_str, status]):
+                return JsonResponse({"success": False, "error": "Missing required fields"})
+
+            try:
+                date = datetime.strptime(date_str, "%Y-%m-%d").date()
+            except ValueError:
+                return JsonResponse({"success": False, "error": "Invalid date format"})
+
+            employee = get_object_or_404(Employee, id=employee_id)
+            
+            # Get or create attendance record
+            attendance, created = Attendance.objects.get_or_create(
+                employee=employee,
+                date=date,
+                defaults={
+                    'status': status,
+                    'day': date.day
+                }
+            )
+
+            if not created:
+                attendance.status = status
+                attendance.save()
+
+            return JsonResponse({
+                "success": True,
+                "employee_id": employee_id,
+                "date": date_str,
+                "status": status
+            })
+
+        except Exception as e:
+            return JsonResponse({"success": False, "error": str(e)})
+
+    return JsonResponse({"success": False, "error": "Invalid request method"})
+
+
+
+
+
 
 @csrf_exempt
 def update_setting_positions(request, doc_id):
