@@ -632,17 +632,19 @@ from django.contrib.auth import get_user_model
 from django.utils import timezone
 
 class Attendance(models.Model):
-    ATTENDANCE_CHOICES = [
-        ('initial', 'Initial'),
-        ('full', 'Full Day'),
-        ('half', 'Half Day'),
-        ('leave', 'Leave'),
-    ]
-
-    employee = models.ForeignKey('Employee', on_delete=models.CASCADE, related_name='attendances')
-    day = models.IntegerField()  # Day of the month (1-31)
-    status = models.CharField(max_length=10, choices=ATTENDANCE_CHOICES, default='initial')
-    date = models.DateField(auto_now_add=True)  # Date when the attendance was recorded
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE)
+    date = models.DateField()
+    day = models.IntegerField()
+    status = models.CharField(
+        max_length=20, 
+        choices=[
+            ('initial', 'Not Marked'),
+            ('full', 'Full Day'),
+            ('half', 'Half Day'),
+            ('leave', 'Leave')
+        ], 
+        default='initial'
+    )
     punch_in = models.DateTimeField(null=True, blank=True)
     punch_out = models.DateTimeField(null=True, blank=True)
     punch_in_location = models.CharField(max_length=255, null=True, blank=True)

@@ -548,78 +548,82 @@
 
     // Save attendance changes
     function saveAttendance() {
-        const modal = document.getElementById('attendanceDetailsModal');
-        const employeeId = document.getElementById('employeeName').getAttribute('data-id');
-        const date = modal.getAttribute('data-date');
-        const status = document.getElementById('attendanceStatus').value;
-        const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content");
+    const modal = document.getElementById('attendanceDetailsModal');
+    const employeeId = document.getElementById('employeeName').getAttribute('data-id');
+    const date = modal.getAttribute('data-date');
+    const status = document.getElementById('attendanceStatus').value;
+    const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content");
 
-        fetch("{% url 'update_attendance_status' %}", {
-            method: "POST",
-            headers: {
-                "X-CSRFToken": csrfToken,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                employee_id: employeeId,
-                date: date,
-                status: status
-            })
+    fetch("{% url 'update_attendance_status' %}", {
+        method: "POST",
+        headers: {
+            "X-CSRFToken": csrfToken,
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            employee_id: employeeId,
+            date: date,
+            status: status
         })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Update the icon in the table
-                const icon = document.querySelector(`i[data-employee-id="${employeeId}"][data-date="${date}"]`);
-                if (icon) {
-                    // Remove all status classes
-                    icon.classList.remove(
-                        "text-success", 
-                        "text-warning", 
-                        "text-danger", 
-                        "text-secondary",
-                        "fa-star",
-                        "fa-star-half-alt",
-                        "fa-times-circle"
-                    );
-                    
-                    // Set new classes based on status
-                    if (status === "full") {
-                        icon.classList.add("text-success", "fa-star");
-                        icon.setAttribute("data-state", "full");
-                    } else if (status === "half") {
-                        icon.classList.add("text-success", "fa-star-half-alt");
-                        icon.setAttribute("data-state", "half");
-                    } else if (status === "leave") {
-                        icon.classList.add("text-danger", "fa-times-circle");
-                        icon.setAttribute("data-state", "leave");
-                    } else {
-                        icon.classList.add("text-secondary", "fa-star");
-                        icon.setAttribute("data-state", "initial");
-                    }
-                    
-                    // Update tooltip
-                    const tooltip = bootstrap.Tooltip.getInstance(icon);
-                    if (tooltip) {
-                        tooltip.dispose();
-                    }
-                    new bootstrap.Tooltip(icon);
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update the icon in the table
+            const icon = document.querySelector(`i[data-employee-id="${data.employee_id}"][data-date="${data.date}"]`);
+            if (icon) {
+                // Remove existing classes
+                icon.classList.remove(
+                    "text-success", 
+                    "text-warning", 
+                    "text-danger", 
+                    "text-secondary",
+                    "fa-star",
+                    "fa-star-half-alt",
+                    "fa-times-circle"
+                );
+                
+                // Set new classes based on status
+                switch(data.status) {
+                    case "full":
+                        icon.classList.add("fa-star", "text-success");
+                        break;
+                    case "half":
+                        icon.classList.add("fa-star-half-alt", "text-success");
+                        break;
+                    case "leave":
+                        icon.classList.add("fa-star", "text-danger");
+                        break;
+                    default:
+                        icon.classList.add("fa-star", "text-secondary");
                 }
                 
-                // Close the modal
-                bootstrap.Modal.getInstance(modal).hide();
+                // Update icon attributes
+                icon.setAttribute("data-state", data.status);
                 
-                // Show success message
-                alert("Attendance status updated successfully!");
-            } else {
-                alert("Error updating attendance: " + (data.error || "Unknown error"));
+                // Refresh tooltip
+                const tooltip = bootstrap.Tooltip.getInstance(icon);
+                if (tooltip) {
+                    tooltip.dispose();
+                }
+                new bootstrap.Tooltip(icon);
             }
-        })
-        .catch(error => {
-            console.error("Error:", error);
-            alert("Something went wrong. Please try again.");
-        });
-    }
+            
+            // Close the modal
+            bootstrap.Modal.getInstance(modal).hide();
+            
+            // Optional: Show success toast/alert
+            alert("Attendance status updated successfully!");
+        } else {
+            // Handle error scenario
+            alert("Error updating attendance: " + (data.error || "Unknown error"));
+        }
+    })
+    .catch(error => {
+        console.error("Error:", error);
+        alert("Something went wrong. Please try again.");
+    });
+}
 
     // Initialize the table with current month on page load
     document.addEventListener('DOMContentLoaded', function() {
