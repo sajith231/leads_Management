@@ -1,34 +1,43 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="container mt-5">
-    <div class="card shadow">
-        <div class="card-header bg-primary text-white">
-            <h3 class="mb-0">Daily Attendance</h3>
-        </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="card mb-3">
-                        <div class="card-body">
-                            <h5 class="card-title">Today's Status</h5>
-                            <div id="punchStatus">
-                                <p class="mb-2">Punch In: <span id="punchInTime">Not punched in yet</span></p>
-                                <p class="mb-2">Punch In Location: <a id="punchInLocationLink" href="#" target="_blank"><span id="punchInLocation">Not punched in yet</span></a></p>
-                                <p class="mb-2">Punch Out: <span id="punchOutTime">Not punched out yet</span></p>
-                                <p class="mb-2">Punch Out Location: <a id="punchOutLocationLink" href="#" target="_blank"><span id="punchOutLocation">Not punched out yet</span></a></p>
+<div style="padding: 20px;width: 95%; margin: auto;">
+    <div class="container"
+        style="display: flex;flex-direction: column;height: 100vh;justify-content: center;align-items: center;">
+        <div class="card shadow" style="overflow: hidden;">
+            <div class="card-header  text-white" style="padding-top: 20px;padding-bottom: 20px;background: linear-gradient(90deg, rgba(2,0,36,1) 0%, rgba(9,9,121,1) 35%, rgb(0, 145, 174) 100%);">
+                <h3 class="mb-0 " style="text-align: center;">Daily Attendance</h3>
+            </div>
+            <div class="card-body" style="background: linear-gradient(90deg, rgba(2,0,36,1) 0%, rgba(9,9,121,1) 35%, rgb(0, 145, 174) 100%);overflow: hidden;">
+                <div class="row" style="overflow: hidden;">
+                    <div class="col-md-6" style="overflow: hidden;">
+                        <div class="card mb-3" style="overflow: hidden;">
+                            <div class="card-body" style="border-radius: 15px; overflow: hidden; background-color: #ffffff19;backdrop-filter: blur(10px);border: 1px solid rgba(255, 255, 255, 0.603);">
+                                <h5 class="" style="padding-left: 20px; padding-right: 20px; padding-top: 10px; padding-bottom: 10px;border-radius: 15px;border: #c2c2c2;background: linear-gradient(90deg, rgba(2,0,36,1) 0%, rgba(9,9,121,1) 35%, rgba(0,212,255,1) 100%);color: white;font-size: 15px; display: flex;justify-content: space-between;align-items: center;">Today's Status <span style="color: ;"><svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e3e3e3"><path d="M441-82q-76-8-141.5-41.5t-114.5-87Q136-264 108-333T80-480q0-157 104.5-270T441-878v81q-119 15-200 104.5T160-480q0 123 81 212.5T441-163v81Zm0-198v-247L337-423l-56-57 200-200 200 200-57 56-103-103v247h-80Zm80 198v-81q44-5 83.5-22t72.5-43l57 58q-45 36-99 59T521-82Zm155-650q-33-26-72-43t-83-22v-81q60 6 114 29t99 59l-58 58Zm114 505-57-57q26-33 43-72.5t22-83.5h81q-6 60-29.5 114T790-227Zm8-293q-5-44-22-83.5T733-676l57-57q36 45 59.5 99T879-520h-81Z"/></svg></span></h5>
+                                <div id="punchStatus" style="color: white;">
+                                    <p class="mb-2" style="display: flex;justify-content: space-between;align-items: center;">Punch In: <span id="punchInTime" style="color: white;">Not punched in yet</span></p>
+                                    <p class="mb-2" style="display: flex;justify-content: space-between;align-items: center;">Punch In Location: <a id="punchInLocationLink" style="color: white;" href="#"
+                                            target="_blank">
+                                            <span id="punchInLocation" style="color: white;">Not punched in yet</span>
+                                        </a></p>
+                                    <p class="mb-2" style="display: flex;justify-content: space-between;align-items: center;">Punch Out: <span style="color: white;" id="punchOutTime">Not punched out yet</span></p>
+                                    <p class="mb-2" style="display: flex;justify-content: space-between;align-items: center;">Punch Out Location: <a style="color: white;" id="punchOutLocationLink" href="#"
+                                            target="_blank"><span id="punchOutLocation" style="color: white;">Not punched out yet</span></a>
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="d-flex justify-content-center align-items-center h-100">
-                        <button class="btn btn-success btn-lg mx-2" onclick="handlePunch('in')" id="punchInBtn">
-                            <i class="fas fa-sign-in-alt"></i><span style="white-space: nowrap;"> Punch In </span>
-                        </button>
-                        <button class="btn btn-danger btn-lg mx-2" onclick="handlePunch('out')" id="punchOutBtn">
-                            <i class="fas fa-sign-out-alt"></i> <span style="white-space: nowrap;"> Punch Out </span>
-                        </button>
+                    <div class="col-md-6">
+                        <div class="d-flex justify-content-center align-items-center h-100">
+                            <button class="btn btn-success btn-lg mx-2" onclick="handlePunch('in')" id="punchInBtn" style="border: 1px solid #ffffff;">
+                                <i class="fas fa-sign-in-alt"></i><span style="white-space: nowrap;"> Punch In </span>
+                            </button>
+                            <button class="btn btn-danger btn-lg mx-2" onclick="handlePunch('out')" id="punchOutBtn" style="border: 1px solid #fff;">
+                                <i class="fas fa-sign-out-alt"></i> <span style="white-space: nowrap;"> Punch Out
+                                </span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -37,199 +46,208 @@
 </div>
 
 <script>
-function formatTime(date) {
-    return date.toLocaleTimeString('en-US', { 
-        hour: '2-digit', 
-        minute: '2-digit',
-        hour12: true 
-    });
-}
+    function formatTime(date) {
+        return date.toLocaleTimeString('en-US', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+        });
+    }
 
-function getLocation(callback) {
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition((position) => {
-            const latitude = position.coords.latitude;
-            const longitude = position.coords.longitude;
-            fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`)
-                .then(response => response.json())
-                .then(data => {
-                    callback({
-                        latitude: latitude,
-                        longitude: longitude,
-                        location_name: data.locality || data.city || data.principalSubdivision || 'Unknown Location'
+    function getLocation(callback) {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition((position) => {
+                const latitude = position.coords.latitude;
+                const longitude = position.coords.longitude;
+                fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`)
+                    .then(response => response.json())
+                    .then(data => {
+                        callback({
+                            latitude: latitude,
+                            longitude: longitude,
+                            location_name: data.locality || data.city || data.principalSubdivision || 'Unknown Location'
+                        });
                     });
+            }, (error) => {
+                console.error('Error getting location:', error);
+                callback({
+                    latitude: null,
+                    longitude: null,
+                    location_name: 'Unknown Location'
                 });
-        }, (error) => {
-            console.error('Error getting location:', error);
+            });
+        } else {
             callback({
                 latitude: null,
                 longitude: null,
                 location_name: 'Unknown Location'
             });
-        });
-    } else {
-        callback({
-            latitude: null,
-            longitude: null,
-            location_name: 'Unknown Location'
-        });
-    }
-}
-
-function handlePunch(action) {
-    const today = new Date().toISOString().split('T')[0];
-    const userId = '{{ request.user.id }}';
-    const storageKey = `punchData_${userId}_${today}`;
-    const storedData = JSON.parse(localStorage.getItem(storageKey) || '{}');
-    
-    // Prevent multiple punch-ins/outs on the same day
-    if (action === 'in' && storedData.punchIn) {
-        alert('You have already punched in today!');
-        return;
-    }
-    if (action === 'out') {
-        if (storedData.punchOut) {
-            alert('You have already punched out today!');
-            return;
-        }
-        if (!storedData.punchIn) {
-            alert('You must punch in before punching out!');
-            return;
         }
     }
 
-    getLocation((location) => {
-        const url = action === 'in' ? "{% url 'punch_in' %}" : "{% url 'punch_out' %}";
-        const now = new Date();
-        
-        fetch(url, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': '{{ csrf_token }}',
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                latitude: location.latitude,
-                longitude: location.longitude,
-                location_name: location.location_name
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                if (action === 'in') {
-                    document.getElementById('punchInTime').textContent = formatTime(now);
-                    document.getElementById('punchInLocation').textContent = location.location_name;
-                    document.getElementById('punchInLocationLink').href = `https://www.google.com/maps?q=${location.latitude},${location.longitude}`;
-                    document.getElementById('punchInBtn').disabled = true;
-                    document.getElementById('punchOutBtn').disabled = false;
-                    
-                    // Update attendance icon
-                    const icon = document.querySelector(`i[data-employee-id="${data.employee_id}"][data-date="${data.day}"]`);
-                    if (icon) {
-                        icon.className = 'fas fa-star-half-alt';
-                        icon.style.color = '#198754';
-                        icon.setAttribute('data-state', 'half');
-                    }
-                    
-                    // Store punch-in data
-                    localStorage.setItem(storageKey, JSON.stringify({
-                        punchIn: now.toISOString(),
-                        punchInLocation: location.location_name,
-                        punchInLatitude: location.latitude,
-                        punchInLongitude: location.longitude
-                    }));
-                } else {
-                    document.getElementById('punchOutTime').textContent = formatTime(now);
-                    document.getElementById('punchOutLocation').textContent = location.location_name;
-                    document.getElementById('punchOutLocationLink').href = `https://www.google.com/maps?q=${location.latitude},${location.longitude}`;
-                    document.getElementById('punchOutBtn').disabled = true;
-                    
-                    // Update attendance icon
-                    const icon = document.querySelector(`i[data-employee-id="${data.employee_id}"][data-date="${data.day}"]`);
-                    if (icon) {
-                        icon.className = 'fas fa-star';
-                        icon.style.color = '#198754';
-                        icon.setAttribute('data-state', 'full');
-                    }
-                    
-                    // Update stored data with punch-out information
-                    storedData.punchOut = now.toISOString();
-                    storedData.punchOutLocation = location.location_name;
-                    storedData.punchOutLatitude = location.latitude;
-                    storedData.punchOutLongitude = location.longitude;
-                    localStorage.setItem(storageKey, JSON.stringify(storedData));
-                }
-                alert(`Punched ${action.toUpperCase()} successfully!`);
-            } else {
-                alert(`Error: ${data.error}`);
+    function handlePunch(action) {
+        const today = new Date().toISOString().split('T')[0];
+        const userId = '{{ request.user.id }}';
+        const storageKey = `punchData_${userId}_${today}`;
+        const storedData = JSON.parse(localStorage.getItem(storageKey) || '{}');
+
+        // Prevent multiple punch-ins/outs on the same day
+        if (action === 'in' && storedData.punchIn) {
+            alert('You have already punched in today!');
+            return;
+        }
+        if (action === 'out') {
+            if (storedData.punchOut) {
+                alert('You have already punched out today!');
+                return;
             }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('An error occurred. Please try again.');
+            if (!storedData.punchIn) {
+                alert('You must punch in before punching out!');
+                return;
+            }
+        }
+
+        getLocation((location) => {
+            const url = action === 'in' ? "{% url 'punch_in' %}" : "{% url 'punch_out' %}";
+            const now = new Date();
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    latitude: location.latitude,
+                    longitude: location.longitude,
+                    location_name: location.location_name
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        if (action === 'in') {
+                            document.getElementById('punchInTime').textContent = formatTime(now);
+                            document.getElementById('punchInLocation').textContent = location.location_name;
+                            document.getElementById('punchInLocationLink').href = `https://www.google.com/maps?q=${location.latitude},${location.longitude}`;
+                            document.getElementById('punchInBtn').disabled = true;
+                            document.getElementById('punchOutBtn').disabled = false;
+
+                            // Update attendance icon
+                            const icon = document.querySelector(`i[data-employee-id="${data.employee_id}"][data-date="${data.day}"]`);
+                            if (icon) {
+                                icon.className = 'fas fa-star-half-alt';
+                                icon.style.color = '#198754';
+                                icon.setAttribute('data-state', 'half');
+                            }
+
+                            // Store punch-in data
+                            localStorage.setItem(storageKey, JSON.stringify({
+                                punchIn: now.toISOString(),
+                                punchInLocation: location.location_name,
+                                punchInLatitude: location.latitude,
+                                punchInLongitude: location.longitude
+                            }));
+                        } else {
+                            document.getElementById('punchOutTime').textContent = formatTime(now);
+                            document.getElementById('punchOutLocation').textContent = location.location_name;
+                            document.getElementById('punchOutLocationLink').href = `https://www.google.com/maps?q=${location.latitude},${location.longitude}`;
+                            document.getElementById('punchOutBtn').disabled = true;
+
+                            // Update attendance icon
+                            const icon = document.querySelector(`i[data-employee-id="${data.employee_id}"][data-date="${data.day}"]`);
+                            if (icon) {
+                                icon.className = 'fas fa-star';
+                                icon.style.color = '#198754';
+                                icon.setAttribute('data-state', 'full');
+                            }
+
+                            // Update stored data with punch-out information
+                            storedData.punchOut = now.toISOString();
+                            storedData.punchOutLocation = location.location_name;
+                            storedData.punchOutLatitude = location.latitude;
+                            storedData.punchOutLongitude = location.longitude;
+                            localStorage.setItem(storageKey, JSON.stringify(storedData));
+                        }
+                        alert(`Punched ${action.toUpperCase()} successfully!`);
+                    } else {
+                        alert(`Error: ${data.error}`);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred. Please try again.');
+                });
         });
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const today = new Date().toISOString().split('T')[0];
+        const userId = '{{ request.user.id }}';
+        const storageKey = `punchData_${userId}_${today}`;
+        const storedData = JSON.parse(localStorage.getItem(storageKey) || '{}');
+
+        // Restore punch-in data if exists
+        if (storedData.punchIn) {
+            const punchInTime = new Date(storedData.punchIn);
+            document.getElementById('punchInTime').textContent = formatTime(punchInTime);
+            document.getElementById('punchInLocation').textContent = storedData.punchInLocation;
+            document.getElementById('punchInLocationLink').href = `https://www.google.com/maps?q=${storedData.punchInLatitude},${storedData.punchInLongitude}`;
+            document.getElementById('punchInBtn').disabled = true;
+            // Only disable punch-out button if user has already punched out
+            document.getElementById('punchOutBtn').disabled = storedData.punchOut ? true : false;
+        } else {
+            // If no punch-in data exists, disable punch-out button
+            document.getElementById('punchOutBtn').disabled = true;
+        }
+
+        // Restore punch-out data if exists
+        if (storedData.punchOut) {
+            const punchOutTime = new Date(storedData.punchOut);
+            document.getElementById('punchOutTime').textContent = formatTime(punchOutTime);
+            document.getElementById('punchOutLocation').textContent = storedData.punchOutLocation;
+            document.getElementById('punchOutLocationLink').href = `https://www.google.com/maps?q=${storedData.punchOutLatitude},${storedData.punchOutLongitude}`;
+            document.getElementById('punchOutBtn').disabled = true;
+        }
     });
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-    const today = new Date().toISOString().split('T')[0];
-    const userId = '{{ request.user.id }}';
-    const storageKey = `punchData_${userId}_${today}`;
-    const storedData = JSON.parse(localStorage.getItem(storageKey) || '{}');
-
-    // Restore punch-in data if exists
-    if (storedData.punchIn) {
-        const punchInTime = new Date(storedData.punchIn);
-        document.getElementById('punchInTime').textContent = formatTime(punchInTime);
-        document.getElementById('punchInLocation').textContent = storedData.punchInLocation;
-        document.getElementById('punchInLocationLink').href = `https://www.google.com/maps?q=${storedData.punchInLatitude},${storedData.punchInLongitude}`;
-        document.getElementById('punchInBtn').disabled = true;
-        // Only disable punch-out button if user has already punched out
-        document.getElementById('punchOutBtn').disabled = storedData.punchOut ? true : false;
-    } else {
-        // If no punch-in data exists, disable punch-out button
-        document.getElementById('punchOutBtn').disabled = true;
-    }
-
-    // Restore punch-out data if exists
-    if (storedData.punchOut) {
-        const punchOutTime = new Date(storedData.punchOut);
-        document.getElementById('punchOutTime').textContent = formatTime(punchOutTime);
-        document.getElementById('punchOutLocation').textContent = storedData.punchOutLocation;
-        document.getElementById('punchOutLocationLink').href = `https://www.google.com/maps?q=${storedData.punchOutLatitude},${storedData.punchOutLongitude}`;
-        document.getElementById('punchOutBtn').disabled = true;
-    }
-});
 
 
 </script>
 
 <style>
-.card {
-    border: none;
-    border-radius: 15px;
-}
-.card-header {
-    border-radius: 15px 15px 0 0 !important;
-}
-.btn {
-    border-radius: 10px;
-    padding: 12px 30px;
-    font-weight: 600;
-}
-.btn i {
-    margin-right: 8px;
-}
-#punchStatus {
-    font-size: 1.1rem;
-}
-#punchStatus p {
-    margin-bottom: 15px;
-}
-#punchStatus span {
-    font-weight: 600;
-    color: #666;
-}
+    .card {
+        border: none;
+        border-radius: 15px;
+        background-color: #ffffff17;
+        overflow: hidden;
+    }
+
+    .card-header {
+        border-radius: 15px 15px 0 0 !important;
+        overflow: hidden;
+    }
+
+    .btn {
+        border-radius: 10px;
+        padding: 12px 30px;
+        font-weight: 600;
+    }
+
+    .btn i {
+        margin-right: 8px;
+    }
+
+    #punchStatus {
+        font-size: 1.1rem;
+    }
+
+    #punchStatus p {
+        margin-bottom: 15px;
+    }
+
+    #punchStatus span {
+        font-weight: 600;
+        color: #666;
+    }
 </style>
 {% endblock %}
