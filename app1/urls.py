@@ -231,8 +231,15 @@ urlpatterns = [
     path('reminders/', views.reminders, name='reminders'),
     path("add-reminder/", views.add_reminder, name="add_reminder"),
     path('reminders/add/', views.add_reminder, name='add_reminder'),
-    path('reminder/edit/<int:reminder_id>/', views.edit_reminder, name='edit_reminder'),
+    path('reminder/edit/<int:reminder_no>/', views.edit_reminder, name='edit_reminder'),
     path('reminders/delete/<int:reminder_id>/', views.delete_reminder, name='delete_reminder'),
+
+
+
+
+    path('add_holiday/', views.add_holiday, name='add_holiday'),
+    path('get_holidays/', views.get_holidays, name='get_holidays'),
+    path('delete_holiday/', views.delete_holiday, name='delete_holiday'),
 
 
 

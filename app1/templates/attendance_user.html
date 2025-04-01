@@ -70,44 +70,47 @@
                     });
             }, (error) => {
                 console.error('Error getting location:', error);
-                callback({
-                    latitude: null,
-                    longitude: null,
-                    location_name: 'Unknown Location'
-                });
+                alert('Location permission is required for attendance tracking. Please enable location services and try again.');
+                callback(null); // Return null to indicate location error
+            }, {
+                enableHighAccuracy: true,
+                timeout: 10000, // 10 seconds timeout
+                maximumAge: 0 // Don't use cached position
             });
         } else {
-            callback({
-                latitude: null,
-                longitude: null,
-                location_name: 'Unknown Location'
-            });
+            alert('Geolocation is not supported by your browser. Attendance tracking requires location services.');
+            callback(null);
         }
     }
 
     function handlePunch(action) {
-        const today = new Date().toISOString().split('T')[0];
-        const userId = '{{ request.user.id }}';
-        const storageKey = `punchData_${userId}_${today}`;
-        const storedData = JSON.parse(localStorage.getItem(storageKey) || '{}');
-
-        // Prevent multiple punch-ins/outs on the same day
-        if (action === 'in' && storedData.punchIn) {
-            alert('You have already punched in today!');
-            return;
-        }
-        if (action === 'out') {
-            if (storedData.punchOut) {
-                alert('You have already punched out today!');
-                return;
-            }
-            if (!storedData.punchIn) {
-                alert('You must punch in before punching out!');
-                return;
-            }
-        }
-
+        // Check if location is available before proceeding
         getLocation((location) => {
+            if (!location) {
+                return; // Exit if location is not available
+            }
+
+            const today = new Date().toISOString().split('T')[0];
+            const userId = '{{ request.user.id }}';
+            const storageKey = `punchData_${userId}_${today}`;
+            const storedData = JSON.parse(localStorage.getItem(storageKey) || '{}');
+
+            // Prevent multiple punch-ins/outs on the same day
+            if (action === 'in' && storedData.punchIn) {
+                alert('You have already punched in today!');
+                return;
+            }
+            if (action === 'out') {
+                if (storedData.punchOut) {
+                    alert('You have already punched out today!');
+                    return;
+                }
+                if (!storedData.punchIn) {
+                    alert('You must punch in before punching out!');
+                    return;
+                }
+            }
+
             const url = action === 'in' ? "{% url 'punch_in' %}" : "{% url 'punch_out' %}";
             const now = new Date();
 
@@ -210,8 +213,6 @@
             document.getElementById('punchOutBtn').disabled = true;
         }
     });
-
-
 </script>
 
 <style>

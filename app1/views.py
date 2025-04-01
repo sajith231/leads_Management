@@ -2666,7 +2666,9 @@ import json
 from .models import Employee, Attendance
 
 def attendance(request):
-    employees = Employee.objects.select_related('user').all()
+    employees = Employee.objects.select_related('user').filter(
+        status='active'  # Add this filter to get only active employees
+    )
     
     today = timezone.now()
     current_month = today.month
@@ -3230,6 +3232,8 @@ def reminders(request):
             "reminder_type": reminder.reminder_type,
             "remark": reminder.remark,
             "remind_date": reminder.remind_date,
+            "event_date": reminder.event_date,  # Make sure this is included
+            "added_by": reminder.added_by,      # Make sure this is included
             "responsible_people": responsible_people
         })
     
@@ -3242,81 +3246,65 @@ def reminders(request):
 
 
 
-# adding remainder views function
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from .models import Reminder, ReminderType, Employee
+
 @login_required
 def add_reminder(request):
-    """View for adding a new reminder with multiple responsible employees."""
-    # Get all reminder types
+    # Fetch reminder types and employees for the form
     reminder_types = ReminderType.objects.all()
-    
-    try:
-        # Fetch active employees with relevant fields, grouped by organization
-        employees = Employee.objects.select_related('user').filter(
-            status='active'
-        ).order_by('organization', 'name')
-        
-        logger.info(f"Found {employees.count()} active employees")
-    except Exception as e:
-        logger.error(f"Error fetching employees: {e}")
-        employees = []
-    
-    if request.method == "POST":
-        reminder_type_id = request.POST.get("reminder_type")
-        remark = request.POST.get("remark")
-        remind_date = request.POST.get("remind_date")
-        responsible_ids = request.POST.getlist("responsible_persons[]")
-        
-        logger.info(f"Form data: Type={reminder_type_id}, Date={remind_date}, Responsible IDs={responsible_ids}")
-        
-        if reminder_type_id and remind_date:
-            try:
-                reminder_type = ReminderType.objects.get(id=reminder_type_id)
-                
-                # Create the reminder
-                reminder = Reminder.objects.create(
-                    reminder_type=reminder_type,
-                    remark=remark,
-                    remind_date=remind_date
-                )
-                
-                # Assign responsible employees if selected
-                if responsible_ids:
-                    for emp_id in responsible_ids:
-                        if emp_id:  # Check if the ID is not empty
-                            try:
-                                responsible_employee = Employee.objects.get(id=emp_id)
-                                reminder.responsible_persons.add(responsible_employee)
-                                logger.info(f"Assigned employee {responsible_employee.name} to reminder {reminder.no}")
-                            except Employee.DoesNotExist:
-                                logger.warning(f"Employee with ID {emp_id} not found")
-                
-                logger.info(f"Successfully created reminder #{reminder.no}")
-                messages.success(request, f"Reminder successfully created")
-                return redirect("reminders")
-            except Exception as e:
-                logger.error(f"Error creating reminder: {e}")
-                # Pass the error to the template
-                form_data = request.POST.dict()
-                form_data['responsible_persons'] = request.POST.getlist("responsible_persons[]")
-                return render(request, "add_reminder.html", {
-                    "employees": employees,
-                    "reminder_types": reminder_types,
-                    "error": str(e),
-                    "form_data": form_data
-                })
-        else:
-            error = "Reminder type and remind date are required."
-            return render(request, "add_reminder.html", {
-                "employees": employees,
-                "reminder_types": reminder_types,
-                "error": error,
-                "form_data": request.POST.dict()
+    employees = Employee.objects.all()
+
+    # Handle GET request
+    if request.method == 'GET':
+        return render(request, 'add_reminder.html', {
+            'reminder_types': reminder_types,
+            'employees': employees,
+            'form_data': {}  # Empty form data for initial render
+        })
+
+    # Handle POST request
+    if request.method == 'POST':
+        try:
+            reminder_type_id = request.POST.get('reminder_type')
+            remark = request.POST.get('remark')
+            remind_date = request.POST.get('remind_date')
+            event_date = request.POST.get('event_date') or None
+            responsible_persons = request.POST.getlist('responsible_persons[]')
+
+            # Create reminder with the currently logged-in user
+            reminder = Reminder.objects.create(
+                reminder_type_id=reminder_type_id,
+                remark=remark,
+                remind_date=remind_date,
+                event_date=event_date,
+                added_by=request.user  # Automatically set to logged-in user
+            )
+
+            # Add responsible persons
+            if responsible_persons:
+                reminder.responsible_persons.set(responsible_persons)
+
+            messages.success(request, 'Reminder added successfully.')
+            return redirect('reminders')
+
+        except Exception as e:
+            # If there's an error, re-render the form with error message
+            messages.error(request, f'Error adding reminder: {str(e)}')
+            return render(request, 'add_reminder.html', {
+                'reminder_types': reminder_types,
+                'employees': employees,
+                'error': str(e),
+                'form_data': request.POST  # Preserve form data
             })
-    
-    # For GET requests
-    return render(request, "add_reminder.html", {
-        "employees": employees,
-        "reminder_types": reminder_types
+
+    # Fallback return if method is neither GET nor POST
+    return render(request, 'add_reminder.html', {
+        'reminder_types': reminder_types,
+        'employees': employees,
+        'form_data': {}
     })
 
 
@@ -3329,89 +3317,42 @@ def add_reminder(request):
 
 # edit remainder views functions
 @login_required
-def edit_reminder(request, reminder_id):
-    """View for editing an existing reminder with multiple responsible employees."""
-    try:
-        reminder = Reminder.objects.get(no=reminder_id)
-    except Reminder.DoesNotExist:
-        logger.error(f"Reminder #{reminder_id} not found")
-        messages.error(request, f"Reminder #{reminder_id} not found")
-        return redirect("reminders")
-    
-    # Get all reminder types
+def edit_reminder(request, reminder_no):
+    reminder = get_object_or_404(Reminder, no=reminder_no)
     reminder_types = ReminderType.objects.all()
+    employees = Employee.objects.all()
     
-    # Get all active employees
-    try:
-        employees = Employee.objects.select_related('user').filter(
-            status='active'
-        ).order_by('organization', 'name')
+    if request.method == 'POST':
+        try:
+            reminder.reminder_type_id = request.POST.get('reminder_type')
+            reminder.remark = request.POST.get('remark')
+            reminder.remind_date = request.POST.get('remind_date')
+            reminder.event_date = request.POST.get('event_date') or None
+            
+            # Do NOT change the added_by user
+            
+            # Update responsible persons
+            responsible_persons = request.POST.getlist('responsible_persons[]')
+            reminder.save()
+            reminder.responsible_persons.set(responsible_persons)
+
+            messages.success(request, 'Reminder updated successfully.')
+            return redirect('reminders')
         
-        logger.info(f"Found {employees.count()} active employees")
-    except Exception as e:
-        logger.error(f"Error fetching employees: {e}")
-        employees = []
-    
-    if request.method == "POST":
-        reminder_type_id = request.POST.get("reminder_type")
-        remark = request.POST.get("remark")
-        remind_date = request.POST.get("remind_date")
-        responsible_ids = request.POST.getlist("responsible_persons[]")
-        
-        logger.info(f"Form data: Type={reminder_type_id}, Date={remind_date}, Responsible IDs={responsible_ids}")
-        
-        if reminder_type_id and remind_date:
-            try:
-                reminder_type = ReminderType.objects.get(id=reminder_type_id)
-                
-                # Update the reminder
-                reminder.reminder_type = reminder_type
-                reminder.remark = remark
-                reminder.remind_date = remind_date
-                reminder.save()
-                
-                # Clear existing relations and add new ones
-                reminder.responsible_persons.clear()
-                
-                # Assign responsible employees if selected
-                if responsible_ids:
-                    for emp_id in responsible_ids:
-                        if emp_id:  # Check if the ID is not empty
-                            try:
-                                responsible_employee = Employee.objects.get(id=emp_id)
-                                reminder.responsible_persons.add(responsible_employee)
-                                logger.info(f"Assigned employee {responsible_employee.name} to reminder {reminder.no}")
-                            except Employee.DoesNotExist:
-                                logger.warning(f"Employee with ID {emp_id} not found")
-                
-                logger.info(f"Successfully updated reminder #{reminder.no}")
-                messages.success(request, f"Reminder #{reminder.no} was updated successfully")
-                return redirect("reminders")
-            except Exception as e:
-                logger.error(f"Error updating reminder: {e}")
-                # Pass the error to the template
-                return render(request, "edit_reminder.html", {
-                    "reminder": reminder,
-                    "employees": employees,
-                    "reminder_types": reminder_types,
-                    "error": str(e)
-                })
-        else:
-            error = "Reminder type and remind date are required."
-            return render(request, "edit_reminder.html", {
-                "reminder": reminder,
-                "employees": employees,
-                "reminder_types": reminder_types,
-                "error": error
+        except Exception as e:
+            messages.error(request, f'Error updating reminder: {str(e)}')
+            return render(request, 'edit_reminder.html', {
+                'reminder': reminder,
+                'reminder_types': reminder_types,
+                'employees': employees,
+                'error': str(e)
             })
     
-    # For GET requests
-    return render(request, "edit_reminder.html", {
-        "reminder": reminder,
-        "employees": employees,
-        "reminder_types": reminder_types
+    return render(request, 'edit_reminder.html', {
+        'reminder': reminder,
+        'reminder_types': reminder_types,
+        'employees': employees
     })
-
 
 
 
@@ -3459,3 +3400,122 @@ def base_context_processor(request):
 
 
 # reminder related functions end here )
+
+
+
+
+from django.views.decorators.csrf import csrf_exempt
+from .models import Holiday
+import json
+from datetime import datetime
+
+@csrf_exempt
+def add_holiday(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            date_str = data.get('date')
+            description = data.get('description', '')
+            
+            # Validate required fields
+            if not date_str:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Date is required'
+                })
+            
+            try:
+                # Convert string to date object
+                date = datetime.strptime(date_str, '%Y-%m-%d').date()
+            except ValueError:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Invalid date format. Use YYYY-MM-DD'
+                })
+            
+            # Check if holiday already exists
+            if Holiday.objects.filter(date=date).exists():
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Holiday already exists for this date'
+                })
+            
+            # Create the holiday
+            holiday = Holiday.objects.create(
+                date=date,
+                description=description
+            )
+            
+            return JsonResponse({
+                'success': True,
+                'holiday': {
+                    'date': holiday.date.strftime('%Y-%m-%d'),
+                    'description': holiday.description
+                }
+            })
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            }, status=400)
+    return JsonResponse({
+        'success': False,
+        'error': 'Invalid request method'
+    }, status=405)
+
+def get_holidays(request):
+    year = request.GET.get('year')
+    month = request.GET.get('month')
+    
+    try:
+        holidays = Holiday.objects.filter(
+            date__year=year,
+            date__month=month
+        ).values('date', 'description')
+        
+        return JsonResponse({
+            'success': True,
+            'holidays': list(holidays)
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        })
+    
+
+
+@csrf_exempt
+def delete_holiday(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            date_str = data.get('date')
+            
+            if not date_str:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Date is required'
+                })
+            
+            try:
+                date = datetime.strptime(date_str, '%Y-%m-%d').date()
+                Holiday.objects.filter(date=date).delete()
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Holiday deleted successfully'
+                })
+            except ValueError:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Invalid date format'
+                })
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            }, status=400)
+    return JsonResponse({
+        'success': False,
+        'error': 'Invalid request method'
+    }, status=405)

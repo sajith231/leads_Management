@@ -34,10 +34,9 @@
                     <label class="form-label">Search by Name</label>
                     <input type="text" class="form-control" id="nameFilter" onkeyup="filterEmployees()" placeholder="Enter name">
                 </div>
-                <!-- <div class="col-md-5">
-                    <button class="btn btn-primary">Add Holiday</button>
-                </div> -->
-                
+                <div class="col-md-5">
+                    <!-- <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#holidayModal">Add Holiday</button> -->
+                </div>
             </div>
         </div>
     </div>
@@ -58,11 +57,10 @@
                     <i class="fas fa-star text-danger me-2"></i>
                     <span>Leave</span>
                 </div>
-                <!-- <div class="d-flex align-items-center">
+                <div class="d-flex align-items-center">
                     <i class="fas fa-star text-warning me-2"></i>
                     <span>Holiday</span> 
-                </div> -->
-                
+                </div>
                 <div class="d-flex align-items-center">
                     <i class="fas fa-star text-secondary me-2"></i>
                     <span>Not Marked</span>
@@ -140,6 +138,33 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                     <button type="button" class="btn btn-primary" onclick="saveAttendance()">Save changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Holiday Modal -->
+    <div class="modal fade" id="holidayModal" tabindex="-1" aria-labelledby="holidayModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="holidayModalLabel">Add Holiday</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Select Date</label>
+                        <input type="date" class="form-control" id="holidayDate">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description (Optional)</label>
+                        <input type="text" class="form-control" id="holidayDescription" placeholder="Enter holiday description">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-danger" onclick="cancelHoliday()">Remouve Holiday</button>
+                    <button type="button" class="btn btn-primary" onclick="saveHoliday()">Save Holiday</button>
                 </div>
             </div>
         </div>
@@ -254,6 +279,9 @@
     #punchInLocationLink:hover, #punchOutLocationLink:hover {
         text-decoration: underline;
     }
+    .holiday-cell {
+        background-color: #fff8e1 !important;
+    }
 </style>
 
 <script>
@@ -279,6 +307,127 @@
             }
         }
     }
+
+    // Save holiday function
+    // Save holiday function
+// Updated saveHoliday function
+function saveHoliday() {
+    const date = document.getElementById('holidayDate').value;
+    const description = document.getElementById('holidayDescription').value;
+    const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content");
+
+    if (!date) {
+        alert('Please select a date');
+        return;
+    }
+
+    // First check if this date is already marked as a holiday in the UI
+    const [year, month, day] = date.split('-');
+    const formattedDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    const holidayIcons = document.querySelectorAll(`i[data-date="${formattedDate}"][data-state="holiday"]`);
+    
+    if (holidayIcons.length > 0) {
+        // This date is already marked as a holiday in the UI
+        alert('This date is already marked as a holiday!');
+        return;
+    }
+
+    fetch("{% url 'add_holiday' %}", {
+        method: "POST",
+        headers: {
+            "X-CSRFToken": csrfToken,
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            date: date,
+            description: description
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update the UI to show the holiday
+            updateHolidayInUI(data.holiday.date);
+            // Close the modal
+            bootstrap.Modal.getInstance(document.getElementById('holidayModal')).hide();
+            alert('Holiday added successfully!');
+        } else {
+            alert('Error adding holiday: ' + (data.error || "Unknown error"));
+        }
+    })
+    .catch(error => {
+        console.error("Error:", error);
+        alert("Something went wrong. Please try again.");
+    });
+}
+    // Function to update UI with holiday
+    // Function to update UI with holiday
+function updateHolidayInUI(date) {
+    const [year, month, day] = date.split('-');
+    const formattedDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    
+    // Update all employee rows for this day
+    document.querySelectorAll(`i[data-date="${formattedDate}"]`).forEach(icon => {
+        icon.classList.remove("text-success", "text-danger", "text-secondary", "text-warning");
+        icon.classList.add("text-warning");
+        icon.setAttribute('data-state', 'holiday');
+        icon.setAttribute('title', 'Holiday');
+        
+        // Update the icon class
+        icon.className = 'fas fa-star text-warning';
+        
+        // Refresh tooltip
+        const tooltip = bootstrap.Tooltip.getInstance(icon);
+        if (tooltip) {
+            tooltip.dispose();
+        }
+        new bootstrap.Tooltip(icon);
+    });
+}
+
+    // Function to load holidays for the month
+    // Function to load holidays for the month
+    function loadHolidays(year, month) {
+    fetch(`/get_holidays/?year=${year}&month=${month}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.holidays) {
+                // First reset all days to initial state
+                document.querySelectorAll(`i[data-date^="${year}-${String(month).padStart(2, '0')}-"]`).forEach(icon => {
+                    if (icon.getAttribute('data-state') === 'holiday') {
+                        icon.classList.remove("text-warning");
+                        icon.classList.add("text-secondary");
+                        icon.setAttribute('data-state', 'initial');
+                        icon.setAttribute('title', 'Not Marked');
+                        icon.className = 'fas fa-star text-secondary';
+                    }
+                });
+
+                // Then mark the holidays
+                data.holidays.forEach(holiday => {
+                    const date = new Date(holiday.date);
+                    const formattedDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+                    
+                    document.querySelectorAll(`i[data-date="${formattedDate}"]`).forEach(icon => {
+                        icon.classList.remove("text-success", "text-danger", "text-secondary");
+                        icon.classList.add("text-warning");
+                        icon.setAttribute('data-state', 'holiday');
+                        icon.setAttribute('title', holiday.description || 'Holiday');
+                        icon.className = 'fas fa-star text-warning';
+                        
+                        const tooltip = bootstrap.Tooltip.getInstance(icon);
+                        if (tooltip) {
+                            tooltip.dispose();
+                        }
+                        new bootstrap.Tooltip(icon);
+                    });
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error loading holidays:', error);
+        });
+}
 
     // Update attendance table based on selected month
     function updateAttendanceTable(selectedDate) {
@@ -376,6 +525,9 @@
             loadAttendanceData(employeeId, year, month);
         });
 
+        // Load holidays for this month
+        loadHolidays(year, month);
+
         // Initialize tooltips
         var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
         var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
@@ -424,6 +576,11 @@
                 iconColor = '#dc3545';
                 tooltipText = 'Leave';
                 break;
+            case 'holiday':
+                iconClass = 'fas fa-star';
+                iconColor = '#ffc107';
+                tooltipText = 'Holiday';
+                break;
             default:
                 iconClass = 'fas fa-star';
                 iconColor = '#ccc';
@@ -447,6 +604,12 @@
 
     // Show attendance modal
     function showAttendanceModal(employeeId, employeeName, date, icon) {
+        // Check if this is a holiday (don't allow editing holidays)
+        if (icon.getAttribute('data-state') === 'holiday') {
+            alert('Holidays cannot be edited here. Use the Holiday management feature.');
+            return;
+        }
+
         const modal = new bootstrap.Modal(document.getElementById('attendanceDetailsModal'));
         const nameInput = document.getElementById('employeeName');
         const dateDisplay = document.getElementById('attendanceDate');
@@ -548,75 +711,130 @@
 
     // Save attendance changes
     function saveAttendance() {
-    const modal = document.getElementById('attendanceDetailsModal');
-    const employeeId = document.getElementById('employeeName').getAttribute('data-id');
-    const date = modal.getAttribute('data-date');
-    const status = document.getElementById('attendanceStatus').value;
+        const modal = document.getElementById('attendanceDetailsModal');
+        const employeeId = document.getElementById('employeeName').getAttribute('data-id');
+        const date = modal.getAttribute('data-date');
+        const status = document.getElementById('attendanceStatus').value;
+        const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content");
+
+        fetch("{% url 'update_attendance_status' %}", {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": csrfToken,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                employee_id: employeeId,
+                date: date,
+                status: status
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update the icon in the table
+                const icon = document.querySelector(`i[data-employee-id="${data.employee_id}"][data-date="${data.date}"]`);
+                if (icon) {
+                    // Remove existing classes
+                    icon.classList.remove(
+                        "text-success", 
+                        "text-warning", 
+                        "text-danger", 
+                        "text-secondary",
+                        "fa-star",
+                        "fa-star-half-alt",
+                        "fa-times-circle"
+                    );
+                    
+                    // Set new classes based on status
+                    switch(data.status) {
+                        case "full":
+                            icon.classList.add("fa-star", "text-success");
+                            break;
+                        case "half":
+                            icon.classList.add("fa-star-half-alt", "text-success");
+                            break;
+                        case "leave":
+                            icon.classList.add("fa-star", "text-danger");
+                            break;
+                        default:
+                            icon.classList.add("fa-star", "text-secondary");
+                    }
+                    
+                    // Update icon attributes
+                    icon.setAttribute("data-state", data.status);
+                    
+                    // Refresh tooltip
+                    const tooltip = bootstrap.Tooltip.getInstance(icon);
+                    if (tooltip) {
+                        tooltip.dispose();
+                    }
+                    new bootstrap.Tooltip(icon);
+                }
+                
+                // Close the modal
+                bootstrap.Modal.getInstance(modal).hide();
+                
+                // Optional: Show success toast/alert
+                alert("Attendance status updated successfully!");
+            } else {
+                // Handle error scenario
+                alert("Error updating attendance: " + (data.error || "Unknown error"));
+            }
+        })
+        .catch(error => {
+            console.error("Error:", error);
+            alert("Something went wrong. Please try again.");
+        });
+    }
+
+    // Initialize the table with current month on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        const now = new Date();
+        const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        document.getElementById('monthFilter').value = currentMonth;
+        updateAttendanceTable(currentMonth);
+        
+        // Set the holiday date picker to today's date by default
+        document.getElementById('holidayDate').valueAsDate = new Date();
+    });
+</script>
+
+<script>
+    // Add this new function to the script section:
+function cancelHoliday() {
+    const date = document.getElementById('holidayDate').value;
     const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content");
 
-    fetch("{% url 'update_attendance_status' %}", {
+    if (!date) {
+        alert('Please select a date to cancel holiday');
+        return;
+    }
+
+    if (!confirm('Are you sure you want to cancel the holiday on ' + date + '?')) {
+        return;
+    }
+
+    fetch("{% url 'delete_holiday' %}", {
         method: "POST",
         headers: {
             "X-CSRFToken": csrfToken,
             "Content-Type": "application/json"
         },
         body: JSON.stringify({
-            employee_id: employeeId,
-            date: date,
-            status: status
+            date: date
         })
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            // Update the icon in the table
-            const icon = document.querySelector(`i[data-employee-id="${data.employee_id}"][data-date="${data.date}"]`);
-            if (icon) {
-                // Remove existing classes
-                icon.classList.remove(
-                    "text-success", 
-                    "text-warning", 
-                    "text-danger", 
-                    "text-secondary",
-                    "fa-star",
-                    "fa-star-half-alt",
-                    "fa-times-circle"
-                );
-                
-                // Set new classes based on status
-                switch(data.status) {
-                    case "full":
-                        icon.classList.add("fa-star", "text-success");
-                        break;
-                    case "half":
-                        icon.classList.add("fa-star-half-alt", "text-success");
-                        break;
-                    case "leave":
-                        icon.classList.add("fa-star", "text-danger");
-                        break;
-                    default:
-                        icon.classList.add("fa-star", "text-secondary");
-                }
-                
-                // Update icon attributes
-                icon.setAttribute("data-state", data.status);
-                
-                // Refresh tooltip
-                const tooltip = bootstrap.Tooltip.getInstance(icon);
-                if (tooltip) {
-                    tooltip.dispose();
-                }
-                new bootstrap.Tooltip(icon);
-            }
-            
+            // Update the UI to remove holiday status
+            removeHolidayFromUI(date);
             // Close the modal
-            bootstrap.Modal.getInstance(modal).hide();
-            
-            // Optional: Show success toast/alert
-            alert("Attendance status updated successfully!");
+            bootstrap.Modal.getInstance(document.getElementById('holidayModal')).hide();
+            alert('Holiday cancelled successfully!');
         } else {
-            // Handle error scenario
-            alert("Error updating attendance: " + (data.error || "Unknown error"));
+            alert('Error cancelling holiday: ' + (data.error || "Unknown error"));
         }
     })
     .catch(error => {
@@ -625,13 +843,27 @@
     });
 }
 
-    // Initialize the table with current month on page load
-    document.addEventListener('DOMContentLoaded', function() {
-        const now = new Date();
-        const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-        document.getElementById('monthFilter').value = currentMonth;
-        updateAttendanceTable(currentMonth);
+// Add this helper function to remove holiday from UI
+function removeHolidayFromUI(date) {
+    const [year, month, day] = date.split('-');
+    const formattedDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    
+    // Update all employee rows for this day
+    document.querySelectorAll(`i[data-date="${formattedDate}"]`).forEach(icon => {
+        icon.classList.remove("text-warning");
+        icon.classList.add("text-secondary");
+        icon.setAttribute('data-state', 'initial');
+        icon.setAttribute('title', 'Not Marked');
+        icon.className = 'fas fa-star text-secondary';
+        
+        // Refresh tooltip
+        const tooltip = bootstrap.Tooltip.getInstance(icon);
+        if (tooltip) {
+            tooltip.dispose();
+        }
+        new bootstrap.Tooltip(icon);
     });
+}
 </script>
 {% endif %}
 {% endblock %}

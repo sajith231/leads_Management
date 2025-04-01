@@ -592,7 +592,7 @@ class ReminderType(models.Model):
 
 
 
-
+from django.conf import settings
 
 
 class Reminder(models.Model):
@@ -602,10 +602,18 @@ class Reminder(models.Model):
     responsible_persons = models.ManyToManyField('Employee', related_name='reminders', blank=True)
     remind_date = models.DateField()
     entry_date = models.DateTimeField(auto_now_add=True)
+    
+    added_by = models.ForeignKey(     
+        settings.AUTH_USER_MODEL, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        related_name='added_reminders',
+        editable=False  
+    )
+    event_date = models.DateField(null=True, blank=True)   
 
     def save(self, *args, **kwargs):
-        # If this is a new instance (no primary key yet), assign the next number
-        if not self.no:  # Changed from 'if not self.pk'
+        if not self.no:  
             max_no = Reminder.objects.aggregate(models.Max('no')).get('no__max') or 0
             self.no = max_no + 1
         super().save(*args, **kwargs)
@@ -614,11 +622,7 @@ class Reminder(models.Model):
         return f"Reminder {self.no}: {self.reminder_type}"
 
 
-    #CREATED AS NEW
-
-    #CREATED AS NEW
-
-    #CREATED AS NEW
+   
 
 
 
@@ -661,9 +665,19 @@ class Attendance(models.Model):
         return f"{self.employee.name} - Day {self.day} - {self.get_status_display()}"
     
 
+    #CREATED AS NEW
 
+    #CREATED AS NEW
 
+    #CREATED AS NEW
 
+# Add to models.py
+class Holiday(models.Model):
+    date = models.DateField(unique=True)
+    description = models.CharField(max_length=255, blank=True, null=True)
+
+    def __str__(self):
+        return f"Holiday - {self.date}"
 
 
 

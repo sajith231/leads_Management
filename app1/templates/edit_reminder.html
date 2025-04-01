@@ -107,6 +107,18 @@
                 <label for="remind_date">Remind Date:</label>
                 <input type="date" name="remind_date" id="remind_date" required value="{{ reminder.remind_date|date:'Y-m-d' }}">
             </div>
+
+            <!-- Add this new field for event date -->
+            <div class="form-group">
+                <label for="event_date">Event Date (optional):</label>
+                <input type="date" name="event_date" id="event_date" value="{{ reminder.event_date|date:'Y-m-d' }}">
+            </div>
+
+            <!-- Display the added_by information -->
+            <div class="form-group">
+                <label>Added By:</label>
+                <p>{{ reminder.added_by.username|default:"Unknown" }}</p>
+            </div>
     
             <div class="form-actions">
                 <button type="submit">Update Reminder</button>

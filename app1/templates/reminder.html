@@ -183,8 +183,6 @@
         
         <label for="end_date" class="fw-bold ms-2">To:</label>
         <input type="date" name="end_date" id="end_date" class="form-control d-inline-block w-auto" value="{{ request.GET.end_date }}">
-        
-        
     </form></div>
     
     <div class="table-container">
@@ -192,11 +190,13 @@
             <thead>
                 <tr>
                     <th>No</th>
+                    <th>Added By</th>
                     <th>Entry Date</th>
                     <th>Type</th>
                     <th>Remark</th>
                     <th>Responsible Person</th>
                     <th>Remind Date</th>
+                    <th>Event Date</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -205,9 +205,11 @@
                     {% for reminder in reminders %}
                         <tr>
                             <td>{{ reminder.display_no }}</td>
+                            <td>{{ reminder.added_by.username|default:"Unknown" }}</td>
                             <td>{{ reminder.entry_date|date:"Y-m-d" }}</td>
                             <td>{{ reminder.reminder_type.name }}</td>
                             <td>{{ reminder.remark }}</td>
+                           
                             <td>
                                 {% if reminder.responsible_people %}
                                     {% for person in reminder.responsible_people %}
@@ -218,6 +220,7 @@
                                 {% endif %}
                             </td>
                             <td>{{ reminder.remind_date|date:"Y-m-d" }}</td>
+                            <td>{{ reminder.event_date|date:"Y-m-d"|default:"N/A" }}</td> 
                             <td class="action-buttons">
                                 <a href="{% url 'edit_reminder' reminder.no %}" class="edit-btn">Edit</a>
                                 <button class="delete-btn" onclick="showDeleteModal('{{ reminder.no }}')">Delete</button>
@@ -226,7 +229,7 @@
                     {% endfor %}
                 {% else %}
                     <tr>
-                        <td colspan="7">No reminders found.</td>
+                        <td colspan="9">No reminders found.</td>
                     </tr>
                 {% endif %}
             </tbody>
