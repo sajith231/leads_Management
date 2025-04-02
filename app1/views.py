@@ -2772,10 +2772,25 @@ def save_attendance(request, employee_id, day, status):
             'message': str(e)
         }, status=500)
 
+
 @login_required
 def attendance_user(request):
     return render(request, 'attendance_user.html')
 
+
+@login_required
+def get_current_employee_id(request):
+    try:
+        custom_user_id = request.session.get('custom_user_id')
+        if not custom_user_id:
+            return JsonResponse({'error': 'User session not found'}, status=404)
+        
+        employee = Employee.objects.get(user_id=custom_user_id)
+        return JsonResponse({'employee_id': employee.id})
+    except Employee.DoesNotExist:
+        return JsonResponse({'error': 'Employee not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
 from django.utils import timezone
 # views.py
 
@@ -2929,16 +2944,39 @@ def get_attendance_data(request):
             date__month=month
         )
 
+        # Get holidays for this month
+        holidays = Holiday.objects.filter(
+            date__year=year,
+            date__month=month
+        ).values_list('date', flat=True)
+
         attendance_data = {}
         for record in attendance_records:
             day = record.date.day
+            # Check if this date is a holiday
+            is_holiday = record.date in holidays
+            
             attendance_data[day] = {
-                'status': record.status if record.status else 'initial',
+                'status': 'holiday' if is_holiday else (record.status if record.status else 'initial'),
                 'punch_in': record.punch_in.isoformat() if record.punch_in else None,
                 'punch_out': record.punch_out.isoformat() if record.punch_out else None,
                 'punch_in_location': record.punch_in_location if record.punch_in_location else None,
-                'punch_out_location': record.punch_out_location if record.punch_out_location else None
+                'punch_out_location': record.punch_out_location if record.punch_out_location else None,
+                'is_holiday': is_holiday
             }
+
+        # Add holidays that don't have attendance records
+        for holiday_date in holidays:
+            day = holiday_date.day
+            if day not in attendance_data:
+                attendance_data[day] = {
+                    'status': 'holiday',
+                    'punch_in': None,
+                    'punch_out': None,
+                    'punch_in_location': None,
+                    'punch_out_location': None,
+                    'is_holiday': True
+                }
 
         return JsonResponse({
             'success': True,

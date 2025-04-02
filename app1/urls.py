@@ -224,6 +224,7 @@ urlpatterns = [
     path('delete-reminder-type/<int:id>/', delete_reminder_type, name='delete_reminder_type'),
     
     path("update_attendance_status/", update_attendance_status, name="update_attendance_status"),
+    path('get_current_employee_id/', views.get_current_employee_id, name='get_current_employee_id'),
 
 
 

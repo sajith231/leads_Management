@@ -2,11 +2,11 @@
 
 {% block content %}
 <div style="padding: 20px;width: 95%; margin: auto;">
-    <div class="container"
-        style="display: flex;flex-direction: column;height: 100vh;justify-content: center;align-items: center;">
-        <div class="card shadow" style="overflow: hidden;">
-            <div class="card-header  text-white" style="padding-top: 20px;padding-bottom: 20px;background: linear-gradient(90deg, rgba(2,0,36,1) 0%, rgba(9,9,121,1) 35%, rgb(0, 145, 174) 100%);">
-                <h3 class="mb-0 " style="text-align: center;">Daily Attendance</h3>
+    <div class="container">
+        <!-- Punch In/Out Card -->
+        <div class="card shadow mb-4" style="overflow: hidden;">
+            <div class="card-header text-white" style="padding-top: 20px;padding-bottom: 20px;background: linear-gradient(90deg, rgba(2,0,36,1) 0%, rgba(9,9,121,1) 35%, rgb(0, 145, 174) 100%);">
+                <h3 class="mb-0" style="text-align: center;">Daily Attendance</h3>
             </div>
             <div class="card-body" style="background: linear-gradient(90deg, rgba(2,0,36,1) 0%, rgba(9,9,121,1) 35%, rgb(0, 145, 174) 100%);overflow: hidden;">
                 <div class="row" style="overflow: hidden;">
@@ -16,13 +16,11 @@
                                 <h5 class="" style="padding-left: 20px; padding-right: 20px; padding-top: 10px; padding-bottom: 10px;border-radius: 15px;border: #c2c2c2;background: linear-gradient(90deg, rgba(2,0,36,1) 0%, rgba(9,9,121,1) 35%, rgba(0,212,255,1) 100%);color: white;font-size: 15px; display: flex;justify-content: space-between;align-items: center;">Today's Status <span style="color: ;"><svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e3e3e3"><path d="M441-82q-76-8-141.5-41.5t-114.5-87Q136-264 108-333T80-480q0-157 104.5-270T441-878v81q-119 15-200 104.5T160-480q0 123 81 212.5T441-163v81Zm0-198v-247L337-423l-56-57 200-200 200 200-57 56-103-103v247h-80Zm80 198v-81q44-5 83.5-22t72.5-43l57 58q-45 36-99 59T521-82Zm155-650q-33-26-72-43t-83-22v-81q60 6 114 29t99 59l-58 58Zm114 505-57-57q26-33 43-72.5t22-83.5h81q-6 60-29.5 114T790-227Zm8-293q-5-44-22-83.5T733-676l57-57q36 45 59.5 99T879-520h-81Z"/></svg></span></h5>
                                 <div id="punchStatus" style="color: white;">
                                     <p class="mb-2" style="display: flex;justify-content: space-between;align-items: center;">Punch In: <span id="punchInTime" style="color: white;">Not punched in yet</span></p>
-                                    <p class="mb-2" style="display: flex;justify-content: space-between;align-items: center;">Punch In Location: <a id="punchInLocationLink" style="color: white;" href="#"
-                                            target="_blank">
+                                    <p class="mb-2" style="display: flex;justify-content: space-between;align-items: center;">Punch In Location: <a id="punchInLocationLink" style="color: white;" href="#" target="_blank">
                                             <span id="punchInLocation" style="color: white;">Not punched in yet</span>
                                         </a></p>
                                     <p class="mb-2" style="display: flex;justify-content: space-between;align-items: center;">Punch Out: <span style="color: white;" id="punchOutTime">Not punched out yet</span></p>
-                                    <p class="mb-2" style="display: flex;justify-content: space-between;align-items: center;">Punch Out Location: <a style="color: white;" id="punchOutLocationLink" href="#"
-                                            target="_blank"><span id="punchOutLocation" style="color: white;">Not punched out yet</span></a>
+                                    <p class="mb-2" style="display: flex;justify-content: space-between;align-items: center;">Punch Out Location: <a style="color: white;" id="punchOutLocationLink" href="#" target="_blank"><span id="punchOutLocation" style="color: white;">Not punched out yet</span></a>
                                     </p>
                                 </div>
                             </div>
@@ -42,10 +40,74 @@
                 </div>
             </div>
         </div>
+
+        <!-- Monthly Attendance View -->
+        <div class="card shadow" style="overflow: hidden;">
+            <div class="card-header text-white" style="padding-top: 20px;padding-bottom: 20px;background: linear-gradient(90deg, rgba(2,0,36,1) 0%, rgba(9,9,121,1) 35%, rgb(0, 145, 174) 100%);">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h3 class="mb-0">My Attendance Records</h3>
+                    <input type="month" class="form-control" id="monthFilter" style="width: 200px;" 
+                           value="{{ current_month|default:'' }}">
+                </div>
+            </div>
+            <div class="card-body" style="background: linear-gradient(90deg, rgba(2,0,36,1) 0%, rgba(9,9,121,1) 35%, rgb(0, 145, 174) 100%);overflow: hidden;">
+                <!-- Legend Section -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <div class="d-flex gap-4 flex-wrap">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-star text-success me-2"></i>
+                                <span style="color: white;">Full Day</span>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-star-half-alt text-success me-2"></i>
+                                <span style="color: white;">Half Day</span>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-star text-danger me-2"></i>
+                                <span style="color: white;">Leave</span>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-star text-warning me-2"></i>
+                                <span style="color: white;">Holiday</span> 
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-star text-secondary me-2"></i>
+                                <span style="color: white;">Not Marked</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Attendance Table -->
+                <div class="table-responsive">
+                    <table class="table table-bordered" style="background-color: white;">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Day</th>
+                                <th>Status</th>
+                                <th>Punch In</th>
+                                <th>Punch Out</th>
+                            </tr>
+                        </thead>
+                        <tbody id="attendanceBody">
+                            <!-- Will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
 <script>
+    // Global variables
+    let currentEmployeeId = null;
+    let currentYear = new Date().getFullYear();
+    let currentMonth = new Date().getMonth() + 1;
+
+    // Format time for display
     function formatTime(date) {
         return date.toLocaleTimeString('en-US', {
             hour: '2-digit',
@@ -54,6 +116,7 @@
         });
     }
 
+    // Get current location
     function getLocation(callback) {
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition((position) => {
@@ -71,11 +134,11 @@
             }, (error) => {
                 console.error('Error getting location:', error);
                 alert('Location permission is required for attendance tracking. Please enable location services and try again.');
-                callback(null); // Return null to indicate location error
+                callback(null);
             }, {
                 enableHighAccuracy: true,
-                timeout: 10000, // 10 seconds timeout
-                maximumAge: 0 // Don't use cached position
+                timeout: 10000,
+                maximumAge: 0
             });
         } else {
             alert('Geolocation is not supported by your browser. Attendance tracking requires location services.');
@@ -83,19 +146,17 @@
         }
     }
 
+    // Handle punch in/out
     function handlePunch(action) {
-        // Check if location is available before proceeding
         getLocation((location) => {
-            if (!location) {
-                return; // Exit if location is not available
-            }
+            if (!location) return;
 
             const today = new Date().toISOString().split('T')[0];
             const userId = '{{ request.user.id }}';
             const storageKey = `punchData_${userId}_${today}`;
             const storedData = JSON.parse(localStorage.getItem(storageKey) || '{}');
 
-            // Prevent multiple punch-ins/outs on the same day
+            // Prevent multiple punch-ins/outs
             if (action === 'in' && storedData.punchIn) {
                 alert('You have already punched in today!');
                 return;
@@ -126,85 +187,190 @@
                     location_name: location.location_name
                 })
             })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        if (action === 'in') {
-                            document.getElementById('punchInTime').textContent = formatTime(now);
-                            document.getElementById('punchInLocation').textContent = location.location_name;
-                            document.getElementById('punchInLocationLink').href = `https://www.google.com/maps?q=${location.latitude},${location.longitude}`;
-                            document.getElementById('punchInBtn').disabled = true;
-                            document.getElementById('punchOutBtn').disabled = false;
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (action === 'in') {
+                        document.getElementById('punchInTime').textContent = formatTime(now);
+                        document.getElementById('punchInLocation').textContent = location.location_name;
+                        document.getElementById('punchInLocationLink').href = `https://www.google.com/maps?q=${location.latitude},${location.longitude}`;
+                        document.getElementById('punchInBtn').disabled = true;
+                        document.getElementById('punchOutBtn').disabled = false;
 
-                            // Update attendance icon
-                            const icon = document.querySelector(`i[data-employee-id="${data.employee_id}"][data-date="${data.day}"]`);
-                            if (icon) {
-                                icon.className = 'fas fa-star-half-alt';
-                                icon.style.color = '#198754';
-                                icon.setAttribute('data-state', 'half');
-                            }
-
-                            // Store punch-in data
-                            localStorage.setItem(storageKey, JSON.stringify({
-                                punchIn: now.toISOString(),
-                                punchInLocation: location.location_name,
-                                punchInLatitude: location.latitude,
-                                punchInLongitude: location.longitude
-                            }));
-                        } else {
-                            document.getElementById('punchOutTime').textContent = formatTime(now);
-                            document.getElementById('punchOutLocation').textContent = location.location_name;
-                            document.getElementById('punchOutLocationLink').href = `https://www.google.com/maps?q=${location.latitude},${location.longitude}`;
-                            document.getElementById('punchOutBtn').disabled = true;
-
-                            // Update attendance icon
-                            const icon = document.querySelector(`i[data-employee-id="${data.employee_id}"][data-date="${data.day}"]`);
-                            if (icon) {
-                                icon.className = 'fas fa-star';
-                                icon.style.color = '#198754';
-                                icon.setAttribute('data-state', 'full');
-                            }
-
-                            // Update stored data with punch-out information
-                            storedData.punchOut = now.toISOString();
-                            storedData.punchOutLocation = location.location_name;
-                            storedData.punchOutLatitude = location.latitude;
-                            storedData.punchOutLongitude = location.longitude;
-                            localStorage.setItem(storageKey, JSON.stringify(storedData));
-                        }
-                        alert(`Punched ${action.toUpperCase()} successfully!`);
+                        // Store punch-in data
+                        localStorage.setItem(storageKey, JSON.stringify({
+                            punchIn: now.toISOString(),
+                            punchInLocation: location.location_name,
+                            punchInLatitude: location.latitude,
+                            punchInLongitude: location.longitude
+                        }));
                     } else {
-                        alert(`Error: ${data.error}`);
+                        document.getElementById('punchOutTime').textContent = formatTime(now);
+                        document.getElementById('punchOutLocation').textContent = location.location_name;
+                        document.getElementById('punchOutLocationLink').href = `https://www.google.com/maps?q=${location.latitude},${location.longitude}`;
+                        document.getElementById('punchOutBtn').disabled = true;
+
+                        // Update stored data
+                        storedData.punchOut = now.toISOString();
+                        storedData.punchOutLocation = location.location_name;
+                        storedData.punchOutLatitude = location.latitude;
+                        storedData.punchOutLongitude = location.longitude;
+                        localStorage.setItem(storageKey, JSON.stringify(storedData));
                     }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('An error occurred. Please try again.');
-                });
+                    
+                    // Refresh the monthly view after punching in/out
+                    loadAttendanceData(currentYear, currentMonth);
+                    alert(`Punched ${action.toUpperCase()} successfully!`);
+                } else {
+                    alert(`Error: ${data.error}`);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+            });
         });
     }
 
-    document.addEventListener('DOMContentLoaded', function () {
+    // Load attendance data for the selected month
+    function loadAttendanceData(year, month) {
+        if (!currentEmployeeId) return;
+        
+        fetch(`/get_attendance_data/?employee_id=${currentEmployeeId}&year=${year}&month=${month}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.attendance) {
+                    updateAttendanceTable(data.attendance, year, month);
+                } else {
+                    console.error('Error loading attendance data:', data.error || 'Unknown error');
+                }
+            })
+            .catch(error => {
+                console.error('Error loading attendance data:', error);
+            });
+    }
+
+    // Update the attendance table with fetched data
+    function updateAttendanceTable(attendanceData, year, month) {
+        const tbody = document.getElementById('attendanceBody');
+        tbody.innerHTML = '';
+        
+        const daysInMonth = new Date(year, month, 0).getDate();
+        const today = new Date();
+        
+        for (let day = 1; day <= daysInMonth; day++) {
+            const date = new Date(year, month - 1, day);
+            const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
+            const isToday = date.getDate() === today.getDate() && 
+                            date.getMonth() === today.getMonth() && 
+                            date.getFullYear() === today.getFullYear();
+            
+            const dayData = attendanceData[day] || { status: 'initial' };
+            
+            // Determine icon and color based on status
+            let iconClass, iconColor, statusText;
+            switch(dayData.status) {
+                case 'full':
+                    iconClass = 'fas fa-star';
+                    iconColor = 'text-success';
+                    statusText = 'Full Day';
+                    break;
+                case 'half':
+                    iconClass = 'fas fa-star-half-alt';
+                    iconColor = 'text-success';
+                    statusText = 'Half Day';
+                    break;
+                case 'leave':
+                    iconClass = 'fas fa-star';
+                    iconColor = 'text-danger';
+                    statusText = 'Leave';
+                    break;
+                case 'holiday':
+                    iconClass = 'fas fa-star';
+                    iconColor = 'text-warning';
+                    statusText = 'Holiday';
+                    break;
+                default:
+                    iconClass = 'fas fa-star';
+                    iconColor = 'text-secondary';
+                    statusText = 'Not Marked';
+            }
+            
+            // Format punch times
+            const punchInTime = dayData.punch_in ? new Date(dayData.punch_in).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '--:--';
+            const punchOutTime = dayData.punch_out ? new Date(dayData.punch_out).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '--:--';
+            
+            // Create table row
+            const row = document.createElement('tr');
+            if (isToday) {
+                row.classList.add('table-primary');
+            } else if (date.getDay() === 0 || date.getDay() === 6) {
+                row.classList.add('table-light');
+            }
+            
+            row.innerHTML = `
+                <td>${date.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}</td>
+                <td>${dayName}</td>
+                <td class="text-center">
+                    <i class="${iconClass} ${iconColor}" title="${statusText}"></i>
+                    ${statusText}
+                </td>
+                <td>${punchInTime}</td>
+                <td>${punchOutTime}</td>
+            `;
+            
+            tbody.appendChild(row);
+        }
+    }
+
+    // Initialize the page
+    document.addEventListener('DOMContentLoaded', function() {
+        // Set current month in the filter
+        const now = new Date();
+        const currentMonthFormatted = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        document.getElementById('monthFilter').value = currentMonthFormatted;
+        
+        // Get the employee ID for the logged-in user
+        fetch("{% url 'get_current_employee_id' %}")
+            .then(response => response.json())
+            .then(data => {
+                if (data.employee_id) {
+                    currentEmployeeId = data.employee_id;
+                    loadAttendanceData(currentYear, currentMonth);
+                } else {
+                    console.error('No employee ID found for current user');
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching employee ID:', error);
+            });
+
+        // Set up month filter change handler
+        document.getElementById('monthFilter').addEventListener('change', function() {
+            const [year, month] = this.value.split('-');
+            currentYear = parseInt(year);
+            currentMonth = parseInt(month);
+            loadAttendanceData(currentYear, currentMonth);
+        });
+
+        // Restore punch-in data if exists
         const today = new Date().toISOString().split('T')[0];
         const userId = '{{ request.user.id }}';
         const storageKey = `punchData_${userId}_${today}`;
         const storedData = JSON.parse(localStorage.getItem(storageKey) || '{}');
 
-        // Restore punch-in data if exists
         if (storedData.punchIn) {
             const punchInTime = new Date(storedData.punchIn);
             document.getElementById('punchInTime').textContent = formatTime(punchInTime);
             document.getElementById('punchInLocation').textContent = storedData.punchInLocation;
             document.getElementById('punchInLocationLink').href = `https://www.google.com/maps?q=${storedData.punchInLatitude},${storedData.punchInLongitude}`;
             document.getElementById('punchInBtn').disabled = true;
-            // Only disable punch-out button if user has already punched out
             document.getElementById('punchOutBtn').disabled = storedData.punchOut ? true : false;
         } else {
-            // If no punch-in data exists, disable punch-out button
             document.getElementById('punchOutBtn').disabled = true;
         }
 
-        // Restore punch-out data if exists
         if (storedData.punchOut) {
             const punchOutTime = new Date(storedData.punchOut);
             document.getElementById('punchOutTime').textContent = formatTime(punchOutTime);
@@ -212,6 +378,11 @@
             document.getElementById('punchOutLocationLink').href = `https://www.google.com/maps?q=${storedData.punchOutLatitude},${storedData.punchOutLongitude}`;
             document.getElementById('punchOutBtn').disabled = true;
         }
+
+        // Periodically check for updates (every 5 minutes)
+        setInterval(() => {
+            loadAttendanceData(currentYear, currentMonth);
+        }, 300000);
     });
 </script>
 
@@ -246,9 +417,33 @@
         margin-bottom: 15px;
     }
 
-    #punchStatus span {
+    .table {
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    
+    .table th {
+        background-color: #f8f9fa;
         font-weight: 600;
-        color: #666;
+    }
+    
+    .table td {
+        vertical-align: middle;
+    }
+    
+    #monthFilter {
+        background-color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 5px 10px;
+    }
+
+    .table-primary {
+        background-color: #e8f4ff !important;
+    }
+
+    .table-light {
+        background-color: #f8f9fa !important;
     }
 </style>
 {% endblock %}
