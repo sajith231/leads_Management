@@ -663,21 +663,21 @@ class Attendance(models.Model):
 
     def __str__(self):
         return f"{self.employee.name} - Day {self.day} - {self.get_status_display()}"
-    
-
-    #CREATED AS NEW
-
-    #CREATED AS NEW
-
-    #CREATED AS NEW
-
-# Add to models.py
+ # Add to models.py
 class Holiday(models.Model):
     date = models.DateField(unique=True)
     description = models.CharField(max_length=255, blank=True, null=True)
 
     def __str__(self):
-        return f"Holiday - {self.date}"
+        return f"Holiday - {self.date}"   
+
+    #CREATED AS NEW
+
+    #CREATED AS NEW
+
+    #CREATED AS NEW
+
+
 
 
 
