@@ -19,7 +19,7 @@ from .views import add_salary_details, get_salary_details,save_attendance
 from .views import update_setting_positions
 
 from .views import reminder_type_view, add_reminder_type, edit_reminder_type, delete_reminder_type,update_attendance
-from .views import update_attendance_status
+from .views import update_attendance_status,get_customers
 
 
 urlpatterns = [
@@ -241,6 +241,7 @@ urlpatterns = [
     path('add_holiday/', views.add_holiday, name='add_holiday'),
     path('get_holidays/', views.get_holidays, name='get_holidays'),
     path('delete_holiday/', views.delete_holiday, name='delete_holiday'),
+    path("proxy/customers/", get_customers, name="proxy_customers"),
 
 
 

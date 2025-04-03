@@ -285,25 +285,7 @@
                     {% endif %}
                 </td>
                 <td>{{ log.added_by.name }}</td>
-                <td>
-                    <div class="assign-user-container">
-                        <select class="form-select user-select" onchange="assignUser({{ log.id }}, this)" required   style="margin-bottom: 5%;">
-                            <option value="">Select User</option>
-                            {% for user in all_users %}
-                            <option value="{{ user.id }}" {% if log.assigned_person.id == user.id %}selected{% endif %}>
-                                {{ user.name }}
-                            </option>
-                            {% endfor %}
-                        </select>
-                        {% if log.assigned_person %}
-                        <div class="assigned-info">
-                            <span class="assigned-person-badge">
-                                <!-- <span style="white-space: nowrap; background-color: #007bff; color: white; padding: 5px 10px; border-radius: 5px;">{{ log.assigned_person.name }}</span> -->
-                            </span>
-                        </div>
-                        {% endif %}
-                    </div>
-                </td>
+                <td style="white-space: nowrap;">{{ log.customer_name|upper }}</td>
                 <td>
                     <div class="date-assign-container">
                         <input type="date" class="form-control assign-date" 

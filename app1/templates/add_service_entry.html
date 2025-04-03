@@ -11,7 +11,16 @@
                 {% csrf_token %}
                 <div class="mb-3">
                     <label for="customer" class="form-label">Customer</label>
-                    <input type="text" class="form-control" id="customer" name="customer" required>
+                    <select class="form-control" id="customer" name="customer" required>
+                        <option value="">Select a customer</option>
+                        {% if customers %}
+                            {% for customer in customers %}
+                                <option value="{{ customer.name }}">{{ customer.name }}</option>
+                            {% endfor %}
+                        {% else %}
+                            <option value="" disabled>No customers available</option>
+                        {% endif %}
+                    </select>
                 </div>
                 <div class="mb-3">
                     <label for="complaint" class="form-label">Complaint</label>

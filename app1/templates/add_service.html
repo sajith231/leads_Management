@@ -7,8 +7,49 @@
         {% csrf_token %}
         <div class="form-group">
             <label for="customer_name">Customer Name:</label>
-            <input type="text" class="form-control" id="customer_name" name="customer_name" required>
+            <select class="form-control" id="customer_name" name="customer_name" required>
+                <option value="" disabled selected>Loading customers...</option>
+            </select>
         </div>
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+    let customerDropdown = document.getElementById("customer_name");
+    
+    fetch('/proxy/customers/')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error("Failed to load customers.");
+            }
+            return response.json();
+        })
+        .then(data => {
+            customerDropdown.innerHTML = ""; // Clear existing options
+            
+            // Add default option
+            let defaultOption = document.createElement("option");
+            defaultOption.value = "";
+            defaultOption.textContent = "Select Customer";
+            defaultOption.disabled = true;
+            defaultOption.selected = true;
+            customerDropdown.appendChild(defaultOption);
+            
+            // Add customer options
+            data.forEach(customer => {
+                let option = document.createElement("option");
+                option.value = customer.name;  // Store the name as value
+                option.textContent = customer.name;
+                customerDropdown.appendChild(option);
+            });
+        })
+        .catch(error => {
+            console.error("Error loading customers:", error);
+            alert("Failed to load customers. Please try again.");
+        });
+});
+            </script>
+            
+        
         <!-- <div class="form-group">
             <label for="type">Type:</label>
             <input type="text" class="form-control" id="type" name="type" required>

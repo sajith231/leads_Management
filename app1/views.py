@@ -1184,7 +1184,12 @@ def get_current_user(request):
     else:
         return User.objects.get(id=request.session.get('custom_user_id'))
 
+import requests
+from django.http import JsonResponse
 
+def get_customers(request):
+    response = requests.get("https://apidata.imcbs.com/api/customers")
+    return JsonResponse(response.json(), safe=False)
 
 @login_required
 def add_service_log(request):
@@ -1199,10 +1204,10 @@ def add_service_log(request):
             remark = request.POST.get('remark')
             voice_note = request.FILES.get('voice_note')
 
-            complaint = Complaint.objects.get(id=complaint_id)
+            complaint = Complaint.objects.get(id=complaint_id) if complaint_id else None
 
             service_log = ServiceLog(
-                customer_name=customer_name,
+                customer_name=customer_name,  # This will store the selected customer name
                 type=type,
                 complaint=complaint,
                 remark=remark,
@@ -1213,7 +1218,6 @@ def add_service_log(request):
             
             messages.success(request, 'Service log added successfully!')
             
-            # Redirect based on user level
             if current_user.user_level == 'admin_level' or request.user.is_superuser:
                 return redirect('service_log')
             else:
@@ -1252,7 +1256,17 @@ def add_service_entry(request):
     try:
         current_user = get_current_user(request)
         complaints = Complaint.objects.all().order_by('created_at')
-
+        
+        # Fetch customers from the API
+        import requests
+        customers = []
+        try:
+            response = requests.get('https://apidata.imcbs.com/api/customers')
+            if response.status_code == 200:
+                customers = response.json()
+        except Exception as e:
+            messages.warning(request, f'Could not fetch customers: {str(e)}')
+        
         if request.method == 'POST':
             # Get form data
             customer = request.POST.get('customer')
@@ -1279,9 +1293,10 @@ def add_service_entry(request):
                 return redirect('service_entry')
             else:
                 return redirect('user_service_entry')
-        
+                
         return render(request, 'add_service_entry.html', {
             'complaints': complaints,
+            'customers': customers,  # Pass customers to the template
             'current_user': current_user
         })
         
@@ -1298,6 +1313,16 @@ def edit_service_entry(request, entry_id):
     entry = get_object_or_404(ServiceEntry, id=entry_id)
     current_user = get_current_user(request)
     complaints = Complaint.objects.all().order_by('created_at')
+
+    # Fetch customers from the API
+    import requests
+    customers = []
+    try:
+        response = requests.get('https://apidata.imcbs.com/api/customers')
+        if response.status_code == 200:
+            customers = response.json()
+    except Exception as e:
+        messages.warning(request, f'Could not fetch customers: {str(e)}')
 
     if request.method == 'POST':
         entry.customer = request.POST.get('customer')
@@ -1317,8 +1342,10 @@ def edit_service_entry(request, entry_id):
     context = {
         'entry': entry,
         'complaints': complaints,
+        'customers': customers,  # Pass customers to the template
     }
     return render(request, 'edit_service_entry.html', context)
+
 
 
 
