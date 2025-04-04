@@ -19,9 +19,11 @@ from .models import Requirement  # Ensure the correct model is imported
 from .models import Lead,ServiceEntry,JobTitle
 import json
 from django.utils import timezone
-from .models import Employee, Attendance
+from .models import Employee, Attendance,LeaveRequest
 from django.db import transaction
 from django.db import models
+from .models import Employee, Attendance, LeaveRequest, Holiday
+from .utils import is_holiday
 
 
 
@@ -2843,6 +2845,21 @@ def punch_in(request):
             now = timezone.now()
             today = now.date()
             
+            # Check if today is a holiday
+            if is_holiday(today):
+                return JsonResponse({'success': False, 'error': 'Cannot punch in on a holiday'})
+            
+            # Check if the employee has already punched in today
+            existing_attendance = Attendance.objects.filter(
+                employee=employee,
+                date=today,
+                day=today.day,
+                punch_in__isnull=False
+            ).exists()
+            
+            if existing_attendance:
+                return JsonResponse({'success': False, 'error': 'You have already punched in today'})
+            
             attendance, created = Attendance.objects.get_or_create(
                 employee=employee,
                 date=today,
@@ -2890,20 +2907,36 @@ def punch_out(request):
             now = timezone.now()
             today = now.date()
             
-            attendance = Attendance.objects.get(
-                employee=employee,
-                date=today,
-                day=today.day
-            )
+            # Check if today is a holiday
+            if is_holiday(today):
+                return JsonResponse({'success': False, 'error': 'Cannot punch out on a holiday'})
             
-            attendance.punch_out = now
-            attendance.punch_out_location = data.get('location_name')
-            attendance.punch_out_latitude = data.get('latitude')
-            attendance.punch_out_longitude = data.get('longitude')
-            attendance.status = 'full'
-            attendance.save()
-            
-            return JsonResponse({'success': True})
+            # Check if the employee has already punched out today
+            try:
+                attendance = Attendance.objects.get(
+                    employee=employee,
+                    date=today,
+                    day=today.day
+                )
+                
+                # Check if already punched out
+                if attendance.punch_out is not None:
+                    return JsonResponse({'success': False, 'error': 'You have already punched out today'})
+                
+                # Check if not punched in yet
+                if attendance.punch_in is None:
+                    return JsonResponse({'success': False, 'error': 'You must punch in before punching out'})
+                
+                attendance.punch_out = now
+                attendance.punch_out_location = data.get('location_name')
+                attendance.punch_out_latitude = data.get('latitude')
+                attendance.punch_out_longitude = data.get('longitude')
+                attendance.status = 'full'
+                attendance.save()
+                
+                return JsonResponse({'success': True})
+            except Attendance.DoesNotExist:
+                return JsonResponse({'success': False, 'error': 'No punch-in record found for today'})
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)})
     return JsonResponse({'success': False, 'error': 'Invalid request'})
@@ -3584,3 +3617,110 @@ def delete_holiday(request):
         'success': False,
         'error': 'Invalid request method'
     }, status=405)
+
+
+
+
+
+
+@login_required
+def create_leave_request(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            employee = Employee.objects.get(user_id=request.session.get('custom_user_id'))
+            
+            leave_request = LeaveRequest.objects.create(
+                employee=employee,
+                start_date=data['start_date'],
+                end_date=data['end_date'],
+                reason=data['reason'],
+                status='pending'
+            )
+            
+            return JsonResponse({'success': True, 'message': 'Leave request submitted successfully'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+@login_required
+def get_leave_requests(request):
+    if request.user.is_superuser or request.session.get('user_level') == 'admin_level':
+        leave_requests = LeaveRequest.objects.filter(status='pending').select_related('employee')
+    else:
+        employee = Employee.objects.get(user_id=request.session.get('custom_user_id'))
+        leave_requests = LeaveRequest.objects.filter(employee=employee).select_related('employee')
+    
+    data = [{
+        'id': req.id,
+        'employee_name': req.employee.name,
+        'start_date': req.start_date.strftime('%Y-%m-%d'),
+        'end_date': req.end_date.strftime('%Y-%m-%d'),
+        'reason': req.reason,
+        'status': req.status,
+        'created_at': req.created_at.strftime('%Y-%m-%d %H:%M')
+    } for req in leave_requests]
+    
+    return JsonResponse({'leave_requests': data})
+
+@login_required
+def process_leave_request(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            leave_request = LeaveRequest.objects.get(id=data['request_id'])
+            
+            if data['action'] == 'approve':
+                # First remove any existing leave marks if this was previously rejected
+                if leave_request.status == 'rejected':
+                    current_date = leave_request.start_date
+                    while current_date <= leave_request.end_date:
+                        Attendance.objects.filter(
+                            employee=leave_request.employee,
+                            date=current_date,
+                            status='leave'
+                        ).delete()
+                        current_date += timedelta(days=1)
+                
+                # Now mark as approved and create attendance records
+                leave_request.status = 'approved'
+                current_date = leave_request.start_date
+                while current_date <= leave_request.end_date:
+                    attendance, created = Attendance.objects.get_or_create(
+                        employee=leave_request.employee,
+                        date=current_date,
+                        defaults={
+                            'day': current_date.day,
+                            'status': 'leave'
+                        }
+                    )
+                    if not created:
+                        attendance.status = 'leave'
+                        attendance.save()
+                    current_date += timedelta(days=1)
+            else:
+                # If rejecting, remove all leave marks for this request
+                leave_request.status = 'rejected'
+                current_date = leave_request.start_date
+                while current_date <= leave_request.end_date:
+                    Attendance.objects.filter(
+                        employee=leave_request.employee,
+                        date=current_date,
+                        status='leave'
+                    ).delete()
+                    current_date += timedelta(days=1)
+            
+            leave_request.processed_by = request.user
+            leave_request.processed_at = timezone.now()
+            leave_request.save()
+            
+            return JsonResponse({
+                'success': True,
+                'employee_id': leave_request.employee.id,
+                'start_date': leave_request.start_date.strftime('%Y-%m-%d'),
+                'end_date': leave_request.end_date.strftime('%Y-%m-%d'),
+                'action': data['action']
+            })
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})

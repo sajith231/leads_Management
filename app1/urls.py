@@ -245,6 +245,13 @@ urlpatterns = [
 
 
 
+    
+    path('leave_request/create/', views.create_leave_request, name='create_leave_request'),
+    path('leave_request/list/', views.get_leave_requests, name='get_leave_requests'),
+    path('leave_request/process/', views.process_leave_request, name='process_leave_request'),
+
+
+
 
     
     

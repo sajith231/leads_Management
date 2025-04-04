@@ -6,6 +6,7 @@
         window.location.href = "{% url 'attendance_user' %}";
     </script>
 {% else %}
+
 <meta name="csrf-token" content="{{ csrf_token }}">
 <div class="allbody" style="overflow: hidden;">
 <div class="container-fluid py-4">
@@ -37,6 +38,7 @@
                 <div class="col-md-5">
                     <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#holidayModal">Add Holiday</button>
                 </div>
+                <!-- <div class="col-md-5" style="display: flex;justify-content: right;"><button class="btn btn-info ms-2" onclick="loadLeaveRequests()">View Leave Requests</button></div> -->
             </div>
         </div>
     </div>
@@ -218,6 +220,141 @@
 </div>
 </div>
 
+
+<div class="modal fade" id="leaveRequestsModal" tabindex="-1" aria-labelledby="leaveRequestsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="leaveRequestsModalLabel">Pending Leave Requests</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Employee</th>
+                                <th>Start Date</th>
+                                <th>End Date</th>
+                                <th>Reason</th>
+                                <th>Requested On</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leaveRequestsTableBody">
+                            <!-- Leave requests will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add this button near the holiday button -->
+
+
+<!-- Add this script -->
+<script>
+function loadLeaveRequests() {
+    fetch('/leave_request/list/')
+        .then(response => response.json())
+        .then(data => {
+            const tbody = document.getElementById('leaveRequestsTableBody');
+            tbody.innerHTML = '';
+            
+            // Sort requests by created_at in descending order (newest first)
+            const sortedRequests = data.leave_requests.sort((a, b) => {
+                return new Date(b.created_at) - new Date(a.created_at);
+            });
+            
+            sortedRequests.forEach(request => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${request.employee_name}</td>
+                    <td>${request.start_date}</td>
+                    <td>${request.end_date}</td>
+                    <td>${request.reason}</td>
+                    <td>${request.created_at}</td>
+                    <td>
+                        <button class="btn btn-sm btn-success" onclick="processLeaveRequest(${request.id}, 'approve')">Approve</button>
+                        <button class="btn btn-sm btn-danger" onclick="processLeaveRequest(${request.id}, 'reject')">Reject</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+            
+            // Show the modal
+            new bootstrap.Modal(document.getElementById('leaveRequestsModal')).show();
+        })
+        .catch(error => {
+            console.error('Error loading leave requests:', error);
+            alert('Error loading leave requests');
+        });
+}
+
+function processLeaveRequest(requestId, action) {
+    if (!confirm(`Are you sure you want to ${action} this leave request?`)) {
+        return;
+    }
+
+    fetch('/leave_request/process/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector("meta[name='csrf-token']").getAttribute("content")
+        },
+        body: JSON.stringify({
+            request_id: requestId,
+            action: action
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(`Leave request ${action}d successfully`);
+            
+            // Update specific dates rather than refreshing the whole table
+            if (data.action === 'reject') {
+                const startDate = new Date(data.start_date);
+                const endDate = new Date(data.end_date);
+                const currentDate = new Date(startDate);
+                
+                while (currentDate <= endDate) {
+                    const formattedDate = currentDate.toISOString().split('T')[0];
+                    const icons = document.querySelectorAll(`i[data-employee-id="${data.employee_id}"][data-date="${formattedDate}"]`);
+                    
+                    icons.forEach(icon => {
+                        icon.className = 'fas fa-star text-secondary';
+                        icon.setAttribute('data-state', 'initial');
+                        icon.setAttribute('title', 'Not Marked');
+                        
+                        // Refresh tooltip
+                        const tooltip = bootstrap.Tooltip.getInstance(icon);
+                        if (tooltip) {
+                            tooltip.dispose();
+                        }
+                        new bootstrap.Tooltip(icon);
+                    });
+                    
+                    currentDate.setDate(currentDate.getDate() + 1);
+                }
+            }
+            
+            loadLeaveRequests(); // Refresh the leave requests list
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while processing the request');
+    });
+}
+</script>
 <!-- Add Font Awesome for icons -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 
