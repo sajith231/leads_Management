@@ -664,6 +664,8 @@ class Attendance(models.Model):
     def __str__(self):
         return f"{self.employee.name} - Day {self.day} - {self.get_status_display()}"
  # Add to models.py
+
+
 class Holiday(models.Model):
     date = models.DateField(unique=True)
     description = models.CharField(max_length=255, blank=True, null=True)
@@ -671,6 +673,10 @@ class Holiday(models.Model):
     def __str__(self):
         return f"Holiday - {self.date}"   
 
+    
+    
+    
+    
     #CREATED AS NEW
 
     #CREATED AS NEW
@@ -690,7 +696,7 @@ class Holiday(models.Model):
 
 
 
-
+from django.contrib.auth.models import User as DjangoUser
 
 
 class LeaveRequest(models.Model):
@@ -706,8 +712,9 @@ class LeaveRequest(models.Model):
     reason = models.TextField()
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     created_at = models.DateTimeField(auto_now_add=True)
-    processed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='processed_leave_requests')
+    processed_by = models.ForeignKey(DjangoUser, on_delete=models.SET_NULL, null=True, blank=True, related_name='processed_leave_requests')
     processed_at = models.DateTimeField(null=True, blank=True)
+    seen_by = models.ManyToManyField(User, related_name='seen_leave_requests')
 
     def __str__(self):
         return f"{self.employee.name} - {self.start_date} to {self.end_date} ({self.status})"

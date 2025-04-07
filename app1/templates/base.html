@@ -643,6 +643,12 @@
                 <div id="admin-menu" class="submenu" style="display: none; margin-left: 5%;">
                     <a href="{% url 'agent_list' %}"><i class="fas fa-binoculars"></i> Address Book</a>
                     <a href="{% url 'document_list' %}"><i class="fas fa-scroll"></i> Documentations</a>
+                    <a href="{% url 'reminders' %}" class="reminder-link">
+                        <i class="fas fa-scroll"></i> Reminders
+                        {% if active_reminders_count > 0 %}
+                            <span class="reminder-badge">{{ active_reminders_count }}</span>
+                        {% endif %}
+                    </a>
                 </div>
         
                 <!-- Marketing Menu -->

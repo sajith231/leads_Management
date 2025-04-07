@@ -1,11 +1,23 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div style="width: 95%; margin: auto;padding-top: 50px;">
+<style>
+    @media (max-width: 768px) {
+        .buttons{
+            display: flex;
+            margin-top: 2%;
+
+        }}
+</style>
+<div style="width: 100%; margin: auto;padding-top: 50px;">
+    <div style="margin-bottom: 20px;" class="buttons"><button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#leaveRequestModal">
+        Request Leave
+    </button>
+    <button class="btn btn-info ms-2" onclick="loadUserLeaveRequests()">
+        <i class="fas fa-list"></i> View My Leave Requests
+    </button>
+</div>
     <div class="">
-        <!-- <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#leaveRequestModal">
-            Request Leave
-        </button> -->
         <!-- Punch In/Out Card -->
         <div class="card shadow mb-4" style="overflow: hidden;">
             <div class="card-header text-white" style="padding-top: 20px;padding-bottom: 20px;background: linear-gradient(90deg, rgba(2,0,36,1) 0%, rgba(9,9,121,1) 35%, rgb(0, 145, 174) 100%);">
@@ -47,11 +59,12 @@
         <!-- Monthly Attendance View -->
         <div class="card shadow" style="overflow: hidden;">
             <div class="card-header text-white" style="padding-top: 20px;padding-bottom: 20px;background: linear-gradient(90deg, rgba(2,0,36,1) 0%, rgba(9,9,121,1) 35%, rgb(0, 145, 174) 100%);">
-                <div class="d-flex justify-content-between align-items-center">
-                    <h3 class="mb-0">My Attendance Records</h3>
+                <div class="d-md-flex justify-content-between align-items-center">
+                    <h3 class="mb-0" style="white-space: nowrap;">My Attendance Records</h3>
                     <input type="month" class="form-control" id="monthFilter" style="width: 200px;" 
                            value="{{ current_month|default:'' }}">
                 </div>
+                
             </div>
             <div class="card-body" style="background: linear-gradient(90deg, rgba(2,0,36,1) 0%, rgba(9,9,121,1) 35%, rgb(0, 145, 174) 100%);overflow: hidden;">
                 <!-- Legend Section -->
@@ -136,7 +149,52 @@
         </div>
     </div>
 </div>
-
+<!-- Add this modal after the existing leaveRequestModal -->
+<div class="modal fade" id="viewLeaveRequestsModal" tabindex="-1" aria-labelledby="viewLeaveRequestsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="viewLeaveRequestsModalLabel">My Leave Requests</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-flex justify-content-between mb-3">
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-sm btn-outline-primary filter-btn active" data-status="all">All</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary filter-btn" data-status="pending">Pending</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary filter-btn" data-status="approved">Approved</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary filter-btn" data-status="rejected">Rejected</button>
+                    </div>
+                    <div>
+                        <button id="prevLeaveRequests" class="btn btn-sm btn-outline-primary" disabled>Previous</button>
+                        <span id="leaveRequestsPaginationInfo" class="mx-2">Showing 1-10</span>
+                        <button id="nextLeaveRequests" class="btn btn-sm btn-outline-primary">Next</button>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Start Date</th>
+                                <th>End Date</th>
+                                <th>Reason</th>
+                                <th>Status</th>
+                                <th>Requested On</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="userLeaveRequestsTableBody">
+                            <!-- Leave requests will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
 <script>
     // Global variables
     let currentEmployeeId = null;
@@ -534,11 +592,183 @@
                 alert('Error: ' + data.error);
             }
         })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('An error occurred while submitting the request');
-        });
+
     }
     </script>
+<script>
+// Add these global variables at the top of your script section
+let currentLeaveRequestsPage = 1;
+const leaveRequestsPerPage = 10;
+let allLeaveRequests = [];
+let currentFilterStatus = 'all';
 
+// Update the loadUserLeaveRequests function
+function loadUserLeaveRequests() {
+    fetch('/leave_request/list/')
+        .then(response => response.json())
+        .then(data => {
+            if (data.leave_requests) {
+                allLeaveRequests = data.leave_requests.sort((a, b) => {
+                    return new Date(b.created_at) - new Date(a.created_at);
+                });
+                updateUserLeaveRequestsTable(1, 'all');
+                new bootstrap.Modal(document.getElementById('viewLeaveRequestsModal')).show();
+            } else {
+                alert('Error loading leave requests');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading leave requests:', error);
+            alert('Error loading leave requests');
+        });
+}
+
+function populateUserLeaveRequestsTable(requests) {
+    const tbody = document.getElementById('userLeaveRequestsTableBody');
+    tbody.innerHTML = '';
+    
+    requests.forEach(request => {
+        const row = document.createElement('tr');
+        
+        // Determine status badge color
+        let statusBadgeClass = 'badge bg-secondary';
+        if (request.status === 'approved') {
+            statusBadgeClass = 'badge bg-success';
+        } else if (request.status === 'rejected') {
+            statusBadgeClass = 'badge bg-danger';
+        } else if (request.status === 'pending') {
+            statusBadgeClass = 'badge bg-warning text-dark';
+        }
+        
+        row.innerHTML = `
+            <td>${request.start_date}</td>
+            <td>${request.end_date}</td>
+            <td>${request.reason}</td>
+            <td><span class="${statusBadgeClass}">${request.status}</span></td>
+            <td>${request.created_at}</td>
+            <td>
+                ${request.status === 'pending' ? `
+                <button class="btn btn-sm btn-danger" onclick="deleteLeaveRequest(${request.id})">
+                    <i class="fas fa-trash"></i> Delete
+                </button>
+                ` : ''}
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function updateUserLeaveRequestsTable(page, statusFilter) {
+    currentLeaveRequestsPage = page;
+    currentFilterStatus = statusFilter;
+    
+    const startIndex = (page - 1) * leaveRequestsPerPage;
+    const endIndex = startIndex + leaveRequestsPerPage;
+    
+    // Filter requests based on current filter status
+    let filteredRequests = allLeaveRequests;
+    if (currentFilterStatus !== 'all') {
+        filteredRequests = allLeaveRequests.filter(req => req.status === currentFilterStatus);
+    }
+    
+    const paginatedRequests = filteredRequests.slice(startIndex, endIndex);
+    
+    const tbody = document.getElementById('userLeaveRequestsTableBody');
+    tbody.innerHTML = '';
+    
+    paginatedRequests.forEach(request => {
+        const row = document.createElement('tr');
+        
+        // Determine status badge color
+        let statusBadgeClass = 'badge bg-secondary';
+        if (request.status === 'approved') {
+            statusBadgeClass = 'badge bg-success';
+        } else if (request.status === 'rejected') {
+            statusBadgeClass = 'badge bg-danger';
+        } else if (request.status === 'pending') {
+            statusBadgeClass = 'badge bg-warning text-dark';
+        }
+        
+        row.innerHTML = `
+            <td>${request.start_date}</td>
+            <td>${request.end_date}</td>
+            <td>${request.reason}</td>
+            <td><span class="${statusBadgeClass}">${request.status}</span></td>
+            <td>${request.created_at}</td>
+            <td>
+                ${request.status === 'pending' ? `
+                <button class="btn btn-sm btn-danger" onclick="deleteLeaveRequest(${request.id})">
+                    <i class="fas fa-trash"></i> Delete
+                </button>
+                ` : ''}
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+    
+    // Update pagination info
+    const totalRequests = filteredRequests.length;
+    const showingStart = startIndex + 1;
+    const showingEnd = Math.min(endIndex, totalRequests);
+    document.getElementById('leaveRequestsPaginationInfo').textContent = 
+        `Showing ${showingStart}-${showingEnd} of ${totalRequests}`;
+    
+    // Update button states
+    document.getElementById('prevLeaveRequests').disabled = page === 1;
+    document.getElementById('nextLeaveRequests').disabled = endIndex >= totalRequests;
+}
+
+// Add event listeners for pagination buttons
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('prevLeaveRequests').addEventListener('click', function() {
+        if (currentLeaveRequestsPage > 1) {
+            updateUserLeaveRequestsTable(currentLeaveRequestsPage - 1, currentFilterStatus);
+        }
+    });
+    
+    document.getElementById('nextLeaveRequests').addEventListener('click', function() {
+        updateUserLeaveRequestsTable(currentLeaveRequestsPage + 1, currentFilterStatus);
+    });
+    
+    // Add filter button event listeners
+    document.querySelectorAll('#viewLeaveRequestsModal .filter-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('#viewLeaveRequestsModal .filter-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            updateUserLeaveRequestsTable(1, this.dataset.status);
+        });
+    });
+});
+
+// Keep the existing deleteLeaveRequest function the same
+function deleteLeaveRequest(requestId) {
+    if (!confirm('Are you sure you want to delete this leave request?')) {
+        return;
+    }
+
+    fetch('/leave_request/delete/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({
+            request_id: requestId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Leave request deleted successfully');
+            loadUserLeaveRequests(); // Refresh the list
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while deleting the request');
+    });
+}
+</script>
 {% endblock %}

@@ -3645,11 +3645,12 @@ def create_leave_request(request):
 
 @login_required
 def get_leave_requests(request):
-    if request.user.is_superuser or request.session.get('user_level') == 'admin_level':
-        leave_requests = LeaveRequest.objects.filter(status='pending').select_related('employee')
+    if request.user.is_superuser or request.session.get('user_level') == 'normal':
+        # Get all leave requests, not just pending ones
+        leave_requests = LeaveRequest.objects.all().select_related('employee').order_by('-created_at')
     else:
         employee = Employee.objects.get(user_id=request.session.get('custom_user_id'))
-        leave_requests = LeaveRequest.objects.filter(employee=employee).select_related('employee')
+        leave_requests = LeaveRequest.objects.filter(employee=employee).select_related('employee').order_by('-created_at')
     
     data = [{
         'id': req.id,
@@ -3658,7 +3659,9 @@ def get_leave_requests(request):
         'end_date': req.end_date.strftime('%Y-%m-%d'),
         'reason': req.reason,
         'status': req.status,
-        'created_at': req.created_at.strftime('%Y-%m-%d %H:%M')
+        'processed_by': req.processed_by.username if req.processed_by else None,
+        'processed_at': req.processed_at.strftime('%Y-%m-%d %H:%M') if req.processed_at else None,
+        'created_at': req.created_at.strftime('%Y-%m-%d ')
     } for req in leave_requests]
     
     return JsonResponse({'leave_requests': data})
@@ -3721,6 +3724,36 @@ def process_leave_request(request):
                 'end_date': leave_request.end_date.strftime('%Y-%m-%d'),
                 'action': data['action']
             })
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+
+
+
+
+
+@login_required
+def delete_leave_request(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            leave_request = LeaveRequest.objects.get(id=data['request_id'])
+            
+            # Only allow deletion if status is pending (for all users)
+            if leave_request.status != 'pending':
+                return JsonResponse({'success': False, 'error': 'Only pending requests can be deleted'})
+            
+            # Check if user is superuser or has user_level='normal'
+            if not (request.user.is_superuser or request.session.get('user_level') == 'normal'):
+                # For regular users, check ownership
+                if leave_request.employee.user_id != request.session.get('custom_user_id'):
+                    return JsonResponse({'success': False, 'error': 'You can only delete your own leave requests'})
+            
+            leave_request.delete()
+            return JsonResponse({'success': True})
+        except LeaveRequest.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'Leave request not found'})
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)})
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
