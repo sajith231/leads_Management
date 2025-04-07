@@ -714,7 +714,7 @@ class LeaveRequest(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     processed_by = models.ForeignKey(DjangoUser, on_delete=models.SET_NULL, null=True, blank=True, related_name='processed_leave_requests')
     processed_at = models.DateTimeField(null=True, blank=True)
-    seen_by = models.ManyToManyField(User, related_name='seen_leave_requests')
+    
 
     def __str__(self):
         return f"{self.employee.name} - {self.start_date} to {self.end_date} ({self.status})"
