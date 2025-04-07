@@ -183,6 +183,7 @@
         
         <label for="end_date" class="fw-bold ms-2">To:</label>
         <input type="date" name="end_date" id="end_date" class="form-control d-inline-block w-auto" value="{{ request.GET.end_date }}">
+        <button type="button" id="todayReminderBtn" class="btn btn-primary ms-2">Today Reminders</button>
     </form></div>
     
     <div class="table-container">
@@ -302,6 +303,17 @@
     
         window.location.href = url.toString();
     }
+    </script>
+    <script>
+        document.getElementById("todayReminderBtn").addEventListener("click", function() {
+            const today = new Date().toISOString().split("T")[0]; // format: YYYY-MM-DD
+            const url = new URL(window.location.href);
+    
+            url.searchParams.set("start_date", today);
+            url.searchParams.set("end_date", today);
+    
+            window.location.href = url.toString();
+        });
     </script>
     
 {% endblock %}

@@ -59,7 +59,6 @@
                                     {% regroup employees by organization as org_list %}
                                     
                                     {% for org in org_list %}
-                                        <optgroup label="{% if org.grouper %}{{ org.grouper }}{% else %}Other{% endif %}">
                                             {% for emp in org.list %}
                                                 <option value="{{ emp.id }}">
                                                     {{ emp.name }} 
