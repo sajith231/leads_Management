@@ -250,6 +250,12 @@ urlpatterns = [
     path('leave_request/list/', views.get_leave_requests, name='get_leave_requests'),
     path('leave_request/process/', views.process_leave_request, name='process_leave_request'),
     path('leave_request/delete/', views.delete_leave_request, name='delete_leave_request'),
+    
+    
+    path('late_request/create/', views.create_late_request, name='create_late_request'),
+    path('late_request/list/', views.get_late_requests, name='get_late_requests'),
+    path('late_request/process/', views.process_late_request, name='process_late_request'),
+    path('late_request/delete/', views.delete_late_request, name='delete_late_request'),
 
 
 

@@ -35,9 +35,17 @@
                     <label class="form-label">Search by Name</label>
                     <input type="text" class="form-control" id="nameFilter" onkeyup="filterEmployees()" placeholder="Enter name">
                 </div>
-                <div class="col-md-5">
-                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#holidayModal">Add Holiday</button>
-                <button class="btn btn-info ms-2" onclick="loadLeaveRequests()">View Leave Requests</button></div>
+                <div class="d-grid gap-2 d-md-flex">
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#holidayModal">
+                      Add Holiday
+                    </button>
+                    <button class="btn btn-info" onclick="loadLeaveRequests()">
+                      View Leave Requests
+                    </button>
+                    <button class="btn btn-info" onclick="loadAdminLateRequests()">
+                      View Late Requests
+                    </button>
+                  </div>
             </div>
         </div>
     </div>
@@ -268,6 +276,55 @@
         </div>
     </div>
 </div>
+
+<!-- Add this modal after the leave requests modal -->
+<div class="modal fade" id="adminLateRequestsModal" tabindex="-1" aria-labelledby="adminLateRequestsModalLabel" aria-hidden="true">
+    <div class="modal-dialog" style="max-width: 1200px; width: 100%;">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="adminLateRequestsModalLabel">Late Requests</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-flex justify-content-between mb-3">
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-sm btn-outline-primary filter-btn active" data-status="all">All</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary filter-btn" data-status="pending">Pending</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary filter-btn" data-status="approved">Approved</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary filter-btn" data-status="rejected">Rejected</button>
+                    </div>
+                    <div>
+                        <button id="prevAdminLateRequests" class="btn btn-sm btn-outline-primary" disabled>Previous</button>
+                        <span id="adminLateRequestsPaginationInfo" class="mx-2">Showing 1-10</span>
+                        <button id="nextAdminLateRequests" class="btn btn-sm btn-outline-primary">Next</button>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Employee</th>
+                                <th>Date</th>
+                                <th>Delay Time</th>
+                                <th>Reason</th>
+                                <th>Status</th>
+                                <th>Requested On</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminLateRequestsTableBody">
+
+                            <!-- Late requests will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
 <style>
     .equal-width-btn {
         width: 130px; /* adjust this as needed */
@@ -352,7 +409,7 @@ function updateLeaveRequestsTable(page, statusFilter = 'all') {
                 ` : `
                     <button class="btn btn-sm btn-success equal-width-btn" onclick="processLeaveRequest(${request.id}, 'approve')">Re-approve</button>
                 `}
-                <span class="text-muted">Processed by ${request.processed_by || 'Admin'}</span>
+                
                 `}
             </td>
             <td>
@@ -1180,7 +1237,163 @@ function deleteLeaveRequest(requestId) {
 }
 </script>
 <script>
-    
+    // Admin late requests management
+    let currentAdminLateRequestsPage = 1;
+    const lateRequestsPerPage = 10;  // Add this line to define the constant
+    let allAdminLateRequests = [];
+    let currentAdminLateFilterStatus = 'all';
+
+    function loadAdminLateRequests() {
+        console.log("Loading late requests..."); // Debugging
+        
+        fetch('/late_request/list/')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log("Response data:", data); // Debugging
+                
+                if (data.success) {
+                    allAdminLateRequests = data.late_requests || [];
+                    updateAdminLateRequestsTable(1, 'all');
+                    new bootstrap.Modal(document.getElementById('adminLateRequestsModal')).show();
+                } else {
+                    console.error('Server error:', data.error);
+                    alert(`Error: ${data.error || 'Unknown error'}`);
+                }
+            })
+            .catch(error => {
+                console.error('Fetch error:', error);
+                alert(`Failed to load late requests: ${error.message}`);
+            });
+    }
+
+    function updateAdminLateRequestsTable(page, statusFilter = 'all') {
+        currentAdminLateRequestsPage = page;
+        currentAdminLateFilterStatus = statusFilter;
+        const startIndex = (page - 1) * lateRequestsPerPage;
+        const endIndex = startIndex + lateRequestsPerPage;
+        
+        // Filter requests based on current filter status
+        let filteredRequests = allAdminLateRequests;
+        if (currentAdminLateFilterStatus !== 'all') {
+            filteredRequests = allAdminLateRequests.filter(req => req.status === currentAdminLateFilterStatus);
+        }
+        
+        const paginatedRequests = filteredRequests.slice(startIndex, endIndex);
+        
+        const tbody = document.getElementById('adminLateRequestsTableBody');
+        tbody.innerHTML = '';
+        
+        paginatedRequests.forEach(request => {
+            const row = document.createElement('tr');
+            
+            // Determine status badge color
+            let statusBadgeClass = 'badge bg-secondary';
+            if (request.status === 'approved') {
+                statusBadgeClass = 'badge bg-success';
+            } else if (request.status === 'rejected') {
+                statusBadgeClass = 'badge bg-danger';
+            } else if (request.status === 'pending') {
+                statusBadgeClass = 'badge bg-warning text-dark';
+            }
+            
+            row.innerHTML = `
+    <td>${request.employee_name}</td>
+    <td>${request.date}</td>
+    <td>${request.delay_time}</td>
+    <td>${request.reason}</td>
+    <td><span class="${statusBadgeClass}">${request.status}</span></td>
+    <td>${request.created_at}</td>
+    <td>
+        ${request.status === 'pending' ? `
+        <button class="btn btn-sm btn-success" onclick="processLateRequest(${request.id}, 'approve')">Approve</button>
+        <button class="btn btn-sm btn-danger" onclick="processLateRequest(${request.id}, 'reject')">Reject</button>
+        ` : `
+        ${request.status === 'approved' ? `
+            <button class="btn btn-sm btn-danger equal-width-btn" onclick="processLateRequest(${request.id}, 'reject')">Revoke Approval</button>
+        ` : `
+            <button class="btn btn-sm btn-success equal-width-btn" onclick="processLateRequest(${request.id}, 'approve')">Re-approve</button>
+        `}
+        
+        `}
+    </td>
+`;
+            tbody.appendChild(row);
+        });
+        
+        // Update pagination info
+        const totalRequests = filteredRequests.length;
+        const showingStart = startIndex + 1;
+        const showingEnd = Math.min(endIndex, totalRequests);
+        document.getElementById('adminLateRequestsPaginationInfo').textContent = 
+            `Showing ${showingStart}-${showingEnd} of ${totalRequests}`;
+        
+        // Update button states
+        document.getElementById('prevAdminLateRequests').disabled = page === 1;
+        document.getElementById('nextAdminLateRequests').disabled = endIndex >= totalRequests;
+    }
+
+    function processLateRequest(requestId, action) {
+        const confirmMessage = action === 'approve' 
+            ? 'Are you sure you want to approve this late request?'
+            : 'Are you sure you want to reject this late request?';
+        
+        if (!confirm(confirmMessage)) {
+            return;
+        }
+
+        fetch('/late_request/process/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector("meta[name='csrf-token']").getAttribute("content")
+            },
+            body: JSON.stringify({
+                request_id: requestId,
+                action: action
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(`Late request ${action}d successfully`);
+                loadAdminLateRequests(); // Refresh the list
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while processing the request');
+        });
+    }
+
+    // Add event listeners for admin late requests
+    document.addEventListener('DOMContentLoaded', function() {
+        // Pagination buttons
+        document.getElementById('prevAdminLateRequests').addEventListener('click', function() {
+            if (currentAdminLateRequestsPage > 1) {
+                updateAdminLateRequestsTable(currentAdminLateRequestsPage - 1, currentAdminLateFilterStatus);
+            }
+        });
+        
+        document.getElementById('nextAdminLateRequests').addEventListener('click', function() {
+            updateAdminLateRequestsTable(currentAdminLateRequestsPage + 1, currentAdminLateFilterStatus);
+        });
+        
+        // Filter buttons
+        document.querySelectorAll('#adminLateRequestsModal .filter-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('#adminLateRequestsModal .filter-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                updateAdminLateRequestsTable(1, this.dataset.status);
+            });
+        });
+    });
 </script>
 {% endif %}
 {% endblock %}

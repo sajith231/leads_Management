@@ -11,10 +11,18 @@
 </style>
 <div style="width: 100%; margin: auto;padding-top: 50px;">
     <div style="margin-bottom: 20px;" class="buttons"><button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#leaveRequestModal">
-        Request Leave
+        Leave Request 
     </button>
     <button class="btn btn-info ms-2" onclick="loadUserLeaveRequests()">
         <i class="fas fa-list"></i> View My Leave Requests
+    </button>
+   </div>
+   <div style="margin-bottom: 20px;" class="buttons">
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#lateRequestModal">
+        Late Request 
+    </button>
+    <button class="btn btn-info ms-2" onclick="loadLateRequests()">
+        <i class="fas fa-list"></i> View My Late Requests
     </button>
 </div>
     <div class="">
@@ -185,6 +193,84 @@
                         </thead>
                         <tbody id="userLeaveRequestsTableBody">
                             <!-- Leave requests will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Late Request Modal -->
+<div class="modal fade" id="lateRequestModal" tabindex="-1" aria-labelledby="lateRequestModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="lateRequestModalLabel">Request Late Arrival</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="lateRequestForm">
+                    <div class="mb-3">
+                        <label for="lateDate" class="form-label">Date</label>
+                        <input type="date" class="form-control" id="lateDate" required readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label for="delayTime" class="form-label">Enter delay time (e.g., 10 minutes)</label>
+                        <input type="text" class="form-control" id="delayTime" required placeholder="e.g., 10 minutes">
+                    </div>
+                    <div class="mb-3">
+                        <label for="lateReason" class="form-label">Reason</label>
+                        <textarea class="form-control" id="lateReason" rows="3" required></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="submitLateRequest()">Submit Request</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- View Late Requests Modal -->
+<div class="modal fade" id="viewLateRequestsModal" tabindex="-1" aria-labelledby="viewLateRequestsModalLabel" aria-hidden="true">
+    <div class="modal-dialog" style="max-width: 1200px;width: 100%;margin: auto;">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="viewLateRequestsModalLabel">My Late Requests</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-2 p-md-10" style="margin: auto;width: 100%;">
+                <div class="d-md-flex justify-content-between mb-3">
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-sm btn-outline-primary filter-btn active" style="font-size: 12px;" data-status="all">All</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary filter-btn" style="font-size: 12px;" data-status="pending">Pending</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary filter-btn" style="font-size: 12px;" data-status="approved">Approved</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary filter-btn" style="font-size: 12px;" data-status="rejected">Rejected</button>
+                    </div>
+                    <div class="d-flex mt-2 mt-md-0">
+                        <button id="prevLateRequests" class="btn btn-sm btn-outline-primary" disabled>Previous</button>
+                        <span id="lateRequestsPaginationInfo" class="mx-2">Showing 1-10</span>
+                        <button id="nextLateRequests" class="btn btn-sm btn-outline-primary">Next</button>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Reason</th>
+                                <th>Status</th>
+                                <th>Requested On</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="userLateRequestsTableBody">
+                            <!-- Late requests will be populated here -->
                         </tbody>
                     </table>
                 </div>
@@ -563,37 +649,37 @@
 
 <script>
     function submitLeaveRequest() {
-        const form = document.getElementById('leaveRequestForm');
-        if (!form.checkValidity()) {
-            form.reportValidity();
-            return;
-        }
-    
-        const data = {
-            start_date: document.getElementById('startDate').value,
-            end_date: document.getElementById('endDate').value,
-            reason: document.getElementById('reason').value
-        };
-    
-        fetch('/leave_request/create/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': '{{ csrf_token }}'
-            },
-            body: JSON.stringify(data)
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('Leave request submitted successfully!');
-                $('#leaveRequestModal').modal('hide');
-            } else {
-                alert('Error: ' + data.error);
-            }
-        })
-
+    const form = document.getElementById('leaveRequestForm');
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
     }
+
+    const data = {
+        start_date: document.getElementById('startDate').value,
+        end_date: document.getElementById('endDate').value,
+        reason: document.getElementById('reason').value
+    };
+
+    fetch('/leave_request/create/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Leave request submitted successfully!');
+            $('#leaveRequestModal').modal('hide');
+            form.reset();
+            location.reload(); // Add this line to refresh the page
+        }
+    })
+    
+}
     </script>
 <script>
 // Add these global variables at the top of your script section
@@ -770,5 +856,185 @@ function deleteLeaveRequest(requestId) {
         alert('An error occurred while deleting the request');
     });
 }
+</script>
+
+
+<script>
+    // Global variables for late requests pagination
+let currentLateRequestsPage = 1;
+const lateRequestsPerPage = 10;
+let allLateRequests = [];
+let currentLateFilterStatus = 'all';
+
+// Submit late request
+function submitLateRequest() {
+    const form = document.getElementById('lateRequestForm');
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+    }
+
+    const data = {
+        date: document.getElementById('lateDate').value,
+        delay_time: document.getElementById('delayTime').value,
+        reason: document.getElementById('lateReason').value
+    };
+
+    fetch('/late_request/create/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Late request submitted successfully!');
+            $('#lateRequestModal').modal('hide');
+            form.reset();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    
+}
+
+// Load user's late requests
+function loadLateRequests() {
+    fetch('/late_request/list/')
+        .then(response => response.json())
+        .then(data => {
+            if (data.late_requests) {
+                allLateRequests = data.late_requests.sort((a, b) => {
+                    return new Date(b.created_at) - new Date(a.created_at);
+                });
+                updateLateRequestsTable(1, 'all');
+                new bootstrap.Modal(document.getElementById('viewLateRequestsModal')).show();
+            } else {
+                alert('Error loading late requests');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading late requests:', error);
+            alert('Error loading late requests');
+        });
+}
+
+// Update late requests table
+function updateLateRequestsTable(page, statusFilter = 'all') {
+    currentLateRequestsPage = page;
+    currentLateFilterStatus = statusFilter;
+    const startIndex = (page - 1) * lateRequestsPerPage;
+    const endIndex = startIndex + lateRequestsPerPage;
+    
+    // Filter requests based on current filter status
+    let filteredRequests = allLateRequests;
+    if (currentLateFilterStatus !== 'all') {
+        filteredRequests = allLateRequests.filter(req => req.status === currentLateFilterStatus);
+    }
+    
+    const paginatedRequests = filteredRequests.slice(startIndex, endIndex);
+    
+    const tbody = document.getElementById('userLateRequestsTableBody');
+    tbody.innerHTML = '';
+    
+    paginatedRequests.forEach(request => {
+        const row = document.createElement('tr');
+        
+        // Determine status badge color
+        let statusBadgeClass = 'badge bg-secondary';
+        if (request.status === 'approved') {
+            statusBadgeClass = 'badge bg-success';
+        } else if (request.status === 'rejected') {
+            statusBadgeClass = 'badge bg-danger';
+        } else if (request.status === 'pending') {
+            statusBadgeClass = 'badge bg-warning text-dark';
+        }
+        
+        row.innerHTML = `
+            <td>${request.date}</td>
+            <td>${request.reason}</td>
+            <td><span class="${statusBadgeClass}">${request.status}</span></td>
+            <td>${request.created_at}</td>
+            <td>
+                ${request.status === 'pending' ? `
+                <button class="btn btn-sm btn-danger" onclick="deleteLateRequest(${request.id})">
+                    <i class="fas fa-trash"></i> Delete
+                </button>
+                ` : ''}
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+    
+    // Update pagination info
+    const totalRequests = filteredRequests.length;
+    const showingStart = startIndex + 1;
+    const showingEnd = Math.min(endIndex, totalRequests);
+    document.getElementById('lateRequestsPaginationInfo').textContent = 
+        `Showing ${showingStart}-${showingEnd} of ${totalRequests}`;
+    
+    // Update button states
+    document.getElementById('prevLateRequests').disabled = page === 1;
+    document.getElementById('nextLateRequests').disabled = endIndex >= totalRequests;
+}
+
+// Delete late request
+function deleteLateRequest(requestId) {
+    if (!confirm('Are you sure you want to delete this late request?')) {
+        return;
+    }
+
+    fetch('/late_request/delete/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({
+            request_id: requestId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Late request deleted successfully');
+            loadLateRequests(); // Refresh the list
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while deleting the request');
+    });
+}
+
+// Initialize late request date to today
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('lateDate').valueAsDate = new Date();
+    
+    // Late requests pagination event listeners
+    document.getElementById('prevLateRequests').addEventListener('click', function() {
+        if (currentLateRequestsPage > 1) {
+            updateLateRequestsTable(currentLateRequestsPage - 1, currentLateFilterStatus);
+        }
+    });
+    
+    document.getElementById('nextLateRequests').addEventListener('click', function() {
+        updateLateRequestsTable(currentLateRequestsPage + 1, currentLateFilterStatus);
+    });
+    
+    // Late requests filter buttons
+    document.querySelectorAll('#viewLateRequestsModal .filter-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('#viewLateRequestsModal .filter-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            updateLateRequestsTable(1, this.dataset.status);
+        });
+    });
+});
 </script>
 {% endblock %}

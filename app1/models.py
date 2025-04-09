@@ -674,26 +674,6 @@ class Holiday(models.Model):
         return f"Holiday - {self.date}"   
 
     
-    
-    
-    
-    #CREATED AS NEW
-
-    #CREATED AS NEW
-
-    #CREATED AS NEW
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 from django.contrib.auth.models import User as DjangoUser
@@ -723,6 +703,46 @@ class LeaveRequest(models.Model):
         if self.status in ['approved', 'rejected'] and not self.processed_at:
             self.processed_at = timezone.now()
         super().save(*args, **kwargs)
+    
+    
+    #CREATED AS NEW
+
+    #CREATED AS NEW
+
+    #CREATED AS NEW
+
+
+
+
+
+
+
+
+class LateRequest(models.Model):
+    employee = models.ForeignKey('Employee', on_delete=models.CASCADE)
+    date = models.DateField()
+    delay_time = models.CharField(max_length=50, default='0 minutes')  # New field
+    reason = models.TextField()
+    status = models.CharField(max_length=20, choices=(
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected')
+    ), default='pending')
+    processed_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL)
+    processed_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.employee.name} - {self.date} ({self.status})"
+
+    class Meta:
+        ordering = ['-created_at']
+
+
+
+
+
+
 
 
 

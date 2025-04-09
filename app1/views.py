@@ -22,7 +22,7 @@ from django.utils import timezone
 from .models import Employee, Attendance,LeaveRequest
 from django.db import transaction
 from django.db import models
-from .models import Employee, Attendance, LeaveRequest, Holiday
+from .models import Employee, Attendance, LeaveRequest, Holiday,LateRequest
 from .utils import is_holiday
 
 
@@ -3757,3 +3757,113 @@ def delete_leave_request(request):
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)})
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+
+
+
+
+# views.py
+@login_required
+def create_late_request(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            employee = Employee.objects.get(user_id=request.session.get('custom_user_id'))
+            
+            late_request = LateRequest.objects.create(
+                employee=employee,
+                date=data['date'],
+                delay_time=data['delay_time'],  # New field
+                reason=data['reason'],
+                status='pending'
+            )
+            
+            return JsonResponse({'success': True, 'message': 'Late request submitted successfully'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+# views.py
+# views.py
+from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
+from .models import LateRequest, Employee
+import json
+
+@login_required
+def get_late_requests(request):
+    try:
+        if request.user.is_superuser or request.session.get('user_level') == 'normal':
+            late_requests = LateRequest.objects.all().select_related('employee')
+        else:
+            employee = Employee.objects.get(user_id=request.session.get('custom_user_id'))
+            late_requests = LateRequest.objects.filter(employee=employee)
+            
+        data = [{
+            'id': req.id,
+            'employee_name': req.employee.name,
+            'date': req.date.strftime('%Y-%m-%d'),
+            'delay_time': req.delay_time,  # New field
+            'reason': req.reason,
+            'status': req.status,
+            'created_at': req.created_at.strftime('%Y-%m-%d')
+        } for req in late_requests]
+        
+        return JsonResponse({'success': True, 'late_requests': data})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+@login_required
+def process_late_request(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            late_request = LateRequest.objects.get(id=data['request_id'])
+            
+            if data['action'] == 'approve':
+                late_request.status = 'approved'
+            else:
+                late_request.status = 'rejected'
+            
+            late_request.processed_by = request.user
+            late_request.processed_at = timezone.now()
+            late_request.save()
+            
+            return JsonResponse({
+                'success': True,
+                'employee_id': late_request.employee.id,
+                'date': late_request.date.strftime('%Y-%m-%d'),
+                'action': data['action']
+            })
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+@login_required
+def delete_late_request(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            late_request = LateRequest.objects.get(id=data['request_id'])
+            
+            # Only allow deletion if status is pending (for all users)
+            if late_request.status != 'pending':
+                return JsonResponse({'success': False, 'error': 'Only pending requests can be deleted'})
+            
+            # Check if user is superuser or has user_level='normal'
+            if not (request.user.is_superuser or request.session.get('user_level') == 'normal'):
+                # For regular users, check ownership
+                if late_request.employee.user_id != request.session.get('custom_user_id'):
+                    return JsonResponse({'success': False, 'error': 'You can only delete your own late requests'})
+            
+            late_request.delete()
+            return JsonResponse({'success': True})
+        except LateRequest.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'Late request not found'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+
+
+
