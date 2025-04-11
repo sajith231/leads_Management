@@ -3882,54 +3882,54 @@ def delete_late_request(request):
 from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse
 from django.utils import timezone
+from django.utils.timezone import localtime
 from datetime import datetime
 from .models import Employee, Attendance, Holiday
 
+
 def attendance_summary(request, employee_id):
     employee = get_object_or_404(Employee, id=employee_id)
-    
-    # Get current month/year or from request
+
+    # Get year and month from request or default to current
     now = timezone.now()
     year = request.GET.get('year', now.year)
     month = request.GET.get('month', now.month)
-    
+
     try:
         year = int(year)
         month = int(month)
     except (ValueError, TypeError):
         year = now.year
         month = now.month
-    
-    # Get attendance records for the selected month
+
+    # Fetch attendance and holidays
     attendance_records = Attendance.objects.filter(
         employee=employee,
         date__year=year,
         date__month=month
     ).order_by('date')
-    
-    # Get holidays for this month
+
     holidays = Holiday.objects.filter(
         date__year=year,
         date__month=month
     ).values_list('date', flat=True)
-    
-    # Prepare data for template
+
+    # Determine number of days in the month
+    if month == 12:
+        days_in_month = (datetime(year + 1, 1, 1) - datetime(year, month, 1)).days
+    else:
+        days_in_month = (datetime(year, month + 1, 1) - datetime(year, month, 1)).days
+
+    # Build attendance data
     attendance_data = []
-    full_day_count = 0
-    half_day_count = 0
-    leave_count = 0
-    not_marked_count = 0
-    
-    days_in_month = (datetime(year, month + 1, 1) - datetime(year, month, 1)).days if month < 12 else (
-        datetime(year + 1, 1, 1) - datetime(year, month, 1)).days
-    
+    full_day_count = half_day_count = leave_count = not_marked_count = 0
+
     for day in range(1, days_in_month + 1):
         date = datetime(year, month, day).date()
         day_name = date.strftime('%A')
-        
-        # Find matching attendance record
-        record = next((r for r in attendance_records if r.date.day == day), None)
-        
+        record = next((r for r in attendance_records if r.date == date), None)
+
+        # Determine status
         if date in holidays:
             status = 'Holiday'
             status_class = 'holiday'
@@ -3954,15 +3954,25 @@ def attendance_summary(request, employee_id):
             status = 'Not Marked'
             status_class = 'not-marked'
             not_marked_count += 1
-        
+
+        # Time formatting with timezone safety
+        punch_in = (
+            localtime(record.punch_in).strftime('%I:%M %p')
+            if record and record.punch_in else '-'
+        )
+        punch_out = (
+            localtime(record.punch_out).strftime('%I:%M %p')
+            if record and record.punch_out else '-'
+        )
+
         attendance_data.append({
             'date': date.strftime('%Y-%m-%d'),
             'display_date': date.strftime('%d %b %Y'),
             'day': day_name,
             'status': status,
             'status_class': status_class,
-            'punch_in': record.punch_in.strftime('%I:%M %p') if record and record.punch_in else '-',
-            'punch_out': record.punch_out.strftime('%I:%M %p') if record and record.punch_out else '-',
+            'punch_in': punch_in,
+            'punch_out': punch_out,
             'punch_in_location': record.punch_in_location if record and record.punch_in_location else '-',
             'punch_out_location': record.punch_out_location if record and record.punch_out_location else '-',
             'punch_in_latitude': record.punch_in_latitude if record else None,
@@ -3970,7 +3980,7 @@ def attendance_summary(request, employee_id):
             'punch_out_latitude': record.punch_out_latitude if record else None,
             'punch_out_longitude': record.punch_out_longitude if record else None,
         })
-    
+
     context = {
         'employee': employee,
         'attendance_data': attendance_data,
@@ -3984,5 +3994,75 @@ def attendance_summary(request, employee_id):
         'current_year': now.year,
         'current_month': now.month,
     }
-    
+
     return render(request, 'attendance_summary.html', context)
+
+
+from django.shortcuts import render
+from django.utils import timezone
+from calendar import monthrange
+from datetime import datetime
+from .models import Employee, Attendance, Holiday
+
+from django.contrib.auth.decorators import login_required
+
+from django.shortcuts import render
+from django.utils import timezone
+from calendar import monthrange
+from datetime import datetime
+from .models import Employee, Attendance, Holiday
+from django.contrib.auth.decorators import login_required
+
+@login_required
+def attendance_total_summary(request):
+    year = int(request.GET.get('year', timezone.now().year))
+    month = int(request.GET.get('month', timezone.now().month))
+
+    employees = Employee.objects.all()
+    days_in_month = monthrange(year, month)[1]
+    start_date = datetime(year, month, 1).date()
+    end_date = datetime(year, month, days_in_month).date()
+
+    # Get holidays in selected month
+    holidays = Holiday.objects.filter(date__range=(start_date, end_date))
+    holiday_dates = set(h.date for h in holidays)
+    holidays_count = len(holiday_dates)
+
+    employee_summaries = []
+
+    for employee in employees:
+        attendance_records = Attendance.objects.filter(employee=employee, date__range=(start_date, end_date))
+
+        full_days = attendance_records.filter(status='full').count()
+        half_days = attendance_records.filter(status='half').count()
+        leaves = attendance_records.filter(status='leave').count()
+
+        # Count attendance-marked dates
+        marked_dates = set(attendance_records.values_list('date', flat=True))
+
+        # Not marked = total - marked - holidays
+        not_marked = days_in_month - len(marked_dates | holiday_dates)
+
+        # Calculate working days (Number of Days - Holidays)
+        working_days = days_in_month - holidays_count
+
+        # Add to summary
+        employee_summaries.append({
+            'id': employee.id,
+            'name': employee.name,
+            'full_days': full_days,
+            'half_days': half_days,
+            'leaves': leaves,
+            'not_marked': not_marked,
+            'holidays': holidays_count,
+            'number_of_days': days_in_month,  # Total days in the month
+            'working_days': working_days,     # Working days (total days - holidays)
+            'total_attendance': full_days + (0.5 * half_days),
+        })
+
+    return render(request, 'attendance_total_summary.html', {
+        'employee_summaries': employee_summaries,
+        'current_year': year,
+        'current_month': f"{month:02}",
+    })
+
