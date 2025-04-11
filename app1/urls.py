@@ -19,7 +19,7 @@ from .views import add_salary_details, get_salary_details,save_attendance
 from .views import update_setting_positions
 
 from .views import reminder_type_view, add_reminder_type, edit_reminder_type, delete_reminder_type,update_attendance
-from .views import update_attendance_status,get_customers
+from .views import update_attendance_status,get_customers,attendance_summary
 
 
 urlpatterns = [
@@ -256,6 +256,7 @@ urlpatterns = [
     path('late_request/list/', views.get_late_requests, name='get_late_requests'),
     path('late_request/process/', views.process_late_request, name='process_late_request'),
     path('late_request/delete/', views.delete_late_request, name='delete_late_request'),
+    path('attendance/summary/<int:employee_id>/', attendance_summary, name='attendance_summary'),
 
 
 

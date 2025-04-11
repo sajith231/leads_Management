@@ -1,0 +1,166 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    .allbody{
+        margin-top: 5%;
+    }
+</style>
+<style>
+    @media (max-width: 768px) {
+        .allbody{
+            margin-top: 15%;
+
+        }}
+</style>
+<div class="allbody">
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <h2 class="card-title mb-0">Attendance Summary for {{ employee.name }}</h2>
+                </div>
+                <div class="col-md-6 text-end">
+                    <div class="input-group" style="max-width: 300px; margin-left: auto;">
+                        <input type="month" class="form-control" id="monthFilter" 
+                               value="{{ year }}-{{ month|stringformat:'02d' }}">
+                        <button class="btn btn-primary" onclick="filterByMonth()">Go</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Full Days</h5>
+                    <h3 class="mb-0">{{ full_day_count }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-dark">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Half Days</h5>
+                    <h3 class="mb-0">{{ half_day_count }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-danger text-white">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Leaves</h5>
+                    <h3 class="mb-0">{{ leave_count }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-secondary text-white">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Not Marked</h5>
+                    <h3 class="mb-0">{{ not_marked_count }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Attendance Details Table -->
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Date</th>
+                            <th>Day</th>
+                            <th>Status</th>
+                            <th>Punch In Time</th>
+                            <th>Punch Out Time</th>
+                            <th>Punch In Location</th>
+                            <th>Punch Out Location</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in attendance_data %}
+                        <tr class="{{ record.status_class }}">
+                            <td>{{ record.display_date }}</td>
+                            <td>{{ record.day }}</td>
+                            <td>
+                                <span class="badge 
+                                    {% if record.status == 'Full Day' %}bg-success
+                                    {% elif record.status == 'Half Day' %}bg-warning text-dark
+                                    {% elif record.status == 'Leave' %}bg-danger
+                                    {% elif record.status == 'Holiday' %}bg-info
+                                    {% else %}bg-secondary{% endif %}">
+                                    {{ record.status }}
+                                </span>
+                            </td>
+                            <td>{{ record.punch_in }}</td>
+                            <td>{{ record.punch_out }}</td>
+                            <td>
+                                {% if record.punch_in_location != '-' and record.punch_in_latitude and record.punch_in_longitude %}
+                                <a href="https://www.google.com/maps?q={{ record.punch_in_latitude }},{{ record.punch_in_longitude }}" 
+                                   target="_blank" class="text-decoration-none">
+                                    {{ record.punch_in_location }}
+                                    <i class="fas fa-external-link-alt ms-1"></i>
+                                </a>
+                                {% else %}
+                                {{ record.punch_in_location }}
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if record.punch_out_location != '-' and record.punch_out_latitude and record.punch_out_longitude %}
+                                <a href="https://www.google.com/maps?q={{ record.punch_out_latitude }},{{ record.punch_out_longitude }}" 
+                                   target="_blank" class="text-decoration-none">
+                                    {{ record.punch_out_location }}
+                                    <i class="fas fa-external-link-alt ms-1"></i>
+                                </a>
+                                {% else %}
+                                {{ record.punch_out_location }}
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function filterByMonth() {
+        const monthFilter = document.getElementById('monthFilter').value;
+        const [year, month] = monthFilter.split('-');
+        window.location.href = `{% url 'attendance_summary' employee.id %}?year=${year}&month=${month}`;
+    }
+</script>
+
+<style>
+    .full-day {
+        background-color: rgba(25, 135, 84, 0.1);
+    }
+    .half-day {
+        background-color: rgba(255, 193, 7, 0.1);
+    }
+    .leave {
+        background-color: rgba(220, 53, 69, 0.1);
+    }
+    .holiday {
+        background-color: rgba(13, 110, 253, 0.1);
+    }
+    .not-marked {
+        background-color: rgba(108, 117, 125, 0.1);
+    }
+    .table th {
+        white-space: nowrap;
+    }
+    .badge {
+        font-size: 0.9em;
+        padding: 0.5em 0.75em;
+    }
+</style>
+{% endblock %}

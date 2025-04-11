@@ -704,20 +704,6 @@ class LeaveRequest(models.Model):
             self.processed_at = timezone.now()
         super().save(*args, **kwargs)
     
-    
-    #CREATED AS NEW
-
-    #CREATED AS NEW
-
-    #CREATED AS NEW
-
-
-
-
-
-
-
-
 class LateRequest(models.Model):
     employee = models.ForeignKey('Employee', on_delete=models.CASCADE)
     date = models.DateField()
@@ -736,7 +722,21 @@ class LateRequest(models.Model):
         return f"{self.employee.name} - {self.date} ({self.status})"
 
     class Meta:
-        ordering = ['-created_at']
+        ordering = ['-created_at']    
+    #CREATED AS NEW
+
+    #CREATED AS NEW
+
+    #CREATED AS NEW
+
+
+
+
+
+
+
+
+
 
 
 

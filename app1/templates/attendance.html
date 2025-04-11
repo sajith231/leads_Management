@@ -6,7 +6,24 @@
         window.location.href = "{% url 'attendance_user' %}";
     </script>
 {% else %}
-
+<style>
+    /* Sticky styles */
+    .sticky-header {
+      position: sticky;
+      left: 0;
+      background-color: #f2f2f2;
+      z-index: 2;
+      box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+    }
+    
+    .sticky-data {
+      position: sticky;
+      left: 0;
+      background-color: #fff;
+      z-index: 1;
+      box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+    }
+  </style>
 <meta name="csrf-token" content="{{ csrf_token }}">
 <div class="allbody" style="overflow: hidden;">
 <div class="container-fluid py-4">
@@ -39,13 +56,19 @@
                     <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#holidayModal">
                       Add Holiday
                     </button>
-                    <button class="btn btn-info" onclick="loadLeaveRequests()">
+                    <button class="btn btn-info position-relative" onclick="loadLeaveRequests()">
                       View Leave Requests
+                      <span id="leaveRequestsBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none">
+                        0
+                      </span>
                     </button>
-                    <button class="btn btn-info" onclick="loadAdminLateRequests()">
+                    <button class="btn btn-info position-relative" onclick="loadAdminLateRequests()">
                       View Late Requests
+                      <span id="lateRequestsBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none">
+                        0
+                      </span>
                     </button>
-                  </div>
+                </div>
             </div>
         </div>
     </div>
@@ -187,8 +210,9 @@
                     <thead class="table-light">
                         <tr>
                             <th rowspan="3" class="align-middle">No</th>
-                            <th rowspan="3" class="align-middle">Name</th>
+                            <th rowspan="3" class="align-middle sticky-header" style="background-color: white;">Name</th>
                             <th rowspan="3" class="align-middle">User ID</th>
+                            <th rowspan="3" class="align-middle">Summary</th>
                             <th id="daysHeader" colspan="31" class="text-center">Days of Month</th>
                         </tr>
                         <tr id="dayNumbers">
@@ -202,8 +226,16 @@
                         {% for employee in employees %}
                         <tr class="employee-row" data-employee-id="{{ employee.id }}" data-name="{{ employee.name }}">
                             <td>{{ forloop.counter }}</td>
-                            <td>{{ employee.name }}</td>
+                            <td class="sticky-data" style="background-color: white;">{{ employee.name }}</td>
                             <td>{{ employee.user.userid|default:'' }}</td>
+                            <td class="text-center">
+                                <i class="fas fa-eye text-primary" 
+                                   data-bs-toggle="tooltip" 
+                                   title="View summary" 
+                                   onclick="viewSummary('{{ employee.id }}')"
+                                   style="cursor: pointer;"></i>
+                            </td>
+                            
                             {% for day in days_of_month %}
                             <td class="text-center">
                                 <i class="fas fa-star text-secondary"
@@ -310,10 +342,10 @@
                                 <th>Status</th>
                                 <th>Requested On</th>
                                 <th>Actions</th>
+                                <th>Delete</th>
                             </tr>
                         </thead>
                         <tbody id="adminLateRequestsTableBody">
-
                             <!-- Late requests will be populated here -->
                         </tbody>
                     </table>
@@ -325,6 +357,7 @@
         </div>
     </div>
 </div>
+
 <style>
     .equal-width-btn {
         width: 130px; /* adjust this as needed */
@@ -342,6 +375,7 @@ let allLeaveRequests = [];
 let currentFilterStatus = 'all';
 
 function loadLeaveRequests(page = 1, statusFilter = 'all') {
+    document.getElementById('leaveRequestsBadge').classList.add('d-none');
     fetch('/leave_request/list/')
         .then(response => response.json())
         .then(data => {
@@ -811,7 +845,7 @@ function updateHolidayInUI(date) {
         // Update attendance cells for each employee
         document.querySelectorAll('#attendanceBody tr').forEach(row => {
             // Remove any existing day cells (except the fixed columns)
-            const fixedCells = Array.from(row.children).slice(0, 3); // Changed from 4 to 3 since we removed the percentage column
+            const fixedCells = Array.from(row.children).slice(0, 4); // Changed from 4 to 3 since we removed the percentage column
             row.innerHTML = '';
             
             // Add back the fixed cells
@@ -1244,6 +1278,7 @@ function deleteLeaveRequest(requestId) {
     let currentAdminLateFilterStatus = 'all';
 
     function loadAdminLateRequests() {
+        document.getElementById('lateRequestsBadge').classList.add('d-none');
         console.log("Loading late requests..."); // Debugging
         
         fetch('/late_request/list/')
@@ -1272,70 +1307,77 @@ function deleteLeaveRequest(requestId) {
     }
 
     function updateAdminLateRequestsTable(page, statusFilter = 'all') {
-        currentAdminLateRequestsPage = page;
-        currentAdminLateFilterStatus = statusFilter;
-        const startIndex = (page - 1) * lateRequestsPerPage;
-        const endIndex = startIndex + lateRequestsPerPage;
+    currentAdminLateRequestsPage = page;
+    currentAdminLateFilterStatus = statusFilter;
+    const startIndex = (page - 1) * lateRequestsPerPage;
+    const endIndex = startIndex + lateRequestsPerPage;
+    
+    // Filter requests based on current filter status
+    let filteredRequests = allAdminLateRequests;
+    if (currentAdminLateFilterStatus !== 'all') {
+        filteredRequests = allAdminLateRequests.filter(req => req.status === currentAdminLateFilterStatus);
+    }
+    
+    const paginatedRequests = filteredRequests.slice(startIndex, endIndex);
+    
+    const tbody = document.getElementById('adminLateRequestsTableBody');
+    tbody.innerHTML = '';
+    
+    paginatedRequests.forEach(request => {
+        const row = document.createElement('tr');
+        row.setAttribute('data-request-id', request.id);
         
-        // Filter requests based on current filter status
-        let filteredRequests = allAdminLateRequests;
-        if (currentAdminLateFilterStatus !== 'all') {
-            filteredRequests = allAdminLateRequests.filter(req => req.status === currentAdminLateFilterStatus);
+        // Determine status badge color
+        let statusBadgeClass = 'badge bg-secondary';
+        if (request.status === 'approved') {
+            statusBadgeClass = 'badge bg-success';
+        } else if (request.status === 'rejected') {
+            statusBadgeClass = 'badge bg-danger';
+        } else if (request.status === 'pending') {
+            statusBadgeClass = 'badge bg-warning text-dark';
         }
         
-        const paginatedRequests = filteredRequests.slice(startIndex, endIndex);
-        
-        const tbody = document.getElementById('adminLateRequestsTableBody');
-        tbody.innerHTML = '';
-        
-        paginatedRequests.forEach(request => {
-            const row = document.createElement('tr');
-            
-            // Determine status badge color
-            let statusBadgeClass = 'badge bg-secondary';
-            if (request.status === 'approved') {
-                statusBadgeClass = 'badge bg-success';
-            } else if (request.status === 'rejected') {
-                statusBadgeClass = 'badge bg-danger';
-            } else if (request.status === 'pending') {
-                statusBadgeClass = 'badge bg-warning text-dark';
-            }
-            
-            row.innerHTML = `
-    <td>${request.employee_name}</td>
-    <td>${request.date}</td>
-    <td>${request.delay_time}</td>
-    <td>${request.reason}</td>
-    <td><span class="${statusBadgeClass}">${request.status}</span></td>
-    <td>${request.created_at}</td>
-    <td>
-        ${request.status === 'pending' ? `
-        <button class="btn btn-sm btn-success" onclick="processLateRequest(${request.id}, 'approve')">Approve</button>
-        <button class="btn btn-sm btn-danger" onclick="processLateRequest(${request.id}, 'reject')">Reject</button>
-        ` : `
-        ${request.status === 'approved' ? `
-            <button class="btn btn-sm btn-danger equal-width-btn" onclick="processLateRequest(${request.id}, 'reject')">Revoke Approval</button>
-        ` : `
-            <button class="btn btn-sm btn-success equal-width-btn" onclick="processLateRequest(${request.id}, 'approve')">Re-approve</button>
-        `}
-        
-        `}
-    </td>
-`;
-            tbody.appendChild(row);
-        });
-        
-        // Update pagination info
-        const totalRequests = filteredRequests.length;
-        const showingStart = startIndex + 1;
-        const showingEnd = Math.min(endIndex, totalRequests);
-        document.getElementById('adminLateRequestsPaginationInfo').textContent = 
-            `Showing ${showingStart}-${showingEnd} of ${totalRequests}`;
-        
-        // Update button states
-        document.getElementById('prevAdminLateRequests').disabled = page === 1;
-        document.getElementById('nextAdminLateRequests').disabled = endIndex >= totalRequests;
-    }
+        row.innerHTML = `
+            <td>${request.employee_name}</td>
+            <td>${request.date}</td>
+            <td>${request.delay_time}</td>
+            <td>${request.reason}</td>
+            <td><span class="${statusBadgeClass}">${request.status}</span></td>
+            <td>${request.created_at}</td>
+            <td>
+                ${request.status === 'pending' ? `
+                <button class="btn btn-sm btn-success" onclick="processLateRequest(${request.id}, 'approve')">Approve</button>
+                <button class="btn btn-sm btn-danger" onclick="processLateRequest(${request.id}, 'reject')">Reject</button>
+                ` : `
+                ${request.status === 'approved' ? `
+                    <button class="btn btn-sm btn-danger equal-width-btn" onclick="processLateRequest(${request.id}, 'reject')">Revoke Approval</button>
+                ` : `
+                    <button class="btn btn-sm btn-success equal-width-btn" onclick="processLateRequest(${request.id}, 'approve')">Re-approve</button>
+                `}
+                `}
+            </td>
+            <td>
+                ${request.status === 'pending' ? `
+                <button class="btn btn-sm btn-danger" onclick="deleteLateRequest(${request.id})">
+                    <i class="fas fa-trash"></i> Delete
+                </button>
+                ` : ''}
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+    
+    // Update pagination info
+    const totalRequests = filteredRequests.length;
+    const showingStart = startIndex + 1;
+    const showingEnd = Math.min(endIndex, totalRequests);
+    document.getElementById('adminLateRequestsPaginationInfo').textContent = 
+        `Showing ${showingStart}-${showingEnd} of ${totalRequests}`;
+    
+    // Update button states
+    document.getElementById('prevAdminLateRequests').disabled = page === 1;
+    document.getElementById('nextAdminLateRequests').disabled = endIndex >= totalRequests;
+}
 
     function processLateRequest(requestId, action) {
         const confirmMessage = action === 'approve' 
@@ -1394,6 +1436,97 @@ function deleteLeaveRequest(requestId) {
             });
         });
     });
+</script>
+
+
+<script>
+    function viewSummary(employeeId) {
+    const monthFilter = document.getElementById('monthFilter').value;
+    const [year, month] = monthFilter.split('-');
+    window.location.href = `/attendance/summary/${employeeId}/?year=${year}&month=${month}`;
+}
+</script>
+<script>
+// Add this script to attendance.html
+function checkNewRequests() {
+    // Check for new leave requests
+    fetch('/leave_request/list/?status=pending')
+        .then(response => response.json())
+        .then(data => {
+            if (data.leave_requests) {
+                const badge = document.getElementById('leaveRequestsBadge');
+                const count = data.leave_requests.length;
+                if (count > 0) {
+                    badge.textContent = count;
+                    badge.classList.remove('d-none');
+                } else {
+                    badge.classList.add('d-none');
+                }
+            }
+        })
+        .catch(error => console.error('Error checking leave requests:', error));
+
+    // Check for new late requests
+    fetch('/late_request/list/?status=pending')
+        .then(response => response.json())
+        .then(data => {
+            if (data.late_requests) {
+                const badge = document.getElementById('lateRequestsBadge');
+                const count = data.late_requests.length;
+                if (count > 0) {
+                    badge.textContent = count;
+                    badge.classList.remove('d-none');
+                } else {
+                    badge.classList.add('d-none');
+                }
+            }
+        })
+        .catch(error => console.error('Error checking late requests:', error));
+}
+
+// Call checkNewRequests on page load and every 5 minutes
+document.addEventListener('DOMContentLoaded', function() {
+    checkNewRequests();
+    setInterval(checkNewRequests, 300000); // 5 minutes
+});
+
+</script>
+<script>
+    function deleteLateRequest(requestId) {
+    if (!confirm('Are you sure you want to delete this late request?')) {
+        return;
+    }
+
+    fetch('/late_request/delete/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector("meta[name='csrf-token']").getAttribute("content")
+        },
+        body: JSON.stringify({
+            request_id: requestId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Late request deleted successfully');
+            // Remove the deleted request from the UI
+            const row = document.querySelector(`tr[data-request-id="${requestId}"]`);
+            if (row) {
+                row.remove();
+            }
+            // Refresh the late requests list
+            loadAdminLateRequests(currentAdminLateRequestsPage, currentAdminLateFilterStatus);
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while deleting the request');
+    });
+}
 </script>
 {% endif %}
 {% endblock %}

@@ -3645,12 +3645,17 @@ def create_leave_request(request):
 
 @login_required
 def get_leave_requests(request):
+    status_filter = request.GET.get('status', None)
+    
     if request.user.is_superuser or request.session.get('user_level') == 'normal':
-        # Get all leave requests, not just pending ones
         leave_requests = LeaveRequest.objects.all().select_related('employee').order_by('-created_at')
+        if status_filter:
+            leave_requests = leave_requests.filter(status=status_filter)
     else:
         employee = Employee.objects.get(user_id=request.session.get('custom_user_id'))
         leave_requests = LeaveRequest.objects.filter(employee=employee).select_related('employee').order_by('-created_at')
+        if status_filter:
+            leave_requests = leave_requests.filter(status=status_filter)
     
     data = [{
         'id': req.id,
@@ -3661,7 +3666,7 @@ def get_leave_requests(request):
         'status': req.status,
         'processed_by': req.processed_by.username if req.processed_by else None,
         'processed_at': req.processed_at.strftime('%Y-%m-%d %H:%M') if req.processed_at else None,
-        'created_at': req.created_at.strftime('%Y-%m-%d ')
+        'created_at': req.created_at.strftime('%Y-%m-%d %H:%M')
     } for req in leave_requests]
     
     return JsonResponse({'leave_requests': data})
@@ -3792,26 +3797,29 @@ import json
 
 @login_required
 def get_late_requests(request):
-    try:
-        if request.user.is_superuser or request.session.get('user_level') == 'normal':
-            late_requests = LateRequest.objects.all().select_related('employee')
-        else:
-            employee = Employee.objects.get(user_id=request.session.get('custom_user_id'))
-            late_requests = LateRequest.objects.filter(employee=employee)
+    status_filter = request.GET.get('status', None)
+    
+    if request.user.is_superuser or request.session.get('user_level') == 'normal':
+        late_requests = LateRequest.objects.all().select_related('employee')
+        if status_filter:
+            late_requests = late_requests.filter(status=status_filter)
+    else:
+        employee = Employee.objects.get(user_id=request.session.get('custom_user_id'))
+        late_requests = LateRequest.objects.filter(employee=employee)
+        if status_filter:
+            late_requests = late_requests.filter(status=status_filter)
             
-        data = [{
-            'id': req.id,
-            'employee_name': req.employee.name,
-            'date': req.date.strftime('%Y-%m-%d'),
-            'delay_time': req.delay_time,  # New field
-            'reason': req.reason,
-            'status': req.status,
-            'created_at': req.created_at.strftime('%Y-%m-%d')
-        } for req in late_requests]
-        
-        return JsonResponse({'success': True, 'late_requests': data})
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)})
+    data = [{
+        'id': req.id,
+        'employee_name': req.employee.name,
+        'date': req.date.strftime('%Y-%m-%d'),
+        'delay_time': req.delay_time,
+        'reason': req.reason,
+        'status': req.status,
+        'created_at': req.created_at.strftime('%Y-%m-%d %H:%M')
+    } for req in late_requests]
+    
+    return JsonResponse({'success': True, 'late_requests': data})
 
 @login_required
 def process_late_request(request):
@@ -3867,3 +3875,114 @@ def delete_late_request(request):
 
 
 
+
+
+
+
+from django.shortcuts import render, get_object_or_404
+from django.http import JsonResponse
+from django.utils import timezone
+from datetime import datetime
+from .models import Employee, Attendance, Holiday
+
+def attendance_summary(request, employee_id):
+    employee = get_object_or_404(Employee, id=employee_id)
+    
+    # Get current month/year or from request
+    now = timezone.now()
+    year = request.GET.get('year', now.year)
+    month = request.GET.get('month', now.month)
+    
+    try:
+        year = int(year)
+        month = int(month)
+    except (ValueError, TypeError):
+        year = now.year
+        month = now.month
+    
+    # Get attendance records for the selected month
+    attendance_records = Attendance.objects.filter(
+        employee=employee,
+        date__year=year,
+        date__month=month
+    ).order_by('date')
+    
+    # Get holidays for this month
+    holidays = Holiday.objects.filter(
+        date__year=year,
+        date__month=month
+    ).values_list('date', flat=True)
+    
+    # Prepare data for template
+    attendance_data = []
+    full_day_count = 0
+    half_day_count = 0
+    leave_count = 0
+    not_marked_count = 0
+    
+    days_in_month = (datetime(year, month + 1, 1) - datetime(year, month, 1)).days if month < 12 else (
+        datetime(year + 1, 1, 1) - datetime(year, month, 1)).days
+    
+    for day in range(1, days_in_month + 1):
+        date = datetime(year, month, day).date()
+        day_name = date.strftime('%A')
+        
+        # Find matching attendance record
+        record = next((r for r in attendance_records if r.date.day == day), None)
+        
+        if date in holidays:
+            status = 'Holiday'
+            status_class = 'holiday'
+        elif record:
+            if record.status == 'full':
+                status = 'Full Day'
+                status_class = 'full-day'
+                full_day_count += 1
+            elif record.status == 'half':
+                status = 'Half Day'
+                status_class = 'half-day'
+                half_day_count += 1
+            elif record.status == 'leave':
+                status = 'Leave'
+                status_class = 'leave'
+                leave_count += 1
+            else:
+                status = 'Not Marked'
+                status_class = 'not-marked'
+                not_marked_count += 1
+        else:
+            status = 'Not Marked'
+            status_class = 'not-marked'
+            not_marked_count += 1
+        
+        attendance_data.append({
+            'date': date.strftime('%Y-%m-%d'),
+            'display_date': date.strftime('%d %b %Y'),
+            'day': day_name,
+            'status': status,
+            'status_class': status_class,
+            'punch_in': record.punch_in.strftime('%I:%M %p') if record and record.punch_in else '-',
+            'punch_out': record.punch_out.strftime('%I:%M %p') if record and record.punch_out else '-',
+            'punch_in_location': record.punch_in_location if record and record.punch_in_location else '-',
+            'punch_out_location': record.punch_out_location if record and record.punch_out_location else '-',
+            'punch_in_latitude': record.punch_in_latitude if record else None,
+            'punch_in_longitude': record.punch_in_longitude if record else None,
+            'punch_out_latitude': record.punch_out_latitude if record else None,
+            'punch_out_longitude': record.punch_out_longitude if record else None,
+        })
+    
+    context = {
+        'employee': employee,
+        'attendance_data': attendance_data,
+        'year': year,
+        'month': month,
+        'month_name': datetime(year, month, 1).strftime('%B %Y'),
+        'full_day_count': full_day_count,
+        'half_day_count': half_day_count,
+        'leave_count': leave_count,
+        'not_marked_count': not_marked_count,
+        'current_year': now.year,
+        'current_month': now.month,
+    }
+    
+    return render(request, 'attendance_summary.html', context)
