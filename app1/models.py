@@ -723,6 +723,9 @@ class LateRequest(models.Model):
 
     class Meta:
         ordering = ['-created_at']    
+    
+    
+    
     #CREATED AS NEW
 
     #CREATED AS NEW
@@ -734,7 +737,84 @@ class LateRequest(models.Model):
 
 
 
+#Project Management
 
+class Project(models.Model):
+    PROJECT_TYPES = [
+        ('Website', 'Website'),
+        ('Web Application', 'Web Application'),
+        ('Mobile Application', 'Mobile Application'),
+    ]
+
+    STATUS_CHOICES = [
+        ('Active', 'Active'),
+        ('On Hold', 'On Hold'),
+        ('Cancel', 'Cancel'),
+        ('In Progress', 'In Progress'),
+        ('Inactive', 'Inactive'),
+    ]
+
+    project_name = models.CharField(max_length=200)
+    languages = models.CharField(max_length=200)
+    technologies = models.CharField(max_length=200)
+    description = models.TextField()
+    database_name = models.CharField(max_length=100)
+    domain_name = models.CharField(max_length=100)
+    domain_platform = models.CharField(max_length=100)
+    github_link = models.URLField()
+    assigned_person = models.ForeignKey(Employee, on_delete=models.SET_NULL, null=True)
+    client = models.CharField(max_length=200, default='')  # Added client field
+    project_status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Active')  # Added project status field
+    project_type = models.CharField(max_length=50, choices=PROJECT_TYPES)
+    project_duration = models.CharField(max_length=50)
+
+    def _str_(self):
+        assigned_to = f" - Assigned to: {self.assigned_person.name}" if self.assigned_person else ""
+        return f"{self.project_name}{assigned_to}"
+
+
+        
+class ProjectWork(models.Model):
+    STATUS_CHOICES = [
+        ('not_started', 'Not Started'),
+        ('started', 'Started'),
+        ('in_progress', 'In Progress'),
+        ('on_hold', 'On Hold'),
+        ('canceled', 'Canceled'),
+        ('finished', 'Finished')
+    ]
+
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='project_works')
+    members = models.ManyToManyField(Employee, related_name='project_works')  # Changed to ManyToManyField
+    start_date = models.DateField(default=timezone.now)
+    deadline = models.DateField()
+    client = models.CharField(max_length=200)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='not_started')
+    
+    @property
+    def countdown(self):
+        if self.deadline:
+            today = timezone.now().date()
+            total_days = (self.deadline - self.start_date).days
+            remaining_days = (self.deadline - today).days
+        
+            if remaining_days <= 0:
+                return {'total': total_days, 'remaining': 0, 'percentage': 100}
+        
+            completed_percentage = ((total_days - remaining_days) / total_days) * 100 if total_days > 0 else 0
+        
+            return {
+                'total': total_days,
+                'remaining': remaining_days,
+                'percentage': min(round(completed_percentage, 1), 100)
+            }
+        return {'total': 0, 'remaining': 0, 'percentage': 0}
+
+    def _str_(self):
+        return f"{self.project.project_name}"
+
+    class Meta:
+        ordering = ['deadline']
 
 
 

@@ -15,7 +15,7 @@ from .models import Lead
 from .forms import LeadForm
 from django.db.models import Q
 from datetime import datetime, timedelta
-from .models import Requirement  # Ensure the correct model is imported
+from .models import Requirement  #Ensure the correct model is imported
 from .models import Lead,ServiceEntry,JobTitle
 import json
 from django.utils import timezone
@@ -4018,7 +4018,9 @@ def attendance_total_summary(request):
     year = int(request.GET.get('year', timezone.now().year))
     month = int(request.GET.get('month', timezone.now().month))
 
-    employees = Employee.objects.all()
+    employees = Employee.objects.select_related('user').filter(
+        status='active'  # Add this filter to get only active employees
+    )
     days_in_month = monthrange(year, month)[1]
     start_date = datetime(year, month, 1).date()
     end_date = datetime(year, month, days_in_month).date()
@@ -4066,3 +4068,317 @@ def attendance_total_summary(request):
         'current_month': f"{month:02}",
     })
 
+
+
+
+
+
+
+
+
+#Project Management
+
+
+
+
+
+
+def project_management(request):
+    projects = Project.objects.all()
+    return render(request, 'project_management.html', {'projects': projects})
+
+from django.shortcuts import get_object_or_404
+
+from .models import Employee  # make sure Employee is imported
+from .models import Employee  # make sure Employee is imported
+
+def add_project(request):
+    # Get all employees
+    employees = Employee.objects.select_related('user').all()
+    project=Project.objects.all()
+
+    if request.method == "POST":
+        employee_id = request.POST.get('assigned_person')
+        employee = get_object_or_404(Employee, id=employee_id) if employee_id else None
+
+        Project.objects.create(
+            project_name=request.POST['project_name'],
+            languages=request.POST['languages'],
+            technologies=request.POST['technologies'],
+            description=request.POST['description'],
+            database_name=request.POST['database_name'],
+            domain_name=request.POST['domain_name'],
+            domain_platform=request.POST['domain_platform'],
+            github_link=request.POST['github_link'],
+            assigned_person=employee,
+            client=request.POST['client'],
+            project_status=request.POST['project_status'],
+            project_type=request.POST['project_type'],
+            project_duration=request.POST['project_duration'],
+        )
+        return redirect('project_management')
+
+    return render(request, "add_project.html", {"employees": employees})
+
+
+from django.shortcuts import render, redirect, get_object_or_404
+from .models import Project, Employee
+from django.contrib import messages
+
+def edit_project(request, project_id):
+    project = get_object_or_404(Project, id=project_id)
+    employees = Employee.objects.select_related('user').all()
+
+    if request.method == "POST":
+        user_id = request.POST.get('assigned_person')
+        employee = get_object_or_404(Employee, user_id=user_id) if user_id else None
+
+        project.project_name = request.POST['project_name']
+        project.languages = request.POST['languages']
+        project.technologies = request.POST['technologies']
+        project.description = request.POST['description']
+        project.database_name = request.POST['database_name']
+        project.domain_name = request.POST['domain_name']
+        project.domain_platform = request.POST['domain_platform']
+        project.github_link = request.POST['github_link']
+        project.assigned_person = employee
+        project.client = request.POST['client']
+        project.project_status = request.POST['project_status']
+        project.project_type = request.POST['project_type']
+        project.project_duration = request.POST['project_duration']
+        project.save()
+        messages.success(request, "Project updated successfully!")
+        return redirect('project_management')
+
+    return render(request, 'project_edit.html', {'project': project, 'employees': employees})
+
+
+def delete_project(request, project_id):
+    project = get_object_or_404(Project, id=project_id)
+    project.delete()
+    messages.success(request, "Project deleted successfully!")
+    return redirect('project_management')
+
+
+
+@login_required
+def get_active_employees(request):
+    """API endpoint to get active employees"""
+    try:
+        active_employees = Employee.objects.filter(status='active').values('id', 'name')
+        return JsonResponse(list(active_employees), safe=False)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, redirect
+from .models import Project, Employee, ProjectWork
+
+@login_required
+def project_work(request):
+    """View for project work management"""
+
+    # Fetch all projects and active employees
+    projects = Project.objects.all().order_by('project_name')
+    employees = Employee.objects.filter(status='active').values('id', 'name', 'status')
+    
+    # Fetch project works with related project (FK) and members (ManyToMany)
+    project_works = ProjectWork.objects.select_related(
+        'project'
+    ).prefetch_related(
+        'members'
+    ).all().order_by('-start_date')
+
+    if request.method == 'POST':
+        project_id = request.POST.get('project')
+        member_ids = request.POST.getlist('members')  # Get multiple selected members
+        start_date = request.POST.get('start_date')
+        deadline = request.POST.get('deadline')
+        client = request.POST.get('client')
+        status = request.POST.get('status')
+
+        try:
+            project = Project.objects.get(id=project_id)
+
+            # Create a new ProjectWork instance
+            project_work = ProjectWork.objects.create(
+                project=project,
+                start_date=start_date,
+                deadline=deadline,
+                client=client,
+                status=status
+            )
+
+            # Add selected members
+            for member_id in member_ids:
+                member = Employee.objects.get(id=member_id, status='active')
+                project_work.members.add(member)
+
+            messages.success(request, "Project work assigned successfully!")
+            return redirect('project_work')
+
+        except Project.DoesNotExist:
+            messages.error(request, "Selected project does not exist.")
+        except Employee.DoesNotExist:
+            messages.error(request, "Selected employee is not active or does not exist.")
+        except Exception as e:
+            messages.error(request, f"Error assigning work: {str(e)}")
+
+    context = {
+        'projects': projects,
+        'employees': employees,
+        'project_works': project_works,
+    }
+
+    return render(request, 'project.html', context)
+
+
+@login_required
+def user_projects(request):
+    """View for displaying projects assigned to the logged-in user"""
+    try:
+        # Get the current user's employee record
+        custom_user_id = request.session.get('custom_user_id')
+        if not custom_user_id:
+            return redirect('login')
+            
+        employee = Employee.objects.get(user_id=custom_user_id)
+        
+        # Get all project works assigned to this employee
+        assigned_projects = ProjectWork.objects.filter(
+            members=employee
+        ).select_related('project').prefetch_related('members').order_by('-start_date')
+        
+        return render(request, 'user_project.html', {
+            'assigned_projects': assigned_projects,
+            'employee': employee
+        })
+        
+    except Employee.DoesNotExist:
+        messages.error(request, "Employee record not found")
+        return redirect('login')
+    except Exception as e:
+        messages.error(request, f"Error fetching projects: {str(e)}")
+        return redirect('login')
+
+@login_required
+def update_project_status(request):
+    """Update the status of a project work"""
+    if request.method == 'POST':
+        project_work_id = request.POST.get('project_work_id')
+        new_status = request.POST.get('status')
+        
+        try:
+            # Get the project work and check if the user is assigned to it
+            project_work = ProjectWork.objects.get(id=project_work_id)
+            custom_user_id = request.session.get('custom_user_id')
+            employee = Employee.objects.get(user_id=custom_user_id)
+            
+            # Check if the user is assigned to this project
+            if employee in project_work.members.all():
+                # Update the status
+                project_work.status = new_status
+                project_work.save()
+                return JsonResponse({'success': True, 'message': 'Status updated successfully'})
+            else:
+                return JsonResponse({'success': False, 'message': 'You are not assigned to this project'}, status=403)
+                
+        except ProjectWork.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'Project work not found'}, status=404)
+        except Employee.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'Employee record not found'}, status=404)
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'Error: {str(e)}'}, status=500)
+    
+    return JsonResponse({'success': False, 'message': 'Invalid request method'}, status=400)
+
+
+
+
+
+@login_required
+def edit_project_work(request, work_id):
+    """View for editing project work"""
+    try:
+        # Get the project work to edit
+        project_work = ProjectWork.objects.get(id=work_id)
+        
+        # Fetch all projects and active employees
+        projects = Project.objects.all().order_by('project_name')
+        employees = Employee.objects.filter(status='active').values('id', 'name', 'status')
+        
+        # Get currently selected member IDs for pre-selecting in the form
+        selected_members = list(project_work.members.values_list('id', flat=True))
+        
+        if request.method == 'POST':
+            project_id = request.POST.get('project')
+            member_ids = request.POST.getlist('members')  # Get multiple selected members
+            start_date = request.POST.get('start_date')
+            deadline = request.POST.get('deadline')
+            client = request.POST.get('client')
+            status = request.POST.get('status')
+
+            try:
+                project = Project.objects.get(id=project_id)
+
+                # Update project work fields
+                project_work.project = project
+                project_work.start_date = start_date
+                project_work.deadline = deadline
+                project_work.client = client
+                project_work.status = status
+                project_work.save()
+
+                # Clear and re-add members
+                project_work.members.clear()
+                for member_id in member_ids:
+                    member = Employee.objects.get(id=member_id, status='active')
+                    project_work.members.add(member)
+
+                messages.success(request, "Project work updated successfully!")
+                return redirect('project_work')
+
+            except Project.DoesNotExist:
+                messages.error(request, "Selected project does not exist.")
+            except Employee.DoesNotExist:
+                messages.error(request, "Selected employee is not active or does not exist.")
+            except Exception as e:
+                messages.error(request, f"Error updating work: {str(e)}")
+
+        context = {
+            'project_work': project_work,
+            'projects': projects,
+            'employees': employees,
+            'selected_members': selected_members,
+        }
+
+        return render(request, 'projectwork_edit.html', context)
+        
+    except ProjectWork.DoesNotExist:
+        messages.error(request, "Project work not found.")
+        return redirect('project_work')
+    except Exception as e:
+        messages.error(request, f"Error: {str(e)}")
+        return redirect('project_work')
+    
+
+
+@login_required
+def delete_project_work(request, work_id):
+    """Delete a project work assignment"""
+    try:
+        project_work = ProjectWork.objects.get(id=work_id)
+        project_name = project_work.project.project_name
+        
+        # Delete the project work
+        project_work.delete()
+        
+        messages.success(request, f"Project work for '{project_name}' has been deleted successfully.")
+    except ProjectWork.DoesNotExist:
+        messages.error(request, "Project work not found.")
+    except Exception as e:
+        messages.error(request, f"Error deleting project work: {str(e)}")
+        
+    return redirect('project_work')

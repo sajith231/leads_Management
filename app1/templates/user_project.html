@@ -1,0 +1,352 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+
+<div class="min-h-screen bg-gradient-to-br from-purple-200 via-blue-100 to-pink-200 p-6">
+    <div class=" mx-auto bg-white bg-opacity-90 rounded-2xl shadow-xl p-8">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold text-gray-800">My Assigned Projects</h1>
+        </div>
+
+        <!-- Success message toast -->
+        <div id="statusUpdateToast" class="fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg transform transition-transform duration-300 scale-0 z-50">
+            <div class="flex items-center">
+                <i class="fas fa-check-circle mr-2"></i>
+                <span id="toastMessage">Status updated successfully!</span>
+            </div>
+        </div>
+
+        {% if assigned_projects %}
+        <div class="bg-white rounded-lg shadow-md p-6 overflow-x-auto">
+            <table class="min-w-full table-auto">
+                <thead class="bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <tr class="text-center">
+                        <th class="px-4 py-3 text-left">Project</th>
+                        <th class="px-4 py-3 text-left">Team Members</th>
+                        <th class="px-4 py-3 text-left">Start Date</th>
+                        <th class="px-4 py-3 text-left">Deadline</th>
+                        <th class="px-4 py-3 text-left">Client</th>
+                        <th class="px-4 py-3 text-left">Status</th>
+                        <th class="px-4 py-3 text-left">Countdown</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 text-gray-800">
+                    {% for project in assigned_projects %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-4 py-4">
+                            <div class="font-semibold text-gray-900">{{ project.project.project_name }}</div>
+                            <div class="text-sm text-gray-500">{{ project.project.description|truncatechars:60 }}</div>
+                        </td>
+
+                        <td class="px-4 py-4 text-center">
+                            <div x-data="{ show: false }" class="relative">
+                                <i @click="show = !show" class="fa-solid fa-user text-xl rounded-full p-2 bg-gray-200 text-blue-600 cursor-pointer"></i>
+                                <div x-show="show" @click.away="show = false"
+                                     class="absolute z-10 mt-2 p-4 bg-white border rounded-lg shadow-lg w-60">
+                                    <h4 class="text-sm font-semibold text-gray-800 mb-2">Team Members</h4>
+                                    <div class="flex flex-col gap-2">
+                                        {% for member in project.members.all %}
+                                        <div class="flex items-center gap-2">
+                                            <i class="fa-solid fa-user text-blue-600 bg-gray-200 rounded-full p-1 text-sm"></i>
+                                            <span class="text-sm text-gray-700">
+                                                {{ member.name }}
+                                                {% if member.id == employee.id %}
+                                                <span class="text-xs text-green-600">(You)</span>
+                                                {% endif %}
+                                            </span>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+
+                        <td class="px-4 py-4 text-sm text-gray-600 text-center">{{ project.start_date|date:"Y-m-d" }}</td>
+                        <td class="px-4 py-4 text-sm text-gray-600 text-center">{{ project.deadline|date:"Y-m-d" }}</td>
+                        <td class="px-4 py-4 text-sm text-gray-600 text-center">{{ project.client }}</td>
+
+                        <td class="px-4 py-4 text-center" x-data="{ open: false }">
+                            <div class="inline-block relative">
+                                <div @click="open = !open" class="cursor-pointer px-2 py-1 rounded-full text-xs font-semibold flex items-center gap-1
+                                    {% if project.status == 'not_started' %}bg-gray-100 text-gray-800
+                                    {% elif project.status == 'started' %}bg-blue-100 text-blue-800
+                                    {% elif project.status == 'in_progress' %}bg-yellow-100 text-yellow-800
+                                    {% elif project.status == 'on_hold' %}bg-orange-100 text-orange-800
+                                    {% elif project.status == 'canceled' %}bg-red-100 text-red-800
+                                    {% else %}bg-green-100 text-green-800{% endif %}">
+                                    <i class="
+                                        {% if project.status == 'not_started' %}fa-regular fa-circle-dot
+                                        {% elif project.status == 'started' %}fa-solid fa-play
+                                        {% elif project.status == 'in_progress' %}fa-solid fa-spinner animate-spin
+                                        {% elif project.status == 'on_hold' %}fa-solid fa-pause
+                                        {% elif project.status == 'canceled' %}fa-solid fa-xmark
+                                        {% else %}fa-solid fa-check{% endif %}
+                                    "></i>
+                                    <span class="status-badge">{{ project.get_status_display }}</span>
+                                </div>
+                        
+                                <!-- Dropdown -->
+                                <div x-show="open" @click.away="open = false"
+                                     class="absolute mt-2 w-44 bg-white shadow-lg border rounded z-20 p-2 space-y-1 text-sm">
+                                    <template x-for="option in [
+                                        { value: 'not_started', label: 'Not Started', icon: 'fa-regular fa-circle-dot' },
+                                        { value: 'started', label: 'Started', icon: 'fa-solid fa-play' },
+                                        { value: 'in_progress', label: 'In Progress', icon: 'fa-solid fa-spinner' },
+                                        { value: 'on_hold', label: 'On Hold', icon: 'fa-solid fa-pause' },
+                                        { value: 'canceled', label: 'Canceled', icon: 'fa-solid fa-xmark' },
+                                        { value: 'finished', label: 'Finished', icon: 'fa-solid fa-check' }
+                                    ]">
+                                        <div @click="open = false; updateProjectStatus('{{ project.id }}', option.value, $el.closest('td'))"
+                                             class="flex items-center gap-2 px-3 py-1.5 rounded hover:bg-gray-100 cursor-pointer">
+                                            <i :class="option.icon"></i>
+                                            <span x-text="option.label"></span>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                        </td>
+                        
+                        
+
+                        <td class="px-4 py-4 text-center">
+                            <div class="w-full">
+                                <div class="flex justify-between text-xs text-gray-600 mb-1">
+                                    <span>{{ project.countdown.remaining }} days left</span>
+                                    <span>{{ project.countdown.percentage }}%</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2.5">
+                                    <div class="h-2.5 rounded-full
+                                        {% if project.countdown.percentage < 50 %}bg-blue-600
+                                        {% elif project.countdown.percentage < 75 %}bg-yellow-500
+                                        {% elif project.countdown.percentage < 90 %}bg-orange-500
+                                        {% else %}bg-red-600{% endif %}"
+                                        style="width: {{ project.countdown.percentage }}%">
+                                    </div>
+                                </div>
+                                <span class="text-xs text-gray-400">{{ project.countdown.total }} total days</span>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-8">
+            <i class="fas fa-folder-open fa-3x text-gray-400 mb-4"></i>
+            <h3 class="text-lg font-medium text-gray-700">No projects assigned</h3>
+            <p class="text-sm text-gray-500">You haven't been assigned to any projects yet.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    // Status update handler
+    $('.status-select').change(function() {
+        var projectId = $(this).data('project-id');
+        var newStatus = $(this).val();
+        var statusElement = $(this).closest('td');
+        
+        // Save the current status in case we need to revert
+        var originalStatus = $(this).find('option:selected').attr('selected', false).val();
+        
+        // CSRF token for Django
+        var csrfToken = '{{ csrf_token }}';
+        
+        $.ajax({
+            url: '{% url "update_project_status" %}',
+            type: 'POST',
+            data: {
+                'project_work_id': projectId,
+                'status': newStatus,
+                'csrfmiddlewaretoken': csrfToken
+            },
+            success: function(response) {
+                if (response.success) {
+                    // Show success toast
+                    showToast(response.message);
+                    
+                    // Update the visual status indicator
+                    updateStatusDisplay(statusElement, newStatus);
+                } else {
+                    alert(response.message);
+                    // Revert the select to original value
+                    $(this).val(originalStatus);
+                }
+            },
+            error: function(xhr) {
+                // Parse the error response
+                var errorMsg = 'Failed to update status';
+                try {
+                    var response = JSON.parse(xhr.responseText);
+                    errorMsg = response.message || errorMsg;
+                } catch(e) {}
+                
+                alert(errorMsg);
+                // Revert the select to original value
+                $(this).val(originalStatus);
+            }
+        });
+    });
+    
+    // Function to show toast notification
+    function showToast(message) {
+        // Set message
+        $('#toastMessage').text(message);
+        
+        // Show toast
+        var toast = $('#statusUpdateToast');
+        toast.removeClass('scale-0').addClass('scale-100');
+        
+        // Hide toast after 3 seconds
+        setTimeout(function() {
+            toast.removeClass('scale-100').addClass('scale-0');
+        }, 3000);
+    }
+    
+    // Function to update the status display
+    function updateStatusDisplay(container, status) {
+        // Get the badge element
+        var badge = container.find('.status-badge');
+        var badgeContainer = badge.parent();
+        
+        // Update text based on status
+        var displayText = '';
+        var iconClass = '';
+        
+        switch(status) {
+            case 'not_started':
+                displayText = 'Not Started';
+                iconClass = 'fa-regular fa-circle-dot';
+                badgeContainer.attr('class', 'px-2 inline-flex items-center gap-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800');
+                break;
+            case 'started':
+                displayText = 'Started';
+                iconClass = 'fa-solid fa-play';
+                badgeContainer.attr('class', 'px-2 inline-flex items-center gap-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800');
+                break;
+            case 'in_progress':
+                displayText = 'In Progress';
+                iconClass = 'fa-solid fa-spinner animate-spin';
+                badgeContainer.attr('class', 'px-2 inline-flex items-center gap-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800');
+                break;
+            case 'on_hold':
+                displayText = 'On Hold';
+                iconClass = 'fa-solid fa-pause';
+                badgeContainer.attr('class', 'px-2 inline-flex items-center gap-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800');
+                break;
+            case 'canceled':
+                displayText = 'Canceled';
+                iconClass = 'fa-solid fa-xmark';
+                badgeContainer.attr('class', 'px-2 inline-flex items-center gap-1 text-xs font-semibold rounded-full bg-red-100 text-red-800');
+                break;
+            case 'finished':
+                displayText = 'Finished';
+                iconClass = 'fa-solid fa-check';
+                badgeContainer.attr('class', 'px-2 inline-flex items-center gap-1 text-xs font-semibold rounded-full bg-green-100 text-green-800');
+                break;
+        }
+        
+        // Update badge text
+        badge.text(displayText);
+        
+        // Update icon
+        badgeContainer.find('i').attr('class', iconClass);
+    }
+});
+</script>
+
+<script>
+    $(document).ready(function () {
+        // Toast logic stays unchanged
+        function showToast(message) {
+            $('#toastMessage').text(message);
+            const toast = $('#statusUpdateToast');
+            toast.removeClass('scale-0').addClass('scale-100');
+            setTimeout(() => toast.removeClass('scale-100').addClass('scale-0'), 3000);
+        }
+    
+        // Reusable status update logic (used in popup now)
+        window.updateProjectStatus = function (projectId, newStatus, container) {
+            const csrfToken = '{{ csrf_token }}';
+    
+            $.ajax({
+                url: '{% url "update_project_status" %}',
+                type: 'POST',
+                data: {
+                    'project_work_id': projectId,
+                    'status': newStatus,
+                    'csrfmiddlewaretoken': csrfToken
+                },
+                success: function (response) {
+                    if (response.success) {
+                        showToast(response.message);
+                        updateStatusDisplay($(container), newStatus);
+                    } else {
+                        alert(response.message);
+                    }
+                },
+                error: function (xhr) {
+                    let errorMsg = 'Failed to update status';
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        errorMsg = response.message || errorMsg;
+                    } catch (e) { }
+                    alert(errorMsg);
+                }
+            });
+        }
+    
+        function updateStatusDisplay(container, status) {
+            const badge = container.find('.status-badge');
+            const badgeContainer = badge.parent();
+            let displayText = '', iconClass = '', classes = '';
+    
+            switch (status) {
+                case 'not_started':
+                    displayText = 'Not Started';
+                    iconClass = 'fa-regular fa-circle-dot';
+                    classes = 'bg-gray-100 text-gray-800';
+                    break;
+                case 'started':
+                    displayText = 'Started';
+                    iconClass = 'fa-solid fa-play';
+                    classes = 'bg-blue-100 text-blue-800';
+                    break;
+                case 'in_progress':
+                    displayText = 'In Progress';
+                    iconClass = 'fa-solid fa-spinner animate-spin';
+                    classes = 'bg-yellow-100 text-yellow-800';
+                    break;
+                case 'on_hold':
+                    displayText = 'On Hold';
+                    iconClass = 'fa-solid fa-pause';
+                    classes = 'bg-orange-100 text-orange-800';
+                    break;
+                case 'canceled':
+                    displayText = 'Canceled';
+                    iconClass = 'fa-solid fa-xmark';
+                    classes = 'bg-red-100 text-red-800';
+                    break;
+                case 'finished':
+                    displayText = 'Finished';
+                    iconClass = 'fa-solid fa-check';
+                    classes = 'bg-green-100 text-green-800';
+                    break;
+            }
+    
+            badge.text(displayText);
+            badgeContainer.removeClass().addClass('px-2 py-1 rounded-full text-xs font-semibold flex items-center gap-1 ' + classes);
+            badgeContainer.find('i').attr('class', iconClass);
+        }
+    });
+    </script>
+    
+{% endblock %}
