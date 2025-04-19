@@ -599,6 +599,25 @@
                     <a href="{% url 'service_log' %}"><i class="fas fa-book"></i> Service Log</a>
                     <a href="{% url 'service_entry' %}"><i class="fas fa-plus-circle"></i> Service Entry</a>
                 </div>
+                <!-- Project Menu -->
+                <!-- Project Menu -->
+                <div onclick="toggleProjectMenu()">
+                    <div>
+                        <h5 style="margin-left: 5%; color: white;" class="mainmenu">
+                            <div style="display: flex;" class="gap-2 align-items-center">
+                                <span style="margin-top: 5%; display: flex; align-items: center; gap: 10px;">
+                                    <i class="fas fa-project-diagram"></i>
+                                    <span>Projects</span>
+                                </span>
+                            </div>
+                        </h5>
+                    </div>
+                </div>
+
+                <div id="project-menu" class="submenu" style="margin-left: 5%; display: none;">
+                    <a href="{% url 'project_work' %}" style="display: flex;gap: 10px;"><i class="fa-solid fa-people-roof"></i> Project Management</a>
+                    <!-- <a href="{% url 'task_list' %}" style="display: flex;gap: 10px;align-items: center;"><i class="fa-solid fa-comment"></i>Task</a> -->
+                </div>
         
                 <!-- Master Menu -->
                 <div onclick="toggleMenu()">
@@ -683,7 +702,7 @@
                     <a href="{% url 'employee_management' %}"><i class="fas fa-users"></i> Employee Management</a>
                     <a href="{% url 'attendance' %}"><i class="fas fa-user-check"></i> Attendance</a>
                     <a href="{% url 'attendance_user' %}"><i class="fas fa-user-clock"></i> Punch in / Punch out</a>
-                    <a href="{% url 'project_work' %}" style="display: flex;gap: 10px;"><i class="fa-solid fa-people-roof"></i> Project Management</a>
+                    <!-- <a href="{% url 'project_work' %}" style="display: flex;gap: 10px;"><i class="fa-solid fa-people-roof"></i> Project Management</a> -->
                 </div>
         
                 <!-- Services Menu -->
@@ -696,10 +715,30 @@
                         </h5>
                     </div>
                 </div>
+                
         
                 <div id="services-menu" class="submenu" style="margin-left: 5%; display: none;">
                     <a href="{% url 'service_log' %}"><i class="fas fa-book"></i> Service Log</a>
                     <a href="{% url 'user_service_entry' %}"><i class="fas fa-plus-circle"></i> Service Entry</a>
+                </div>
+                <!-- Project Menu -->
+                <!-- Project Menu -->
+                <div onclick="toggleProjectMenu()">
+                    <div>
+                        <h5 style="margin-left: 5%; color: white;" class="mainmenu">
+                            <div style="display: flex;" class="gap-2 align-items-center">
+                                <span style="margin-top: 5%; display: flex; align-items: center; gap: 10px;">
+                                    <i class="fas fa-project-diagram"></i>
+                                    <span>Projects</span>
+                                </span>
+                            </div>
+                        </h5>
+                    </div>
+                </div>
+
+                <div id="project-menu" class="submenu" style="margin-left: 5%; display: none;">
+                    <a href="{% url 'project_work' %}" style="display: flex;gap: 10px;"><i class="fa-solid fa-people-roof"></i> Project Management</a>
+                    <!-- <a href="{% url 'task_list' %}" style="display: flex;gap: 10px;align-items: center;"><i class="fa-solid fa-comment"></i>Task</a> -->
                 </div>
         
             {% elif request.session.user_level == '3level' or request.session.user_level == '5level' %}
@@ -747,6 +786,24 @@
                 <div id="services-menu" class="submenu" style="margin-left: 5%; display: none;">
                     <a href="{% url 'service_log' %}"><i class="fas fa-book"></i> Service Log</a>
                     <a href="{% url 'service_entry' %}"><i class="fas fa-plus-circle"></i> Service Entry</a>
+                </div>
+                <!-- Project Menu -->
+                <!-- Project Menu -->
+                <div onclick="toggleProjectMenu()">
+                    <div>
+                        <h5 style="margin-left: 5%; color: white;" class="mainmenu">
+                            <div style="display: flex;" class="gap-2 align-items-center">
+                                <span style="margin-top: 5%; display: flex; align-items: center; gap: 10px;">
+                                    <i class="fas fa-project-diagram"></i>
+                                    <span>Projects</span>
+                                </span>
+                            </div>
+                        </h5>
+                    </div>
+                </div>
+
+                <div id="project-menu" class="submenu" style="margin-left: 5%; display: none;">
+                    <a href="{% url 'user_projects' %}" style="display: flex;gap: 10px;align-items: center;"><i class="fa-solid fa-diagram-project"></i>Project Works</a>
                 </div>
         
             {% endif %}
@@ -881,6 +938,16 @@
             popup.classList.remove('active');
         }
     });
+</script>
+<script>
+    function toggleProjectMenu() {
+        const menu = document.getElementById("project-menu");
+        if (menu.style.display === "none" || menu.style.display === "") {
+            menu.style.display = "block";
+        } else {
+            menu.style.display = "none";
+        }
+    }
 </script>
 </body>
 

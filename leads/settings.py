@@ -47,7 +47,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'app1'
+    'ckeditor',
+    'app1',
+    
 ]
 
 MIDDLEWARE = [
@@ -90,7 +92,19 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'leads.wsgi.application'
 
-
+# CKEditor configuration
+CKEDITOR_CONFIGS = {
+    'default': {
+        'toolbar': 'Custom',
+        'toolbar_Custom': [
+            ['Bold', 'Italic', 'Underline', 'Strike'],
+            ['NumberedList', 'BulletedList'],
+            ['Styles', 'Format'],
+        ],
+        'height': 300,
+        'width': '100%',
+    },
+}
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 

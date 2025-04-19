@@ -32,8 +32,9 @@
             </div>
 
             <div>
-                <label class="block font-medium text-gray-700">Description:</label>
-                <textarea name="description" rows="4" required class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-lg"></textarea>
+                <label class="block font-medium text-gray-700">Notes:</label>
+                {{ form.media }}  <!-- Add CKEditor's required media -->
+                <textarea name="notes" id="id_notes" required class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-lg"></textarea>
             </div>
 
             <div>
@@ -106,4 +107,17 @@
         </form>
     </div>
 </div>
+
+<!-- CKEditor initialization script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ckeditor/4.17.2/ckeditor.js"></script>
+<script>
+    CKEDITOR.replace('id_notes', {
+        toolbar: [
+            { name: 'basicstyles', items: ['Bold', 'Italic', 'Underline', 'Strike'] },
+            { name: 'paragraph', items: ['NumberedList', 'BulletedList'] },
+            { name: 'styles', items: ['Styles', 'Format'] }
+        ],
+        height: 200
+    });
+</script>
 {% endblock %}

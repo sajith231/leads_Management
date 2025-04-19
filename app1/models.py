@@ -738,6 +738,8 @@ class LateRequest(models.Model):
 
 
 #Project Management
+#Project Management
+from ckeditor.fields import RichTextField  # Import CKEditor's RichTextField
 
 class Project(models.Model):
     PROJECT_TYPES = [
@@ -757,7 +759,7 @@ class Project(models.Model):
     project_name = models.CharField(max_length=200)
     languages = models.CharField(max_length=200)
     technologies = models.CharField(max_length=200)
-    description = models.TextField()
+    notes = RichTextField()  # Changed from description to notes and using RichTextField
     database_name = models.CharField(max_length=100)
     domain_name = models.CharField(max_length=100)
     domain_platform = models.CharField(max_length=100)
@@ -815,6 +817,31 @@ class ProjectWork(models.Model):
 
     class Meta:
         ordering = ['deadline']
+
+
+
+from django.db import models
+from django.utils import timezone
+
+class Task(models.Model):
+    STATUS_CHOICES = [
+        ('Not Started', 'Not Started'),
+        ('Started', 'Started'),
+        ('On Hold', 'On Hold'),
+        ('In Progress', 'In Progress'),
+        ('Cancel', 'Cancel'),
+    ]
+
+    title = models.CharField(max_length=255)
+    project = models.ForeignKey('Project', on_delete=models.CASCADE)
+    start_date = models.DateField(default=timezone.now)
+    deadline_date = models.DateField()
+    assigned_to = models.ForeignKey('Employee', on_delete=models.SET_NULL, null=True)
+    assigned_by = models.ForeignKey(Employee, on_delete=models.SET_NULL, null=True, blank=True, related_name='created_tasks')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Not Started')
+
+    def _str_(self):
+        return self.title
 
 
 

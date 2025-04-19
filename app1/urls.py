@@ -266,6 +266,7 @@ urlpatterns = [
     
     
     #Project Management
+    #Project Management
     path('project-management/', views.project_management, name='project_management'),
     path('add-project/', views.add_project, name='add_project'),
     path('project_work/', views.project_work, name='project_work'),
@@ -275,6 +276,11 @@ urlpatterns = [
     path('update-project-status/', views.update_project_status, name='update_project_status'),
     path('project/work/edit/<int:work_id>/', views.edit_project_work, name='edit_project_work'),
     path('project-work/delete/<int:work_id>/', views.delete_project_work, name='delete_project_work'),
+
+    #Task
+    path('tasks/', views.task_list, name='task_list'),
+    path('tasks/add/', views.add_task, name='add_task'),
+    path('tasks/update-status/<int:task_id>/', views.update_task_status, name='update_task_status'),
     
 
 

@@ -4170,6 +4170,95 @@ def get_active_employees(request):
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
 
+def project_management(request):
+    projects = Project.objects.all()
+    employees = Employee.objects.select_related('user').all()
+    return render(request, 'project_management.html', {
+        'projects': projects,
+        'employees': employees
+    })
+
+from django.shortcuts import get_object_or_404
+
+from .models import Employee  # make sure Employee is imported
+from .models import Employee  # make sure Employee is imported
+
+def add_project(request):
+    # Get all employees
+    employees = Employee.objects.select_related('user').all()
+    
+    if request.method == "POST":
+        employee_id = request.POST.get('assigned_person')
+        employee = get_object_or_404(Employee, id=employee_id) if employee_id else None
+        
+        Project.objects.create(
+            project_name=request.POST['project_name'],
+            languages=request.POST['languages'],
+            technologies=request.POST['technologies'],
+            notes=request.POST['notes'],  # Changed from description to notes
+            database_name=request.POST['database_name'],
+            domain_name=request.POST['domain_name'],
+            domain_platform=request.POST['domain_platform'],
+            github_link=request.POST['github_link'],
+            assigned_person=employee,
+            client=request.POST['client'],
+            project_status=request.POST['project_status'],
+            project_type=request.POST['project_type'],
+            project_duration=request.POST['project_duration'],
+        )
+        return redirect('project_management')
+    
+    return render(request, "add_project.html", {"employees": employees})
+
+from django.shortcuts import render, redirect, get_object_or_404
+from .models import Project, Employee
+from django.contrib import messages
+
+def edit_project(request, project_id):
+    project = get_object_or_404(Project, id=project_id)
+    employees = Employee.objects.select_related('user').all()
+
+    if request.method == "POST":
+        user_id = request.POST.get('assigned_person')
+        employee = get_object_or_404(Employee, user_id=user_id) if user_id else None
+
+        project.project_name = request.POST['project_name']
+        project.languages = request.POST['languages']
+        project.technologies = request.POST['technologies']
+        project.notes = request.POST['notes']  # Changed from description to notes
+        project.database_name = request.POST['database_name']
+        project.domain_name = request.POST['domain_name']
+        project.domain_platform = request.POST['domain_platform']
+        project.github_link = request.POST['github_link']
+        project.assigned_person = employee
+        project.client = request.POST['client']
+        project.project_status = request.POST['project_status']
+        project.project_type = request.POST['project_type']
+        project.project_duration = request.POST['project_duration']
+        project.save()
+        messages.success(request, "Project updated successfully!")
+        return redirect('project_management')
+
+    return render(request, 'project_edit.html', {'project': project, 'employees': employees})
+
+
+def delete_project(request, project_id):
+    project = get_object_or_404(Project, id=project_id)
+    project.delete()
+    messages.success(request, "Project deleted successfully!")
+    return redirect('project_management')
+
+
+
+@login_required
+def get_active_employees(request):
+    """API endpoint to get active employees"""
+    try:
+        active_employees = Employee.objects.filter(status='active').values('id', 'name')
+        return JsonResponse(list(active_employees), safe=False)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -4364,7 +4453,6 @@ def edit_project_work(request, work_id):
         return redirect('project_work')
     
 
-
 @login_required
 def delete_project_work(request, work_id):
     """Delete a project work assignment"""
@@ -4382,3 +4470,146 @@ def delete_project_work(request, work_id):
         messages.error(request, f"Error deleting project work: {str(e)}")
         
     return redirect('project_work')
+
+
+
+from .models import Task, Project, Employee
+from django.utils import timezone
+
+@login_required
+def add_task(request):
+    projects = Project.objects.all()
+    employees = Employee.objects.filter(status='active')
+
+    if request.method == 'POST':
+        try:
+            title = request.POST['title']
+            project_id = request.POST['project']
+            start_date = request.POST.get('start_date', timezone.now().date())
+            deadline_date = request.POST['deadline_date']
+            assigned_to_id = request.POST['assigned_to']
+
+            # Get the current logged-in user
+            current_user = request.user
+            
+            # Find the employee record for the current user
+            try:
+                assigned_by_employee = Employee.objects.get(user=current_user)
+            except Employee.DoesNotExist:
+                # If no employee record exists (like for admin), create a dummy one or handle differently
+                assigned_by_employee = None
+                messages.warning(request, 'No employee record found for your account. Task will be marked as assigned by admin.')
+
+            project = get_object_or_404(Project, id=project_id)
+            assigned_to = get_object_or_404(Employee, id=assigned_to_id)
+
+            Task.objects.create(
+                title=title,
+                project=project,
+                start_date=start_date,
+                deadline_date=deadline_date,
+                assigned_to=assigned_to,
+                assigned_by=assigned_by_employee if assigned_by_employee else None,
+                status='Not Started'
+            )
+            messages.success(request, 'Task created successfully!')
+            return redirect('task_list')
+            
+        except Exception as e:
+            messages.error(request, f'Error creating task: {str(e)}')
+            return render(request, 'add_task.html', {
+                'projects': projects,
+                'employees': employees,
+                'form_data': request.POST
+            })
+
+    return render(request, 'add_task.html', {
+        'projects': projects,
+        'employees': employees
+    })
+
+from datetime import date, datetime
+from datetime import date
+
+def task_list(request):
+    # Get today's date
+    today = date.today()
+    
+    # Check if user is admin from session
+    user_level = request.session.get('user_level')
+    is_admin = user_level in ['admin_level', '5level'] or request.user.is_superuser
+    # Get tasks based on user role
+
+    if is_admin:
+        tasks = Task.objects.all()
+    else:
+        # For non-admin users, get only tasks assigned to them
+        try:
+            custom_user_id = request.session.get('custom_user_id')
+            employee = Employee.objects.get(user_id=custom_user_id)
+            tasks = Task.objects.filter(assigned_to=employee)
+        except Employee.DoesNotExist:
+            tasks = Task.objects.none()
+            messages.warning(request, 'No employee record found for your account.')
+
+    task_data = []
+
+    for task in tasks:
+        start = task.start_date
+        deadline = task.deadline_date
+
+        total_days = (deadline - start).days
+        days_remaining = (deadline - today).days
+        elapsed_days = (today - start).days
+
+        if total_days > 0:
+            percent_complete = min(max(int((elapsed_days / total_days) * 100), 0), 100)
+        else:
+            percent_complete = 100
+
+        task_data.append({
+            'task': task,
+            'total_days': total_days,
+            'days_remaining': days_remaining,
+            'percent_complete': percent_complete,
+        })
+
+    return render(request, 'task.html', {
+        'task_data': task_data,
+        'today': today,
+        'is_admin': is_admin  # Pass this to template for conditional rendering
+    })
+
+
+from django.views.decorators.http import require_POST
+
+@require_POST
+@login_required
+def update_task_status(request, task_id):
+    task = get_object_or_404(Task, id=task_id)
+    
+    # Check if user is admin from session
+    user_level = request.session.get('user_level')
+    is_admin = user_level in ['admin_level', '5level'] or request.user.is_superuser
+    is_assigned_employee = False
+    
+    try:
+        custom_user_id = request.session.get('custom_user_id')
+        employee = Employee.objects.get(user_id=custom_user_id)
+        is_assigned_employee = (task.assigned_to == employee)
+    except Employee.DoesNotExist:
+        pass
+    
+    if not (is_admin or is_assigned_employee):
+        messages.error(request, "You don't have permission to update this task.")
+        return redirect('task_list')
+    
+    new_status = request.POST.get('status')
+    if new_status in dict(Task.STATUS_CHOICES):
+        task.status = new_status
+        task.save()
+        messages.success(request, "Task status updated successfully.")
+    else:
+        messages.error(request, "Invalid task status.")
+    
+    return redirect('task_list')

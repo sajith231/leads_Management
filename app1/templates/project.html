@@ -13,6 +13,9 @@
     td,th{
         border: .5px solid rgba(0, 0, 0, 0.078);
     }
+    .project-row {
+        transition: all 0.3s ease;
+    }
 </style>
 
 <div class="min-h-screen bg-gradient-to-br w-full from-purple-200 via-blue-100 to-pink-200 md:p-6">
@@ -28,225 +31,373 @@
                     Assign Work
                 </button>
             </div>
+            <button id="filterSidebarOpen" onclick="toggleSidebarOpen()" class="text-2xl text-blue-600"><i class="fa-solid fa-filter"></i></button>
         </div>
         <h2 class="text-2xl font-semibold text-gray-800 mb-6 hidden md:flex">Project Work List</h2>
 
-        <!-- Project Work Table -->
-<div class="bg-white rounded-lg shadow-md mb-6 overflow-x-auto">
-    <table class="min-w-full table-auto">
-        <thead class="bg-gray-50">
-            <tr class="text-center bg-blue-200">
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Project</th>
-                <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Team Members</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Start Date</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Deadline</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Countdown</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Edit</th>                    
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Delete</th>                    
-            </tr>
-        </thead>
-        <tbody class="bg-white divide-y divide-gray-200">
-            {% for work in project_works %}
-            <tr>
-                <td class="px-6 py-2 whitespace-nowrap">{{ work.project.project_name }}</td>
-                <td class="px-2 py-2 border-none flex justify-center">
-                    <div x-data="{ showMembers: false }" class="relative">
-                        <!-- Trigger Icon -->
-                        <i 
-                            class="fa-solid fa-user text-xl rounded-full p-2 bg-gray-200 text-blue-600 cursor-pointer"
-                            @click="showMembers = !showMembers"
-                            title="View Members"
-                        ></i>
-                
-                        <!-- Pop-up with members -->
-                        <div 
-                            x-show="showMembers" 
-                            @click.away="showMembers = false"
-                            class="absolute z-10 mt-2 p-4 bg-white border rounded-lg shadow-lg w-60"
-                        >
-                            <h4 class="text-sm font-semibold text-gray-800 mb-2">Team Members</h4>
-                            <div class="flex flex-col gap-2">
-                                {% for member in work.members.all %}
-                                <div class="flex items-center gap-2">
-                                    <i class="fa-solid fa-user text-blue-600 bg-gray-200 rounded-full p-1 text-sm"></i>
-                                    <span class="text-sm text-gray-700">{{ member.name }}</span>
-                                </div>
-                                {% endfor %}
-                            </div>
+        <!-- Search and Filter Section -->
+        <div class="mb-6">
+            <div class="flex flex-col md:flex-row gap-4 mb-4">
+                <!-- Search Bar -->
+                <div class="flex-grow">
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fas fa-search text-gray-400"></i>
                         </div>
-                    </div>
-                </td>
-                
-                <td class="px-6 py-2 whitespace-nowrap">{{ work.start_date|date:"Y-m-d" }}</td>
-                <td class="px-6 py-2 whitespace-nowrap">{{ work.deadline|date:"Y-m-d" }}</td>
-                <td class="px-6 py-2 whitespace-nowrap">{{ work.client }}</td>
-                <td class="px-6 py-2 whitespace-nowrap">
-                    <span class="px-2 inline-flex items-center gap-1 text-xs leading-5 font-semibold rounded-full
-                        {% if work.status == 'not_started' %}bg-gray-100 text-gray-800
-                        {% elif work.status == 'started' %}bg-blue-100 text-blue-800
-                        {% elif work.status == 'in_progress' %}bg-yellow-100 text-yellow-800
-                        {% elif work.status == 'on_hold' %}bg-orange-100 text-orange-800
-                        {% elif work.status == 'canceled' %}bg-red-100 text-red-800
-                        {% else %}bg-green-100 text-green-800{% endif %}">
-                        
-                        <!-- Icon based on status -->
-                        {% if work.status == 'not_started' %}
-                            <i class="fa-regular fa-circle-dot"></i>
-                        {% elif work.status == 'started' %}
-                            <i class="fa-solid fa-play"></i>
-                        {% elif work.status == 'in_progress' %}
-                            <i class="fa-solid fa-spinner animate-spin"></i>
-                        {% elif work.status == 'on_hold' %}
-                            <i class="fa-solid fa-pause"></i>
-                        {% elif work.status == 'canceled' %}
-                            <i class="fa-solid fa-xmark"></i>
-                        {% else %}
-                            <i class="fa-solid fa-check"></i>
-                        {% endif %}
-                
-                        {{ work.get_status_display }}
-                    </span>
-                </td>
-                
-                <td class="px-6 py-2 whitespace-nowrap">
-                    <div class="w-full">
-                        <div class="flex justify-between mb-1">
-                            <span class="text-xs font-medium text-gray-700">{{ work.countdown.remaining }} days left</span>
-                            <span class="text-xs font-medium text-gray-700">{{ work.countdown.percentage }}%</span>
-                        </div>
-                        <div class="w-full bg-gray-200 rounded-full h-2.5">
-                            <div class="h-2.5 rounded-full 
-                                {% if work.countdown.percentage < 50 %}bg-blue-600
-                                {% elif work.countdown.percentage < 75 %}bg-yellow-500
-                                {% elif work.countdown.percentage < 90 %}bg-orange-500
-                                {% else %}bg-red-600{% endif %}" 
-                                style="width: {{ work.countdown.percentage }}%"></div>
-                        </div>
-                        <span class="text-xs text-gray-500 mt-1">{{ work.countdown.total }} total days</span>
-                    </div>
-                </td>
-                <td class="px-6 py-2 whitespace-nowrap">
-                    <a href="{% url 'edit_project_work' work.id %}" class="text-blue-600 hover:text-blue-800">
-                        <i class="fa-solid fa-pen-to-square" title="Edit"></i>
-                    </a>
-                </td>
-                <td class="px-6 py-2 whitespace-nowrap">
-                    <button onclick="confirmDelete('{{ work.id }}', '{{ work.project.project_name }}')" class="text-red-600 hover:text-red-800">
-                        <i class="fa-solid fa-trash" title="Delete"></i>
-                    </button>
-                </td>
-
-                <!-- Delete Confirmation Modal -->
-                <div id="deleteConfirmModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-                    <div class="bg-white rounded-lg shadow-lg w-full max-w-md p-6 relative">
-                        <h2 class="text-xl font-semibold text-gray-800 mb-4">Confirm Deletion</h2>
-                        <p id="deleteConfirmMessage" class="text-gray-600 mb-6">Are you sure you want to delete this project work?</p>
-                        <div class="flex justify-end space-x-3">
-                            <button onclick="closeDeleteModal()" class="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 transition duration-300">
-                                Cancel
-                            </button>
-                            <form id="deleteForm" method="POST" action="">
-                                {% csrf_token %}
-                                <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition duration-300">
-                                    Delete
-                                </button>
-                            </form>
-                        </div>
+                        <input type="text" id="projectWorkSearch" 
+                               placeholder="Search projects by name..." 
+                               class="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
                 </div>
 
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="7" class="px-6 py-4 text-center text-gray-500">No project works found</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
+                <!-- Filter Buttons -->
+                <div class="flex flex-wrap gap-2">
+                    <button onclick="filterProjectWorks('all')" class="filter-btn active px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition" data-filter="all">
+                        All
+                    </button>
+                    <button onclick="filterProjectWorks('not_started')" class="filter-btn px-4 py-2 bg-gray-100 text-gray-800 rounded-md hover:bg-gray-200 transition" data-filter="not_started">
+                        Not Started
+                    </button>
+                    <button onclick="filterProjectWorks('started')" class="filter-btn px-4 py-2 bg-blue-100 text-blue-800 rounded-md hover:bg-blue-200 transition" data-filter="started">
+                        Started
+                    </button>
+                    <button onclick="filterProjectWorks('in_progress')" class="filter-btn px-4 py-2 bg-yellow-100 text-yellow-800 rounded-md hover:bg-yellow-200 transition" data-filter="in_progress">
+                        In Progress
+                    </button>
+                    <button onclick="filterProjectWorks('on_hold')" class="filter-btn px-4 py-2 bg-orange-100 text-orange-800 rounded-md hover:bg-orange-200 transition" data-filter="on_hold">
+                        On Hold
+                    </button>
+                    <button onclick="filterProjectWorks('finished')" class="filter-btn px-4 py-2 bg-green-100 text-green-800 rounded-md hover:bg-green-200 transition" data-filter="finished">
+                        Finished
+                    </button>
+                    <button onclick="filterProjectWorks('canceled')" class="filter-btn px-4 py-2 bg-red-100 text-red-800 rounded-md hover:bg-red-200 transition" data-filter="canceled">
+                        Canceled
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Project Work Table -->
+        <div class="bg-white rounded-lg shadow-md mb-6 overflow-x-auto">
+            <table class="min-w-full table-auto">
+                <thead class="bg-gray-50">
+                    <tr class="text-center bg-blue-200">
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Project</th>
+                        <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Team Members</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Start Date</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Deadline</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Countdown</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Edit</th>                    
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Delete</th>                    
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200" id="projectWorksTable">
+                    {% for work in project_works %}
+                    <tr class="project-row" 
+                        data-project-name="{{ work.project.project_name|lower }}"
+                        data-client="{{ work.client|lower }}"
+                        data-status="{{ work.status }}"
+                        data-start-date="{{ work.start_date|date:'Y-m-d' }}"
+                        data-deadline="{{ work.deadline|date:'Y-m-d' }}"
+                        data-members="{% for member in work.members.all %}{{ member.id }},{% endfor %}">
+                        <td class="px-6 py-2 whitespace-nowrap">{{ work.project.project_name }}</td>
+                        <td class="px-2 py-2 border-none flex justify-center">
+                            <div x-data="{ showMembers: false }" class="relative">
+                                <!-- Trigger Icon -->
+                                <i 
+                                    class="fa-solid fa-user text-xl rounded-full p-2 bg-gray-200 text-blue-600 cursor-pointer"
+                                    @click="showMembers = !showMembers"
+                                    title="View Members"
+                                ></i>
+                        
+                                <!-- Pop-up with members -->
+                                <div 
+                                    x-show="showMembers" 
+                                    @click.away="showMembers = false"
+                                    class="absolute z-10 mt-2 p-4 bg-white border rounded-lg shadow-lg w-60"
+                                >
+                                    <h4 class="text-sm font-semibold text-gray-800 mb-2">Team Members</h4>
+                                    <div class="flex flex-col gap-2">
+                                        {% for member in work.members.all %}
+                                        <div class="flex items-center gap-2">
+                                            <i class="fa-solid fa-user text-blue-600 bg-gray-200 rounded-full p-1 text-sm"></i>
+                                            <span class="text-sm text-gray-700">{{ member.name }}</span>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                        
+                        <td class="px-6 py-2 whitespace-nowrap">{{ work.start_date|date:"Y-m-d" }}</td>
+                        <td class="px-6 py-2 whitespace-nowrap">{{ work.deadline|date:"Y-m-d" }}</td>
+                        <td class="px-6 py-2 whitespace-nowrap">{{ work.client }}</td>
+                        <td class="px-6 py-2 whitespace-nowrap">
+                            <span class="px-2 inline-flex items-center gap-1 text-xs leading-5 font-semibold rounded-full
+                                {% if work.status == 'not_started' %}bg-gray-100 text-gray-800
+                                {% elif work.status == 'started' %}bg-blue-100 text-blue-800
+                                {% elif work.status == 'in_progress' %}bg-yellow-100 text-yellow-800
+                                {% elif work.status == 'on_hold' %}bg-orange-100 text-orange-800
+                                {% elif work.status == 'canceled' %}bg-red-100 text-red-800
+                                {% else %}bg-green-100 text-green-800{% endif %}">
+                                
+                                <!-- Icon based on status -->
+                                {% if work.status == 'not_started' %}
+                                    <i class="fa-regular fa-circle-dot"></i>
+                                {% elif work.status == 'started' %}
+                                    <i class="fa-solid fa-play"></i>
+                                {% elif work.status == 'in_progress' %}
+                                    <i class="fa-solid fa-spinner animate-spin"></i>
+                                {% elif work.status == 'on_hold' %}
+                                    <i class="fa-solid fa-pause"></i>
+                                {% elif work.status == 'canceled' %}
+                                    <i class="fa-solid fa-xmark"></i>
+                                {% else %}
+                                    <i class="fa-solid fa-check"></i>
+                                {% endif %}
+                        
+                                {{ work.get_status_display }}
+                            </span>
+                        </td>
+                        
+                        <td class="px-6 py-2 whitespace-nowrap">
+                            <div class="w-full">
+                                <div class="flex justify-between mb-1">
+                                    <span class="text-xs font-medium text-gray-700">{{ work.countdown.remaining }} days left</span>
+                                    <span class="text-xs font-medium text-gray-700">{{ work.countdown.percentage }}%</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2.5">
+                                    <div class="h-2.5 rounded-full 
+                                        {% if work.countdown.percentage < 50 %}bg-blue-600
+                                        {% elif work.countdown.percentage < 75 %}bg-yellow-500
+                                        {% elif work.countdown.percentage < 90 %}bg-orange-500
+                                        {% else %}bg-red-600{% endif %}" 
+                                        style="width: {{ work.countdown.percentage }}%"></div>
+                                </div>
+                                <span class="text-xs text-gray-500 mt-1">{{ work.countdown.total }} total days</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-2 whitespace-nowrap">
+                            <a href="{% url 'edit_project_work' work.id %}" class="text-blue-600 hover:text-blue-800">
+                                <i class="fa-solid fa-pen-to-square" title="Edit"></i>
+                            </a>
+                        </td>
+                        <td class="px-6 py-2 whitespace-nowrap">
+                            <button onclick="confirmDelete('{{ work.id }}', '{{ work.project.project_name }}')" class="text-red-600 hover:text-red-800">
+                                <i class="fa-solid fa-trash" title="Delete"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" class="px-6 py-4 text-center text-gray-500">No project works found</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            
+            <!-- No Results Message -->
+            <div id="noResults" class="hidden py-8 text-center text-gray-500">
+                No project works found matching your search criteria.
+            </div>
+        </div>
+
+        <!-- Delete Confirmation Modal -->
+        <div id="deleteConfirmModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+            <div class="bg-white rounded-lg shadow-lg w-full max-w-md p-6 relative">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">Confirm Deletion</h2>
+                <p id="deleteConfirmMessage" class="text-gray-600 mb-6">Are you sure you want to delete this project work?</p>
+                <div class="flex justify-end space-x-3">
+                    <button onclick="closeDeleteModal()" class="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 transition duration-300">
+                        Cancel
+                    </button>
+                    <form id="deleteForm" method="POST" action="">
+                        {% csrf_token %}
+                        <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition duration-300">
+                            Delete
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
 
         <!-- Add Project Work Modal -->
-<div id="projectWorkForm" class="fixed inset-0 bg-black bg-opacity-50 flex items-center w-full justify-center z-50 hidden">
-    <div class="bg-white rounded-lg shadow-lg w-full max-w-3xl mx-auto p-6 relative">
-        <button onclick="toggleForm()"
-            class="absolute top-2 right-2 text-gray-600 hover:text-gray-900 text-2xl">&times;</button>
-        <h2 class="text-2xl font-semibold text-gray-800 mb-6">Add Project Work</h2>
-        <form method="POST" class="space-y-4">
-            {% csrf_token %}
+        <div id="projectWorkForm" class="fixed inset-0 bg-black bg-opacity-50 flex items-center w-full justify-center z-50 hidden">
+            <div class="bg-white rounded-lg shadow-lg w-full max-w-3xl mx-auto p-6 relative">
+                <button onclick="toggleForm()"
+                    class="absolute top-2 right-2 text-gray-600 hover:text-gray-900 text-2xl">&times;</button>
+                <h2 class="text-2xl font-semibold text-gray-800 mb-6">Add Project Work</h2>
+                <form method="POST" class="space-y-4">
+                    {% csrf_token %}
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Project</label>
+                            <select name="project" required
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="">Select Project</option>
+                                {% for project in projects %}
+                                <option value="{{ project.id }}">{{ project.project_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Team Members</label>
+                            <select name="members" multiple="multiple" required
+                                class="select2 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                {% for employee in employees %}
+                                {% if employee.status == 'active' %}
+                                <option value="{{ employee.id }}">{{ employee.name }}</option>
+                                {% endif %}
+                                {% endfor %}
+                            </select>
+                            <p class="text-xs text-gray-500 mt-1">Hold Ctrl/Cmd to select multiple members</p>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+                            <input type="date" name="start_date" value="{% now 'Y-m-d' %}" required
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Deadline</label>
+                            <input type="date" name="deadline" required
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Client</label>
+                            <input type="text" name="client" required
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                            <select name="status" required
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="not_started">Not Started</option>
+                                <option value="started">Started</option>
+                                <option value="in_progress">In Progress</option>
+                                <option value="on_hold">On Hold</option>
+                                <option value="canceled">Canceled</option>
+                                <option value="finished">Finished</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end mt-6">
+                        <button type="submit"
+                            class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-300">
+                            Add Project Work
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Filter Sidebar -->
+        <div id="filterSidebar" class="fixed hidden inset-y-0 right-0 w-64 bg-white shadow-xl z-50 overflow-y-auto p-4 transition-transform">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold">Filter Project Works</h3>
+                <button onclick="toggleSidebarClose()" class="text-gray-600 hover:text-gray-800">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="space-y-4">
+                <!-- Project Name -->
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Project</label>
-                    <select name="project" required
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <option value="">Select Project</option>
-                        {% for project in projects %}
-                        <option value="{{ project.id }}">{{ project.project_name }}</option>
+                    <label class="block text-sm font-medium text-gray-700">Project Name</label>
+                    <select id="filterProjectName" class="w-full mt-1 p-2 border rounded-md">
+                        <option value="">All</option>
+                        {% for work in project_works %}
+                            <option value="{{ work.project.project_name|lower }}">{{ work.project.project_name }}</option>
                         {% endfor %}
                     </select>
                 </div>
 
+                <!-- Team Members -->
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Team Members</label>
-                    <select name="members" multiple="multiple" required
-                        class="select2 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <label class="block text-sm font-medium text-gray-700">Team Members</label>
+                    <select id="filterTeamMembers" class="w-full mt-1 p-2 border rounded-md">
+                        <option value="">All</option>
                         {% for employee in employees %}
-                        {% if employee.status == 'active' %}
-                        <option value="{{ employee.id }}">{{ employee.name }}</option>
-                        {% endif %}
+                            {% if employee.status == 'active' %}
+                                <option value="{{ employee.id }}">{{ employee.name }}</option>
+                            {% endif %}
                         {% endfor %}
                     </select>
-                    <p class="text-xs text-gray-500 mt-1">Hold Ctrl/Cmd to select multiple members</p>
                 </div>
 
+                <!-- Date Range -->
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
-                    <input type="date" name="start_date" value="{% now 'Y-m-d' %}" required
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <label class="block text-sm font-medium text-gray-700">Start Date From</label>
+                    <input type="date" id="filterStartDateFrom" class="w-full mt-1 p-2 border rounded-md">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Start Date To</label>
+                    <input type="date" id="filterStartDateTo" class="w-full mt-1 p-2 border rounded-md">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Deadline From</label>
+                    <input type="date" id="filterDeadlineFrom" class="w-full mt-1 p-2 border rounded-md">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Deadline To</label>
+                    <input type="date" id="filterDeadlineTo" class="w-full mt-1 p-2 border rounded-md">
                 </div>
 
+                <!-- Client -->
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Deadline</label>
-                    <input type="date" name="deadline" required
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <label class="block text-sm font-medium text-gray-700">Client</label>
+                    <select id="filterClient" class="w-full mt-1 p-2 border rounded-md">
+                        <option value="">All</option>
+                        {% for work in project_works %}
+                            <option value="{{ work.client|lower }}">{{ work.client }}</option>
+                        {% endfor %}
+                    </select>
                 </div>
 
+                <!-- Status -->
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Client</label>
-                    <input type="text" name="client" required
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                    <select name="status" required
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <label class="block text-sm font-medium text-gray-700">Status</label>
+                    <select id="filterStatus" class="w-full mt-1 p-2 border rounded-md">
+                        <option value="all">All</option>
                         <option value="not_started">Not Started</option>
                         <option value="started">Started</option>
                         <option value="in_progress">In Progress</option>
                         <option value="on_hold">On Hold</option>
-                        <option value="canceled">Canceled</option>
                         <option value="finished">Finished</option>
+                        <option value="canceled">Canceled</option>
                     </select>
                 </div>
-            </div>
 
-            <div class="flex justify-end mt-6">
-                <button type="submit"
-                    class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-300">
-                    Add Project Work
+                <button onclick="applyProjectWorkFilters()" class="w-full py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition duration-300">
+                    Apply Filters
+                </button>
+                <button onclick="resetProjectWorkFilters()" class="w-full py-2 px-4 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition duration-300">
+                    Reset Filters
                 </button>
             </div>
-        </form>
-    </div>
-</div>
-
+        </div>
     </div>
 </div>
 
 <script>
+    function toggleSidebarOpen() {
+        const sidebar = document.getElementById('filterSidebar');
+        sidebar.classList.toggle('hidden');
+    }
+    function toggleSidebarClose() {
+        const sidebar = document.getElementById('filterSidebar');
+        sidebar.classList.toggle('hidden');
+    }
+
+    // Modal functions
     function openModal(id) {
         document.getElementById('modal-' + id).classList.remove('hidden');
     }
@@ -264,26 +415,12 @@
     $(document).ready(function() {
         $('.select2').select2({
             placeholder: "Select team members",
-            allowClear: true
-        });
-    });
-
-    function toggleForm() {
-        const form = document.getElementById('projectWorkForm');
-        form.classList.toggle('hidden');
-    }
-
-    $(document).ready(function () {
-        $('.select2').select2({
-            placeholder: "Select team members",
             allowClear: true,
             dropdownParent: $('#projectWorkForm') // Ensures dropdown appears correctly in modal
         });
     });
-</script>
 
-<script>
-    // Add these functions to your existing script section
+    // Delete confirmation functions
     function confirmDelete(id, projectName) {
         const modal = document.getElementById('deleteConfirmModal');
         const message = document.getElementById('deleteConfirmMessage');
@@ -302,6 +439,125 @@
     function closeDeleteModal() {
         document.getElementById('deleteConfirmModal').classList.add('hidden');
     }
+
+    // Filter projects by status
+    function filterProjectWorks(status) {
+        // Update active button state
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.classList.remove('active', 'ring-2', 'ring-blue-500');
+            if (btn.getAttribute('data-filter') === status) {
+                btn.classList.add('active', 'ring-2', 'ring-blue-500');
+            }
+        });
+
+        const searchText = document.getElementById('projectWorkSearch').value.toLowerCase();
+        const rows = document.querySelectorAll('.project-row');
+        let visibleCount = 0;
+        
+        rows.forEach(row => {
+            const projectName = row.getAttribute('data-project-name');
+            const projectStatus = row.getAttribute('data-status');
+            
+            // Check if project matches both the search term and selected status
+            const matchesSearch = projectName.includes(searchText);
+            const matchesStatus = status === 'all' || projectStatus === status;
+            
+            if (matchesSearch && matchesStatus) {
+                row.classList.remove('hidden');
+                visibleCount++;
+            } else {
+                row.classList.add('hidden');
+            }
+        });
+        
+        // Show/hide no results message
+        const noResultsEl = document.getElementById('noResults');
+        if (visibleCount === 0) {
+            noResultsEl.classList.remove('hidden');
+        } else {
+            noResultsEl.classList.add('hidden');
+        }
+    }
+
+    // Enhanced filter function for project works
+    function applyProjectWorkFilters() {
+        const filters = {
+            projectName: document.getElementById('filterProjectName').value.toLowerCase(),
+            teamMember: document.getElementById('filterTeamMembers').value,
+            startDateFrom: document.getElementById('filterStartDateFrom').value,
+            startDateTo: document.getElementById('filterStartDateTo').value,
+            deadlineFrom: document.getElementById('filterDeadlineFrom').value,
+            deadlineTo: document.getElementById('filterDeadlineTo').value,
+            client: document.getElementById('filterClient').value.toLowerCase(),
+            status: document.getElementById('filterStatus').value
+        };
+
+        const rows = document.querySelectorAll('.project-row');
+        let visibleCount = 0;
+
+        rows.forEach(row => {
+            const rowData = {
+                projectName: row.dataset.projectName,
+                members: row.dataset.members,
+                startDate: row.dataset.startDate,
+                deadline: row.dataset.deadline,
+                client: row.dataset.client,
+                status: row.dataset.status
+            };
+
+            // Check each filter condition
+            const matches = {
+                projectName: filters.projectName ? rowData.projectName.includes(filters.projectName) : true,
+                teamMember: filters.teamMember ? rowData.members.includes(filters.teamMember) : true,
+                startDateFrom: filters.startDateFrom ? rowData.startDate >= filters.startDateFrom : true,
+                startDateTo: filters.startDateTo ? rowData.startDate <= filters.startDateTo : true,
+                deadlineFrom: filters.deadlineFrom ? rowData.deadline >= filters.deadlineFrom : true,
+                deadlineTo: filters.deadlineTo ? rowData.deadline <= filters.deadlineTo : true,
+                client: filters.client ? rowData.client.includes(filters.client) : true,
+                status: filters.status === 'all' ? true : rowData.status === filters.status
+            };
+
+            const shouldShow = Object.values(matches).every(v => v);
+            row.classList.toggle('hidden', !shouldShow);
+            if(shouldShow) visibleCount++;
+        });
+
+        document.getElementById('noResults').classList.toggle('hidden', visibleCount > 0);
+        toggleSidebarClose();
+    }
+
+    function resetProjectWorkFilters() {
+        // Reset all filter inputs
+        document.getElementById('filterProjectName').value = '';
+        document.getElementById('filterTeamMembers').value = '';
+        document.getElementById('filterStartDateFrom').value = '';
+        document.getElementById('filterStartDateTo').value = '';
+        document.getElementById('filterDeadlineFrom').value = '';
+        document.getElementById('filterDeadlineTo').value = '';
+        document.getElementById('filterClient').value = '';
+        document.getElementById('filterStatus').value = 'all';
+        
+        // Reset the main search
+        document.getElementById('projectWorkSearch').value = '';
+        
+        // Reset the status filter to 'All'
+        document.querySelector('.filter-btn[data-filter="all"]').click();
+        
+        toggleSidebarClose();
+    }
+
+    // Initialize search functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        // Set "All" button as active initially
+        document.querySelector('.filter-btn[data-filter="all"]').classList.add('active', 'ring-2', 'ring-blue-500');
+        
+        // Add search input event listener
+        const searchInput = document.getElementById('projectWorkSearch');
+        searchInput.addEventListener('input', function() {
+            const activeFilter = document.querySelector('.filter-btn.active').getAttribute('data-filter');
+            filterProjectWorks(activeFilter);
+        });
+    });
 </script>
 
 {% endblock %}

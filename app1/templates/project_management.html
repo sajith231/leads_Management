@@ -4,20 +4,79 @@
 <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
+<style>
+    /* Add styles for rich text content in modal */
+    .rich-text-content {
+        max-height: 60vh;
+        overflow-y: auto;
+    }
+    
+    .rich-text-content h1 {
+        font-size: 1.75rem;
+        font-weight: bold;
+        margin-bottom: 1rem;
+    }
+    
+    .rich-text-content h2 {
+        font-size: 1.5rem;
+        font-weight: bold;
+        margin-bottom: 0.75rem;
+    }
+    
+    .rich-text-content h3 {
+        font-size: 1.25rem;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+    }
+    
+    .rich-text-content ul {
+        list-style-type: disc;
+        margin-left: 1.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .rich-text-content ol {
+        list-style-type: decimal;
+        margin-left: 1.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .rich-text-content strong {
+        font-weight: bold;
+    }
+    
+    .rich-text-content em {
+        font-style: italic;
+    }
+    
+    .rich-text-content u {
+        text-decoration: underline;
+    }
+    
+    .rich-text-content s {
+        text-decoration: line-through;
+    }
+</style>
 
 <div class="min-h-screen bg-gradient-to-br w-full from-purple-200 via-blue-100 to-pink-200 md:p-6">
     <div class="w-full mx-auto md:bg-white bg-opacity-80 rounded-2xl shadow-xl md:p-8">
         <div class="grid pt-10 md:pt-2 grid-cols-1 place-items-center md:flex justify-between items-center mb-6">
-            <a href="{% url 'project_work' %}">
-                <button class="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-300">
-                    <i class="fa-solid fa-arrow-left"></i> Back
-                </button>
-            </a>
-            <a href="{% url 'add_project' %}" class="mt-2 md:mt-0">
-                <button class="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-300">
-                    + Add Project
-                </button>
-            </a>
+            <div class="flex gap-3 items-center">
+                <a href="{% url 'project_work' %}" class="mt-2">
+                    <button class="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-300">
+                        <i class="fa-solid fa-arrow-left"></i> Back
+                    </button>
+                </a>
+                <div class="flex items-center gap-3">
+                    <a href="{% url 'add_project' %}" class="mt-2 md:mt-0">
+                        <button class="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-300">
+                            + Add Project
+                        </button>
+                    </a>
+                </div>
+            </div>
+            <button id="filterSidebarOpen" onclick="toggleSidebarOpen()" class="text-2xl text-blue-600"><i class="fa-solid fa-filter"></i></button>
+            
         </div>
 
         <!-- Search and Filter Section -->
@@ -66,7 +125,7 @@
                         <th class="px-4 py-3 text-left sticky left-0 z-10 bg-blue-100">Project Name</th>
                         <th class="px-4 py-3 text-left">Languages</th>
                         <th class="px-4 py-3 text-left">Technologies</th>
-                        <th class="px-4 py-3 text-left">Description</th>
+                        <th class="px-4 py-3 text-left">Notes</th>
                         <th class="px-4 py-3 text-left">Database</th>
                         <th class="px-4 py-3 text-left">Domain Name</th>
                         <th class="px-4 py-3 text-left">Domain Platform</th>
@@ -82,7 +141,15 @@
                 </thead>
                 <tbody class="text-gray-800" id="projectsTable">
                     {% for project in projects %}
-                    <tr class="border-t hover:bg-gray-100 transition duration-200 project-row" data-project-name="{{ project.project_name|lower }}" data-project-status="{{ project.project_status }}">
+                    <tr class="border-t hover:bg-gray-100 transition duration-200 project-row" 
+                        data-project-name="{{ project.project_name|lower }}" 
+                        data-project-status="{{ project.project_status }}"
+                        data-languages="{{ project.languages|lower }}"
+                        data-database="{{ project.database_name|lower }}"
+                        data-domain-platform="{{ project.domain_platform|lower }}"
+                        data-assigned-person="{% if project.assigned_person %}{{ project.assigned_person.id }}{% endif %}"
+                        data-client="{{ project.client|lower }}"
+                        data-project-type="{{ project.project_type }}">
                         <td class="px-4 py-2 sticky left-0 z-10 bg-white">{{ project.project_name }}</td>
                         <td class="px-4 py-2 text-center">
                             <button onclick="openModal('lang-{{ project.id }}')" class="text-blue-600 hover:text-green-800">
@@ -114,20 +181,22 @@
                             </div>
                         </td>
                         
-                        <td class="px-4 py-2 text-center">
+                        <td class="px-4 py-2 text-start">
                             <button onclick="openModal('{{ project.id }}')" class="text-blue-600 hover:text-blue-800">
                                 <i class="fas fa-info-circle"></i>
                             </button>
                         
-                            <!-- Modal -->
+                            <!-- Modal for Notes -->
                             <div id="modal-{{ project.id }}" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50">
-                                <div class="bg-white rounded-lg shadow-lg w-11/12 max-w-md p-6 relative">
-                                    <h3 class="text-xl font-semibold mb-4">Project Description</h3>
-                                    <p class="text-gray-700 text-wrap">{{ project.description }}</p>
+                                <div class="bg-white rounded-lg shadow-lg w-11/12 max-w-2xl p-6 relative">
+                                    <h3 class="text-xl font-semibold mb-4">Project Notes</h3>
+                                    <div class="text-gray-700 rich-text-content">
+                                        {{ project.notes|safe }}
+                                    </div>
                                     <button onclick="closeModal('{{ project.id }}')" class="absolute top-2 right-3 text-gray-600 hover:text-gray-800 text-xl">&times;</button>
                                 </div>
                             </div>
-                        </td>                        
+                        </td>                              
                         <td class="px-4 py-2 text-center">
                             <button onclick="openModal('db-{{ project.id }}')" class="text-blue-600 hover:text-rose-800">
                                 <i class="fas fa-database"></i>
@@ -203,35 +272,139 @@
             </div>
         </div>
     </div>
+
+    <!-- Filter Sidebar -->
+    <div id="filterSidebar" class=" fixed hidden inset-y-0 right-0 w-64 bg-white shadow-xl z-50 overflow-y-auto p-4 transition-transform">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-semibold">Filter Projects</h3>
+            <button onclick="toggleSidebarClose()" class="text-gray-600 hover:text-gray-800">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <div class="space-y-4">
+            <!-- Project Name -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Project Name</label>
+                <select id="filterProjectName" class="w-full mt-1 p-2 border rounded-md">
+                    <option value="">All</option>
+                    {% for project in projects %}
+                        <option value="{{ project.project_name|lower }}">{{ project.project_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Languages -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Languages</label>
+                <select id="filterLanguages" class="w-full mt-1 p-2 border rounded-md">
+                    <option value="">All</option>
+                    {% for project in projects %}
+                        {% if project.languages %}
+                            <option value="{{ project.languages|lower }}">{{ project.languages }}</option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Database -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Database</label>
+                <select id="filterDatabase" class="w-full mt-1 p-2 border rounded-md">
+                    <option value="">All</option>
+                    {% for project in projects %}
+                        {% if project.database_name %}
+                            <option value="{{ project.database_name|lower }}">{{ project.database_name }}</option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Domain Platform -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Domain Platform</label>
+                <select id="filterDomainPlatform" class="w-full mt-1 p-2 border rounded-md">
+                    <option value="">All</option>
+                    {% for project in projects %}
+                        {% if project.domain_platform %}
+                            <option value="{{ project.domain_platform|lower }}">{{ project.domain_platform }}</option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Assigned Person -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Assigned Person</label>
+                <select id="filterAssignedPerson" class="w-full mt-1 p-2 border rounded-md">
+                    <option value="">All</option>
+                    {% for project in projects %}
+                        {% if project.assigned_person %}
+                            <option value="{{ project.assigned_person.id }}">{{ project.assigned_person.name }}</option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Client -->
+            <!-- Client -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Client</label>
+                <select id="filterClient" class="w-full mt-1 p-2 border rounded-md">
+                    <option value="">All</option>
+                    {% for project in projects %}
+                        {% if project.client %}
+                            <option value="{{ project.client|lower }}">{{ project.client }}</option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Status -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Status</label>
+                <select id="filterStatus" class="w-full mt-1 p-2 border rounded-md">
+                    <option value="all">All</option>
+                    <option value="Active">Active</option>
+                    <option value="On Hold">On Hold</option>
+                    <option value="Cancel">Cancel</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Inactive">Inactive</option>
+                </select>
+            </div>
+
+            <!-- Project Type -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Project Type</label>
+                <select id="filterProjectType" class="w-full mt-1 p-2 border rounded-md">
+                    <option value="all">All</option>
+                    <option value="Website">Website</option>
+                    <option value="Web Application">Web Application</option>
+                    <option value="Mobile Application">Mobile Application</option>
+                </select>
+            </div>
+
+            <button onclick="applyFilters()" class="w-full py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition duration-300">
+                Apply Filters
+            </button>
+            <button onclick="resetFilters()" class="w-full py-2 px-4 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition duration-300">
+                Reset Filters
+            </button>
+        </div>
+    </div>
 </div>
 
 <script>
-    function openModal(id) {
-        document.getElementById('modal-' + id).classList.remove('hidden');
+    function toggleSidebarOpen() {
+        const sidebar = document.getElementById('filterSidebar');
+        sidebar.classList.toggle('hidden');
     }
-
-    function closeModal(id) {
-        document.getElementById('modal-' + id).classList.add('hidden');
-    }
-
-    function openModal(id) {
-        document.getElementById('modal-' + id).classList.remove('hidden');
-    }
-    function closeModal(id) {
-        document.getElementById('modal-' + id).classList.add('hidden');
-    }
-    
-</script>
-
-<script>
-    function openModal(id) {
-        document.getElementById('modal-' + id).classList.remove('hidden');
-    }
-
-    function closeModal(id) {
-        document.getElementById('modal-' + id).classList.add('hidden');
+    function toggleSidebarClose() {
+        const sidebar = document.getElementById('filterSidebar');
+        sidebar.classList.toggle('hidden');
     }
 </script>
+
 
 <script>
     // Modal functions
@@ -242,6 +415,12 @@
     function closeModal(id) {
         document.getElementById('modal-' + id).classList.add('hidden');
     }
+    
+    // Toggle sidebar
+    // function toggleSidebar() {
+    //     const sidebar = document.getElementById('filterSidebar');
+    //     sidebar.classList.toggle('hidden');
+    // }
     
     // Filter projects by status
     function filterProjects(status) {
@@ -282,6 +461,60 @@
         }
     }
     
+    // Enhanced filter function
+    function applyFilters() {
+        const filters = {
+            projectName: document.getElementById('filterProjectName').value.toLowerCase(),
+            languages: document.getElementById('filterLanguages').value.toLowerCase(),
+            database: document.getElementById('filterDatabase').value.toLowerCase(),
+            domainPlatform: document.getElementById('filterDomainPlatform').value.toLowerCase(),
+            assignedPerson: document.getElementById('filterAssignedPerson').value,
+            client: document.getElementById('filterClient').value.toLowerCase(),
+            status: document.getElementById('filterStatus').value,
+            projectType: document.getElementById('filterProjectType').value
+        };
+
+        const rows = document.querySelectorAll('.project-row');
+        let visibleCount = 0;
+
+        rows.forEach(row => {
+            const matches = {
+                projectName: row.dataset.projectName.includes(filters.projectName),
+                languages: row.dataset.languages.includes(filters.languages),
+                database: row.dataset.database.includes(filters.database),
+                domainPlatform: row.dataset.domainPlatform.includes(filters.domainPlatform),
+                assignedPerson: filters.assignedPerson ? row.dataset.assignedPerson === filters.assignedPerson : true,
+                client: row.dataset.client.includes(filters.client),
+                status: filters.status === 'all' ? true : row.dataset.projectStatus === filters.status,
+                projectType: filters.projectType === 'all' ? true : row.dataset.projectType === filters.projectType
+            };
+
+            const shouldShow = Object.values(matches).every(v => v);
+            row.classList.toggle('hidden', !shouldShow);
+            if(shouldShow) visibleCount++;
+        });
+
+        document.getElementById('noResults').classList.toggle('hidden', visibleCount > 0);
+    }
+    
+    function resetFilters() {
+        // Reset all filter inputs
+        document.getElementById('filterProjectName').value = '';
+        document.getElementById('filterLanguages').value = '';
+        document.getElementById('filterDatabase').value = '';
+        document.getElementById('filterDomainPlatform').value = '';
+        document.getElementById('filterAssignedPerson').value = '';
+        document.getElementById('filterClient').value = '';
+        document.getElementById('filterStatus').value = 'all';
+        document.getElementById('filterProjectType').value = 'all';
+        
+        // Reset the main search
+        document.getElementById('projectSearch').value = '';
+        
+        // Reset the status filter to 'All'
+        document.querySelector('.filter-btn[data-filter="all"]').click();
+    }
+
     // Initialize search functionality
     document.addEventListener('DOMContentLoaded', function() {
         // Set "All" button as active initially
