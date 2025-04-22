@@ -3666,7 +3666,7 @@ def get_leave_requests(request):
         'status': req.status,
         'processed_by': req.processed_by.username if req.processed_by else None,
         'processed_at': req.processed_at.strftime('%Y-%m-%d %H:%M') if req.processed_at else None,
-        'created_at': req.created_at.strftime('%Y-%m-%d %H:%M')
+        'created_at': req.created_at.strftime('%Y-%m-%d ')
     } for req in leave_requests]
     
     return JsonResponse({'leave_requests': data})
@@ -3816,7 +3816,7 @@ def get_late_requests(request):
         'delay_time': req.delay_time,
         'reason': req.reason,
         'status': req.status,
-        'created_at': req.created_at.strftime('%Y-%m-%d %H:%M')
+        'created_at': req.created_at.strftime('%Y-%m-%d ')
     } for req in late_requests]
     
     return JsonResponse({'success': True, 'late_requests': data})
