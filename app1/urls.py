@@ -198,7 +198,7 @@ urlpatterns = [
     path('salary-certificate/<int:employee_id>/', views.salary_certificate, name='salary_certificate'),
     path("add_salary_details/", add_salary_details, name="add_salary_details"),
     path("get_salary_details/<int:employee_id>/", get_salary_details, name="get_salary_details"),
-    path('user-control/', views.user_control, name='user_control'),
+    path('user-control/<int:user_id>/', views.user_control, name='user_control'),
 
 
     path('attendance/', views.attendance, name='attendance'),
@@ -281,6 +281,12 @@ urlpatterns = [
     path('tasks/', views.task_list, name='task_list'),
     path('tasks/add/', views.add_task, name='add_task'),
     path('tasks/update-status/<int:task_id>/', views.update_task_status, name='update_task_status'),
+
+
+    
+    path('user_menu_control/', views.user_menu_control, name='user_menu_control'),
+    path('configure_user_menu/<int:user_id>/', views.configure_user_menu, name='configure_user_menu'),
+    path('default_menus/', views.default_menus, name='default_menus'),
     
 
 

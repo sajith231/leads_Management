@@ -19,7 +19,7 @@
 
 
 
-    <title>Leading Management</title>
+    <title>Administration Management</title>
     <style>
        
         th {
@@ -513,7 +513,7 @@
         </button>
 
         <div class="sidebar">
-            {% if request.session.user_level == 'admin' or user.is_superuser %}
+            {% if 'Administration' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
                 <!-- Admin/Superuser Sidebar -->
                 <div onclick="toggleAdminMenu()">
                     <div>
@@ -529,18 +529,24 @@
                 </div>
         
                 <div id="admin-menu" class="submenu" style="display: none; margin-left: 5%;">
+                    {% if 'agent_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
                     <a href="{% url 'agent_list' %}"><i class="fas fa-binoculars"></i> Address Book</a>
+                    {% endif %}
+                    {% if 'document_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
                     <a href="{% url 'document_list' %}"><i class="fas fa-scroll"></i> Documentations</a>
+                    {% endif %}
+                    {% if 'reminders' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
                     <a href="{% url 'reminders' %}" class="reminder-link">
                         <i class="fas fa-bell"></i> Reminders
                         {% if active_reminders_count > 0 %}
                             <span class="reminder-badge">{{ active_reminders_count }}</span>
                         {% endif %}
                     </a>
-
+                    {% endif %}
                 </div>
         
                 <!-- HR Menu -->
+                {% if 'HR' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
                 <div onclick="toggleHRMenu()">
                     <div>
                         <h5 style="margin-left: 5%; color: white;" class="mainmenu">
@@ -556,17 +562,32 @@
         
                 <div id="hr-menu" class="submenu" style="display: none; margin-left: 5%;">
                     <!-- Full HR options for admin -->
+                    {% if 'cv_management' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
                     <a href="{% url 'cv_management' %}"><i class="fas fa-file-contract"></i> CV Management</a>
+                    {% endif %}
+                    {% if 'interview_management' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
                     <a href="{% url 'interview_management' %}"><i class="fas fa-user-tie"></i> Interview Management</a>
+                    {% endif %}
+                    {% if 'make_offer_letter' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
                     <a href="{% url 'make_offer_letter' %}"><i class="fas fa-file-signature"></i> Offer Letter</a>
+                    {% endif %}
+                    {% if 'employee_management' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
                     <a href="{% url 'employee_management' %}"><i class="fas fa-users"></i> Employee Management</a>
+                    {% endif %}
+                    {% if 'attendance' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
                     <a href="{% url 'attendance' %}"><i class="fas fa-user-check"></i> Attendance</a>
+                    {% endif %}
+                    {% if 'make_salary_certificate' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
                     <a href="{% url 'make_salary_certificate' %}"><i class="fas fa-file-invoice-dollar"></i> Salary Certificate</a>
+                    {% endif %}
+                    {% if 'make_experience_certificate' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
                     <a href="{% url 'make_experience_certificate' %}"><i class="fas fa-award"></i> Experience Certificate</a>
-                   
+                    {% endif %}
                 </div>
+                {% endif %}
         
                 <!-- Marketing Menu -->
+                {% if 'Marketing' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
                 <div onclick="toggleMarketingMenu()">
                     <div>
                         <h5 style="margin-left: 5%; color: white;" class="mainmenu">
@@ -581,10 +602,14 @@
                 </div>
         
                 <div id="marketing-menu" class="submenu" style="display: none; margin-left: 5%;">
+                    {% if 'all_leads' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
                     <a href="{% url 'all_leads' %}"><i class="fas fa-user"></i> Leads</a>
+                    {% endif %}
                 </div>
+                {% endif %}
         
                 <!-- Services Menu -->
+                {% if 'Services' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
                 <div onclick="toggleServicesMenu()" class="sideBarMob">
                     <div>
                         <h5 style="margin-left: 5%; color: white;" class="mainmenu">
@@ -596,10 +621,15 @@
                 </div>
         
                 <div id="services-menu" class="submenu" style="margin-left: 5%; display: none;">
+                    {% if 'service_log' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
                     <a href="{% url 'service_log' %}"><i class="fas fa-book"></i> Service Log</a>
+                    {% endif %}
+                    {% if 'service_entry' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
                     <a href="{% url 'service_entry' %}"><i class="fas fa-plus-circle"></i> Service Entry</a>
+                    {% endif %}
                 </div>
-                <!-- Project Menu -->
+                {% endif %}
+
                 <!-- Project Menu -->
                 <div onclick="toggleProjectMenu()">
                     <div>
@@ -613,10 +643,10 @@
                         </h5>
                     </div>
                 </div>
-
+                
                 <div id="project-menu" class="submenu" style="margin-left: 5%; display: none;">
                     <a href="{% url 'project_work' %}" style="display: flex;gap: 10px;"><i class="fa-solid fa-people-roof"></i> Project Management</a>
-                    <!-- <a href="{% url 'task_list' %}" style="display: flex;gap: 10px;align-items: center;"><i class="fa-solid fa-comment"></i>Task</a> -->
+                   
                 </div>
         
                 <!-- Master Menu -->
@@ -645,14 +675,14 @@
                     <a href="{% url 'users_table' %}"><i class="fas fa-users"></i> Users</a>
                     <a href="{% url 'reminder_type' %}"><i class="fas fa-bell"></i> Reminder Types</a>
                 </div>
-        
-            {% elif request.session.user_level == 'normal' %}
-                <!-- Normal User Sidebar -->
+            {% else %}
+                <!-- Regular User Sidebar - Only show allowed menus -->
+                {% if 'agent_list' in allowed_menus %}
                 <div onclick="toggleAdminMenu()">
                     <div>
-                        <h5 style="margin-left: 4%; color: white;margin-bottom: 18px;" class="mainmenu">
+                        <h5 style="margin-left: 5%; color: white;" class="mainmenu">
                             <div style="display: flex;" class="gap-2 align-items-center">
-                                <span style="display: flex;align-items: center;gap: 10px;">
+                                <span style="margin-top: 5%;display: flex;align-items: center;gap: 10px;">
                                     <i class="fas fa-tools"></i>
                                     <span>Administration</span>
                                 </span>
@@ -662,30 +692,28 @@
                 </div>
         
                 <div id="admin-menu" class="submenu" style="display: none; margin-left: 5%;">
+                    {% if 'agent_list' in allowed_menus %}
                     <a href="{% url 'agent_list' %}"><i class="fas fa-binoculars"></i> Address Book</a>
+                    {% endif %}
+                    {% if 'document_list' in allowed_menus %}
                     <a href="{% url 'document_list' %}"><i class="fas fa-scroll"></i> Documentations</a>
+                    {% endif %}
+                    {% if 'reminders' in allowed_menus %}
                     <a href="{% url 'reminders' %}" class="reminder-link">
                         <i class="fas fa-bell"></i> Reminders
                         {% if active_reminders_count > 0 %}
                             <span class="reminder-badge">{{ active_reminders_count }}</span>
                         {% endif %}
                     </a>
+                    {% endif %}
                 </div>
-        
-                <!-- Marketing Menu -->
-                <div onclick="toggleUserMenu()">
-                    <h5 class="mainmenu" style="color: white;margin-left: 4%;">
-                        <div style="display: flex;gap: 10px;"><i class="fas fa-bullhorn"></i> <span style="margin-left: 1%;">Marketing</span></div>
-                    </h5>
-                </div>
-                <div id="user-menu" class="submenu" style="margin-right: 50%;">
-                    <a href="{% url 'all_leads' %}"><i class="fas fa-user"></i> Leads</a>
-                </div>
-        
+                {% endif %}
+
+                {% if 'cv_management' in allowed_menus or 'interview_management' in allowed_menus or 'make_offer_letter' in allowed_menus or 'employee_management' in allowed_menus or 'attendance' in allowed_menus or 'make_salary_certificate' in allowed_menus or 'make_experience_certificate' in allowed_menus or 'attendance_user' in allowed_menus %}
                 <!-- HR Menu -->
                 <div onclick="toggleHRMenu()">
                     <div>
-                        <h5 style="margin-left: 4%; color: white;" class="mainmenu">
+                        <h5 style="margin-left: 5%; color: white;" class="mainmenu">
                             <div style="display: flex;" class="gap-2 align-items-center">
                                 <span style="margin-top: 5%;display: flex;align-items: center;gap: 10px;">
                                     <i class="fas fa-users-cog"></i>
@@ -697,81 +725,58 @@
                 </div>
         
                 <div id="hr-menu" class="submenu" style="display: none; margin-left: 5%;">
+                    {% if 'cv_management' in allowed_menus %}
                     <a href="{% url 'cv_management' %}"><i class="fas fa-file-contract"></i> CV Management</a>
+                    {% endif %}
+                    {% if 'interview_management' in allowed_menus %}
                     <a href="{% url 'interview_management' %}"><i class="fas fa-user-tie"></i> Interview Management</a>
+                    {% endif %}
+                    {% if 'make_offer_letter' in allowed_menus %}
+                    <a href="{% url 'make_offer_letter' %}"><i class="fas fa-file-signature"></i> Offer Letter</a>
+                    {% endif %}
+                    {% if 'employee_management' in allowed_menus %}
                     <a href="{% url 'employee_management' %}"><i class="fas fa-users"></i> Employee Management</a>
+                    {% endif %}
+                    {% if 'attendance' in allowed_menus %}
                     <a href="{% url 'attendance' %}"><i class="fas fa-user-check"></i> Attendance</a>
+                    {% endif %}
+                    {% if 'attendance_user' in allowed_menus %}
                     <a href="{% url 'attendance_user' %}"><i class="fas fa-user-clock"></i> Punch in / Punch out</a>
-                    <!-- <a href="{% url 'project_work' %}" style="display: flex;gap: 10px;"><i class="fa-solid fa-people-roof"></i> Project Management</a> -->
+                    {% endif %}
+                    {% if 'make_salary_certificate' in allowed_menus %}
+                    <a href="{% url 'make_salary_certificate' %}"><i class="fas fa-file-invoice-dollar"></i> Salary Certificate</a>
+                    {% endif %}
+                    {% if 'make_experience_certificate' in allowed_menus %}
+                    <a href="{% url 'make_experience_certificate' %}"><i class="fas fa-award"></i> Experience Certificate</a>
+                    {% endif %}
                 </div>
-        
-                <!-- Services Menu -->
-                <div onclick="toggleServicesMenu()" class="sideBarMob">
+                {% endif %}
+
+                {% if 'all_leads' in allowed_menus or 'user_dashboard' in allowed_menus %}
+                <div onclick="toggleMarketingMenu()">
                     <div>
-                        <h5 style="margin-left: 4%; color: white;" class="mainmenu">
+                        <h5 style="margin-left: 5%; color: white;" class="mainmenu">
                             <div style="display: flex;" class="gap-2 align-items-center">
-                                <i class="fas fa-wrench"></i> <span>Services</span>
+                                <span style="margin-top: 5%;display: flex;align-items: center;gap: 10px;">
+                                    <i class="fas fa-bullhorn"></i>
+                                    <span>Marketing</span>
+                                </span>
                             </div>
                         </h5>
                     </div>
                 </div>
                 
-        
-                <div id="services-menu" class="submenu" style="margin-left: 5%; display: none;">
-                    <a href="{% url 'service_log' %}"><i class="fas fa-book"></i> Service Log</a>
-                    <a href="{% url 'user_service_entry' %}"><i class="fas fa-plus-circle"></i> Service Entry</a>
-                </div>
-                <!-- Project Menu -->
-                <!-- Project Menu -->
-                <div onclick="toggleProjectMenu()">
-                    <div>
-                        <h5 style="margin-left: 5%; color: white;" class="mainmenu">
-                            <div style="display: flex;" class="gap-2 align-items-center">
-                                <span style="margin-top: 5%; display: flex; align-items: center; gap: 10px;">
-                                    <i class="fas fa-project-diagram"></i>
-                                    <span>Projects</span>
-                                </span>
-                            </div>
-                        </h5>
-                    </div>
-                </div>
-
-                <div id="project-menu" class="submenu" style="margin-left: 5%; display: none;">
-                    <a href="{% url 'project_work' %}" style="display: flex;gap: 10px;"><i class="fa-solid fa-people-roof"></i> Project Management</a>
-                    <!-- <a href="{% url 'task_list' %}" style="display: flex;gap: 10px;align-items: center;"><i class="fa-solid fa-comment"></i>Task</a> -->
-                </div>
-        
-            {% elif request.session.user_level == '3level' or request.session.user_level == '5level' %}
-        
-                <!-- Marketing Menu -->
-                <div onclick="toggleUserMenu()">
-                    <h5 class="mainmenu" style="color: white;margin-left: 7%;">
-                        <div style="display: flex;gap: 5px;"><i class="fas fa-bullhorn"></i> <span style="margin-left: 1%;">Marketing</span></div>
-                    </h5>
-                </div>
-                <div id="user-menu" class="submenu" style="margin-right: 50%;">
+                <div id="marketing-menu" class="submenu" style="display: none; margin-left: 5%;">
+                    {% if 'all_leads' in allowed_menus %}
+                    <a href="{% url 'all_leads' %}"><i class="fas fa-user"></i> Leads</a>
+                    {% endif %}
+                    {% if 'user_dashboard' in allowed_menus %}
                     <a href="{% url 'user_dashboard' %}"><i class="fas fa-user"></i> Leads</a>
+                    {% endif %}
                 </div>
-        
-                <!-- HR Menu -->
-                <div onclick="toggleHRMenu()">
-                    <div>
-                        <h5 style="margin-left: 5%; color: white;" class="mainmenu">
-                            <div style="display: flex;" class="gap-2 align-items-center">
-                                <span style="margin-top: 5%;display: flex;align-items: center;gap: 10px;">
-                                    <i class="fas fa-users-cog"></i>
-                                    <span>HR</span>
-                                </span>
-                            </div>
-                        </h5>
-                    </div>
-                </div>
-        
-                <div id="hr-menu" class="submenu" style="display: none; margin-left: 5%;">
-                    <a href="{% url 'attendance_user' %}"><i class="fas fa-user-clock"></i> Punch in / Punch out</a>
-                    <a href="{% url 'user_projects' %}" style="display: flex;gap: 10px;align-items: center;"><i class="fa-solid fa-diagram-project"></i>Project Works</a>
-                </div>
-        
+                {% endif %}
+
+                {% if 'service_log' in allowed_menus or 'service_entry' in allowed_menus or 'user_service_entry' in allowed_menus or 'user_service_log' in allowed_menus %}
                 <!-- Services Menu -->
                 <div onclick="toggleServicesMenu()" class="sideBarMob">
                     <div>
@@ -784,11 +789,23 @@
                 </div>
         
                 <div id="services-menu" class="submenu" style="margin-left: 5%; display: none;">
+                    {% if 'service_log' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
                     <a href="{% url 'service_log' %}"><i class="fas fa-book"></i> Service Log</a>
+                    {% endif %}
+                    {% if 'service_entry' in allowed_menus %}
                     <a href="{% url 'service_entry' %}"><i class="fas fa-plus-circle"></i> Service Entry</a>
+                    {% endif %}
+                    {% if 'user_service_log' in allowed_menus %}
+                    <a href="{% url 'user_service_log' %}"><i class="fas fa-book"></i> Service Log</a>
+                    {% endif %}
+                    {% if 'user_service_entry' in allowed_menus %}
+                    <a href="{% url 'user_service_entry' %}"><i class="fas fa-plus-circle"></i> Service Entry</a>
+                    {% endif %}
                 </div>
-                <!-- Project Menu -->
-                <!-- Project Menu -->
+                {% endif %}
+
+                <!-- Project Menu for regular users -->
+                {% if 'project_work' in allowed_menus or 'user_projects' in allowed_menus %}
                 <div onclick="toggleProjectMenu()">
                     <div>
                         <h5 style="margin-left: 5%; color: white;" class="mainmenu">
@@ -803,9 +820,64 @@
                 </div>
 
                 <div id="project-menu" class="submenu" style="margin-left: 5%; display: none;">
-                    <a href="{% url 'user_projects' %}" style="display: flex;gap: 10px;align-items: center;"><i class="fa-solid fa-diagram-project"></i>Project Works</a>
+                    {% if 'project_work' in allowed_menus %}
+                    <a href="{% url 'project_work' %}" style="display: flex;gap: 10px;"><i class="fa-solid fa-people-roof"></i> Project Management</a>
+                    {% endif %}
+                    {% if 'user_projects' in allowed_menus %}
+                    <a href="{% url 'user_projects' %}" style="display: flex;gap: 10px;"><i class="fa-solid fa-diagram-project"></i> Project Works</a>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                {% if 'all_districts' in allowed_menus or 'all_areas' in allowed_menus or 'all_locations' in allowed_menus or 'all_requirements' in allowed_menus or 'business_type_list' in allowed_menus or 'job_titles' in allowed_menus or 'all_hardwares' in allowed_menus or 'all_complaints' in allowed_menus or 'all_branches' in allowed_menus or 'users_table' in allowed_menus or 'reminder_type' in allowed_menus %}
+                <!-- Master Menu -->
+                <div onclick="toggleMenu()">
+                    <div>
+                        <h5 style="margin-left: 5%; color: white;" class="mainmenu">
+                            <div style="display: flex;margin-top: 7%;" class="gap-2 align-items-center">
+                                <i class="fas fa-cog"></i>
+                                <span>Master</span>
+                            </div>
+                        </h5>
+                    </div>
                 </div>
         
+                <div id="master-menu" class="submenu">
+                    {% if 'all_districts' in allowed_menus %}
+                    <a href="{% url 'all_districts' %}"><i class="fas fa-map"></i> District</a>
+                    {% endif %}
+                    {% if 'all_areas' in allowed_menus %}
+                    <a href="{% url 'all_areas' %}"><i class="fas fa-map-marker-alt"></i> Area</a>
+                    {% endif %}
+                    {% if 'all_locations' in allowed_menus %}
+                    <a href="{% url 'all_locations' %}"><i class="fas fa-chart-area"></i> Location</a>
+                    {% endif %}
+                    {% if 'all_requirements' in allowed_menus %}
+                    <a href="{% url 'all_requirements' %}"><i class="fas fa-tasks"></i> Requirements</a>
+                    {% endif %}
+                    {% if 'business_type_list' in allowed_menus %}
+                    <a href="{% url 'business_type_list' %}"><i class="fas fa-binoculars"></i> Business Type</a>
+                    {% endif %}
+                    {% if 'job_titles' in allowed_menus %}
+                    <a href="{% url 'job_titles' %}"><i class="fas fa-search"></i> Job Title</a>
+                    {% endif %}
+                    {% if 'all_hardwares' in allowed_menus %}
+                    <a href="{% url 'all_hardwares' %}"><i class="fas fa-desktop"></i> Hardware</a>
+                    {% endif %}
+                    {% if 'all_complaints' in allowed_menus %}
+                    <a href="{% url 'all_complaints' %}"><i class="fas fa-bug"></i> Complaints</a>
+                    {% endif %}
+                    {% if 'all_branches' in allowed_menus %}
+                    <a href="{% url 'all_branches' %}"><i class="fas fa-code-branch"></i> Branch</a>
+                    {% endif %}
+                    {% if 'users_table' in allowed_menus %}
+                    <a href="{% url 'users_table' %}"><i class="fas fa-users"></i> Users</a>
+                    {% endif %}
+                    {% if 'reminder_type' in allowed_menus %}
+                    <a href="{% url 'reminder_type' %}"><i class="fas fa-bell"></i> Reminder Types</a>
+                    {% endif %}
+                </div>
+                {% endif %}
             {% endif %}
         </div>
 

@@ -1,3 +1,4 @@
+
 {% extends 'base.html' %}
 
 {% block content %}
@@ -24,7 +25,6 @@
 
         }
     }
-
 
     
     .table-container {
@@ -61,7 +61,9 @@
                     <th>DOB</th>
                     <th>Remarks</th>
                     <th>Offer Letter Details</th>
+                    {% if 'generate_offer_letter' in request.session.allowed_menus or request.user.is_superuser %}
                     <th>Offer Letter</th>
+                    {% endif %}
                 </tr>
             </thead>
             <tbody>
@@ -92,18 +94,19 @@
                             <i class="fa fa-eye"></i> View Details
                         </button>
                     </td>
+                    {% if 'generate_offer_letter' in request.session.allowed_menus or request.user.is_superuser %}
                     <td>
                         <a href="/generate_offer_letter/{{ cv.id }}/" class="btn btn-warning btn-sm">
                             <i class="fas fa-file-signature"></i> Generate
                         </a>
-                        
-                        
                     </td>
+                {% endif %}
+                
                 </tr>
                 {% endif %}
                 {% empty %}
                 <tr>
-                    <td colspan="15" class="text-center text-danger">No candidates with "Yes" interview status.</td>
+                    <td colspan="{% if 'generate_offer_letter' in request.session.allowed_menus %}15{% else %}14{% endif %}" class="text-center text-danger">No candidates with "Yes" interview status.</td>
                 </tr>
                 {% endfor %}
             </tbody>

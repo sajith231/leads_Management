@@ -40,7 +40,9 @@
                     <th>DOB</th>
                     <th>Attachments</th>
                     <th>Experience Certificate Details</th>
+                    {% if 'generate_experience_certificate' in request.session.allowed_menus or request.user.is_superuser %}
                     <th>Experience Certificate</th>
+                    {% endif %}
                 </tr>
             </thead>
             <tbody id="employeeTable">
@@ -133,11 +135,13 @@
                             </div>
                         </div>
                     </td>
+                    {% if 'generate_experience_certificate' in request.session.allowed_menus or request.user.is_superuser %}
                     <td>
                         <a href="{% url 'experience_certificate' employee.id %}?date={{ current_date }}" onclick="setCurrentDate(this)">
                             <i class="fa fa-file-pdf" style="font-size: x-large; color: red; display: flex; justify-content: center;"></i>
                         </a>
                     </td>
+                    {% endif %}
 
                 </tr>
                 {% empty %}

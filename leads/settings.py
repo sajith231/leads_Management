@@ -62,6 +62,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 
     'app1.middleware.NoCacheMiddleware',  # Add this line for logout issue
+    'app1.middleware.UserMenuMiddleware', 
     
 ]
 MEDIA_ROOT= os.path.join(BASE_DIR,'media')
@@ -80,6 +81,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'app1.context_processors.user_info',  # ✅ Correct function
+                
                 
                 
                 

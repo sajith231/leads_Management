@@ -39,7 +39,9 @@
                     <th>DOB</th>
                     <th>Attachments</th>
                     <th>Add details</th>
+                    {% if 'generate_salary_certificate' in request.session.allowed_menus or request.user.is_superuser %}
                     <th>Salary Certificate</th>
+                    {% endif %}
                 </tr>
             </thead>
             <tbody id="employeeTable">
@@ -135,9 +137,11 @@
                     
                     
                     <td>
+                        {% if 'generate_salary_certificate' in request.session.allowed_menus or request.user.is_superuser %}
                         <a href="{% url 'salary_certificate' employee.id %}?date={{ current_date }}" title="Generate Salary Certificate">
                             <span style="font-size: x-large;display: flex;justify-content: center;"><i class="fas fa-file-pdf"></i></span>
                         </a>
+                        {% endif %}
                     </td>
                     
                     

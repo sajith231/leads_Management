@@ -39,7 +39,7 @@
     <!-- Filter Section -->
     <div class="row mb-3">
         <div class="col-md-3">
-            <input type="text" class="form-control" id="nameFilter" placeholder="Search by name" onkeyup="filterAgents()">
+            <input type="text" class="form-control" id="nameFilter" placeholder="Search by name or firm name" onkeyup="filterAgents()">
         </div>
         <div class="col-md-3">
             <select class="form-control" id="districtFilter" onchange="filterAgents()">
@@ -92,7 +92,7 @@
             </thead>
             <tbody>
                 {% for agent in agents %}
-                    <tr class="agent-row" data-district="{{ agent.district|upper }}" data-business-type="{{ agent.business_type|upper }}" data-name="{{ agent.name|upper }}">
+                    <tr class="agent-row" data-district="{{ agent.district|upper }}" data-business-type="{{ agent.business_type|upper }}" data-name="{{ agent.name|upper }}" data-firm-name="{{ agent.firm_name|default_if_none:''|upper }}">
                         <td>{{ forloop.counter }}</td>
                         <td>{{ agent.name|upper }}</td>
                         <td>{{ agent.firm_name|default_if_none:''|upper }}</td>
@@ -147,8 +147,9 @@ function filterAgents() {
         const districtValue = row.getAttribute('data-district');
         const businessTypeValue = row.getAttribute('data-business-type');
         const nameValue = row.getAttribute('data-name');
+        const firmNameValue = row.getAttribute('data-firm-name');
         
-        const matchesName = !searchText || nameValue.includes(searchText);
+        const matchesName = !searchText || nameValue.includes(searchText) || firmNameValue.includes(searchText);
         const matchesDistrict = !selectedDistrict || districtValue === selectedDistrict;
         const matchesBusinessType = !selectedBusinessType || businessTypeValue === selectedBusinessType;
 

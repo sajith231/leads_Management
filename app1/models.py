@@ -85,6 +85,9 @@ class User(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='active') 
+    allowed_menus = models.TextField(blank=True, null=True)#CREATED AS NEW
+
+    
 
 
     def __str__(self):
@@ -726,11 +729,7 @@ class LateRequest(models.Model):
     
     
     
-    #CREATED AS NEW
-
-    #CREATED AS NEW
-
-    #CREATED AS NEW
+    
 
 
 
@@ -847,10 +846,21 @@ class Task(models.Model):
 
 
 
+    #CREATED AS NEW
+
+    #CREATED AS NEW
+
+    #CREATED AS NEW
 
 
-
-
+class DefaultSettings(models.Model):
+    default_menus = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = 'Default Setting'
+        verbose_name_plural = 'Default Settings'
 
 
 

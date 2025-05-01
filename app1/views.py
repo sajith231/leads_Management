@@ -22,7 +22,7 @@ from django.utils import timezone
 from .models import Employee, Attendance,LeaveRequest
 from django.db import transaction
 from django.db import models
-from .models import Employee, Attendance, LeaveRequest, Holiday,LateRequest
+from .models import Employee, Attendance, LeaveRequest, Holiday,LateRequest,DefaultSettings
 from .utils import is_holiday
 
 
@@ -65,9 +65,16 @@ def login(request):
 
                 auth_login(request, django_user)
 
-                # Move these lines here after custom_user is assigned
+                # Store user info in session
                 request.session['custom_user_id'] = custom_user.id
-                request.session['user_level'] = custom_user.user_level  
+                request.session['user_level'] = custom_user.user_level
+                
+                # Store allowed menus in session
+                try:
+                    allowed_menus = json.loads(custom_user.allowed_menus) if custom_user.allowed_menus else []
+                except json.JSONDecodeError:
+                    allowed_menus = []
+                request.session['allowed_menus'] = allowed_menus
 
                 # Redirect admin users to all_leads page
                 if custom_user.user_level == 'normal':
@@ -102,6 +109,16 @@ def logout(request):
 @login_required
 def admin_dashboard(request):
     return render(request, "admin_dashboard.html")
+
+@login_required
+def save_user_menus(request, user_id):
+    if request.method == 'POST':
+        user = get_object_or_404(User, id=user_id)
+        selected_menus = json.loads(request.POST.get('selected_menus', '[]'))
+        user.allowed_menus = selected_menus
+        user.save()
+        return JsonResponse({'status': 'success'})
+    return JsonResponse({'status': 'error'}, status=400)
 
 
 @login_required
@@ -204,6 +221,40 @@ from .forms import UserForm
 
 
 
+# @login_required
+# def add_user(request):
+#     if request.method == "POST":
+#         form = UserForm(request.POST, request.FILES)  # Process submitted form data
+
+#         # Prevent using "admin" as a User ID
+#         if request.POST.get("userid") == "admin":
+#             messages.error(request, "The User ID 'admin' is not allowed.")
+#             return render(request, "add_user.html", {"form": form})
+
+#         if form.is_valid():
+#             try:
+#                 user = form.save(commit=False)  # Create a user instance but don't save yet
+                
+#                 # Handle the optional image field
+#                 if "image" in request.FILES:
+#                     user.image = request.FILES["image"]  # Assign uploaded image
+                
+#                 user.save()  # Save the user to the database
+
+#                 messages.success(request, f"User '{user.name}' created successfully!")
+#                 return redirect("users_table")
+#             except Exception as e:
+#                 messages.error(request, f"Error creating user: {str(e)}")
+#         else:
+#             # Display form errors as messages
+#             for field, errors in form.errors.items():
+#                 for error in errors:
+#                     messages.error(request, f"{field}: {error}")
+#     else:
+#         form = UserForm()  # Initialize an empty form for GET requests
+
+#     return render(request, "add_user.html", {"form": form})
+
 @login_required
 def add_user(request):
     if request.method == "POST":
@@ -221,6 +272,17 @@ def add_user(request):
                 # Handle the optional image field
                 if "image" in request.FILES:
                     user.image = request.FILES["image"]  # Assign uploaded image
+                
+                # Set default menus for new users
+                try:
+                    default_settings = DefaultSettings.objects.first()
+                    if default_settings and default_settings.default_menus:
+                        user.allowed_menus = default_settings.default_menus
+                    else:
+                        user.allowed_menus = json.dumps([])  # Empty array if no defaults set
+                except Exception as e:
+                    messages.warning(request, f"Could not set default menus: {str(e)}")
+                    user.allowed_menus = json.dumps([])
                 
                 user.save()  # Save the user to the database
 
@@ -1027,24 +1089,31 @@ def assign_user(request, log_id):
 def service_log(request):
     try:
         current_user = get_current_user(request)
+        allowed_menus = request.session.get('allowed_menus', [])
         
-        # Allow both superusers and admin_level users to access all logs
-        if request.user.is_superuser or current_user.user_level == 'admin_level':
+        # Allow access if:
+        # 1. User is superuser/admin OR
+        # 2. User has 'service_log' in their allowed menus
+        if (request.user.is_superuser or 
+            current_user.user_level == 'admin_level' or 
+            'service_log' in allowed_menus):
+            
             logs = ServiceLog.objects.select_related(
                 'added_by', 
                 'complaint', 
                 'assigned_person'
             ).all()
             all_users = User.objects.all()
-            
+
             return render(request, 'service_log.html', {
                 'logs': logs,
                 'all_users': all_users,
                 'current_user': current_user
             })
         else:
+            # Redirect to user-specific log if they don't have admin access
             return redirect('user_service_log')
-            
+
     except Exception as e:
         messages.error(request, f'Error accessing service logs: {str(e)}')
         return redirect('login')
@@ -2683,8 +2752,8 @@ def get_salary_details(request, employee_id):
         return JsonResponse({"error": "No salary details found"}, status=404)
     
 
-def user_control(request):
-    return render(request, 'user_control.html')
+def user_control(request, user_id):
+    return render(request, 'user_control.html', {'user_id': user_id})
 
 
 from django.shortcuts import render
@@ -3491,9 +3560,20 @@ def base_context_processor(request):
     # Check if we're currently on the reminders page
     is_reminders_page = request.path == reverse('reminders')
     
+    # Get user's allowed menus
+    allowed_menus = []
+    if hasattr(request, 'user') and request.user.is_authenticated:
+        try:
+            user = User.objects.get(userid=request.user.username)
+            if user.allowed_menus:
+                allowed_menus = json.loads(user.allowed_menus)
+        except User.DoesNotExist:
+            pass
+    
     return {
         'active_reminders_count': active_reminders_count,
-        'is_reminders_page': is_reminders_page
+        'is_reminders_page': is_reminders_page,
+        'allowed_menus': allowed_menus
     }
 
 
@@ -4613,3 +4693,300 @@ def update_task_status(request, task_id):
         messages.error(request, "Invalid task status.")
     
     return redirect('task_list')
+
+
+
+
+
+@login_required
+def user_menu_control(request):
+    users = User.objects.all()
+    
+    if request.method == 'POST':
+        user_id = request.POST.get('user_id')
+        if user_id:
+            return redirect('configure_user_menu', user_id=user_id)
+            
+    return render(request, 'user_menu_control.html', {'users': users})
+
+
+
+
+@login_required
+def configure_user_menu(request, user_id):
+    user = get_object_or_404(User, id=user_id)
+    
+    # Get all the main menus and their submenus from the template structure
+    menus = [
+        {
+            'name': 'Administration',
+            'icon': 'fas fa-tools',
+            'submenus': [
+                {'id': 'agent_list', 'name': 'Address Book', 'icon': 'fas fa-binoculars'},
+                {'id': 'document_list', 'name': 'Documentations', 'icon': 'fas fa-scroll'},
+                {'id': 'reminders', 'name': 'Reminders', 'icon': 'fas fa-bell'}
+            ]
+        },
+        # Update the HR menu section in both views to:
+        {
+            'name': 'HR',
+            'icon': 'fas fa-users-cog',
+            'submenus': [
+                {'id': 'cv_management', 'name': 'CV Management', 'icon': 'fas fa-file-contract'},
+                {'id': 'interview_management', 'name': 'Interview Management', 'icon': 'fas fa-user-tie'},
+                {
+                    'id': 'make_offer_letter', 
+                    'name': 'Offer Letter', 
+                    'icon': 'fas fa-file-signature',
+                    'submenus': [
+                        {'id': 'generate_offer_letter', 'name': 'Generate Offer Letter', 'icon': 'fas fa-file-export'}
+                    ]
+                },
+                {'id': 'employee_management', 'name': 'Employee Management', 'icon': 'fas fa-users'},
+                {'id': 'attendance', 'name': 'Attendance', 'icon': 'fas fa-user-check'},
+                {'id': 'attendance_user', 'name': 'Punch in / Punch out', 'icon': 'fas fa-user-clock'},
+                {
+                    'id': 'make_salary_certificate', 
+                    'name': 'Salary Certificate', 
+                    'icon': 'fas fa-file-invoice-dollar',
+                    'submenus': [
+                        {'id': 'generate_salary_certificate', 'name': 'Generate Salary Certificate', 'icon': 'fas fa-file-pdf'}
+                    ]
+                },
+                 {
+                    'id': 'make_experience_certificate',
+                    'name': 'Experience Certificate',
+                    'icon': 'fas fa-award',
+                    'submenus':[
+                        {'id': 'generate_experience_certificate', 'name': 'Generate Experience Certificate', 'icon': 'fas fa-file-pdf'}
+                    ]
+                    
+                    
+                    
+                    
+                    }
+            ]
+        },
+        {
+            'name': 'Marketing',
+            'icon': 'fas fa-bullhorn',
+            'submenus': [
+                {'id': 'all_leads', 'name': 'Leads(Admin Dashboard)', 'icon': 'fas fa-user'},
+                {'id': 'user_dashboard', 'name': 'Leads(User Dashboard)', 'icon': 'fas fa-user'}
+            ]
+        },
+        {
+            'name': 'Services',
+            'icon': 'fas fa-wrench',
+            'submenus': [
+                {'id': 'service_log', 'name': 'Service Log (Admin Dashboard)', 'icon': 'fas fa-book'},
+                {'id': 'service_entry', 'name': 'Service Entry (Admin Dashboard)', 'icon': 'fas fa-plus-circle'},
+                {'id': 'user_service_log', 'name': 'Service Log(User Dashboard)', 'icon': 'fas fa-book'},
+                {'id': 'user_service_entry', 'name': 'Service Entry(User Dashboard)', 'icon': 'fas fa-plus-circle'}
+            ]
+        },
+        {
+            'name': 'Projects',
+            'icon': 'fas fa-project-diagram',
+            'submenus': [
+                {'id': 'project_work', 'name': 'Project Management(Admin Dashboard)', 'icon': 'fa-solid fa-people-roof'},
+                {'id': 'user_projects', 'name': 'Project Works(User Dashboard)', 'icon': 'fa-solid fa-diagram-project'},  # New submenu
+            ]
+        },
+        {
+            'name': 'Master',
+            'icon': 'fas fa-cog',
+            'submenus': [
+                {'id': 'all_districts', 'name': 'District', 'icon': 'fas fa-map'},
+                {'id': 'all_areas', 'name': 'Area', 'icon': 'fas fa-map-marker-alt'},
+                {'id': 'all_locations', 'name': 'Location', 'icon': 'fas fa-chart-area'},
+                {'id': 'all_requirements', 'name': 'Requirements', 'icon': 'fas fa-tasks'},
+                {'id': 'business_type_list', 'name': 'Business Type', 'icon': 'fas fa-binoculars'},
+                {'id': 'job_titles', 'name': 'Job Title', 'icon': 'fas fa-search'},
+                {'id': 'all_hardwares', 'name': 'Hardware', 'icon': 'fas fa-desktop'},
+                {'id': 'all_complaints', 'name': 'Complaints', 'icon': 'fas fa-bug'},
+                {'id': 'all_branches', 'name': 'Branch', 'icon': 'fas fa-code-branch'},
+                {'id': 'users_table', 'name': 'Users', 'icon': 'fas fa-users'},
+                {'id': 'reminder_type', 'name': 'Reminder Types', 'icon': 'fas fa-bell'}
+            ]
+        }
+    ]
+    
+    # Get the user's currently allowed menus
+    try:
+        allowed_menus = json.loads(user.allowed_menus) if user.allowed_menus else []
+    except json.JSONDecodeError:
+        # If the user doesn't have any menus set up yet, apply default menus
+        try:
+            default_settings = DefaultSettings.objects.first()
+            if default_settings and default_settings.default_menus:
+                allowed_menus = json.loads(default_settings.default_menus)
+            else:
+                allowed_menus = []
+        except (DefaultSettings.DoesNotExist, json.JSONDecodeError):
+            allowed_menus = []
+    
+    if request.method == 'POST':
+        # Get the selected menu items from the form
+        selected_menus = []
+        for key in request.POST:
+            if key.startswith('menu_'):
+                selected_menus.append(key.replace('menu_', ''))
+                
+        # Save the user's menu permissions
+        user.allowed_menus = json.dumps(selected_menus)
+        user.save()
+        
+        # Update session if editing own permissions
+        if request.user.id == user.id:
+            request.session['allowed_menus'] = selected_menus
+        
+        messages.success(request, f"Menu permissions for {user.name} have been updated.")
+    
+    return render(request, 'configure_user_menu.html', {
+        'user': user,
+        'menus': menus,
+        'allowed_menus': allowed_menus
+    })
+
+
+
+
+
+
+
+@login_required
+def default_menus(request):
+    # Get all the main menus and their submenus from the template structure
+    menus = [
+        {
+            'name': 'Administration',
+            'icon': 'fas fa-tools',
+            'submenus': [
+                {'id': 'agent_list', 'name': 'Address Book', 'icon': 'fas fa-binoculars'},
+                {'id': 'document_list', 'name': 'Documentations', 'icon': 'fas fa-scroll'},
+                {'id': 'reminders', 'name': 'Reminders', 'icon': 'fas fa-bell'}
+            ]
+        },
+        {
+            'name': 'HR',
+            'icon': 'fas fa-users-cog',
+            'submenus': [
+                {'id': 'cv_management', 'name': 'CV Management', 'icon': 'fas fa-file-contract'},
+                {'id': 'interview_management', 'name': 'Interview Management', 'icon': 'fas fa-user-tie'},
+                {
+                    'id': 'make_offer_letter', 
+                    'name': 'Offer Letter', 
+                    'icon': 'fas fa-file-signature',
+                    'submenus': [
+                        {'id': 'generate_offer_letter', 'name': 'Generate Offer Letter', 'icon': 'fas fa-file-export'}
+                    ]
+                },
+                {'id': 'employee_management', 'name': 'Employee Management', 'icon': 'fas fa-users'},
+                {'id': 'attendance', 'name': 'Attendance', 'icon': 'fas fa-user-check'},
+                {'id': 'attendance_user', 'name': 'Punch in / Punch out', 'icon': 'fas fa-user-clock'},
+                {
+                    'id': 'make_salary_certificate', 
+                    'name': 'Salary Certificate', 
+                    'icon': 'fas fa-file-invoice-dollar',
+                    'submenus': [
+                        {'id': 'generate_salary_certificate', 'name': 'Generate Salary Certificate', 'icon': 'fas fa-file-pdf'}
+                    ]
+                },
+                {
+                    'id': 'make_experience_certificate',
+                    'name': 'Experience Certificate',
+                    'icon': 'fas fa-award',
+                    'submenus':[
+                        {'id': 'generate_experience_certificate', 'name': 'Generate Experience Certificate', 'icon': 'fas fa-file-pdf'}
+                    ]
+                    
+                    
+                    
+                    
+                    }
+            ]
+        },
+        {
+            'name': 'Marketing',
+            'icon': 'fas fa-bullhorn',
+            'submenus': [
+                {'id': 'all_leads', 'name': 'Leads(Admin Dashboard)', 'icon': 'fas fa-user'},
+                {'id': 'user_dashboard', 'name': 'Leads(User Dashboard)', 'icon': 'fas fa-user'}
+            ]
+        },
+        {
+            'name': 'Services',
+            'icon': 'fas fa-wrench',
+            'submenus': [
+                {'id': 'service_log', 'name': 'Service Log (Admin Dashboard)', 'icon': 'fas fa-book'},
+                {'id': 'service_entry', 'name': 'Service Entry (Admin Dashboard)', 'icon': 'fas fa-plus-circle'},
+                {'id': 'user_service_log', 'name': 'Service Log(User Dashboard)', 'icon': 'fas fa-book'},
+                {'id': 'user_service_entry', 'name': 'Service Entry(User Dashboard)', 'icon': 'fas fa-plus-circle'}
+            ]
+        },
+        {
+            'name': 'Projects',
+            'icon': 'fas fa-project-diagram',
+            'submenus': [
+                {'id': 'project_work', 'name': 'Project Management (Admin Dashboard)', 'icon': 'fa-solid fa-people-roof'},
+                {'id': 'user_projects', 'name': 'Project Works (User Dashboard)', 'icon': 'fa-solid fa-diagram-project'},
+            ]
+        },
+        {
+            'name': 'Master',
+            'icon': 'fas fa-cog',
+            'submenus': [
+                {'id': 'all_districts', 'name': 'District', 'icon': 'fas fa-map'},
+                {'id': 'all_areas', 'name': 'Area', 'icon': 'fas fa-map-marker-alt'},
+                {'id': 'all_locations', 'name': 'Location', 'icon': 'fas fa-chart-area'},
+                {'id': 'all_requirements', 'name': 'Requirements', 'icon': 'fas fa-tasks'},
+                {'id': 'business_type_list', 'name': 'Business Type', 'icon': 'fas fa-binoculars'},
+                {'id': 'job_titles', 'name': 'Job Title', 'icon': 'fas fa-search'},
+                {'id': 'all_hardwares', 'name': 'Hardware', 'icon': 'fas fa-desktop'},
+                {'id': 'all_complaints', 'name': 'Complaints', 'icon': 'fas fa-bug'},
+                {'id': 'all_branches', 'name': 'Branch', 'icon': 'fas fa-code-branch'},
+                {'id': 'users_table', 'name': 'Users', 'icon': 'fas fa-users'},
+                {'id': 'reminder_type', 'name': 'Reminder Types', 'icon': 'fas fa-bell'}
+            ]
+        }
+    ]
+    
+    # Fetch current default menus from settings or database
+    try:
+        default_settings = DefaultSettings.objects.first()
+        if default_settings and default_settings.default_menus:
+            default_menus = json.loads(default_settings.default_menus)
+        else:
+            default_menus = []
+    except (DefaultSettings.DoesNotExist, json.JSONDecodeError):
+        default_menus = []
+    
+    if request.method == 'POST':
+        # Get the selected menu items from the form
+        selected_menus = []
+        for key in request.POST:
+            if key.startswith('menu_'):
+                selected_menus.append(key.replace('menu_', ''))
+                
+        # Save the default menu settings
+        if not default_settings:
+            default_settings = DefaultSettings()
+        
+        default_settings.default_menus = json.dumps(selected_menus)
+        default_settings.save()
+        
+        # Apply to all non-admin users if requested
+        if 'apply_to_all' in request.POST and request.POST['apply_to_all'] == 'yes':
+            users = User.objects.filter(user_level__isnull=True) | User.objects.exclude(user_level='admin')
+            for user in users:
+                user.allowed_menus = json.dumps(selected_menus)
+                user.save()
+            messages.success(request, "Default menus have been set and applied to all users.")
+        else:
+            messages.success(request, "Default menus have been set successfully.")
+    
+    return render(request, 'default_menus.html', {
+        'menus': menus,
+        'default_menus': default_menus
+    })
