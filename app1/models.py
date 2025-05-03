@@ -85,7 +85,7 @@ class User(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='active') 
-    allowed_menus = models.TextField(blank=True, null=True)#CREATED AS NEW
+    allowed_menus = models.TextField(blank=True, null=True)
 
     
 
@@ -752,7 +752,9 @@ class Project(models.Model):
         ('On Hold', 'On Hold'),
         ('Cancel', 'Cancel'),
         ('In Progress', 'In Progress'),
+        ('Finish', 'Finish'),#CREATED AS NEW
         ('Inactive', 'Inactive'),
+        
     ]
 
     project_name = models.CharField(max_length=200)
@@ -846,11 +848,7 @@ class Task(models.Model):
 
 
 
-    #CREATED AS NEW
-
-    #CREATED AS NEW
-
-    #CREATED AS NEW
+    
 
 
 class DefaultSettings(models.Model):
@@ -867,7 +865,11 @@ class DefaultSettings(models.Model):
 
 
 
+    #CREATED AS NEW
 
+    #CREATED AS NEW
+
+    #CREATED AS NEW
 
 
 

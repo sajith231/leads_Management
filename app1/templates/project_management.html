@@ -111,6 +111,9 @@
                     <button onclick="filterProjects('In Progress')" class="filter-btn px-4 py-2 bg-blue-100 text-blue-800 rounded-md hover:bg-blue-200 transition" data-filter="In Progress">
                         In Progress
                     </button>
+                    <button onclick="filterProjects('Finish')" class="filter-btn px-4 py-2 bg-purple-100 text-purple-800 rounded-md hover:bg-purple-200 transition" data-filter="Finish">
+                        Finish
+                    </button>
                     <button onclick="filterProjects('Inactive')" class="filter-btn px-4 py-2 bg-gray-100 text-gray-800 rounded-md hover:bg-gray-200 transition" data-filter="Inactive">
                         Inactive
                     </button>
@@ -234,6 +237,8 @@
                                 bg-red-100 text-red-800
                             {% elif project.project_status == 'In Progress' %}
                                 bg-blue-100 text-blue-800
+                            {% elif project.project_status == 'Finish' %}
+                                bg-purple-100 text-purple-800
                             {% elif project.project_status == 'Inactive' %}
                                 bg-gray-100 text-gray-800
                             {% endif %}
@@ -368,6 +373,7 @@
                     <option value="Active">Active</option>
                     <option value="On Hold">On Hold</option>
                     <option value="Cancel">Cancel</option>
+                    <option value="Finish">Finish</option>
                     <option value="In Progress">In Progress</option>
                     <option value="Inactive">Inactive</option>
                 </select>

@@ -21,6 +21,7 @@ from .views import update_setting_positions
 from .views import reminder_type_view, add_reminder_type, edit_reminder_type, delete_reminder_type,update_attendance
 from .views import update_attendance_status,get_customers,attendance_summary
 from .views import attendance_total_summary
+from .views import edit_profile
 
 
 urlpatterns = [
@@ -287,6 +288,7 @@ urlpatterns = [
     path('user_menu_control/', views.user_menu_control, name='user_menu_control'),
     path('configure_user_menu/<int:user_id>/', views.configure_user_menu, name='configure_user_menu'),
     path('default_menus/', views.default_menus, name='default_menus'),
+    path('edit-profile/', edit_profile, name='edit_profile'),
     
 
 

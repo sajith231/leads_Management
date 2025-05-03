@@ -374,6 +374,45 @@ def user_dashboard(request):
 
 
 
+# views.py
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, redirect
+from .models import User
+from django.contrib.auth import update_session_auth_hash
+
+@login_required
+def edit_profile(request):
+    try:
+        user = User.objects.get(userid=request.user.username)
+    except User.DoesNotExist:
+        messages.error(request, "User not found")
+        return redirect('login')
+
+    if request.method == 'POST':
+        current_password = request.POST.get('current_password')
+        new_password1 = request.POST.get('new_password1')
+        new_password2 = request.POST.get('new_password2')
+        
+        # Validate current password
+        if current_password and user.password != current_password:
+            messages.error(request, "Current password is incorrect")
+            return redirect('edit_profile')
+        
+        # Check if new passwords match
+        if new_password1 and new_password1 != new_password2:
+            messages.error(request, "New passwords don't match")
+            return redirect('edit_profile')
+        
+        # Update password if changed
+        if new_password1:
+            user.password = new_password1
+            messages.success(request, "Password updated successfully")
+        
+        user.save()
+        return redirect('edit_profile')
+
+    return render(request, 'edit_profile.html', {'user': user})
 
 
 

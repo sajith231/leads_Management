@@ -390,18 +390,29 @@
         {% endif %}
         <!-- User Popup -->
         <div id="userPopup" class="user-popup">
-            
+            {% if not request.user.is_superuser %}
+            <div style="display: flex;justify-content: right;">
+                <a href="{% url 'edit_profile' %}">
+                    <i class="fas fa-edit" style="color: black; margin-left: 8px; cursor: pointer;" title="Edit"></i>
+                </a>
+            </div>
+            {% endif %}
+
             {% if user_image %}
-                    <div style="display: block;"><div style="margin-top: 10%;"><img src="{{ user_image }}" alt="Profile Image" 
-                         style="width: 40px; height: 40px; border-radius: 50%; cursor: pointer;"></div>
-                    <div class="username" >
-                        <span style="color: black; font-weight: bold; cursor: pointer;">Hello,{{ user_name }}</span>
-                    </div></div>
-                {% else %}
-                    <div class="username" style="margin-top: 15%;">
+                <div style="display: block;">
+                    <div style="margin-top: 5%;">
+                        <img src="{{ user_image }}" alt="Profile Image" 
+                             style="width: 40px; height: 40px; border-radius: 50%; cursor: pointer;">
+                    </div>
+                    <div class="username" style="margin-bottom: 10%;">
                         <span style="color: black; font-weight: bold; cursor: pointer;">Hello,{{ user_name }}</span>
                     </div>
-                {% endif %}
+                </div>
+            {% else %}
+                <div class="username" style="margin-top: 15%;">
+                    <span style="color: black; font-weight: bold; cursor: pointer;">Hello,{{ user_name }}</span>
+                </div>
+            {% endif %}
             <a href="{% url 'logout' %}" class="logout-btn" style="background-color: rgb(240, 6, 6);">
                 <i class="fas fa-sign-out-alt"></i><span style="color: white;"> Logout</span>
             </a>

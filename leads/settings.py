@@ -40,6 +40,7 @@ LOGIN_REDIRECT_URL = 'admin_dashboard'
 LOGIN_URL = 'login'
 # Application definition
 
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -51,6 +52,7 @@ INSTALLED_APPS = [
     'app1',
     
 ]
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
