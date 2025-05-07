@@ -543,9 +543,11 @@
                     {% if 'agent_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
                     <a href="{% url 'agent_list' %}"><i class="fas fa-binoculars"></i> Address Book</a>
                     {% endif %}
+                    {% if 'credential_management' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
                     <a href="{% url 'credential_management' %}">
                         <i class="fas fa-key"></i> Credential Management
-                    </a>                                      
+                    </a>
+                    {% endif %}                                      
                     {% if 'document_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
                     <a href="{% url 'document_list' %}"><i class="fas fa-scroll"></i> Documentations</a>
                     {% endif %}
@@ -709,6 +711,10 @@
                     {% if 'agent_list' in allowed_menus %}
                     <a href="{% url 'agent_list' %}"><i class="fas fa-binoculars"></i> Address Book</a>
                     {% endif %}
+                    {% if 'credential_management' in allowed_menus %}
+                    <a href="{% url 'credential_management' %}"><i class="fas fa-binoculars"></i>Credential Management</a>
+                    {% endif %}
+
                     {% if 'document_list' in allowed_menus %}
                     <a href="{% url 'document_list' %}"><i class="fas fa-scroll"></i> Documentations</a>
                     {% endif %}

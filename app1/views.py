@@ -4762,6 +4762,7 @@ def configure_user_menu(request, user_id):
             'icon': 'fas fa-tools',
             'submenus': [
                 {'id': 'agent_list', 'name': 'Address Book', 'icon': 'fas fa-binoculars'},
+                {'id': 'credential_management', 'name': 'Credential Management', 'icon': 'fas fa-key'},  
                 {'id': 'document_list', 'name': 'Documentations', 'icon': 'fas fa-scroll'},
                 {'id': 'reminders', 'name': 'Reminders', 'icon': 'fas fa-bell'}
             ]
@@ -4903,6 +4904,7 @@ def default_menus(request):
             'icon': 'fas fa-tools',
             'submenus': [
                 {'id': 'agent_list', 'name': 'Address Book', 'icon': 'fas fa-binoculars'},
+                {'id': 'credential_management', 'name': 'Credential Management', 'icon': 'fas fa-key'},  
                 {'id': 'document_list', 'name': 'Documentations', 'icon': 'fas fa-scroll'},
                 {'id': 'reminders', 'name': 'Reminders', 'icon': 'fas fa-bell'}
             ]
