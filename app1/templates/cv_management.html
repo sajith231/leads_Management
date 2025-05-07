@@ -580,33 +580,67 @@ audio {
 }
 </style>
 <!-- Pagination Controls -->
-<div class="pagination justify-content-center">
-    <ul class="pagination">
-        {% if cv_list.has_previous %}
-            <li class="page-item">
-                <a class="page-link" href="?page=1">&laquo; First</a>
-            </li>
-            <li class="page-item">
-                <a class="page-link" href="?page={{ cv_list.previous_page_number }}">Previous</a>
-            </li>
-        {% endif %}
-
-        <li class="page-item disabled">
-            <span class="page-link">
-                Page {{ cv_list.number }} of {{ cv_list.paginator.num_pages }}
+<style>
+    .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin: 20px 0;
+    }
+    
+    .pagination .step-links {
+        display: flex;
+        gap: 8px;
+    }
+    
+    .pagination .step-links a, .pagination .step-links .current {
+        padding: 8px 12px;
+        margin: 0 2px;
+        border-radius: 4px;
+        text-decoration: none;
+        color: #fff;
+        background-color: #007bff;
+    }
+    
+    .pagination .step-links .current {
+        background-color: #6c757d;
+    }
+    
+    .pagination .step-links a:hover {
+        background-color: #0056b3;
+    }
+    
+    .pagination .step-links a:disabled {
+        pointer-events: none;
+        opacity: 0.6;
+    }
+    </style>
+    
+    <div class="pagination">
+        <span class="step-links">
+            {% if cv_list.has_previous %}
+                <a href="?page=1{% if selected_job_title %}&job_title={{ selected_job_title }}{% endif %}{% if selected_interview_status %}&interview_status={{ selected_interview_status }}{% endif %}{% if name_query %}&name={{ name_query }}{% endif %}">First</a>
+                <a href="?page={{ cv_list.previous_page_number }}{% if selected_job_title %}&job_title={{ selected_job_title }}{% endif %}{% if selected_interview_status %}&interview_status={{ selected_interview_status }}{% endif %}{% if name_query %}&name={{ name_query }}{% endif %}">Previous</a>
+            {% else %}
+                <a disabled>First</a>
+                <a disabled>Previous</a>
+            {% endif %}
+    
+            <span class="current">
+                Page {{ cv_list.number }} of {{ cv_list.paginator.num_pages }}.
             </span>
-        </li>
+    
+            {% if cv_list.has_next %}
+                <a href="?page={{ cv_list.next_page_number }}{% if selected_job_title %}&job_title={{ selected_job_title }}{% endif %}{% if selected_interview_status %}&interview_status={{ selected_interview_status }}{% endif %}{% if name_query %}&name={{ name_query }}{% endif %}">Next</a>
+                <a href="?page={{ cv_list.paginator.num_pages }}{% if selected_job_title %}&job_title={{ selected_job_title }}{% endif %}{% if selected_interview_status %}&interview_status={{ selected_interview_status }}{% endif %}{% if name_query %}&name={{ name_query }}{% endif %}">Last</a>
+            {% else %}
+                <a disabled>Next</a>
+                <a disabled>Last</a>
+            {% endif %}
+        </span>
+    </div>
+    
 
-        {% if cv_list.has_next %}
-            <li class="page-item">
-                <a class="page-link" href="?page={{ cv_list.next_page_number }}">Next</a>
-            </li>
-            <li class="page-item">
-                <a class="page-link" href="?page={{ cv_list.paginator.num_pages }}">Last &raquo;</a>
-            </li>
-        {% endif %}
-    </ul>
-</div>
 
 <!-- Modal for Remarks -->
 <div id="remarksModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="remarksModalLabel" aria-hidden="true">
