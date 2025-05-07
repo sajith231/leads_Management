@@ -37,10 +37,11 @@
             // Add customer options
             data.forEach(customer => {
                 let option = document.createElement("option");
-                option.value = customer.name;  // Store the name as value
-                option.textContent = customer.name;
+                option.value = customer.name;  // Still store name as value
+                option.textContent = `${customer.name} - ${customer.address}`;  // Show name and address
                 customerDropdown.appendChild(option);
             });
+
         })
         .catch(error => {
             console.error("Error loading customers:", error);

@@ -10,7 +10,7 @@
                 <option value="">Select a customer</option>
                 {% if customers %}
                     {% for customer in customers %}
-                        <option value="{{ customer.name }}" {% if customer.name == entry.customer %}selected{% endif %}>{{ customer.name }}</option>
+                        <option value="{{ customer.name }}" {% if customer.name == entry.customer %}selected{% endif %}>{{ customer.name }},{{ customer.address }}</option>
                     {% endfor %}
                 {% else %}
                     <option value="" disabled>No customers available</option>

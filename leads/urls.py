@@ -18,10 +18,13 @@ from django.contrib import admin
 from django.urls import path,include
 from django.conf.urls.static import static
 from django.conf import settings
-
+from app2 import views 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('app1.urls')),
+    path('app2/', include('app2.urls')),
+    path('edit-field/<int:field_id>/', views.edit_field, name='edit_field'),
+
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

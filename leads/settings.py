@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'ckeditor',
     'app1',
+    'app2',  # 👈 Add this line
     
 ]
 

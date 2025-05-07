@@ -1298,7 +1298,7 @@ import requests
 from django.http import JsonResponse
 
 def get_customers(request):
-    response = requests.get("https://apidata.imcbs.com/api/customers")
+    response = requests.get("https://rrc.imcbs.com/api/rrc-clients-data")
     return JsonResponse(response.json(), safe=False)
 
 @login_required
@@ -1371,7 +1371,7 @@ def add_service_entry(request):
         import requests
         customers = []
         try:
-            response = requests.get('https://apidata.imcbs.com/api/customers')
+            response = requests.get('https://rrc.imcbs.com/api/rrc-clients-data')
             if response.status_code == 200:
                 customers = response.json()
         except Exception as e:
@@ -1428,7 +1428,7 @@ def edit_service_entry(request, entry_id):
     import requests
     customers = []
     try:
-        response = requests.get('https://apidata.imcbs.com/api/customers')
+        response = requests.get('https://rrc.imcbs.com/api/rrc-clients-data')
         if response.status_code == 200:
             customers = response.json()
     except Exception as e:
