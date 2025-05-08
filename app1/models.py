@@ -300,7 +300,7 @@ from django.utils.timezone import now
 
 class CV(models.Model):
     GENDER_CHOICES = [
-        ('', ''),  # Optional field
+        ('', ''),  
         ('M', 'Male'),
         ('F', 'Female'),
     ]
@@ -337,7 +337,7 @@ class CV(models.Model):
     selected = models.BooleanField(default=False)  
     created_by = models.ForeignKey(get_user_model(), on_delete=models.SET_NULL, null=True, blank=True, related_name="created_cvs")
     agent = models.ForeignKey('Agent', on_delete=models.SET_NULL, null=True, blank=True) 
-    gender = models.CharField(max_length=1, choices=GENDER_CHOICES, blank=True) #CREATED AS NEW
+    gender = models.CharField(max_length=1, choices=GENDER_CHOICES, blank=True)
 
     
     
@@ -760,7 +760,7 @@ class Project(models.Model):
         ('On Hold', 'On Hold'),
         ('Cancel', 'Cancel'),
         ('In Progress', 'In Progress'),
-        ('Finish', 'Finish'),#CREATED AS NEW
+        ('Finish', 'Finish'),
         ('Inactive', 'Inactive'),
         
     ]
