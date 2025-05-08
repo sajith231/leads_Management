@@ -1717,6 +1717,7 @@ def add_cv(request):
             remarks = request.POST.get('remarks', '')
             cv_attachment = request.FILES['cv_attachment']
             agent_id = request.POST.get('agent')
+            gender = request.POST.get('gender', '')
 
             # Create CV instance (without agent initially)
             cv = CV.objects.create(
@@ -1732,7 +1733,8 @@ def add_cv(request):
                 remarks=remarks,
                 cv_attachment=cv_attachment,
                 created_date=now(),
-                created_by=request.user
+                created_by=request.user,
+                gender=gender,
             )
 
             # Assign agent after CV creation
@@ -1779,6 +1781,7 @@ def edit_cv(request, id):
             cv.education = request.POST['education']
             cv.experience = request.POST['experience']
             job_title_id = request.POST['job_title']
+            cv.gender = request.POST.get('gender', '')
             cv.job_title = JobTitle.objects.get(id=job_title_id)
             if 'dob' in request.POST and request.POST['dob']:
                 cv.dob = request.POST['dob']

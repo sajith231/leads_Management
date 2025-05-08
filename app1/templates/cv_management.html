@@ -150,6 +150,7 @@
                                 <th>Created Date</th>
                                 <th>Created User</th>
                                 <th>Name</th>
+                                <th>Gender</th>
                                 <th>Address</th>
                                 <th>Phone Number</th>  <!-- New column -->
                                 <th>Place</th>
@@ -185,6 +186,7 @@
                                 </td>
                                 
                                 <td>{{ cv.name|upper }}</td>
+                                <td>{{ cv.get_gender_display|default:"-"|upper }}</td>
                                 <td>{{ cv.address|upper|slice:":30" }}<br>{{ cv.address|upper|slice:"50:500" }}</td>
                                 <td>{{ cv.phone_number }}</td>
                                 <td>{{ cv.place|upper }}</td>
