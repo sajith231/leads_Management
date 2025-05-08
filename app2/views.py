@@ -6,9 +6,11 @@ from .models import Field, Credentials, CredentialDetail, Category
 def credential_management(request):
     fields = Field.objects.all()
     credentials = Credentials.objects.all()
+    categories = Category.objects.all()  # Add this line
     return render(request, 'credential_management.html', {
         'fields': fields,
-        'credentials': credentials
+        'credentials': credentials,
+        'categories': categories  # Add this line
     })
 
 def add_field(request):
