@@ -70,7 +70,7 @@
 .table td:nth-child(3) {
     position: sticky;
     left: 0;
-    background-color: #00fff2; 
+    background-color: rgb(59, 59, 248); 
     z-index: 1;
     /* Add shadow for better visual separation */
     box-shadow: 2px 0 5px -2px rgba(0, 0, 0, 0.1);
@@ -79,7 +79,7 @@
 /* Ensure the header has a higher z-index than the body cells */
 .table th:nth-child(3) {
     z-index: 2;
-    background-color: #00fff2;  /* Match your header background color */
+    background-color: rgb(59, 59, 248);   /* Match your header background color */
 }
 
 /* Maintain borders for sticky column */
@@ -148,7 +148,7 @@
                             <tr>
                                 <th>No</th>
                                 <th>Created Date</th>
-                                <th>Name</th>
+                                <th style="color: white;">Name</th>
                                 <th>Job Title</th>
                                 <th>CV Attachment</th>
                                 <th>Place</th>
@@ -182,7 +182,7 @@
                             <tr>
                                 <td>{{ cv_list.start_index|add:forloop.counter0 }}</td>
                                 <td>{{ cv.created_date|date:"d-m-Y" }}</td>
-                                <td>{{ cv.name|upper }}</td>
+                                <td style="color: white;">{{ cv.name|upper }}</td>
                                 <td>{{ cv.job_title|upper }}</td>
                                 <td>
                                     <a href="{{ cv.cv_attachment.url }}" target="_blank">
