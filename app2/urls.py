@@ -15,5 +15,11 @@ urlpatterns = [
     path('edit-credential-detail/<int:detail_id>/', views.edit_credential_detail, name='edit_credential_detail'),
     path('delete-credential-detail/<int:detail_id>/', views.delete_credential_detail, name='delete_credential_detail'),
 
+
+
+    path('add-category/', views.add_category, name='add_category'),
+    path('edit-category/<int:category_id>/', views.edit_category, name='edit_category'),
+    path('delete-category/<int:category_id>/', views.delete_category, name='delete_category'),
+
     
 ]

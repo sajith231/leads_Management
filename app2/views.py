@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
-from .models import Field,Credentials
+from django.views.decorators.http import require_POST
+from .models import Field, Credentials, CredentialDetail, Category
 
 def credential_management(request):
     fields = Field.objects.all()
@@ -23,60 +24,58 @@ def edit_field(request, field_id):
     if request.method == 'POST':
         new_name = request.POST.get('field_name')
         if new_name:
-            field.name = new_name  # Update field name
+            field.name = new_name
             field.save()
-        return redirect('credential_management')  # Reload page after editing
-    return render(request, 'edit_field_modal.html', {'field': field})  # Open popup for editing
+        return redirect('credential_management')
+    return render(request, 'edit_field_modal.html', {'field': field})
 
 def delete_field(request, field_id):
     field = get_object_or_404(Field, id=field_id)
-    field.delete()  # Delete the field
-    return redirect('credential_management')  # Reload page after deletion
-
+    field.delete()
+    return redirect('credential_management')
 
 def add_credential(request):
     if request.method == 'POST':
         credential_name = request.POST.get('credential_name')
+        category = request.POST.get('category')
+        remark = request.POST.get('remark')
         if credential_name:
-            Credentials.objects.create(name=credential_name)
+            Credentials.objects.create(
+                name=credential_name,
+                category=category,
+                remark=remark
+            )
             return redirect('credential_management')
-    return render(request, 'add_credential.html')
-
-# views.py
-from django.shortcuts import get_object_or_404, redirect
-from .models import Credentials
+    
+    # Pass categories to the template
+    categories = Category.objects.all()
+    return render(request, 'add_credential.html', {'categories': categories})
 
 def delete_credential(request, id):
     credential = get_object_or_404(Credentials, id=id)
     credential.delete()
     return redirect('credential_management')
 
-
-
-from django.shortcuts import render, redirect, get_object_or_404
-from .models import Credentials
-
 def edit_credential(request, id):
     credential = get_object_or_404(Credentials, id=id)
+    categories = Category.objects.all()
+    
     if request.method == 'POST':
         credential_name = request.POST.get('credential_name')
+        category = request.POST.get('category')
+        remark = request.POST.get('remark')
         if credential_name:
             credential.name = credential_name
+            credential.category = category
+            credential.remark = remark
             credential.save()
             return redirect('credential_management')
-    return render(request, 'edit_credential.html', {'credential': credential})
+    
+    return render(request, 'edit_credential.html', {
+        'credential': credential,
+        'categories': categories
+    })
 
-
-
-
-
-
-
-# Add these imports at the top
-from django.views.decorators.http import require_POST
-from .models import CredentialDetail
-
-# Add these new views
 @require_POST
 def add_credential_detail(request, credential_id):
     credential = get_object_or_404(Credentials, id=credential_id)
@@ -102,12 +101,6 @@ def credential_detail(request, id):
         'fields': fields
     })
 
-
-
-
-from django.shortcuts import get_object_or_404
-from .models import CredentialDetail
-
 def edit_credential_detail(request, detail_id):
     detail = get_object_or_404(CredentialDetail, id=detail_id)
     if request.method == 'POST':
@@ -127,3 +120,27 @@ def delete_credential_detail(request, detail_id):
     credential_id = detail.credential.id
     detail.delete()
     return redirect('credential_detail', id=credential_id)
+
+# New Category Management Views
+def add_category(request):
+    if request.method == 'POST':
+        category_name = request.POST.get('category_name')
+        if category_name:
+            Category.objects.create(name=category_name)
+            return redirect('add_credential')
+    return redirect('add_credential')
+
+def edit_category(request, category_id):
+    category = get_object_or_404(Category, id=category_id)
+    if request.method == 'POST':
+        new_name = request.POST.get('category_name')
+        if new_name:
+            category.name = new_name
+            category.save()
+        return redirect('add_credential')
+    return redirect('add_credential')
+
+def delete_category(request, category_id):
+    category = get_object_or_404(Category, id=category_id)
+    category.delete()
+    return redirect('add_credential')
