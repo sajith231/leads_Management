@@ -10,18 +10,57 @@
             <form method="POST" action="{% url 'add_service_entry' %}">
                 {% csrf_token %}
                 <div class="mb-3">
-                    <label for="customer" class="form-label">Customer</label>
-                    <select class="form-control" id="customer" name="customer" required>
-                        <option value="">Select a customer</option>
-                        {% if customers %}
-                            {% for customer in customers %}
-                                <option value="{{ customer.name }}">{{ customer.name }},{{ customer.address}}</option>
-                            {% endfor %}
-                        {% else %}
-                            <option value="" disabled>No customers available</option>
-                        {% endif %}
-                    </select>
-                </div>
+    <label for="customer" class="form-label">Customer</label>
+    <input list="customerList" class="form-control" id="customer" name="customer" placeholder="Search Customer" required>
+    <datalist id="customerList">
+        <option value="Loading customers..."></option>
+    </datalist>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        let customerDropdown = document.getElementById("customerList");
+        let customerInput = document.getElementById("customer");
+
+        // Fetch customers when the page loads
+        fetch('/proxy/customers/')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("Failed to load customers.");
+                }
+                return response.json();
+            })
+            .then(data => {
+                customerDropdown.innerHTML = ""; // Clear existing options
+
+                // Add customer options
+                data.forEach(customer => {
+                    let option = document.createElement("option");
+                    option.value = `${customer.name}, ${customer.address}`; // Display name and address
+                    customerDropdown.appendChild(option);
+                });
+            })
+            .catch(error => {
+                console.error("Error loading customers:", error);
+                alert("Failed to load customers. Please try again.");
+            });
+
+        // Filter customers as the user types
+        customerInput.addEventListener("input", function () {
+            let filter = customerInput.value.toLowerCase();
+            let options = customerDropdown.querySelectorAll("option");
+
+            options.forEach(option => {
+                if (option.value.toLowerCase().includes(filter)) {
+                    option.style.display = "block";
+                } else {
+                    option.style.display = "none";
+                }
+            });
+        });
+    });
+</script>
+
                 <div class="mb-3">
                     <label for="complaint" class="form-label">Complaint</label>
                     <select class="form-control" id="complaint" name="complaint" required>

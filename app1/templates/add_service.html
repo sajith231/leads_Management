@@ -1,16 +1,64 @@
 {% extends 'base.html' %}
 
 {% block content %}
+
     <h2 style="display: flex; justify-content: center;">Add Service Log</h2>
 
     <form method="POST" action="{% url 'add_service_log' %}" enctype="multipart/form-data" style="width: 60%;">
         {% csrf_token %}
         <div class="form-group">
-            <label for="customer_name">Customer Name:</label>
-            <select class="form-control" id="customer_name" name="customer_name" required>
-                <option value="" disabled selected>Loading customers...</option>
-            </select>
-        </div>
+    <label for="customer_name">Customer Name:</label>
+    <input list="customerList" class="form-control" id="customer_name" name="customer_name" placeholder="Search Customer" required>
+    <datalist id="customerList">
+        <option value="Loading customers..."></option>
+    </datalist>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        let customerDropdown = document.getElementById("customerList");
+        let customerInput = document.getElementById("customer_name");
+
+        // Fetch customers when the page loads
+        fetch('/proxy/customers/')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("Failed to load customers.");
+                }
+                return response.json();
+            })
+            .then(data => {
+                customerDropdown.innerHTML = ""; // Clear existing options
+
+                // Add customer options
+                data.forEach(customer => {
+                    let option = document.createElement("option");
+                    option.value = `${customer.name} - ${customer.address}`;
+                    customerDropdown.appendChild(option);
+                });
+            })
+            .catch(error => {
+                console.error("Error loading customers:", error);
+                alert("Failed to load customers. Please try again.");
+            });
+
+        // Filter customers as the user types
+        customerInput.addEventListener("input", function () {
+            let filter = customerInput.value.toLowerCase();
+            let options = customerDropdown.querySelectorAll("option");
+
+            options.forEach(option => {
+                if (option.value.toLowerCase().includes(filter)) {
+                    option.style.display = "block";
+                } else {
+                    option.style.display = "none";
+                }
+            });
+        });
+    });
+</script>
+
+
         
         <script>
             document.addEventListener("DOMContentLoaded", function () {
