@@ -6,57 +6,103 @@
 
     <form method="POST" action="{% url 'add_service_log' %}" enctype="multipart/form-data" style="width: 60%;">
         {% csrf_token %}
-        <div class="form-group">
+       <div class="form-group" style="position: relative;">
     <label for="customer_name">Customer Name:</label>
-    <input list="customerList" class="form-control" id="customer_name" name="customer_name" placeholder="Search Customer" required>
-    <datalist id="customerList">
-        <option value="Loading customers..."></option>
-    </datalist>
+    <input type="text" class="form-control" id="customer_name" name="customer_name" placeholder="Search Customer" autocomplete="off" required>
+    <div id="dropdown" class="dropdown-menu" style="display: none; position: absolute; width: 100%; max-height: 200px; overflow-y: auto; z-index: 1000;">
+        <p style="padding: 10px; margin: 0;">Loading customers...</p>
+    </div>
 </div>
 
 <script>
     document.addEventListener("DOMContentLoaded", function () {
-        let customerDropdown = document.getElementById("customerList");
-        let customerInput = document.getElementById("customer_name");
+        const customerInput = document.getElementById("customer_name");
+        const dropdown = document.getElementById("dropdown");
 
         // Fetch customers when the page loads
         fetch('/proxy/customers/')
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error("Failed to load customers.");
-                }
-                return response.json();
-            })
+            .then(response => response.json())
             .then(data => {
-                customerDropdown.innerHTML = ""; // Clear existing options
+                dropdown.innerHTML = ""; // Clear existing options
 
-                // Add customer options
+                // Add customer options to the dropdown
                 data.forEach(customer => {
-                    let option = document.createElement("option");
-                    option.value = `${customer.name} - ${customer.address}`;
-                    customerDropdown.appendChild(option);
+                    const option = document.createElement("div");
+                    option.classList.add("dropdown-item");
+                    option.textContent = `${customer.name} - ${customer.address}`;
+                    option.addEventListener("click", function () {
+                        customerInput.value = option.textContent;
+                        dropdown.style.display = "none"; // Hide the dropdown on selection
+                    });
+                    dropdown.appendChild(option);
                 });
             })
             .catch(error => {
                 console.error("Error loading customers:", error);
-                alert("Failed to load customers. Please try again.");
+                dropdown.innerHTML = '<p style="padding: 10px; margin: 0;">Failed to load customers.</p>';
             });
 
-        // Filter customers as the user types
-        customerInput.addEventListener("input", function () {
-            let filter = customerInput.value.toLowerCase();
-            let options = customerDropdown.querySelectorAll("option");
+        // Show dropdown when clicking on the input field
+        customerInput.addEventListener("focus", function () {
+            dropdown.style.display = "block";
+        });
 
-            options.forEach(option => {
-                if (option.value.toLowerCase().includes(filter)) {
-                    option.style.display = "block";
+        // Hide dropdown when clicking outside
+        document.addEventListener("click", function (e) {
+            if (!customerInput.contains(e.target) && !dropdown.contains(e.target)) {
+                dropdown.style.display = "none";
+            }
+        });
+
+        // Filter the dropdown items as user types
+        customerInput.addEventListener("input", function () {
+            const filter = customerInput.value.toLowerCase();
+            const items = dropdown.querySelectorAll(".dropdown-item");
+            let hasVisibleItem = false;
+
+            items.forEach(item => {
+                if (item.textContent.toLowerCase().includes(filter)) {
+                    item.style.display = "block";
+                    hasVisibleItem = true;
                 } else {
-                    option.style.display = "none";
+                    item.style.display = "none";
                 }
             });
+
+            // Show dropdown if any item matches
+            dropdown.style.display = hasVisibleItem ? "block" : "none";
         });
     });
 </script>
+
+<style>
+    .dropdown-menu {
+        background-color: white;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+
+    .dropdown-item {
+        padding: 8px 12px;
+        cursor: pointer;
+    }
+
+    .dropdown-item:hover {
+        background-color: #f1f1f1;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 8px;
+        margin: 5px 0;
+    }
+
+    .form-group {
+        margin: 10px 0;
+    }
+</style>
+
+
 
 
         

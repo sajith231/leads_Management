@@ -9,57 +9,105 @@
         <div class="col-md-6">
             <form method="POST" action="{% url 'add_service_entry' %}">
                 {% csrf_token %}
-                <div class="mb-3">
+                <div class="mb-3" style="position: relative;">
     <label for="customer" class="form-label">Customer</label>
-    <input list="customerList" class="form-control" id="customer" name="customer" placeholder="Search Customer" required>
-    <datalist id="customerList">
-        <option value="Loading customers..."></option>
-    </datalist>
+    <input type="text" class="form-control" id="customer" name="customer" placeholder="Search Customer" autocomplete="off" required>
+    <div id="customerDropdown" class="dropdown-menu" style="display: none; position: absolute; width: 100%; max-height: 200px; overflow-y: auto; z-index: 1000;">
+        <p style="padding: 10px; margin: 0;">Loading customers...</p>
+    </div>
 </div>
 
 <script>
     document.addEventListener("DOMContentLoaded", function () {
-        let customerDropdown = document.getElementById("customerList");
-        let customerInput = document.getElementById("customer");
+        const customerInput = document.getElementById("customer");
+        const customerDropdown = document.getElementById("customerDropdown");
 
         // Fetch customers when the page loads
         fetch('/proxy/customers/')
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error("Failed to load customers.");
-                }
-                return response.json();
-            })
+            .then(response => response.json())
             .then(data => {
                 customerDropdown.innerHTML = ""; // Clear existing options
 
                 // Add customer options
                 data.forEach(customer => {
-                    let option = document.createElement("option");
-                    option.value = `${customer.name}, ${customer.address}`; // Display name and address
+                    const option = document.createElement("div");
+                    option.classList.add("dropdown-item");
+                    option.textContent = `${customer.name}, ${customer.address}`; // Display name and address
+                    option.addEventListener("click", function () {
+                        customerInput.value = option.textContent;
+                        customerDropdown.style.display = "none"; // Hide dropdown after selection
+                    });
                     customerDropdown.appendChild(option);
                 });
             })
             .catch(error => {
                 console.error("Error loading customers:", error);
-                alert("Failed to load customers. Please try again.");
+                customerDropdown.innerHTML = '<p style="padding: 10px; margin: 0;">Failed to load customers.</p>';
             });
+
+        // Show dropdown on focus
+        customerInput.addEventListener("focus", function () {
+            customerDropdown.style.display = "block";
+        });
+
+        // Hide dropdown when clicking outside
+        document.addEventListener("click", function (e) {
+            if (!customerInput.contains(e.target) && !customerDropdown.contains(e.target)) {
+                customerDropdown.style.display = "none";
+            }
+        });
 
         // Filter customers as the user types
         customerInput.addEventListener("input", function () {
-            let filter = customerInput.value.toLowerCase();
-            let options = customerDropdown.querySelectorAll("option");
+            const filter = customerInput.value.toLowerCase();
+            const options = customerDropdown.querySelectorAll(".dropdown-item");
+            let hasVisibleItem = false;
 
             options.forEach(option => {
-                if (option.value.toLowerCase().includes(filter)) {
+                if (option.textContent.toLowerCase().includes(filter)) {
                     option.style.display = "block";
+                    hasVisibleItem = true;
                 } else {
                     option.style.display = "none";
                 }
             });
+
+            // Show the dropdown if any item matches the filter
+            customerDropdown.style.display = hasVisibleItem ? "block" : "none";
         });
     });
 </script>
+
+<style>
+    .dropdown-menu {
+        background-color: white;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        margin-top: 2px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    .dropdown-item {
+        padding: 8px 12px;
+        cursor: pointer;
+        white-space: nowrap;
+    }
+
+    .dropdown-item:hover {
+        background-color: #f1f1f1;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 8px;
+        margin: 5px 0;
+    }
+
+    .form-group, .mb-3 {
+        margin: 10px 0;
+    }
+</style>
+
 
                 <div class="mb-3">
                     <label for="complaint" class="form-label">Complaint</label>
