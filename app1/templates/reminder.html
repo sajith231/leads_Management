@@ -177,14 +177,18 @@
     {% endif %}
 
     <a href="{% url 'add_reminder' %}" class="add-button">Add New Reminder</a>
-    <div><form method="GET" class="mb-3">
+    <div>
+    <form method="GET" class="mb-3">
         <label for="start_date" class="fw-bold">From:</label>
         <input type="date" name="start_date" id="start_date" class="form-control d-inline-block w-auto" value="{{ request.GET.start_date }}">
         
         <label for="end_date" class="fw-bold ms-2">To:</label>
         <input type="date" name="end_date" id="end_date" class="form-control d-inline-block w-auto" value="{{ request.GET.end_date }}">
-        <button type="button" id="todayReminderBtn" class="btn btn-primary ms-2">Today Reminders</button>
-    </form></div>
+        
+        <button type="button" id="okBtn" class="btn btn-primary ms-2">OK</button>
+        <button type="button" id="todayReminderBtn" class="btn btn-secondary ms-2">Today Reminders</button>
+    </form>
+</div>
     
     <div class="table-container">
         <table>
@@ -287,9 +291,8 @@
     </script>
 
 <script>
-    document.getElementById("start_date").addEventListener("change", filterReminders);
-    document.getElementById("end_date").addEventListener("change", filterReminders);
-    
+    document.getElementById("okBtn").addEventListener("click", filterReminders);
+
     function filterReminders() {
         const startDate = document.getElementById("start_date").value;
         const endDate = document.getElementById("end_date").value;
@@ -303,7 +306,7 @@
     
         window.location.href = url.toString();
     }
-    </script>
+</script>
     <script>
         document.getElementById("todayReminderBtn").addEventListener("click", function() {
             const today = new Date().toISOString().split("T")[0]; // format: YYYY-MM-DD
