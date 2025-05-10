@@ -3782,13 +3782,13 @@ def get_leave_requests(request):
     data = [{
         'id': req.id,
         'employee_name': req.employee.name,
-        'start_date': req.start_date.strftime('%Y-%m-%d'),
-        'end_date': req.end_date.strftime('%Y-%m-%d'),
+        'start_date': req.start_date.strftime('%d-%m-%Y'),
+        'end_date': req.end_date.strftime('%d-%m-%Y'),
         'reason': req.reason,
         'status': req.status,
         'processed_by': req.processed_by.username if req.processed_by else None,
         'processed_at': req.processed_at.strftime('%Y-%m-%d %H:%M') if req.processed_at else None,
-        'created_at': req.created_at.strftime('%Y-%m-%d ')
+        'created_at': req.created_at.strftime('%d-%m-%Y')
     } for req in leave_requests]
     
     return JsonResponse({'leave_requests': data})

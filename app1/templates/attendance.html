@@ -277,8 +277,8 @@
             <div class="modal-body">
                 <div class="d-flex justify-content-between mb-3">
                     <div class="btn-group" role="group">
-                        <button type="button" class="btn btn-sm btn-outline-primary filter-btn active" data-status="all">All</button>
-                        <button type="button" class="btn btn-sm btn-outline-primary filter-btn" data-status="pending">Pending</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary filter-btn " data-status="all">All</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary filter-btn active" data-status="pending">Pending</button>
                         <button type="button" class="btn btn-sm btn-outline-primary filter-btn" data-status="approved">Approved</button>
                         <button type="button" class="btn btn-sm btn-outline-primary filter-btn" data-status="rejected">Rejected</button>
                     </div>
@@ -380,7 +380,7 @@ const leaveRequestsPerPage = 10;
 let allLeaveRequests = [];
 let currentFilterStatus = 'all';
 
-function loadLeaveRequests(page = 1, statusFilter = 'all') {
+function loadLeaveRequests(page = 1, statusFilter = 'pending') {
     document.getElementById('leaveRequestsBadge').classList.add('d-none');
     fetch('/leave_request/list/')
         .then(response => response.json())
