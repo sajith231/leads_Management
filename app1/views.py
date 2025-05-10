@@ -1361,12 +1361,13 @@ def service_entry(request):
 
 
 
+
 @login_required
 def add_service_entry(request):
     try:
         current_user = get_current_user(request)
         complaints = Complaint.objects.all().order_by('created_at')
-        
+
         # Fetch customers from the API
         import requests
         customers = []
@@ -1376,7 +1377,7 @@ def add_service_entry(request):
                 customers = response.json()
         except Exception as e:
             messages.warning(request, f'Could not fetch customers: {str(e)}')
-        
+
         if request.method == 'POST':
             # Get form data
             customer = request.POST.get('customer')
@@ -1384,7 +1385,9 @@ def add_service_entry(request):
             remarks = request.POST.get('remarks')
             place = request.POST.get('place')
             status = request.POST.get('status')
-            
+            mode_of_service = request.POST.get('mode_of_service')
+            service_type = request.POST.get('service_type')  # New field
+
             # Create new service entry
             service_entry = ServiceEntry.objects.create(
                 date=timezone.now(),
@@ -1392,31 +1395,33 @@ def add_service_entry(request):
                 complaint=complaint,
                 remarks=remarks,
                 status=status,
+                mode_of_service=mode_of_service,
+                service_type=service_type,  # New field
                 user=current_user,
                 place=place
             )
-            
+
             messages.success(request, 'Service entry added successfully!')
-            
+
             # Redirect based on user level
             if current_user.user_level == 'admin_level' or request.user.is_superuser:
                 return redirect('service_entry')
             else:
                 return redirect('user_service_entry')
-                
+
         return render(request, 'add_service_entry.html', {
             'complaints': complaints,
-            'customers': customers,  # Pass customers to the template
+            'customers': customers,
             'current_user': current_user
         })
-        
+
     except Exception as e:
         messages.error(request, f'Error adding service entry: {str(e)}')
-        # Redirect based on user level
         if current_user.user_level == 'admin_level' or request.user.is_superuser:
             return redirect('service_entry')
         else:
             return redirect('user_service_entry')
+
 
 @login_required
 def edit_service_entry(request, entry_id):
@@ -1441,8 +1446,10 @@ def edit_service_entry(request, entry_id):
         entry.remarks = request.POST.get('remarks')
         entry.place = request.POST.get('place')
         entry.status = request.POST.get('status')
+        entry.mode_of_service = request.POST.get('mode_of_service')  # Existing field
+        entry.service_type = request.POST.get('service_type')  # New field
         entry.save()
-        
+
         # Redirect based on user level
         if current_user.user_level == 'admin_level' or request.user.is_superuser:
             return redirect('service_entry')
@@ -1452,7 +1459,7 @@ def edit_service_entry(request, entry_id):
     context = {
         'entry': entry,
         'complaints': complaints,
-        'customers': customers,  # Pass customers to the template
+        'customers': customers,
     }
     return render(request, 'edit_service_entry.html', context)
 

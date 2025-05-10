@@ -40,6 +40,22 @@
                 <option value="Solved" {% if entry.status == 'Solved' %}selected{% endif %}>Solved</option>
             </select>
         </div>
+        <!-- Mode of Service -->
+        <div class="mb-3">
+            <label for="mode_of_service" class="form-label">Mode of Service</label>
+            <select name="mode_of_service" id="mode_of_service" class="form-select" required>
+                <option value="Online" {% if entry.mode_of_service == 'Online' %}selected{% endif %}>Online</option>
+                <option value="Onsite" {% if entry.mode_of_service == 'Onsite' %}selected{% endif %}>Onsite</option>
+            </select>
+        </div>
+        <!-- Service Type -->
+        <div class="mb-3">
+            <label for="service_type" class="form-label">Service Type</label>
+            <select name="service_type" id="service_type" class="form-select" required>
+                <option value="Software" {% if entry.service_type == 'Software' %}selected{% endif %}>Software</option>
+                <option value="Hardware" {% if entry.service_type == 'Hardware' %}selected{% endif %}>Hardware</option>
+            </select>
+        </div>
         <button type="submit" class="btn btn-primary">Update</button>
         <a href="{% url 'service_entry' %}" class="btn btn-secondary">Cancel</a>
     </form>

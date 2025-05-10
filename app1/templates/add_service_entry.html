@@ -21,6 +21,7 @@
     document.addEventListener("DOMContentLoaded", function () {
         const customerInput = document.getElementById("customer");
         const customerDropdown = document.getElementById("customerDropdown");
+        const placeInput = document.getElementById("place");  // New: Access the place field
 
         // Fetch customers when the page loads
         fetch('/proxy/customers/')
@@ -28,13 +29,15 @@
             .then(data => {
                 customerDropdown.innerHTML = ""; // Clear existing options
 
-                // Add customer options
+                // Add customer options with address data
                 data.forEach(customer => {
                     const option = document.createElement("div");
                     option.classList.add("dropdown-item");
                     option.textContent = `${customer.name}, ${customer.address}`; // Display name and address
+                    option.setAttribute("data-address", customer.address); // New: Store address as data attribute
                     option.addEventListener("click", function () {
-                        customerInput.value = option.textContent;
+                        customerInput.value = customer.name;  // Set the customer name
+                        placeInput.value = option.getAttribute("data-address");  // Auto-fill the place field
                         customerDropdown.style.display = "none"; // Hide dropdown after selection
                     });
                     customerDropdown.appendChild(option);
@@ -78,6 +81,7 @@
     });
 </script>
 
+
 <style>
     .dropdown-menu {
         background-color: white;
@@ -119,13 +123,20 @@
                     </select>
                 </div>
                 <div class="mb-3">
+                    <label for="service_type" class="form-label">Service Type</label>
+                    <select name="service_type" id="service_type" class="form-select" required>
+                        <option value="Software">Software</option>
+                        <option value="Hardware">Hardware</option>
+                    </select>
+                </div>
+                <div class="mb-3">
                     <label for="remarks" class="form-label">Remarks</label>
                     <textarea class="form-control" id="remarks" name="remarks" rows="2"></textarea>
                 </div>
                 <div class="mb-3">
                     <label for="status" class="form-label">Status</label>
                     <select class="form-control" id="status" name="status" required>
-                        <option value="Pending">Pending</option>
+                        
                         <option value="Solved">Solved</option>
                     </select>
                 </div>
@@ -133,6 +144,16 @@
                     <label for="place" class="form-label">Place</label>
                     <input type="text" class="form-control" id="place" name="place" required>
                 </div>
+                <div class="form-group">
+                    <label for="mode_of_service">Mode of Service:</label>
+                    <select class="form-control" id="mode_of_service" name="mode_of_service" required>
+                        <option value="" disabled selected>Select Mode</option>
+                        <option value="Online">Online</option>
+                        <option value="Onsite">Onsite</option>
+                    </select>
+                </div>
+
+
                 <button type="submit" class="btn btn-primary">Submit</button>
                 <a href="{% url 'service_entry' %}" class="btn btn-secondary">Cancel</a>
             </form>
