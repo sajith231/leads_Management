@@ -164,10 +164,10 @@
         }
     </style>
 
-    <h1>Reminders</h1>
+
 
     {% if messages %}
-        <div class="messages">
+        <div class="messages">    <h1>Reminders</h1>
             {% for message in messages %}
                 <div class="alert alert-{{ message.tags }}">
                     {{ message }}
@@ -211,7 +211,7 @@
                         <tr>
                             <td>{{ reminder.display_no }}</td>
                             <td>{{ reminder.added_by.username|default:"Unknown" }}</td>
-                            <td>{{ reminder.entry_date|date:"Y-m-d" }}</td>
+                            <td>{{ reminder.entry_date|date:"d-m-Y" }}</td>
                             <td>{{ reminder.reminder_type.name }}</td>
                             <td>{{ reminder.remark }}</td>
                            
@@ -224,8 +224,8 @@
                                     <em>No responsible person assigned</em>
                                 {% endif %}
                             </td>
-                            <td>{{ reminder.remind_date|date:"Y-m-d" }}</td>
-                            <td>{{ reminder.event_date|date:"Y-m-d"|default:"N/A" }}</td> 
+                            <td>{{ reminder.remind_date|date:"d-m-Y" }}</td>
+                            <td>{{ reminder.event_date|date:"d-m-Y"|default:"N/A" }}</td> 
                             <td class="action-buttons">
                                 <a href="{% url 'edit_reminder' reminder.no %}" class="edit-btn">Edit</a>
                                 <button class="delete-btn" onclick="showDeleteModal('{{ reminder.no }}')">Delete</button>

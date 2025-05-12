@@ -83,42 +83,45 @@
                 <div class="table-responsive">
                     <table class="table table-hover table-bordered">
                         <thead class="table-light">
-                            <tr>
-                                <th>No</th>
-                                <th class="sticky-header">Employee Name</th>
-                                <th>Number Of Days</th>
-                                <th>Working Days</th>
-                                <th>Full Days</th>
-                                <th>Half Days</th>
-                                <th>Leaves</th>
-                                <th>Not Marked</th>
-                                <th>Holidays</th>
-                                <th style="background-color: whitesmoke;">Total</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for employee in employee_summaries %}
-                            <tr>
-                                <td>{{ forloop.counter }}</td>
-                                <td class="sticky-header" style="background-color: white;">{{ employee.name }}</td>
-                                <td>{{ employee.number_of_days }}</td>
-                                <td>{{ employee.working_days }}</td>
-                                <td>{{ employee.full_days }}</td>
-                                <td>{{ employee.half_days }}</td>
-                                <td>{{ employee.leaves }}</td>
-                                <td>{{ employee.not_marked }}</td>
-                                <td>{{ employee.holidays }}</td>
-                                <td style="background-color: whitesmoke;">{{ employee.total_attendance }}</td>
-                                <td>
-                                    <a href="{% url 'attendance_summary' employee.id %}?year={{ current_year }}&month={{ current_month }}"
-                                       class="btn btn-sm btn-primary">
-                                        View Details
-                                    </a>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
+                        <tr>
+                            <th>No</th>
+                            <th class="sticky-header">Employee Name</th>
+                            <th>Number Of Days</th>
+                            <th>Working Days</th>
+                            <th>Full Days(Unverified)</th>
+                            <th>Verified Full Days</th>
+                            <th>Half Days(Unverified)</th>
+                            <th>Verified Half Days</th>
+                            <th>Leaves</th>
+                            <th>Not Marked</th>
+                            <th>Holidays</th>
+                            <th style="background-color: whitesmoke;">Total</th>
+                            <th>Action</th>
+                        </tr>
+                    <tbody>
+                    {% for employee in employee_summaries %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td class="sticky-header" style="background-color: white;">{{ employee.name }}</td>
+                        <td>{{ employee.number_of_days }}</td>
+                        <td>{{ employee.working_days }}</td>
+                        <td>{{ employee.full_days }}</td>
+                        <td>{{ employee.verified_full_days }}</td>
+                        <td>{{ employee.half_days }}</td>
+                        <td>{{ employee.verified_half_days }}</td>
+                        <td>{{ employee.leaves }}</td>
+                        <td>{{ employee.not_marked }}</td>
+                        <td>{{ employee.holidays }}</td>
+                        <td style="background-color: whitesmoke;">{{ employee.total_attendance }}</td>
+                        <td>
+                            <a href="{% url 'attendance_summary' employee.id %}?year={{ current_year }}&month={{ current_month }}"
+                            class="btn btn-sm btn-primary">
+                                View Details
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
                     </table>
                 </div>
             </div>

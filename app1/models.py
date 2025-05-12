@@ -259,12 +259,22 @@ class ServiceEntry(models.Model):
         ('Pending', 'Pending'),
         ('Solved', 'Solved')
     ]
+    MODE_CHOICES = [
+        ('Online', 'Online'),
+        ('Onsite', 'Onsite')
+    ]
+    SERVICE_TYPE_CHOICES = [
+        ('Hardware', 'Hardware'),
+        ('Software', 'Software')
+    ]
     
     date = models.DateTimeField(auto_now_add=True)
     customer = models.CharField(max_length=200)
     complaint = models.TextField()
     remarks = models.TextField(blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending')
+    mode_of_service = models.CharField(max_length=20, choices=MODE_CHOICES, default='Onsite') 
+    service_type = models.CharField(max_length=20, choices=SERVICE_TYPE_CHOICES, default='Software') 
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     place = models.CharField(max_length=200)
 

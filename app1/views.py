@@ -1366,7 +1366,7 @@ def add_service_entry(request):
     try:
         current_user = get_current_user(request)
         complaints = Complaint.objects.all().order_by('created_at')
-        
+
         # Fetch customers from the API
         import requests
         customers = []
@@ -1376,7 +1376,7 @@ def add_service_entry(request):
                 customers = response.json()
         except Exception as e:
             messages.warning(request, f'Could not fetch customers: {str(e)}')
-        
+
         if request.method == 'POST':
             # Get form data
             customer = request.POST.get('customer')
@@ -1384,7 +1384,9 @@ def add_service_entry(request):
             remarks = request.POST.get('remarks')
             place = request.POST.get('place')
             status = request.POST.get('status')
-            
+            mode_of_service = request.POST.get('mode_of_service')
+            service_type = request.POST.get('service_type')  # New field
+
             # Create new service entry
             service_entry = ServiceEntry.objects.create(
                 date=timezone.now(),
@@ -1392,31 +1394,33 @@ def add_service_entry(request):
                 complaint=complaint,
                 remarks=remarks,
                 status=status,
+                mode_of_service=mode_of_service,
+                service_type=service_type,  # New field
                 user=current_user,
                 place=place
             )
-            
+
             messages.success(request, 'Service entry added successfully!')
-            
+
             # Redirect based on user level
             if current_user.user_level == 'admin_level' or request.user.is_superuser:
                 return redirect('service_entry')
             else:
                 return redirect('user_service_entry')
-                
+
         return render(request, 'add_service_entry.html', {
             'complaints': complaints,
-            'customers': customers,  # Pass customers to the template
+            'customers': customers,
             'current_user': current_user
         })
-        
+
     except Exception as e:
         messages.error(request, f'Error adding service entry: {str(e)}')
-        # Redirect based on user level
         if current_user.user_level == 'admin_level' or request.user.is_superuser:
             return redirect('service_entry')
         else:
             return redirect('user_service_entry')
+
 
 @login_required
 def edit_service_entry(request, entry_id):
@@ -1441,8 +1445,10 @@ def edit_service_entry(request, entry_id):
         entry.remarks = request.POST.get('remarks')
         entry.place = request.POST.get('place')
         entry.status = request.POST.get('status')
+        entry.mode_of_service = request.POST.get('mode_of_service')  # Existing field
+        entry.service_type = request.POST.get('service_type')  # New field
         entry.save()
-        
+
         # Redirect based on user level
         if current_user.user_level == 'admin_level' or request.user.is_superuser:
             return redirect('service_entry')
@@ -1452,9 +1458,11 @@ def edit_service_entry(request, entry_id):
     context = {
         'entry': entry,
         'complaints': complaints,
-        'customers': customers,  # Pass customers to the template
+        'customers': customers,
     }
     return render(request, 'edit_service_entry.html', context)
+
+
 
 
 
@@ -4011,8 +4019,6 @@ from .models import Employee, Attendance, Holiday
 
 def attendance_summary(request, employee_id):
     employee = get_object_or_404(Employee, id=employee_id)
-
-    # Get year and month from request or default to current
     now = timezone.now()
     year = request.GET.get('year', now.year)
     month = request.GET.get('month', now.month)
@@ -4024,7 +4030,6 @@ def attendance_summary(request, employee_id):
         year = now.year
         month = now.month
 
-    # Fetch attendance and holidays
     attendance_records = Attendance.objects.filter(
         employee=employee,
         date__year=year,
@@ -4036,22 +4041,19 @@ def attendance_summary(request, employee_id):
         date__month=month
     ).values_list('date', flat=True)
 
-    # Determine number of days in the month
     if month == 12:
         days_in_month = (datetime(year + 1, 1, 1) - datetime(year, month, 1)).days
     else:
         days_in_month = (datetime(year, month + 1, 1) - datetime(year, month, 1)).days
 
-    # Build attendance data
     attendance_data = []
-    full_day_count = half_day_count = leave_count = not_marked_count = 0
+    full_day_count = verified_full_day_count = half_day_count = verified_half_day_count = leave_count = not_marked_count = 0
 
     for day in range(1, days_in_month + 1):
         date = datetime(year, month, day).date()
         day_name = date.strftime('%A')
         record = next((r for r in attendance_records if r.date == date), None)
 
-        # Determine status
         if date in holidays:
             status = 'Holiday'
             status_class = 'holiday'
@@ -4060,10 +4062,18 @@ def attendance_summary(request, employee_id):
                 status = 'Full Day'
                 status_class = 'full-day'
                 full_day_count += 1
+            elif record.status == 'verified_full':
+                status = 'Verified Full Day'
+                status_class = 'verified-full-day'
+                verified_full_day_count += 1
             elif record.status == 'half':
                 status = 'Half Day'
                 status_class = 'half-day'
                 half_day_count += 1
+            elif record.status == 'verified_half':
+                status = 'Verified Half Day'
+                status_class = 'verified-half-day'
+                verified_half_day_count += 1
             elif record.status == 'leave':
                 status = 'Leave'
                 status_class = 'leave'
@@ -4077,7 +4087,6 @@ def attendance_summary(request, employee_id):
             status_class = 'not-marked'
             not_marked_count += 1
 
-        # Time formatting with timezone safety
         punch_in = (
             localtime(record.punch_in).strftime('%I:%M %p')
             if record and record.punch_in else '-'
@@ -4110,7 +4119,9 @@ def attendance_summary(request, employee_id):
         'month': month,
         'month_name': datetime(year, month, 1).strftime('%B %Y'),
         'full_day_count': full_day_count,
+        'verified_full_day_count': verified_full_day_count,
         'half_day_count': half_day_count,
+        'verified_half_day_count': verified_half_day_count,
         'leave_count': leave_count,
         'not_marked_count': not_marked_count,
         'current_year': now.year,
@@ -4134,20 +4145,16 @@ from calendar import monthrange
 from datetime import datetime
 from .models import Employee, Attendance, Holiday
 from django.contrib.auth.decorators import login_required
-
 @login_required
 def attendance_total_summary(request):
     year = int(request.GET.get('year', timezone.now().year))
     month = int(request.GET.get('month', timezone.now().month))
 
-    employees = Employee.objects.select_related('user').filter(
-        status='active'  # Add this filter to get only active employees
-    )
+    employees = Employee.objects.select_related('user').filter(status='active')
     days_in_month = monthrange(year, month)[1]
     start_date = datetime(year, month, 1).date()
     end_date = datetime(year, month, days_in_month).date()
 
-    # Get holidays in selected month
     holidays = Holiday.objects.filter(date__range=(start_date, end_date))
     holiday_dates = set(h.date for h in holidays)
     holidays_count = len(holiday_dates)
@@ -4158,30 +4165,28 @@ def attendance_total_summary(request):
         attendance_records = Attendance.objects.filter(employee=employee, date__range=(start_date, end_date))
 
         full_days = attendance_records.filter(status='full').count()
+        verified_full_days = attendance_records.filter(status='verified_full').count()
         half_days = attendance_records.filter(status='half').count()
+        verified_half_days = attendance_records.filter(status='verified_half').count()
         leaves = attendance_records.filter(status='leave').count()
 
-        # Count attendance-marked dates
         marked_dates = set(attendance_records.values_list('date', flat=True))
-
-        # Not marked = total - marked - holidays
         not_marked = days_in_month - len(marked_dates | holiday_dates)
-
-        # Calculate working days (Number of Days - Holidays)
         working_days = days_in_month - holidays_count
 
-        # Add to summary
         employee_summaries.append({
             'id': employee.id,
             'name': employee.name,
             'full_days': full_days,
+            'verified_full_days': verified_full_days,
             'half_days': half_days,
+            'verified_half_days': verified_half_days,
             'leaves': leaves,
             'not_marked': not_marked,
             'holidays': holidays_count,
-            'number_of_days': days_in_month,  # Total days in the month
-            'working_days': working_days,     # Working days (total days - holidays)
-            'total_attendance': full_days + (0.5 * half_days),
+            'number_of_days': days_in_month,
+            'working_days': working_days,
+            'total_attendance': full_days + verified_full_days + (0.5 * half_days) + (0.5 * verified_half_days),
         })
 
     return render(request, 'attendance_total_summary.html', {

@@ -100,6 +100,11 @@
                     <span>Holiday</span> 
                 </div>
                 <div class="d-flex align-items-center">
+                    <i class="fas fa-star text-primary me-2"></i>
+                    <span class="">verified</span> 
+                </div>
+
+                <div class="d-flex align-items-center">
                     <i class="fas fa-star text-secondary me-2"></i>
                     <span>Not Marked</span>
                 </div>
@@ -175,7 +180,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary" onclick="saveAttendance()">Save changes</button>
+                    <button type="button" class="btn btn-primary" onclick="saveAttendance()">Verify Attendance</button>
                 </div>
             </div>
         </div>
@@ -936,22 +941,32 @@ function updateHolidayInUI(date) {
         switch(status) {
             case 'full':
                 iconClass = 'fas fa-star';
-                iconColor = '#198754';
+                iconColor = '#198754'; // Green for unverified full day
                 tooltipText = `Full Day (In: ${punchIn ? new Date(punchIn).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'N/A'}, Out: ${punchOut ? new Date(punchOut).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'N/A'})`;
                 break;
             case 'half':
                 iconClass = 'fas fa-star-half-alt';
-                iconColor = '#198754';
+                iconColor = '#198754'; // Green for unverified half day
                 tooltipText = `Half Day (In: ${punchIn ? new Date(punchIn).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'N/A'})`;
+                break;
+            case 'verified_full':
+                iconClass = 'fas fa-star';
+                iconColor = '#0d6efd'; // Blue for verified full day
+                tooltipText = `Verified Full Day (In: ${punchIn ? new Date(punchIn).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'N/A'}, Out: ${punchOut ? new Date(punchOut).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'N/A'})`;
+                break;
+            case 'verified_half':
+                iconClass = 'fas fa-star-half-alt';
+                iconColor = '#0d6efd'; // Blue for verified half day
+                tooltipText = `Verified Half Day (In: ${punchIn ? new Date(punchIn).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'N/A'})`;
                 break;
             case 'leave':
                 iconClass = 'fas fa-star';
-                iconColor = '#dc3545';
+                iconColor = '#dc3545'; // Red for leave (unchanged)
                 tooltipText = 'Leave';
                 break;
             case 'holiday':
                 iconClass = 'fas fa-star';
-                iconColor = '#ffc107';
+                iconColor = '#ffc107'; // Yellow for holiday (unchanged)
                 tooltipText = 'Holiday';
                 break;
             default:
@@ -1090,6 +1105,12 @@ function updateHolidayInUI(date) {
         const status = document.getElementById('attendanceStatus').value;
         const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content");
 
+        // Determine if we're verifying (changing to verified status)
+        const currentState = modal.querySelector('#attendanceStatus').value;
+        const verifiedStatus = currentState === 'full' ? 'verified_full' : 
+                             currentState === 'half' ? 'verified_half' : 
+                             currentState;
+
         fetch("{% url 'update_attendance_status' %}", {
             method: "POST",
             headers: {
@@ -1099,7 +1120,7 @@ function updateHolidayInUI(date) {
             body: JSON.stringify({
                 employee_id: employeeId,
                 date: date,
-                status: status
+                status: verifiedStatus
             })
         })
         .then(response => response.json())
@@ -1114,9 +1135,9 @@ function updateHolidayInUI(date) {
                         "text-warning", 
                         "text-danger", 
                         "text-secondary",
+                        "text-primary",
                         "fa-star",
-                        "fa-star-half-alt",
-                        "fa-times-circle"
+                        "fa-star-half-alt"
                     );
                     
                     // Set new classes based on status
@@ -1124,11 +1145,20 @@ function updateHolidayInUI(date) {
                         case "full":
                             icon.classList.add("fa-star", "text-success");
                             break;
+                        case "verified_full":
+                            icon.classList.add("fa-star", "text-primary");
+                            break;
                         case "half":
                             icon.classList.add("fa-star-half-alt", "text-success");
                             break;
+                        case "verified_half":
+                            icon.classList.add("fa-star-half-alt", "text-primary");
+                            break;
                         case "leave":
                             icon.classList.add("fa-star", "text-danger");
+                            break;
+                        case "holiday":
+                            icon.classList.add("fa-star", "text-warning");
                             break;
                         default:
                             icon.classList.add("fa-star", "text-secondary");
@@ -1149,10 +1179,10 @@ function updateHolidayInUI(date) {
                 bootstrap.Modal.getInstance(modal).hide();
                 
                 // Optional: Show success toast/alert
-                alert("Attendance status updated successfully!");
+                alert("Attendance verified successfully!");
             } else {
                 // Handle error scenario
-                alert("Error updating attendance: " + (data.error || "Unknown error"));
+                alert("Error verifying attendance: " + (data.error || "Unknown error"));
             }
         })
         .catch(error => {
@@ -1160,6 +1190,7 @@ function updateHolidayInUI(date) {
             alert("Something went wrong. Please try again.");
         });
     }
+
 
     // Initialize the table with current month on page load
     document.addEventListener('DOMContentLoaded', function() {
