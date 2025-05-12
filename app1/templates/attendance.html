@@ -80,37 +80,37 @@
     </div>
 
     <!-- Legend Section -->
-    <div class="card shadow-sm mb-4">
-        <div class="card-body">
-            <div class="d-flex gap-4">
-                <div class="md:d-flex align-items-center">
-                    <i class="fas fa-star text-success me-2"></i>
-                    <span>Full Day</span>
-                </div>
-                <div class="d-flex align-items-center">
-                    <i class="fas fa-star-half-alt text-success me-2"></i>
-                    <span>Half Day</span>
-                </div>
-                <div class="d-flex align-items-center">
-                    <i class="fas fa-star text-danger me-2"></i>
-                    <span>Leave</span>
-                </div>
-                <div class="d-flex align-items-center">
-                    <i class="fas fa-star text-warning me-2"></i>
-                    <span>Holiday</span> 
-                </div>
-                <div class="d-flex align-items-center">
-                    <i class="fas fa-star text-primary me-2"></i>
-                    <span class="">verified</span> 
-                </div>
-
-                <div class="d-flex align-items-center">
-                    <i class="fas fa-star text-secondary me-2"></i>
-                    <span>Not Marked</span>
-                </div>
+    <!-- Legend Section -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <div class="d-flex gap-4">
+            <div class="md:d-flex align-items-center">
+                <i class="fas fa-star text-success me-2"></i>
+                <span>Full Day</span>
+            </div>
+            <div class="d-flex align-items-center">
+                <i class="fas fa-star-half-alt text-success me-2"></i>
+                <span>Half Day</span>
+            </div>
+            <div class="d-flex align-items-center">
+                <i class="fas fa-star text-danger me-2"></i>
+                <span>Leave</span>
+            </div>
+            <div class="d-flex align-items-center">
+                <i class="fas fa-star text-warning me-2"></i>
+                <span>Holiday</span> 
+            </div>
+            <div class="d-flex align-items-center">
+                <i class="fas fa-star text-primary me-2"></i>
+                <span>Verified</span> 
+            </div>
+            <div class="d-flex align-items-center">
+                <i class="fas fa-star text-secondary me-2"></i>
+                <span>Not Marked</span>
             </div>
         </div>
     </div>
+</div>
 
     <!-- Attendance Details Modal -->
     <div class="modal fade" id="attendanceDetailsModal" tabindex="-1" aria-labelledby="attendanceDetailsModalLabel" aria-hidden="true">
@@ -933,62 +933,63 @@ function updateHolidayInUI(date) {
     }
 
     // Update attendance icon based on status
-    function updateAttendanceIcon(icon, status, punchIn, punchOut) {
-        let iconClass = 'fas fa-star';
-        let iconColor = '#ccc';
-        let tooltipText = 'Not Marked';
-        
-        switch(status) {
-            case 'full':
-                iconClass = 'fas fa-star';
-                iconColor = '#198754'; // Green for unverified full day
-                tooltipText = `Full Day (In: ${punchIn ? new Date(punchIn).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'N/A'}, Out: ${punchOut ? new Date(punchOut).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'N/A'})`;
-                break;
-            case 'half':
-                iconClass = 'fas fa-star-half-alt';
-                iconColor = '#198754'; // Green for unverified half day
-                tooltipText = `Half Day (In: ${punchIn ? new Date(punchIn).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'N/A'})`;
-                break;
-            case 'verified_full':
-                iconClass = 'fas fa-star';
-                iconColor = '#0d6efd'; // Blue for verified full day
-                tooltipText = `Verified Full Day (In: ${punchIn ? new Date(punchIn).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'N/A'}, Out: ${punchOut ? new Date(punchOut).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'N/A'})`;
-                break;
-            case 'verified_half':
-                iconClass = 'fas fa-star-half-alt';
-                iconColor = '#0d6efd'; // Blue for verified half day
-                tooltipText = `Verified Half Day (In: ${punchIn ? new Date(punchIn).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'N/A'})`;
-                break;
-            case 'leave':
-                iconClass = 'fas fa-star';
-                iconColor = '#dc3545'; // Red for leave (unchanged)
-                tooltipText = 'Leave';
-                break;
-            case 'holiday':
-                iconClass = 'fas fa-star';
-                iconColor = '#ffc107'; // Yellow for holiday (unchanged)
-                tooltipText = 'Holiday';
-                break;
-            default:
-                iconClass = 'fas fa-star';
-                iconColor = '#ccc';
-                tooltipText = 'Not Marked';
-        }
-        
-        icon.className = iconClass;
-        icon.style.color = iconColor;
-        icon.setAttribute('data-state', status);
-        icon.setAttribute('title', tooltipText);
-        icon.setAttribute('data-bs-toggle', 'tooltip');
-        icon.setAttribute('data-bs-placement', 'top');
-        
-        // Refresh tooltip
-        const tooltip = bootstrap.Tooltip.getInstance(icon);
-        if (tooltip) {
-            tooltip.dispose();
-        }
-        new bootstrap.Tooltip(icon);
+    // Update attendance icon based on status
+function updateAttendanceIcon(icon, status, punchIn, punchOut) {
+    let iconClass = 'fas fa-star';
+    let iconColor = '#ccc';
+    let tooltipText = 'Not Marked';
+    
+    switch(status) {
+        case 'full':
+            iconClass = 'fas fa-star';
+            iconColor = '#198754'; // Green for unverified full day
+            tooltipText = `Full Day (In: ${punchIn ? new Date(punchIn).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'N/A'}, Out: ${punchOut ? new Date(punchOut).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'N/A'})`;
+            break;
+        case 'half':
+            iconClass = 'fas fa-star-half-alt';
+            iconColor = '#198754'; // Green for unverified half day
+            tooltipText = `Half Day (In: ${punchIn ? new Date(punchIn).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'N/A'})`;
+            break;
+        case 'verified_full':
+            iconClass = 'fas fa-star';
+            iconColor = '#0d6efd'; // Blue for verified full day
+            tooltipText = `Verified Full Day (In: ${punchIn ? new Date(punchIn).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'N/A'}, Out: ${punchOut ? new Date(punchOut).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'N/A'})`;
+            break;
+        case 'verified_half':
+            iconClass = 'fas fa-star-half-alt';
+            iconColor = '#0d6efd'; // Blue for verified half day
+            tooltipText = `Verified Half Day (In: ${punchIn ? new Date(punchIn).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'N/A'})`;
+            break;
+        case 'leave':
+            iconClass = 'fas fa-star';
+            iconColor = '#dc3545'; // Red for leave
+            tooltipText = 'Leave';
+            break;
+        case 'holiday':
+            iconClass = 'fas fa-star';
+            iconColor = '#ffc107'; // Yellow for holiday
+            tooltipText = 'Holiday';
+            break;
+        default:
+            iconClass = 'fas fa-star';
+            iconColor = '#ccc';
+            tooltipText = 'Not Marked';
     }
+    
+    icon.className = iconClass;
+    icon.style.color = iconColor;
+    icon.setAttribute('data-state', status);
+    icon.setAttribute('title', tooltipText);
+    icon.setAttribute('data-bs-toggle', 'tooltip');
+    icon.setAttribute('data-bs-placement', 'top');
+    
+    // Refresh tooltip
+    const tooltip = bootstrap.Tooltip.getInstance(icon);
+    if (tooltip) {
+        tooltip.dispose();
+    }
+    new bootstrap.Tooltip(icon);
+}
 
     // Show attendance modal
     function showAttendanceModal(employeeId, employeeName, date, icon) {
@@ -1099,97 +1100,97 @@ function updateHolidayInUI(date) {
 
     // Save attendance changes
     function saveAttendance() {
-        const modal = document.getElementById('attendanceDetailsModal');
-        const employeeId = document.getElementById('employeeName').getAttribute('data-id');
-        const date = modal.getAttribute('data-date');
-        const status = document.getElementById('attendanceStatus').value;
-        const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content");
+    const modal = document.getElementById('attendanceDetailsModal');
+    const employeeId = document.getElementById('employeeName').getAttribute('data-id');
+    const date = modal.getAttribute('data-date');
+    const status = document.getElementById('attendanceStatus').value;
+    const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content");
 
-        // Determine if we're verifying (changing to verified status)
-        const currentState = modal.querySelector('#attendanceStatus').value;
-        const verifiedStatus = currentState === 'full' ? 'verified_full' : 
-                             currentState === 'half' ? 'verified_half' : 
-                             currentState;
+    // Determine if we're verifying (changing to verified status)
+    const currentState = modal.querySelector('#attendanceStatus').value;
+    const verifiedStatus = currentState === 'full' ? 'verified_full' : 
+                         currentState === 'half' ? 'verified_half' : 
+                         currentState;
 
-        fetch("{% url 'update_attendance_status' %}", {
-            method: "POST",
-            headers: {
-                "X-CSRFToken": csrfToken,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                employee_id: employeeId,
-                date: date,
-                status: verifiedStatus
-            })
+    fetch("{% url 'update_attendance_status' %}", {
+        method: "POST",
+        headers: {
+            "X-CSRFToken": csrfToken,
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            employee_id: employeeId,
+            date: date,
+            status: verifiedStatus
         })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Update the icon in the table
-                const icon = document.querySelector(`i[data-employee-id="${data.employee_id}"][data-date="${data.date}"]`);
-                if (icon) {
-                    // Remove existing classes
-                    icon.classList.remove(
-                        "text-success", 
-                        "text-warning", 
-                        "text-danger", 
-                        "text-secondary",
-                        "text-primary",
-                        "fa-star",
-                        "fa-star-half-alt"
-                    );
-                    
-                    // Set new classes based on status
-                    switch(data.status) {
-                        case "full":
-                            icon.classList.add("fa-star", "text-success");
-                            break;
-                        case "verified_full":
-                            icon.classList.add("fa-star", "text-primary");
-                            break;
-                        case "half":
-                            icon.classList.add("fa-star-half-alt", "text-success");
-                            break;
-                        case "verified_half":
-                            icon.classList.add("fa-star-half-alt", "text-primary");
-                            break;
-                        case "leave":
-                            icon.classList.add("fa-star", "text-danger");
-                            break;
-                        case "holiday":
-                            icon.classList.add("fa-star", "text-warning");
-                            break;
-                        default:
-                            icon.classList.add("fa-star", "text-secondary");
-                    }
-                    
-                    // Update icon attributes
-                    icon.setAttribute("data-state", data.status);
-                    
-                    // Refresh tooltip
-                    const tooltip = bootstrap.Tooltip.getInstance(icon);
-                    if (tooltip) {
-                        tooltip.dispose();
-                    }
-                    new bootstrap.Tooltip(icon);
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update the icon in the table
+            const icon = document.querySelector(`i[data-employee-id="${data.employee_id}"][data-date="${data.date}"]`);
+            if (icon) {
+                // Remove existing classes
+                icon.classList.remove(
+                    "text-success", 
+                    "text-warning", 
+                    "text-danger", 
+                    "text-secondary",
+                    "text-primary",
+                    "fa-star",
+                    "fa-star-half-alt"
+                );
+                
+                // Set new classes based on status
+                switch(data.status) {
+                    case "full":
+                        icon.classList.add("fa-star", "text-success");
+                        break;
+                    case "verified_full":
+                        icon.classList.add("fa-star", "text-primary");
+                        break;
+                    case "half":
+                        icon.classList.add("fa-star-half-alt", "text-success");
+                        break;
+                    case "verified_half":
+                        icon.classList.add("fa-star-half-alt", "text-primary");
+                        break;
+                    case "leave":
+                        icon.classList.add("fa-star", "text-danger");
+                        break;
+                    case "holiday":
+                        icon.classList.add("fa-star", "text-warning");
+                        break;
+                    default:
+                        icon.classList.add("fa-star", "text-secondary");
                 }
                 
-                // Close the modal
-                bootstrap.Modal.getInstance(modal).hide();
+                // Update icon attributes
+                icon.setAttribute("data-state", data.status);
                 
-                // Optional: Show success toast/alert
-                alert("Attendance verified successfully!");
-            } else {
-                // Handle error scenario
-                alert("Error verifying attendance: " + (data.error || "Unknown error"));
+                // Refresh tooltip
+                const tooltip = bootstrap.Tooltip.getInstance(icon);
+                if (tooltip) {
+                    tooltip.dispose();
+                }
+                new bootstrap.Tooltip(icon);
             }
-        })
-        .catch(error => {
-            console.error("Error:", error);
-            alert("Something went wrong. Please try again.");
-        });
-    }
+            
+            // Close the modal
+            bootstrap.Modal.getInstance(modal).hide();
+            
+            // Optional: Show success toast/alert
+            alert("Attendance verified successfully!");
+        } else {
+            // Handle error scenario
+            alert("Error verifying attendance: " + (data.error || "Unknown error"));
+        }
+    })
+    .catch(error => {
+        console.error("Error:", error);
+        alert("Something went wrong. Please try again.");
+    });
+}
 
 
     // Initialize the table with current month on page load

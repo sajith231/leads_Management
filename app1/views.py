@@ -3220,19 +3220,22 @@ def update_attendance_status(request):
                 date=date,
                 defaults={
                     'status': status,
-                    'day': date.day
+                    'day': date.day,
+                    'verified': True if status.startswith('verified_') else False
                 }
             )
 
             if not created:
                 attendance.status = status
+                attendance.verified = True if status.startswith('verified_') else False
                 attendance.save()
 
             return JsonResponse({
                 "success": True,
                 "employee_id": employee_id,
                 "date": date_str,
-                "status": status
+                "status": status,
+                "verified": attendance.verified
             })
 
         except Exception as e:

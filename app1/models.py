@@ -670,6 +670,7 @@ class Attendance(models.Model):
         ], 
         default='initial'
     )
+    
     punch_in = models.DateTimeField(null=True, blank=True)
     punch_out = models.DateTimeField(null=True, blank=True)
     punch_in_location = models.CharField(max_length=255, null=True, blank=True)
@@ -678,6 +679,7 @@ class Attendance(models.Model):
     punch_in_longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     punch_out_latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     punch_out_longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    verified = models.BooleanField(default=False)  # CREATED AS NEW 
 
     class Meta:
         unique_together = ('employee', 'day', 'date')  # Ensure no duplicate entries for the same day
