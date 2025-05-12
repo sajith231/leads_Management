@@ -30,7 +30,7 @@ class DistrictForm(forms.ModelForm):
 
 
 from django import forms
-from .models import User, Branch
+from .models import User, Branch, CV  # Add CV to imports
 from django.contrib.auth.models import User as DjangoUser
 
 class UserForm(forms.ModelForm):
@@ -56,15 +56,26 @@ class UserForm(forms.ModelForm):
         required=False,
         widget=forms.FileInput(attrs={'class': 'form-control'})
     )
-    
+
+    # Add new field for CV names
+    cv_name = forms.ModelChoiceField(
+        queryset=CV.objects.all(),
+        required=False,
+        label="Add name from CV",
+        widget=forms.Select(attrs={
+            'class': 'form-select',
+            'id': 'cv-name-select'
+        })
+    )
 
     class Meta:
         model = User
-        fields = ['name', 'userid', 'password', 'branch', 'user_level', 'image','status']  # Include image field
+        fields = ['name', 'userid', 'password', 'branch', 'user_level', 'image', 'status']
         widgets = {
             'name': forms.TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'Enter Full Name',
+                'id': 'name-input'
             }),
             'userid': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -84,12 +95,15 @@ class UserForm(forms.ModelForm):
             if field == 'password':
                 self.fields[field].required = not self.edit_mode
             elif field == 'image':
-                self.fields[field].required = False  # Keep image field optional
+                self.fields[field].required = not self.edit_mode
+            elif field == 'cv_name':  # Never required
+                self.fields[field].required = False
             else:
                 self.fields[field].required = True
 
         if self.edit_mode:
             self.fields['password'].widget.attrs['placeholder'] = 'Leave empty to keep current password'
+            self.fields['image'].help_text = "Leave empty to keep current image"
 
     def clean_userid(self):
         userid = self.cleaned_data.get('userid')

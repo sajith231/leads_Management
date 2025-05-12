@@ -11,7 +11,6 @@
     @media (max-width: 768px) {
         .allbody{
             margin-top: 15%;
-
         }}
 </style>
 <div class="allbody">
@@ -29,7 +28,7 @@
         </select>
     </div>
 
-    <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+    <div class="table-responsive" style="max-height: 600px; overflow-y: auto;">
         <table class="table table-bordered table-striped" id="serviceTable">
             <thead>
                 <tr>
@@ -42,17 +41,15 @@
                     <th>Added By</th>
                     <th>Place</th>
                     <th>Service Type</th>
-
                     <th>Mode of Service</th>
-
                     <th>Edit</th>
                     <th>Delete</th>
                 </tr>
             </thead>
             <tbody>
-                {% for entry in service_entries %}
+                {% for entry in page_obj %}
                 <tr>
-                    <td>{{ forloop.counter }}</td>
+                    <td>{{ forloop.counter0|add:page_obj.start_index }}</td>
                     <td>{{ entry.date|date:"Y-m-d H:i" }}</td>
                     <td>{{ entry.customer|upper }}</td>
                     <td>{{ entry.complaint|upper }}</td>
@@ -71,9 +68,7 @@
                     <td>{{ entry.user.name|upper }}</td>
                     <td>{{ entry.place|upper }}</td>
                     <td>{{ entry.service_type|upper }}</td>
-
                     <td>{{ entry.mode_of_service|upper }}</td>
-
                     <td>
                         <a href="{% url 'edit_service_entry' entry.id %}" class="btn btn-sm btn-warning">Edit</a>
                     </td>
@@ -87,6 +82,25 @@
                 {% endfor %}
             </tbody>
         </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination">
+        <span class="step-links">
+            {% if page_obj.has_previous %}
+                <a href="?page=1" class="btn btn-sm btn-outline-primary">&laquo; first</a>
+                <a href="?page={{ page_obj.previous_page_number }}" class="btn btn-sm btn-outline-primary">previous</a>
+            {% endif %}
+
+            <span class="current">
+                Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+            </span>
+
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}" class="btn btn-sm btn-outline-primary">next</a>
+                <a href="?page={{ page_obj.paginator.num_pages }}" class="btn btn-sm btn-outline-primary">last &raquo;</a>
+            {% endif %}
+        </span>
     </div>
 </div>
 
@@ -118,14 +132,14 @@
 
         // Function to filter rows by status
         const filterRowsByStatus = () => {
-            const selectedStatus = statusFilter.value.toLowerCase(); // Lowercase for consistent comparison
+            const selectedStatus = statusFilter.value.toLowerCase();
 
             tableRows.forEach(row => {
                 const statusCell = row.querySelector('.status span').textContent.trim().toLowerCase();
                 if (selectedStatus === 'all' || statusCell === selectedStatus) {
-                    row.style.display = ''; // Show row
+                    row.style.display = '';
                 } else {
-                    row.style.display = 'none'; // Hide row
+                    row.style.display = 'none';
                 }
             });
         };
@@ -137,14 +151,13 @@
         remarkIcons.forEach(icon => {
             icon.addEventListener('click', function () {
                 const remark = this.getAttribute('data-remark');
-                remarkContent.textContent = remark || 'No remarks available.'; // Fallback if remark is empty
+                remarkContent.textContent = remark || 'No remarks available.';
                 remarkModal.show();
             });
         });
 
-        // Initial filter application (optional, in case a default filter is needed)
+        // Initial filter application
         filterRowsByStatus();
     });
 </script>
-
 {% endblock %}

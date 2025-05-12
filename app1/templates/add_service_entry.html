@@ -9,11 +9,95 @@
         <div class="col-md-6">
             <form method="POST" action="{% url 'add_service_entry' %}">
                 {% csrf_token %}
+                <!-- Customer Section -->
                 <div class="mb-3" style="position: relative;">
-    <label for="customer" class="form-label">Customer</label>
-    <input type="text" class="form-control" id="customer" name="customer" placeholder="Search Customer" autocomplete="off" required>
-    <div id="customerDropdown" class="dropdown-menu" style="display: none; position: absolute; width: 100%; max-height: 200px; overflow-y: auto; z-index: 1000;">
-        <p style="padding: 10px; margin: 0;">Loading customers...</p>
+                    <label for="customer" class="form-label">Customer</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="customer" name="customer" placeholder="Search or type new customer" autocomplete="off" required>
+                        <button class="btn btn-outline-secondary" type="button" id="newCustomerBtn">New Customer</button>
+                    </div>
+                    <div id="customerDropdown" class="dropdown-menu" style="display: none; position: absolute; width: 100%; max-height: 200px; overflow-y: auto; z-index: 1000;">
+                        <p style="padding: 10px; margin: 0;">Loading customers...</p>
+                    </div>
+                </div>
+
+                <!-- New Customer Fields (hidden by default) -->
+                <div class="mb-3" id="newCustomerFields" style="display: none;">
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            New Customer Details
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label for="new_customer_name" class="form-label">Customer Name *</label>
+                                <input type="text" class="form-control" id="new_customer_name" name="new_customer_name">
+                            </div>
+                            <div class="mb-3">
+                                <label for="new_customer_address" class="form-label">Place *</label>
+                                <input type="text" class="form-control" id="new_customer_address" name="new_customer_address">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Complaint Field -->
+                <div class="mb-3">
+                    <label for="complaint" class="form-label">Complaint *</label>
+                    <select class="form-control" id="complaint" name="complaint" required>
+                        <option value="">Select a complaint</option>
+                        {% for complaint in complaints %}
+                            <option value="{{ complaint.description }}">{{ complaint.description }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Service Type Field -->
+                <div class="mb-3">
+                    <label for="service_type" class="form-label">Service Type *</label>
+                    <select name="service_type" id="service_type" class="form-select" required>
+                        <option value="Software">Software</option>
+                        <option value="Hardware">Hardware</option>
+                    </select>
+                </div>
+
+                <!-- Remarks Field -->
+                <div class="mb-3">
+                    <label for="remarks" class="form-label">Remarks</label>
+                    <textarea class="form-control" id="remarks" name="remarks" rows="2"></textarea>
+                </div>
+
+                <!-- Status Field -->
+                <div class="mb-3">
+                    <label for="status" class="form-label">Status *</label>
+                    <select class="form-control" id="status" name="status" required>
+                        
+                        <option value="Solved">Solved</option>
+                    </select>
+                </div>
+
+                <!-- Place Field -->
+                <div class="mb-3">
+                    <label for="place" class="form-label">Place *</label>
+                    <input type="text" class="form-control" id="place" name="place" required>
+                </div>
+
+                <!-- Mode of Service Field -->
+                <div class="form-group">
+                    <label for="mode_of_service">Mode of Service *</label>
+                    <select class="form-control" id="mode_of_service" name="mode_of_service" required>
+                        <option value="" disabled selected>Select Mode</option>
+                        <option value="Online">Online</option>
+                        <option value="Onsite">Onsite</option>
+                    </select>
+                </div>
+
+                <!-- Form Buttons -->
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary">Submit</button>
+                    <a href="{% url 'service_entry' %}" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 
@@ -21,8 +105,53 @@
     document.addEventListener("DOMContentLoaded", function () {
         const customerInput = document.getElementById("customer");
         const customerDropdown = document.getElementById("customerDropdown");
-        const placeInput = document.getElementById("place");  // New: Access the place field
+        const placeInput = document.getElementById("place");
+        const newCustomerBtn = document.getElementById("newCustomerBtn");
+        const newCustomerFields = document.getElementById("newCustomerFields");
+        const newCustomerName = document.getElementById("new_customer_name");
+        const newCustomerAddress = document.getElementById("new_customer_address");
 
+        let isNewCustomer = false;
+
+        // Toggle between new customer and existing customer
+        // Inside the newCustomerBtn click event listener
+        newCustomerBtn.addEventListener("click", function() {
+            isNewCustomer = !isNewCustomer;
+            
+            if (isNewCustomer) {
+                newCustomerBtn.textContent = "Select Existing";
+                newCustomerBtn.classList.remove("btn-outline-secondary");
+                newCustomerBtn.classList.add("btn-outline-primary");
+                newCustomerFields.style.display = "block";
+                customerDropdown.style.display = "none";
+                customerInput.value = "";
+                customerInput.placeholder = "Will use new customer details below";
+                customerInput.readOnly = true;
+                customerInput.required = false;
+                newCustomerName.required = true;
+                newCustomerAddress.required = true;
+                
+                // Add event listener to auto-fill place when new customer address changes
+                newCustomerAddress.addEventListener("input", function() {
+                    placeInput.value = newCustomerAddress.value;
+                });
+            } else {
+                newCustomerBtn.textContent = "New Customer";
+                newCustomerBtn.classList.remove("btn-outline-primary");
+                newCustomerBtn.classList.add("btn-outline-secondary");
+                newCustomerFields.style.display = "none";
+                customerInput.placeholder = "Search or type new customer";
+                customerInput.readOnly = false;
+                customerInput.required = true;
+                newCustomerName.required = false;
+                newCustomerAddress.required = false;
+                
+                // Remove the event listener when switching back to existing customer
+                newCustomerAddress.removeEventListener("input", function() {
+                    placeInput.value = newCustomerAddress.value;
+                });
+            }
+        });
         // Fetch customers when the page loads
         fetch('/proxy/customers/')
             .then(response => response.json())
@@ -33,24 +162,30 @@
                 data.forEach(customer => {
                     const option = document.createElement("div");
                     option.classList.add("dropdown-item");
-                    option.textContent = `${customer.name}, ${customer.address}`; // Display name and address
-                    option.setAttribute("data-address", customer.address); // New: Store address as data attribute
+                    option.textContent = `${customer.name}, ${customer.address}`;
+                    option.setAttribute("data-address", customer.address);
                     option.addEventListener("click", function () {
-                        customerInput.value = customer.name;  // Set the customer name
-                        placeInput.value = option.getAttribute("data-address");  // Auto-fill the place field
-                        customerDropdown.style.display = "none"; // Hide dropdown after selection
+                        customerInput.value = customer.name;
+                        placeInput.value = option.getAttribute("data-address");
+                        customerDropdown.style.display = "none";
                     });
                     customerDropdown.appendChild(option);
                 });
+
+                if (data.length === 0) {
+                    customerDropdown.innerHTML = '<p style="padding: 10px; margin: 0;">No customers found</p>';
+                }
             })
             .catch(error => {
                 console.error("Error loading customers:", error);
-                customerDropdown.innerHTML = '<p style="padding: 10px; margin: 0;">Failed to load customers.</p>';
+                customerDropdown.innerHTML = '<p style="padding: 10px; margin: 0;">Failed to load customers. You can add a new customer.</p>';
             });
 
         // Show dropdown on focus
         customerInput.addEventListener("focus", function () {
-            customerDropdown.style.display = "block";
+            if (!isNewCustomer) {
+                customerDropdown.style.display = "block";
+            }
         });
 
         // Hide dropdown when clicking outside
@@ -62,6 +197,8 @@
 
         // Filter customers as the user types
         customerInput.addEventListener("input", function () {
+            if (isNewCustomer) return;
+            
             const filter = customerInput.value.toLowerCase();
             const options = customerDropdown.querySelectorAll(".dropdown-item");
             let hasVisibleItem = false;
@@ -75,12 +212,17 @@
                 }
             });
 
-            // Show the dropdown if any item matches the filter
             customerDropdown.style.display = hasVisibleItem ? "block" : "none";
+        });
+
+        // Auto-fill place when selecting from dropdown
+        customerDropdown.addEventListener("click", function(e) {
+            if (e.target.classList.contains("dropdown-item")) {
+                placeInput.value = e.target.getAttribute("data-address");
+            }
         });
     });
 </script>
-
 
 <style>
     .dropdown-menu {
@@ -101,7 +243,7 @@
         background-color: #f1f1f1;
     }
 
-    .form-control {
+    .form-control, .form-select {
         width: 100%;
         padding: 8px;
         margin: 5px 0;
@@ -110,54 +252,22 @@
     .form-group, .mb-3 {
         margin: 10px 0;
     }
+
+    .card {
+        margin-bottom: 1rem;
+        border: 1px solid rgba(0,0,0,.125);
+        border-radius: .25rem;
+    }
+
+    .card-header {
+        padding: .5rem 1rem;
+        margin-bottom: 0;
+        background-color: rgba(0,0,0,.03);
+        border-bottom: 1px solid rgba(0,0,0,.125);
+    }
+
+    .card-body {
+        padding: 1rem;
+    }
 </style>
-
-
-                <div class="mb-3">
-                    <label for="complaint" class="form-label">Complaint</label>
-                    <select class="form-control" id="complaint" name="complaint" required>
-                        <option value="">Select a complaint</option>
-                        {% for complaint in complaints %}
-                            <option value="{{ complaint.description }}">{{ complaint.description }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label for="service_type" class="form-label">Service Type</label>
-                    <select name="service_type" id="service_type" class="form-select" required>
-                        <option value="Software">Software</option>
-                        <option value="Hardware">Hardware</option>
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label for="remarks" class="form-label">Remarks</label>
-                    <textarea class="form-control" id="remarks" name="remarks" rows="2"></textarea>
-                </div>
-                <div class="mb-3">
-                    <label for="status" class="form-label">Status</label>
-                    <select class="form-control" id="status" name="status" required>
-                        
-                        <option value="Solved">Solved</option>
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label for="place" class="form-label">Place</label>
-                    <input type="text" class="form-control" id="place" name="place" required>
-                </div>
-                <div class="form-group">
-                    <label for="mode_of_service">Mode of Service:</label>
-                    <select class="form-control" id="mode_of_service" name="mode_of_service" required>
-                        <option value="" disabled selected>Select Mode</option>
-                        <option value="Online">Online</option>
-                        <option value="Onsite">Onsite</option>
-                    </select>
-                </div>
-
-
-                <button type="submit" class="btn btn-primary">Submit</button>
-                <a href="{% url 'service_entry' %}" class="btn btn-secondary">Cancel</a>
-            </form>
-        </div>
-    </div>
-</div>
 {% endblock %}

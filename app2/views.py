@@ -3,14 +3,36 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from .models import Field, Credentials, CredentialDetail, Category
 
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+
 def credential_management(request):
-    fields = Field.objects.all()
+    # Retrieve all credentials
     credentials = Credentials.objects.all()
-    categories = Category.objects.all()  # Add this line
+    
+    # Set up pagination
+    paginator = Paginator(credentials, 12)  # 12 credentials per page
+    
+    # Get the current page number from the request
+    page_number = request.GET.get('page', 1)
+    
+    try:
+        page_obj = paginator.page(page_number)
+    except PageNotAnInteger:
+        # If page is not an integer, deliver first page
+        page_obj = paginator.page(1)
+    except EmptyPage:
+        # If page is out of range, deliver last page of results
+        page_obj = paginator.page(paginator.num_pages)
+    
+    # Retrieve fields and categories
+    fields = Field.objects.all()
+    categories = Category.objects.all()
+    
     return render(request, 'credential_management.html', {
         'fields': fields,
-        'credentials': credentials,
-        'categories': categories  # Add this line
+        'credentials': credentials,  # Keep this for compatibility with other parts of the template
+        'page_obj': page_obj,  # Pass the paginated object
+        'categories': categories
     })
 
 def add_field(request):

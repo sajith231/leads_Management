@@ -258,45 +258,43 @@ from .forms import UserForm
 @login_required
 def add_user(request):
     if request.method == "POST":
-        form = UserForm(request.POST, request.FILES)  # Process submitted form data
+        form = UserForm(request.POST, request.FILES, edit_mode=False)
 
-        # Prevent using "admin" as a User ID
         if request.POST.get("userid") == "admin":
             messages.error(request, "The User ID 'admin' is not allowed.")
             return render(request, "add_user.html", {"form": form})
 
         if form.is_valid():
             try:
-                user = form.save(commit=False)  # Create a user instance but don't save yet
+                user = form.save(commit=False)
                 
-                # Handle the optional image field
+                # The cv_name field is just for selection, not saved to model
+                
                 if "image" in request.FILES:
-                    user.image = request.FILES["image"]  # Assign uploaded image
+                    user.image = request.FILES["image"]
                 
-                # Set default menus for new users
                 try:
                     default_settings = DefaultSettings.objects.first()
                     if default_settings and default_settings.default_menus:
                         user.allowed_menus = default_settings.default_menus
                     else:
-                        user.allowed_menus = json.dumps([])  # Empty array if no defaults set
+                        user.allowed_menus = json.dumps([])
                 except Exception as e:
                     messages.warning(request, f"Could not set default menus: {str(e)}")
                     user.allowed_menus = json.dumps([])
                 
-                user.save()  # Save the user to the database
+                user.save()
 
                 messages.success(request, f"User '{user.name}' created successfully!")
                 return redirect("users_table")
             except Exception as e:
                 messages.error(request, f"Error creating user: {str(e)}")
         else:
-            # Display form errors as messages
             for field, errors in form.errors.items():
                 for error in errors:
                     messages.error(request, f"{field}: {error}")
     else:
-        form = UserForm()  # Initialize an empty form for GET requests
+        form = UserForm()
 
     return render(request, "add_user.html", {"form": form})
 
@@ -1346,13 +1344,26 @@ from django.utils import timezone
 from .models import ServiceEntry, User  # Import the custom User model
 from django.contrib.auth.decorators import login_required
 
+from django.shortcuts import render, redirect
+from django.utils import timezone
+from .models import ServiceEntry, User
+from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
+from django.contrib import messages
+
 @login_required
 def service_entry(request):
     try:
-        current_user = get_current_user(request)
-        service_entries = ServiceEntry.objects.all().order_by('-date')
+        current_user = request.user  # Assuming you're using the default user model
+        service_entries_list = ServiceEntry.objects.all().order_by('-date')
+        
+        # Add pagination with 15 items per page
+        paginator = Paginator(service_entries_list, 12)
+        page_number = request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+        
         return render(request, 'service_entry.html', {
-            'service_entries': service_entries,
+            'page_obj': page_obj,
             'current_user': current_user
         })
     except Exception as e:
@@ -1368,7 +1379,6 @@ def add_service_entry(request):
         complaints = Complaint.objects.all().order_by('created_at')
 
         # Fetch customers from the API
-        import requests
         customers = []
         try:
             response = requests.get('https://rrc.imcbs.com/api/rrc-clients-data')
@@ -1378,24 +1388,36 @@ def add_service_entry(request):
             messages.warning(request, f'Could not fetch customers: {str(e)}')
 
         if request.method == 'POST':
-            # Get form data
-            customer = request.POST.get('customer')
+            # Check if it's a new customer
+            new_customer_name = request.POST.get('new_customer_name')
+            if new_customer_name:
+                # This is a new customer
+                customer_name = new_customer_name
+                place = request.POST.get('new_customer_address', '')
+                
+                # Here you would typically save the new customer to your database
+                # For now, we'll just use the name directly
+            else:
+                # Existing customer
+                customer_name = request.POST.get('customer')
+                place = request.POST.get('place')
+
+            # Get other form data
             complaint = request.POST.get('complaint')
             remarks = request.POST.get('remarks')
-            place = request.POST.get('place')
             status = request.POST.get('status')
             mode_of_service = request.POST.get('mode_of_service')
-            service_type = request.POST.get('service_type')  # New field
+            service_type = request.POST.get('service_type')
 
             # Create new service entry
             service_entry = ServiceEntry.objects.create(
                 date=timezone.now(),
-                customer=customer,
+                customer=customer_name,
                 complaint=complaint,
                 remarks=remarks,
                 status=status,
                 mode_of_service=mode_of_service,
-                service_type=service_type,  # New field
+                service_type=service_type,
                 user=current_user,
                 place=place
             )
