@@ -273,6 +273,8 @@ class ServiceEntry(models.Model):
     complaint = models.TextField()
     remarks = models.TextField(blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending')
+    mode_of_service = models.CharField(max_length=20, choices=MODE_CHOICES, default='Onsite') 
+    service_type = models.CharField(max_length=20, choices=SERVICE_TYPE_CHOICES, default='Software')  
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     place = models.CharField(max_length=200)
 
@@ -663,9 +665,7 @@ class Attendance(models.Model):
         choices=[
             ('initial', 'Not Marked'),
             ('full', 'Full Day'),
-            ('verified_full', 'Verified Full Day'),
             ('half', 'Half Day'),
-            ('verified_half', 'Verified Half Day'),
             ('leave', 'Leave')
         ], 
         default='initial'

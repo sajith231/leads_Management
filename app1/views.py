@@ -1361,7 +1361,6 @@ def service_entry(request):
 
 
 
-
 @login_required
 def add_service_entry(request):
     try:
@@ -3202,35 +3201,44 @@ def update_attendance_status(request):
         try:
             data = json.loads(request.body)
             employee_id = data.get("employee_id")
-            date = data.get("date")
+            date_str = data.get("date")
             status = data.get("status")
 
-            if not all([employee_id, date, status]):
+            if not all([employee_id, date_str, status]):
                 return JsonResponse({"success": False, "error": "Missing required fields"})
 
+            try:
+                date = datetime.strptime(date_str, "%Y-%m-%d").date()
+            except ValueError:
+                return JsonResponse({"success": False, "error": "Invalid date format"})
+
+            employee = get_object_or_404(Employee, id=employee_id)
+            
             # Get or create attendance record
             attendance, created = Attendance.objects.get_or_create(
-                employee_id=employee_id,
+                employee=employee,
                 date=date,
-                defaults={"status": status}
+                defaults={
+                    'status': status,
+                    'day': date.day
+                }
             )
 
             if not created:
-                # Only update if status is different
-                if attendance.status != status:
-                    attendance.status = status
-                    attendance.save()
+                attendance.status = status
+                attendance.save()
 
             return JsonResponse({
                 "success": True,
-                "status": status,
                 "employee_id": employee_id,
-                "date": date
+                "date": date_str,
+                "status": status
             })
+
         except Exception as e:
             return JsonResponse({"success": False, "error": str(e)})
 
-    return JsonResponse({"success": False, "error": "Invalid request"})
+    return JsonResponse({"success": False, "error": "Invalid request method"})
 
 
 
