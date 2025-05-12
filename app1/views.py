@@ -3202,44 +3202,35 @@ def update_attendance_status(request):
         try:
             data = json.loads(request.body)
             employee_id = data.get("employee_id")
-            date_str = data.get("date")
+            date = data.get("date")
             status = data.get("status")
 
-            if not all([employee_id, date_str, status]):
+            if not all([employee_id, date, status]):
                 return JsonResponse({"success": False, "error": "Missing required fields"})
 
-            try:
-                date = datetime.strptime(date_str, "%Y-%m-%d").date()
-            except ValueError:
-                return JsonResponse({"success": False, "error": "Invalid date format"})
-
-            employee = get_object_or_404(Employee, id=employee_id)
-            
             # Get or create attendance record
             attendance, created = Attendance.objects.get_or_create(
-                employee=employee,
+                employee_id=employee_id,
                 date=date,
-                defaults={
-                    'status': status,
-                    'day': date.day
-                }
+                defaults={"status": status}
             )
 
             if not created:
-                attendance.status = status
-                attendance.save()
+                # Only update if status is different
+                if attendance.status != status:
+                    attendance.status = status
+                    attendance.save()
 
             return JsonResponse({
                 "success": True,
+                "status": status,
                 "employee_id": employee_id,
-                "date": date_str,
-                "status": status
+                "date": date
             })
-
         except Exception as e:
             return JsonResponse({"success": False, "error": str(e)})
 
-    return JsonResponse({"success": False, "error": "Invalid request method"})
+    return JsonResponse({"success": False, "error": "Invalid request"})
 
 
 

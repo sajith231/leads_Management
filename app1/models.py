@@ -663,7 +663,9 @@ class Attendance(models.Model):
         choices=[
             ('initial', 'Not Marked'),
             ('full', 'Full Day'),
+            ('verified_full', 'Verified Full Day'),
             ('half', 'Half Day'),
+            ('verified_half', 'Verified Half Day'),
             ('leave', 'Leave')
         ], 
         default='initial'

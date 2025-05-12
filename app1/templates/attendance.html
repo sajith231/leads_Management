@@ -1099,98 +1099,71 @@ function updateHolidayInUI(date) {
 
     // Save attendance changes
     function saveAttendance() {
-        const modal = document.getElementById('attendanceDetailsModal');
-        const employeeId = document.getElementById('employeeName').getAttribute('data-id');
-        const date = modal.getAttribute('data-date');
-        const status = document.getElementById('attendanceStatus').value;
-        const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content");
+    const modal = document.getElementById('attendanceDetailsModal');
+    const employeeId = document.getElementById('employeeName').getAttribute('data-id');
+    const date = modal.getAttribute('data-date');
+    const status = document.getElementById('attendanceStatus').value;
+    const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content");
 
-        // Determine if we're verifying (changing to verified status)
-        const currentState = modal.querySelector('#attendanceStatus').value;
-        const verifiedStatus = currentState === 'full' ? 'verified_full' : 
-                             currentState === 'half' ? 'verified_half' : 
-                             currentState;
-
-        fetch("{% url 'update_attendance_status' %}", {
-            method: "POST",
-            headers: {
-                "X-CSRFToken": csrfToken,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                employee_id: employeeId,
-                date: date,
-                status: verifiedStatus
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Update the icon in the table
-                const icon = document.querySelector(`i[data-employee-id="${data.employee_id}"][data-date="${data.date}"]`);
-                if (icon) {
-                    // Remove existing classes
-                    icon.classList.remove(
-                        "text-success", 
-                        "text-warning", 
-                        "text-danger", 
-                        "text-secondary",
-                        "text-primary",
-                        "fa-star",
-                        "fa-star-half-alt"
-                    );
-                    
-                    // Set new classes based on status
-                    switch(data.status) {
-                        case "full":
-                            icon.classList.add("fa-star", "text-success");
-                            break;
-                        case "verified_full":
-                            icon.classList.add("fa-star", "text-primary");
-                            break;
-                        case "half":
-                            icon.classList.add("fa-star-half-alt", "text-success");
-                            break;
-                        case "verified_half":
-                            icon.classList.add("fa-star-half-alt", "text-primary");
-                            break;
-                        case "leave":
-                            icon.classList.add("fa-star", "text-danger");
-                            break;
-                        case "holiday":
-                            icon.classList.add("fa-star", "text-warning");
-                            break;
-                        default:
-                            icon.classList.add("fa-star", "text-secondary");
-                    }
-                    
-                    // Update icon attributes
-                    icon.setAttribute("data-state", data.status);
-                    
-                    // Refresh tooltip
-                    const tooltip = bootstrap.Tooltip.getInstance(icon);
-                    if (tooltip) {
-                        tooltip.dispose();
-                    }
-                    new bootstrap.Tooltip(icon);
-                }
-                
-                // Close the modal
-                bootstrap.Modal.getInstance(modal).hide();
-                
-                // Optional: Show success toast/alert
-                alert("Attendance verified successfully!");
-            } else {
-                // Handle error scenario
-                alert("Error verifying attendance: " + (data.error || "Unknown error"));
-            }
-        })
-        .catch(error => {
-            console.error("Error:", error);
-            alert("Something went wrong. Please try again.");
-        });
+    // Determine verified status based on current state
+    let verifiedStatus = status;
+    if (status === 'full' || status === 'half') {
+        verifiedStatus = status === 'full' ? 'verified_full' : 'verified_half';
     }
 
+    fetch("{% url 'update_attendance_status' %}", {
+        method: "POST",
+        headers: {
+            "X-CSRFToken": csrfToken,
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            employee_id: employeeId,
+            date: date,
+            status: verifiedStatus
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update the icon in the table
+            const icon = document.querySelector(`i[data-employee-id="${data.employee_id}"][data-date="${data.date}"]`);
+            if (icon) {
+                // Remove existing classes
+                icon.className = '';
+                
+                // Set new classes based on status
+                if (data.status === 'verified_full') {
+                    icon.classList.add('fas', 'fa-star', 'text-primary');
+                    icon.setAttribute('title', 'Verified Full Day');
+                } else if (data.status === 'verified_half') {
+                    icon.classList.add('fas', 'fa-star-half-alt', 'text-primary');
+                    icon.setAttribute('title', 'Verified Half Day');
+                }
+                
+                icon.setAttribute('data-state', data.status);
+                
+                // Refresh tooltip
+                const tooltip = bootstrap.Tooltip.getInstance(icon);
+                if (tooltip) {
+                    tooltip.dispose();
+                }
+                new bootstrap.Tooltip(icon);
+            }
+            
+            // Close the modal
+            bootstrap.Modal.getInstance(modal).hide();
+            
+            alert("Attendance verified successfully!");
+        } else {
+            alert("Error verifying attendance: " + (data.error || "Unknown error"));
+        }
+    })
+    .catch(error => {
+        console.error("Error:", error);
+        alert("Something went wrong. Please try again.");
+    });
+}
 
     // Initialize the table with current month on page load
     document.addEventListener('DOMContentLoaded', function() {
