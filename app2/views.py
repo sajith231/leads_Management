@@ -6,11 +6,32 @@ from .models import Field, Credentials, CredentialDetail, Category
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 def credential_management(request):
-    # Retrieve all credentials
-    credentials = Credentials.objects.all()
+    # Get search parameters from request
+    search_query = request.GET.get('search', '')
+    category_filter = request.GET.get('category', '')
     
-    # Set up pagination
-    paginator = Paginator(credentials, 12)  # 12 credentials per page
+    # Start with all credentials
+    credentials_queryset = Credentials.objects.all()
+    
+    # Apply search filter if provided
+    if search_query:
+        credentials_queryset = credentials_queryset.filter(
+            # Search in name
+            name__icontains=search_query
+        ) | credentials_queryset.filter(
+            # Search in category
+            category__icontains=search_query
+        ) | credentials_queryset.filter(
+            # Search in remark
+            remark__icontains=search_query
+        )
+    
+    # Apply category filter if provided
+    if category_filter:
+        credentials_queryset = credentials_queryset.filter(category__iexact=category_filter)
+    
+    # Set up pagination on the filtered results
+    paginator = Paginator(credentials_queryset, 12)  # 12 credentials per page
     
     # Get the current page number from the request
     page_number = request.GET.get('page', 1)
@@ -24,15 +45,17 @@ def credential_management(request):
         # If page is out of range, deliver last page of results
         page_obj = paginator.page(paginator.num_pages)
     
-    # Retrieve fields and categories
-    fields = Field.objects.all()
+    # Get unique categories for the dropdown filter
     categories = Category.objects.all()
+    fields = Field.objects.all()
     
     return render(request, 'credential_management.html', {
         'fields': fields,
-        'credentials': credentials,  # Keep this for compatibility with other parts of the template
-        'page_obj': page_obj,  # Pass the paginated object
-        'categories': categories
+        'credentials': credentials_queryset,  # Pass the filtered queryset (for checking if empty)
+        'page_obj': page_obj,                # Pass the paginated object
+        'categories': categories,
+        'search_query': search_query,        # Pass the search query back to the template
+        'category_filter': category_filter   # Pass the category filter back to the template
     })
 
 def add_field(request):
