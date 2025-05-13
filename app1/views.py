@@ -300,8 +300,22 @@ def add_user(request):
 
 @login_required
 def users_table(request):
-    users = User.objects.all().select_related('branch')
-    return render(request, 'users_table.html', {'users': users})
+    # Get status filter from request, default to 'active'
+    status_filter = request.GET.get('status_filter', 'active')
+    
+    # Base query
+    users_query = User.objects.all().select_related('branch')
+    
+    # Apply filter if not 'all'
+    if status_filter != 'all':
+        users_query = users_query.filter(status=status_filter)
+    
+    users = users_query
+    
+    return render(request, 'users_table.html', {
+        'users': users,
+        'status_filter': status_filter
+    })
 
 
 @login_required
