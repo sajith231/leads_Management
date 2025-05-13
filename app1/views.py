@@ -2211,11 +2211,16 @@ from .models import Employee, Attachment
 from django.core.files.storage import FileSystemStorage
 
 
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
+from .models import Employee
 
 @login_required
 def employee_management(request):
-    employees = Employee.objects.select_related("user").all()
-    return render(request, "employee_management.html", {"employees": employees})
+    status_filter = request.GET.get('status', 'active')  # Default to 'active'
+    employees = Employee.objects.filter(status=status_filter).select_related("user")
+    return render(request, "employee_management.html", {"employees": employees, "status_filter": status_filter})
+
 
 
 from django.shortcuts import render, redirect

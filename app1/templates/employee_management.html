@@ -20,6 +20,14 @@
     </div>
 
     <a href="{% url 'add_employee' %}" class="btn btn-primary mb-3">Add New Employee</a>
+    <div class="mb-3">
+    <label for="statusFilter" class="form-label">Filter by Status:</label>
+    <select id="statusFilter" class="form-select" onchange="filterByStatus()" style="width: 300px;">
+        <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
+        <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Inactive</option>
+        <option value="on_leave" {% if status_filter == 'on_leave' %}selected{% endif %}>On Leave</option>
+    </select>
+</div>
    
 
     <div style="overflow-x: auto; white-space: nowrap; max-width: 100%;">
@@ -252,5 +260,10 @@
         background: white; /* Keep background white */
     }
 </style>
-
+<script>
+    function filterByStatus() {
+        const status = document.getElementById('statusFilter').value;
+        window.location.href = '?status=' + status;
+    }
+</script>
 {% endblock %}
