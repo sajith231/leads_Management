@@ -224,7 +224,7 @@ class Complaint(models.Model):
         ('both', 'Both'),
     ]
     description = models.TextField()
-    complaint_type = models.CharField(max_length=10, choices=COMPLAINT_TYPES, default='software')
+    complaint_type = models.CharField(max_length=10, choices=COMPLAINT_TYPES, default='software')#CREATED AS NEW
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
