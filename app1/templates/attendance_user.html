@@ -7,7 +7,11 @@
             display: flex;
             margin-top: 2%;
 
-        }}
+        }
+        .BreakIn{
+            font-size: 5px;
+        }
+        }
 </style>
 <div style="width: 100%; margin: auto;padding-top: 50px;">
     <div style="margin-bottom: 20px;" class="buttons"><button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#leaveRequestModal">
@@ -63,6 +67,39 @@
                 </div>
             </div>
         </div>
+        <div class="card shadow mb-4" style="overflow: hidden;">
+    <div class="card-header text-white" style="padding-top: 20px;padding-bottom: 20px;background: linear-gradient(90deg, rgba(2,0,36,1) 0%, rgba(9,9,121,1) 35%, rgb(0, 145, 174) 100%);">
+        <h3 class="mb-0" style="text-align: center;">Break Time Management</h3>
+    </div>
+    <div class="card-body" style="background: linear-gradient(90deg, rgba(2,0,36,1) 0%, rgba(9,9,121,1) 35%, rgb(0, 145, 174) 100%);overflow: hidden;">
+        <div class="row" style="overflow: hidden;">
+            <div class="col-md-6" style="overflow: hidden;">
+                <div class="card mb-3" style="overflow: hidden;">
+                    <div class="card-body" style="border-radius: 15px; overflow: hidden; background-color: #ffffff19;backdrop-filter: blur(10px);border: 1px solid rgba(255, 255, 255, 0.603);">
+                        <h5 class="" style="padding-left: 20px; padding-right: 20px; padding-top: 10px; padding-bottom: 10px;border-radius: 15px;border: #c2c2c2;background: linear-gradient(90deg, rgba(2,0,36,1) 0%, rgba(9,9,121,1) 35%, rgba(0,212,255,1) 100%);color: white;font-size: 15px; display: flex;justify-content: space-between;align-items: center;">Today's Break Status <span style="color: ;"><svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e3e3e3"><path d="M441-82q-76-8-141.5-41.5t-114.5-87Q136-264 108-333T80-480q0-157 104.5-270T441-878v81q-119 15-200 104.5T160-480q0 123 81 212.5T441-163v81Zm0-198v-247L337-423l-56-57 200-200 200 200-57 56-103-103v247h-80Zm80 198v-81q44-5 83.5-22t72.5-43l57 58q-45 36-99 59T521-82Zm155-650q-33-26-72-43t-83-22v-81q60 6 114 29t99 59l-58 58Zm114 505-57-57q26-33 43-72.5t22-83.5h81q-6 60-29.5 114T790-227Zm8-293q-5-44-22-83.5T733-676l57-57q36 45 59.5 99T879-520h-81Z"/></svg></span></h5>
+                        <div id="breakStatus" style="color: white;">
+                            <p class="mb-2 BreakIn" style="display: flex;justify-content: center;align-items: center;gap: 5px;text-wrap: wrap;white-space: wrap;">Break Punch In: <span id="breakPunchInTime" style="color: white;">Not punched in yet</span></p>
+                            <p class="mb-2" style="display: flex;justify-content: space-between;align-items: center;">Break Punch Out: <span style="color: white;" id="breakPunchOutTime">Not punched out yet</span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="d-flex justify-content-center align-items-center h-100">
+                    <button class="btn btn-success  md:btn-lg mx-2" onclick="handleBreakPunch('in')" id="breakPunchInBtn" style="border: 1px solid #ffffff;">
+                        <i class="fas fa-sign-in-alt"></i><span style="white-space: nowrap;"> Break <br> Punch In </span>
+                    </button>
+                    <button class="btn btn-danger btn-xs md:btn-lg mx-2" onclick="handleBreakPunch('out')" id="breakPunchOutBtn" style="border: 1px solid #fff;">
+                        <i class="fas fa-sign-out-alt"></i> <span style="white-space: nowrap;"> Break <br> Punch Out
+                        </span>
+                    </button>
+                    
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
         <!-- Monthly Attendance View -->
         <div class="card shadow" style="overflow: hidden;">
@@ -1054,6 +1091,119 @@ document.addEventListener('DOMContentLoaded', function() {
             updateLateRequestsTable(1, this.dataset.status);
         });
     });
+});
+</script>
+
+<script>
+    
+function handleBreakPunch(action) {
+    fetch(`/handle_break_punch/${action}/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            if (action === 'in') {
+                document.getElementById('breakPunchInTime').textContent = data.break_punch_in;
+                document.getElementById('breakPunchInBtn').disabled = true;
+                document.getElementById('breakPunchOutBtn').disabled = false;
+            } else if (action === 'out') {
+                document.getElementById('breakPunchOutTime').textContent = data.break_punch_out;
+                document.getElementById('breakPunchOutBtn').disabled = true;
+            }
+        } else {
+            alert(data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again.');
+    });
+}
+
+</script>
+<script>
+// Update the handleBreakPunch function
+function handleBreakPunch(action) {
+    fetch(`/handle_break_punch/${action}/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            loadBreakStatus(); // Refresh the break status
+            if (action === 'in') {
+                alert('Break started successfully!');
+            } else {
+                alert('Break ended successfully!');
+            }
+        } else {
+            alert(data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again.');
+    });
+}
+
+// Update the loadBreakStatus function
+function loadBreakStatus() {
+    fetch('/get_break_status/')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update UI based on break status
+                const breakStatusDiv = document.getElementById('breakStatus');
+                let html = '';
+                
+                // Show all breaks today
+                if (data.breaks_today && data.breaks_today.length > 0) {
+                    data.breaks_today.forEach((breakItem, index) => {
+                        html += `<p class="mb-2" style="display: flex;justify-content: space-between;align-items: center;">
+                            Break ${index + 1}: 
+                            <span>${breakItem.punch_in || '--:--'} to ${breakItem.punch_out || '--:--'}</span>
+                        </p>`;
+                    });
+                } else {
+                    html = '<p>No breaks taken today</p>';
+                }
+                
+                // Show current active break if exists
+                if (data.has_active_break) {
+                    html += `<p class="mb-2" style="display: flex;justify-content: space-between;align-items: center; color: #ffcc00;">
+                        <strong>Current Break:</strong> 
+                        <span>Started at ${data.current_break_in}</span>
+                    </p>`;
+                }
+                
+                breakStatusDiv.innerHTML = html;
+                
+                // Update button states
+                document.getElementById('breakPunchInBtn').disabled = !data.can_punch_in;
+                document.getElementById('breakPunchOutBtn').disabled = !data.can_punch_out;
+            } else {
+                console.error('Error loading break status');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading break status:', error);
+        });
+}
+
+// Call this when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    loadBreakStatus();
 });
 </script>
 {% endblock %}

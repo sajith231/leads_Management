@@ -294,6 +294,14 @@ urlpatterns = [
 
 
 
+   
+    path('break_time_management/', views.break_time_management, name='break_time_management'),
+    path('handle_break_punch/<str:action>/', views.handle_break_punch, name='handle_break_punch'),
+    path('get_break_status/', views.get_break_status, name='get_break_status'),
+
+
+
+
 
 
     

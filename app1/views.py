@@ -5083,3 +5083,154 @@ def default_menus(request):
         'menus': menus,
         'default_menus': default_menus
     })
+
+
+from django.shortcuts import render, redirect
+from django.utils import timezone
+from .models import BreakTime, Employee
+
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import get_object_or_404
+from django.http import JsonResponse
+from django.utils import timezone
+from datetime import datetime
+import pytz
+
+from django.shortcuts import render, redirect
+from django.utils import timezone
+from .models import BreakTime, Employee
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import get_object_or_404
+from django.http import JsonResponse
+from django.utils import timezone
+from datetime import datetime
+import pytz
+
+@login_required
+def handle_break_punch(request, action):
+    if request.method == 'POST':
+        employee_id = request.session.get('custom_user_id')
+        employee = get_object_or_404(Employee, user_id=employee_id)
+
+        indian_tz = pytz.timezone('Asia/Kolkata')
+        now = datetime.now(indian_tz)
+        today = now.date()
+
+        if action == 'in':
+            # Check if there's an active break (punch in without punch out)
+            active_break = BreakTime.objects.filter(
+                employee=employee,
+                date=today,
+                is_active=True,
+                break_punch_in__isnull=False,
+                break_punch_out__isnull=True
+            ).first()
+            
+            if active_break:
+                return JsonResponse({
+                    'success': False, 
+                    'error': 'You have an active break. Please punch out first.'
+                })
+                
+            # Create new break entry
+            break_time = BreakTime.objects.create(
+                employee=employee,
+                date=today,
+                break_punch_in=now,
+                is_active=True
+            )
+            return JsonResponse({
+                'success': True, 
+                'break_punch_in': now.strftime('%H:%M:%S')
+            })
+
+        elif action == 'out':
+            # Find the most recent active break
+            active_break = BreakTime.objects.filter(
+                employee=employee,
+                date=today,
+                is_active=True,
+                break_punch_in__isnull=False,
+                break_punch_out__isnull=True
+            ).order_by('-break_punch_in').first()
+            
+            if not active_break:
+                return JsonResponse({
+                    'success': False, 
+                    'error': 'No active break found to punch out'
+                })
+                
+            active_break.break_punch_out = now
+            active_break.is_active = False
+            active_break.save()
+            
+            return JsonResponse({
+                'success': True, 
+                'break_punch_out': now.strftime('%H:%M:%S')
+            })
+
+    return JsonResponse({'success': False, 'error': 'Invalid request'})
+
+
+@login_required
+def break_time_management(request):
+    break_times = BreakTime.objects.all().order_by('-date', '-break_punch_in')
+
+    indian_tz = pytz.timezone('Asia/Kolkata')
+    for bt in break_times:
+        if bt.break_punch_in and bt.break_punch_out:
+            duration = bt.break_punch_out - bt.break_punch_in
+            bt.duration = str(duration).split('.')[0]  # format as HH:MM:SS
+        else:
+            bt.duration = None
+
+    return render(request, 'break_time_management.html', {'break_times': break_times})
+
+
+
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import get_object_or_404
+from django.http import JsonResponse
+from datetime import datetime
+import pytz
+@login_required
+def get_break_status(request):
+    employee_id = request.session.get('custom_user_id')
+    employee = get_object_or_404(Employee, user_id=employee_id)
+    
+    indian_tz = pytz.timezone('Asia/Kolkata')
+    now = datetime.now(indian_tz)
+    today = now.date()
+    
+    # Check for active break (punch in without punch out)
+    active_break = BreakTime.objects.filter(
+        employee=employee,
+        date=today,
+        is_active=True,
+        break_punch_in__isnull=False,
+        break_punch_out__isnull=True
+    ).order_by('-break_punch_in').first()
+    
+    all_breaks_today = BreakTime.objects.filter(
+        employee=employee,
+        date=today
+    ).order_by('-break_punch_in')
+    
+    break_list = []
+    for break_time in all_breaks_today:
+        break_list.append({
+            'punch_in': break_time.break_punch_in.astimezone(indian_tz).strftime('%H:%M:%S') if break_time.break_punch_in else None,
+            'punch_out': break_time.break_punch_out.astimezone(indian_tz).strftime('%H:%M:%S') if break_time.break_punch_out else None,
+            'is_active': break_time.is_active
+        })
+    
+    response_data = {
+        'success': True,
+        'has_active_break': active_break is not None,
+        'can_punch_in': active_break is None,
+        'can_punch_out': active_break is not None,
+        'breaks_today': break_list,
+        'current_break_in': active_break.break_punch_in.astimezone(indian_tz).strftime('%H:%M:%S') if active_break else None
+    }
+
+    return JsonResponse(response_data)

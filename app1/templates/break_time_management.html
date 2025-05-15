@@ -1,0 +1,45 @@
+<!-- break_time_management.html -->
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <h2 class="my-4">Break Time Management</h2>
+    <div style="overflow: scroll;"><table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Employee</th>
+                <th>Date</th>
+                <th>Break Punch In</th>
+                <th>Break Punch Out</th>
+                <th>Duration</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for break_time in break_times %}
+            <tr>
+                <td>{{ break_time.employee.name }}</td>
+                <td>{{ break_time.date }}</td>
+                <td>{{ break_time.break_punch_in|date:"Y-m-d H:i:s" }}</td>
+                <td>{{ break_time.break_punch_out|date:"Y-m-d H:i:s" }}</td>
+                <td>
+                    {% if break_time.break_punch_out %}
+                        {{ break_time.break_punch_in|timesince:break_time.break_punch_out }}
+                    {% else %}
+                        In Progress
+                    {% endif %}
+                    </td>
+
+                <td>
+                    {% if break_time.is_active and not break_time.break_punch_out %}
+                        <span class="badge bg-warning">Active</span>
+                    {% else %}
+                        <span class="badge bg-success">Completed</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table></div>
+</div>
+{% endblock %}

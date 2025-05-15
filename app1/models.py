@@ -329,6 +329,7 @@ class CV(models.Model):
         ('Thiruvananthapuram', 'Thiruvananthapuram'),
         ('Thrissur', 'Thrissur'),
         ('Wayanad', 'Wayanad'),
+        ('Other', 'Other'),
     ]
     created_date = models.DateTimeField(default=now)
     name = models.CharField(max_length=255)
@@ -894,6 +895,15 @@ class DefaultSettings(models.Model):
 
 
 
+class BreakTime(models.Model):
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE)
+    date = models.DateField()
+    break_punch_in = models.DateTimeField(null=True, blank=True)
+    break_punch_out = models.DateTimeField(null=True, blank=True)
+    is_active = models.BooleanField(default=True)  # To track current active break
 
+
+    def __str__(self):
+        return f"{self.employee.name} - Break Time on {self.date}"
 
 
