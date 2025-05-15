@@ -1422,6 +1422,9 @@ def add_service_entry(request):
             status = request.POST.get('status')
             mode_of_service = request.POST.get('mode_of_service')
             service_type = request.POST.get('service_type')
+            duration = request.POST.get('duration')
+            phone_number = request.POST.get('phone_number')
+
 
             # Create new service entry
             service_entry = ServiceEntry.objects.create(
@@ -1433,7 +1436,9 @@ def add_service_entry(request):
                 mode_of_service=mode_of_service,
                 service_type=service_type,
                 user=current_user,
-                place=place
+                place=place,
+                duration=duration,
+                phone_number=phone_number
             )
 
             messages.success(request, 'Service entry added successfully!')
@@ -1463,6 +1468,7 @@ def edit_service_entry(request, entry_id):
     entry = get_object_or_404(ServiceEntry, id=entry_id)
     current_user = get_current_user(request)
     complaints = Complaint.objects.all().order_by('created_at')
+    
 
     # Fetch customers from the API
     import requests
@@ -1483,6 +1489,8 @@ def edit_service_entry(request, entry_id):
         entry.status = request.POST.get('status')
         entry.mode_of_service = request.POST.get('mode_of_service')  # Existing field
         entry.service_type = request.POST.get('service_type')  # New field
+        entry.duration = request.POST.get('duration')
+        entry.phone_number = request.POST.get('phone_number')
         entry.save()
 
         # Redirect based on user level
@@ -1626,10 +1634,56 @@ def user_delete_service_entry(request, entry_id):
 from django.shortcuts import render, redirect
 from .models import Agent
 
+from django.core.paginator import Paginator
+from django.shortcuts import render, redirect
+from .models import Agent, BusinessType
+
+from django.core.paginator import Paginator
+from django.shortcuts import render, redirect
+from .models import Agent, BusinessType
+
+from django.core.paginator import Paginator
+from django.shortcuts import render, redirect
+from .models import Agent, BusinessType
+
+from django.core.paginator import Paginator
+from django.shortcuts import render, redirect
+from .models import Agent, BusinessType
+
+from django.core.paginator import Paginator
+from django.db.models import Q
+
 def agent_list(request):
+    # Get search parameters from the request
+    search_name = request.GET.get('name', '').strip().upper()
+    search_district = request.GET.get('district', '').strip().upper()
+    search_business_type = request.GET.get('business_type', '').strip().upper()
+
+    # Filter agents based on search parameters
     agents = Agent.objects.all()
-    business_types = BusinessType.objects.all()
-    return render(request, 'agent.html', {'agents': agents, 'business_types': business_types})
+    if search_name:
+        agents = agents.filter(Q(name__icontains=search_name) | Q(firm_name__icontains=search_name))
+    if search_district:
+        agents = agents.filter(district__icontains=search_district)
+    if search_business_type:
+        agents = agents.filter(business_type__icontains=search_business_type)
+
+    # Set up pagination
+    paginator = Paginator(agents, 15)  # Show 15 agents per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    # Pass search parameters to the template for pagination links
+    context = {
+        'agents': page_obj,
+        'business_types': BusinessType.objects.all(),
+        'search_name': search_name,
+        'search_district': search_district,
+        'search_business_type': search_business_type
+    }
+
+    return render(request, 'agent.html', context)
+
 
 def add_agent(request):
     business_types = BusinessType.objects.all()

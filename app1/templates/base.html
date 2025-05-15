@@ -637,11 +637,11 @@
                 </div>
         
                 <div id="services-menu" class="submenu" style="margin-left: 5%; display: none;">
-                    {% if 'service_log' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
-                    <a href="{% url 'service_log' %}"><i class="fas fa-book"></i> Service Log</a>
-                    {% endif %}
                     {% if 'service_entry' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
                     <a href="{% url 'service_entry' %}"><i class="fas fa-plus-circle"></i> Service Entry</a>
+                    {% endif %}
+                    {% if 'service_log' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+                    <a href="{% url 'service_log' %}"><i class="fas fa-book"></i> Service Log</a>
                     {% endif %}
                 </div>
                 {% endif %}

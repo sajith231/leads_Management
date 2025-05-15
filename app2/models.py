@@ -13,7 +13,7 @@ class Credentials(models.Model):
     name = models.CharField(max_length=255)
     category = models.CharField(max_length=255, blank=True, null=True)
     remark = models.CharField(max_length=255, blank=True, null=True)
-    credential_type = models.CharField(max_length=50, choices=[('priority 1', 'Priority 1'), ('priority 2', 'Priority 2')], default='priority 1')#CREATED AS NEW
+    credential_type = models.CharField(max_length=50, choices=[('priority 1', 'Priority 1'), ('priority 2', 'Priority 2')], default='priority 1')
 
     
     def __str__(self):

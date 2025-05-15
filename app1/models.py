@@ -218,7 +218,13 @@ class LeadHardwarePrice(models.Model):
 
 
 class Complaint(models.Model):
+    COMPLAINT_TYPES = [
+        ('software', 'Software'),
+        ('hardware', 'Hardware'),
+        ('both', 'Both'),
+    ]
     description = models.TextField()
+    complaint_type = models.CharField(max_length=10, choices=COMPLAINT_TYPES, default='software')
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -277,6 +283,8 @@ class ServiceEntry(models.Model):
     service_type = models.CharField(max_length=20, choices=SERVICE_TYPE_CHOICES, default='Software')  
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     place = models.CharField(max_length=200)
+    duration = models.CharField(max_length=100, blank=True)  # CREATED AS NEW
+    phone_number = models.CharField(max_length=20, blank=True, null=True)# CREATED AS NEW
 
     class Meta:
         ordering = ['-date']
@@ -791,7 +799,7 @@ class Project(models.Model):
     project_status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Active')  # Added project status field
     project_type = models.CharField(max_length=50, choices=PROJECT_TYPES)
     project_duration = models.CharField(max_length=50)
-    deadline = models.DateField(null=True, blank=True)  #CREATED AS NEW
+    deadline = models.DateField(null=True, blank=True) 
 
 
     def _str_(self):
@@ -909,4 +917,4 @@ class BreakTime(models.Model):
 
     #CREATED AS NEW
 
-    #CREATED AS NEW
+    #CREATED AS NEWF

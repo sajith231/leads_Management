@@ -2,34 +2,32 @@
 {% block content %}
 <style>
     th {
-    text-transform: capitalize;
-}
+        text-transform: capitalize;
+    }
     .modal {
-      position: fixed;
-      z-index: 1;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.4);
+        position: fixed;
+        z-index: 1;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.4);
     }
-  
     .modal-content {
-      background-color: #fff;
-      margin: 15% auto;
-      padding: 20px;
-      width: 300px;
-      border-radius: 8px;
-      text-align: center;
+        background-color: #fff;
+        margin: 15% auto;
+        padding: 20px;
+        width: 300px;
+        border-radius: 8px;
+        text-align: center;
     }
-  
     .close-btn {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      color: rgb(0, 0, 0);
-      font-size: 20px;
-      cursor: pointer;
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        color: rgb(0, 0, 0);
+        font-size: 20px;
+        cursor: pointer;
     }
 </style>
 
@@ -37,35 +35,36 @@
     <h2 style="text-transform: uppercase;display: flex;justify-content: center;margin-bottom: 2%;">Address Book</h2>
 
     <!-- Filter Section -->
+     
     <div class="row mb-3">
         <div class="col-md-3">
-            <input type="text" class="form-control" id="nameFilter" placeholder="Search by name or firm name" onkeyup="filterAgents()">
+            <input type="text" class="form-control" id="nameFilter" placeholder="Search by name or firm name" value="{{ search_name }}" onkeyup="filterAgents()">
         </div>
         <div class="col-md-3">
             <select class="form-control" id="districtFilter" onchange="filterAgents()">
                 <option value="">All Districts</option>
-                <option value="Alappuzha">Alappuzha</option>
-                <option value="Ernakulam">Ernakulam</option>
-                <option value="Idukki">Idukki</option>
-                <option value="Kannur">Kannur</option>
-                <option value="Kasaragod">Kasaragod</option>
-                <option value="Kollam">Kollam</option>
-                <option value="Kottayam">Kottayam</option>
-                <option value="Kozhikode">Kozhikode</option>
-                <option value="Malappuram">Malappuram</option>
-                <option value="Palakkad">Palakkad</option>
-                <option value="Pathanamthitta">Pathanamthitta</option>
-                <option value="Thiruvananthapuram">Thiruvananthapuram</option>
-                <option value="Thrissur">Thrissur</option>
-                <option value="Wayanad">Wayanad</option>
-                <option value="Other">Other</option>
+                <option value="Alappuzha" {% if search_district == 'ALAPPUZHA' %}selected{% endif %}>Alappuzha</option>
+                <option value="Ernakulam" {% if search_district == 'ERNAKULAM' %}selected{% endif %}>Ernakulam</option>
+                <option value="Idukki" {% if search_district == 'IDUKKI' %}selected{% endif %}>Idukki</option>
+                <option value="Kannur" {% if search_district == 'KANNUR' %}selected{% endif %}>Kannur</option>
+                <option value="Kasaragod" {% if search_district == 'KASARAGOD' %}selected{% endif %}>Kasaragod</option>
+                <option value="Kollam" {% if search_district == 'KOLLAM' %}selected{% endif %}>Kollam</option>
+                <option value="Kottayam" {% if search_district == 'KOTTAYAM' %}selected{% endif %}>Kottayam</option>
+                <option value="Kozhikode" {% if search_district == 'KOZHIKODE' %}selected{% endif %}>Kozhikode</option>
+                <option value="Malappuram" {% if search_district == 'MALAPPURAM' %}selected{% endif %}>Malappuram</option>
+                <option value="Palakkad" {% if search_district == 'PALAKKAD' %}selected{% endif %}>Palakkad</option>
+                <option value="Pathanamthitta" {% if search_district == 'PATHANAMTHITTA' %}selected{% endif %}>Pathanamthitta</option>
+                <option value="Thiruvananthapuram" {% if search_district == 'THIRUVANANTHAPURAM' %}selected{% endif %}>Thiruvananthapuram</option>
+                <option value="Thrissur" {% if search_district == 'THRISSUR' %}selected{% endif %}>Thrissur</option>
+                <option value="Wayanad" {% if search_district == 'WAYANAD' %}selected{% endif %}>Wayanad</option>
+                <option value="Other" {% if search_district == 'OTHER' %}selected{% endif %}>Other</option>
             </select>
         </div>
         <div class="col-md-3">
             <select class="form-control" id="businessTypeFilter" onchange="filterAgents()">
                 <option value="">All Business Types</option>
                 {% for type in business_types %}
-                    <option value="{{ type.name|upper }}">{{ type.name|upper }}</option>
+                    <option value="{{ type.name|upper }}" {% if search_business_type == type.name|upper %}selected{% endif %}>{{ type.name|upper }}</option>
                 {% endfor %}
             </select>
         </div>
@@ -73,6 +72,37 @@
             <a href="{% url 'add_agent' %}" class="btn btn-primary">Add New</a>
         </div>
     </div>
+
+     <nav aria-label="Page navigation example">
+    <ul class="pagination">
+        {% if agents.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page=1&name={{ search_name }}&district={{ search_district }}&business_type={{ search_business_type }}">First</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ agents.previous_page_number }}&name={{ search_name }}&district={{ search_district }}&business_type={{ search_business_type }}">Previous</a>
+            </li>
+        {% endif %}
+        {% for num in agents.paginator.page_range %}
+            {% if agents.number == num %}
+                <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+            {% else %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ num }}&name={{ search_name }}&district={{ search_district }}&business_type={{ search_business_type }}">{{ num }}</a>
+                </li>
+            {% endif %}
+        {% endfor %}
+        {% if agents.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ agents.next_page_number }}&name={{ search_name }}&district={{ search_district }}&business_type={{ search_business_type }}">Next</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ agents.paginator.num_pages }}&name={{ search_name }}&district={{ search_district }}&business_type={{ search_business_type }}">Last</a>
+            </li>
+        {% endif %}
+    </ul>
+</nav>
+
 
     <div style="overflow: scroll;">
         <table class="table table-bordered">
@@ -120,6 +150,9 @@
                 {% endfor %}
             </tbody>
         </table>
+
+        <!-- Pagination Controls -->
+       
 
         <!-- Popup Modal -->
         <div id="remarkPopup" class="modal" style="display: none;">

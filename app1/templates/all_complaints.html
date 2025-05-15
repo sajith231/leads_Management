@@ -18,16 +18,17 @@
             <tr>
                 <th>#</th>
                 <th>Complaint</th>
+                <th>Type</th>
                 <th>Edit</th>
                 <th>Delete</th>
-                
             </tr>
         </thead>
         <tbody>
             {% for complaint in complaints %}
             <tr>
                 <td>{{ forloop.counter }}</td>
-                <td>{{ complaint.description|upper }}</td>
+                <td>{{ complaint.description|capfirst }}</td>
+                <td>{{ complaint.get_complaint_type_display|capfirst }}</td>
                 <td>
                     <a href="{% url 'edit_complaint' complaint.id %}" class="btn btn-warning btn-sm">Edit</a>
                 </td>
@@ -37,7 +38,6 @@
                        Delete
                     </a>
                 </td>
-                
             </tr>
             {% endfor %}
         </tbody>

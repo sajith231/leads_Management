@@ -66,6 +66,8 @@
                     <th>Place</th>
                     <th>Service Type</th>
                     <th>Mode of Service</th>
+                    <th>Phone</th>
+                    <th>Duration</th>
                     <th>Edit</th>
                     <th>Delete</th>
                 </tr>
@@ -93,6 +95,15 @@
                     <td>{{ entry.place|upper }}</td>
                     <td>{{ entry.service_type|upper }}</td>
                     <td>{{ entry.mode_of_service|upper }}</td>
+                    <td>
+                        {% if entry.mode_of_service == 'Online' %}
+                            {{ entry.phone_number }}
+                        {% else %}
+                            —
+                        {% endif %}
+                    </td>
+
+                    <td>{{ entry.duration }}</td>
                     <td>
                         <a href="{% url 'edit_service_entry' entry.id %}" class="btn btn-sm btn-warning">Edit</a>
                     </td>

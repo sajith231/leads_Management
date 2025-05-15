@@ -361,12 +361,15 @@ class HardwareForm(forms.ModelForm):
 class ComplaintForm(forms.ModelForm):
     class Meta:
         model = Complaint
-        fields = ['description']
+        fields = ['description', 'complaint_type']
         widgets = {
             'description': forms.TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'Enter complaint',
                 'rows': 3,
+            }),
+            'complaint_type': forms.Select(attrs={
+                'class': 'form-control',
             }),
         }
 

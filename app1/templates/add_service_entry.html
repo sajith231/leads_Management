@@ -40,18 +40,6 @@
                     </div>
                 </div>
 
-                <!-- Complaint Field -->
-                <div class="mb-3">
-                    <label for="complaint" class="form-label">Complaint *</label>
-                    <select class="form-control" id="complaint" name="complaint" required>
-                        <option value="">Select a complaint</option>
-                        {% for complaint in complaints %}
-                            <option value="{{ complaint.description }}">{{ complaint.description }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-
-                <!-- Service Type Field -->
                 <div class="mb-3">
                     <label for="service_type" class="form-label">Service Type *</label>
                     <select name="service_type" id="service_type" class="form-select" required>
@@ -60,6 +48,21 @@
                     </select>
                 </div>
 
+                <!-- Complaint Field -->
+                <div class="mb-3">
+                    <label for="complaint" class="form-label">Complaint *</label>
+                    <select class="form-control" id="complaint" name="complaint" required>
+    <option value="">Select a complaint</option>
+    {% for complaint in complaints %}
+        <option value="{{ complaint.description }}" data-type="{{ complaint.complaint_type }}">{{ complaint.description }}</option>
+    {% endfor %}
+</select>
+
+                </div>
+
+                <!-- Service Type Field -->
+                
+
                 <!-- Remarks Field -->
                 <div class="mb-3">
                     <label for="remarks" class="form-label">Remarks</label>
@@ -67,7 +70,7 @@
                 </div>
 
                 <!-- Status Field -->
-                <div class="mb-3">
+                <div class="mb-3" style="display: none;">
                     <label for="status" class="form-label">Status *</label>
                     <select class="form-control" id="status" name="status" required>
                         
@@ -80,6 +83,10 @@
                     <label for="place" class="form-label">Place *</label>
                     <input type="text" class="form-control" id="place" name="place" required>
                 </div>
+                <div class="mb-3">
+                    <label for="duration" class="form-label">Duration</label>
+                    <input type="text" class="form-control" id="duration" name="duration" placeholder="e.g. 2 hours">
+                </div>
 
                 <!-- Mode of Service Field -->
                 <div class="form-group">
@@ -90,6 +97,10 @@
                         <option value="Onsite">Onsite</option>
                     </select>
                 </div>
+                <div class="mb-3" id="phoneNumberGroup" style="display: none;">
+    <label for="phone_number" class="form-label">Phone Number</label>
+    <input type="text" class="form-control" id="phone_number" name="phone_number" placeholder="Enter phone number">
+</div>
 
                 <!-- Form Buttons -->
                 <div class="mt-4">
@@ -222,6 +233,54 @@
             }
         });
     });
+
+
+
+
+
+
+
+
+
+    // Function to filter complaints based on selected service type
+function filterComplaints() {
+    const serviceType = document.getElementById('service_type').value.toLowerCase();
+    const complaintSelect = document.getElementById('complaint');
+    
+    Array.from(complaintSelect.options).forEach(option => {
+        if (option.value === "") { // Keep the default "Select a complaint" option
+            option.hidden = false;
+            return;
+        }
+        const complaintType = option.getAttribute('data-type');
+        const show = (complaintType === serviceType || complaintType === 'both');
+        option.hidden = !show;
+    });
+
+    // Reset selection if current value is hidden
+    if (complaintSelect.value && complaintSelect.options[complaintSelect.selectedIndex].hidden) {
+        complaintSelect.value = "";
+    }
+}
+
+// Initial filter on page load
+filterComplaints();
+
+// Add event listener for service type changes
+document.getElementById('service_type').addEventListener('change', filterComplaints);
+</script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const modeSelect = document.getElementById('mode_of_service');
+        const phoneGroup = document.getElementById('phoneNumberGroup');
+
+        function togglePhoneField() {
+            phoneGroup.style.display = modeSelect.value === 'Online' ? 'block' : 'none';
+        }
+
+        modeSelect.addEventListener('change', togglePhoneField);
+        togglePhoneField();  // Initial check
+    });
 </script>
 
 <style>
@@ -270,4 +329,5 @@
         padding: 1rem;
     }
 </style>
+
 {% endblock %}
