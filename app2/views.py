@@ -5,6 +5,16 @@ from .models import Field, Credentials, CredentialDetail, Category
 
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
+from django.contrib.auth.decorators import login_required
+from app1.models import User  # Import the User model from app1
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+from .models import Field, Credentials, CredentialDetail, Category
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from app1.models import User  # Import your User model from app1
+
 def credential_management(request):
     # Get search parameters from request
     search_query = request.GET.get('search', '')
@@ -13,16 +23,21 @@ def credential_management(request):
     # Start with all credentials
     credentials_queryset = Credentials.objects.all()
     
+    # Check user level from session
+    user_level = request.session.get('user_level', 'normal')
+    
+    # Filter credentials based on user level
+    if user_level not in ['normal', 'admin_level']:
+        # For non-admin users, show only priority 2 credentials
+        credentials_queryset = credentials_queryset.filter(credential_type='priority 2')
+    
     # Apply search filter if provided
     if search_query:
         credentials_queryset = credentials_queryset.filter(
-            # Search in name
             name__icontains=search_query
         ) | credentials_queryset.filter(
-            # Search in category
             category__icontains=search_query
         ) | credentials_queryset.filter(
-            # Search in remark
             remark__icontains=search_query
         )
     
@@ -39,10 +54,8 @@ def credential_management(request):
     try:
         page_obj = paginator.page(page_number)
     except PageNotAnInteger:
-        # If page is not an integer, deliver first page
         page_obj = paginator.page(1)
     except EmptyPage:
-        # If page is out of range, deliver last page of results
         page_obj = paginator.page(paginator.num_pages)
     
     # Get unique categories for the dropdown filter
@@ -51,11 +64,11 @@ def credential_management(request):
     
     return render(request, 'credential_management.html', {
         'fields': fields,
-        'credentials': credentials_queryset,  # Pass the filtered queryset (for checking if empty)
-        'page_obj': page_obj,                # Pass the paginated object
+        'credentials': credentials_queryset,
+        'page_obj': page_obj,
         'categories': categories,
-        'search_query': search_query,        # Pass the search query back to the template
-        'category_filter': category_filter   # Pass the category filter back to the template
+        'search_query': search_query,
+        'category_filter': category_filter
     })
 
 def add_field(request):
@@ -86,42 +99,61 @@ def add_credential(request):
         credential_name = request.POST.get('credential_name')
         category = request.POST.get('category')
         remark = request.POST.get('remark')
+        credential_type = request.POST.get('credential_type')
+        
         if credential_name:
+            # Get the current user from the session
+            user_id = request.session.get('user_id')
+            user = None
+            if user_id:
+                try:
+                    user = User.objects.get(id=user_id)
+                except User.DoesNotExist:
+                    pass
+                
+            # Create the credential with the user who added it
             Credentials.objects.create(
                 name=credential_name,
                 category=category,
-                remark=remark
+                remark=remark,
+                credential_type=credential_type,
+                added_by=user  # Set the user who added this credential
             )
             return redirect('credential_management')
     
-    # Pass categories to the template
     categories = Category.objects.all()
     return render(request, 'add_credential.html', {'categories': categories})
+
 
 def delete_credential(request, id):
     credential = get_object_or_404(Credentials, id=id)
     credential.delete()
     return redirect('credential_management')
 
+# views.py
 def edit_credential(request, id):
     credential = get_object_or_404(Credentials, id=id)
     categories = Category.objects.all()
-    
+
     if request.method == 'POST':
         credential_name = request.POST.get('credential_name')
         category = request.POST.get('category')
         remark = request.POST.get('remark')
+        credential_type = request.POST.get('credential_type')
+
         if credential_name:
             credential.name = credential_name
             credential.category = category
             credential.remark = remark
+            credential.credential_type = credential_type
             credential.save()
             return redirect('credential_management')
-    
+
     return render(request, 'edit_credential.html', {
         'credential': credential,
         'categories': categories
     })
+
 
 @require_POST
 def add_credential_detail(request, credential_id):

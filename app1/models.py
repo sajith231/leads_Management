@@ -791,6 +791,8 @@ class Project(models.Model):
     project_status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Active')  # Added project status field
     project_type = models.CharField(max_length=50, choices=PROJECT_TYPES)
     project_duration = models.CharField(max_length=50)
+    deadline = models.DateField(null=True, blank=True)  #CREATED AS NEW
+
 
     def _str_(self):
         assigned_to = f" - Assigned to: {self.assigned_person.name}" if self.assigned_person else ""
@@ -886,11 +888,7 @@ class DefaultSettings(models.Model):
 
 
 
-    #CREATED AS NEW
-
-    #CREATED AS NEW
-
-    #CREATED AS NEW
+   
 
 
 
@@ -907,3 +905,8 @@ class BreakTime(models.Model):
         return f"{self.employee.name} - Break Time on {self.date}"
 
 
+    #CREATED AS NEW
+
+    #CREATED AS NEW
+
+    #CREATED AS NEW

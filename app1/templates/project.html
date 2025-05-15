@@ -442,42 +442,48 @@
 
     // Filter projects by status
     function filterProjectWorks(status) {
-        // Update active button state
-        document.querySelectorAll('.filter-btn').forEach(btn => {
-            btn.classList.remove('active', 'ring-2', 'ring-blue-500');
-            if (btn.getAttribute('data-filter') === status) {
-                btn.classList.add('active', 'ring-2', 'ring-blue-500');
-            }
-        });
-
-        const searchText = document.getElementById('projectWorkSearch').value.toLowerCase();
-        const rows = document.querySelectorAll('.project-row');
-        let visibleCount = 0;
-        
-        rows.forEach(row => {
-            const projectName = row.getAttribute('data-project-name');
-            const projectStatus = row.getAttribute('data-status');
-            
-            // Check if project matches both the search term and selected status
-            const matchesSearch = projectName.includes(searchText);
-            const matchesStatus = status === 'all' || projectStatus === status;
-            
-            if (matchesSearch && matchesStatus) {
-                row.classList.remove('hidden');
-                visibleCount++;
-            } else {
-                row.classList.add('hidden');
-            }
-        });
-        
-        // Show/hide no results message
-        const noResultsEl = document.getElementById('noResults');
-        if (visibleCount === 0) {
-            noResultsEl.classList.remove('hidden');
-        } else {
-            noResultsEl.classList.add('hidden');
+    // Update active button state
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.remove('active', 'ring-2', 'ring-blue-500');
+        if (btn.getAttribute('data-filter') === status) {
+            btn.classList.add('active', 'ring-2', 'ring-blue-500');
         }
+    });
+
+    const searchText = document.getElementById('projectWorkSearch').value.toLowerCase();
+    const rows = document.querySelectorAll('.project-row');
+    let visibleCount = 0;
+    
+    rows.forEach(row => {
+        const projectName = row.getAttribute('data-project-name');
+        const projectStatus = row.getAttribute('data-status');
+        
+        // For 'all' filter, exclude finished projects
+        if (status === 'all' && projectStatus === 'finished') {
+            row.classList.add('hidden');
+            return;
+        }
+        
+        // Check if project matches both the search term and selected status
+        const matchesSearch = projectName.includes(searchText);
+        const matchesStatus = status === 'all' || projectStatus === status;
+        
+        if (matchesSearch && matchesStatus) {
+            row.classList.remove('hidden');
+            visibleCount++;
+        } else {
+            row.classList.add('hidden');
+        }
+    });
+    
+    // Show/hide no results message
+    const noResultsEl = document.getElementById('noResults');
+    if (visibleCount === 0) {
+        noResultsEl.classList.remove('hidden');
+    } else {
+        noResultsEl.classList.add('hidden');
     }
+}
 
     // Enhanced filter function for project works
     function applyProjectWorkFilters() {

@@ -4361,6 +4361,7 @@ def add_project(request):
     if request.method == "POST":
         employee_id = request.POST.get('assigned_person')
         employee = get_object_or_404(Employee, id=employee_id) if employee_id else None
+        deadline = request.POST.get('deadline') if request.POST.get('deadline') else None
         
         Project.objects.create(
             project_name=request.POST['project_name'],
@@ -4376,6 +4377,8 @@ def add_project(request):
             project_status=request.POST['project_status'],
             project_type=request.POST['project_type'],
             project_duration=request.POST['project_duration'],
+            deadline=deadline,  # Add this line
+
         )
         return redirect('project_management')
     
@@ -4406,6 +4409,8 @@ def edit_project(request, project_id):
         project.project_status = request.POST['project_status']
         project.project_type = request.POST['project_type']
         project.project_duration = request.POST['project_duration']
+        project.deadline = request.POST.get('deadline') if request.POST.get('deadline') else None
+        
         project.save()
         messages.success(request, "Project updated successfully!")
         return redirect('project_management')

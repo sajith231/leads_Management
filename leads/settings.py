@@ -34,6 +34,8 @@ CSRF_TRUSTED_ORIGINS = [
     
 ]
 
+
+
 ALLOWED_HOSTS = ['88.222.215.20','myimc.in','www.myimc.in','127.0.0.1']
 
 LOGIN_REDIRECT_URL = 'admin_dashboard'
