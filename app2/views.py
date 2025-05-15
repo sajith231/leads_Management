@@ -117,7 +117,7 @@ def add_credential(request):
                 category=category,
                 remark=remark,
                 credential_type=credential_type,
-                added_by=user  # Set the user who added this credential
+                
             )
             return redirect('credential_management')
     
