@@ -1086,9 +1086,35 @@ def add_complaint(request):
         form = ComplaintForm()
     return render(request, 'add_complaints.html', {'form': form})
 
+from django.core.paginator import Paginator
+from django.shortcuts import render
+from .models import Complaint
+
+
+from django.core.paginator import Paginator
+
 def all_complaints(request):
-    complaints = Complaint.objects.all().order_by('created_at')  # Ascending order
-    return render(request, 'all_complaints.html', {'complaints': complaints})
+    complaint_type = request.GET.get('type', 'all')
+    if complaint_type == 'all':
+        complaints = Complaint.objects.all().order_by('description')
+    else:
+        complaints = Complaint.objects.filter(complaint_type=complaint_type).order_by('description')
+
+    # Pagination
+    paginator = Paginator(complaints, 15)  # 15 complaints per page
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+
+    # Calculate the starting index for continuous numbering
+    start_index = (page_obj.number - 1) * paginator.per_page
+
+    return render(request, 'all_complaints.html', {
+        'page_obj': page_obj,
+        'selected_type': complaint_type,
+        'start_index': start_index,
+    })
+
+
 
 # Edit complaint view
 def edit_complaint(request, complaint_id):
@@ -1365,20 +1391,70 @@ from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.contrib import messages
 
+from django.contrib.auth import get_user_model
+User = get_user_model()
+
+from django.utils.timezone import now, timedelta
+from datetime import datetime
+
+from django.utils.timezone import now, timedelta
+from datetime import datetime, date
+
+from django.utils.timezone import now, timedelta
+from datetime import datetime, date
+
 @login_required
 def service_entry(request):
     try:
-        current_user = request.user  # Assuming you're using the default user model
-        service_entries_list = ServiceEntry.objects.all().order_by('-date')
+        current_user = request.user
+        selected_user_id = request.GET.get('user')
         
-        # Add pagination with 15 items per page
+        # Check if any date filters are already applied
+        has_date_filter = 'from_date' in request.GET or 'to_date' in request.GET
+        
+        # Default to today's date if no date filters are applied
+        today = now().date()
+        if not has_date_filter:
+            default_from_date = today
+            default_to_date = today
+        else:
+            # Get date range from request
+            from_date_str = request.GET.get('from_date')
+            to_date_str = request.GET.get('to_date')
+            
+            # Convert string dates to date objects
+            try:
+                default_from_date = datetime.strptime(from_date_str, '%Y-%m-%d').date() if from_date_str else today
+                default_to_date = datetime.strptime(to_date_str, '%Y-%m-%d').date() if to_date_str else today
+            except (ValueError, TypeError):
+                default_from_date = today
+                default_to_date = today
+        
+        # Filter by date range (inclusive)
+        service_entries_list = ServiceEntry.objects.filter(
+            date__date__gte=default_from_date,
+            date__date__lte=default_to_date
+        ).order_by('-date')
+
+        # Apply user filter if provided
+        if selected_user_id and selected_user_id != 'all':
+            service_entries_list = service_entries_list.filter(user_id=selected_user_id)
+
+        # Pagination
         paginator = Paginator(service_entries_list, 12)
         page_number = request.GET.get('page')
         page_obj = paginator.get_page(page_number)
-        
+
+        # Send user list to template
+        users = User.objects.all()
+
         return render(request, 'service_entry.html', {
             'page_obj': page_obj,
-            'current_user': current_user
+            'current_user': current_user,
+            'users': users,
+            'selected_user_id': selected_user_id,
+            'default_from_date': default_from_date.strftime('%Y-%m-%d'),
+            'default_to_date': default_to_date.strftime('%Y-%m-%d'),
         })
     except Exception as e:
         messages.error(request, f'Error accessing service entries: {str(e)}')
@@ -1585,10 +1661,8 @@ def user_add_service_entry(request):
 
 
 
-# Add user-specific edit and delete views
 @login_required
 def user_edit_service_entry(request, entry_id):
-    # Get entry and verify it belongs to current user
     entry = get_object_or_404(ServiceEntry, id=entry_id)
     current_user = get_current_user(request)
     
@@ -1598,6 +1672,15 @@ def user_edit_service_entry(request, entry_id):
     
     complaints = Complaint.objects.all().order_by('created_at')
 
+    # Fetch customers from the API
+    customers = []
+    try:
+        response = requests.get('https://rrc.imcbs.com/api/rrc-clients-data')
+        if response.status_code == 200:
+            customers = response.json()
+    except Exception as e:
+        messages.warning(request, f'Could not fetch customers: {str(e)}')
+
     if request.method == 'POST':
         entry.customer = request.POST.get('customer')
         complaint_description = request.POST.get('complaint')
@@ -1605,12 +1688,17 @@ def user_edit_service_entry(request, entry_id):
         entry.remarks = request.POST.get('remarks')
         entry.place = request.POST.get('place')
         entry.status = request.POST.get('status')
+        entry.mode_of_service = request.POST.get('mode_of_service')
+        entry.service_type = request.POST.get('service_type')
+        entry.duration = request.POST.get('duration')
+        entry.phone_number = request.POST.get('phone_number')
         entry.save()
         return redirect('user_service_entry')
 
     context = {
         'entry': entry,
         'complaints': complaints,
+        'customers': customers,  # Add this line
         'is_user_view': True
     }
     return render(request, 'edit_service_entry.html', context)
@@ -5233,9 +5321,18 @@ def handle_break_punch(request, action):
 
 @login_required
 def break_time_management(request):
-    break_times = BreakTime.objects.all().order_by('-date', '-break_punch_in')
-
+    # Get selected date from request, default to today's date
+    selected_date = request.GET.get('date')
     indian_tz = pytz.timezone('Asia/Kolkata')
+
+    if selected_date:
+        date_filter = datetime.strptime(selected_date, '%Y-%m-%d').date()
+    else:
+        date_filter = datetime.now(indian_tz).date()
+
+    # Filter break times based on the selected date
+    break_times = BreakTime.objects.filter(date=date_filter).order_by('-date', '-break_punch_in')
+
     for bt in break_times:
         if bt.break_punch_in and bt.break_punch_out:
             duration = bt.break_punch_out - bt.break_punch_in
@@ -5243,7 +5340,11 @@ def break_time_management(request):
         else:
             bt.duration = None
 
-    return render(request, 'break_time_management.html', {'break_times': break_times})
+    return render(request, 'break_time_management.html', {
+        'break_times': break_times,
+        'selected_date': date_filter,
+    })
+
 
 
 

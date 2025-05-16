@@ -4,15 +4,58 @@
     @media (max-width: 768px) {
         .allbody{
             margin-top: 15%;
-
-        }}
-       
+        }
+    }
 </style>
 <div class="allbody">
 <div class="container mt-4">
     <h2 style="display: flex;justify-content: center;white-space: nowrap;">All Complaints</h2>
     <a href="{% url 'add_complaint' %}" class="btn btn-primary mb-4" style="margin-left: 80%;white-space: nowrap;">Add New</a>
-    {% if complaints %}
+    <div>
+    <form method="get" class="mb-3" style="max-width: 300px;">
+    <label for="type">Filter by Type:</label>
+    <select name="type" id="type" class="form-select" onchange="this.form.submit()">
+        <option value="all" {% if selected_type == 'all' %}selected{% endif %}>All</option>
+        <option value="software" {% if selected_type == 'software' %}selected{% endif %}>Software</option>
+        <option value="hardware" {% if selected_type == 'hardware' %}selected{% endif %}>Hardware</option>
+        <option value="both" {% if selected_type == 'both' %}selected{% endif %}>Both</option>
+    </select>
+</form>
+</div>
+<div class="pagination d-flex justify-content-center">
+        <ul class="pagination">
+            {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?type={{ selected_type }}&page=1">&laquo; First</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?type={{ selected_type }}&page={{ page_obj.previous_page_number }}">Previous</a>
+                </li>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+                {% if num == page_obj.number %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ num }}</span>
+                    </li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?type={{ selected_type }}&page={{ num }}">{{ num }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?type={{ selected_type }}&page={{ page_obj.next_page_number }}">Next</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?type={{ selected_type }}&page={{ page_obj.paginator.num_pages }}">Last &raquo;</a>
+                </li>
+            {% endif %}
+        </ul>
+    </div>
+    {% if page_obj %}
     <table class="table table-bordered">
         <thead>
             <tr>
@@ -24,9 +67,9 @@
             </tr>
         </thead>
         <tbody>
-            {% for complaint in complaints %}
+            {% for complaint in page_obj %}
             <tr>
-                <td>{{ forloop.counter }}</td>
+                <td>{{ forloop.counter|add:start_index }}</td>
                 <td>{{ complaint.description|capfirst }}</td>
                 <td>{{ complaint.get_complaint_type_display|capfirst }}</td>
                 <td>
@@ -42,6 +85,10 @@
             {% endfor %}
         </tbody>
     </table>
+
+    <!-- Pagination Controls -->
+    
+
     {% else %}
     <p>No complaints found.</p>
     {% endif %}

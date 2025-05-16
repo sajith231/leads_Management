@@ -224,7 +224,7 @@ class Complaint(models.Model):
         ('both', 'Both'),
     ]
     description = models.TextField()
-    complaint_type = models.CharField(max_length=10, choices=COMPLAINT_TYPES, default='software')#CREATED AS NEW
+    complaint_type = models.CharField(max_length=10, choices=COMPLAINT_TYPES, default='software')
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -283,8 +283,8 @@ class ServiceEntry(models.Model):
     service_type = models.CharField(max_length=20, choices=SERVICE_TYPE_CHOICES, default='Software')  
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     place = models.CharField(max_length=200)
-    duration = models.CharField(max_length=100, blank=True)  # CREATED AS NEW
-    phone_number = models.CharField(max_length=20, blank=True, null=True)# CREATED AS NEW
+    duration = models.CharField(max_length=100, blank=True)
+    phone_number = models.CharField(max_length=20, blank=True, null=True)
 
     class Meta:
         ordering = ['-date']

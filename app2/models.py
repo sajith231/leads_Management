@@ -46,3 +46,40 @@ class Category(models.Model):
 #CREATED AS NEW
 #CREATED AS NEW
 #CREATED AS NEW
+
+
+from django.db import models
+from django.contrib.auth.models import User
+from django.utils import timezone
+
+class ProductType(models.Model):
+    name = models.CharField(max_length=100)
+    
+    def __str__(self):
+        return self.name
+
+class ProductCategory(models.Model):
+    name = models.CharField(max_length=100)
+    product_type = models.ForeignKey(ProductType, on_delete=models.CASCADE)
+    
+    def __str__(self):
+        return self.name
+
+PRIORITY_CHOICES = [
+    ('priority1', 'Priority 1'),
+    ('priority2', 'Priority 2'),
+]
+
+class InformationCenter(models.Model):
+    title = models.CharField(max_length=200)
+    remark = models.TextField(blank=True)
+    url = models.URLField()
+    added_date = models.DateField(default=timezone.now)
+    uploaded_by = models.ForeignKey(User, on_delete=models.CASCADE)
+    product_type = models.ForeignKey(ProductType, on_delete=models.CASCADE)
+    product_category = models.ForeignKey(ProductCategory, on_delete=models.CASCADE)
+    thumbnail = models.ImageField(upload_to='information_thumbnails/')
+    priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES)
+    
+    def __str__(self):
+        return self.title

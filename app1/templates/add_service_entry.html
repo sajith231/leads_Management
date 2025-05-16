@@ -270,17 +270,21 @@ filterComplaints();
 document.getElementById('service_type').addEventListener('change', filterComplaints);
 </script>
 <script>
-    document.addEventListener("DOMContentLoaded", function () {
-        const modeSelect = document.getElementById('mode_of_service');
-        const phoneGroup = document.getElementById('phoneNumberGroup');
+document.addEventListener("DOMContentLoaded", function () {
+    const modeSelect = document.getElementById('mode_of_service');
+    const phoneGroup = document.getElementById('phoneNumberGroup');
+    const phoneInput = document.getElementById('phone_number');
 
-        function togglePhoneField() {
-            phoneGroup.style.display = modeSelect.value === 'Online' ? 'block' : 'none';
-        }
+    function togglePhoneField() {
+        const isOnline = modeSelect.value === 'Online';
+        phoneGroup.style.display = isOnline ? 'block' : 'none';
+        phoneInput.required = isOnline;
+    }
 
-        modeSelect.addEventListener('change', togglePhoneField);
-        togglePhoneField();  // Initial check
-    });
+    modeSelect.addEventListener('change', togglePhoneField);
+    togglePhoneField();  // Initial check on page load
+});
+
 </script>
 
 <style>

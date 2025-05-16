@@ -1,6 +1,8 @@
 # urls.py
 from django.urls import path
 from . import views
+from .views import InformationCenterListView, add_information_center,edit_information_center,delete_information_center
+
 
 urlpatterns = [
     path('credential-management/', views.credential_management, name='credential_management'),
@@ -20,6 +22,27 @@ urlpatterns = [
     path('add-category/', views.add_category, name='add_category'),
     path('edit-category/<int:category_id>/', views.edit_category, name='edit_category'),
     path('delete-category/<int:category_id>/', views.delete_category, name='delete_category'),
+
+    path('information-center/', InformationCenterListView.as_view(), name='information_center'),
+    path('add-information-center/', add_information_center, name='add_information_center'),
+    path('edit-information-center/<int:pk>/', edit_information_center, name='edit_information_center'),
+    
+    path('delete-information-center/<int:pk>/', views.delete_information_center, name='delete_information_center'),
+
+
+
+
+
+    path('product-types/', views.product_type_list, name='product_type_list'),
+    path('add-product-type/', views.add_product_type, name='add_product_type'),
+    path('edit-product-type/<int:id>/', views.edit_product_type, name='edit_product_type'),
+    path('delete-product-type/<int:id>/', views.delete_product_type, name='delete_product_type'),
+    
+    # Product Category URLs
+    path('product-categories/', views.product_category_list, name='product_category_list'),
+    path('add-product-category/', views.add_product_category, name='add_product_category'),
+    path('edit-product-category/<int:id>/', views.edit_product_category, name='edit_product_category'),
+    path('delete-product-category/<int:id>/', views.delete_product_category, name='delete_product_category'),
 
     
 ]

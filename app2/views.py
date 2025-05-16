@@ -223,3 +223,170 @@ def delete_category(request, category_id):
     category = get_object_or_404(Category, id=category_id)
     category.delete()
     return redirect('add_credential')
+
+
+
+
+from django.shortcuts import render, redirect
+from django.views.generic import ListView
+from .models import InformationCenter, ProductType, ProductCategory
+from django.contrib.auth.decorators import login_required
+
+class InformationCenterListView(ListView):
+    model = InformationCenter
+    template_name = 'information_center.html'
+    context_object_name = 'information_items'
+    ordering = ['-added_date']
+
+@login_required
+def add_information_center(request):
+    if request.method == 'POST':
+        title = request.POST.get('title')
+        remark = request.POST.get('remark')
+        url = request.POST.get('url')
+        added_date = request.POST.get('added_date')
+        product_type_id = request.POST.get('product_type')
+        product_category_id = request.POST.get('product_category')
+        thumbnail = request.FILES.get('thumbnail')
+        priority = request.POST.get('priority')
+        
+        product_type = ProductType.objects.get(id=product_type_id)
+        product_category = ProductCategory.objects.get(id=product_category_id)
+        
+        InformationCenter.objects.create(
+            title=title,
+            remark=remark,
+            url=url,
+            added_date=added_date,
+            uploaded_by=request.user,
+            product_type=product_type,
+            product_category=product_category,
+            thumbnail=thumbnail,
+            priority=priority
+        )
+        return redirect('information_center')
+    
+    product_types = ProductType.objects.all()
+    product_categories = ProductCategory.objects.all()
+    
+    return render(request, 'add_information_center.html', {
+        'product_types': product_types,
+        'product_categories': product_categories,
+    })
+
+
+# views.py
+from django.shortcuts import render, redirect, get_object_or_404
+from django.views.generic import ListView
+from .models import InformationCenter, ProductType, ProductCategory
+from django.contrib.auth.decorators import login_required
+
+@login_required
+def edit_information_center(request, pk):
+    item = get_object_or_404(InformationCenter, pk=pk)
+    
+    if request.method == 'POST':
+        item.title = request.POST.get('title')
+        item.remark = request.POST.get('remark')
+        item.url = request.POST.get('url')
+        item.added_date = request.POST.get('added_date')
+        item.product_type_id = request.POST.get('product_type')
+        item.product_category_id = request.POST.get('product_category')
+        item.priority = request.POST.get('priority')
+        
+        if 'thumbnail' in request.FILES:
+            item.thumbnail = request.FILES['thumbnail']
+        
+        item.save()
+        return redirect('information_center')
+    
+    product_types = ProductType.objects.all()
+    product_categories = ProductCategory.objects.all()
+    
+    return render(request, 'edit_information_center.html', {
+        'item': item,
+        'product_types': product_types,
+        'product_categories': product_categories,
+    })
+
+@login_required
+def delete_information_center(request, pk):
+    item = get_object_or_404(InformationCenter, pk=pk)
+    item.delete()
+    return redirect('information_center')
+
+# views.py (add these to your existing views)
+from django.shortcuts import render, redirect, get_object_or_404
+from .models import ProductType, ProductCategory
+
+@login_required
+def add_product_type(request):
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        if name:
+            ProductType.objects.create(name=name)
+            return redirect('product_type_list')
+    return render(request, 'add_product_type.html')
+
+@login_required
+def edit_product_type(request, id):
+    product_type = get_object_or_404(ProductType, id=id)
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        if name:
+            product_type.name = name
+            product_type.save()
+            return redirect('product_type_list')
+    return render(request, 'edit_product_type.html', {'product_type': product_type})
+
+@login_required
+def delete_product_type(request, id):
+    product_type = get_object_or_404(ProductType, id=id)
+    product_type.delete()
+    return redirect('product_type_list')
+
+@login_required
+def product_type_list(request):
+    product_types = ProductType.objects.all()
+    return render(request, 'product_type_list.html', {'product_types': product_types})
+
+@login_required
+def add_product_category(request):
+    product_types = ProductType.objects.all()
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        product_type_id = request.POST.get('product_type')
+        if name and product_type_id:
+            product_type = ProductType.objects.get(id=product_type_id)
+            ProductCategory.objects.create(name=name, product_type=product_type)
+            return redirect('product_category_list')
+    return render(request, 'add_product_category.html', {'product_types': product_types})
+
+@login_required
+def edit_product_category(request, id):
+    product_category = get_object_or_404(ProductCategory, id=id)
+    product_types = ProductType.objects.all()
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        product_type_id = request.POST.get('product_type')
+        if name and product_type_id:
+            product_type = ProductType.objects.get(id=product_type_id)
+            product_category.name = name
+            product_category.product_type = product_type
+            product_category.save()
+            return redirect('product_category_list')
+    return render(request, 'edit_product_category.html', {
+        'product_category': product_category,
+        'product_types': product_types
+    })
+
+@login_required
+def delete_product_category(request, id):
+    product_category = get_object_or_404(ProductCategory, id=id)
+    product_category.delete()
+    return redirect('product_category_list')
+
+@login_required
+def product_category_list(request):
+    product_categories = ProductCategory.objects.all()
+    return render(request, 'product_category_list.html', {'product_categories': product_categories})

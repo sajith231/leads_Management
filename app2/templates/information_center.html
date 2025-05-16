@@ -1,0 +1,454 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<div class="header">
+    <a href="{% url 'product_type_list' %}" class="add-btn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+        Add Product Type
+    </a>
+    <a href="{% url 'product_category_list' %}" class="add-btn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+        Add category
+    </a>
+</div>
+<div class="information-center">
+    <div class="container">
+        <div class="header">
+            <h1 class="title">Information Center</h1>
+            <a href="{% url 'add_information_center' %}" class="add-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                Add New
+            </a>
+        </div>
+        
+        <div class="information-grid">
+            {% for item in information_items %}
+            <div class="information-item">
+                <div class="thumbnail-container">
+                    <a href="{{ item.url }}" target="_blank" class="thumbnail-link">
+                        {% if item.thumbnail %}
+    <div style="height: 150px;">
+        <img src="{{ item.thumbnail.url }}" alt="{{ item.title }}" class="thumbnail">
+    </div>
+{% else %}
+    <div style="height: 150px;">
+        <img src="{% static 'default-thumbnail.jpg' %}" alt="No Thumbnail" class="thumbnail">
+    </div>
+{% endif %}
+
+                        <div class="play-overlay">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="play-icon">
+                                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                            </svg>
+                        </div>
+                    </a>
+                </div>
+                <div class="information-content">
+                    <h3 class="item-title">{{ item.title }}</h3>
+                    <p class="item-remark">{{ item.remark|truncatechars:100 }}</p>
+                    <div class="item-meta">
+                        <span class="date">Added on: {{ item.added_date|date:"M d, Y" }}</span>
+                        <div class="item-actions">
+                            <a href="{% url 'edit_information_center' item.id %}" class="action-btn edit">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                </svg>
+                            </a>
+                            <button class="action-btn delete" onclick="openDeleteModal({{ item.id }})">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="3 6 5 6 21 6"></polyline>
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                    <line x1="10" y1="11" x2="10" y2="17"></line>
+                                    <line x1="14" y1="11" x2="14" y2="17"></line>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="no-items">
+                <p>No information items found. Add your first item!</p>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <div class="pagination">
+            {% if information_items.has_previous %}
+                <a href="?page=1" class="page-link first">&laquo; First</a>
+                <a href="?page={{ information_items.previous_page_number }}" class="page-link prev">Previous</a>
+            {% endif %}
+            
+            <span class="current-page">
+                Page {{ information_items.number }} of {{ information_items.paginator.num_pages }}
+            </span>
+            
+            {% if information_items.has_next %}
+                <a href="?page={{ information_items.next_page_number }}" class="page-link next">Next</a>
+                <a href="?page={{ information_items.paginator.num_pages }}" class="page-link last">Last &raquo;</a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" class="modal">
+    <div class="modal-content">
+        <h3>Confirm Deletion</h3>
+        <p>Are you sure you want to delete this information item?</p>
+        <div class="modal-actions">
+            <button onclick="closeDeleteModal()" class="btn-secondary">Cancel</button>
+            <form id="deleteForm" method="post" action="{% url 'delete_information_center' 0 %}">
+                {% csrf_token %}
+                <button type="submit" class="btn-danger">Delete</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Main Container Styles */
+    .information-center {
+        width: 100%;
+        padding: 20px 0;
+        background-color: #f8f9fa;
+    }
+    
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 15px;
+    }
+    
+    /* Header Styles */
+    .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid #e9ecef;
+    }
+    
+    .title {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #212529;
+        margin: 0;
+    }
+    
+    .add-btn {
+        display: flex;
+        align-items: center;
+        background-color: #007bff;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 4px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: background-color 0.2s;
+    }
+    
+    .add-btn:hover {
+        background-color: #0069d9;
+    }
+    
+    .add-btn .icon {
+        margin-right: 8px;
+    }
+    
+    /* Grid Layout */
+    .information-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 30px;
+    }
+    
+    /* Item Cards */
+    .information-item {
+        background-color: #fff;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .information-item:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Thumbnail Styles */
+    .thumbnail-container {
+        position: relative;
+        padding-top: 56.25%; /* 16:9 Aspect Ratio */
+        overflow: hidden;
+    }
+    
+    .thumbnail-link {
+        display: block;
+        width: 100%;
+        height: 100%;
+    }
+    
+    .thumbnail {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s;
+    }
+    
+    .information-item:hover .thumbnail {
+        transform: scale(1.05);
+    }
+    
+    .play-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.3);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+    
+    .information-item:hover .play-overlay {
+        opacity: 1;
+    }
+    
+    .play-icon {
+        color: white;
+        filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+    }
+    
+    /* Content Styles */
+    .information-content {
+        padding: 20px;
+    }
+    
+    .item-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #343a40;
+        margin: 0 0 10px 0;
+        line-height: 1.4;
+    }
+    
+    .item-remark {
+        color: #6c757d;
+        margin: 0 0 15px 0;
+        line-height: 1.6;
+    }
+    
+    .item-meta {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        color: #adb5bd;
+        font-size: 0.875rem;
+    }
+    
+    .item-actions {
+        display: flex;
+        gap: 10px;
+    }
+    
+    .action-btn {
+        background: none;
+        border: none;
+        padding: 5px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 4px;
+        transition: background-color 0.2s;
+    }
+    
+    .action-btn:hover {
+        background-color: #f1f3f5;
+    }
+    
+    .action-btn.edit {
+        color: #007bff;
+    }
+    
+    .action-btn.delete {
+        color: #dc3545;
+    }
+    
+    /* No Items Message */
+    .no-items {
+        grid-column: 1 / -1;
+        text-align: center;
+        padding: 40px;
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Pagination */
+    .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-top: 40px;
+    }
+    
+    .page-link {
+        margin: 0 5px;
+        padding: 8px 12px;
+        border-radius: 4px;
+        background-color: #fff;
+        color: #007bff;
+        text-decoration: none;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        transition: background-color 0.2s;
+    }
+    
+    .page-link:hover {
+        background-color: #e9ecef;
+    }
+    
+    .current-page {
+        margin: 0 10px;
+        color: #6c757d;
+    }
+    
+    /* Modal Styles */
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .modal-content {
+        background-color: white;
+        padding: 25px;
+        border-radius: 8px;
+        width: 90%;
+        max-width: 400px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    }
+    
+    .modal-content h3 {
+        margin-top: 0;
+        color: #343a40;
+    }
+    
+    .modal-content p {
+        margin-bottom: 20px;
+        color: #6c757d;
+    }
+    
+    .modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+    
+    .btn-secondary {
+        background-color: #f8f9fa;
+        color: #495057;
+        border: 1px solid #ced4da;
+        padding: 8px 16px;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+    
+    .btn-secondary:hover {
+        background-color: #e9ecef;
+    }
+    
+    .btn-danger {
+        background-color: #dc3545;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+    
+    .btn-danger:hover {
+        background-color: #c82333;
+    }
+    
+    /* Responsive Styles */
+    @media (max-width: 992px) {
+        .information-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .information-grid {
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        
+        .header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 15px;
+        }
+        
+        .pagination {
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+    }
+</style>
+
+<script>
+    // Delete Modal Functions
+    function openDeleteModal(itemId) {
+    const modal = document.getElementById('deleteModal');
+    const form = document.getElementById('deleteForm');
+    
+    // Set the form action URL using the URL template tag
+    form.action = `{% url 'delete_information_center' 0 %}`.replace('0', itemId);
+    
+    // Show the modal
+    modal.style.display = 'flex';
+}
+    
+    function closeDeleteModal() {
+        const modal = document.getElementById('deleteModal');
+        modal.style.display = 'none';
+    }
+    
+    // Close modal when clicking outside the content
+    window.onclick = function(event) {
+        const modal = document.getElementById('deleteModal');
+        if (event.target === modal) {
+            closeDeleteModal();
+        }
+    }
+</script>
+{% endblock %}

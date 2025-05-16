@@ -18,6 +18,18 @@
     <h1 style="display: flex; justify-content: center;">Service Entry</h1>
     
     <a href="{% url 'add_service_entry' %}" class="btn btn-primary mb-3">Add new</a>
+    <div class="row mb-3">
+    <div class="row mb-3">
+    <div class="col-md-3">
+        <label for="fromDate" class="form-label">From Date:</label>
+        <input type="date" id="fromDate" class="form-control" value="{{ default_from_date }}">
+    </div>
+    <div class="col-md-3">
+        <label for="toDate" class="form-label">To Date:</label>
+        <input type="date" id="toDate" class="form-control" value="{{ default_to_date }}">
+    </div>
+</div>
+</div>
 
      
 
@@ -27,13 +39,15 @@
 
     <!-- Status Filter -->
     <div class="mb-3">
-        <label for="statusFilter" class="form-label">Filter by Status:</label>
-        <select id="statusFilter" class="form-select" style="width: 30%;">
-            <option value="all">All Status</option>
-            <option value="Solved">Solved</option>
-            <option value="Pending">Pending</option>
-        </select>
-    </div>
+    <label for="userFilter" class="form-label">Filter by User:</label>
+    <select id="userFilter" class="form-select" style="width: 30%;">
+        <option value="all">All Users</option>
+        {% for user in users %}
+            <option value="{{ user.id }}">{{ user.name|upper }}</option>
+        {% endfor %}
+    </select>
+    
+</div>
     <div class="pagination">
         <span class="step-links">
             {% if page_obj.has_previous %}
@@ -52,7 +66,7 @@
         </span>
     </div>
 
-    <div class="table-responsive" style="max-height: 600px; overflow-y: auto;margin-top: 1%;">
+    <div class="table-responsive" style=" overflow-x: auto;margin-top: 1%;">
         <table class="table table-bordered table-striped" id="serviceTable">
             <thead>
                 <tr>
@@ -76,7 +90,7 @@
                 {% for entry in page_obj %}
                 <tr>
                     <td>{{ forloop.counter0|add:page_obj.start_index }}</td>
-                    <td>{{ entry.date|date:"Y-m-d H:i" }}</td>
+                    <td>{{ entry.date|date:"d-m-Y H:i" }}</td>
                     <td>{{ entry.customer|upper }}</td>
                     <td>{{ entry.complaint|upper }}</td>
                     <td>
@@ -176,6 +190,54 @@
 
         // Initial filter application
         filterRowsByStatus();
+    });
+</script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const statusFilter = document.getElementById('statusFilter');
+        const tableRows = document.querySelectorAll('#serviceTable tbody tr');
+        const remarkIcons = document.querySelectorAll('.remark-icon');
+        const remarkModal = new bootstrap.Modal(document.getElementById('remarkModal'));
+        const remarkContent = document.getElementById('remarkContent');
+        const fromDateInput = document.getElementById('fromDate');
+        const toDateInput = document.getElementById('toDate');
+        const userFilter = document.getElementById('userFilter');
+
+        // Function to update URL with filters
+        // Update the event listeners and URL update function
+const updateFilters = () => {
+    const fromDate = fromDateInput.value;
+    const toDate = toDateInput.value;
+    const userId = userFilter.value;
+    
+    const currentUrl = new URL(window.location.href);
+    
+    if (fromDate) currentUrl.searchParams.set('from_date', fromDate);
+    else currentUrl.searchParams.delete('from_date');
+    
+    if (toDate) currentUrl.searchParams.set('to_date', toDate);
+    else currentUrl.searchParams.delete('to_date');
+    
+    if (userId && userId !== 'all') currentUrl.searchParams.set('user', userId);
+    else currentUrl.searchParams.delete('user');
+    
+    currentUrl.searchParams.delete('page'); // Reset to first page
+    window.location.href = currentUrl.toString();
+};
+
+        // Apply filter on date change
+        fromDateInput.addEventListener('change', updateFilters);
+        toDateInput.addEventListener('change', updateFilters);
+        userFilter.addEventListener('change', updateFilters);
+
+        // Show remarks in modal
+        remarkIcons.forEach(icon => {
+            icon.addEventListener('click', function () {
+                const remark = this.getAttribute('data-remark');
+                remarkContent.textContent = remark || 'No remarks available.';
+                remarkModal.show();
+            });
+        });
     });
 </script>
 {% endblock %}

@@ -4,20 +4,20 @@
     <h1>Edit Service Entry</h1>
     <form method="post">
         {% csrf_token %}
+        <!-- Customer -->
         <div class="mb-3">
             <label for="customer" class="form-label">Customer</label>
             <select class="form-control" id="customer" name="customer" required>
                 <option value="">Select a customer</option>
-                {% if customers %}
-                    {% for customer in customers %}
-                        <option value="{{ customer.name }}" {% if customer.name == entry.customer %}selected{% endif %}>{{ customer.name }},{{ customer.address }}</option>
-                    {% endfor %}
-                {% else %}
-                    <option value="" disabled>No customers available</option>
-                {% endif %}
+                {% for customer in customers %}
+                    <option value="{{ customer.name }}" {% if customer.name == entry.customer %}selected{% endif %}>
+                        {{ customer.name }}, {{ customer.address }}
+                    </option>
+                {% endfor %}
             </select>
         </div>
-         <!-- Service Type -->
+
+        <!-- Service Type -->
         <div class="mb-3">
             <label for="service_type" class="form-label">Service Type</label>
             <select name="service_type" id="service_type" class="form-select" required>
@@ -25,27 +25,39 @@
                 <option value="Hardware" {% if entry.service_type == 'Hardware' %}selected{% endif %}>Hardware</option>
             </select>
         </div>
+
+        <!-- Complaint -->
         <div class="mb-3">
             <label for="complaint" class="form-label">Complaint</label>
             <select name="complaint" id="complaint" class="form-select" required>
                 <option value="">Select a complaint</option>
                 {% for complaint in complaints %}
-                    <option value="{{ complaint.description }}" data-type="{{ complaint.complaint_type }}" {% if complaint.description == entry.complaint %}selected{% endif %}>{{ complaint.description }}</option>
+                    <option value="{{ complaint.description }}" data-type="{{ complaint.complaint_type }}" {% if complaint.description == entry.complaint %}selected{% endif %}>
+                        {{ complaint.description }}
+                    </option>
                 {% endfor %}
             </select>
         </div>
+
+        <!-- Remarks -->
         <div class="mb-3">
             <label for="remarks" class="form-label">Remarks</label>
             <input type="text" name="remarks" id="remarks" class="form-control" value="{{ entry.remarks }}">
         </div>
+
+        <!-- Place -->
         <div class="mb-3">
             <label for="place" class="form-label">Place</label>
             <input type="text" name="place" id="place" class="form-control" value="{{ entry.place }}">
         </div>
+
+        <!-- Duration -->
         <div class="mb-3">
             <label for="duration" class="form-label">Duration</label>
             <input type="text" name="duration" id="duration" class="form-control" value="{{ entry.duration }}">
         </div>
+
+        <!-- Status -->
         <div class="mb-3">
             <label for="status" class="form-label">Status</label>
             <select name="status" id="status" class="form-select">
@@ -53,6 +65,7 @@
                 <option value="Solved" {% if entry.status == 'Solved' %}selected{% endif %}>Solved</option>
             </select>
         </div>
+
         <!-- Mode of Service -->
         <div class="mb-3">
             <label for="mode_of_service" class="form-label">Mode of Service</label>
@@ -61,65 +74,67 @@
                 <option value="Onsite" {% if entry.mode_of_service == 'Onsite' %}selected{% endif %}>Onsite</option>
             </select>
         </div>
+
+        <!-- Phone Number -->
         <div class="mb-3" id="phoneNumberGroup" style="display: none;">
-    <label for="phone_number" class="form-label">Phone Number</label>
-    <input type="text" class="form-control" id="phone_number" name="phone_number" value="{{ entry.phone_number }}">
-</div>
-       
+            <label for="phone_number" class="form-label">Phone Number</label>
+            <input type="text" class="form-control" id="phone_number" name="phone_number" value="{{ entry.phone_number }}">
+        </div>
+
+        <!-- Submit Buttons -->
         <button type="submit" class="btn btn-primary">Update</button>
         <a href="{% url 'service_entry' %}" class="btn btn-secondary">Cancel</a>
     </form>
 </div>
 
+<!-- Complaint Filter -->
 <script>
-    // Function to filter complaints based on selected service type
     function filterComplaints() {
         const serviceType = document.getElementById('service_type').value.toLowerCase();
         const complaintSelect = document.getElementById('complaint');
         const selectedComplaint = complaintSelect.value;
         let hasVisibleSelected = false;
-        
+
         Array.from(complaintSelect.options).forEach(option => {
-            if (option.value === "") { // Keep the default "Select a complaint" option
+            if (option.value === "") {
                 option.hidden = false;
                 return;
             }
-            
-            const complaintType = option.getAttribute('data-type');
-            const show = (complaintType === serviceType || complaintType === 'both');
+            const type = option.getAttribute('data-type');
+            const show = (type === serviceType || type === 'both');
             option.hidden = !show;
-            
-            // Check if the currently selected option will remain visible
             if (option.value === selectedComplaint && show) {
                 hasVisibleSelected = true;
             }
         });
 
-        // If the current selection will be hidden, reset to the default option
         if (selectedComplaint && !hasVisibleSelected) {
             complaintSelect.value = "";
         }
     }
 
-    // Initial filter on page load
-    document.addEventListener("DOMContentLoaded", function() {
-        filterComplaints();
-        
-        // Add event listener for service type changes
-        document.getElementById('service_type').addEventListener('change', filterComplaints);
-    });
-</script>
-<script>
     document.addEventListener("DOMContentLoaded", function () {
+        // Initial complaint filter
+        filterComplaints();
+        document.getElementById('service_type').addEventListener('change', filterComplaints);
+
+        // Toggle phone number field
         const modeSelect = document.getElementById('mode_of_service');
         const phoneGroup = document.getElementById('phoneNumberGroup');
+        const phoneInput = document.getElementById('phone_number');
 
         function togglePhoneField() {
-            phoneGroup.style.display = modeSelect.value === 'Online' ? 'block' : 'none';
+            if (modeSelect.value === 'Online') {
+                phoneGroup.style.display = 'block';
+                phoneInput.required = true;
+            } else {
+                phoneGroup.style.display = 'none';
+                phoneInput.required = false;
+            }
         }
 
         modeSelect.addEventListener('change', togglePhoneField);
-        togglePhoneField();  // Initial on load
+        togglePhoneField(); // Initial
     });
 </script>
 
