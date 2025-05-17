@@ -60,7 +60,7 @@ class ProductType(models.Model):
 
 class ProductCategory(models.Model):
     name = models.CharField(max_length=100)
-    product_type = models.ForeignKey(ProductType, on_delete=models.CASCADE)
+    
     
     def __str__(self):
         return self.name

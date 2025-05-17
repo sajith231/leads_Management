@@ -1,20 +1,15 @@
 {% extends 'base.html' %}
 {% load static %}
 {% block content %}
-<div class="header">
+
+<div class="header" style="margin-top: 3.5%;display: flex;">
     <a href="{% url 'product_type_list' %}" class="add-btn">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon">
-            <line x1="12" y1="5" x2="12" y2="19"></line>
-            <line x1="5" y1="12" x2="19" y2="12"></line>
-        </svg>
-        Add Product Type
+        
+        Product Type
     </a>
     <a href="{% url 'product_category_list' %}" class="add-btn">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon">
-            <line x1="12" y1="5" x2="12" y2="19"></line>
-            <line x1="5" y1="12" x2="19" y2="12"></line>
-        </svg>
-        Add category
+        
+        Category
     </a>
 </div>
 <div class="information-center">
@@ -54,7 +49,26 @@
                 </div>
                 <div class="information-content">
                     <h3 class="item-title">{{ item.title }}</h3>
-                    <p class="item-remark">{{ item.remark|truncatechars:100 }}</p>
+                    <div class="item-remark">
+                        <p class="description" data-full="{{ item.remark }}">{{ item.remark|truncatewords:10 }}</p>
+                        <button class="more-btn" onclick="toggleDescription(this)">More</button>
+                        <style>
+                            .more-btn {
+    background-color: #007bff; /* Blue background */
+    color: white; /* White text */
+    border: none; /* No border */
+    padding: 5px 10px; /* Padding around the text */
+    border-radius: 4px; /* Rounded corners */
+    cursor: pointer; /* Pointer cursor on hover */
+    font-size: 0.9rem; /* Font size */
+    transition: background-color 0.2s ease; /* Smooth transition for background color */
+}
+
+.more-btn:hover {
+    background-color: #0056b3; /* Darker blue on hover */
+}
+                        </style>
+                    </div>
                     <div class="item-meta">
                         <span class="date">Added on: {{ item.added_date|date:"M d, Y" }}</span>
                         <div class="item-actions">
@@ -83,21 +97,7 @@
             {% endfor %}
         </div>
         
-        <div class="pagination">
-            {% if information_items.has_previous %}
-                <a href="?page=1" class="page-link first">&laquo; First</a>
-                <a href="?page={{ information_items.previous_page_number }}" class="page-link prev">Previous</a>
-            {% endif %}
-            
-            <span class="current-page">
-                Page {{ information_items.number }} of {{ information_items.paginator.num_pages }}
-            </span>
-            
-            {% if information_items.has_next %}
-                <a href="?page={{ information_items.next_page_number }}" class="page-link next">Next</a>
-                <a href="?page={{ information_items.paginator.num_pages }}" class="page-link last">Last &raquo;</a>
-            {% endif %}
-        </div>
+        
     </div>
 </div>
 
@@ -413,9 +413,11 @@
         }
         
         .header {
-            flex-direction: column;
+            /* flex-direction: column; */
+            padding-top: 10%;
             align-items: flex-start;
             gap: 15px;
+            
         }
         
         .pagination {
@@ -428,15 +430,15 @@
 <script>
     // Delete Modal Functions
     function openDeleteModal(itemId) {
-    const modal = document.getElementById('deleteModal');
-    const form = document.getElementById('deleteForm');
-    
-    // Set the form action URL using the URL template tag
-    form.action = `{% url 'delete_information_center' 0 %}`.replace('0', itemId);
-    
-    // Show the modal
-    modal.style.display = 'flex';
-}
+        const modal = document.getElementById('deleteModal');
+        const form = document.getElementById('deleteForm');
+        
+        // Set the form action URL using the URL template tag
+        form.action = `{% url 'delete_information_center' 0 %}`.replace('0', itemId);
+        
+        // Show the modal
+        modal.style.display = 'flex';
+    }
     
     function closeDeleteModal() {
         const modal = document.getElementById('deleteModal');
@@ -448,6 +450,19 @@
         const modal = document.getElementById('deleteModal');
         if (event.target === modal) {
             closeDeleteModal();
+        }
+    }
+
+    // Toggle Description Function
+    function toggleDescription(button) {
+        const description = button.previousElementSibling;
+        const fullText = description.getAttribute('data-full');
+        if (description.textContent === fullText) {
+            description.textContent = fullText.split(' ').slice(0, 10).join(' ') + '...';
+            button.textContent = 'More';
+        } else {
+            description.textContent = fullText;
+            button.textContent = 'Less';
         }
     }
 </script>

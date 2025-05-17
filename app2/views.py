@@ -352,15 +352,12 @@ def product_type_list(request):
 
 @login_required
 def add_product_category(request):
-    product_types = ProductType.objects.all()
     if request.method == 'POST':
         name = request.POST.get('name')
-        product_type_id = request.POST.get('product_type')
-        if name and product_type_id:
-            product_type = ProductType.objects.get(id=product_type_id)
-            ProductCategory.objects.create(name=name, product_type=product_type)
+        if name:
+            ProductCategory.objects.create(name=name)
             return redirect('product_category_list')
-    return render(request, 'add_product_category.html', {'product_types': product_types})
+    return render(request, 'add_product_category.html')
 
 @login_required
 def edit_product_category(request, id):

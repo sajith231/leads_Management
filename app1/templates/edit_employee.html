@@ -91,12 +91,23 @@
         
 
         <div class="mb-3">
-            <label class="form-label">Attachments</label><br>
-            {% for attachment in employee.attachments.all %}
-                <a href="{{ attachment.file.url }}" target="_blank">View</a><br>
-            {% endfor %}
-            <input type="file" name="attachments" class="form-control" multiple>
-        </div>
+    <label class="form-label">Attachments</label><br>
+    {% if employee.attachments.all %}
+        {% for attachment in employee.attachments.all %}
+            <div class="form-check">
+                <input type="checkbox" name="delete_attachments" value="{{ attachment.id }}" class="form-check-input">
+                <label class="form-check-label">
+                    <a href="{{ attachment.file.url }}" target="_blank">View Attachment</a>
+                    <span style="color: red;">(Delete)</span>
+                </label>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p>No existing attachments.</p>
+    {% endif %}
+    <input type="file" name="attachments" class="form-control" multiple>
+</div>
+
         <div class="mb-3">
             <label class="form-label">Bank Account Number</label>
             <input type="text" name="bank_account_number" class="form-control" value="{{ employee.bank_account_number }}">

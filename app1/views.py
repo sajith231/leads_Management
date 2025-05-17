@@ -2438,16 +2438,15 @@ def delete_employee(request, emp_id):
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import Employee, Attachment
 from django.contrib import messages
-
 @login_required
 def edit_employee(request, emp_id):
     employee = get_object_or_404(Employee, id=emp_id)
-    users = User.objects.exclude(employee__isnull=False).union(User.objects.filter(id=employee.user.id if employee.user else None))  # Exclude already assigned users
+    users = User.objects.exclude(employee__isnull=False).union(User.objects.filter(id=employee.user.id if employee.user else None))
 
     if request.method == "POST":
         user_id = request.POST.get("user_id")
         selected_user = User.objects.get(id=user_id) if user_id else None
-        
+
         # Ensure User ID is unique
         if selected_user and Employee.objects.exclude(id=employee.id).filter(user=selected_user).exists():
             messages.error(request, f"User ID {selected_user.userid} is already assigned to another employee.")
@@ -2474,19 +2473,29 @@ def edit_employee(request, emp_id):
         employee.bank_name = request.POST.get("bank_name", "")
         employee.branch = request.POST.get("branch", "")
         employee.status = request.POST.get("status")
-
         employee.save()
+
+        # Delete selected attachments
+        delete_attachments = request.POST.getlist("delete_attachments")
+        if delete_attachments:
+            Attachment.objects.filter(id__in=delete_attachments).delete()
+
+        # Handle new attachments (if any)
+        for file in request.FILES.getlist('attachments'):
+            Attachment.objects.create(employee=employee, file=file)
+
         messages.success(request, "Employee updated successfully.")
         return redirect("employee_management")
 
     context = {
         "employee": employee,
-        "users": users,  # Pass only available users
+        "users": users,
         "joining_date": employee.joining_date.strftime("%Y-%m-%d"),
         "dob": employee.dob.strftime("%Y-%m-%d"),
     }
 
     return render(request, "edit_employee.html", context)
+
 
 
 
