@@ -1,21 +1,136 @@
 {% extends 'base.html' %}
 {% load static %}
 {% block content %}
+<style>
+    /* Filter Styles */
+.filter-container {
+    margin-bottom: 30px;
+    background-color: #fff;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
 
+.filter-form {
+    width: 100%;
+}
+
+.filter-row {
+    display: flex;
+    gap: 15px;
+    align-items: flex-end;
+}
+
+.filter-group {
+    flex: 1;
+}
+
+.filter-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #495057;
+    font-size: 0.9rem;
+}
+
+.filter-select {
+    width: 100%;
+    padding: 10px 15px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    font-size: 0.95rem;
+    background-color: #fff;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23495057' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 16px;
+    cursor: pointer;
+}
+
+.reset-btn {
+    display: inline-block;
+    padding: 10px 15px;
+    background-color: #f8f9fa;
+    color: #495057;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+}
+
+.reset-btn:hover {
+    background-color: #e9ecef;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .filter-row {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .filter-group {
+        width: 100%;
+    }
+}
+</style>
 <div class="header" style="margin-top: 3.5%;display: flex;">
+    {% if request.user.is_superuser or 'product_type_list' in request.session.allowed_menus %}
     <a href="{% url 'product_type_list' %}" class="add-btn">
         
         Product Type
     </a>
+    {% endif %}
+    {% if request.user.is_superuser or 'product_category_list' in request.session.allowed_menus %}
     <a href="{% url 'product_category_list' %}" class="add-btn">
         
         Category
     </a>
+    {% endif %}
+</div>
+<!-- Add this section below the header div in information_center.html -->
+<div class="filter-container">
+    <form method="get" class="filter-form">
+        <div class="filter-row">
+            <div class="filter-group">
+                <label for="product_type">Product Type</label>
+                <select id="product_type" name="product_type" class="filter-select" onchange="this.form.submit()">
+                    <option value="">All Types</option>
+                    {% for type in product_types %}
+                    <option value="{{ type.id }}" {% if request.GET.product_type == type.id|stringformat:"s" %}selected{% endif %}>
+                        {{ type.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label for="product_category">Product Category</label>
+                <select id="product_category" name="product_category" class="filter-select" onchange="this.form.submit()">
+                    <option value="">All Categories</option>
+                    {% for category in product_categories %}
+                    <option value="{{ category.id }}" {% if request.GET.product_category == category.id|stringformat:"s" %}selected{% endif %}>
+                        {{ category.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <a href="{% url 'information_center' %}" class="reset-btn">Reset Filters</a>
+            </div>
+        </div>
+    </form>
 </div>
 <div class="information-center">
     <div class="container">
         <div class="header">
             <h1 class="title">Information Center</h1>
+            {% if request.user.is_superuser or 'add_information_center' in request.session.allowed_menus %}
             <a href="{% url 'add_information_center' %}" class="add-btn">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon">
                     <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -23,6 +138,7 @@
                 </svg>
                 Add New
             </a>
+            {% endif %}
         </div>
         
         <div class="information-grid">
@@ -72,12 +188,15 @@
                     <div class="item-meta">
                         <span class="date">Added on: {{ item.added_date|date:"M d, Y" }}</span>
                         <div class="item-actions">
+                            {% if request.user.is_superuser or 'edit_information_center' in request.session.allowed_menus %}
                             <a href="{% url 'edit_information_center' item.id %}" class="action-btn edit">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                                 </svg>
                             </a>
+                            {% endif %}
+                            {% if request.user.is_superuser or 'delete_information_center' in request.session.allowed_menus %}
                             <button class="action-btn delete" onclick="openDeleteModal({{ item.id }})">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <polyline points="3 6 5 6 21 6"></polyline>
@@ -86,6 +205,7 @@
                                     <line x1="14" y1="11" x2="14" y2="17"></line>
                                 </svg>
                             </button>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -432,6 +552,8 @@
     function openDeleteModal(itemId) {
         const modal = document.getElementById('deleteModal');
         const form = document.getElementById('deleteForm');
+        const productTypeSelect = document.getElementById('product_type');
+        const productCategorySelect = document.getElementById('product_category');
         
         // Set the form action URL using the URL template tag
         form.action = `{% url 'delete_information_center' 0 %}`.replace('0', itemId);

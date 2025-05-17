@@ -904,7 +904,15 @@
                 </div>
                 {% endif %}
             {% endif %}
-             <!-- <div style="margin-top: 13px;"><a href="{% url 'information_center' %}"><i class="fas fa-photo-video" style="color: white;font-size: medium;"></i><span style="color: white;">Information Centre</span></a></div> -->
+             {% if 'information_center' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+    <div style="margin-top: 13px;">
+        <a href="{% url 'information_center' %}">
+            <i class="fas fa-photo-video" style="color: white;font-size: medium;"></i>
+            <span style="color: white;">Information Centre</span>
+        </a>
+    </div>
+    {% endif %}
+</div>
         </div>
 
     <div class="content">

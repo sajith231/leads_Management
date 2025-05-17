@@ -5057,7 +5057,20 @@ def configure_user_menu(request, user_id):
                 {'id': 'users_table', 'name': 'Users', 'icon': 'fas fa-users'},
                 {'id': 'reminder_type', 'name': 'Reminder Types', 'icon': 'fas fa-bell'}
             ]
-        }
+        },
+       {
+    'name': 'Information Centre',
+    'icon': 'fas fa-photo-video',
+    'submenus': [
+        {'id': 'information_center', 'name': 'Information Centre', 'icon': 'fas fa-photo-video'},
+        {'id': 'product_type_list', 'name': 'Product Type', 'icon': 'fas fa-tags'},
+        {'id': 'product_category_list', 'name': 'Category', 'icon': 'fas fa-list-alt'},
+        {'id': 'add_information_center', 'name': 'Add New Media', 'icon': 'fas fa-plus'},
+        {'id': 'edit_information_center', 'name': 'Edit Media', 'icon': 'fas fa-edit'},
+        {'id': 'delete_information_center', 'name': 'Delete Media', 'icon': 'fas fa-trash'}
+    ]
+}
+
     ]
     
     # Get the user's currently allowed menus
@@ -5197,6 +5210,18 @@ def default_menus(request):
                 {'id': 'all_branches', 'name': 'Branch', 'icon': 'fas fa-code-branch'},
                 {'id': 'users_table', 'name': 'Users', 'icon': 'fas fa-users'},
                 {'id': 'reminder_type', 'name': 'Reminder Types', 'icon': 'fas fa-bell'}
+            ]
+        },
+        {
+            'name': 'Information Centre',
+            'icon': 'fas fa-photo-video',
+            'submenus': [
+                {'id': 'information_center', 'name': 'Information Centre', 'icon': 'fas fa-photo-video'},
+                {'id': 'product_type_list', 'name': 'Product Type', 'icon': 'fas fa-tags'},
+                {'id': 'product_category_list', 'name': 'Category', 'icon': 'fas fa-list-alt'},
+                {'id': 'add_information_center', 'name': 'Add New Media', 'icon': 'fas fa-plus'},
+                {'id': 'edit_information_center', 'name': 'Edit Media', 'icon': 'fas fa-edit'},
+                {'id': 'delete_information_center', 'name': 'Delete Media', 'icon': 'fas fa-trash'}
             ]
         }
     ]

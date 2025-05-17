@@ -237,6 +237,24 @@ class InformationCenterListView(ListView):
     template_name = 'information_center.html'
     context_object_name = 'information_items'
     ordering = ['-added_date']
+    
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        product_type = self.request.GET.get('product_type')
+        product_category = self.request.GET.get('product_category')
+        
+        if product_type:
+            queryset = queryset.filter(product_type_id=product_type)
+        if product_category:
+            queryset = queryset.filter(product_category_id=product_category)
+            
+        return queryset
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['product_types'] = ProductType.objects.all()
+        context['product_categories'] = ProductCategory.objects.all()
+        return context
 
 @login_required
 def add_information_center(request):
