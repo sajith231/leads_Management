@@ -129,6 +129,7 @@
                 margin-left: 15%;
             }
             
+            
         }
 
         input {
@@ -513,6 +514,31 @@
             margin-right: 70px;
             margin-top: 15px;
         }
+
+
+
+.information_center {
+    margin-top: 10px;
+}
+
+.information_center a {
+    color: white;
+    text-decoration: none;
+}
+
+.information_center i {
+    color: white;
+    font-size: medium;
+}
+
+.information_center span {
+    color: white;
+}
+
+.information_center span:first-of-type {
+    font-weight: 600;
+    font-size: large;
+}
     </style>    
         
         <!-- Hamburger Menu Button -->
@@ -905,12 +931,14 @@
                 {% endif %}
             {% endif %}
              {% if 'information_center' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
-    <div style="margin-top: 13px;">
-        <a href="{% url 'information_center' %}">
-            <i class="fas fa-photo-video" style="color: white;font-size: medium;"></i>
-            <span style="color: white;">Information Centre</span>
-        </a>
-    </div>
+    <div class="information_center">
+    <a href="{% url 'information_center' %}">
+        <i class="fas fa-photo-video"></i>
+        <span>
+            <span>Information Centre</span>
+        </span>
+    </a>
+</div>
     {% endif %}
 </div>
         </div>
