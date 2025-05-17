@@ -243,6 +243,10 @@ class InformationCenterListView(ListView):
         product_type = self.request.GET.get('product_type')
         product_category = self.request.GET.get('product_category')
         
+        # Filter by priority based on user status
+        if not self.request.user.is_superuser:
+            queryset = queryset.filter(priority='priority2')
+        
         if product_type:
             queryset = queryset.filter(product_type_id=product_type)
         if product_category:
