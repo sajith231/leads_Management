@@ -692,6 +692,17 @@
                     <a href="{% url 'project_work' %}" style="display: flex;gap: 10px;"><i class="fa-solid fa-people-roof"></i> Project Management</a>
                    
                 </div>
+
+                {% if 'information_center' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+    <div class="information_center">
+    <a href="{% url 'information_center' %}">
+        <i class="fas fa-photo-video" style="font-size: medium;"></i>
+        <span>
+            <span>Information Centre</span>
+        </span>
+    </a>
+</div>
+    {% endif %}
         
                 <!-- Master Menu -->
                 <div onclick="toggleMenu()">
@@ -879,6 +890,16 @@
                     {% endif %}
                 </div>
                 {% endif %}
+                {% if 'information_center' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+    <div class="information_center">
+    <a href="{% url 'information_center' %}">
+        <i class="fas fa-photo-video" style="font-size: medium;"></i>
+        <span>
+            <span>Information Centre</span>
+        </span>
+    </a>
+</div>
+    {% endif %}
 
                 {% if 'all_districts' in allowed_menus or 'all_areas' in allowed_menus or 'all_locations' in allowed_menus or 'all_requirements' in allowed_menus or 'business_type_list' in allowed_menus or 'job_titles' in allowed_menus or 'all_hardwares' in allowed_menus or 'all_complaints' in allowed_menus or 'all_branches' in allowed_menus or 'users_table' in allowed_menus or 'reminder_type' in allowed_menus %}
                 <!-- Master Menu -->
@@ -930,16 +951,7 @@
                 </div>
                 {% endif %}
             {% endif %}
-             {% if 'information_center' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
-    <div class="information_center">
-    <a href="{% url 'information_center' %}">
-        <i class="fas fa-photo-video" style="font-size: medium;"></i>
-        <span>
-            <span>Information Centre</span>
-        </span>
-    </a>
-</div>
-    {% endif %}
+             
 </div>
         </div>
 
