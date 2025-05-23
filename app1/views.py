@@ -2924,10 +2924,28 @@ def toggle_selection_status(request):
     return redirect('interview_management')  # Redirect back to the interview management page
 
 
+from django.core.paginator import Paginator
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
+from .models import Employee
+
 @login_required
 def make_experience_certificate(request):
+    search_query = request.GET.get('q', '')
     employees = Employee.objects.all()
-    return render(request, 'make_experience_certificate.html', {'employees': employees})
+
+    if search_query:
+        employees = employees.filter(name__icontains=search_query)
+
+    paginator = Paginator(employees, 15)  # 15 per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'make_experience_certificate.html', {
+        'page_obj': page_obj,
+        'search_query': search_query
+    })
+
 
 
 

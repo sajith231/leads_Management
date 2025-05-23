@@ -15,13 +15,39 @@
         <i class="fas fa-file-pdf"></i> MAKE EXPERIENCE CERTIFICATE
     </h2>
     <div class="mb-3" style="margin-top: 3%;">
-        <input type="text" id="searchInput" class="form-control" placeholder="Search by employee name...">
+        <form method="get" class="mb-3" style="margin-top: 3%;">
+    <input type="text" name="q" id="searchInput" class="form-control" placeholder="Search by employee name..." value="{{ search_query }}">
+</form>
     </div>
     <!-- Add Employee Button -->
     <!-- <a href="{% url 'add_employee' %}" class="btn btn-primary mb-3">Add New Employee</a> -->
 
     <!-- Table for Employee List -->
     <div style="overflow-x: auto; white-space: nowrap; max-width: 100%;margin-top: 3%;">
+        <div class="pagination mt-3">
+    <nav>
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?q={{ search_query }}&page={{ page_obj.previous_page_number }}">Previous</a>
+                </li>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+                <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                    <a class="page-link" href="?q={{ search_query }}&page={{ num }}">{{ num }}</a>
+                </li>
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?q={{ search_query }}&page={{ page_obj.next_page_number }}">Next</a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+</div>
+
         <table class="table table-bordered" style="min-width: 1200px;">
             <thead>
                 <tr>
@@ -46,7 +72,7 @@
                 </tr>
             </thead>
             <tbody id="employeeTable">
-                {% for employee in employees %}
+                {% for employee in page_obj %}
                 <tr>
                     <td>{{ forloop.counter }}</td>
                     <td class="sticky-name">{{ employee.name }}</td>
