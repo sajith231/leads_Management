@@ -1162,38 +1162,48 @@ def assign_user(request, log_id):
 
 
 
+from django.core.paginator import Paginator
+
 @login_required
 def service_log(request):
     try:
         current_user = get_current_user(request)
         allowed_menus = request.session.get('allowed_menus', [])
-        
-        # Allow access if:
-        # 1. User is superuser/admin OR
-        # 2. User has 'service_log' in their allowed menus
+
         if (request.user.is_superuser or 
             current_user.user_level == 'admin_level' or 
             'service_log' in allowed_menus):
-            
+
             logs = ServiceLog.objects.select_related(
                 'added_by', 
                 'complaint', 
                 'assigned_person'
             ).all()
+
+            # Optional: Add filtering logic here based on GET parameters
+            # Example: filter by user
+            user_filter = request.GET.get('user')
+            if user_filter:
+                logs = logs.filter(added_by_id=user_filter)
+
+            paginator = Paginator(logs, 15)  # Show 15 logs per page
+            page_number = request.GET.get('page')
+            page_obj = paginator.get_page(page_number)
+
             all_users = User.objects.all()
 
             return render(request, 'service_log.html', {
-                'logs': logs,
+                'logs': page_obj,  # Send paginated object
                 'all_users': all_users,
                 'current_user': current_user
             })
         else:
-            # Redirect to user-specific log if they don't have admin access
             return redirect('user_service_log')
 
     except Exception as e:
         messages.error(request, f'Error accessing service logs: {str(e)}')
         return redirect('login')
+
 
 
 from django.shortcuts import render, get_object_or_404, redirect

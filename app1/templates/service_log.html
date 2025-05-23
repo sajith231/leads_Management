@@ -190,9 +190,9 @@
         <div class="filter-group">
             <label for="statusFilter">Status</label>
             <select id="statusFilter" class="form-select" onchange="applyFilters()">
+                <option value="Not Completed">Not Completed</option>
                 <option value="all">All Status</option>
                 <option value="Completed">Completed</option>
-                <option value="Not Completed">Not Completed</option>
             </select>
         </div>
     
@@ -226,6 +226,21 @@
 </div>
 <div style="display: flex;justify-content: end;"><a href="{% url 'add_service_log' %}" class="btn btn-primary" >Add New</a></div>
 <div style="overflow-x:auto; -webkit-overflow-scrolling: touch;">
+    <div class="pagination">
+  <span class="step-links">
+    {% if logs.has_previous %}
+      <a href="?{% if request.GET.user %}user={{ request.GET.user }}&{% endif %}page=1">&laquo; first</a>
+      <a href="?{% if request.GET.user %}user={{ request.GET.user }}&{% endif %}page={{ logs.previous_page_number }}">previous</a>
+    {% endif %}
+
+    <span class="current">Page {{ logs.number }} of {{ logs.paginator.num_pages }}</span>
+
+    {% if logs.has_next %}
+      <a href="?{% if request.GET.user %}user={{ request.GET.user }}&{% endif %}page={{ logs.next_page_number }}">next</a>
+      <a href="?{% if request.GET.user %}user={{ request.GET.user }}&{% endif %}page={{ logs.paginator.num_pages }}">last &raquo;</a>
+    {% endif %}
+  </span>
+</div>
     <table class="table table-bordered" style="margin-top: 20px; width: 100%; text-align: center;">
         <thead>
             <tr>
