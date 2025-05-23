@@ -380,24 +380,25 @@ def add_product_category(request):
             ProductCategory.objects.create(name=name)
             return redirect('product_category_list')
     return render(request, 'add_product_category.html')
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, redirect, get_object_or_404
+from .models import ProductCategory
 
 @login_required
 def edit_product_category(request, id):
     product_category = get_object_or_404(ProductCategory, id=id)
-    product_types = ProductType.objects.all()
+
     if request.method == 'POST':
         name = request.POST.get('name')
-        product_type_id = request.POST.get('product_type')
-        if name and product_type_id:
-            product_type = ProductType.objects.get(id=product_type_id)
+        if name:
             product_category.name = name
-            product_category.product_type = product_type
             product_category.save()
             return redirect('product_category_list')
+
     return render(request, 'edit_product_category.html', {
-        'product_category': product_category,
-        'product_types': product_types
+        'product_category': product_category
     })
+
 
 @login_required
 def delete_product_category(request, id):

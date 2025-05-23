@@ -5387,6 +5387,7 @@ from django.shortcuts import get_object_or_404
 from django.http import JsonResponse
 from datetime import datetime
 import pytz
+
 @login_required
 def get_break_status(request):
     employee_id = request.session.get('custom_user_id')
