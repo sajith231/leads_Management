@@ -550,6 +550,8 @@
         </button>
 
         <div class="sidebar">
+             
+             
             {% if 'Administration' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
                 <!-- Admin/Superuser Sidebar -->
                 <div onclick="toggleAdminMenu()">
@@ -604,6 +606,7 @@
         
                 <div id="hr-menu" class="submenu" style="display: none; margin-left: 5%;">
                     <!-- Full HR options for admin -->
+                     <a href="{% url 'daily_task_admin' %}" style="display: flex;gap: 10px;"><i class="fa-solid fa-people-roof"></i> Daily Task Admin</a>
                     {% if 'cv_management' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
                     <a href="{% url 'cv_management' %}"><i class="fas fa-file-contract"></i> CV Management</a>
                     {% endif %}
@@ -733,6 +736,8 @@
                 
 
             {% else %}
+
+            
                 <!-- Regular User Sidebar - Only show allowed menus -->
                 {% if 'agent_list' in allowed_menus %}
                 <div onclick="toggleAdminMenu()">
@@ -787,6 +792,7 @@
                 </div>
         
                 <div id="hr-menu" class="submenu" style="display: none; margin-left: 5%;">
+                    <a href="{% url 'daily_task_user' %}" style="display: flex;gap: 10px;"><i class="fa-solid fa-people-roof"></i> Daily Task</a>
                     {% if 'cv_management' in allowed_menus %}
                     <a href="{% url 'cv_management' %}"><i class="fas fa-file-contract"></i> CV Management</a>
                     {% endif %}
@@ -900,6 +906,8 @@
     </a>
 </div>
     {% endif %}
+
+   
 
                 {% if 'all_districts' in allowed_menus or 'all_areas' in allowed_menus or 'all_locations' in allowed_menus or 'all_requirements' in allowed_menus or 'business_type_list' in allowed_menus or 'job_titles' in allowed_menus or 'all_hardwares' in allowed_menus or 'all_complaints' in allowed_menus or 'all_branches' in allowed_menus or 'users_table' in allowed_menus or 'reminder_type' in allowed_menus %}
                 <!-- Master Menu -->

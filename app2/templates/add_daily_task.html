@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container">
+    <h2 class="my-4">Add New Daily Task</h2>
+    <form method="post" action="{% url 'add_daily_task' %}">
+        {% csrf_token %}
+         <div class="mb-3">
+            <label for="project_assigned" class="form-label">Project (Assigned)</label>
+            <select class="form-select" id="project_assigned" name="project_assigned">
+                <option value="">Select Project</option>
+                {% for project in assigned_projects %}
+                <option value="{{ project }}">{{ project }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="mb-3">
+            <label for="project" class="form-label">Project</label>
+            <input type="text" class="form-control" id="project" name="project" required>
+        </div>
+        <div class="mb-3">
+            <label for="task" class="form-label">Task</label>
+            <input type="text" class="form-control" id="task" name="task" required>
+        </div>
+        <div class="mb-3">
+            <label for="duration" class="form-label">Duration</label>
+            <input type="text" class="form-control" id="duration" name="duration" required>
+        </div>
+        <div class="mb-3">
+            <label for="status" class="form-label">Status</label>
+            <select class="form-select" id="status" name="status" required>
+                <option value="complete">Complete</option>
+                <option value="started">Started</option>
+                <option value="finish">Finish</option>
+                <option value="in_progress">In Progress</option>
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Save</button>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const projectInput = document.getElementById('project');
+        const projectAssignedSelect = document.getElementById('project_assigned');
+        const form = document.querySelector('form');
+
+        form.addEventListener('submit', function(event) {
+            if (!projectInput.value && !projectAssignedSelect.value) {
+                alert('Either "Project" or "Project (Assigned)" must be filled.');
+                event.preventDefault();
+            }
+        });
+    });
+</script>
+{% endblock %}

@@ -410,3 +410,104 @@ def delete_product_category(request, id):
 def product_category_list(request):
     product_categories = ProductCategory.objects.all()
     return render(request, 'product_category_list.html', {'product_categories': product_categories})
+
+
+
+
+
+
+
+
+
+
+
+
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from .models import DailyTask
+from django.utils import timezone
+
+from app1.models import Project, ProjectWork, Employee
+
+
+
+@login_required
+def daily_task_admin(request):
+    daily_tasks = DailyTask.objects.all().select_related('added_by')
+    return render(request, 'daily_task_admin.html', {'daily_tasks': daily_tasks})
+
+@login_required
+def daily_task_user(request):
+    daily_tasks = DailyTask.objects.filter(added_by=request.user)
+    return render(request, 'daily_task_user.html', {'daily_tasks': daily_tasks})
+
+@login_required
+def add_daily_task(request):
+    if request.method == 'POST':
+        project = request.POST.get('project', '')
+        project_assigned = request.POST.get('project_assigned', '')
+        task = request.POST['task']
+        duration = request.POST['duration']
+        status = request.POST['status']
+
+        if not project and not project_assigned:
+            messages.error(request, 'Either "Project" or "Project (Assigned)" must be filled.')
+            return redirect('add_daily_task')
+
+        DailyTask.objects.create(
+            project=project or project_assigned,
+            task=task,
+            duration=duration,
+            status=status,
+            added_by=request.user
+        )
+        messages.success(request, 'Task added successfully!')
+        return redirect('daily_task_user')
+
+    assigned_projects = []  # Fetch assigned projects for the current user
+    try:
+        custom_user_id = request.session.get('custom_user_id')
+        employee = Employee.objects.get(user_id=custom_user_id)
+        assigned_projects = ProjectWork.objects.filter(members=employee).values_list('project__project_name', flat=True)
+    except Employee.DoesNotExist:
+        messages.warning(request, 'No employee record found for your account.')
+
+    return render(request, 'add_daily_task.html', {'assigned_projects': assigned_projects})
+
+@login_required
+def edit_daily_task(request, task_id):
+    task = get_object_or_404(DailyTask, id=task_id)
+    if request.method == 'POST':
+        project = request.POST.get('project', '')
+        project_assigned = request.POST.get('project_assigned', '')
+        task.task = request.POST['task']
+        task.duration = request.POST['duration']
+        task.status = request.POST['status']
+
+        if not project and not project_assigned:
+            messages.error(request, 'Either "Project" or "Project (Assigned)" must be filled.')
+            return redirect('edit_daily_task', task_id=task.id)
+
+        task.project = project or project_assigned
+        task.save()
+        messages.success(request, 'Task updated successfully!')
+        return redirect('daily_task_user')
+
+    assigned_projects = []  # Fetch assigned projects for the current user
+    try:
+        custom_user_id = request.session.get('custom_user_id')
+        employee = Employee.objects.get(user_id=custom_user_id)
+        assigned_projects = ProjectWork.objects.filter(members=employee).values_list('project__project_name', flat=True)
+    except Employee.DoesNotExist:
+        messages.warning(request, 'No employee record found for your account.')
+
+    return render(request, 'edit_daily_task.html', {'task': task, 'assigned_projects': assigned_projects})
+
+@login_required
+def delete_daily_task(request, task_id):
+    task = get_object_or_404(DailyTask, id=task_id)
+    task.delete()
+    messages.success(request, 'Task deleted successfully!')
+    return redirect('daily_task_user')

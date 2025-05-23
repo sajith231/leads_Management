@@ -373,74 +373,87 @@
 
     // Handle punch in/out
     function handlePunch(action) {
-        getLocation((location) => {
-            if (!location) return;
+    getLocation((location) => {
+        if (!location) return;
 
-            const today = new Date().toISOString().split('T')[0];
-            const userId = '{{ request.user.id }}';
-            const storageKey = `punchData_${userId}_${today}`;
-            // We'll still use localStorage for UI updates, but the server will be the source of truth
-            const storedData = JSON.parse(localStorage.getItem(storageKey) || '{}');
+        const today = new Date().toISOString().split('T')[0];
+        const userId = '{{ request.user.id }}';
+        const storageKey = `punchData_${userId}_${today}`;
+        const storedData = JSON.parse(localStorage.getItem(storageKey) || '{}');
 
-            const url = action === 'in' ? "{% url 'punch_in' %}" : "{% url 'punch_out' %}";
-            const now = new Date();
-
-            fetch(url, {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': '{{ csrf_token }}',
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    latitude: location.latitude,
-                    longitude: location.longitude,
-                    location_name: location.location_name
-                })
-            })
+        // Check if there is an active break
+        fetch('/get_break_status/')
             .then(response => response.json())
             .then(data => {
-                if (data.success) {
-                    if (action === 'in') {
-                        document.getElementById('punchInTime').textContent = formatTime(now);
-                        document.getElementById('punchInLocation').textContent = location.location_name;
-                        document.getElementById('punchInLocationLink').href = `https://www.google.com/maps?q=${location.latitude},${location.longitude}`;
-                        document.getElementById('punchInBtn').disabled = true;
-                        document.getElementById('punchOutBtn').disabled = false;
-
-                        // Store punch-in data locally for UI updates
-                        localStorage.setItem(storageKey, JSON.stringify({
-                            punchIn: now.toISOString(),
-                            punchInLocation: location.location_name,
-                            punchInLatitude: location.latitude,
-                            punchInLongitude: location.longitude
-                        }));
-                    } else {
-                        document.getElementById('punchOutTime').textContent = formatTime(now);
-                        document.getElementById('punchOutLocation').textContent = location.location_name;
-                        document.getElementById('punchOutLocationLink').href = `https://www.google.com/maps?q=${location.latitude},${location.longitude}`;
-                        document.getElementById('punchOutBtn').disabled = true;
-
-                        // Update stored data locally for UI updates
-                        storedData.punchOut = now.toISOString();
-                        storedData.punchOutLocation = location.location_name;
-                        storedData.punchOutLatitude = location.latitude;
-                        storedData.punchOutLongitude = location.longitude;
-                        localStorage.setItem(storageKey, JSON.stringify(storedData));
-                    }
-                    
-                    // Refresh the monthly view after punching in/out
-                    loadAttendanceData(currentYear, currentMonth);
-                    alert(`Punched ${action.toUpperCase()} successfully!`);
-                } else {
-                    alert(`Error: ${data.error}`);
+                if (data.success && data.has_active_break && action === 'out') {
+                    alert('You have an active break. Please finish your break before punching out.');
+                    return;
                 }
+
+                const url = action === 'in' ? "{% url 'punch_in' %}" : "{% url 'punch_out' %}";
+                const now = new Date();
+
+                fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        latitude: location.latitude,
+                        longitude: location.longitude,
+                        location_name: location.location_name
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        if (action === 'in') {
+                            document.getElementById('punchInTime').textContent = formatTime(now);
+                            document.getElementById('punchInLocation').textContent = location.location_name;
+                            document.getElementById('punchInLocationLink').href = `https://www.google.com/maps?q=${location.latitude},${location.longitude}`;
+                            document.getElementById('punchInBtn').disabled = true;
+                            document.getElementById('punchOutBtn').disabled = false;
+
+                            // Store punch-in data locally for UI updates
+                            localStorage.setItem(storageKey, JSON.stringify({
+                                punchIn: now.toISOString(),
+                                punchInLocation: location.location_name,
+                                punchInLatitude: location.latitude,
+                                punchInLongitude: location.longitude
+                            }));
+                        } else {
+                            document.getElementById('punchOutTime').textContent = formatTime(now);
+                            document.getElementById('punchOutLocation').textContent = location.location_name;
+                            document.getElementById('punchOutLocationLink').href = `https://www.google.com/maps?q=${location.latitude},${location.longitude}`;
+                            document.getElementById('punchOutBtn').disabled = true;
+
+                            // Update stored data locally for UI updates
+                            storedData.punchOut = now.toISOString();
+                            storedData.punchOutLocation = location.location_name;
+                            storedData.punchOutLatitude = location.latitude;
+                            storedData.punchOutLongitude = location.longitude;
+                            localStorage.setItem(storageKey, JSON.stringify(storedData));
+                        }
+                        
+                        // Refresh the monthly view after punching in/out
+                        loadAttendanceData(currentYear, currentMonth);
+                        alert(`Punched ${action.toUpperCase()} successfully!`);
+                    } else {
+                        alert(`Error: ${data.error}`);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred. Please try again.');
+                });
             })
             .catch(error => {
-                console.error('Error:', error);
+                console.error('Error fetching break status:', error);
                 alert('An error occurred. Please try again.');
             });
-        });
-    }
+    });
+}
 
     // Load attendance data for the selected month
     function loadAttendanceData(year, month) {

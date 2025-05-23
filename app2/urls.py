@@ -44,5 +44,19 @@ urlpatterns = [
     path('edit-product-category/<int:id>/', views.edit_product_category, name='edit_product_category'),
     path('delete-product-category/<int:id>/', views.delete_product_category, name='delete_product_category'),
 
+
+
+
+
+
+
+
+
+    path('daily_task_admin/', views.daily_task_admin, name='daily_task_admin'),
+    path('daily_task_user/', views.daily_task_user, name='daily_task_user'),
+    path('add_daily_task/', views.add_daily_task, name='add_daily_task'),
+    path('edit_daily_task/<int:task_id>/', views.edit_daily_task, name='edit_daily_task'),
+    path('delete_daily_task/<int:task_id>/', views.delete_daily_task, name='delete_daily_task'),
+
     
 ]

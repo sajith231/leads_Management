@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container">
+    <h2 class="my-4">Edit Daily Task</h2>
+    <form method="post" action="{% url 'edit_daily_task' task.id %}">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="project" class="form-label">Project</label>
+            <input type="text" class="form-control" id="project" name="project" value="{{ task.project }}" required>
+        </div>
+        <div class="mb-3">
+            <label for="project_assigned" class="form-label">Project (Assigned)</label>
+            <select class="form-select" id="project_assigned" name="project_assigned">
+                <option value="">Select Project</option>
+                {% for project in assigned_projects %}
+                <option value="{{ project }}">{{ project }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="mb-3">
+            <label for="task" class="form-label">Task</label>
+            <input type="text" class="form-control" id="task" name="task" value="{{ task.task }}" required>
+        </div>
+        <div class="mb-3">
+            <label for="duration" class="form-label">Duration</label>
+            <input type="text" class="form-control" id="duration" name="duration" value="{{ task.duration }}" required>
+        </div>
+        <div class="mb-3">
+            <label for="status" class="form-label">Status</label>
+            <select class="form-select" id="status" name="status" required>
+                <option value="complete" {% if task.status == 'complete' %}selected{% endif %}>Complete</option>
+                <option value="started" {% if task.status == 'started' %}selected{% endif %}>Started</option>
+                <option value="finish" {% if task.status == 'finish' %}selected{% endif %}>Finish</option>
+                <option value="in_progress" {% if task.status == 'in_progress' %}selected{% endif %}>In Progress</option>
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Save</button>
+        <a href="{% url 'daily_task_user' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const projectInput = document.getElementById('project');
+        const projectAssignedSelect = document.getElementById('project_assigned');
+        const form = document.querySelector('form');
+
+        form.addEventListener('submit', function(event) {
+            if (!projectInput.value && !projectAssignedSelect.value) {
+                alert('Either "Project" or "Project (Assigned)" must be filled.');
+                event.preventDefault();
+            }
+        });
+    });
+</script>
+{% endblock %}

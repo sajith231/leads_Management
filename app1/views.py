@@ -3298,12 +3298,24 @@ def punch_out(request):
             
             custom_user = User.objects.get(id=custom_user_id)
             employee = Employee.objects.get(user=custom_user)
-            now = timezone.now()
+            now = datetime.now()
             today = now.date()
             
             # Check if today is a holiday
             if is_holiday(today):
                 return JsonResponse({'success': False, 'error': 'Cannot punch out on a holiday'})
+            
+            # Check if the employee has an active break
+            active_break = BreakTime.objects.filter(
+                employee=employee,
+                date=today,
+                is_active=True,
+                break_punch_in__isnull=False,
+                break_punch_out__isnull=True
+            ).first()
+            
+            if active_break:
+                return JsonResponse({'success': False, 'error': 'You have an active break. Please finish your break before punching out.'})
             
             # Check if the employee has already punched out today
             try:
