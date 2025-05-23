@@ -6,7 +6,7 @@
     <h2 class="my-4">Add New Daily Task</h2>
     <form method="post" action="{% url 'add_daily_task' %}">
         {% csrf_token %}
-         <div class="mb-3">
+        <div class="mb-3">
             <label for="project_assigned" class="form-label">Project (Assigned)</label>
             <select class="form-select" id="project_assigned" name="project_assigned">
                 <option value="">Select Project</option>
@@ -14,10 +14,11 @@
                 <option value="{{ project }}">{{ project }}</option>
                 {% endfor %}
             </select>
+            <div class="form-text">OR</div>
         </div>
         <div class="mb-3">
-            <label for="project" class="form-label">Project</label>
-            <input type="text" class="form-control" id="project" name="project" required>
+            <label for="project" class="form-label">Project (Manual Entry)</label>
+            <input type="text" class="form-control" id="project" name="project" placeholder="Enter project name if not in assigned list">
         </div>
         <div class="mb-3">
             <label for="task" class="form-label">Task</label>
@@ -48,9 +49,29 @@
         const projectAssignedSelect = document.getElementById('project_assigned');
         const form = document.querySelector('form');
 
+        // Disable manual input when an assigned project is selected
+        projectAssignedSelect.addEventListener('change', function() {
+            if (this.value) {
+                projectInput.disabled = true;
+                projectInput.value = '';
+            } else {
+                projectInput.disabled = false;
+            }
+        });
+
+        // Disable assigned select when manual input has value
+        projectInput.addEventListener('input', function() {
+            if (this.value) {
+                projectAssignedSelect.disabled = true;
+                projectAssignedSelect.value = '';
+            } else {
+                projectAssignedSelect.disabled = false;
+            }
+        });
+
         form.addEventListener('submit', function(event) {
             if (!projectInput.value && !projectAssignedSelect.value) {
-                alert('Either "Project" or "Project (Assigned)" must be filled.');
+                alert('Either "Project (Assigned)" or "Project (Manual Entry)" must be filled.');
                 event.preventDefault();
             }
         });

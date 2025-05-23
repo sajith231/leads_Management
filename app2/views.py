@@ -242,6 +242,7 @@ class InformationCenterListView(ListView):
         queryset = super().get_queryset()
         product_type = self.request.GET.get('product_type')
         product_category = self.request.GET.get('product_category')
+        search_query = self.request.GET.get('search', '').strip()  # Get the search query
         
         # Filter by priority based on user status
         if not self.request.user.is_superuser:
@@ -251,7 +252,9 @@ class InformationCenterListView(ListView):
             queryset = queryset.filter(product_type_id=product_type)
         if product_category:
             queryset = queryset.filter(product_category_id=product_category)
-            
+        if search_query:
+            queryset = queryset.filter(title__icontains=search_query)  # Filter by title
+        
         return queryset
     
     def get_context_data(self, **kwargs):
@@ -432,28 +435,84 @@ from django.utils import timezone
 from app1.models import Project, ProjectWork, Employee
 
 
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 @login_required
 def daily_task_admin(request):
-    daily_tasks = DailyTask.objects.all().select_related('added_by')
-    return render(request, 'daily_task_admin.html', {'daily_tasks': daily_tasks})
+    status_filter = request.GET.get('status', '')
+    user_filter = request.GET.get('user', '')
+    start_date = request.GET.get('start_date', '')
+    end_date = request.GET.get('end_date', '')
+
+    daily_tasks = DailyTask.objects.all().select_related('added_by').order_by('-created_at')
+
+    if status_filter:
+        daily_tasks = daily_tasks.filter(status=status_filter)
+    if user_filter:
+        daily_tasks = daily_tasks.filter(added_by_id=user_filter)
+    if start_date:
+        daily_tasks = daily_tasks.filter(created_at__gte=start_date)
+    if end_date:
+        daily_tasks = daily_tasks.filter(created_at__lte=end_date)
+
+    paginator = Paginator(daily_tasks, 15)  # 15 rows per page
+    page = request.GET.get('page', 1)
+    try:
+        page_obj = paginator.page(page)
+    except PageNotAnInteger:
+        page_obj = paginator.page(1)
+    except EmptyPage:
+        page_obj = paginator.page(paginator.num_pages)
+
+    users = User.objects.all()
+    return render(request, 'daily_task_admin.html', {
+        'page_obj': page_obj,
+        'users': users,
+        'status_filter': status_filter,
+        'user_filter': user_filter,
+        'start_date': start_date,
+        'end_date': end_date
+    })
+
 
 @login_required
 def daily_task_user(request):
-    daily_tasks = DailyTask.objects.filter(added_by=request.user)
-    return render(request, 'daily_task_user.html', {'daily_tasks': daily_tasks})
+    daily_tasks = DailyTask.objects.filter(added_by=request.user).order_by('-created_at')
+
+
+    paginator = Paginator(daily_tasks, 15)
+    page = request.GET.get('page', 1)
+    try:
+        page_obj = paginator.page(page)
+    except PageNotAnInteger:
+        page_obj = paginator.page(1)
+    except EmptyPage:
+        page_obj = paginator.page(paginator.num_pages)
+
+    return render(request, 'daily_task_user.html', {'page_obj': page_obj})
+
 
 @login_required
 def add_daily_task(request):
     if request.method == 'POST':
-        project = request.POST.get('project', '')
-        project_assigned = request.POST.get('project_assigned', '')
-        task = request.POST['task']
-        duration = request.POST['duration']
-        status = request.POST['status']
+        project = request.POST.get('project', '').strip()
+        project_assigned = request.POST.get('project_assigned', '').strip()
+        task = request.POST.get('task', '').strip()
+        duration = request.POST.get('duration', '').strip()
+        status = request.POST.get('status', '').strip()
 
+        # Validate that either project or project_assigned is provided (but not both)
         if not project and not project_assigned:
-            messages.error(request, 'Either "Project" or "Project (Assigned)" must be filled.')
+            messages.error(request, 'Either "Project (Assigned)" or "Project (Manual Entry)" must be filled.')
+            return redirect('add_daily_task')
+        
+        if project and project_assigned:
+            messages.error(request, 'Please use only one project field - either assigned or manual entry.')
+            return redirect('add_daily_task')
+
+        # Validate other required fields
+        if not task or not duration or not status:
+            messages.error(request, 'All fields are required.')
             return redirect('add_daily_task')
 
         DailyTask.objects.create(
@@ -466,7 +525,7 @@ def add_daily_task(request):
         messages.success(request, 'Task added successfully!')
         return redirect('daily_task_user')
 
-    assigned_projects = []  # Fetch assigned projects for the current user
+    assigned_projects = []
     try:
         custom_user_id = request.session.get('custom_user_id')
         employee = Employee.objects.get(user_id=custom_user_id)
@@ -474,7 +533,9 @@ def add_daily_task(request):
     except Employee.DoesNotExist:
         messages.warning(request, 'No employee record found for your account.')
 
-    return render(request, 'add_daily_task.html', {'assigned_projects': assigned_projects})
+    return render(request, 'add_daily_task.html', {
+        'assigned_projects': assigned_projects
+    })
 
 @login_required
 def edit_daily_task(request, task_id):

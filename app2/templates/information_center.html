@@ -64,6 +64,23 @@
 
 .reset-btn:hover {
     background-color: #e9ecef;
+
+}
+.search-container {
+    margin-right: 15px;
+}
+
+.search-input {
+    padding: 10px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    font-size: 0.95rem;
+    width: 300px;
+    transition: width 0.3s ease;
+}
+
+.search-input:focus {
+    width: 400px;
 }
 
 /* Responsive adjustments */
@@ -81,13 +98,11 @@
 <div class="header" style="margin-top: 3.5%;display: flex;">
     {% if request.user.is_superuser or 'product_type_list' in request.session.allowed_menus %}
     <a href="{% url 'product_type_list' %}" class="add-btn">
-        
         Product Type
     </a>
     {% endif %}
     {% if request.user.is_superuser or 'product_category_list' in request.session.allowed_menus %}
     <a href="{% url 'product_category_list' %}" class="add-btn">
-        
         Category
     </a>
     {% endif %}
@@ -119,6 +134,9 @@
                     {% endfor %}
                 </select>
             </div>
+            <div class="search-container">
+        <input type="text" id="search-title" class="search-input" placeholder="Search by title...">
+    </div>
             
             <div class="filter-group">
                 <a href="{% url 'information_center' %}" class="reset-btn">Reset Filters</a>
@@ -587,5 +605,28 @@
             button.textContent = 'Less';
         }
     }
+</script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('search-title');
+        let debounceTimer;
+
+        searchInput.addEventListener('input', function() {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(function() {
+                const searchQuery = searchInput.value.trim();
+                
+                if (searchQuery) {
+                    // Clear other filters and only search by title
+                    const url = new URL(window.location.origin + window.location.pathname);
+                    url.searchParams.set('search', searchQuery);
+                    window.location.href = url.toString();
+                } else {
+                    // If search is empty, go back to base URL without any parameters
+                    window.location.href = window.location.origin + window.location.pathname;
+                }
+            }, 2000); // 2-second delay
+        });
+    });
 </script>
 {% endblock %}

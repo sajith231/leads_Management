@@ -51,7 +51,7 @@ urlpatterns = [
 
 
 
-
+    
     path('daily_task_admin/', views.daily_task_admin, name='daily_task_admin'),
     path('daily_task_user/', views.daily_task_user, name='daily_task_user'),
     path('add_daily_task/', views.add_daily_task, name='add_daily_task'),
