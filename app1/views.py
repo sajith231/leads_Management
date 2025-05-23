@@ -2933,13 +2933,30 @@ def make_experience_certificate(request):
 
 from django.utils import timezone
 
+from django.core.paginator import Paginator
+from django.utils import timezone
+from django.shortcuts import render
+from .models import Employee
+
 def make_salary_certificate(request):
-    employees = Employee.objects.all()
-    current_date = timezone.now().strftime("%d/%m/%Y")  # Format the date as DD/MM/YYYY
+    search_query = request.GET.get('search', '')
+    if search_query:
+        employees = Employee.objects.filter(name__icontains=search_query)
+    else:
+        employees = Employee.objects.all()
+
+    paginator = Paginator(employees, 15)  # Show 15 employees per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    current_date = timezone.now().strftime("%d/%m/%Y")
+
     return render(request, 'make_salary_certificate.html', {
-        'employees': employees,
+        'page_obj': page_obj,
+        'search_query': search_query,
         'current_date': current_date
     })
+
 
 
 
