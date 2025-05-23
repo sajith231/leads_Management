@@ -1741,6 +1741,11 @@ from .models import Agent, BusinessType
 from django.core.paginator import Paginator
 from django.db.models import Q
 
+from django.db.models import Q
+from django.core.paginator import Paginator
+from django.shortcuts import render
+from .models import Agent, BusinessType
+
 def agent_list(request):
     # Get search parameters from the request
     search_name = request.GET.get('name', '').strip().upper()
@@ -1755,6 +1760,9 @@ def agent_list(request):
         agents = agents.filter(district__icontains=search_district)
     if search_business_type:
         agents = agents.filter(business_type__icontains=search_business_type)
+
+    # Sort agents alphabetically by name
+    agents = agents.order_by('name')
 
     # Set up pagination
     paginator = Paginator(agents, 15)  # Show 15 agents per page
@@ -1771,6 +1779,7 @@ def agent_list(request):
     }
 
     return render(request, 'agent.html', context)
+
 
 
 def add_agent(request):
@@ -2357,11 +2366,40 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from .models import Employee
 
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
+from django.db.models import Q
+
 @login_required
 def employee_management(request):
     status_filter = request.GET.get('status', 'active')  # Default to 'active'
+    search_query = request.GET.get('search', '')  # Get search query
+    
+    # Base queryset with status filter
     employees = Employee.objects.filter(status=status_filter).select_related("user")
-    return render(request, "employee_management.html", {"employees": employees, "status_filter": status_filter})
+    
+    # Apply search filter if search query exists
+    if search_query:
+        employees = employees.filter(
+            Q(name__icontains=search_query) |
+            Q(user__userid__icontains=search_query) |
+            Q(job_title__icontains=search_query) |
+            Q(organization__icontains=search_query)
+        )
+    
+    # Pagination - 15 employees per page
+    paginator = Paginator(employees, 15)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    return render(request, "employee_management.html", {
+        "page_obj": page_obj,
+        "employees": page_obj,  # For backward compatibility
+        "status_filter": status_filter,
+        "search_query": search_query,
+        "total_employees": paginator.count,
+    })
 
 
 
