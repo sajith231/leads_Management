@@ -459,8 +459,9 @@ from datetime import date, datetime, timedelta
 def daily_task_admin(request):
     status_filter = request.GET.get('status', '')
     user_filter = request.GET.get('user', '')
-    start_date = request.GET.get('start_date', date.today().strftime('%Y-%m-%d'))  # Default to today's date
-    end_date = request.GET.get('end_date', date.today().strftime('%Y-%m-%d'))  # Default to today's date
+    project_filter = request.GET.get('project', '')  # Add project filter
+    start_date = request.GET.get('start_date', date.today().strftime('%Y-%m-%d'))
+    end_date = request.GET.get('end_date', date.today().strftime('%Y-%m-%d'))
 
     daily_tasks = DailyTask.objects.all().select_related('added_by').order_by('-created_at')
 
@@ -468,16 +469,16 @@ def daily_task_admin(request):
         daily_tasks = daily_tasks.filter(status=status_filter)
     if user_filter:
         daily_tasks = daily_tasks.filter(added_by_id=user_filter)
+    if project_filter:
+        daily_tasks = daily_tasks.filter(project=project_filter)  # Filter by project
     if start_date:
-        # Convert start_date to datetime and set time to 00:00:00
         start_datetime = datetime.strptime(start_date, '%Y-%m-%d')
         daily_tasks = daily_tasks.filter(created_at__gte=start_datetime)
     if end_date:
-        # Convert end_date to datetime and set time to 23:59:59
         end_datetime = datetime.strptime(end_date, '%Y-%m-%d') + timedelta(days=1) - timedelta(seconds=1)
         daily_tasks = daily_tasks.filter(created_at__lte=end_datetime)
 
-    paginator = Paginator(daily_tasks, 15)  # 15 rows per page
+    paginator = Paginator(daily_tasks, 15)
     page = request.GET.get('page', 1)
     try:
         page_obj = paginator.page(page)
@@ -487,11 +488,15 @@ def daily_task_admin(request):
         page_obj = paginator.page(paginator.num_pages)
 
     users = User.objects.all()
+    projects = Project.objects.all()  # Fetch all projects
+
     return render(request, 'daily_task_admin.html', {
         'page_obj': page_obj,
         'users': users,
+        'projects': projects,  # Pass projects to the template
         'status_filter': status_filter,
         'user_filter': user_filter,
+        'project_filter': project_filter,  # Pass project filter value
         'start_date': start_date,
         'end_date': end_date
     })

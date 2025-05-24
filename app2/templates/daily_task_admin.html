@@ -72,6 +72,18 @@
             </select>
         </div>
         <div class="me-2">
+            <label for="project_filter" class="form-label">Project</label>
+            <select name="project" id="project_filter" class="form-select" onchange="this.form.submit()">
+                <option value="">All Projects</option>
+                {% for project in projects %}
+                <option value="{{ project.project_name }}" 
+                        {% if project_filter == project.project_name|stringformat:"s" %}selected{% endif %}>
+                    {{ project.project_name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="me-2">
             <label for="start_date" class="form-label">Start Date</label>
             <input type="date" name="start_date" id="start_date" class="form-control" onchange="this.form.submit()" value="{{ start_date }}">
         </div>
