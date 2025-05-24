@@ -4091,6 +4091,8 @@ def get_leave_requests(request):
     
     return JsonResponse({'leave_requests': data})
 
+import requests
+
 @login_required
 def process_leave_request(request):
     if request.method == 'POST':
@@ -4142,6 +4144,9 @@ def process_leave_request(request):
             leave_request.processed_at = timezone.now()
             leave_request.save()
             
+            # Send WhatsApp message
+            send_whatsapp_message(leave_request.employee.phone_personal, data['action'])
+            
             return JsonResponse({
                 'success': True,
                 'employee_id': leave_request.employee.id,
@@ -4152,6 +4157,20 @@ def process_leave_request(request):
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)})
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+def send_whatsapp_message(phone_number, action):
+    secret = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
+    account = "1741445642812b4ba287f5ee0bc9d43bbf5bbe87fb67cc5a0aa3836"
+    recipient = phone_number
+    message = f"Your leave request has been {action}."
+    
+    url = f"https://app.dxing.in/api/send/whatsapp?secret={secret}&account={account}&recipient={recipient}&type=text&message={message}"
+    response = requests.get(url)
+    
+    if response.status_code == 200:
+        print("WhatsApp message sent successfully.")
+    else:
+        print("Failed to send WhatsApp message.")
 
 
 
