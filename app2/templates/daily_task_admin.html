@@ -1,51 +1,86 @@
+
 {% extends 'base.html' %}
 {% load static %}
 
 {% block content %}
 
 <style>
-     @media (max-width: 480px) {
-    .container{
-        margin-top: 6%;
+    @media (max-width: 480px) {
+        .container {
+            margin-top: 6%;
+        }
     }
-    
-  }
+
+    /* Adjust the width of the user filter dropdown */
+    .user-filter-dropdown {
+        width: 180px; /* Adjusted width */
+        min-width: 150px; /* Minimum width to ensure readability */
+    }
+
+    /* Ensure dropdown content is displayed properly */
+    .form-select {
+        color: black !important; /* Ensure text color is black */
+        background-color: white !important;
+    }
+
+    .form-select option {
+        color: black !important; /* Ensure option text is black */
+        background-color: white !important;
+        padding: 5px 10px;
+    }
+
+    /* Additional styling for better visibility */
+    .form-select:focus {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+    }
+
+    /* Ensure the dropdown appears above other elements */
+    .form-select {
+        z-index: 1050;
+        position: relative;
+    }
 </style>
-<div class="container py-4" >
+
+<div class="container py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>Daily Tasks</h2>
     </div>
 
     <div class="mb-3">
-        <form method="get" action="" class="d-flex gap-3" id="filterForm">
-            <div class="me-2">
-                <label for="status_filter" class="form-label">Status</label>
-                <select name="status" id="status_filter" class="form-select" onchange="this.form.submit()">
-                    <option value="">All</option>
-                    <option value="complete" {% if status_filter == 'complete' %}selected{% endif %}>Complete</option>
-                    <option value="in_progress" {% if status_filter == 'in_progress' %}selected{% endif %}>In Progress</option>
-                    <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
-                </select>
-            </div>
-            <div class="me-2">
-                <label for="user_filter" class="form-label">User</label>
-                <select name="user" id="user_filter" class="form-select" onchange="this.form.submit()">
-                    <option value="">All</option>
-                    {% for user in users %}
-                    <option value="{{ user.id }}" {% if user_filter == user.id|stringformat:"s" %}selected{% endif %}>{{ user.username }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="me-2">
-                <label for="start_date" class="form-label">Start Date</label>
-                <input type="date" name="start_date" id="start_date" class="form-control" onchange="this.form.submit()" value="{{ start_date }}">
-            </div>
-            <div class="me-2">
-                <label for="end_date" class="form-label">End Date</label>
-                <input type="date" name="end_date" id="end_date" class="form-control" onchange="this.form.submit()" value="{{ end_date }}">
-            </div>
-        </form>
-    </div>
+    <form method="get" action="" class="d-flex gap-3" id="filterForm">
+        <div class="me-2">
+            <label for="status_filter" class="form-label">Status</label>
+            <select name="status" id="status_filter" class="form-select" onchange="this.form.submit()">
+                <option value="">All</option>
+                <option value="complete" {% if status_filter == 'complete' %}selected{% endif %}>Complete</option>
+                <option value="in_progress" {% if status_filter == 'in_progress' %}selected{% endif %}>In Progress</option>
+                <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+            </select>
+        </div>
+        <div class="me-2">
+            <label for="user_filter" class="form-label">User</label>
+            <select name="user" id="user_filter" class="form-select user-filter-dropdown" onchange="this.form.submit()">
+                <option value="" style="color: black !important;">All Users</option>
+                {% for user in users %}
+                <option value="{{ user.id }}" 
+                        style="color: black !important;" 
+                        {% if user_filter == user.id|stringformat:"s" %}selected{% endif %}>
+                    {{ user.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="me-2">
+            <label for="start_date" class="form-label">Start Date</label>
+            <input type="date" name="start_date" id="start_date" class="form-control" onchange="this.form.submit()" value="{{ start_date }}">
+        </div>
+        <div class="me-2">
+            <label for="end_date" class="form-label">End Date</label>
+            <input type="date" name="end_date" id="end_date" class="form-control" onchange="this.form.submit()" value="{{ end_date }}">
+        </div>
+    </form>
+</div>
 
     <div class="table-responsive shadow-sm rounded bg-white">
         <div class="mt-3">
@@ -90,9 +125,8 @@
                     <th>Project</th>
                     <th>Task</th>
                     <th>Duration</th>
-                    <th>Remark</th>  <!-- Add this column -->
+                    <th>Remark</th>
                     <th>Status</th>
-                    
                 </tr>
             </thead>
             <tbody>
@@ -105,13 +139,10 @@
                     <td>{{ task.task }}</td>
                     <td>{{ task.duration }}</td>
                     <td>
-  <button onclick="showRemarkPopup('{{ task.remark }}')" style="background: none; border: none; cursor: pointer;">
-    <i class="fas fa-comment-dots" style="color: #555; font-size: 18px;"></i>
-  </button>
-</td>
-
-
-
+                        <button onclick="showRemarkPopup('{{ task.remark }}')" style="background: none; border: none; cursor: pointer;">
+                            <i class="fas fa-comment-dots" style="color: #555; font-size: 18px;"></i>
+                        </button>
+                    </td>
                     <td>
                         <span class="badge 
                             {% if task.status == 'complete' %} bg-success 
@@ -121,7 +152,6 @@
                             {{ task.get_status_display }}
                         </span>
                     </td>
-                    
                 </tr>
                 {% empty %}
                 <tr>
@@ -132,9 +162,10 @@
         </table>
     </div>
 </div>
+
 <!-- Remark Popup Modal -->
 <div id="remarkModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-     background-color: rgba(0, 0, 0, 0.6); justify-content: center; align-items: center;">
+     background-color: rgba(0, 0, 0, 0.6); justify-content: center; align-items: center; z-index: 9999;">
   <div style="background-color: #fff; padding: 20px; border-radius: 10px; max-width: 400px; width: 80%; position: relative;">
     <span onclick="closeRemarkPopup()" style="position: absolute; top: 10px; right: 15px; cursor: pointer; font-size: 20px;">&times;</span>
     <p id="remarkContent" style="white-space: pre-wrap;"></p>
@@ -151,5 +182,18 @@
   function closeRemarkPopup() {
     document.getElementById('remarkModal').style.display = 'none';
   }
+
+  // Additional script to ensure dropdown styling
+  document.addEventListener('DOMContentLoaded', function() {
+    const userSelect = document.getElementById('user_filter');
+    if (userSelect) {
+      userSelect.style.color = 'black';
+      const options = userSelect.querySelectorAll('option');
+      options.forEach(option => {
+        option.style.color = 'black';
+        option.style.backgroundColor = 'white';
+      });
+    }
+  });
 </script>
 {% endblock %}

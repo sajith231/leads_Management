@@ -437,12 +437,30 @@ from app1.models import Project, ProjectWork, Employee
 
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
+from django.core.paginator import Paginator
+from .models import DailyTask
+from app1.models import User  # Ensure you import User from the correct app
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
+from .models import DailyTask
+from app1.models import User  # Ensure you import User from the correct app
+from datetime import date
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
+from .models import DailyTask
+from app1.models import User  # Ensure you import User from the correct app
+from datetime import date, datetime, timedelta
+
 @login_required
 def daily_task_admin(request):
     status_filter = request.GET.get('status', '')
     user_filter = request.GET.get('user', '')
-    start_date = request.GET.get('start_date', '')
-    end_date = request.GET.get('end_date', '')
+    start_date = request.GET.get('start_date', date.today().strftime('%Y-%m-%d'))  # Default to today's date
+    end_date = request.GET.get('end_date', date.today().strftime('%Y-%m-%d'))  # Default to today's date
 
     daily_tasks = DailyTask.objects.all().select_related('added_by').order_by('-created_at')
 
@@ -451,9 +469,13 @@ def daily_task_admin(request):
     if user_filter:
         daily_tasks = daily_tasks.filter(added_by_id=user_filter)
     if start_date:
-        daily_tasks = daily_tasks.filter(created_at__gte=start_date)
+        # Convert start_date to datetime and set time to 00:00:00
+        start_datetime = datetime.strptime(start_date, '%Y-%m-%d')
+        daily_tasks = daily_tasks.filter(created_at__gte=start_datetime)
     if end_date:
-        daily_tasks = daily_tasks.filter(created_at__lte=end_date)
+        # Convert end_date to datetime and set time to 23:59:59
+        end_datetime = datetime.strptime(end_date, '%Y-%m-%d') + timedelta(days=1) - timedelta(seconds=1)
+        daily_tasks = daily_tasks.filter(created_at__lte=end_datetime)
 
     paginator = Paginator(daily_tasks, 15)  # 15 rows per page
     page = request.GET.get('page', 1)
@@ -473,7 +495,6 @@ def daily_task_admin(request):
         'start_date': start_date,
         'end_date': end_date
     })
-
 
 @login_required
 def daily_task_user(request):
