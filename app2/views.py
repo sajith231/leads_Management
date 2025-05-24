@@ -491,7 +491,6 @@ def daily_task_user(request):
 
     return render(request, 'daily_task_user.html', {'page_obj': page_obj})
 
-
 @login_required
 def add_daily_task(request):
     if request.method == 'POST':
@@ -500,6 +499,7 @@ def add_daily_task(request):
         task = request.POST.get('task', '').strip()
         duration = request.POST.get('duration', '').strip()
         status = request.POST.get('status', '').strip()
+        remark = request.POST.get('remark', '')  # Get the remark field
 
         # Validate that either project or project_assigned is provided (but not both)
         if not project and not project_assigned:
@@ -520,7 +520,8 @@ def add_daily_task(request):
             task=task,
             duration=duration,
             status=status,
-            added_by=request.user
+            added_by=request.user,
+            remark=remark  # Add the remark field
         )
         messages.success(request, 'Task added successfully!')
         return redirect('daily_task_user')
@@ -546,6 +547,7 @@ def edit_daily_task(request, task_id):
         task.task = request.POST['task']
         task.duration = request.POST['duration']
         task.status = request.POST['status']
+        task.remark = request.POST.get('remark', '')  # Update the remark field
 
         if not project and not project_assigned:
             messages.error(request, 'Either "Project" or "Project (Assigned)" must be filled.')

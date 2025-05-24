@@ -5136,13 +5136,13 @@ def configure_user_menu(request, user_id):
                     },
                     {
                     'id': 'daily_task_admin',
-                    'name': 'Daily Task Admin',
+                    'name': 'Daily Task(Admin dashboard)',
                     'icon': 'fa-solid fa-people-roof',
                     'submenus': []
                 },
                 {
                     'id': 'daily_task_user',
-                    'name': 'Daily Task',
+                    'name': 'Daily Task(User dashboard)',
                     'icon': 'fa-solid fa-people-roof',
                     'submenus': []
                 },

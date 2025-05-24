@@ -2,11 +2,11 @@
 {% load static %}
 
 {% block content %}
-<div class="container py-4">
+<div class="container py-4" style="margin-top: 6%;">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class=>My Daily Tasks</h2>
         <a href="{% url 'add_daily_task' %}" class="btn btn-success shadow-sm">
-            <i class="fa fa-plus me-1"></i> Add New Task
+            <i class="fa fa-plus me-1"></i> Add New
         </a>
     </div>
 
@@ -32,7 +32,9 @@
                     <th scope="col">Project</th>
                     <th scope="col">Task</th>
                     <th scope="col">Duration</th>
+                    <th scope="col">Remark</th> 
                     <th scope="col">Status</th>
+                     <!-- Add this column -->
                     <th scope="col">Edit</th>
                     <th scope="col">Delete</th>
                 </tr>
@@ -46,6 +48,11 @@
                     <td>{{ task.task }}</td>
                     <td>{{ task.duration }}</td>
                     <td>
+  <button onclick="showRemarkPopup('{{ task.remark }}')" style="background: none; border: none; cursor: pointer;">
+    <i class="fas fa-comment-dots" style="color: #555; font-size: 18px;"></i>
+  </button>
+</td>
+                    <td>
                         <span class="badge 
                             {% if task.status == 'complete' %} bg-success 
                             {% elif task.status == 'in_progress' %} bg-warning text-dark 
@@ -54,6 +61,7 @@
                             {{ task.get_status_display }}
                         </span>
                     </td>
+                    
                     
                     <td>
                         <a href="{% url 'edit_daily_task' task.id %}" class="btn btn-warning btn-sm">
@@ -72,11 +80,30 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="8" class="text-center text-muted">No tasks available.</td>
+                    <td colspan="9" class="text-center text-muted">No tasks available.</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
 </div>
+<!-- Remark Popup Modal -->
+<div id="remarkModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+     background-color: rgba(0, 0, 0, 0.6); justify-content: center; align-items: center;">
+  <div style="background-color: #fff; padding: 20px; border-radius: 10px; max-width: 400px; width: 80%; position: relative;">
+    <span onclick="closeRemarkPopup()" style="position: absolute; top: 10px; right: 15px; cursor: pointer; font-size: 20px;">&times;</span>
+    <p id="remarkContent" style="white-space: pre-wrap;"></p>
+  </div>
+</div>
+<script>
+  function showRemarkPopup(remark) {
+    document.getElementById('remarkContent').innerText = remark;
+    document.getElementById('remarkModal').style.display = 'flex';
+  }
+
+  function closeRemarkPopup() {
+    document.getElementById('remarkModal').style.display = 'none';
+  }
+</script>
+
 {% endblock %}
