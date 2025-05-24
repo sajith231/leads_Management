@@ -4162,11 +4162,18 @@ def send_whatsapp_message(phone_number, action):
     secret = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
     account = "1741445642812b4ba287f5ee0bc9d43bbf5bbe87fb67cc5a0aa3836"
     recipient = phone_number
-    message = f"Your leave request has been {action}."
-    
+
+    # Customize messages based on the action
+    if action == 'approve':
+        message = "Your leave request has been approved."
+    elif action == 'reject':
+        message = "Your leave request has been rejected."
+    else:
+        message = "Your leave request status has been updated."
+
     url = f"https://app.dxing.in/api/send/whatsapp?secret={secret}&account={account}&recipient={recipient}&type=text&message={message}"
     response = requests.get(url)
-    
+
     if response.status_code == 200:
         print("WhatsApp message sent successfully.")
     else:
