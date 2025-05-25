@@ -5133,19 +5133,7 @@ def configure_user_menu(request, user_id):
                     
                     
                     
-                    },
-                    {
-                    'id': 'daily_task_admin',
-                    'name': 'Daily Task(Admin dashboard)',
-                    'icon': 'fa-solid fa-people-roof',
-                    'submenus': []
-                },
-                {
-                    'id': 'daily_task_user',
-                    'name': 'Daily Task(User dashboard)',
-                    'icon': 'fa-solid fa-people-roof',
-                    'submenus': []
-                },
+                    }
             ]
         },
         {
@@ -5172,6 +5160,18 @@ def configure_user_menu(request, user_id):
             'submenus': [
                 {'id': 'project_work', 'name': 'Project Management(Admin Dashboard)', 'icon': 'fa-solid fa-people-roof'},
                 {'id': 'user_projects', 'name': 'Project Works(User Dashboard)', 'icon': 'fa-solid fa-diagram-project'},  # New submenu
+                {
+                    'id': 'daily_task_admin',
+                    'name': 'Daily Task(Admin dashboard)',
+                    'icon': 'fa-solid fa-people-roof',
+                    'submenus': []
+                },
+                {
+                    'id': 'daily_task_user',
+                    'name': 'Daily Task(User dashboard)',
+                    'icon': 'fa-solid fa-people-roof',
+                    'submenus': []
+                },
             ]
         },
         {
@@ -5326,6 +5326,18 @@ def default_menus(request):
             'submenus': [
                 {'id': 'project_work', 'name': 'Project Management (Admin Dashboard)', 'icon': 'fa-solid fa-people-roof'},
                 {'id': 'user_projects', 'name': 'Project Works (User Dashboard)', 'icon': 'fa-solid fa-diagram-project'},
+                {
+                    'id': 'daily_task_admin',
+                    'name': 'Daily Task(Admin dashboard)',
+                    'icon': 'fa-solid fa-people-roof',
+                    'submenus': []
+                },
+                {
+                    'id': 'daily_task_user',
+                    'name': 'Daily Task(User dashboard)',
+                    'icon': 'fa-solid fa-people-roof',
+                    'submenus': []
+                },
             ]
         },
         {

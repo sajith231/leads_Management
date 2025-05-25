@@ -606,9 +606,6 @@
         
                 <div id="hr-menu" class="submenu" style="display: none; margin-left: 5%;">
                     <!-- Full HR options for admin -->
-                    {% if 'daily_task_admin' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
-                    <a href="{% url 'daily_task_admin' %}" style="display: flex;gap: 10px;"><i class="fa-solid fa-people-roof"></i> Daily Task</a>
-                    {% endif %}
                     {% if 'cv_management' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
                     <a href="{% url 'cv_management' %}"><i class="fas fa-file-contract"></i> CV Management</a>
                     {% endif %}
@@ -693,8 +690,12 @@
                     </div>
                 </div>
                 
+                
                 <div id="project-menu" class="submenu" style="margin-left: 5%; display: none;">
                     <a href="{% url 'project_work' %}" style="display: flex;gap: 10px;"><i class="fa-solid fa-people-roof"></i> Project Management</a>
+                    {% if 'daily_task_admin' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+                    <a href="{% url 'daily_task_admin' %}" style="display: flex;gap: 10px;"><i class="fa-solid fa-people-roof"></i> Daily Task</a>
+                    {% endif %}
                    
                 </div>
 
@@ -796,14 +797,6 @@
                 
         
                 <div id="hr-menu" class="submenu" style="display: none; margin-left: 5%;">
-                    {% if 'daily_task_user' in allowed_menus %}
-                        <a href="{% url 'daily_task_user' %}" style="display: flex;gap: 10px;">
-                            <i class="fa-solid fa-people-roof"></i> Daily Task
-                        </a>
-                    {% endif %}
-                    {% if 'daily_task_admin' in allowed_menus %}
-                        <a href="{% url 'daily_task_admin' %}" style="display: flex;gap: 10px;"><i class="fa-solid fa-people-roof"></i> Daily Task Admin</a>
-                    {% endif %}
 
                     {% if 'cv_management' in allowed_menus %}
                     <a href="{% url 'cv_management' %}"><i class="fas fa-file-contract"></i> CV Management</a>
@@ -905,6 +898,14 @@
                     {% endif %}
                     {% if 'user_projects' in allowed_menus %}
                     <a href="{% url 'user_projects' %}" style="display: flex;gap: 10px;"><i class="fa-solid fa-diagram-project"></i> Project Works</a>
+                    {% endif %}
+                    {% if 'daily_task_user' in allowed_menus %}
+                        <a href="{% url 'daily_task_user' %}" style="display: flex;gap: 10px;">
+                            <i class="fa-solid fa-people-roof"></i> Daily Task
+                        </a>
+                    {% endif %}
+                    {% if 'daily_task_admin' in allowed_menus %}
+                        <a href="{% url 'daily_task_admin' %}" style="display: flex;gap: 10px;"><i class="fa-solid fa-people-roof"></i> Daily Task Admin</a>
                     {% endif %}
                 </div>
                 {% endif %}
