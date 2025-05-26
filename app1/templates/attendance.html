@@ -119,79 +119,84 @@
 </div>
 
     <!-- Attendance Details Modal -->
-    <div class="modal fade" id="attendanceDetailsModal" tabindex="-1" aria-labelledby="attendanceDetailsModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content" style="">
-                <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title" id="attendanceDetailsModalLabel">Attendance Details</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Employee Name</label>
-                                <input type="text" class="form-control" id="employeeName" readonly>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Date</label>
-                                <div class="form-control" id="attendanceDate" readonly></div>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Status</label>
-                                <select class="form-select" id="attendanceStatus">
-                                    <option value="full">Full Day</option>
-                                    <option value="half">Half Day</option>
-                                    <option value="leave">Leave</option>
-                                    <option value="initial">Not Marked</option>
-                                </select>
-                            </div>
+    <!-- Attendance Details Modal -->
+<div class="modal fade" id="attendanceDetailsModal" tabindex="-1" aria-labelledby="attendanceDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="attendanceDetailsModalLabel">Attendance Details</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Employee Name</label>
+                            <input type="text" class="form-control" id="employeeName" readonly>
                         </div>
-                        <div class="col-md-6">
-                            <div class="card">
-                                <div class="card-header bg-light">
-                                    <h6 class="mb-0">Punch Details</h6>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Date</label>
+                            <div class="form-control" id="attendanceDate" readonly></div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Status</label>
+                            <select class="form-select" id="attendanceStatus">
+                                <option value="full">Full Day</option>
+                                <option value="half">Half Day</option>
+                                <option value="leave">Leave</option>
+                                <option value="initial">Not Marked</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Add Note (Optional)</label>
+                            <textarea class="form-control" id="attendanceNote" rows="3" placeholder="Enter note here"></textarea>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0">Punch Details</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Punch In Time</label>
+                                    <div class="form-control" id="punchInDisplay">Not punched in</div>
                                 </div>
-                                <div class="card-body">
-                                    <div class="mb-3">
-                                        <label class="form-label fw-bold">Punch In Time</label>
-                                        <div class="form-control" id="punchInDisplay">Not punched in</div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Punch In Location</label>
+                                    <div class="form-control">
+                                        <a id="punchInLocationLink" href="#" target="_blank" class="text-decoration-none">
+                                            <span id="punchInLocation">Not available</span>
+                                            <i class="fas fa-external-link-alt ms-2"></i>
+                                        </a>
                                     </div>
-                                    <div class="mb-3">
-                                        <label class="form-label fw-bold">Punch In Location</label>
-                                        <div class="form-control">
-                                            <a id="punchInLocationLink" href="#" target="_blank" class="text-decoration-none">
-                                                <span id="punchInLocation">Not available</span>
-                                                <i class="fas fa-external-link-alt ms-2"></i>
-                                            </a>
-                                        </div>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="form-label fw-bold">Punch Out Time</label>
-                                        <div class="form-control" id="punchOutDisplay">Not punched out</div>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="form-label fw-bold">Punch Out Location</label>
-                                        <div class="form-control">
-                                            <a id="punchOutLocationLink" href="#" target="_blank" class="text-decoration-none">
-                                                <span id="punchOutLocation">Not available</span>
-                                                <i class="fas fa-external-link-alt ms-2"></i>
-                                            </a>
-                                        </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Punch Out Time</label>
+                                    <div class="form-control" id="punchOutDisplay">Not punched out</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Punch Out Location</label>
+                                    <div class="form-control">
+                                        <a id="punchOutLocationLink" href="#" target="_blank" class="text-decoration-none">
+                                            <span id="punchOutLocation">Not available</span>
+                                            <i class="fas fa-external-link-alt ms-2"></i>
+                                        </a>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" id="updateAttendanceBtn" class="btn btn-primary" onclick="updateAttendance()">Update Attendance</button>
-                    <button type="button" id="verifyAttendanceBtn" class="btn btn-primary" onclick="saveAttendance()">Verify Attendance</button>
-                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" id="updateAttendanceBtn" class="btn btn-primary" onclick="updateAttendance()">Update Attendance</button>
+                <button type="button" id="verifyAttendanceBtn" class="btn btn-primary" onclick="saveAttendance()">Verify Attendance</button>
             </div>
         </div>
     </div>
+</div>
 
     <!-- Holiday Modal -->
     <div class="modal fade" id="holidayModal" style="max-width: 1200px;width: 100%;" tabindex="-1" aria-labelledby="holidayModalLabel" aria-hidden="true">
@@ -1016,6 +1021,7 @@ function updateAttendanceIcon(icon, status, punchIn, punchOut) {
     const punchOutDisplay = document.getElementById('punchOutDisplay');
     const punchOutLocation = document.getElementById('punchOutLocation');
     const punchOutLocationLink = document.getElementById('punchOutLocationLink');
+    const noteTextarea = document.getElementById('attendanceNote'); // Get the note textarea
     const updateBtn = document.getElementById('updateAttendanceBtn');
     const verifyBtn = document.getElementById('verifyAttendanceBtn');
 
@@ -1076,7 +1082,6 @@ function updateAttendanceIcon(icon, status, punchIn, punchOut) {
         }
     }
 
-
     // Fetch attendance details for this employee and date
     fetch(`/get_attendance_status/?employee_id=${employeeId}&date=${date}`)
         .then(response => response.json())
@@ -1132,11 +1137,15 @@ function updateAttendanceIcon(icon, status, punchIn, punchOut) {
                 punchOutLocation.textContent = 'Not available';
                 punchOutLocationLink.href = '#';
             }
+
+            // Set Note details
+            noteTextarea.value = data.note || ''; // Set the note value
         })
         .catch(error => {
             console.error('Error fetching attendance details:', error);
             punchInDisplay.textContent = 'Error loading data';
             punchOutDisplay.textContent = 'Error loading data';
+            noteTextarea.value = ''; // Clear the note field in case of error
         });
 
     modal.show();
@@ -1587,18 +1596,28 @@ document.addEventListener('DOMContentLoaded', function() {
     const employeeId = document.getElementById('employeeName').getAttribute('data-id');
     const date = modal.getAttribute('data-date');
     const status = document.getElementById('attendanceStatus').value;
+    const note = document.getElementById('attendanceNote').value; // Get the note value
     const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content");
     const isSuperuser = {% if is_superuser %}true{% else %}false{% endif %};
 
-    // Check if this is a verified record being updated by superuser
+    // Determine verified status
+    let verifiedStatus;
+    if (status === 'full') {
+        verifiedStatus = 'verified_full';
+    } else if (status === 'half') {
+        verifiedStatus = 'verified_half';
+    } else {
+        verifiedStatus = status; // leave, holiday, etc.
+    }
+
+    // For superusers, allow reverifying already verified records
     const icon = document.querySelector(`i[data-employee-id="${employeeId}"][data-date="${date}"]`);
     const currentState = icon ? icon.getAttribute('data-state') || 'initial' : 'initial';
-    const isVerified = currentState.startsWith('verified_');
+    const isAlreadyVerified = currentState.startsWith('verified_');
 
-    // For superusers updating verified records, maintain verified status
-    let newStatus = status;
-    if (isSuperuser && isVerified) {
-        newStatus = `verified_${status}`;
+    if (isAlreadyVerified && !isSuperuser) {
+        alert("This attendance is already verified and cannot be modified.");
+        return;
     }
 
     fetch("{% url 'update_attendance_status' %}", {
@@ -1610,7 +1629,8 @@ document.addEventListener('DOMContentLoaded', function() {
         body: JSON.stringify({
             employee_id: employeeId,
             date: date,
-            status: newStatus
+            status: verifiedStatus,
+            note: note // Include the note in the data
         })
     })
     .then(response => response.json())

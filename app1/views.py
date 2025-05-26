@@ -3393,20 +3393,22 @@ def get_attendance_status(request):
 
         if attendance:
             return JsonResponse({
-                'punch_in': localtime(attendance.punch_in).isoformat() if attendance.punch_in else None,
-                'punch_out': localtime(attendance.punch_out).isoformat() if attendance.punch_out else None,
+                'punch_in': attendance.punch_in.isoformat() if attendance.punch_in else None,
+                'punch_out': attendance.punch_out.isoformat() if attendance.punch_out else None,
                 'punch_in_location': attendance.punch_in_location if attendance.punch_in_location else 'Not available',
                 'punch_out_location': attendance.punch_out_location if attendance.punch_out_location else 'Not available',
                 'punch_in_latitude': str(attendance.punch_in_latitude) if attendance.punch_in_latitude else None,
                 'punch_in_longitude': str(attendance.punch_in_longitude) if attendance.punch_in_longitude else None,
                 'punch_out_latitude': str(attendance.punch_out_latitude) if attendance.punch_out_latitude else None,
                 'punch_out_longitude': str(attendance.punch_out_longitude) if attendance.punch_out_longitude else None,
+                'note': attendance.note if attendance.note else '',  # Include the note
             })
         return JsonResponse({
             'punch_in': None,
             'punch_out': None,
             'punch_in_location': 'Not available',
-            'punch_out_location': 'Not available'
+            'punch_out_location': 'Not available',
+            'note': ''  # Ensure note is included even if no record exists
         })
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=400)
@@ -3501,7 +3503,6 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
 from .models import Attendance, Employee
-
 @csrf_exempt
 def update_attendance_status(request):
     if request.method == "POST":
@@ -3510,6 +3511,7 @@ def update_attendance_status(request):
             employee_id = data.get("employee_id")
             date_str = data.get("date")
             status = data.get("status")
+            note = data.get("note", "")  # Get the note from the request
 
             if not all([employee_id, date_str, status]):
                 return JsonResponse({"success": False, "error": "Missing required fields"})
@@ -3535,6 +3537,7 @@ def update_attendance_status(request):
             if not created:
                 attendance.status = status
                 attendance.verified = True if status.startswith('verified_') else False
+                attendance.note = note  # Update the note field
                 attendance.save()
 
             return JsonResponse({
@@ -3542,6 +3545,7 @@ def update_attendance_status(request):
                 "employee_id": employee_id,
                 "date": date_str,
                 "status": status,
+                "note": note,  # Return the note in the response
                 "verified": attendance.verified
             })
 
@@ -4352,7 +4356,6 @@ from django.utils.timezone import localtime
 from datetime import datetime
 from .models import Employee, Attendance, Holiday
 
-
 def attendance_summary(request, employee_id):
     employee = get_object_or_404(Employee, id=employee_id)
     now = timezone.now()
@@ -4446,6 +4449,7 @@ def attendance_summary(request, employee_id):
             'punch_in_longitude': record.punch_in_longitude if record else None,
             'punch_out_latitude': record.punch_out_latitude if record else None,
             'punch_out_longitude': record.punch_out_longitude if record else None,
+            'note': record.note if record and record.note else '',  # Ensure note is included
         })
 
     context = {
