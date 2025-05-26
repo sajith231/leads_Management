@@ -4114,8 +4114,14 @@ def get_leave_requests(request):
     } for req in leave_requests]
     
     return JsonResponse({'leave_requests': data})
-
+import json
+from datetime import timedelta
+from django.utils import timezone
+from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
+from .models import LeaveRequest, Attendance
 import requests
+
 
 @login_required
 def process_leave_request(request):
@@ -4123,9 +4129,9 @@ def process_leave_request(request):
         try:
             data = json.loads(request.body)
             leave_request = LeaveRequest.objects.get(id=data['request_id'])
-            
+
             if data['action'] == 'approve':
-                # First remove any existing leave marks if this was previously rejected
+                # Remove old rejected leave marks if any
                 if leave_request.status == 'rejected':
                     current_date = leave_request.start_date
                     while current_date <= leave_request.end_date:
@@ -4135,8 +4141,8 @@ def process_leave_request(request):
                             status='leave'
                         ).delete()
                         current_date += timedelta(days=1)
-                
-                # Now mark as approved and create attendance records
+
+                # Approve and add leave attendance
                 leave_request.status = 'approved'
                 current_date = leave_request.start_date
                 while current_date <= leave_request.end_date:
@@ -4152,8 +4158,9 @@ def process_leave_request(request):
                         attendance.status = 'leave'
                         attendance.save()
                     current_date += timedelta(days=1)
+
             else:
-                # If rejecting, remove all leave marks for this request
+                # Reject and delete leave attendance
                 leave_request.status = 'rejected'
                 current_date = leave_request.start_date
                 while current_date <= leave_request.end_date:
@@ -4163,14 +4170,14 @@ def process_leave_request(request):
                         status='leave'
                     ).delete()
                     current_date += timedelta(days=1)
-            
+
             leave_request.processed_by = request.user
             leave_request.processed_at = timezone.now()
             leave_request.save()
-            
+
             # Send WhatsApp message
             send_whatsapp_message(leave_request.employee.phone_personal, data['action'])
-            
+
             return JsonResponse({
                 'success': True,
                 'employee_id': leave_request.employee.id,
@@ -4180,14 +4187,15 @@ def process_leave_request(request):
             })
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)})
+
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
 
 def send_whatsapp_message(phone_number, action):
     secret = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
-    account = "1741445642812b4ba287f5ee0bc9d43bbf5bbe87fb67cc5a0aa3836"
-    recipient = phone_number
+    account = "1748250982812b4ba287f5ee0bc9d43bbf5bbe87fb683431662a427"
 
-    # Customize messages based on the action
+    # Format the message based on action
     if action == 'approve':
         message = "Your leave request has been approved."
     elif action == 'reject':
@@ -4195,13 +4203,20 @@ def send_whatsapp_message(phone_number, action):
     else:
         message = "Your leave request status has been updated."
 
-    url = f"https://app.dxing.in/api/send/whatsapp?secret={secret}&account={account}&recipient={recipient}&type=text&message={message}"
+    # Construct API URL with replacements
+    url = (
+        f"https://app.dxing.in/api/send/whatsapp?"
+        f"secret={secret}&account={account}"
+        f"&recipient={phone_number}"
+        f"&type=text&message={message}&priority=1"
+    )
+
     response = requests.get(url)
 
     if response.status_code == 200:
         print("WhatsApp message sent successfully.")
     else:
-        print("Failed to send WhatsApp message.")
+        print(f"Failed to send WhatsApp message. Status code: {response.status_code}")
 
 
 
