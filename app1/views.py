@@ -1080,24 +1080,24 @@ from .forms import ComplaintForm
 from .models import Complaint
 from django.contrib.auth import get_user_model
 User = get_user_model()
+
 @login_required
 def add_complaint(request):
     if request.method == 'POST':
         form = ComplaintForm(request.POST)
         if form.is_valid():
             complaint = form.save(commit=False)
+            # Force evaluation of SimpleLazyObject:
             user = request.user
-            if user.is_authenticated:
-                complaint.created_by = user
-            else:
-                # If not authenticated, redirect or raise error
-                return redirect('login')  # or handle as needed
+            # Or explicitly get user instance from DB if needed:
+            if not isinstance(user, User):
+                user = User.objects.get(pk=user.pk)
+            complaint.created_by = user
             complaint.save()
             return redirect('all_complaints')
     else:
         form = ComplaintForm()
     return render(request, 'add_complaints.html', {'form': form})
-
 
 
 from django.core.paginator import Paginator
