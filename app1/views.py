@@ -3131,7 +3131,8 @@ def attendance(request):
         'current_month': today.strftime('%B %Y'),
         'days_in_month': days_in_month,
         'today': today.day,
-        'range': range(1, days_in_month + 1)
+        'range': range(1, days_in_month + 1),
+        'is_superuser': request.user.is_superuser  # Add this line
     }
 
     return render(request, 'attendance.html', context)

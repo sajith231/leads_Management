@@ -186,8 +186,8 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <!-- <button type="button" class="btn btn-primary" onclick="">Verify Attendance</button> -->
-                    <button type="button" class="btn btn-primary" onclick="saveAttendance()">Verify Attendance</button>
+                    <button type="button" id="updateAttendanceBtn" class="btn btn-primary" onclick="updateAttendance()">Update Attendance</button>
+                    <button type="button" id="verifyAttendanceBtn" class="btn btn-primary" onclick="saveAttendance()">Verify Attendance</button>
                 </div>
             </div>
         </div>
@@ -952,15 +952,15 @@ function updateAttendanceIcon(icon, status, punchIn, punchOut) {
             iconColor = '#198754'; // Green for unverified full day
             tooltipText = `Full Day (In: ${punchIn ? new Date(punchIn).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'N/A'}, Out: ${punchOut ? new Date(punchOut).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'N/A'})`;
             break;
-        case 'half':
-            iconClass = 'fas fa-star-half-alt';
-            iconColor = '#198754'; // Green for unverified half day
-            tooltipText = `Half Day (In: ${punchIn ? new Date(punchIn).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'N/A'})`;
-            break;
         case 'verified_full':
             iconClass = 'fas fa-star';
             iconColor = '#0d6efd'; // Blue for verified full day
             tooltipText = `Verified Full Day (In: ${punchIn ? new Date(punchIn).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'N/A'}, Out: ${punchOut ? new Date(punchOut).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'N/A'})`;
+            break;
+        case 'half':
+            iconClass = 'fas fa-star-half-alt';
+            iconColor = '#198754'; // Green for unverified half day
+            tooltipText = `Half Day (In: ${punchIn ? new Date(punchIn).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'N/A'})`;
             break;
         case 'verified_half':
             iconClass = 'fas fa-star-half-alt';
@@ -1000,110 +1000,147 @@ function updateAttendanceIcon(icon, status, punchIn, punchOut) {
 
     // Show attendance modal
     function showAttendanceModal(employeeId, employeeName, date, icon) {
-        // Check if this is a holiday (don't allow editing holidays)
-        if (icon.getAttribute('data-state') === 'holiday') {
-            alert('Holidays cannot be edited here. Use the Holiday management feature.');
-            return;
+    // Check if this is a holiday (don't allow editing holidays)
+    if (icon.getAttribute('data-state') === 'holiday') {
+        alert('Holidays cannot be edited here. Use the Holiday management feature.');
+        return;
+    }
+
+    const modal = new bootstrap.Modal(document.getElementById('attendanceDetailsModal'));
+    const nameInput = document.getElementById('employeeName');
+    const dateDisplay = document.getElementById('attendanceDate');
+    const statusSelect = document.getElementById('attendanceStatus');
+    const punchInDisplay = document.getElementById('punchInDisplay');
+    const punchInLocation = document.getElementById('punchInLocation');
+    const punchInLocationLink = document.getElementById('punchInLocationLink');
+    const punchOutDisplay = document.getElementById('punchOutDisplay');
+    const punchOutLocation = document.getElementById('punchOutLocation');
+    const punchOutLocationLink = document.getElementById('punchOutLocationLink');
+    const updateBtn = document.getElementById('updateAttendanceBtn');
+    const verifyBtn = document.getElementById('verifyAttendanceBtn');
+
+    // Store references for later use
+    modal._element.setAttribute('data-employee-id', employeeId);
+    modal._element.setAttribute('data-date', date);
+    modal._element.setAttribute('data-icon-element', icon.outerHTML);
+
+    // Set employee name
+    nameInput.value = employeeName;
+    nameInput.setAttribute('data-id', employeeId);
+
+    // Format the date nicely
+    const [year, month, day] = date.split('-');
+    const displayDate = new Date(year, month - 1, day);
+    dateDisplay.textContent = displayDate.toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+
+    // Get current status from icon
+    const currentState = icon.getAttribute('data-state') || 'initial';
+    statusSelect.value = currentState.replace('verified_', ''); // Remove verified_ prefix for the select
+
+    // Check if already verified (blue color or verified_ prefix)
+    const isVerified = icon.style.color === 'rgb(13, 110, 253)' || currentState.startsWith('verified_');
+    
+    // Check if user is superuser (passed from Django template)
+    const isSuperuser = {% if is_superuser %}true{% else %}false{% endif %};
+    
+    // Set up UI based on verification status and user role
+    if (isVerified && !isSuperuser) {
+        // For verified records and regular users
+        statusSelect.disabled = true;
+        updateBtn.disabled = true;
+        verifyBtn.disabled = true;
+        updateBtn.classList.add('btn-secondary');
+        updateBtn.classList.remove('btn-primary');
+        verifyBtn.classList.add('btn-secondary');
+        verifyBtn.classList.remove('btn-primary');
+    } else {
+        // For unverified records OR superusers
+        statusSelect.disabled = false;
+        updateBtn.disabled = false;
+        verifyBtn.disabled = false;
+        updateBtn.classList.add('btn-primary');
+        updateBtn.classList.remove('btn-secondary');
+        verifyBtn.classList.add('btn-primary');
+        verifyBtn.classList.remove('btn-secondary');
+        
+        // If superuser viewing verified record, change button text
+        if (isSuperuser && isVerified) {
+            verifyBtn.textContent = 'Re-verify Attendance';
+        } else {
+            verifyBtn.textContent = 'Verify Attendance';
         }
+    }
 
-        const modal = new bootstrap.Modal(document.getElementById('attendanceDetailsModal'));
-        const nameInput = document.getElementById('employeeName');
-        const dateDisplay = document.getElementById('attendanceDate');
-        const statusSelect = document.getElementById('attendanceStatus');
-        const punchInDisplay = document.getElementById('punchInDisplay');
-        const punchInLocation = document.getElementById('punchInLocation');
-        const punchInLocationLink = document.getElementById('punchInLocationLink');
-        const punchOutDisplay = document.getElementById('punchOutDisplay');
-        const punchOutLocation = document.getElementById('punchOutLocation');
-        const punchOutLocationLink = document.getElementById('punchOutLocationLink');
 
-        // Store references for later use
-        modal._element.setAttribute('data-employee-id', employeeId);
-        modal._element.setAttribute('data-date', date);
-        modal._element.setAttribute('data-icon-element', icon.outerHTML);
+    // Fetch attendance details for this employee and date
+    fetch(`/get_attendance_status/?employee_id=${employeeId}&date=${date}`)
+        .then(response => response.json())
+        .then(data => {
+            // Set Punch In details
+            if (data.punch_in) {
+                const punchInTime = new Date(data.punch_in);
+                punchInDisplay.textContent = punchInTime.toLocaleTimeString('en-US', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true
+                });
 
-        // Set employee name
-        nameInput.value = employeeName;
-        nameInput.setAttribute('data-id', employeeId);
-
-        // Format the date nicely
-        const [year, month, day] = date.split('-');
-        const displayDate = new Date(year, month - 1, day);
-        dateDisplay.textContent = displayDate.toLocaleDateString('en-US', {
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        });
-
-        // Get current status from icon
-        const currentState = icon.getAttribute('data-state') || 'initial';
-        statusSelect.value = currentState;
-
-        // Fetch attendance details for this employee and date
-        fetch(`/get_attendance_status/?employee_id=${employeeId}&date=${date}`)
-            .then(response => response.json())
-            .then(data => {
-                // Set Punch In details
-                if (data.punch_in) {
-                    const punchInTime = new Date(data.punch_in);
-                    punchInDisplay.textContent = punchInTime.toLocaleTimeString('en-US', {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        hour12: true
-                    });
-
-                    if (data.punch_in_location && data.punch_in_location !== 'Unknown Location') {
-                        punchInLocation.textContent = data.punch_in_location;
-                        if (data.punch_in_latitude && data.punch_in_longitude) {
-                            punchInLocationLink.href = `https://www.google.com/maps?q=${data.punch_in_latitude},${data.punch_in_longitude}`;
-                        } else {
-                            punchInLocationLink.href = '#';
-                        }
+                if (data.punch_in_location && data.punch_in_location !== 'Unknown Location') {
+                    punchInLocation.textContent = data.punch_in_location;
+                    if (data.punch_in_latitude && data.punch_in_longitude) {
+                        punchInLocationLink.href = `https://www.google.com/maps?q=${data.punch_in_latitude},${data.punch_in_longitude}`;
                     } else {
-                        punchInLocation.textContent = 'Not available';
                         punchInLocationLink.href = '#';
                     }
                 } else {
-                    punchInDisplay.textContent = 'Not punched in';
                     punchInLocation.textContent = 'Not available';
                     punchInLocationLink.href = '#';
                 }
+            } else {
+                punchInDisplay.textContent = 'Not punched in';
+                punchInLocation.textContent = 'Not available';
+                punchInLocationLink.href = '#';
+            }
 
-                // Set Punch Out details
-                if (data.punch_out) {
-                    const punchOutTime = new Date(data.punch_out);
-                    punchOutDisplay.textContent = punchOutTime.toLocaleTimeString('en-US', {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        hour12: true
-                    });
+            // Set Punch Out details
+            if (data.punch_out) {
+                const punchOutTime = new Date(data.punch_out);
+                punchOutDisplay.textContent = punchOutTime.toLocaleTimeString('en-US', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true
+                });
 
-                    if (data.punch_out_location && data.punch_out_location !== 'Unknown Location') {
-                        punchOutLocation.textContent = data.punch_out_location;
-                        if (data.punch_out_latitude && data.punch_out_longitude) {
-                            punchOutLocationLink.href = `https://www.google.com/maps?q=${data.punch_out_latitude},${data.punch_out_longitude}`;
-                        } else {
-                            punchOutLocationLink.href = '#';
-                        }
+                if (data.punch_out_location && data.punch_out_location !== 'Unknown Location') {
+                    punchOutLocation.textContent = data.punch_out_location;
+                    if (data.punch_out_latitude && data.punch_out_longitude) {
+                        punchOutLocationLink.href = `https://www.google.com/maps?q=${data.punch_out_latitude},${data.punch_out_longitude}`;
                     } else {
-                        punchOutLocation.textContent = 'Not available';
                         punchOutLocationLink.href = '#';
                     }
                 } else {
-                    punchOutDisplay.textContent = 'Not punched out';
                     punchOutLocation.textContent = 'Not available';
                     punchOutLocationLink.href = '#';
                 }
-            })
-            .catch(error => {
-                console.error('Error fetching attendance details:', error);
-                punchInDisplay.textContent = 'Error loading data';
-                punchOutDisplay.textContent = 'Error loading data';
-            });
+            } else {
+                punchOutDisplay.textContent = 'Not punched out';
+                punchOutLocation.textContent = 'Not available';
+                punchOutLocationLink.href = '#';
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching attendance details:', error);
+            punchInDisplay.textContent = 'Error loading data';
+            punchOutDisplay.textContent = 'Error loading data';
+        });
 
-        modal.show();
-    }
+    modal.show();
+}
 
     // Save attendance changes
     function saveAttendance() {
@@ -1112,12 +1149,27 @@ function updateAttendanceIcon(icon, status, punchIn, punchOut) {
     const date = modal.getAttribute('data-date');
     const status = document.getElementById('attendanceStatus').value;
     const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content");
+    const isSuperuser = {% if is_superuser %}true{% else %}false{% endif %};
 
-    // Determine if we're verifying (changing to verified status)
-    const currentState = modal.querySelector('#attendanceStatus').value;
-    const verifiedStatus = currentState === 'full' ? 'verified_full' : 
-                         currentState === 'half' ? 'verified_half' : 
-                         currentState;
+    // Determine verified status
+    let verifiedStatus;
+    if (status === 'full') {
+        verifiedStatus = 'verified_full';
+    } else if (status === 'half') {
+        verifiedStatus = 'verified_half';
+    } else {
+        verifiedStatus = status; // leave, holiday, etc.
+    }
+
+    // For superusers, allow reverifying already verified records
+    const icon = document.querySelector(`i[data-employee-id="${employeeId}"][data-date="${date}"]`);
+    const currentState = icon ? icon.getAttribute('data-state') || 'initial' : 'initial';
+    const isAlreadyVerified = currentState.startsWith('verified_');
+
+    if (isAlreadyVerified && !isSuperuser) {
+        alert("This attendance is already verified and cannot be modified.");
+        return;
+    }
 
     fetch("{% url 'update_attendance_status' %}", {
         method: "POST",
@@ -1137,59 +1189,15 @@ function updateAttendanceIcon(icon, status, punchIn, punchOut) {
             // Update the icon in the table
             const icon = document.querySelector(`i[data-employee-id="${data.employee_id}"][data-date="${data.date}"]`);
             if (icon) {
-                // Remove existing classes
-                icon.classList.remove(
-                    "text-success", 
-                    "text-warning", 
-                    "text-danger", 
-                    "text-secondary",
-                    "text-primary",
-                    "fa-star",
-                    "fa-star-half-alt"
-                );
-                
-                // Set new classes based on status
-                switch(data.status) {
-                    case "full":
-                        icon.classList.add("fa-star", "text-success");
-                        break;
-                    case "verified_full":
-                        icon.classList.add("fa-star", "text-primary");
-                        break;
-                    case "half":
-                        icon.classList.add("fa-star-half-alt", "text-success");
-                        break;
-                    case "verified_half":
-                        icon.classList.add("fa-star-half-alt", "text-primary");
-                        break;
-                    case "leave":
-                        icon.classList.add("fa-star", "text-danger");
-                        break;
-                    case "holiday":
-                        icon.classList.add("fa-star", "text-warning");
-                        break;
-                    default:
-                        icon.classList.add("fa-star", "text-secondary");
-                }
-                
-                // Update icon attributes
-                icon.setAttribute("data-state", data.status);
-                
-                // Refresh tooltip
-                const tooltip = bootstrap.Tooltip.getInstance(icon);
-                if (tooltip) {
-                    tooltip.dispose();
-                }
-                new bootstrap.Tooltip(icon);
+                updateAttendanceIcon(icon, data.status, data.punch_in, data.punch_out);
             }
             
             // Close the modal
             bootstrap.Modal.getInstance(modal).hide();
             
-            // Optional: Show success toast/alert
+            // Show success message
             alert("Attendance verified successfully!");
         } else {
-            // Handle error scenario
             alert("Error verifying attendance: " + (data.error || "Unknown error"));
         }
     })
@@ -1572,6 +1580,63 @@ document.addEventListener('DOMContentLoaded', function() {
         alert('An error occurred while deleting the request');
     });
 }
+</script>
+<script>
+    function updateAttendance() {
+    const modal = document.getElementById('attendanceDetailsModal');
+    const employeeId = document.getElementById('employeeName').getAttribute('data-id');
+    const date = modal.getAttribute('data-date');
+    const status = document.getElementById('attendanceStatus').value;
+    const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content");
+    const isSuperuser = {% if is_superuser %}true{% else %}false{% endif %};
+
+    // Check if this is a verified record being updated by superuser
+    const icon = document.querySelector(`i[data-employee-id="${employeeId}"][data-date="${date}"]`);
+    const currentState = icon ? icon.getAttribute('data-state') || 'initial' : 'initial';
+    const isVerified = currentState.startsWith('verified_');
+
+    // For superusers updating verified records, maintain verified status
+    let newStatus = status;
+    if (isSuperuser && isVerified) {
+        newStatus = `verified_${status}`;
+    }
+
+    fetch("{% url 'update_attendance_status' %}", {
+        method: "POST",
+        headers: {
+            "X-CSRFToken": csrfToken,
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            employee_id: employeeId,
+            date: date,
+            status: newStatus
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update the icon in the table
+            const icon = document.querySelector(`i[data-employee-id="${data.employee_id}"][data-date="${data.date}"]`);
+            if (icon) {
+                updateAttendanceIcon(icon, data.status, data.punch_in, data.punch_out);
+            }
+            
+            // Close the modal
+            bootstrap.Modal.getInstance(modal).hide();
+            
+            // Show success message
+            alert("Attendance updated successfully!");
+        } else {
+            alert("Error updating attendance: " + (data.error || "Unknown error"));
+        }
+    })
+    .catch(error => {
+        console.error("Error:", error);
+        alert("Something went wrong. Please try again.");
+    });
+}
+
 </script>
 {% endif %}
 {% endblock %}
