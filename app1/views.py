@@ -1073,13 +1073,8 @@ def delete_hardware(request, hardware_id):
 
 
 
-
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import render, redirect
-from .forms import ComplaintForm
 from .models import Complaint
-from django.contrib.auth import get_user_model
-User = get_user_model()
+from .forms import ComplaintForm
 
 @login_required
 def add_complaint(request):
@@ -1087,12 +1082,16 @@ def add_complaint(request):
         form = ComplaintForm(request.POST)
         if form.is_valid():
             complaint = form.save(commit=False)
-            # Force evaluation of SimpleLazyObject:
-            user = request.user
-            # Or explicitly get user instance from DB if needed:
-            if not isinstance(user, User):
-                user = User.objects.get(pk=user.pk)
-            complaint.created_by = user
+            # Get the custom User instance from session or however you store it
+            # Option 1: If you store user_id in session
+            if 'user_id' in request.session:
+                try:
+                    custom_user = User.objects.get(id=request.session['user_id'])
+                    complaint.created_by = custom_user
+                except User.DoesNotExist:
+                    complaint.created_by = None
+            else:
+                complaint.created_by = None
             complaint.save()
             return redirect('all_complaints')
     else:
@@ -1107,28 +1106,28 @@ from .models import Complaint
 
 from django.core.paginator import Paginator
 
+@login_required
 def all_complaints(request):
-    complaint_type = request.GET.get('type', 'all')
-    if complaint_type == 'all':
-        complaints = Complaint.objects.all().order_by('description')
+    selected_type = request.GET.get('type', 'all')
+    
+    if selected_type == 'all':
+        complaints = Complaint.objects.all().order_by('-created_at')
     else:
-        complaints = Complaint.objects.filter(complaint_type=complaint_type).order_by('description')
-
-    # Pagination
-    paginator = Paginator(complaints, 15)  # 15 complaints per page
-    page_number = request.GET.get('page', 1)
+        complaints = Complaint.objects.filter(complaint_type=selected_type).order_by('-created_at')
+    
+    paginator = Paginator(complaints, 10)  # Show 10 complaints per page
+    page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-
-    # Calculate the starting index for continuous numbering
+    
+    # Calculate start index for pagination
     start_index = (page_obj.number - 1) * paginator.per_page
-
-    return render(request, 'all_complaints.html', {
+    
+    context = {
         'page_obj': page_obj,
-        'selected_type': complaint_type,
+        'selected_type': selected_type,
         'start_index': start_index,
-    })
-
-
+    }
+    return render(request, 'all_complaints.html', context)
 
 # Edit complaint view
 def edit_complaint(request, complaint_id):
