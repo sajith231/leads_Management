@@ -226,6 +226,7 @@ class Complaint(models.Model):
     description = models.TextField()
     complaint_type = models.CharField(max_length=10, choices=COMPLAINT_TYPES, default='software')
     created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True) 
 
     def __str__(self):
         return f"Complaint #{self.id}"

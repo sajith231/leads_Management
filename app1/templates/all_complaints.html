@@ -62,6 +62,8 @@
                 <th>#</th>
                 <th>Complaint</th>
                 <th>Type</th>
+                <th>Created Date</th>
+                <th>Created By</th>
                 <th>Edit</th>
                 <th>Delete</th>
             </tr>
@@ -72,6 +74,8 @@
                 <td>{{ forloop.counter|add:start_index }}</td>
                 <td>{{ complaint.description|capfirst }}</td>
                 <td>{{ complaint.get_complaint_type_display|capfirst }}</td>
+                <td>{{ complaint.created_at|date:"Y-m-d H:i" }}</td>
+                <td>{{ complaint.created_by.name }}</td>
                 <td>
                     <a href="{% url 'edit_complaint' complaint.id %}" class="btn btn-warning btn-sm">Edit</a>
                 </td>

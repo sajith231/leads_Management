@@ -1073,14 +1073,28 @@ def delete_hardware(request, hardware_id):
 
 
 
-from .models import Complaint
-from .forms import ComplaintForm
 
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, redirect
+from .forms import ComplaintForm
+from .models import Complaint
+
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, redirect
+from .forms import ComplaintForm
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
+@login_required
 def add_complaint(request):
     if request.method == 'POST':
         form = ComplaintForm(request.POST)
         if form.is_valid():
-            form.save()
+            complaint = form.save(commit=False)
+            # Ensure you are assigning the User instance, not the SimpleLazyObject
+            complaint.created_by = request.user if isinstance(request.user, User) else User.objects.get(id=request.user.id)
+            complaint.save()
             return redirect('all_complaints')
     else:
         form = ComplaintForm()
