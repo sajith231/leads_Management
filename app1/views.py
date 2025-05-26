@@ -2406,7 +2406,8 @@ def employee_management(request):
     search_query = request.GET.get('search', '')  # Get search query
     
     # Base queryset with status filter
-    employees = Employee.objects.filter(status=status_filter).select_related("user")
+    employees = Employee.objects.filter(status=status_filter).select_related("user").order_by('name')
+
     
     # Apply search filter if search query exists
     if search_query:
@@ -4064,8 +4065,14 @@ def delete_holiday(request):
 
 
 
-
-
+import requests
+import json
+from datetime import timedelta
+from django.utils import timezone
+from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from .models import LeaveRequest, Employee, Attendance
 
 @login_required
 def create_leave_request(request):
@@ -4082,10 +4089,33 @@ def create_leave_request(request):
                 status='pending'
             )
             
+            # List of phone numbers to send the WhatsApp message
+            phone_numbers = ["9061947005", "8129139506", "7907667116"]
+            
+            # Construct the message with the employee's name and leave request details
+            message = f"New leave request from {employee.name}. Start Date: {data['start_date']}, End Date: {data['end_date']}, Reason: {data['reason']}"
+            
+            # Send WhatsApp message to each phone number
+            for number in phone_numbers:
+                send_whatsapp_message_new_request(number, message)
+            
             return JsonResponse({'success': True, 'message': 'Leave request submitted successfully'})
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)})
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+def send_whatsapp_message_new_request(phone_number, message):
+    secret = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
+    account = "1748250982812b4ba287f5ee0bc9d43bbf5bbe87fb683431662a427"
+    
+    url = f"https://app.dxing.in/api/send/whatsapp?secret={secret}&account={account}&recipient={phone_number}&type=text&message={message}&priority=1"
+    
+    response = requests.get(url)
+    
+    if response.status_code == 200:
+        print(f"WhatsApp message sent successfully to {phone_number}")
+    else:
+        print(f"Failed to send WhatsApp message to {phone_number}. Status code: {response.status_code}, Response: {response.text}")
 
 @login_required
 def get_leave_requests(request):
@@ -4114,14 +4144,6 @@ def get_leave_requests(request):
     } for req in leave_requests]
     
     return JsonResponse({'leave_requests': data})
-import json
-from datetime import timedelta
-from django.utils import timezone
-from django.http import JsonResponse
-from django.contrib.auth.decorators import login_required
-from .models import LeaveRequest, Attendance
-import requests
-
 
 @login_required
 def process_leave_request(request):
@@ -4175,8 +4197,8 @@ def process_leave_request(request):
             leave_request.processed_at = timezone.now()
             leave_request.save()
 
-            # Send WhatsApp message
-            send_whatsapp_message(leave_request.employee.phone_personal, data['action'])
+            # Send WhatsApp message with leave request details
+            send_whatsapp_message_status_update(leave_request, data['action'])
 
             return JsonResponse({
                 'success': True,
@@ -4190,20 +4212,23 @@ def process_leave_request(request):
 
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
 
-
-def send_whatsapp_message(phone_number, action):
+def send_whatsapp_message_status_update(leave_request, action):
+    """Send WhatsApp message with detailed leave request information"""
     secret = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
     account = "1748250982812b4ba287f5ee0bc9d43bbf5bbe87fb683431662a427"
 
-    # Format the message based on action
+    # Format the message with leave request details based on action
     if action == 'approve':
-        message = "Your leave request has been approved."
+        message = f"Your leave request has been approved. Start Date: {leave_request.start_date.strftime('%d-%m-%Y')}, End Date: {leave_request.end_date.strftime('%d-%m-%Y')}, Reason: {leave_request.reason}"
     elif action == 'reject':
-        message = "Your leave request has been rejected."
+        message = f"Your leave request has been rejected. Start Date: {leave_request.start_date.strftime('%d-%m-%Y')}, End Date: {leave_request.end_date.strftime('%d-%m-%Y')}, Reason: {leave_request.reason}"
     else:
-        message = "Your leave request status has been updated."
+        # This replaces the generic "Your leave request status has been updated." message
+        message = f"Leave request status updated. Start Date: {leave_request.start_date.strftime('%d-%m-%Y')}, End Date: {leave_request.end_date.strftime('%d-%m-%Y')}, Reason: {leave_request.reason}, Status: {leave_request.status}"
 
-    # Construct API URL with replacements
+    phone_number = leave_request.employee.phone_personal
+
+    # Construct API URL
     url = (
         f"https://app.dxing.in/api/send/whatsapp?"
         f"secret={secret}&account={account}"
@@ -4214,11 +4239,9 @@ def send_whatsapp_message(phone_number, action):
     response = requests.get(url)
 
     if response.status_code == 200:
-        print("WhatsApp message sent successfully.")
+        print(f"WhatsApp message sent successfully to {phone_number}")
     else:
-        print(f"Failed to send WhatsApp message. Status code: {response.status_code}")
-
-
+        print(f"Failed to send WhatsApp message to {phone_number}. Status code: {response.status_code}, Response: {response.text}")
 
 
 
