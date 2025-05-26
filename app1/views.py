@@ -1106,14 +1106,19 @@ from .models import Complaint
 
 from django.core.paginator import Paginator
 
+from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
+from django.shortcuts import render
+from .models import Complaint
+
 @login_required
 def all_complaints(request):
     selected_type = request.GET.get('type', 'all')
     
     if selected_type == 'all':
-        complaints = Complaint.objects.all().order_by('-created_at')
+        complaints = Complaint.objects.all().order_by('description')  # Alphabetic order
     else:
-        complaints = Complaint.objects.filter(complaint_type=selected_type).order_by('-created_at')
+        complaints = Complaint.objects.filter(complaint_type=selected_type).order_by('description')  # Alphabetic order
     
     paginator = Paginator(complaints, 10)  # Show 10 complaints per page
     page_number = request.GET.get('page')
@@ -1128,6 +1133,7 @@ def all_complaints(request):
         'start_index': start_index,
     }
     return render(request, 'all_complaints.html', context)
+
 
 # Edit complaint view
 def edit_complaint(request, complaint_id):
