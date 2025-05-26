@@ -48,11 +48,11 @@
     </select>
     
 </div>
-    <div class="pagination">
+ <div class="pagination">
     <span class="step-links">
         {% if page_obj.has_previous %}
-            <a href="?page=1&from_date={{ default_from_date }}&to_date={{ default_to_date }}&user={{ selected_user_id }}" class="btn btn-sm btn-outline-primary">&laquo; first</a>
-            <a href="?page={{ page_obj.previous_page_number }}&from_date={{ default_from_date }}&to_date={{ default_to_date }}&user={{ selected_user_id }}" class="btn btn-sm btn-outline-primary">previous</a>
+            <a href="?page=1&from_date={{ request.GET.from_date|default:'' }}&to_date={{ request.GET.to_date|default:'' }}&user={{ request.GET.user|default:'' }}" class="btn btn-sm btn-outline-primary">&laquo; first</a>
+            <a href="?page={{ page_obj.previous_page_number }}&from_date={{ request.GET.from_date|default:'' }}&to_date={{ request.GET.to_date|default:'' }}&user={{ request.GET.user|default:'' }}" class="btn btn-sm btn-outline-primary">previous</a>
         {% endif %}
 
         <span class="current">
@@ -60,8 +60,8 @@
         </span>
 
         {% if page_obj.has_next %}
-            <a href="?page={{ page_obj.next_page_number }}&from_date={{ default_from_date }}&to_date={{ default_to_date }}&user={{ selected_user_id }}" class="btn btn-sm btn-outline-primary">next</a>
-            <a href="?page={{ page_obj.paginator.num_pages }}&from_date={{ default_from_date }}&to_date={{ default_to_date }}&user={{ selected_user_id }}" class="btn btn-sm btn-outline-primary">last &raquo;</a>
+            <a href="?page={{ page_obj.next_page_number }}&from_date={{ request.GET.from_date|default:'' }}&to_date={{ request.GET.to_date|default:'' }}&user={{ request.GET.user|default:'' }}" class="btn btn-sm btn-outline-primary">next</a>
+            <a href="?page={{ page_obj.paginator.num_pages }}&from_date={{ request.GET.from_date|default:'' }}&to_date={{ request.GET.to_date|default:'' }}&user={{ request.GET.user|default:'' }}" class="btn btn-sm btn-outline-primary">last &raquo;</a>
         {% endif %}
     </span>
 </div>
@@ -238,6 +238,39 @@ const updateFilters = () => {
                 remarkModal.show();
             });
         });
+    });
+</script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const fromDateInput = document.getElementById('fromDate');
+        const toDateInput = document.getElementById('toDate');
+        const userFilter = document.getElementById('userFilter');
+
+        // Function to update URL with filters
+        const updateFilters = () => {
+            const fromDate = fromDateInput.value;
+            const toDate = toDateInput.value;
+            const userId = userFilter.value;
+            
+            const currentUrl = new URL(window.location.href);
+            
+            if (fromDate) currentUrl.searchParams.set('from_date', fromDate);
+            else currentUrl.searchParams.delete('from_date');
+            
+            if (toDate) currentUrl.searchParams.set('to_date', toDate);
+            else currentUrl.searchParams.delete('to_date');
+            
+            if (userId && userId !== 'all') currentUrl.searchParams.set('user', userId);
+            else currentUrl.searchParams.delete('user');
+            
+            currentUrl.searchParams.delete('page'); // Reset to first page
+            window.location.href = currentUrl.toString();
+        };
+
+        // Apply filter on date change
+        fromDateInput.addEventListener('change', updateFilters);
+        toDateInput.addEventListener('change', updateFilters);
+        userFilter.addEventListener('change', updateFilters);
     });
 </script>
 {% endblock %}
