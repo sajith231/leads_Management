@@ -2959,10 +2959,9 @@ from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from .models import Employee
 
-@login_required
 def make_experience_certificate(request):
     search_query = request.GET.get('q', '')
-    employees = Employee.objects.all()
+    employees = Employee.objects.all().order_by('name')
 
     if search_query:
         employees = employees.filter(name__icontains=search_query)
@@ -2989,9 +2988,9 @@ from .models import Employee
 def make_salary_certificate(request):
     search_query = request.GET.get('search', '')
     if search_query:
-        employees = Employee.objects.filter(name__icontains=search_query)
+        employees = Employee.objects.filter(name__icontains=search_query).order_by('name')
     else:
-        employees = Employee.objects.all()
+        employees = Employee.objects.all().order_by('name')
 
     paginator = Paginator(employees, 15)  # Show 15 employees per page
     page_number = request.GET.get('page')

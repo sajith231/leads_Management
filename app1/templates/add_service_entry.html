@@ -50,15 +50,15 @@
 
                 <!-- Complaint Field -->
                 <div class="mb-3">
-                    <label for="complaint" class="form-label">Complaint *</label>
-                    <select class="form-control" id="complaint" name="complaint" required>
-    <option value="">Select a complaint</option>
-    {% for complaint in complaints %}
-        <option value="{{ complaint.description }}" data-type="{{ complaint.complaint_type }}">{{ complaint.description }}</option>
-    {% endfor %}
-</select>
+    <label for="complaint" class="form-label">Complaint *</label>
+    <select class="form-control" id="complaint" name="complaint" required>
+        <option value="">Select a complaint</option>
+        {% for complaint in complaints|dictsort:"description" %}
+            <option value="{{ complaint.description }}" data-type="{{ complaint.complaint_type }}">{{ complaint.description }}</option>
+        {% endfor %}
+    </select>
+</div>
 
-                </div>
 
                 <!-- Service Type Field -->
                 
