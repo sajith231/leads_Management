@@ -2573,7 +2573,7 @@ from .models import Employee
 
 def save_experience_certificate_details(request, employee_id):
     if request.method == "POST":
-        employee = get_object_or_404(Employee, id=employee_id).order_by('name')
+        employee = get_object_or_404(Employee, id=employee_id)
         start_date = request.POST.get("start_date")
         end_date = request.POST.get("end_date")
 
@@ -3036,7 +3036,7 @@ from django.utils import timezone
 from .models import Employee
 
 def salary_certificate(request, employee_id):
-    employee = get_object_or_404(Employee, id=employee_id).order_by('name')
+    employee = get_object_or_404(Employee, id=employee_id)
     clicked_date = request.GET.get("date", timezone.now().strftime("%d/%m/%Y"))  # Default to current date if not provided
     salary_details = getattr(employee, "salary_details", None)
 
