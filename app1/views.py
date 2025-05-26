@@ -4089,7 +4089,7 @@ def create_leave_request(request):
             )
             
             # List of phone numbers to send the WhatsApp message
-            phone_numbers = ["9061947005", "8129139506", "7907667116"]
+            phone_numbers = ["9946545535", "7593820007", "7593820005"]
             
             # Construct the message with the employee's name and leave request details
             message = f"New leave request from {employee.name}. Start Date: {data['start_date']}, End Date: {data['end_date']}, Reason: {data['reason']}"
