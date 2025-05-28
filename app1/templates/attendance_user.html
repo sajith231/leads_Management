@@ -172,6 +172,7 @@
 
 
 
+<!-- Update the leave request modal -->
 <div class="modal fade" id="leaveRequestModal" tabindex="-1" aria-labelledby="leaveRequestModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -190,6 +191,13 @@
                         <input type="date" class="form-control" id="endDate" required>
                     </div>
                     <div class="mb-3">
+                        <label for="leaveType" class="form-label">Leave Type</label>
+                        <select class="form-select" id="leaveType" required>
+                            <option value="full_day">Full Day</option>
+                            <option value="half_day">Half Day</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
                         <label for="reason" class="form-label">Reason</label>
                         <textarea class="form-control" id="reason" rows="3" required></textarea>
                     </div>
@@ -202,7 +210,8 @@
         </div>
     </div>
 </div>
-<!-- Add this modal after the existing leaveRequestModal -->
+
+<!-- Update the view leave requests modal -->
 <div class="modal fade" id="viewLeaveRequestsModal" tabindex="-1" aria-labelledby="viewLeaveRequestsModalLabel" aria-hidden="true">
     <div class="modal-dialog" style="max-width: 1200px;width: 100%;margin: auto;">
         <div class="modal-content">
@@ -230,6 +239,7 @@
                             <tr>
                                 <th>Start Date</th>
                                 <th>End Date</th>
+                                <th>Leave Type</th>
                                 <th>Reason</th>
                                 <th>Status</th>
                                 <th>Requested On</th>
@@ -727,6 +737,7 @@
     const data = {
         start_date: document.getElementById('startDate').value,
         end_date: document.getElementById('endDate').value,
+        leave_type: document.getElementById('leaveType').value,
         reason: document.getElementById('reason').value
     };
 
@@ -744,7 +755,9 @@
             alert('Leave request submitted successfully!');
             $('#leaveRequestModal').modal('hide');
             form.reset();
-            location.reload(); // Add this line to refresh the page
+            loadUserLeaveRequests(); // Refresh the leave requests list
+        } else {
+            alert('Error: ' + (data.error || 'Unknown error'));
         }
     })
     
@@ -847,6 +860,7 @@ function updateUserLeaveRequestsTable(page, statusFilter) {
         row.innerHTML = `
             <td>${request.start_date}</td>
             <td>${request.end_date}</td>
+            <td>${request.leave_type}</td>
             <td>${request.reason}</td>
             <td><span class="${statusBadgeClass}">${request.status}</span></td>
             <td>${request.created_at}</td>

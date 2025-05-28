@@ -313,6 +313,7 @@
                                 <th>Start Date</th>
                                 <th>End Date</th>
                                 <th>Reason</th>
+                                <th>Leave Type</th> 
                                 <th>Status</th>
                                 <th>Requested On</th>
                                 <th>Actions</th>
@@ -454,6 +455,7 @@ function updateLeaveRequestsTable(page, statusFilter = 'all') {
             <td>${request.start_date}</td>
             <td>${request.end_date}</td>
             <td>${request.reason}</td>
+            <td>${request.leave_type}</td> <!-- Added leave type here -->
             <td><span class="${statusBadgeClass}">${request.status}</span></td>
             <td>${request.created_at}</td>
             <td>
@@ -946,6 +948,7 @@ function updateHolidayInUI(date) {
 
     // Update attendance icon based on status
     // Update attendance icon based on status
+// In the updateAttendanceIcon function in attendance.html
 function updateAttendanceIcon(icon, status, punchIn, punchOut) {
     let iconClass = 'fas fa-star';
     let iconColor = '#ccc';
@@ -1002,7 +1005,6 @@ function updateAttendanceIcon(icon, status, punchIn, punchOut) {
     }
     new bootstrap.Tooltip(icon);
 }
-
     // Show attendance modal
     function showAttendanceModal(employeeId, employeeName, date, icon) {
     // Check if this is a holiday (don't allow editing holidays)

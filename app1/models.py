@@ -720,10 +720,15 @@ class LeaveRequest(models.Model):
         ('approved', 'Approved'),
         ('rejected', 'Rejected'),
     ]
+    LEAVE_TYPE_CHOICES = [
+        ('full_day', 'Full Day'),
+        ('half_day', 'Half Day'),
+    ]
     
     employee = models.ForeignKey(Employee, on_delete=models.CASCADE)
     start_date = models.DateField()
     end_date = models.DateField()
+    leave_type = models.CharField(max_length=20, choices=LEAVE_TYPE_CHOICES, default='full_day')#CREATED AS NEW 
     reason = models.TextField()
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     created_at = models.DateTimeField(auto_now_add=True)

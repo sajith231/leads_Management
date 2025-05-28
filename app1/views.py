@@ -4080,19 +4080,31 @@ def create_leave_request(request):
             data = json.loads(request.body)
             employee = Employee.objects.get(user_id=request.session.get('custom_user_id'))
             
+            start_date = datetime.strptime(data['start_date'], '%Y-%m-%d').date()
+            end_date = datetime.strptime(data['end_date'], '%Y-%m-%d').date()
+
             leave_request = LeaveRequest.objects.create(
                 employee=employee,
-                start_date=data['start_date'],
-                end_date=data['end_date'],
+                start_date=start_date,
+                end_date=end_date,
+                leave_type=data['leave_type'],
                 reason=data['reason'],
                 status='pending'
             )
+
             
             # List of phone numbers to send the WhatsApp message
             phone_numbers = ["9946545535", "7593820007", "7593820005"]
             
-            # Construct the message with the employee's name and leave request details
-            message = f"New leave request from {employee.name}. Start Date: {data['start_date']}, End Date: {data['end_date']}, Reason: {data['reason']}"
+            formatted_start = start_date.strftime('%d %m %Y')
+            formatted_end = end_date.strftime('%d %m %Y')
+
+            message = (
+                f"New leave request from {employee.name}. "
+                f"Type: {leave_request.get_leave_type_display()}, "
+                f"Start Date: {formatted_start}, End Date: {formatted_end}, "
+                f"Reason: {data['reason']}"
+            )
             
             # Send WhatsApp message to each phone number
             for number in phone_numbers:
@@ -4135,6 +4147,7 @@ def get_leave_requests(request):
         'employee_name': req.employee.name,
         'start_date': req.start_date.strftime('%d-%m-%Y'),
         'end_date': req.end_date.strftime('%d-%m-%Y'),
+        'leave_type': req.get_leave_type_display(),
         'reason': req.reason,
         'status': req.status,
         'processed_by': req.processed_by.username if req.processed_by else None,
@@ -4172,11 +4185,11 @@ def process_leave_request(request):
                         date=current_date,
                         defaults={
                             'day': current_date.day,
-                            'status': 'leave'
+                            'status': 'leave' if leave_request.leave_type == 'full_day' else 'half'
                         }
                     )
                     if not created:
-                        attendance.status = 'leave'
+                        attendance.status = 'leave' if leave_request.leave_type == 'full_day' else 'half'
                         attendance.save()
                     current_date += timedelta(days=1)
 
@@ -4202,9 +4215,10 @@ def process_leave_request(request):
             return JsonResponse({
                 'success': True,
                 'employee_id': leave_request.employee.id,
-                'start_date': leave_request.start_date.strftime('%Y-%m-%d'),
-                'end_date': leave_request.end_date.strftime('%Y-%m-%d'),
-                'action': data['action']
+                'start_date': leave_request.start_date.strftime('%d %m %Y'),
+                'end_date': leave_request.end_date.strftime('%d %m %Y'),
+                'action': data['action'],
+                'leave_type': leave_request.leave_type
             })
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)})
