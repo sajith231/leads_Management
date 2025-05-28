@@ -344,8 +344,8 @@
             <div class="modal-body">
                 <div class="d-flex justify-content-between mb-3">
                     <div class="btn-group" role="group">
-                        <button type="button" class="btn btn-sm btn-outline-primary filter-btn active" data-status="all">All</button>
-                        <button type="button" class="btn btn-sm btn-outline-primary filter-btn" data-status="pending">Pending</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary filter-btn " data-status="all">All</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary filter-btn active" data-status="pending">Pending</button>
                         <button type="button" class="btn btn-sm btn-outline-primary filter-btn" data-status="approved">Approved</button>
                         <button type="button" class="btn btn-sm btn-outline-primary filter-btn" data-status="rejected">Rejected</button>
                     </div>
@@ -1357,7 +1357,7 @@ function deleteLeaveRequest(requestId) {
                 
                 if (data.success) {
                     allAdminLateRequests = data.late_requests || [];
-                    updateAdminLateRequestsTable(1, 'all');
+                    updateAdminLateRequestsTable(1, 'pending');
                     new bootstrap.Modal(document.getElementById('adminLateRequestsModal')).show();
                 } else {
                     console.error('Server error:', data.error);

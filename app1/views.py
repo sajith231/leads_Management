@@ -4296,17 +4296,47 @@ def create_late_request(request):
             data = json.loads(request.body)
             employee = Employee.objects.get(user_id=request.session.get('custom_user_id'))
             
+            # Convert date string to datetime object
+            date_str = data['date']
+            date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
+            
             late_request = LateRequest.objects.create(
                 employee=employee,
-                date=data['date'],
+                date=date_obj,
                 delay_time=data['delay_time'],  # New field
                 reason=data['reason'],
                 status='pending'
             )
             
+            # Send WhatsApp message to managers
+            phone_numbers = ["9946545535", "7593820007", "7593820005"]
+            message = (
+                f"New late request from {employee.name}. "
+                f"Date: {date_obj.strftime('%d-%m-%Y')}, "
+                f"Delay Time: {late_request.delay_time}, "
+                f"Reason: {late_request.reason}"
+            )
+            
+            for number in phone_numbers:
+                send_whatsapp_message(number, message)
+            
             return JsonResponse({'success': True, 'message': 'Late request submitted successfully'})
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)})
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+def send_whatsapp_message(phone_number, message):
+    secret = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
+    account = "1748250982812b4ba287f5ee0bc9d43bbf5bbe87fb683431662a427"
+    
+    url = f"https://app.dxing.in/api/send/whatsapp?secret={secret}&account={account}&recipient={phone_number}&type=text&message={message}&priority=1"
+    
+    response = requests.get(url)
+    
+    if response.status_code == 200:
+        print(f"WhatsApp message sent successfully to {phone_number}")
+    else:
+        print(f"Failed to send WhatsApp message to {phone_number}. Status code: {response.status_code}, Response: {response.text}")
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
 
 # views.py
@@ -4351,12 +4381,23 @@ def process_late_request(request):
             
             if data['action'] == 'approve':
                 late_request.status = 'approved'
+                message = (
+                    f"Your late request for {late_request.date.strftime('%d-%m-%Y')} has been approved. "
+                    f"Delay Time: {late_request.delay_time}, Reason: {late_request.reason}"
+                )
             else:
                 late_request.status = 'rejected'
+                message = (
+                    f"Your late request for {late_request.date.strftime('%d-%m-%Y')} has been rejected. "
+                    f"Delay Time: {late_request.delay_time}, Reason: {late_request.reason}"
+                )
             
             late_request.processed_by = request.user
             late_request.processed_at = timezone.now()
             late_request.save()
+            
+            # Send WhatsApp message to the employee
+            send_whatsapp_message(late_request.employee.phone_personal, message)
             
             return JsonResponse({
                 'success': True,
