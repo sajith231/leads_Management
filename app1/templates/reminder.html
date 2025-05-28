@@ -164,10 +164,9 @@
         }
     </style>
 
-
-
     {% if messages %}
-        <div class="messages">    <h1>Reminders</h1>
+        <div class="messages">
+            <h1>Reminders</h1>
             {% for message in messages %}
                 <div class="alert alert-{{ message.tags }}">
                     {{ message }}
@@ -178,17 +177,20 @@
 
     <a href="{% url 'add_reminder' %}" class="add-button">Add New Reminder</a>
     <div>
-    <form method="GET" class="mb-3">
-        <label for="start_date" class="fw-bold">From:</label>
-        <input type="date" name="start_date" id="start_date" class="form-control d-inline-block w-auto" value="{{ request.GET.start_date }}">
-        
-        <label for="end_date" class="fw-bold ms-2">To:</label>
-        <input type="date" name="end_date" id="end_date" class="form-control d-inline-block w-auto" value="{{ request.GET.end_date }}">
-        
-        <button type="button" id="okBtn" class="btn btn-primary ms-2">OK</button>
-        <button type="button" id="todayReminderBtn" class="btn btn-secondary ms-2">Today Reminders</button>
-    </form>
-</div>
+        <form method="GET" class="mb-3">
+            <label for="start_date" class="fw-bold">From:</label>
+            <input type="date" name="start_date" id="start_date" class="form-control d-inline-block w-auto" value="{{ request.GET.start_date }}">
+            
+            <label for="end_date" class="fw-bold ms-2">To:</label>
+            <input type="date" name="end_date" id="end_date" class="form-control d-inline-block w-auto" value="{{ request.GET.end_date }}">
+            
+            <label for="search" class="fw-bold ms-2">Search Remark:</label>
+            <input type="text" name="search" id="search" class="form-control d-inline-block w-auto" value="{{ request.GET.search }}">
+            
+            <button type="button" id="okBtn" class="btn btn-primary ms-2">OK</button>
+            <button type="button" id="todayReminderBtn" class="btn btn-secondary ms-2">Today Reminders</button>
+        </form>
+    </div>
     
     <div class="table-container">
         <table>
@@ -290,31 +292,36 @@
         });
     </script>
 
-<script>
-    document.getElementById("okBtn").addEventListener("click", filterReminders);
+    <script>
+        document.getElementById("okBtn").addEventListener("click", filterReminders);
 
-    function filterReminders() {
-        const startDate = document.getElementById("start_date").value;
-        const endDate = document.getElementById("end_date").value;
-        const url = new URL(window.location.href);
+        function filterReminders() {
+            const startDate = document.getElementById("start_date").value;
+            const endDate = document.getElementById("end_date").value;
+            const search = document.getElementById("search").value;
+            const url = new URL(window.location.href);
+            
+            if (startDate) url.searchParams.set("start_date", startDate);
+            else url.searchParams.delete("start_date");
+            
+            if (endDate) url.searchParams.set("end_date", endDate);
+            else url.searchParams.delete("end_date");
+
+            if (search) url.searchParams.set("search", search);
+            else url.searchParams.delete("search");
         
-        if (startDate) url.searchParams.set("start_date", startDate);
-        else url.searchParams.delete("start_date");
-        
-        if (endDate) url.searchParams.set("end_date", endDate);
-        else url.searchParams.delete("end_date");
-    
-        window.location.href = url.toString();
-    }
-</script>
+            window.location.href = url.toString();
+        }
+    </script>
     <script>
         document.getElementById("todayReminderBtn").addEventListener("click", function() {
             const today = new Date().toISOString().split("T")[0]; // format: YYYY-MM-DD
             const url = new URL(window.location.href);
-    
+        
             url.searchParams.set("start_date", today);
             url.searchParams.set("end_date", today);
-    
+            url.searchParams.delete("search");
+        
             window.location.href = url.toString();
         });
     </script>

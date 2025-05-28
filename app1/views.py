@@ -3744,6 +3744,7 @@ def reminders(request):
     """View for displaying filtered reminders."""
     start_date = request.GET.get("start_date")
     end_date = request.GET.get("end_date")
+    search_query = request.GET.get("search")
 
     reminders_list = Reminder.objects.all().prefetch_related('responsible_persons').order_by('entry_date')
 
@@ -3751,6 +3752,14 @@ def reminders(request):
         reminders_list = reminders_list.filter(remind_date__range=[start_date, end_date])
     elif start_date:
         reminders_list = reminders_list.filter(remind_date=start_date)
+
+    if search_query:
+        reminders_list = reminders_list.filter(
+            Q(remark__icontains=search_query) |
+            Q(reminder_type__name__icontains=search_query) |
+            Q(remind_date__icontains=search_query) |
+            Q(responsible_persons__name__icontains=search_query)
+        )
 
     # Prepare data for template
     reminders_data = []
@@ -3772,7 +3781,6 @@ def reminders(request):
         "reminders": reminders_data,
         "reminder_types": ReminderType.objects.all()
     })
-
 
 
 
