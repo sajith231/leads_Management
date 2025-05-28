@@ -3,12 +3,15 @@
 {% block content %}
 <style>
     /* Filter Styles */
+    body{
+        background-color: black;
+    }
     .filter-container {
-        margin-bottom: 30px;
-        background-color: #fff;
-        padding: 15px;
+        margin-bottom: 10px;
+        background-color:black;
         border-radius: 8px;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        
     }
 
     .filter-form {
@@ -87,7 +90,7 @@
     .information-center {
         width: 100%;
         padding: 20px 0;
-        background-color: #f8f9fa;
+        background-color: black;
     }
     
     .container {
@@ -137,14 +140,14 @@
     /* Category Section Styles */
     .category-section {
         margin-bottom: 40px;
-        background-color: #fff;
+        background-color: black;
         border-radius: 12px;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
         overflow: hidden;
     }
 
     .category-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, red 0%, rgb(83, 0, 0) 100%);
         color: white;
         padding: 20px 25px;
         border-bottom: 3px solid rgba(255, 255, 255, 0.1);
@@ -319,7 +322,7 @@
 
 
     .more-btn {
-        background-color: #007bff;
+        background-color: red;
         color: white;
         border: none;
         padding: 4px 8px;
@@ -331,7 +334,7 @@
     }
 
     .more-btn:hover {
-        background-color: #0056b3;
+        background-color: rgb(75, 1, 1);
     }
 
     .item-meta {
@@ -365,10 +368,12 @@
 
     .action-btn.edit {
         color: #007bff;
+        background-color: whitesmoke;
     }
 
     .action-btn.delete {
         color: #dc3545;
+        background-color: whitesmoke;
     }
 
     /* Navigation Buttons */
@@ -564,12 +569,13 @@
 
 <div class="header" style="margin-top: 3.5%; display: flex;">
     {% if request.user.is_superuser or 'product_type_list' in request.session.allowed_menus %}
-    <a href="{% url 'product_type_list' %}" class="add-btn">
+    <a href="{% url 'product_type_list' %}" class="add-btn" style="background:linear-gradient(red,rgb(128, 0, 0))">
         Product Type
     </a>
     {% endif %}
+                <h1 class="title" style="color: white;">IMC CONNECT</h1>
     {% if request.user.is_superuser or 'product_category_list' in request.session.allowed_menus %}
-    <a href="{% url 'product_category_list' %}" class="add-btn">
+    <a href="{% url 'product_category_list' %}" class="add-btn" style="background:linear-gradient(red,rgb(128, 0, 0))">
         Category
     </a>
     {% endif %}
@@ -580,7 +586,7 @@
     <form method="get" class="filter-form">
         <div class="filter-row">
             <div class="filter-group">
-                <label for="product_type">Product Type</label>
+                <label for="product_type" style="color: white;">Product Type</label>
                 <select id="product_type" name="product_type" class="filter-select" onchange="this.form.submit()">
                     <option value="">All Types</option>
                     {% for type in product_types %}
@@ -592,7 +598,7 @@
             </div>
             
             <div class="filter-group">
-                <label for="product_category">Product Category</label>
+                <label for="product_category" style="color: white;">Product Category</label>
                 <select id="product_category" name="product_category" class="filter-select" onchange="this.form.submit()">
                     <option value="">All Categories</option>
                     {% for category in product_categories %}
@@ -610,16 +616,8 @@
             <div class="filter-group">
                 <a href="{% url 'information_center' %}" class="reset-btn">Reset Filters</a>
             </div>
-        </div>
-    </form>
-</div>
-
-<div class="information-center">
-    <div class="container">
-        <div class="header">
-            <h1 class="title">Information Center</h1>
-            {% if request.user.is_superuser or 'add_information_center' in request.session.allowed_menus %}
-            <a href="{% url 'add_information_center' %}" class="add-btn">
+              {% if request.user.is_superuser or 'add_information_center' in request.session.allowed_menus %}
+            <a href="{% url 'add_information_center' %}" class="add-btn" style="background:linear-gradient(red,rgb(128, 0, 0))">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon">
                     <line x1="12" y1="5" x2="12" y2="19"></line>
                     <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -627,6 +625,15 @@
                 Add New
             </a>
             {% endif %}
+        </div>
+    </form>
+</div>
+
+<div class="information-center">
+    <div class="container-fluid">
+        <div class="header">
+
+          
         </div>
         
         <!-- Categorized Content -->
@@ -640,7 +647,7 @@
                                 <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
                                 <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
                             </svg>
-                            {{ category_group.grouper.name|default:"Uncategorized" }}
+                            <span>{{ category_group.grouper.name|default:"Uncategorized" }}</span>
                         </h2>
                     </div>
                     
@@ -648,7 +655,7 @@
                     {% for type_group in type_list %}
                         <div class="product-type-section">
                             <div class="product-type-header">
-                                <h3 class="product-type-title">
+                                <h3 class="product-type-title" style="color: white;">
                                     <svg class="product-type-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                         <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
                                         <line x1="16" y1="2" x2="16" y2="6"></line>
@@ -670,9 +677,9 @@
                                 <div class="gallery-wrapper">
                                     <div class="gallery-track" id="gallery-{{ forloop.parentloop.counter }}-{{ forloop.counter }}">
                                         {% for item in type_group.list %}
-                                        <div class="gallery-item">
-                                            <div class="thumbnail-container">
-                                                <a href="{{ item.url }}" target="_blank" class="thumbnail-link">
+                                        <div class="gallery-item" style="background:linear-gradient(red,rgb(128, 0, 0))" >
+                                            <div class="thumbnail-container"> 
+                                                <a href="{{ item.url }}" target="_blank" class="thumbnail-link" >
                                                     {% if item.thumbnail %}
                                                         <img src="{{ item.thumbnail.url }}" alt="{{ item.title }}" class="thumbnail">
                                                     {% else %}
@@ -687,16 +694,16 @@
                                             </div>
                                             
                                             <div class="item-content">
-                                                <h4 class="item-title">{{ item.title }}</h4>
+                                                <h4 class="item-title" style="color: white;">{{ item.title }}</h4>
                                                 <div class="item-remark">
-                                                    <p class="description" data-full="{{ item.remark }}">{{ item.remark|truncatewords:8 }}</p>
+                                                    <p class="description" data-full="{{ item.remark }}" style="color: white;">{{ item.remark|truncatewords:8 }}</p>
 
                                                     {% if item.remark|wordcount > 8 %}
                                                     <button class="more-btn" onclick="toggleDescription(this)">More</button>
                                                     {% endif %}
                                                 </div>
                                                 <div class="item-meta">
-                                                    <span class="date">{{ item.added_date|date:"M d" }}</span>
+                                                    <span class="date" style="color: white;">{{ item.added_date|date:"M d" }}</span>
                                                     <div class="item-actions">
                                                         {% if request.user.is_superuser or 'edit_information_center' in request.session.allowed_menus %}
                                                         <a href="{% url 'edit_information_center' item.id %}" class="action-btn edit">
