@@ -454,6 +454,7 @@ from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from .models import DailyTask
 from app1.models import User  # Ensure you import User from the correct app
 from datetime import date, datetime, timedelta
+
 @login_required
 def daily_task_admin(request):
     status_filter = request.GET.get('status', '')
@@ -467,7 +468,7 @@ def daily_task_admin(request):
     if status_filter:
         daily_tasks = daily_tasks.filter(status=status_filter)
     if user_filter:
-        daily_tasks = daily_tasks.filter(added_by_id=user_filter)  # Filter by user_id
+        daily_tasks = daily_tasks.filter(added_by_id=user_filter)
     if project_filter:
         daily_tasks = daily_tasks.filter(project=project_filter)  # Filter by project
     if start_date:
