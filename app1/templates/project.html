@@ -82,11 +82,12 @@
             <table class="min-w-full table-auto">
                 <thead class="bg-gray-50">
                     <tr class="text-center bg-blue-200">
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Project</th>
                         <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Team Members</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Start Date</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Deadline</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
+                        
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Countdown</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Edit</th>                    
@@ -102,6 +103,7 @@
                         data-start-date="{{ work.start_date|date:'Y-m-d' }}"
                         data-deadline="{{ work.deadline|date:'Y-m-d' }}"
                         data-members="{% for member in work.members.all %}{{ member.id }},{% endfor %}">
+                        <td class="px-6 py-2 whitespace-nowrap">{{ work.client }}</td>
                         <td class="px-6 py-2 whitespace-nowrap">{{ work.project.project_name }}</td>
                         <td class="px-2 py-2 border-none flex justify-center">
                             <div x-data="{ showMembers: false }" class="relative">
@@ -131,9 +133,9 @@
                             </div>
                         </td>
                         
-                        <td class="px-6 py-2 whitespace-nowrap">{{ work.start_date|date:"Y-m-d" }}</td>
-                        <td class="px-6 py-2 whitespace-nowrap">{{ work.deadline|date:"Y-m-d" }}</td>
-                        <td class="px-6 py-2 whitespace-nowrap">{{ work.client }}</td>
+                        <td class="px-6 py-2 whitespace-nowrap">{{ work.start_date|date:"d-m-Y" }}</td>
+                        <td class="px-6 py-2 whitespace-nowrap">{{ work.deadline|date:"d-m-Y" }}</td>
+                        
                         <td class="px-6 py-2 whitespace-nowrap">
                             <span class="px-2 inline-flex items-center gap-1 text-xs leading-5 font-semibold rounded-full
                                 {% if work.status == 'not_started' %}bg-gray-100 text-gray-800
