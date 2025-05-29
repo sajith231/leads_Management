@@ -59,6 +59,15 @@
             <input type="text" name="job_title" class="form-control" value="{{ employee.job_title }}" required>
         </div>
         <div class="mb-3">
+    <label class="form-label">Duty Time Start</label>
+    <input type="time" name="duty_time_start" class="form-control" value="{{ employee.duty_time_start|time:'H:i' }}">
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Duty Time End</label>
+        <input type="time" name="duty_time_end" class="form-control" value="{{ employee.duty_time_end|time:'H:i' }}">
+    </div>
+        <div class="mb-3">
             <label class="form-label">Organization</label>
             <select name="organization" class="form-control">
                 <option value="" {% if not employee.organization %}selected{% endif %}>Select Organization</option>

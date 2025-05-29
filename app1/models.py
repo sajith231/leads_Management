@@ -527,6 +527,8 @@ class Employee(models.Model):
     bank_name = models.CharField(max_length=100, blank=True, null=True)
     branch = models.CharField(max_length=100, blank=True, null=True)  
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')  
+    duty_time_start = models.TimeField(null=True, blank=True)#CREATED AS NEW
+    duty_time_end = models.TimeField(null=True, blank=True)#CREATED AS NEW
 
     def clean(self):
         """ Ensure the selected User ID is unique. """

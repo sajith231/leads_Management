@@ -2462,6 +2462,8 @@ def add_employee(request):
         bank_name = request.POST.get('bank_name', '')
         branch = request.POST.get('branch', '')
         status = request.POST.get("status")
+        duty_time_start = request.POST.get('duty_time_start', None)
+        duty_time_end = request.POST.get('duty_time_end', None)
 
         employee = Employee.objects.create(
             name=name,
@@ -2483,6 +2485,8 @@ def add_employee(request):
             bank_name=bank_name,
             branch=branch,
             status=status,
+            duty_time_start=duty_time_start,
+            duty_time_end=duty_time_end,
         )
 
         for file in request.FILES.getlist('attachments'):
@@ -2541,6 +2545,8 @@ def edit_employee(request, emp_id):
         employee.bank_name = request.POST.get("bank_name", "")
         employee.branch = request.POST.get("branch", "")
         employee.status = request.POST.get("status")
+        employee.duty_time_start = request.POST.get("duty_time_start", None)
+        employee.duty_time_end = request.POST.get("duty_time_end", None)
         employee.save()
 
         # Delete selected attachments
