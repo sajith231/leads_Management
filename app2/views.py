@@ -236,13 +236,14 @@ class InformationCenterListView(ListView):
     model = InformationCenter
     template_name = 'information_center.html'
     context_object_name = 'information_items'
-    ordering = ['-added_date']
+    # Changed ordering to group by category first, then by date
+    ordering = ['product_category__name', '-added_date']
     
     def get_queryset(self):
         queryset = super().get_queryset()
         product_type = self.request.GET.get('product_type')
         product_category = self.request.GET.get('product_category')
-        search_query = self.request.GET.get('search', '').strip()  # Get the search query
+        search_query = self.request.GET.get('search', '').strip()
         
         # Filter by priority based on user status
         if not self.request.user.is_superuser:
@@ -253,9 +254,10 @@ class InformationCenterListView(ListView):
         if product_category:
             queryset = queryset.filter(product_category_id=product_category)
         if search_query:
-            queryset = queryset.filter(title__icontains=search_query)  # Filter by title
+            queryset = queryset.filter(title__icontains=search_query)
         
-        return queryset
+        # Ensure proper ordering for regroup to work correctly
+        return queryset.select_related('product_category', 'product_type').order_by('product_category__name', '-added_date')
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
