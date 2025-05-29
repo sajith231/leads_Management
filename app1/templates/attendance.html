@@ -231,26 +231,30 @@
             <div class="card-body">
                 <table class="table table-hover table-bordered">
                     <thead class="table-light">
-                        <tr>
-                            <th rowspan="3" class="align-middle">No</th>
-                            <th rowspan="3" class="align-middle sticky-header" style="background-color: white;">Name</th>
-                            <th rowspan="3" class="align-middle">User ID</th>
-                            <th rowspan="3" class="align-middle">Summary</th>
-                            <th id="daysHeader" colspan="31" class="text-center">Days of Month</th>
-                        </tr>
-                        <tr id="dayNumbers">
-                            <!-- Day numbers will be populated by JavaScript -->
-                        </tr>
-                        <tr id="dayNames">
-                            <!-- Day names will be populated by JavaScript -->
-                        </tr>
-                    </thead>
+                    <tr>
+                        <th rowspan="3" class="align-middle">No</th>
+                        <th rowspan="3" class="align-middle sticky-header" style="background-color: white;">Name</th>
+                        <th rowspan="3" class="align-middle">User ID</th>
+                        <th rowspan="3" class="align-middle">Duty Start</th>  <!-- New column -->
+                        <th rowspan="3" class="align-middle">Duty End</th>    <!-- New column -->
+                        <th rowspan="3" class="align-middle">Summary</th>
+                        <th id="daysHeader" colspan="31" class="text-center">Days of Month</th>
+                    </tr>
+                    <tr id="dayNumbers">
+                        <!-- Day numbers will be populated by JavaScript -->
+                    </tr>
+                    <tr id="dayNames">
+                        <!-- Day names will be populated by JavaScript -->
+                    </tr>
+                </thead>
                     <tbody id="attendanceBody">
                         {% for employee in employees %}
                         <tr class="employee-row" data-employee-id="{{ employee.id }}" data-name="{{ employee.name }}">
                             <td>{{ forloop.counter }}</td>
                             <td class="sticky-data" style="background-color: white;">{{ employee.name }}</td>
                             <td>{{ employee.user.userid|default:'' }}</td>
+                            <td>{{ employee.duty_time_start|time:"H:i" }}</td>  <!-- New column -->
+                            <td>{{ employee.duty_time_end|time:"H:i" }}</td>    <!-- New column -->
                             <td class="text-center">
                                 <i class="fas fa-eye text-primary" 
                                    data-bs-toggle="tooltip" 
@@ -869,12 +873,12 @@ function updateHolidayInUI(date) {
 
         // Update attendance cells for each employee
         document.querySelectorAll('#attendanceBody tr').forEach(row => {
-            // Remove any existing day cells (except the fixed columns)
-            const fixedCells = Array.from(row.children).slice(0, 4); // Changed from 4 to 3 since we removed the percentage column
-            row.innerHTML = '';
-            
-            // Add back the fixed cells
-            fixedCells.forEach(cell => row.appendChild(cell));
+                // Remove any existing day cells (except the fixed columns)
+                const fixedCells = Array.from(row.children).slice(0, 6); // Changed from 4 to 6 to keep the new columns
+                row.innerHTML = '';
+                
+                // Add back the fixed cells
+                fixedCells.forEach(cell => row.appendChild(cell));
             
             // Get employee ID from the data attribute
             const employeeId = row.getAttribute('data-employee-id');
