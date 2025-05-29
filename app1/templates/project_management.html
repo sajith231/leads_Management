@@ -212,6 +212,7 @@
                     <tr>
                         <th class="px-4 py-3 text-left">Client</th>
                         <th class="px-4 py-3 text-left  left-0 z-10 bg-blue-100">Project Name</th>
+                        <th class="px-4 py-3 text-left">Notes</th>
                         <th class="px-4 py-3 text-left">Domain Name</th>
                         
                         <th class="px-4 py-3 text-left">Assigned Person</th>
@@ -221,7 +222,7 @@
                         <th class="px-4 py-3 text-left">Languages</th>
                         <th class="px-4 py-3 text-left">Technologies</th>
                         <th class="px-4 py-3 text-left">Database</th>
-                        <th class="px-4 py-3 text-left">Notes</th>
+                        
                         
                         
                         
@@ -253,17 +254,24 @@
             <span class="cursor-pointer">{{ project.project_name }}</span>
             
             <!-- Hover Popup -->
-            <div class="hover-popup">
-                <h4>Project Notes</h4>
-                <div class="hover-popup-content">
-                    {% if project.notes %}
+            
+        </td>
+        <td class="px-4 py-2 text-start">
+            <button onclick="openModal('{{ project.id }}')" class="text-blue-600 hover:text-blue-800">
+                <i class="fas fa-info-circle"></i>
+            </button>
+        
+            <!-- Modal for Notes -->
+            <div id="modal-{{ project.id }}" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50">
+                <div class="bg-white rounded-lg shadow-lg w-11/12 max-w-2xl p-6 relative">
+                    <h3 class="text-xl font-semibold mb-4">Project Notes</h3>
+                    <div class="text-gray-700 rich-text-content">
                         {{ project.notes|safe }}
-                    {% else %}
-                        <em>No notes available for this project.</em>
-                    {% endif %}
+                    </div>
+                    <button onclick="closeModal('{{ project.id }}')" class="absolute top-2 right-3 text-gray-600 hover:text-gray-800 text-xl">&times;</button>
                 </div>
             </div>
-        </td>
+        </td>    
         <td class="px-4 py-2">{{ project.domain_name }}</td>
         
         <td class="px-4 py-2">
@@ -322,22 +330,7 @@
                 </div>
             </div>
         </td> 
-        <td class="px-4 py-2 text-start">
-            <button onclick="openModal('{{ project.id }}')" class="text-blue-600 hover:text-blue-800">
-                <i class="fas fa-info-circle"></i>
-            </button>
-        
-            <!-- Modal for Notes -->
-            <div id="modal-{{ project.id }}" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50">
-                <div class="bg-white rounded-lg shadow-lg w-11/12 max-w-2xl p-6 relative">
-                    <h3 class="text-xl font-semibold mb-4">Project Notes</h3>
-                    <div class="text-gray-700 rich-text-content">
-                        {{ project.notes|safe }}
-                    </div>
-                    <button onclick="closeModal('{{ project.id }}')" class="absolute top-2 right-3 text-gray-600 hover:text-gray-800 text-xl">&times;</button>
-                </div>
-            </div>
-        </td>                              
+                                  
         <td class="px-4 py-2">
             <a href="{{ project.github_link }}" class="text-blue-600 hover:underline" target="_blank">GitHub</a>
         </td>

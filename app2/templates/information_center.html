@@ -3,15 +3,14 @@
 {% block content %}
 <style>
     /* Filter Styles */
-    body{
+    body {
         background-color: black;
     }
     .filter-container {
         margin-bottom: 10px;
-        background-color:black;
+        background-color: black;
         border-radius: 8px;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-        
     }
 
     .filter-form {
@@ -92,13 +91,13 @@
         padding: 20px 0;
         background-color: black;
     }
-    
+
     .container {
         max-width: 1200px;
         margin: 0 auto;
         padding: 0 15px;
     }
-    
+
     /* Header Styles */
     .header {
         display: flex;
@@ -108,14 +107,14 @@
         padding-bottom: 20px;
         border-bottom: 1px solid #e9ecef;
     }
-    
+
     .title {
         font-size: 2rem;
         font-weight: 700;
         color: #212529;
         margin: 0;
     }
-    
+
     .add-btn {
         display: flex;
         align-items: center;
@@ -128,11 +127,11 @@
         transition: background-color 0.2s;
         margin-right: 10px;
     }
-    
+
     .add-btn:hover {
         background-color: #0069d9;
     }
-    
+
     .add-btn .icon {
         margin-right: 8px;
     }
@@ -149,7 +148,7 @@
     .category-header {
         background: linear-gradient(135deg, red 0%, rgb(83, 0, 0) 100%);
         color: white;
-        padding: 20px 25px;
+        padding: 10px 15px;
         border-bottom: 3px solid rgba(255, 255, 255, 0.1);
     }
 
@@ -167,57 +166,19 @@
         height: 24px;
     }
 
-    .product-type-section {
-        padding: 25px;
-        border-bottom: 1px solid #e9ecef;
-    }
-
-    .product-type-section:last-child {
-        border-bottom: none;
-    }
-
-    .product-type-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 20px;
-    }
-
-    .product-type-title {
-        font-size: 1.25rem;
-        font-weight: 600;
-        color: #495057;
-        margin: 0;
-        display: flex;
-        align-items: center;
-    }
-
-    .product-type-icon {
-        margin-right: 8px;
-        width: 20px;
-        height: 20px;
-        color: #6c757d;
-    }
-
-    .item-count {
-        background-color: #e9ecef;
-        color: #495057;
-        padding: 4px 12px;
-        border-radius: 20px;
-        font-size: 0.875rem;
-        font-weight: 500;
-    }
-
     /* Gallery Styles */
     .gallery-container {
         position: relative;
+        padding: 20px 0;
     }
 
     .gallery-wrapper {
-    overflow-x: auto;
-    scroll-behavior: smooth;
-    white-space: nowrap;
-}
+        overflow-x: auto;
+        scroll-behavior: smooth;
+        white-space: nowrap;
+        padding: 0 20px;
+        -webkit-overflow-scrolling: touch;
+    }
 
     .gallery-track {
         display: inline-flex;
@@ -227,11 +188,15 @@
 
     .gallery-item {
         width: 300px;
-        background-color: #f8f9fa;
+        background: linear-gradient(red, rgb(128, 0, 0));
         border-radius: 8px;
         overflow: hidden;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         transition: transform 0.2s, box-shadow 0.2s;
+        margin: 1% 0;
+        display: inline-block;
+        vertical-align: top;
+        white-space: normal;
     }
 
     .gallery-item:hover {
@@ -292,7 +257,7 @@
     .item-title {
         font-size: 1rem;
         font-weight: 600;
-        color: #343a40;
+        color: white;
         margin: 0 0 8px 0;
         line-height: 1.4;
         display: -webkit-box;
@@ -302,24 +267,23 @@
     }
 
     .item-remark {
-        color: #6c757d;
+        color: white;
         font-size: 0.875rem;
         margin: 0 0 12px 0;
         line-height: 1.5;
     }
 
     .description.clamp {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-}
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
 
-.description {
-    white-space: normal;
-    overflow: visible;
-}
-
+    .description {
+        white-space: normal;
+        overflow: visible;
+    }
 
     .more-btn {
         background-color: red;
@@ -341,7 +305,7 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        color: #adb5bd;
+        color: white;
         font-size: 0.75rem;
     }
 
@@ -401,11 +365,11 @@
     }
 
     .nav-btn.prev {
-        left: -20px;
+        left: 0;
     }
 
     .nav-btn.next {
-        right: -20px;
+        right: 0;
     }
 
     .nav-btn:disabled {
@@ -450,7 +414,7 @@
         justify-content: center;
         align-items: center;
     }
-    
+
     .modal-content {
         background-color: white;
         padding: 25px;
@@ -459,23 +423,23 @@
         max-width: 400px;
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
     }
-    
+
     .modal-content h3 {
         margin-top: 0;
         color: #343a40;
     }
-    
+
     .modal-content p {
         margin-bottom: 20px;
         color: #6c757d;
     }
-    
+
     .modal-actions {
         display: flex;
         justify-content: flex-end;
         gap: 10px;
     }
-    
+
     .btn-secondary {
         background-color: #f8f9fa;
         color: #495057;
@@ -485,11 +449,11 @@
         cursor: pointer;
         transition: background-color 0.2s;
     }
-    
+
     .btn-secondary:hover {
         background-color: #e9ecef;
     }
-    
+
     .btn-danger {
         background-color: #dc3545;
         color: white;
@@ -499,7 +463,7 @@
         cursor: pointer;
         transition: background-color 0.2s;
     }
-    
+
     .btn-danger:hover {
         background-color: #c82333;
     }
@@ -510,7 +474,7 @@
             flex-direction: column;
             gap: 15px;
         }
-        
+
         .filter-group {
             width: 100%;
         }
@@ -540,11 +504,11 @@
         }
 
         .nav-btn.prev {
-            left: -15px;
+            left: 0;
         }
 
         .nav-btn.next {
-            right: -15px;
+            right: 0;
         }
 
         .category-header {
@@ -573,7 +537,7 @@
         Product Type
     </a>
     {% endif %}
-                <h1 class="title" style="color: white;">IMC CONNECT</h1>
+    <h1 class="title" style="color: white;">IMC CONNECT</h1>
     {% if request.user.is_superuser or 'product_category_list' in request.session.allowed_menus %}
     <a href="{% url 'product_category_list' %}" class="add-btn" style="background:linear-gradient(red,rgb(128, 0, 0))">
         Category
@@ -616,7 +580,7 @@
             <div class="filter-group">
                 <a href="{% url 'information_center' %}" class="reset-btn">Reset Filters</a>
             </div>
-              {% if request.user.is_superuser or 'add_information_center' in request.session.allowed_menus %}
+            {% if request.user.is_superuser or 'add_information_center' in request.session.allowed_menus %}
             <a href="{% url 'add_information_center' %}" class="add-btn" style="background:linear-gradient(red,rgb(128, 0, 0))">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon">
                     <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -632,8 +596,6 @@
 <div class="information-center">
     <div class="container-fluid">
         <div class="header">
-
-          
         </div>
         
         <!-- Categorized Content -->
@@ -651,94 +613,75 @@
                         </h2>
                     </div>
                     
-                    {% regroup category_group.list by product_type as type_list %}
-                    {% for type_group in type_list %}
-                        <div class="product-type-section">
-                            <div class="product-type-header">
-                                <h3 class="product-type-title" style="color: white;">
-                                    <svg class="product-type-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                                        <line x1="16" y1="2" x2="16" y2="6"></line>
-                                        <line x1="8" y1="2" x2="8" y2="6"></line>
-                                        <line x1="3" y1="10" x2="21" y2="10"></line>
-                                    </svg>
-                                    {{ type_group.grouper.name|default:"Uncategorized Type" }}
-                                </h3>
-                                <span class="item-count">{{ type_group.list|length }} item{{ type_group.list|length|pluralize }}</span>
-                            </div>
-                            
-                            <div class="gallery-container" data-gallery="gallery-{{ forloop.parentloop.counter }}-{{ forloop.counter }}">
-                                <button class="nav-btn prev" onclick="moveGallery('gallery-{{ forloop.parentloop.counter }}-{{ forloop.counter }}', -1)">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <polyline points="15 18 9 12 15 6"></polyline>
-                                    </svg>
-                                </button>
-                                
-                                <div class="gallery-wrapper">
-                                    <div class="gallery-track" id="gallery-{{ forloop.parentloop.counter }}-{{ forloop.counter }}">
-                                        {% for item in type_group.list %}
-                                        <div class="gallery-item" style="background:linear-gradient(red,rgb(128, 0, 0))" >
-                                            <div class="thumbnail-container"> 
-                                                <a href="{{ item.url }}" target="_blank" class="thumbnail-link" >
-                                                    {% if item.thumbnail %}
-                                                        <img src="{{ item.thumbnail.url }}" alt="{{ item.title }}" class="thumbnail">
-                                                    {% else %}
-                                                        <img src="{% static 'default-thumbnail.jpg' %}" alt="No Thumbnail" class="thumbnail">
-                                                    {% endif %}
-                                                    <div class="play-overlay">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="play-icon">
-                                                            <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                                                        </svg>
-                                                    </div>
-                                                </a>
+                    <div class="gallery-container" data-gallery="gallery-{{ category_group.grouper.id }}">
+                        <button class="nav-btn prev" onclick="moveGallery('gallery-{{ category_group.grouper.id }}', -1)">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="15 18 9 12 15 6"></polyline>
+                            </svg>
+                        </button>
+                        
+                        <div class="gallery-wrapper">
+                            <div class="gallery-track" id="gallery-{{ category_group.grouper.id }}">
+                                {% for item in category_group.list %}
+                                <div class="gallery-item">
+                                    <div class="thumbnail-container"> 
+                                        <a href="{{ item.url }}" target="_blank" class="thumbnail-link">
+                                            {% if item.thumbnail %}
+                                                <img src="{{ item.thumbnail.url }}" alt="{{ item.title }}" class="thumbnail">
+                                            {% else %}
+                                                <img src="{% static 'default-thumbnail.jpg' %}" alt="No Thumbnail" class="thumbnail">
+                                            {% endif %}
+                                            <div class="play-overlay">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="play-icon">
+                                                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                                                </svg>
                                             </div>
-                                            
-                                            <div class="item-content">
-                                                <h4 class="item-title" style="color: white;">{{ item.title }}</h4>
-                                                <div class="item-remark">
-                                                    <p class="description" data-full="{{ item.remark }}" style="color: white;">{{ item.remark|truncatewords:8 }}</p>
-
-                                                    {% if item.remark|wordcount > 8 %}
-                                                    <button class="more-btn" onclick="toggleDescription(this)">More</button>
-                                                    {% endif %}
-                                                </div>
-                                                <div class="item-meta">
-                                                    <span class="date" style="color: white;">{{ item.added_date|date:"M d" }}</span>
-                                                    <div class="item-actions">
-                                                        {% if request.user.is_superuser or 'edit_information_center' in request.session.allowed_menus %}
-                                                        <a href="{% url 'edit_information_center' item.id %}" class="action-btn edit">
-                                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                                                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                                                            </svg>
-                                                        </a>
-                                                        {% endif %}
-                                                        {% if request.user.is_superuser or 'delete_information_center' in request.session.allowed_menus %}
-                                                        <button class="action-btn delete" onclick="openDeleteModal({{ item.id }})">
-                                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                                <polyline points="3 6 5 6 21 6"></polyline>
-                                                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                                                <line x1="10" y1="11" x2="10" y2="17"></line>
-                                                                <line x1="14" y1="11" x2="14" y2="17"></line>
-                                                            </svg>
-                                                        </button>
-                                                        {% endif %}
-                                                    </div>
-                                                </div>
+                                        </a>
+                                    </div>
+                                    
+                                    <div class="item-content">
+                                        <h4 class="item-title">{{ item.title }}</h4>
+                                        <div class="item-remark">
+                                            <p class="description" data-full="{{ item.remark }}">{{ item.remark|truncatewords:8 }}</p>
+                                            {% if item.remark|wordcount > 8 %}
+                                            <button class="more-btn" onclick="toggleDescription(this)">More</button>
+                                            {% endif %}
+                                        </div>
+                                        <div class="item-meta">
+                                            <span class="date">{{ item.added_date|date:"M d" }}</span>
+                                            <div class="item-actions">
+                                                {% if request.user.is_superuser or 'edit_information_center' in request.session.allowed_menus %}
+                                                <a href="{% url 'edit_information_center' item.id %}" class="action-btn edit">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                                    </svg>
+                                                </a>
+                                                {% endif %}
+                                                {% if request.user.is_superuser or 'delete_information_center' in request.session.allowed_menus %}
+                                                <button class="action-btn delete" onclick="openDeleteModal({{ item.id }})">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <polyline points="3 6 5 6 21 6"></polyline>
+                                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                                        <line x1="10" y1="11" x2="10" y2="17"></line>
+                                                        <line x1="14" y1="11" x2="14" y2="17"></line>
+                                                    </svg>
+                                                </button>
+                                                {% endif %}
                                             </div>
                                         </div>
-                                        {% endfor %}
                                     </div>
                                 </div>
-                                
-                                <button class="nav-btn next" onclick="moveGallery('gallery-{{ forloop.parentloop.counter }}-{{ forloop.counter }}', 1)">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <polyline points="9 18 15 12 9 6"></polyline>
-                                    </svg>
-                                </button>
+                                {% endfor %}
                             </div>
                         </div>
-                    {% endfor %}
+                        
+                        <button class="nav-btn next" onclick="moveGallery('gallery-{{ category_group.grouper.id }}', 1)">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="9 18 15 12 9 6"></polyline>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
             {% endfor %}
         {% else %}
@@ -822,16 +765,18 @@
         Object.keys(galleryPositions).forEach(galleryId => {
             galleryPositions[galleryId] = 0;
             const track = document.getElementById(galleryId);
-            track.style.transform = 'translateX(0px)';
-            
-            const container = document.querySelector(`[data-gallery="${galleryId}"]`);
-            const items = track.children;
-            const itemWidth = items[0] ? items[0].offsetWidth + 20 : 300;
-            const containerWidth = container.querySelector('.gallery-wrapper').offsetWidth;
-            const visibleItems = Math.floor(containerWidth / itemWidth);
-            const maxPosition = Math.max(0, items.length - visibleItems);
-            
-            updateNavigationButtons(galleryId, maxPosition);
+            if (track) {
+                track.style.transform = 'translateX(0px)';
+                
+                const container = document.querySelector(`[data-gallery="${galleryId}"]`);
+                const items = track.children;
+                const itemWidth = items[0] ? items[0].offsetWidth + 20 : 300;
+                const containerWidth = container.querySelector('.gallery-wrapper').offsetWidth;
+                const visibleItems = Math.floor(containerWidth / itemWidth);
+                const maxPosition = Math.max(0, items.length - visibleItems);
+                
+                updateNavigationButtons(galleryId, maxPosition);
+            }
         });
     });
 
@@ -861,31 +806,30 @@
     }
 
     // Toggle Description Function
-   function toggleDescription(button) {
-    const descriptionEl = button.previousElementSibling;
-    const fullText = descriptionEl.getAttribute('data-full')?.trim();
-    const isExpanded = button.getAttribute('data-expanded') === 'true';
+    function toggleDescription(button) {
+        const descriptionEl = button.previousElementSibling;
+        const fullText = descriptionEl.getAttribute('data-full')?.trim();
+        const isExpanded = button.getAttribute('data-expanded') === 'true';
 
-    if (!fullText) return;
+        if (!fullText) return;
 
-    if (isExpanded) {
-        // Collapse
-        const words = fullText.split(/\s+/);
-        const truncated = words.slice(0, 8).join(' ') + (words.length > 8 ? '...' : '');
-        descriptionEl.textContent = truncated;
-        descriptionEl.classList.add('clamp'); // add clamp class back
-        button.textContent = 'More';
-        button.setAttribute('data-expanded', 'false');
-    } else {
-        // Expand
-        descriptionEl.textContent = fullText;
-        descriptionEl.classList.remove('clamp'); // remove line-clamping
-        button.textContent = 'Less';
-        button.setAttribute('data-expanded', 'true');
+        if (isExpanded) {
+            // Collapse
+            const words = fullText.split(/\s+/);
+            const truncated = words.slice(0, 8).join(' ') + (words.length > 8 ? '...' : '');
+            descriptionEl.textContent = truncated;
+            descriptionEl.classList.add('clamp'); // add clamp class back
+            button.textContent = 'More';
+            button.setAttribute('data-expanded', 'false');
+        } else {
+            // Expand
+            descriptionEl.textContent = fullText;
+            descriptionEl.classList.remove('clamp'); // remove line-clamping
+            button.textContent = 'Less';
+            button.setAttribute('data-expanded', 'true');
+        }
     }
-}
 
-   
     // Search functionality
     document.addEventListener('DOMContentLoaded', function() {
         const searchInput = document.getElementById('search-title');
@@ -1031,6 +975,5 @@
             }
         }, interval);
     }
-
 </script>
 {% endblock %}
