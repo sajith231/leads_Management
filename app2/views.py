@@ -467,7 +467,7 @@ def daily_task_admin(request):
     if status_filter:
         daily_tasks = daily_tasks.filter(status=status_filter)
     if user_filter:
-        daily_tasks = daily_tasks.filter(added_by_id=user_filter)  # Filter by user ID
+        daily_tasks = daily_tasks.filter(added_by_id=user_filter)  # Filter by user_id
     if project_filter:
         daily_tasks = daily_tasks.filter(project=project_filter)  # Filter by project
     if start_date:
