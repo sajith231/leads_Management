@@ -232,11 +232,13 @@ from django.views.generic import ListView
 from .models import InformationCenter, ProductType, ProductCategory
 from django.contrib.auth.decorators import login_required
 
+from django.utils import timezone
+from datetime import timedelta
+
 class InformationCenterListView(ListView):
     model = InformationCenter
     template_name = 'information_center.html'
     context_object_name = 'information_items'
-    # Changed ordering to group by category first, then by date
     ordering = ['product_category__name', '-added_date']
     
     def get_queryset(self):
@@ -263,6 +265,12 @@ class InformationCenterListView(ListView):
         context = super().get_context_data(**kwargs)
         context['product_types'] = ProductType.objects.all()
         context['product_categories'] = ProductCategory.objects.all()
+        
+        # Get items from the last two days
+        two_days_ago = timezone.now() - timedelta(days=1)
+        whats_new_items = InformationCenter.objects.filter(added_date__gte=two_days_ago).order_by('-added_date')
+        context['whats_new_items'] = whats_new_items
+        
         return context
 
 @login_required
@@ -276,6 +284,9 @@ def add_information_center(request):
         product_category_id = request.POST.get('product_category')
         thumbnail = request.FILES.get('thumbnail')
         priority = request.POST.get('priority')
+        language = request.POST.get('language')  # New field
+        duration = request.POST.get('duration')  # New field
+        host = request.POST.get('host')  # New field
         
         product_type = ProductType.objects.get(id=product_type_id)
         product_category = ProductCategory.objects.get(id=product_category_id)
@@ -289,7 +300,10 @@ def add_information_center(request):
             product_type=product_type,
             product_category=product_category,
             thumbnail=thumbnail,
-            priority=priority
+            priority=priority,
+            language=language,  # New field
+            duration=duration,  # New field
+            host=host  # New field
         )
         return redirect('information_center')
     
@@ -300,7 +314,6 @@ def add_information_center(request):
         'product_types': product_types,
         'product_categories': product_categories,
     })
-
 
 # views.py
 from django.shortcuts import render, redirect, get_object_or_404
@@ -320,6 +333,9 @@ def edit_information_center(request, pk):
         item.product_type_id = request.POST.get('product_type')
         item.product_category_id = request.POST.get('product_category')
         item.priority = request.POST.get('priority')
+        item.language = request.POST.get('language')  # New field
+        item.duration = request.POST.get('duration')  # New field
+        item.host = request.POST.get('host')  # New field
         
         if 'thumbnail' in request.FILES:
             item.thumbnail = request.FILES['thumbnail']
@@ -602,3 +618,30 @@ def delete_daily_task(request, task_id):
     task.delete()
     messages.success(request, 'Task deleted successfully!')
     return redirect('daily_task_user')
+
+
+
+
+from .models import InformationCenter, ProductCategory
+
+@login_required
+def category_detail(request, category_id):
+    category = get_object_or_404(ProductCategory, id=category_id)
+    product_type_id = request.GET.get('product_type')
+    
+    items = InformationCenter.objects.filter(product_category_id=category_id)
+
+    # Filter by product_type if provided
+    if product_type_id:
+        items = items.filter(product_type_id=product_type_id)
+    
+    items = items.order_by('-added_date')
+    product_types = ProductType.objects.all()
+    
+    return render(request, 'category_detail.html', {
+        'category': category,
+        'items': items,
+        'product_types': product_types,
+        'selected_product_type': product_type_id
+    })
+

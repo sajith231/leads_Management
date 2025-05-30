@@ -80,6 +80,9 @@ class InformationCenter(models.Model):
     product_category = models.ForeignKey(ProductCategory, on_delete=models.CASCADE)
     thumbnail = models.ImageField(upload_to='information_thumbnails/')
     priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES)
+    language = models.CharField(max_length=50, blank=True)  #CREATED AS NEW
+    duration = models.CharField(max_length=50, blank=True)  #CREATED AS NEW
+    host = models.CharField(max_length=255, blank=True)  # CREATED AS NEW
     
     def __str__(self):
         return self.title

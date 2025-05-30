@@ -255,7 +255,7 @@
     }
 
     .item-title {
-        font-size: 1rem;
+        font-size: 20px;
         font-weight: 600;
         color: white;
         margin: 0 0 8px 0;
@@ -467,6 +467,9 @@
     .btn-danger:hover {
         background-color: #c82333;
     }
+    .additional-info{
+        color: white;
+    }
 
     /* Responsive Styles */
     @media (max-width: 768px) {
@@ -530,7 +533,64 @@
         }
     }
 </style>
+<style>
+    .explore-button-container {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        margin-left: auto;
+        padding-left: 20px;
+    }
 
+    .explore-btn {
+        background: linear-gradient(rgb(61, 1, 1), rgb(122, 5, 5));
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        text-decoration: none;
+        white-space: nowrap;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+    }
+
+    .explore-btn:hover {
+        background: linear-gradient(rgb(82, 2, 2), rgb(143, 6, 6));
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Mobile Responsive Styles */
+    @media (max-width: 768px) {
+        .category-title {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 15px;
+        }
+
+        .explore-button-container {
+            width: 100%;
+            justify-content: center;
+            padding-left: 0;
+            margin-left: 0;
+        }
+
+        .explore-btn {
+            width: 100%;
+            text-align: center;
+            padding: 12px 20px;
+            font-size: 1rem;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .explore-btn {
+            padding: 10px 15px;
+            font-size: 0.9rem;
+        }
+    }
+</style>
 <div class="header" style="margin-top: 3.5%; display: flex;">
     {% if request.user.is_superuser or 'product_type_list' in request.session.allowed_menus %}
     <a href="{% url 'product_type_list' %}" class="add-btn" style="background:linear-gradient(red,rgb(128, 0, 0))">
@@ -597,6 +657,94 @@
     <div class="container-fluid">
         <div class="header">
         </div>
+
+        <!-- What's New Section -->
+<div class="category-section">
+    <div class="category-header">
+        <h2 class="category-title">
+            <svg class="category-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+            </svg>
+            <span>What's New</span>
+        </h2>
+    </div>
+    
+    <div class="gallery-container" data-gallery="whats-new-gallery">
+        <button class="nav-btn prev" onclick="moveGallery('whats-new-gallery', -1)">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+        </button>
+        
+        <div class="gallery-wrapper">
+            <div class="gallery-track" id="whats-new-gallery">
+                {% for item in whats_new_items %}
+                <div class="gallery-item">
+                    <div class="thumbnail-container"> 
+                        <a href="{{ item.url }}" target="_blank" class="thumbnail-link">
+                            {% if item.thumbnail %}
+                                <img src="{{ item.thumbnail.url }}" alt="{{ item.title }}" class="thumbnail">
+                            {% else %}
+                                <img src="{% static 'default-thumbnail.jpg' %}" alt="No Thumbnail" class="thumbnail">
+                            {% endif %}
+                            <div class="play-overlay">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="play-icon">
+                                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                                </svg>
+                            </div>
+                        </a>
+                    </div>
+                    
+                    <div class="item-content">
+                        <h4 class="item-title">{{ item.title }}</h4>
+                        <div class="item-remark">
+                            <p class="description" data-full="{{ item.remark }}">{{ item.remark|truncatewords:8 }}</p>
+                            {% if item.remark|wordcount > 8 %}
+                            <button class="more-btn" onclick="toggleDescription(this)">More</button>
+                            {% endif %}
+                        </div>
+                        <div class="additional-info">
+                            <p><strong>Language:</strong> {{ item.language }}</p>
+                            <p><strong>Duration:</strong> {{ item.duration }}</p>
+                            <p><strong>Host:</strong> {{ item.host }}</p>
+                        </div>
+                        <div class="item-meta">
+                            <span class="date">{{ item.added_date|date:"M d" }}</span>
+                            <div class="item-actions">
+                                {% if request.user.is_superuser or 'edit_information_center' in request.session.allowed_menus %}
+                                <a href="{% url 'edit_information_center' item.id %}" class="action-btn edit">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                    </svg>
+                                </a>
+                                {% endif %}
+                                {% if request.user.is_superuser or 'delete_information_center' in request.session.allowed_menus %}
+                                <button class="action-btn delete" onclick="openDeleteModal({{ item.id }})">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="3 6 5 6 21 6"></polyline>
+                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                        <line x1="10" y1="11" x2="10" y2="17"></line>
+                                        <line x1="14" y1="11" x2="14" y2="17"></line>
+                                    </svg>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <button class="nav-btn next" onclick="moveGallery('whats-new-gallery', 1)">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+        </button>
+    </div>
+</div>
         
         <!-- Categorized Content -->
         {% regroup information_items by product_category as category_list %}
@@ -610,6 +758,12 @@
                                 <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
                             </svg>
                             <span>{{ category_group.grouper.name|default:"Uncategorized" }}</span>
+                            <div class="explore-button-container">
+                                <a href="" class="explore-btn">
+                                    Explore More
+                                    {% url 'category_detail' category_group.grouper.id %}
+                                </a>
+                            </div>
                         </h2>
                     </div>
                     
@@ -646,6 +800,11 @@
                                             {% if item.remark|wordcount > 8 %}
                                             <button class="more-btn" onclick="toggleDescription(this)">More</button>
                                             {% endif %}
+                                        </div>
+                                        <div class="additional-info">
+                                            <p><strong>Language:</strong> {{ item.language }}</p>
+                                            <p><strong>Duration:</strong> {{ item.duration }}</p>
+                                            <p><strong>Host:</strong> {{ item.host }}</p>
                                         </div>
                                         <div class="item-meta">
                                             <span class="date">{{ item.added_date|date:"M d" }}</span>
