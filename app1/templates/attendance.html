@@ -1163,8 +1163,9 @@ function updateAttendanceIcon(icon, status, punchIn, punchOut) {
     const employeeId = document.getElementById('employeeName').getAttribute('data-id');
     const date = modal.getAttribute('data-date');
     const status = document.getElementById('attendanceStatus').value;
+    const note = document.getElementById('attendanceNote').value; // Get the note value
     const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content");
-    const isSuperuser = {% if is_superuser %}true{% else %}false{% endif %};
+    const isSuperuser = {{ is_superuser|lower }};
 
     // Determine verified status
     let verifiedStatus;
@@ -1195,7 +1196,8 @@ function updateAttendanceIcon(icon, status, punchIn, punchOut) {
         body: JSON.stringify({
             employee_id: employeeId,
             date: date,
-            status: verifiedStatus
+            status: verifiedStatus,
+            note: note // Include the note in the data
         })
     })
     .then(response => response.json())
@@ -1212,6 +1214,12 @@ function updateAttendanceIcon(icon, status, punchIn, punchOut) {
             
             // Show success message
             alert("Attendance verified successfully!");
+            
+            // Disable buttons after verification unless superuser
+            if (!isSuperuser) {
+                document.getElementById('updateAttendanceBtn').disabled = true;
+                document.getElementById('verifyAttendanceBtn').disabled = true;
+            }
         } else {
             alert("Error verifying attendance: " + (data.error || "Unknown error"));
         }
@@ -1602,9 +1610,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const employeeId = document.getElementById('employeeName').getAttribute('data-id');
     const date = modal.getAttribute('data-date');
     const status = document.getElementById('attendanceStatus').value;
-    const note = document.getElementById('attendanceNote').value; // Get the note value
     const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content");
-    const isSuperuser = {% if is_superuser %}true{% else %}false{% endif %};
+    const isSuperuser = {{ is_superuser|lower }};
 
     // Determine verified status
     let verifiedStatus;
@@ -1635,8 +1642,7 @@ document.addEventListener('DOMContentLoaded', function() {
         body: JSON.stringify({
             employee_id: employeeId,
             date: date,
-            status: verifiedStatus,
-            note: note // Include the note in the data
+            status: status
         })
     })
     .then(response => response.json())
