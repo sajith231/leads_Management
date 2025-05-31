@@ -175,8 +175,9 @@
         </div>
     {% endif %}
 
-    <a href="{% url 'add_reminder' %}" class="add-button">Add New Reminder</a>
+    
     <div>
+        
         <form method="GET" class="mb-3">
             <label for="start_date" class="fw-bold">From:</label>
             <input type="date" name="start_date" id="start_date" class="form-control d-inline-block w-auto" value="{{ request.GET.start_date }}">
@@ -189,8 +190,11 @@
             
             <button type="button" id="okBtn" class="btn btn-primary ms-2">OK</button>
             <button type="button" id="todayReminderBtn" class="btn btn-secondary ms-2">Today Reminders</button>
+            <a href="{% url 'add_reminder' %}" class="add-button" style="margin-left: 8%;">Add New</a>
+            
         </form>
     </div>
+    
     
     <div class="table-container">
         <table>
