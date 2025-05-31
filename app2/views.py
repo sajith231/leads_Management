@@ -635,7 +635,7 @@ def category_detail(request, category_id):
     if product_type_id:
         items = items.filter(product_type_id=product_type_id)
     
-    items = items.order_by('-added_date')
+    items = items.order_by('product_type__name', '-added_date')
     product_types = ProductType.objects.all()
     
     return render(request, 'category_detail.html', {

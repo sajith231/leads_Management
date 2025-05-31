@@ -151,6 +151,13 @@
         padding: 10px 15px;
         border-bottom: 3px solid rgba(255, 255, 255, 0.1);
     }
+    .whatsnew-header{
+        background: linear-gradient(135deg, rgb(0, 170, 255) 0%, rgb(0, 120, 212) 100%);
+        color: white;
+        padding: 10px 15px;
+        border-bottom: 3px solid rgba(255, 255, 255, 0.1);
+
+    }
 
     .category-title {
         font-size: 1.5rem;
@@ -197,6 +204,19 @@
         display: inline-block;
         vertical-align: top;
         white-space: normal;
+    }
+    .whats-new-gallery{
+        width: 300px;
+        background: linear-gradient(#007bff, #007bff);
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s, box-shadow 0.2s;
+        margin: 1% 0;
+        display: inline-block;
+        vertical-align: top;
+        white-space: normal;
+
     }
 
     .gallery-item:hover {
@@ -467,9 +487,27 @@
     .btn-danger:hover {
         background-color: #c82333;
     }
-    .additional-info{
-        color: white;
-    }
+    .additional-info {
+    color: white;             /* text color */
+    font-size: 15px;
+    font-weight: 500;
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;          /* allow wrapping on small screens */
+    padding: 5px 0px;         /* optional padding for better spacing */
+    margin: 5px;              /* optional margin for better spacing */
+    white-space: normal;      /* allow text to wrap */
+}
+
+.additional-info p {
+    margin: 0;                /* remove default margin */
+    white-space: normal;      /* allow text to wrap */
+    background-color: rgba(255, 255, 255, 0.193);
+    padding: 5px;             /* keep individual items in one line */
+    border-radius: 100px;
+    flex: 1 1 auto;           /* allow paragraphs to grow and shrink */
+}
+
 
     /* Responsive Styles */
     @media (max-width: 768px) {
@@ -660,7 +698,7 @@
 
         <!-- What's New Section -->
 <div class="category-section">
-    <div class="category-header">
+    <div class="whatsnew-header">
         <h2 class="category-title">
             <svg class="category-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
@@ -680,7 +718,7 @@
         <div class="gallery-wrapper">
             <div class="gallery-track" id="whats-new-gallery">
                 {% for item in whats_new_items %}
-                <div class="gallery-item">
+                <div class="whats-new-gallery" >
                     <div class="thumbnail-container"> 
                         <a href="{{ item.url }}" target="_blank" class="thumbnail-link">
                             {% if item.thumbnail %}
@@ -696,7 +734,7 @@
                         </a>
                     </div>
                     
-                    <div class="item-content">
+                    <div class="item-content" style="background-color: #007bff;">
                         <h4 class="item-title">{{ item.title }}</h4>
                         <div class="item-remark">
                             <p class="description" data-full="{{ item.remark }}">{{ item.remark|truncatewords:8 }}</p>
@@ -705,9 +743,9 @@
                             {% endif %}
                         </div>
                         <div class="additional-info">
-                            <p><strong>Language:</strong> {{ item.language }}</p>
-                            <p><strong>Duration:</strong> {{ item.duration }}</p>
-                            <p><strong>Host:</strong> {{ item.host }}</p>
+                            <p style> {{ item.language }}</p>
+                            <p> {{ item.duration }}</p>
+                            <p>{{ item.host }}</p>
                         </div>
                         <div class="item-meta">
                             <span class="date">{{ item.added_date|date:"M d" }}</span>
@@ -802,9 +840,9 @@
                                             {% endif %}
                                         </div>
                                         <div class="additional-info">
-                                            <p><strong>Language:</strong> {{ item.language }}</p>
-                                            <p><strong>Duration:</strong> {{ item.duration }}</p>
-                                            <p><strong>Host:</strong> {{ item.host }}</p>
+                                            <p> {{ item.language }}</p>
+                                            <p> {{ item.duration }}</p>
+                                            <p>{{ item.host }}</p>
                                         </div>
                                         <div class="item-meta">
                                             <span class="date">{{ item.added_date|date:"M d" }}</span>

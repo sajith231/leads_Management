@@ -14,22 +14,15 @@
     <link rel="icon" type="image/png" href="{% static 'images/sysmaclogo.png' %}" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     
-
-
-
-
-
     <title>Administration Management</title>
+    
     <style>
-       
         th {
-    text-transform: capitalize;
-    font-weight: 500;
-}
+            text-transform: capitalize;
+            font-weight: 500;
+        }
 
-
-        td,
-        th {
+        td, th {
             white-space: nowrap;
         }
 
@@ -37,135 +30,32 @@
             font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
         }
         
-    </style>
-    <style>
-        /* Your existing styles */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-
-
-        }
-
-
-
-        .content {
-            margin-left: 260px;
-            padding: 20px;
-            transition: 0.3s;
-        }
-
-        .hamburger {
-            display: none;
-            position: fixed;
-            top: 20px;
-            left: 0px;
-            z-index: 1001;
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: 10px;
-            background-color: #333;
-            border-radius: 5px;
-        }
-
-        .hamburger span {
-            display: block;
-            width: 25px;
-            height: 3px;
-            background-color: white;
-            margin: 5px 0;
-            transition: 0.3s;
-        }
-
-        @media (max-width: 768px) {
-            .logo {
-
-                margin-bottom: 5%;
-            }
-
-            .hamburger {
-                display: block;
-            }
-
-            .submenu a {
-                padding: 8px 0;
-                font-size: 1em;
-                color: #bbb;
-                margin-left: 10%;
-            }
-
-
-
-            .content {
-                margin-left: 0;
-                /* padding-top: 70px; */
-
-            }
-
-            .content.shifted {
-                margin-left: 0;
-            }
-
-            .hamburger.active span:nth-child(1) {
-                transform: rotate(45deg) translate(5px, 5px);
-            }
-
-            .hamburger.active span:nth-child(2) {
-                opacity: 0;
-            }
-
-            .hamburger.active span:nth-child(3) {
-                transform: rotate(-45deg) translate(7px, -7px);
-            }
-
-            .d-flex justify-content-center align-items-center {
-                margin-left: 15%;
-            }
-            
-            
-        }
-
-        input {
-            border: black 1px solid;
-            outline: none;
-        }
-
-        .submenu {
-            display: none;
-            flex-direction: column;
-            padding-left: 15px;
-            margin-top: 10px;
-        }
-
-        .submenu a {
-            padding: 8px 0;
-            font-size: 1em;
-            color: white;
-
-
-        }
-
-        .submenu a:hover {
-            color: black;
-        }
-    </style>
-    <style>
+        /* Main sidebar styling */
         .sidebar {
             width: 255px;
             height: 100vh;
             position: fixed;
             background-color: rgb(146, 99, 74);
             padding-top: 20px;
-            transition: all 0.3s ease-in-out;
+            transition: transform 0.3s ease-in-out;
             z-index: 1000;
-            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: #ccc #333;
+        }
+
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 3px;
+        }
+
+        .sidebar::-webkit-scrollbar-track {
+            background: transparent;
         }
 
         .sidebar a {
@@ -174,54 +64,81 @@
             display: flex;
             align-items: center;
             font-size: 1.1em;
-            transition: all 0.3s ease-in-out;
+            transition: all 0.3s ease;
             border-radius: 5px;
             margin: 5px 15px;
-
+            padding: 10px 15px;
         }
 
         .sidebar a:hover {
             color: #fff;
-            background-color: rgba(255, 255, 255, 0.1);
+            background-color: rgba(255, 255, 255, 0.15);
         }
 
         .sidebar a .fas {
             margin-right: 10px;
-            font-size: 1.2em;
+            font-size: 1.1em;
+            width: 20px;
+            text-align: center;
         }
 
         .submenu {
             display: none;
             flex-direction: column;
             margin-left: 20px;
-            border-left: 2px solid rgba(255, 255, 255, 0.3);
+            border-left: 2px solid rgba(255, 255, 255, 0.2);
             padding-left: 10px;
         }
 
         .submenu a {
             color: #ccc;
-            font-size: 1em;
-            margin-bottom: 5px;
+            font-size: 0.95em;
+            margin: 3px 0;
+            padding: 8px 15px;
         }
 
         .submenu a:hover {
             color: #fff;
-            background-color: rgba(255, 255, 255, 0.05);
-            border-radius: 3px;
+            background-color: rgba(255, 255, 255, 0.1);
         }
 
+        .mainmenu {
+            cursor: pointer;
+            padding: 12px 15px;
+            margin: 5px 15px;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+            color: white;
+        }
+
+        .mainmenu:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .mainmenu span {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Mobile menu toggle button */
         .hamburger {
             display: none;
             position: fixed;
             top: 20px;
             left: 15px;
             z-index: 1001;
-            background: #222;
+            background: rgb(146, 99, 74);
             border: none;
             cursor: pointer;
-            padding: 10px;
+            padding: 12px;
             border-radius: 5px;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .hamburger:hover {
+            background: rgba(146, 99, 74, 0.9);
         }
 
         .hamburger span {
@@ -245,264 +162,122 @@
             transform: rotate(-45deg) translate(5px, -5px);
         }
 
-        .sideBarMob {
-            margin-top: 8%;
-        }
-        .UserCredentials{
-            display: flex; align-items: center; gap: 10px;
+        /* Content area */
+        .content {
+            margin-left: 255px;
+            padding: 20px;
+            transition: margin-left 0.3s ease;
         }
 
+        /* Mobile styles */
         @media (max-width: 768px) {
             .sidebar {
-                /* transform: translateX(-250px); */
-                width: 0%;
-                transition: transform 0.3s ease-in-out;
-                /* padding-top: 80px; */
-                display: flex;
-                justify-content: center;
-                flex-direction: column;
-                align-items: center;
-                overflow: hidden;
-
-            }
-
-            .sideBarMob {
-                margin-top: 2%;
+                transform: translateX(-100%);
+                width: 280px;
+                padding-top: 70px;
             }
 
             .sidebar.active {
-                width: 100%;
-                /* transform: translateX(0); */
+                transform: translateX(0);
             }
 
-            .submenu {
-                display: none;
-                flex-direction: column;
-                margin-left: 200px;
-                border-left: 2px solid rgba(255, 255, 255, 0.3);
-                padding-left: 10px;
+            .content {
+                margin-left: 0;
             }
 
             .hamburger {
                 display: block;
             }
 
-            .content {
-                margin-left: 0;
-                transition: margin-left 0.3s ease-in-out;
-
+            /* Mobile menu specific styles */
+            .mainmenu {
+                padding: 15px;
+                margin: 5px 10px;
             }
 
-            #services-menu {
-                padding-left: 5%;
-
+            .submenu {
+                margin-left: 15px;
+                padding-left: 15px;
             }
 
-            #master-menu {
-                margin-right: 45%;
+            .submenu a {
+                padding: 10px 15px;
             }
-            .submenu1{
-                text-align: center;
-            }
-
-        }
-    </style>
-
-
-
-    <style>
-        .sidebar {
-            overflow-y: auto;
-            /* Enable vertical scrolling */
-            max-height: 100vh;
-            /* Restrict the height to the viewport */
-            scrollbar-width: thin;
-            /* Makes the scrollbar thinner (for modern browsers) */
-            scrollbar-color: #ccc #333;
-            /* Scrollbar colors (for modern browsers) */
         }
 
-        /* Optional: Styling for WebKit-based browsers (Chrome, Safari, Edge) */
-        .sidebar::-webkit-scrollbar {
-            width: 8px;
-            /* Width of the scrollbar */
+        /* User popup styles */
+        .user-popup {
+            width: 250px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+            padding: 15px;
+            position: absolute;
+            top: 60px;
+            right: 10px;
+            display: none;
+            z-index: 1000;
+            border: 1px solid #eee;
         }
 
-        .sidebar::-webkit-scrollbar-thumb {
-            background: #ccc;
-            /* Scrollbar thumb color */
-            border-radius: 4px;
-            /* Rounded edges for the thumb */
+        .user-popup.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
         }
 
-        .sidebar::-webkit-scrollbar-track {
-            background: #333;
-            /* Scrollbar track color */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
-    </style>
-<style>
-    .user-popup {
-        position: absolute;
-        top: 60px; /* Adjust based on your layout */
-        right: 10px;
-        background-color: white;
-        border: 1px solid #ccc;
-        border-radius: 5px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        padding: 10px;
-        display: none;
-        z-index: 1000;
-    }
-    .user-popup a {
-        display: block;
-        padding: 8px 12px;
-        color: #333;
-        text-decoration: none;
-    }
-    .user-popup a:hover {
-        background-color: #f1f1f1;
-    }
-    .user-popup.active {
-        display: block;
-    }
-</style>
 
-</head>
-
-<body>
-    
-    <div style="position: absolute; top: 10px; right: 10px; display: flex; align-items: center; gap: 10px;">
-        {% if user.is_authenticated %}
-            <div class="UserCredentials" onclick="toggleUserPopup()">
-                {% if user_image %}
-                    <img src="{{ user_image }}" alt="Profile Image" 
-                         style="width: 40px; height: 40px; border-radius: 50%; cursor: pointer;">
-                    
-                {% else %}
-                    <div class="username">
-                        <img src="{{ user_image }}" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';" 
-     alt="Profile Image" style="width: 40px; height: 40px; border-radius: 50%; cursor: pointer;">
-
-<i class="fa fa-user-circle" style="font-size: 40px; display: none;"></i>
-
-                    </div>
-                {% endif %}
-            </div>
-        {% endif %}
-        <!-- User Popup -->
-        <div id="userPopup" class="user-popup">
-            {% if not request.user.is_superuser %}
-            <div style="display: flex;justify-content: right;">
-                <a href="{% url 'edit_profile' %}">
-                    <i class="fas fa-edit" style="color: black; margin-left: 8px; cursor: pointer;" title="Edit"></i>
-                </a>
-            </div>
-            {% endif %}
-
-            {% if user_image %}
-                <div style="display: block;">
-                    <div style="margin-top: 5%;">
-                        <img src="{{ user_image }}" alt="Profile Image" 
-                             style="width: 40px; height: 40px; border-radius: 50%; cursor: pointer;">
-                    </div>
-                    <div class="username" style="margin-bottom: 10%;">
-                        <span style="color: black; font-weight: bold; cursor: pointer;">Hello,{{ user_name }}</span>
-                    </div>
-                </div>
-            {% else %}
-                <div class="username" style="margin-top: 15%;">
-                    <span style="color: black; font-weight: bold; cursor: pointer;">Hello,{{ user_name }}</span>
-                </div>
-            {% endif %}
-            <a href="{% url 'logout' %}" class="logout-btn" style="background-color: rgb(240, 6, 6);">
-                <i class="fas fa-sign-out-alt"></i><span style="color: white;"> Logout</span>
-            </a>
-        </div>
-<style>
-    .user-popup {
-    width: 300px;
-    height: 200px;
-    background: whitesmoke;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px green;
-    padding: 15px;
-    text-align: center;
-    border: 1px solid #ddd;
-}
-
-.user-greeting {
-    font-size: 16px;
-    font-weight: 500;
-    color: #333;
-    margin-bottom: 10px;
-}
-
-.logout-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 8px 12px;
-    background: #dc3545;
-    color: #fff;
-    text-decoration: none;
-    border-radius: 5px;
-    font-size: 14px;
-    transition: background 0.3s ease;
-    margin-top: 150px;
-    margin-right: 30%;
-}
-
-.logout-btn i {
-    margin-right: 8px;
-    
-}
-
-
-
-</style>        
-        
-</div>
-        
-        
-    </div>
-    
-    <style>
-         .username {
-  font-family: 'Roboto', 'Open Sans', Arial, sans-serif;
-  font-size: 16px;
-  font-weight: 500;
-  color: #202124;
-  letter-spacing: 0.1px;
-  padding: 8px 12px;
-  border-radius: 4px;
-  background-color: #f1f3f4;
-  display: inline-block;
-  margin: 4px 0;
-}
-
-/* Hover effect */
-.username:hover {
-  background-color: #e8eaed;
-  box-shadow: 0 1px 2px rgba(60, 64, 67, 0.3);
-  transition: all 0.2s ease;
-}
-
-/* For a verified or premium style */
-.username.verified {
-  border-left: 3px solid #1a73e8;
-}
-    </style>
-    
-    <style>
-        .reminder-link {
-            position: relative;
-            display: inline-block;
+        .user-credentials {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
         }
-        
+
+        .user-img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .user-fallback {
+            font-size: 40px;
+            color: #666;
+        }
+
+        .logout-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+            background: #dc3545;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 15px;
+            transition: background 0.3s ease;
+        }
+
+        .logout-btn:hover {
+            background: #c82333;
+        }
+
+        .username {
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        /* Reminder badge */
         .reminder-badge {
             position: absolute;
             top: -5px;
-            right: -10px;
+            right: -5px;
             background-color: #ff3547;
             color: white;
             border-radius: 50%;
@@ -511,521 +286,538 @@
             font-weight: bold;
             min-width: 1.5rem;
             text-align: center;
-            margin-right: 70px;
-            margin-top: 15px;
         }
 
+        .reminder-link {
+            position: relative;
+        }
 
-
-.information_center {
-    margin-top: 10px;
-}
-
-.information_center a {
-    color: white;
-    text-decoration: none;
-}
-
-.information_center i {
-    color: white;
-    font-size: medium;
-}
-
-.information_center span {
-    color: white;
-}
-
-.information_center span:first-of-type {
-    font-weight: 600;
-    font-size: large;
-}
-    </style>    
-        
-        <!-- Hamburger Menu Button -->
-        <button class="hamburger" onclick="toggleSidebar()">
-            <span></span>
-            <span></span>
-            <span></span>
-
-        </button>
-
-        <div class="sidebar">
-             
-             
-            {% if 'Administration' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
-                <!-- Admin/Superuser Sidebar -->
-                <div onclick="toggleAdminMenu()">
-                    <div>
-                        <h5 style="margin-left: 5%; color: white;" class="mainmenu">
-                            <div style="display: flex;" class="gap-2 align-items-center">
-                                <span style="margin-top: 5%;display: flex;align-items: center;gap: 10px;">
-                                    <i class="fas fa-tools"></i>
-                                    <span>Administration</span>
-                                </span>
-                            </div>
-                        </h5>
-                    </div>
-                </div>
-        
-                <div id="admin-menu" class="submenu" style="display: none; margin-left: 5%;">
-                    {% if 'agent_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
-                    <a href="{% url 'agent_list' %}"><i class="fas fa-binoculars"></i> Address Book</a>
-                    {% endif %}
-                    {% if 'credential_management' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
-                    <a href="{% url 'credential_management' %}">
-                        <i class="fas fa-key"></i> Credential Management
-                    </a>
-                    {% endif %}                                      
-                    {% if 'document_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
-                    <a href="{% url 'document_list' %}"><i class="fas fa-scroll"></i> Documentations</a>
-                    {% endif %}
-                    {% if 'reminders' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
-                    <a href="{% url 'reminders' %}" class="reminder-link">
-                        <i class="fas fa-bell"></i> Reminders
-                        {% if active_reminders_count > 0 %}
-                            <span class="reminder-badge">{{ active_reminders_count }}</span>
-                        {% endif %}
-                    </a>
-                    {% endif %}
-                </div>
-        
-                <!-- HR Menu -->
-                {% if 'HR' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
-                <div onclick="toggleHRMenu()">
-                    <div>
-                        <h5 style="margin-left: 5%; color: white;" class="mainmenu">
-                            <div style="display: flex;" class="gap-2 align-items-center">
-                                <span style="margin-top: 5%;display: flex;align-items: center;gap: 10px;">
-                                    <i class="fas fa-users-cog"></i>
-                                    <span>HR</span>
-                                </span>
-                            </div>
-                        </h5>
-                    </div>
-                </div>
-        
-                <div id="hr-menu" class="submenu" style="display: none; margin-left: 5%;">
-                    <!-- Full HR options for admin -->
-                    {% if 'cv_management' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
-                    <a href="{% url 'cv_management' %}"><i class="fas fa-file-contract"></i> CV Management</a>
-                    {% endif %}
-                    {% if 'interview_management' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
-                    <a href="{% url 'interview_management' %}"><i class="fas fa-user-tie"></i> Interview Management</a>
-                    {% endif %}
-                    {% if 'make_offer_letter' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
-                    <a href="{% url 'make_offer_letter' %}"><i class="fas fa-file-signature"></i> Offer Letter</a>
-                    {% endif %}
-                    {% if 'employee_management' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
-                    <a href="{% url 'employee_management' %}"><i class="fas fa-users"></i> Employee Management</a>
-                    {% endif %}
-                    {% if 'attendance' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
-                    <a href="{% url 'attendance' %}"><i class="fas fa-user-check"></i> Attendance</a>
-                    {% endif %}
-                    {% if 'make_salary_certificate' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
-                    <a href="{% url 'make_salary_certificate' %}"><i class="fas fa-file-invoice-dollar"></i> Salary Certificate</a>
-                    {% endif %}
-                    {% if 'make_experience_certificate' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
-                    <a href="{% url 'make_experience_certificate' %}"><i class="fas fa-award"></i> Experience Certificate</a>
-                    {% endif %}
-                </div>
-                {% endif %}
-        
-                <!-- Marketing Menu -->
-                {% if 'Marketing' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
-                <div onclick="toggleMarketingMenu()">
-                    <div>
-                        <h5 style="margin-left: 5%; color: white;" class="mainmenu">
-                            <div style="display: flex;" class="gap-2 align-items-center">
-                                <span style="margin-top: 5%;display: flex;align-items: center;gap: 10px;">
-                                    <i class="fas fa-bullhorn"></i>
-                                    <span>Marketing</span>
-                                </span>
-                            </div>
-                        </h5>
-                    </div>
-                </div>
-        
-                <div id="marketing-menu" class="submenu" style="display: none; margin-left: 5%;">
-                    {% if 'all_leads' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
-                    <a href="{% url 'all_leads' %}"><i class="fas fa-user"></i> Leads</a>
-                    {% endif %}
-                </div>
-                {% endif %}
-        
-                <!-- Services Menu -->
-                {% if 'Services' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
-                <div onclick="toggleServicesMenu()" class="sideBarMob">
-                    <div>
-                        <h5 style="margin-left: 5%; color: white;" class="mainmenu">
-                            <div style="display: flex;margin-top: 5%;" class="gap-2 align-items-center">
-                                <i class="fas fa-wrench"></i> <span>Services</span>
-                            </div>
-                        </h5>
-                    </div>
-                </div>
-        
-                <div id="services-menu" class="submenu" style="margin-left: 5%; display: none;">
-                    {% if 'service_entry' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
-                    <a href="{% url 'service_entry' %}"><i class="fas fa-plus-circle"></i> Service Entry</a>
-                    {% endif %}
-                    {% if 'service_log' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
-                    <a href="{% url 'service_log' %}"><i class="fas fa-book"></i> Service Log</a>
-                    {% endif %}
-                </div>
-                {% endif %}
-
-                
-
-                <!-- Project Menu -->
-                <div onclick="toggleProjectMenu()">
-                    <div>
-                        <h5 style="margin-left: 5%; color: white;" class="mainmenu">
-                            <div style="display: flex;" class="gap-2 align-items-center">
-                                <span style="margin-top: 5%; display: flex; align-items: center; gap: 10px;">
-                                    <i class="fas fa-project-diagram"></i>
-                                    <span>Projects</span>
-                                </span>
-                            </div>
-                        </h5>
-                    </div>
-                </div>
-                
-                
-                <div id="project-menu" class="submenu" style="margin-left: 5%; display: none;">
-                    <a href="{% url 'project_work' %}" style="display: flex;gap: 10px;"><i class="fa-solid fa-people-roof"></i> Project Management</a>
-                    {% if 'daily_task_admin' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
-                    <a href="{% url 'daily_task_admin' %}" style="display: flex;gap: 10px;"><i class="fa-solid fa-people-roof"></i> Daily Task</a>
-                    {% endif %}
-                   
-                </div>
-
-                {% if 'information_center' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
-    <div class="information_center">
-    <a href="{% url 'information_center' %}">
-        <i class="fas fa-photo-video" style="font-size: medium;"></i>
-        <span>
-            <span>IMC Connect</span>
-        </span>
-    </a>
-</div>
-    {% endif %}
-        
-                <!-- Master Menu -->
-                <div onclick="toggleMenu()">
-                    <div>
-                        <h5 style="margin-left: 5%; color: white;" class="mainmenu">
-                            <div style="display: flex;margin-top: 7%;" class="gap-2 align-items-center">
-                                <i class="fas fa-cog"></i>
-                                <span>Master</span>
-                            </div>
-                        </h5>
-                    </div>
-                </div>
-        
-                <div id="master-menu" class="submenu">
-                    <!-- Full master menu options -->
-                    <a href="{% url 'all_districts' %}"><i class="fas fa-map"></i> District</a>
-                    <a href="{% url 'all_areas' %}"><i class="fas fa-map-marker-alt"></i> Area</a>
-                    <a href="{% url 'all_locations' %}"><i class="fas fa-chart-area"></i> Location</a>
-                    <a href="{% url 'all_requirements' %}"><i class="fas fa-tasks"></i> Requirements</a>
-                    <a href="{% url 'business_type_list' %}"><i class="fas fa-binoculars"></i> Business Type</a>
-                    <a href="{% url 'job_titles' %}"><i class="fas fa-search"></i> Job Title</a>
-                    <a href="{% url 'all_hardwares' %}"><i class="fas fa-desktop"></i> Hardware</a>
-                    <a href="{% url 'all_complaints' %}"><i class="fas fa-bug"></i> Complaints</a>
-                    <a href="{% url 'all_branches' %}"><i class="fas fa-code-branch"></i> Branch</a>
-                    <a href="{% url 'users_table' %}"><i class="fas fa-users"></i> Users</a>
-                    <a href="{% url 'reminder_type' %}"><i class="fas fa-bell"></i> Reminder Types</a>
-                </div>
-                
-
-            {% else %}
-
+        /* Information center */
+        .information_center {
             
-                <!-- Regular User Sidebar - Only show allowed menus -->
-                {% if 'agent_list' in allowed_menus %}
-                <div onclick="toggleAdminMenu()">
-                    <div>
-                        <h5 style="margin-left: 5%; color: white;" class="mainmenu">
-                            <div style="display: flex;" class="gap-2 align-items-center">
-                                <span style="margin-top: 5%;display: flex;align-items: center;gap: 10px;">
-                                    <i class="fas fa-tools"></i>
-                                    <span>Administration</span>
-                                </span>
-                            </div>
-                        </h5>
-                    </div>
-                </div>
+           font-size: 13px;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .information_center:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .information_center a {
+            color: white;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            
+        }
+
+        .information_center i {
+            font-size: 1.1em;
+        }
+
+        .information_center span {
+            font-weight: 500;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- User Profile Area -->
+    <div style="position: absolute; top: 10px; right: 10px; z-index: 1000;">
+        {% if user.is_authenticated %}
+            <div class="user-credentials" onclick="toggleUserPopup()">
+                {% if user_image %}
+                    <img src="{{ user_image }}" alt="Profile Image" class="user-img">
+                {% else %}
+                    <i class="fas fa-user-circle user-fallback"></i>
+                {% endif %}
+            </div>
+        {% endif %}
         
-                <div id="admin-menu" class="submenu" style="display: none; margin-left: 5%;">
-                    {% if 'agent_list' in allowed_menus %}
-                    <a href="{% url 'agent_list' %}"><i class="fas fa-binoculars"></i> Address Book</a>
-                    {% endif %}
-                    {% if 'credential_management' in allowed_menus %}
-                    <a href="{% url 'credential_management' %}"><i class="fas fa-key"></i> Credential Management</a>
-                    {% endif %}
-
-                    {% if 'document_list' in allowed_menus %}
-                    <a href="{% url 'document_list' %}"><i class="fas fa-scroll"></i> Documentations</a>
-                    {% endif %}
-                    {% if 'reminders' in allowed_menus %}
-                    <a href="{% url 'reminders' %}" class="reminder-link">
-                        <i class="fas fa-bell"></i> Reminders
-                        {% if active_reminders_count > 0 %}
-                            <span class="reminder-badge">{{ active_reminders_count }}</span>
-                        {% endif %}
-                    </a>
-                    {% endif %}
-                </div>
-                {% endif %}
-                
-
-                {% if 'cv_management' in allowed_menus or 'interview_management' in allowed_menus or 'make_offer_letter' in allowed_menus or 'employee_management' in allowed_menus or 'attendance' in allowed_menus or 'make_salary_certificate' in allowed_menus or 'make_experience_certificate' in allowed_menus or 'attendance_user' in allowed_menus %}
-                <!-- HR Menu -->
-                <div onclick="toggleHRMenu()">
-                    <div>
-                        <h5 style="margin-left: 5%; color: white;" class="mainmenu">
-                            <div style="display: flex;" class="gap-2 align-items-center">
-                                <span style="margin-top: 5%;display: flex;align-items: center;gap: 10px;">
-                                    <i class="fas fa-users-cog"></i>
-                                    <span>HR</span>
-                                </span>
-                                
-                            </div>
-                        </h5>
-                    </div>
-                </div>
-                
-        
-                <div id="hr-menu" class="submenu" style="display: none; margin-left: 5%;">
-
-                    {% if 'cv_management' in allowed_menus %}
-                    <a href="{% url 'cv_management' %}"><i class="fas fa-file-contract"></i> CV Management</a>
-                    {% endif %}
-                    {% if 'interview_management' in allowed_menus %}
-                    <a href="{% url 'interview_management' %}"><i class="fas fa-user-tie"></i> Interview Management</a>
-                    {% endif %}
-                    {% if 'make_offer_letter' in allowed_menus %}
-                    <a href="{% url 'make_offer_letter' %}"><i class="fas fa-file-signature"></i> Offer Letter</a>
-                    {% endif %}
-                    {% if 'employee_management' in allowed_menus %}
-                    <a href="{% url 'employee_management' %}"><i class="fas fa-users"></i> Employee Management</a>
-                    {% endif %}
-                    {% if 'attendance' in allowed_menus %}
-                    <a href="{% url 'attendance' %}"><i class="fas fa-user-check"></i> Attendance</a>
-                    {% endif %}
-                    {% if 'attendance_user' in allowed_menus %}
-                    <a href="{% url 'attendance_user' %}"><i class="fas fa-user-clock"></i> Punch in / Punch out</a>
-                    {% endif %}
-                    {% if 'make_salary_certificate' in allowed_menus %}
-                    <a href="{% url 'make_salary_certificate' %}"><i class="fas fa-file-invoice-dollar"></i> Salary Certificate</a>
-                    {% endif %}
-                    {% if 'make_experience_certificate' in allowed_menus %}
-                    <a href="{% url 'make_experience_certificate' %}"><i class="fas fa-award"></i> Experience Certificate</a>
-                    {% endif %}
-                </div>
-                {% endif %}
-
-                {% if 'all_leads' in allowed_menus or 'user_dashboard' in allowed_menus %}
-                <div onclick="toggleMarketingMenu()">
-                    <div>
-                        <h5 style="margin-left: 5%; color: white;" class="mainmenu">
-                            <div style="display: flex;" class="gap-2 align-items-center">
-                                <span style="margin-top: 5%;display: flex;align-items: center;gap: 10px;">
-                                    <i class="fas fa-bullhorn"></i>
-                                    <span>Marketing</span>
-                                </span>
-                            </div>
-                        </h5>
-                    </div>
-                </div>
-                
-                <div id="marketing-menu" class="submenu" style="display: none; margin-left: 5%;">
-                    {% if 'all_leads' in allowed_menus %}
-                    <a href="{% url 'all_leads' %}"><i class="fas fa-user"></i> Leads</a>
-                    {% endif %}
-                    {% if 'user_dashboard' in allowed_menus %}
-                    <a href="{% url 'user_dashboard' %}"><i class="fas fa-user"></i> Leads</a>
-                    {% endif %}
-                </div>
-                {% endif %}
-
-                {% if 'service_log' in allowed_menus or 'service_entry' in allowed_menus or 'user_service_entry' in allowed_menus or 'user_service_log' in allowed_menus %}
-                <!-- Services Menu -->
-                <div onclick="toggleServicesMenu()" class="sideBarMob">
-                    <div>
-                        <h5 style="margin-left: 5%; color: white;" class="mainmenu">
-                            <div style="display: flex;margin-top: 5%;" class="gap-2 align-items-center">
-                                <i class="fas fa-wrench"></i> <span>Services</span>
-                            </div>
-                        </h5>
-                    </div>
-                </div>
-        
-                <div id="services-menu" class="submenu" style="margin-left: 5%; display: none;">
-                    {% if 'service_log' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
-                    <a href="{% url 'service_log' %}"><i class="fas fa-book"></i> Service Log</a>
-                    {% endif %}
-                    {% if 'service_entry' in allowed_menus %}
-                    <a href="{% url 'service_entry' %}"><i class="fas fa-plus-circle"></i> Service Entry</a>
-                    {% endif %}
-                    {% if 'user_service_log' in allowed_menus %}
-                    <a href="{% url 'user_service_log' %}"><i class="fas fa-book"></i> Service Log</a>
-                    {% endif %}
-                    {% if 'user_service_entry' in allowed_menus %}
-                    <a href="{% url 'user_service_entry' %}"><i class="fas fa-plus-circle"></i> Service Entry</a>
-                    {% endif %}
-                </div>
-                {% endif %}
-
-                <!-- Project Menu for regular users -->
-                {% if 'project_work' in allowed_menus or 'user_projects' in allowed_menus %}
-                <div onclick="toggleProjectMenu()">
-                    <div>
-                        <h5 style="margin-left: 5%; color: white;" class="mainmenu">
-                            <div style="display: flex;" class="gap-2 align-items-center">
-                                <span style="margin-top: 5%; display: flex; align-items: center; gap: 10px;">
-                                    <i class="fas fa-project-diagram"></i>
-                                    <span>Projects</span>
-                                </span>
-                            </div>
-                        </h5>
-                    </div>
-                </div>
-
-                <div id="project-menu" class="submenu" style="margin-left: 5%; display: none;">
-                    {% if 'project_work' in allowed_menus %}
-                    <a href="{% url 'project_work' %}" style="display: flex;gap: 10px;"><i class="fa-solid fa-people-roof"></i> Project Management</a>
-                    {% endif %}
-                    {% if 'user_projects' in allowed_menus %}
-                    <a href="{% url 'user_projects' %}" style="display: flex;gap: 10px;"><i class="fa-solid fa-diagram-project"></i> Project Works</a>
-                    {% endif %}
-                    {% if 'daily_task_user' in allowed_menus %}
-                        <a href="{% url 'daily_task_user' %}" style="display: flex;gap: 10px;">
-                            <i class="fa-solid fa-people-roof"></i> Daily Task
-                        </a>
-                    {% endif %}
-                    {% if 'daily_task_admin' in allowed_menus %}
-                        <a href="{% url 'daily_task_admin' %}" style="display: flex;gap: 10px;"><i class="fa-solid fa-people-roof"></i> Daily Task Admin</a>
-                    {% endif %}
-                </div>
-                {% endif %}
-                {% if 'information_center' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
-    <div class="information_center">
-    <a href="{% url 'information_center' %}">
-        <i class="fas fa-photo-video" style="font-size: medium;"></i>
-        <span>
-            <span>IMC Connect</span>
-        </span>
-    </a>
-</div>
-    {% endif %}
-
-   
-
-                {% if 'all_districts' in allowed_menus or 'all_areas' in allowed_menus or 'all_locations' in allowed_menus or 'all_requirements' in allowed_menus or 'business_type_list' in allowed_menus or 'job_titles' in allowed_menus or 'all_hardwares' in allowed_menus or 'all_complaints' in allowed_menus or 'all_branches' in allowed_menus or 'users_table' in allowed_menus or 'reminder_type' in allowed_menus %}
-                <!-- Master Menu -->
-                <div onclick="toggleMenu()">
-                    <div>
-                        <h5 style="margin-left: 5%; color: white;" class="mainmenu">
-                            <div style="display: flex;margin-top: 7%;" class="gap-2 align-items-center">
-                                <i class="fas fa-cog"></i>
-                                <span>Master</span>
-                            </div>
-                        </h5>
-                    </div>
-                </div>
-        
-                <div id="master-menu" class="submenu">
-                    {% if 'all_districts' in allowed_menus %}
-                    <a href="{% url 'all_districts' %}"><i class="fas fa-map"></i> District</a>
-                    {% endif %}
-                    {% if 'all_areas' in allowed_menus %}
-                    <a href="{% url 'all_areas' %}"><i class="fas fa-map-marker-alt"></i> Area</a>
-                    {% endif %}
-                    {% if 'all_locations' in allowed_menus %}
-                    <a href="{% url 'all_locations' %}"><i class="fas fa-chart-area"></i> Location</a>
-                    {% endif %}
-                    {% if 'all_requirements' in allowed_menus %}
-                    <a href="{% url 'all_requirements' %}"><i class="fas fa-tasks"></i> Requirements</a>
-                    {% endif %}
-                    {% if 'business_type_list' in allowed_menus %}
-                    <a href="{% url 'business_type_list' %}"><i class="fas fa-binoculars"></i> Business Type</a>
-                    {% endif %}
-                    {% if 'job_titles' in allowed_menus %}
-                    <a href="{% url 'job_titles' %}"><i class="fas fa-search"></i> Job Title</a>
-                    {% endif %}
-                    {% if 'all_hardwares' in allowed_menus %}
-                    <a href="{% url 'all_hardwares' %}"><i class="fas fa-desktop"></i> Hardware</a>
-                    {% endif %}
-                    {% if 'all_complaints' in allowed_menus %}
-                    <a href="{% url 'all_complaints' %}"><i class="fas fa-bug"></i> Complaints</a>
-                    {% endif %}
-                    {% if 'all_branches' in allowed_menus %}
-                    <a href="{% url 'all_branches' %}"><i class="fas fa-code-branch"></i> Branch</a>
-                    {% endif %}
-                    {% if 'users_table' in allowed_menus %}
-                    <a href="{% url 'users_table' %}"><i class="fas fa-users"></i> Users</a>
-                    {% endif %}
-                    {% if 'reminder_type' in allowed_menus %}
-                    <a href="{% url 'reminder_type' %}"><i class="fas fa-bell"></i> Reminder Types</a>
-                    {% endif %}
-                </div>
-                {% endif %}
+        <!-- User Popup -->
+        <div id="userPopup" class="user-popup">
+            {% if not request.user.is_superuser %}
+            <div style="text-align: right;">
+                <a href="{% url 'edit_profile' %}" style="color: #666;">
+                    <i class="fas fa-edit" style="cursor: pointer;" title="Edit Profile"></i>
+                </a>
+            </div>
             {% endif %}
-             
-</div>
+
+            <div style="text-align: center; margin: 10px 0;">
+                {% if user_image %}
+                    <img src="{{ user_image }}" alt="Profile Image" class="user-img" style="width: 60px; height: 60px;">
+                {% endif %}
+                <div class="username">Hello, {{ user_name }}</div>
+            </div>
+            
+            <a href="{% url 'logout' %}" class="logout-btn">
+                <i class="fas fa-sign-out-alt"></i>
+                <span style="margin-left: 8px;">Logout</span>
+            </a>
         </div>
+    </div>
 
+    <!-- Mobile Menu Toggle -->
+    <button class="hamburger" onclick="toggleSidebar()">
+        <span></span>
+        <span></span>
+        <span></span>
+    </button>
+
+    <!-- Sidebar Navigation -->
+    <div class="sidebar">
+        {% if 'Administration' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+            <!-- Admin/Superuser Sidebar -->
+            <div class="mainmenu" onclick="toggleAdminMenu()">
+                <span>
+                    <i class="fas fa-tools"></i>
+                    <span>Administration</span>
+                </span>
+            </div>
+    
+            <div id="admin-menu" class="submenu">
+                {% if 'agent_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+                <a href="{% url 'agent_list' %}"><i class="fas fa-binoculars"></i> Address Book</a>
+                {% endif %}
+                {% if 'credential_management' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+                <a href="{% url 'credential_management' %}">
+                    <i class="fas fa-key"></i> Credential Management
+                </a>
+                {% endif %}                                      
+                {% if 'document_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+                <a href="{% url 'document_list' %}"><i class="fas fa-scroll"></i> Documentations</a>
+                {% endif %}
+                {% if 'reminders' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+                <a href="{% url 'reminders' %}" class="reminder-link">
+                    <i class="fas fa-bell"></i> Reminders
+                    {% if active_reminders_count > 0 %}
+                        <span class="reminder-badge">{{ active_reminders_count }}</span>
+                    {% endif %}
+                </a>
+                {% endif %}
+            </div>
+    
+            <!-- HR Menu -->
+            {% if 'HR' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+            <div class="mainmenu" onclick="toggleHRMenu()">
+                <span>
+                    <i class="fas fa-users-cog"></i>
+                    <span>HR</span>
+                </span>
+            </div>
+    
+            <div id="hr-menu" class="submenu">
+                {% if 'cv_management' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+                <a href="{% url 'cv_management' %}"><i class="fas fa-file-contract"></i> CV Management</a>
+                {% endif %}
+                {% if 'interview_management' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+                <a href="{% url 'interview_management' %}"><i class="fas fa-user-tie"></i> Interview Management</a>
+                {% endif %}
+                {% if 'make_offer_letter' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+                <a href="{% url 'make_offer_letter' %}"><i class="fas fa-file-signature"></i> Offer Letter</a>
+                {% endif %}
+                {% if 'employee_management' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+                <a href="{% url 'employee_management' %}"><i class="fas fa-users"></i> Employee Management</a>
+                {% endif %}
+                {% if 'attendance' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+                <a href="{% url 'attendance' %}"><i class="fas fa-user-check"></i> Attendance</a>
+                {% endif %}
+                {% if 'make_salary_certificate' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+                <a href="{% url 'make_salary_certificate' %}"><i class="fas fa-file-invoice-dollar"></i> Salary Certificate</a>
+                {% endif %}
+                {% if 'make_experience_certificate' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+                <a href="{% url 'make_experience_certificate' %}"><i class="fas fa-award"></i> Experience Certificate</a>
+                {% endif %}
+            </div>
+            {% endif %}
+    
+            <!-- Marketing Menu -->
+            {% if 'Marketing' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+            <div class="mainmenu" onclick="toggleMarketingMenu()">
+                <span>
+                    <i class="fas fa-bullhorn"></i>
+                    <span>Marketing</span>
+                </span>
+            </div>
+    
+            <div id="marketing-menu" class="submenu">
+                {% if 'all_leads' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+                <a href="{% url 'all_leads' %}"><i class="fas fa-user"></i> Leads</a>
+                {% endif %}
+            </div>
+            {% endif %}
+    
+            <!-- Services Menu -->
+            {% if 'Services' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+            <div class="mainmenu" onclick="toggleServicesMenu()">
+                <span>
+                    <i class="fas fa-wrench"></i>
+                    <span>Services</span>
+                </span>
+            </div>
+    
+            <div id="services-menu" class="submenu">
+                {% if 'service_entry' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+                <a href="{% url 'service_entry' %}"><i class="fas fa-plus-circle"></i> Service Entry</a>
+                {% endif %}
+                {% if 'service_log' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+                <a href="{% url 'service_log' %}"><i class="fas fa-book"></i> Service Log</a>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- Project Menu -->
+            <div class="mainmenu" onclick="toggleProjectMenu()">
+                <span>
+                    <i class="fas fa-project-diagram"></i>
+                    <span>Projects</span>
+                </span>
+            </div>
+            
+            <div id="project-menu" class="submenu">
+                <a href="{% url 'project_work' %}"><i class="fa-solid fa-people-roof"></i> Project Management</a>
+                {% if 'daily_task_admin' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+                <a href="{% url 'daily_task_admin' %}"><i class="fa-solid fa-tasks"></i> Daily Task</a>
+                {% endif %}
+            </div>
+
+            {% if 'information_center' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+            <div class="information_center">
+                <a href="{% url 'information_center' %}">
+                    <i class="fas fa-photo-video"></i>
+                    <span>IMC Connect</span>
+                </a>
+            </div>
+            {% endif %}
+    
+            <!-- Master Menu -->
+            <div class="mainmenu" onclick="toggleMasterMenu()">
+                <span>
+                    <i class="fas fa-cog"></i>
+                    <span>Master</span>
+                </span>
+            </div>
+    
+            <div id="master-menu" class="submenu">
+                <a href="{% url 'all_districts' %}"><i class="fas fa-map"></i> District</a>
+                <a href="{% url 'all_areas' %}"><i class="fas fa-map-marker-alt"></i> Area</a>
+                <a href="{% url 'all_locations' %}"><i class="fas fa-chart-area"></i> Location</a>
+                <a href="{% url 'all_requirements' %}"><i class="fas fa-tasks"></i> Requirements</a>
+                <a href="{% url 'business_type_list' %}"><i class="fas fa-binoculars"></i> Business Type</a>
+                <a href="{% url 'job_titles' %}"><i class="fas fa-search"></i> Job Title</a>
+                <a href="{% url 'all_hardwares' %}"><i class="fas fa-desktop"></i> Hardware</a>
+                <a href="{% url 'all_complaints' %}"><i class="fas fa-bug"></i> Complaints</a>
+                <a href="{% url 'all_branches' %}"><i class="fas fa-code-branch"></i> Branch</a>
+                <a href="{% url 'users_table' %}"><i class="fas fa-users"></i> Users</a>
+                <a href="{% url 'reminder_type' %}"><i class="fas fa-bell"></i> Reminder Types</a>
+            </div>
+            
+
+        {% else %}
+            <!-- Regular User Sidebar - Only show allowed menus -->
+            {% if 'agent_list' in allowed_menus %}
+            <div class="mainmenu" onclick="toggleAdminMenu()">
+                <span>
+                    <i class="fas fa-tools"></i>
+                    <span>Administration</span>
+                </span>
+            </div>
+    
+            <div id="admin-menu" class="submenu">
+                {% if 'agent_list' in allowed_menus %}
+                <a href="{% url 'agent_list' %}"><i class="fas fa-binoculars"></i> Address Book</a>
+                {% endif %}
+                {% if 'credential_management' in allowed_menus %}
+                <a href="{% url 'credential_management' %}"><i class="fas fa-key"></i> Credential Management</a>
+                {% endif %}
+                {% if 'document_list' in allowed_menus %}
+                <a href="{% url 'document_list' %}"><i class="fas fa-scroll"></i> Documentations</a>
+                {% endif %}
+                {% if 'reminders' in allowed_menus %}
+                <a href="{% url 'reminders' %}" class="reminder-link">
+                    <i class="fas fa-bell"></i> Reminders
+                    {% if active_reminders_count > 0 %}
+                        <span class="reminder-badge">{{ active_reminders_count }}</span>
+                    {% endif %}
+                </a>
+                {% endif %}
+            </div>
+            {% endif %}
+            
+
+            {% if 'cv_management' in allowed_menus or 'interview_management' in allowed_menus or 'make_offer_letter' in allowed_menus or 'employee_management' in allowed_menus or 'attendance' in allowed_menus or 'make_salary_certificate' in allowed_menus or 'make_experience_certificate' in allowed_menus or 'attendance_user' in allowed_menus %}
+            <!-- HR Menu -->
+            <div class="mainmenu" onclick="toggleHRMenu()">
+                <span>
+                    <i class="fas fa-users-cog"></i>
+                    <span>HR</span>
+                </span>
+            </div>
+            
+    
+            <div id="hr-menu" class="submenu">
+                {% if 'cv_management' in allowed_menus %}
+                <a href="{% url 'cv_management' %}"><i class="fas fa-file-contract"></i> CV Management</a>
+                {% endif %}
+                {% if 'interview_management' in allowed_menus %}
+                <a href="{% url 'interview_management' %}"><i class="fas fa-user-tie"></i> Interview Management</a>
+                {% endif %}
+                {% if 'make_offer_letter' in allowed_menus %}
+                <a href="{% url 'make_offer_letter' %}"><i class="fas fa-file-signature"></i> Offer Letter</a>
+                {% endif %}
+                {% if 'employee_management' in allowed_menus %}
+                <a href="{% url 'employee_management' %}"><i class="fas fa-users"></i> Employee Management</a>
+                {% endif %}
+                {% if 'attendance' in allowed_menus %}
+                <a href="{% url 'attendance' %}"><i class="fas fa-user-check"></i> Attendance</a>
+                {% endif %}
+                {% if 'attendance_user' in allowed_menus %}
+                <a href="{% url 'attendance_user' %}"><i class="fas fa-user-clock"></i> Punch in / Punch out</a>
+                {% endif %}
+                {% if 'make_salary_certificate' in allowed_menus %}
+                <a href="{% url 'make_salary_certificate' %}"><i class="fas fa-file-invoice-dollar"></i> Salary Certificate</a>
+                {% endif %}
+                {% if 'make_experience_certificate' in allowed_menus %}
+                <a href="{% url 'make_experience_certificate' %}"><i class="fas fa-award"></i> Experience Certificate</a>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            {% if 'all_leads' in allowed_menus or 'user_dashboard' in allowed_menus %}
+            <div class="mainmenu" onclick="toggleMarketingMenu()">
+                <span>
+                    <i class="fas fa-bullhorn"></i>
+                    <span>Marketing</span>
+                </span>
+            </div>
+            
+            <div id="marketing-menu" class="submenu">
+                {% if 'all_leads' in allowed_menus %}
+                <a href="{% url 'all_leads' %}"><i class="fas fa-user"></i> Leads</a>
+                {% endif %}
+                {% if 'user_dashboard' in allowed_menus %}
+                <a href="{% url 'user_dashboard' %}"><i class="fas fa-user"></i> Leads</a>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            {% if 'service_log' in allowed_menus or 'service_entry' in allowed_menus or 'user_service_entry' in allowed_menus or 'user_service_log' in allowed_menus %}
+            <!-- Services Menu -->
+            <div class="mainmenu" onclick="toggleServicesMenu()">
+                <span>
+                    <i class="fas fa-wrench"></i>
+                    <span>Services</span>
+                </span>
+            </div>
+    
+            <div id="services-menu" class="submenu">
+                {% if 'service_log' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+                <a href="{% url 'service_log' %}"><i class="fas fa-book"></i> Service Log</a>
+                {% endif %}
+                {% if 'service_entry' in allowed_menus %}
+                <a href="{% url 'service_entry' %}"><i class="fas fa-plus-circle"></i> Service Entry</a>
+                {% endif %}
+                {% if 'user_service_log' in allowed_menus %}
+                <a href="{% url 'user_service_log' %}"><i class="fas fa-book"></i> Service Log</a>
+                {% endif %}
+                {% if 'user_service_entry' in allowed_menus %}
+                <a href="{% url 'user_service_entry' %}"><i class="fas fa-plus-circle"></i> Service Entry</a>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- Project Menu for regular users -->
+            {% if 'project_work' in allowed_menus or 'user_projects' in allowed_menus %}
+            <div class="mainmenu" onclick="toggleProjectMenu()">
+                <span>
+                    <i class="fas fa-project-diagram"></i>
+                    <span>Projects</span>
+                </span>
+            </div>
+
+            <div id="project-menu" class="submenu">
+                {% if 'project_work' in allowed_menus %}
+                <a href="{% url 'project_work' %}"><i class="fa-solid fa-people-roof"></i> Project Management</a>
+                {% endif %}
+                {% if 'user_projects' in allowed_menus %}
+                <a href="{% url 'user_projects' %}"><i class="fa-solid fa-diagram-project"></i> Project Works</a>
+                {% endif %}
+                {% if 'daily_task_user' in allowed_menus %}
+                    <a href="{% url 'daily_task_user' %}">
+                        <i class="fa-solid fa-tasks"></i> Daily Task
+                    </a>
+                {% endif %}
+                {% if 'daily_task_admin' in allowed_menus %}
+                    <a href="{% url 'daily_task_admin' %}"><i class="fa-solid fa-tasks"></i> Daily Task Admin</a>
+                {% endif %}
+            </div>
+            {% endif %}
+            
+            {% if 'information_center' in allowed_menus %}
+            <div class="information_center">
+                <a href="{% url 'information_center' %}">
+                    <i class="fas fa-photo-video"></i>
+                    <span>IMC Connect</span>
+                </a>
+            </div>
+            {% endif %}
+
+            {% if 'all_districts' in allowed_menus or 'all_areas' in allowed_menus or 'all_locations' in allowed_menus or 'all_requirements' in allowed_menus or 'business_type_list' in allowed_menus or 'job_titles' in allowed_menus or 'all_hardwares' in allowed_menus or 'all_complaints' in allowed_menus or 'all_branches' in allowed_menus or 'users_table' in allowed_menus or 'reminder_type' in allowed_menus %}
+            <!-- Master Menu -->
+            <div class="mainmenu" onclick="toggleMasterMenu()">
+                <span>
+                    <i class="fas fa-cog"></i>
+                    <span>Master</span>
+                </span>
+            </div>
+    
+            <div id="master-menu" class="submenu">
+                {% if 'all_districts' in allowed_menus %}
+                <a href="{% url 'all_districts' %}"><i class="fas fa-map"></i> District</a>
+                {% endif %}
+                {% if 'all_areas' in allowed_menus %}
+                <a href="{% url 'all_areas' %}"><i class="fas fa-map-marker-alt"></i> Area</a>
+                {% endif %}
+                {% if 'all_locations' in allowed_menus %}
+                <a href="{% url 'all_locations' %}"><i class="fas fa-chart-area"></i> Location</a>
+                {% endif %}
+                {% if 'all_requirements' in allowed_menus %}
+                <a href="{% url 'all_requirements' %}"><i class="fas fa-tasks"></i> Requirements</a>
+                {% endif %}
+                {% if 'business_type_list' in allowed_menus %}
+                <a href="{% url 'business_type_list' %}"><i class="fas fa-binoculars"></i> Business Type</a>
+                {% endif %}
+                {% if 'job_titles' in allowed_menus %}
+                <a href="{% url 'job_titles' %}"><i class="fas fa-search"></i> Job Title</a>
+                {% endif %}
+                {% if 'all_hardwares' in allowed_menus %}
+                <a href="{% url 'all_hardwares' %}"><i class="fas fa-desktop"></i> Hardware</a>
+                {% endif %}
+                {% if 'all_complaints' in allowed_menus %}
+                <a href="{% url 'all_complaints' %}"><i class="fas fa-bug"></i> Complaints</a>
+                {% endif %}
+                {% if 'all_branches' in allowed_menus %}
+                <a href="{% url 'all_branches' %}"><i class="fas fa-code-branch"></i> Branch</a>
+                {% endif %}
+                {% if 'users_table' in allowed_menus %}
+                <a href="{% url 'users_table' %}"><i class="fas fa-users"></i> Users</a>
+                {% endif %}
+                {% if 'reminder_type' in allowed_menus %}
+                <a href="{% url 'reminder_type' %}"><i class="fas fa-bell"></i> Reminder Types</a>
+                {% endif %}
+            </div>
+            {% endif %}
+        {% endif %}
+    </div>
+
+    <!-- Main Content Area -->
     <div class="content">
-        <di>
-            <style>
-                .logout-btn {
-                    margin-bottom: 10%;
-                    position: absolute;
-                    top: 0;
-                    /* Adjust the top position */
-                    right: 10px;
-                    /* Adjust the right position */
-                    color: white;
-                    display: flex;
-                    align-items: center;
-                    gap: 5px;
-                    /* Space between icon and text */
-                    background: #333;
-                    /* Optional: Background color */
-                    padding: 8px 12px;
-                    /* Padding for better appearance */
-                    border-radius: 5px;
-                    /* Rounded corners */
-                }
-
-                .logout-btn i,
-                .logout-btn span {
-                    color: white;
-                }
-            </style>
-
-            {% block content %}{% endblock %}
+        {% block content %}{% endblock %}
     </div>
-    </div>
+
     <script src="{% static 'js/scripts.js' %}"></script>
     {% block extra_js %}{% endblock %}
 
     <script>
-        function toggleMenu() {
-            const menu = document.getElementById('master-menu');
-            menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
-        }
-
+        // Toggle sidebar on mobile
         function toggleSidebar() {
             const sidebar = document.querySelector('.sidebar');
-            const content = document.querySelector('.content');
             const hamburger = document.querySelector('.hamburger');
             sidebar.classList.toggle('active');
-            content.classList.toggle('shifted');
             hamburger.classList.toggle('active');
+            
+            // Add overlay when sidebar is active
+            if (sidebar.classList.contains('active')) {
+                createOverlay();
+            } else {
+                removeOverlay();
+            }
         }
 
+        // Create overlay when sidebar is open
+        function createOverlay() {
+            const overlay = document.createElement('div');
+            overlay.id = 'sidebar-overlay';
+            overlay.style.position = 'fixed';
+            overlay.style.top = '0';
+            overlay.style.left = '0';
+            overlay.style.width = '100%';
+            overlay.style.height = '100%';
+            overlay.style.backgroundColor = 'rgba(0,0,0,0.5)';
+            overlay.style.zIndex = '999';
+            overlay.style.backdropFilter = 'blur(2px)';
+            overlay.onclick = toggleSidebar;
+            document.body.appendChild(overlay);
+        }
+
+        // Remove overlay when sidebar is closed
+        function removeOverlay() {
+            const overlay = document.getElementById('sidebar-overlay');
+            if (overlay) {
+                overlay.remove();
+            }
+        }
+
+        // Menu toggle functions
+        function toggleAdminMenu() {
+            toggleMenu('admin-menu');
+        }
+
+        function toggleHRMenu() {
+            toggleMenu('hr-menu');
+        }
+
+        function toggleMarketingMenu() {
+            toggleMenu('marketing-menu');
+        }
+
+        function toggleServicesMenu() {
+            toggleMenu('services-menu');
+        }
+
+        function toggleProjectMenu() {
+            toggleMenu('project-menu');
+        }
+
+        function toggleMasterMenu() {
+            toggleMenu('master-menu');
+        }
+
+        function toggleMenu(menuId) {
+            const menu = document.getElementById(menuId);
+            if (menu.style.display === 'block') {
+                menu.style.display = 'none';
+            } else {
+                // Close other menus
+                document.querySelectorAll('.submenu').forEach(submenu => {
+                    if (submenu.id !== menuId) {
+                        submenu.style.display = 'none';
+                    }
+                });
+                menu.style.display = 'block';
+            }
+        }
+
+        // User popup toggle
+        function toggleUserPopup() {
+            const popup = document.getElementById('userPopup');
+            popup.classList.toggle('active');
+        }
+
+        // Close popup when clicking outside
+        document.addEventListener('click', function(event) {
+            const popup = document.getElementById('userPopup');
+            const userCredentials = document.querySelector('.user-credentials');
+            
+            if (!userCredentials.contains(event.target) && !popup.contains(event.target)) {
+                popup.classList.remove('active');
+            }
+        });
+
+        // Close sidebar when clicking a link (mobile)
         document.querySelectorAll('.sidebar a').forEach(item => {
             item.addEventListener('click', () => {
                 if (window.innerWidth <= 768) {
@@ -1033,89 +825,20 @@
                 }
             });
         });
-    </script>
-    <script>
-        function toggleServicesMenu() {
-            const menu = document.getElementById("services-menu");
-            if (menu.style.display === "none" || menu.style.display === "") {
-                menu.style.display = "block";
-            } else {
-                menu.style.display = "none";
+
+        // Auto-close submenus when clicking outside (desktop)
+        document.addEventListener('click', function(event) {
+            if (window.innerWidth > 768) {
+                const isClickInsideMenu = event.target.closest('.mainmenu') || 
+                                         event.target.closest('.submenu');
+                
+                if (!isClickInsideMenu) {
+                    document.querySelectorAll('.submenu').forEach(menu => {
+                        menu.style.display = 'none';
+                    });
+                }
             }
-        }
-    </script>
-    <script>
-        function toggleHRMenu() {
-            const menu = document.getElementById("hr-menu");
-            menu.style.display = (menu.style.display === "block") ? "none" : "block";
-        }
-    </script>
-    <script>
-        function toggleMarketingMenu() {
-            const menu = document.getElementById("marketing-menu");
-            menu.style.display = (menu.style.display === "block") ? "none" : "block";
-        }
-    </script>
-    <script>
-        function toggleAdminMenu() {
-            const menu = document.getElementById("admin-menu");
-            menu.style.display = (menu.style.display === "block") ? "none" : "block";
-        }
-    </script>
-<script>
-    function toggleUserMenu() {
-        var menu = document.getElementById('user-menu');
-        menu.style.display = (menu.style.display === 'none' || menu.style.display === '') ? 'block' : 'none';
-    }
-</script>
-
-
-<script>
-    document.addEventListener("DOMContentLoaded", function () {
-        const menus = document.querySelectorAll('.mainmenu'); // Select all main menu headings
-
-        menus.forEach(menu => {
-            menu.addEventListener("click", function () {
-                const submenu = this.nextElementSibling; // Get the submenu under the clicked main menu
-
-                // Close all other open submenus
-                document.querySelectorAll('.submenu').forEach(otherSubmenu => {
-                    if (otherSubmenu !== submenu) {
-                        otherSubmenu.style.display = "none";
-                    }
-                });
-
-                // Toggle the clicked submenu
-                submenu.style.display = (submenu.style.display === "block") ? "none" : "block";
-            });
         });
-    });
-</script>
-<script>
-    function toggleUserPopup() {
-        const popup = document.getElementById('userPopup');
-        popup.classList.toggle('active');
-    }
-
-    // Close the popup when clicking outside of it
-    document.addEventListener('click', function(event) {
-        const popup = document.getElementById('userPopup');
-        const userCredentials = document.querySelector('.UserCredentials');
-        if (!userCredentials.contains(event.target) && !popup.contains(event.target)) {
-            popup.classList.remove('active');
-        }
-    });
-</script>
-<script>
-    function toggleProjectMenu() {
-        const menu = document.getElementById("project-menu");
-        if (menu.style.display === "none" || menu.style.display === "") {
-            menu.style.display = "block";
-        } else {
-            menu.style.display = "none";
-        }
-    }
-</script>
+    </script>
 </body>
-
 </html>
