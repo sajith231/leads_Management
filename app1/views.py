@@ -22,7 +22,7 @@ from django.utils import timezone
 from .models import Employee, Attendance,LeaveRequest
 from django.db import transaction
 from django.db import models
-from .models import Employee, Attendance, LeaveRequest, Holiday,LateRequest,DefaultSettings
+from .models import Employee, Attendance, LeaveRequest, Holiday,LateRequest,DefaultSettings,EarlyRequest
 from .utils import is_holiday
 
 
@@ -5719,7 +5719,128 @@ def get_break_status(request):
 
 
 
+# views.py
+@login_required
+def create_early_request(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            employee = Employee.objects.get(user_id=request.session.get('custom_user_id'))
+            
+            early_request = EarlyRequest.objects.create(
+                employee=employee,
+                date=data['date'],
+                early_time=data['early_time'],
+                reason=data['reason'],
+                status='pending'
+            )
+            
+            # Send WhatsApp message to managers
+            phone_numbers = ["9946545535", "7593820007", "7593820005","9846754998"]
+            message = (
+                f"New early request from {employee.name}. "
+                f"Date: {data['date']}, "
+                f"Early Time: {data['early_time']}, "
+                f"Reason: {data['reason']}"
+            )
+            
+            for number in phone_numbers:
+                send_whatsapp_message(number, message)
+            
+            return JsonResponse({'success': True, 'message': 'Early request submitted successfully'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
 
+@login_required
+def get_early_requests(request):
+    status_filter = request.GET.get('status', None)
+    
+    if request.user.is_superuser or request.session.get('user_level') == 'normal':
+        early_requests = EarlyRequest.objects.all().select_related('employee')
+        if status_filter:
+            early_requests = early_requests.filter(status=status_filter)
+    else:
+        employee = Employee.objects.get(user_id=request.session.get('custom_user_id'))
+        early_requests = EarlyRequest.objects.filter(employee=employee)
+        if status_filter:
+            early_requests = early_requests.filter(status=status_filter)
+            
+    data = [{
+        'id': req.id,
+        'employee_name': req.employee.name,
+        'date': req.date.strftime('%Y-%m-%d'),
+        'early_time': req.early_time.strftime('%H:%M'),
+        'reason': req.reason,
+        'status': req.status,
+        'created_at': req.created_at.strftime('%Y-%m-%d %H:%M')
+    } for req in early_requests]
+    
+    return JsonResponse({'success': True, 'early_requests': data})
+
+@login_required
+def process_early_request(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            early_request = EarlyRequest.objects.get(id=data['request_id'])
+            
+            if data['action'] == 'approve':
+                early_request.status = 'approved'
+                message = (
+                    f"Your early request for {early_request.date.strftime('%d-%m-%Y')} has been approved. "
+                    f"Early Time: {early_request.early_time.strftime('%H:%M')}, Reason: {early_request.reason}"
+                )
+            else:
+                early_request.status = 'rejected'
+                message = (
+                    f"Your early request for {early_request.date.strftime('%d-%m-%Y')} has been rejected. "
+                    f"Early Time: {early_request.early_time.strftime('%H:%M')}, Reason: {early_request.reason}"
+                )
+            
+            # Explicitly fetch the User instance
+            processed_by_user = User.objects.get(id=request.user.id)
+            early_request.processed_by = processed_by_user
+            early_request.processed_at = timezone.now()
+            early_request.save()
+            
+            # Send WhatsApp message to the employee
+            send_whatsapp_message(early_request.employee.phone_personal, message)
+            
+            return JsonResponse({
+                'success': True,
+                'employee_id': early_request.employee.id,
+                'date': early_request.date.strftime('%Y-%m-%d'),
+                'action': data['action']
+            })
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+@login_required
+def delete_early_request(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            early_request = EarlyRequest.objects.get(id=data['request_id'])
+            
+            # Only allow deletion if status is pending (for all users)
+            if early_request.status != 'pending':
+                return JsonResponse({'success': False, 'error': 'Only pending requests can be deleted'})
+            
+            # Check if user is superuser or has user_level='normal'
+            if not (request.user.is_superuser or request.session.get('user_level') == 'normal'):
+                # For regular users, check ownership
+                if early_request.employee.user_id != request.session.get('custom_user_id'):
+                    return JsonResponse({'success': False, 'error': 'You can only delete your own early requests'})
+            
+            early_request.delete()
+            return JsonResponse({'success': True})
+        except EarlyRequest.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'Early request not found'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
 
 
 

@@ -68,6 +68,12 @@
                         0
                       </span>
                     </button>
+                    <button class="btn btn-info position-relative" onclick="loadAdminEarlyRequests()">
+                        View Early Requests
+                        <span id="earlyRequestsBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none">
+                            0
+                        </span>
+                    </button>
                     <div><button class="btn btn-info position-relative" onclick="window.location.href='{% url 'attendance_total_summary' %}'">
                         Total Summary
                         <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none">
@@ -375,6 +381,53 @@
                         </thead>
                         <tbody id="adminLateRequestsTableBody">
                             <!-- Late requests will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="adminEarlyRequestsModal" tabindex="-1" aria-labelledby="adminEarlyRequestsModalLabel" aria-hidden="true">
+    <div class="modal-dialog" style="max-width: 1200px; width: 100%;">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="adminEarlyRequestsModalLabel">Early Requests</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-flex justify-content-between mb-3">
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-sm btn-outline-primary filter-btn" data-status="all">All</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary filter-btn active" data-status="pending">Pending</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary filter-btn" data-status="approved">Approved</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary filter-btn" data-status="rejected">Rejected</button>
+                    </div>
+                    <div>
+                        <button id="prevAdminEarlyRequests" class="btn btn-sm btn-outline-primary" disabled>Previous</button>
+                        <span id="adminEarlyRequestsPaginationInfo" class="mx-2">Showing 1-10</span>
+                        <button id="nextAdminEarlyRequests" class="btn btn-sm btn-outline-primary">Next</button>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Employee</th>
+                                <th>Date</th>
+                                <th>Early Time</th>
+                                <th>Reason</th>
+                                <th>Status</th>
+                                <th>Requested On</th>
+                                <th>Actions</th>
+                                <th>Delete</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminEarlyRequestsTableBody">
+                            <!-- Early requests will be populated here -->
                         </tbody>
                     </table>
                 </div>
@@ -1669,6 +1722,220 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 }
 
+</script>
+<script>
+// Admin early requests management
+let currentAdminEarlyRequestsPage = 1;
+let allAdminEarlyRequests = [];
+let currentAdminEarlyFilterStatus = 'all';
+
+function loadAdminEarlyRequests() {
+    document.getElementById('earlyRequestsBadge').classList.add('d-none');
+    
+    fetch('/early_request/list/')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                allAdminEarlyRequests = data.early_requests || [];
+                updateAdminEarlyRequestsTable(1, 'pending');
+                new bootstrap.Modal(document.getElementById('adminEarlyRequestsModal')).show();
+            } else {
+                console.error('Server error:', data.error);
+                alert(`Error: ${data.error || 'Unknown error'}`);
+            }
+        })
+        .catch(error => {
+            console.error('Fetch error:', error);
+            alert(`Failed to load early requests: ${error.message}`);
+        });
+}
+
+function updateAdminEarlyRequestsTable(page, statusFilter = 'all') {
+    currentAdminEarlyRequestsPage = page;
+    currentAdminEarlyFilterStatus = statusFilter;
+    const startIndex = (page - 1) * lateRequestsPerPage;
+    const endIndex = startIndex + lateRequestsPerPage;
+    
+    // Filter requests based on current filter status
+    let filteredRequests = allAdminEarlyRequests;
+    if (currentAdminEarlyFilterStatus !== 'all') {
+        filteredRequests = allAdminEarlyRequests.filter(req => req.status === currentAdminEarlyFilterStatus);
+    }
+    
+    const paginatedRequests = filteredRequests.slice(startIndex, endIndex);
+    
+    const tbody = document.getElementById('adminEarlyRequestsTableBody');
+    tbody.innerHTML = '';
+    
+    paginatedRequests.forEach(request => {
+        const row = document.createElement('tr');
+        row.setAttribute('data-request-id', request.id);
+        
+        // Determine status badge color
+        let statusBadgeClass = 'badge bg-secondary';
+        if (request.status === 'approved') {
+            statusBadgeClass = 'badge bg-success';
+        } else if (request.status === 'rejected') {
+            statusBadgeClass = 'badge bg-danger';
+        } else if (request.status === 'pending') {
+            statusBadgeClass = 'badge bg-warning text-dark';
+        }
+        
+        row.innerHTML = `
+            <td>${request.employee_name}</td>
+            <td>${request.date}</td>
+            <td>${request.early_time}</td>
+            <td>${request.reason}</td>
+            <td><span class="${statusBadgeClass}">${request.status}</span></td>
+            <td>${request.created_at}</td>
+            <td>
+                ${request.status === 'pending' ? `
+                <button class="btn btn-sm btn-success" onclick="processEarlyRequest(${request.id}, 'approve')">Approve</button>
+                <button class="btn btn-sm btn-danger" onclick="processEarlyRequest(${request.id}, 'reject')">Reject</button>
+                ` : `
+                ${request.status === 'approved' ? `
+                    <button class="btn btn-sm btn-danger equal-width-btn" onclick="processEarlyRequest(${request.id}, 'reject')">Revoke Approval</button>
+                ` : `
+                    <button class="btn btn-sm btn-success equal-width-btn" onclick="processEarlyRequest(${request.id}, 'approve')">Re-approve</button>
+                `}
+                `}
+            </td>
+            <td>
+                ${request.status === 'pending' ? `
+                <button class="btn btn-sm btn-danger" onclick="deleteEarlyRequest(${request.id})">
+                    <i class="fas fa-trash"></i> Delete
+                </button>
+                ` : ''}
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+    
+    // Update pagination info
+    const totalRequests = filteredRequests.length;
+    const showingStart = startIndex + 1;
+    const showingEnd = Math.min(endIndex, totalRequests);
+    document.getElementById('adminEarlyRequestsPaginationInfo').textContent = 
+        `Showing ${showingStart}-${showingEnd} of ${totalRequests}`;
+    
+    // Update button states
+    document.getElementById('prevAdminEarlyRequests').disabled = page === 1;
+    document.getElementById('nextAdminEarlyRequests').disabled = endIndex >= totalRequests;
+}
+
+function processEarlyRequest(requestId, action) {
+    const confirmMessage = action === 'approve' 
+        ? 'Are you sure you want to approve this early request?'
+        : 'Are you sure you want to reject this early request?';
+    
+    if (!confirm(confirmMessage)) {
+        return;
+    }
+
+    fetch('/early_request/process/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector("meta[name='csrf-token']").getAttribute("content")
+        },
+        body: JSON.stringify({
+            request_id: requestId,
+            action: action
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(`Early request ${action}d successfully`);
+            loadAdminEarlyRequests(); // Refresh the list
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while processing the request');
+    });
+}
+
+function deleteEarlyRequest(requestId) {
+    if (!confirm('Are you sure you want to delete this early request?')) {
+        return;
+    }
+
+    fetch('/early_request/delete/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector("meta[name='csrf-token']").getAttribute("content")
+        },
+        body: JSON.stringify({
+            request_id: requestId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Early request deleted successfully');
+            // Remove the deleted request from the UI
+            const row = document.querySelector(`tr[data-request-id="${requestId}"]`);
+            if (row) {
+                row.remove();
+            }
+            // Refresh the early requests list
+            loadAdminEarlyRequests(currentAdminEarlyRequestsPage, currentAdminEarlyFilterStatus);
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while deleting the request');
+    });
+}
+
+// Add event listeners for admin early requests
+document.addEventListener('DOMContentLoaded', function() {
+    // Pagination buttons
+    document.getElementById('prevAdminEarlyRequests').addEventListener('click', function() {
+        if (currentAdminEarlyRequestsPage > 1) {
+            updateAdminEarlyRequestsTable(currentAdminEarlyRequestsPage - 1, currentAdminEarlyFilterStatus);
+        }
+    });
+    
+    document.getElementById('nextAdminEarlyRequests').addEventListener('click', function() {
+        updateAdminEarlyRequestsTable(currentAdminEarlyRequestsPage + 1, currentAdminEarlyFilterStatus);
+    });
+    
+    // Filter buttons
+    document.querySelectorAll('#adminEarlyRequestsModal .filter-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('#adminEarlyRequestsModal .filter-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            updateAdminEarlyRequestsTable(1, this.dataset.status);
+        });
+    });
+});
+
+// Update checkNewRequests to include early requests
+function checkNewRequests() {
+    // Check for new early requests
+    fetch('/early_request/list/?status=pending')
+        .then(response => response.json())
+        .then(data => {
+            if (data.early_requests) {
+                const badge = document.getElementById('earlyRequestsBadge');
+                const count = data.early_requests.length;
+                if (count > 0) {
+                    badge.textContent = count;
+                    badge.classList.remove('d-none');
+                } else {
+                    badge.classList.add('d-none');
+                }
+            }
+        })
+        .catch(error => console.error('Error checking early requests:', error));
+}
 </script>
 {% endif %}
 {% endblock %}

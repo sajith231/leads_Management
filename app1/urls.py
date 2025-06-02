@@ -301,6 +301,13 @@ urlpatterns = [
 
 
 
+    path('early_request/create/', views.create_early_request, name='create_early_request'),
+    path('early_request/list/', views.get_early_requests, name='list_early_requests'),
+    path('early_request/process/', views.process_early_request, name='process_early_request'),
+    path('early_request/delete/', views.delete_early_request, name='delete_early_request'),
+
+
+
 
 
 

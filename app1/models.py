@@ -928,3 +928,24 @@ class BreakTime(models.Model):
     #CREATED AS NEW
 
     #CREATED AS NEWF
+
+
+    # models.py
+REQUEST_STATUS_CHOICES = [
+    ('pending', 'Pending'),
+    ('approved', 'Approved'),
+    ('rejected', 'Rejected'),
+]
+
+class EarlyRequest(models.Model):
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE)
+    date = models.DateField()
+    early_time = models.TimeField()
+    reason = models.TextField()
+    status = models.CharField(max_length=20, choices=REQUEST_STATUS_CHOICES, default='pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+    processed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    processed_at = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.employee.name} - {self.date}"

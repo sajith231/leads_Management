@@ -29,6 +29,15 @@
         <i class="fas fa-list"></i> View My Late Requests
     </button>
 </div>
+<div style="margin-bottom: 20px;" class="buttons">
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#earlyRequestModal">
+        Early Request 
+    </button>
+    <button class="btn btn-info ms-2" onclick="loadEarlyRequests()">
+        <i class="fas fa-list"></i> View My Early Requests
+    </button>
+</div>
+
     <div class="">
         <!-- Punch In/Out Card -->
         <div class="card shadow mb-4" style="overflow: hidden;">
@@ -326,6 +335,83 @@
                         </thead>
                         <tbody id="userLateRequestsTableBody">
                             <!-- Late requests will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="earlyRequestModal" tabindex="-1" aria-labelledby="earlyRequestModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="earlyRequestModalLabel">Request Early Departure</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="earlyRequestForm">
+                    <div class="mb-3">
+                        <label for="earlyDate" class="form-label">Date</label>
+                        <input type="date" class="form-control" id="earlyDate" required readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label for="earlyTime" class="form-label">Early Departure Time</label>
+                        <input type="time" class="form-control" id="earlyTime" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="earlyReason" class="form-label">Reason</label>
+                        <textarea class="form-control" id="earlyReason" rows="3" required></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="submitEarlyRequest()">Submit Request</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- View Early Requests Modal -->
+<div class="modal fade" id="viewEarlyRequestsModal" tabindex="-1" aria-labelledby="viewEarlyRequestsModalLabel" aria-hidden="true">
+    <div class="modal-dialog" style="max-width: 1200px;width: 100%;margin: auto;">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="viewEarlyRequestsModalLabel">My Early Requests</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-2 p-md-10" style="margin: auto;width: 100%;">
+                <div class="d-md-flex justify-content-between mb-3">
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-sm btn-outline-primary filter-btn active" style="font-size: 12px;" data-status="all">All</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary filter-btn" style="font-size: 12px;" data-status="pending">Pending</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary filter-btn" style="font-size: 12px;" data-status="approved">Approved</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary filter-btn" style="font-size: 12px;" data-status="rejected">Rejected</button>
+                    </div>
+                    <div class="d-flex mt-2 mt-md-0">
+                        <button id="prevEarlyRequests" class="btn btn-sm btn-outline-primary" disabled>Previous</button>
+                        <span id="earlyRequestsPaginationInfo" class="mx-2">Showing 1-10</span>
+                        <button id="nextEarlyRequests" class="btn btn-sm btn-outline-primary">Next</button>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Early Time</th>
+                                <th>Reason</th>
+                                <th>Status</th>
+                                <th>Requested On</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="userEarlyRequestsTableBody">
+                            <!-- Early requests will be populated here -->
                         </tbody>
                     </table>
                 </div>
@@ -1231,6 +1317,186 @@ function loadBreakStatus() {
 // Call this when page loads
 document.addEventListener('DOMContentLoaded', function() {
     loadBreakStatus();
+});
+</script>
+<script>
+    // Global variables for early requests pagination
+let currentEarlyRequestsPage = 1;
+const earlyRequestsPerPage = 10;
+let allEarlyRequests = [];
+let currentEarlyFilterStatus = 'all';
+
+// Submit early request
+function submitEarlyRequest() {
+    const form = document.getElementById('earlyRequestForm');
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+    }
+
+    const data = {
+        date: document.getElementById('earlyDate').value,
+        early_time: document.getElementById('earlyTime').value,
+        reason: document.getElementById('earlyReason').value
+    };
+
+    fetch('/early_request/create/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Early request submitted successfully!');
+            $('#earlyRequestModal').modal('hide');
+            form.reset();
+            loadEarlyRequests(); // Refresh the early requests list
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    
+}
+
+// Load user's early requests
+function loadEarlyRequests() {
+    fetch('/early_request/list/')
+        .then(response => response.json())
+        .then(data => {
+            if (data.early_requests) {
+                allEarlyRequests = data.early_requests.sort((a, b) => {
+                    return new Date(b.created_at) - new Date(a.created_at);
+                });
+                updateEarlyRequestsTable(1, 'all');
+                new bootstrap.Modal(document.getElementById('viewEarlyRequestsModal')).show();
+            } else {
+                alert('Error loading early requests');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading early requests:', error);
+            alert('Error loading early requests');
+        });
+}
+
+// Update early requests table
+function updateEarlyRequestsTable(page, statusFilter = 'all') {
+    currentEarlyRequestsPage = page;
+    currentEarlyFilterStatus = statusFilter;
+    const startIndex = (page - 1) * earlyRequestsPerPage;
+    const endIndex = startIndex + earlyRequestsPerPage;
+    
+    // Filter requests based on current filter status
+    let filteredRequests = allEarlyRequests;
+    if (currentEarlyFilterStatus !== 'all') {
+        filteredRequests = allEarlyRequests.filter(req => req.status === currentEarlyFilterStatus);
+    }
+    
+    const paginatedRequests = filteredRequests.slice(startIndex, endIndex);
+    
+    const tbody = document.getElementById('userEarlyRequestsTableBody');
+    tbody.innerHTML = '';
+    
+    paginatedRequests.forEach(request => {
+        const row = document.createElement('tr');
+        
+        // Determine status badge color
+        let statusBadgeClass = 'badge bg-secondary';
+        if (request.status === 'approved') {
+            statusBadgeClass = 'badge bg-success';
+        } else if (request.status === 'rejected') {
+            statusBadgeClass = 'badge bg-danger';
+        } else if (request.status === 'pending') {
+            statusBadgeClass = 'badge bg-warning text-dark';
+        }
+        
+        row.innerHTML = `
+            <td>${request.date}</td>
+            <td>${request.early_time}</td>
+            <td>${request.reason}</td>
+            <td><span class="${statusBadgeClass}">${request.status}</span></td>
+            <td>${request.created_at}</td>
+            <td>
+                ${request.status === 'pending' ? `
+                <button class="btn btn-sm btn-danger" onclick="deleteEarlyRequest(${request.id})">
+                    <i class="fas fa-trash"></i> Delete
+                </button>
+                ` : ''}
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+    
+    // Update pagination info
+    const totalRequests = filteredRequests.length;
+    const showingStart = startIndex + 1;
+    const showingEnd = Math.min(endIndex, totalRequests);
+    document.getElementById('earlyRequestsPaginationInfo').textContent = 
+        `Showing ${showingStart}-${showingEnd} of ${totalRequests}`;
+    
+    // Update button states
+    document.getElementById('prevEarlyRequests').disabled = page === 1;
+    document.getElementById('nextEarlyRequests').disabled = endIndex >= totalRequests;
+}
+
+// Delete early request
+function deleteEarlyRequest(requestId) {
+    if (!confirm('Are you sure you want to delete this early request?')) {
+        return;
+    }
+
+    fetch('/early_request/delete/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({
+            request_id: requestId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Early request deleted successfully');
+            loadEarlyRequests(); // Refresh the list
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while deleting the request');
+    });
+}
+
+// Initialize early request date to today
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('earlyDate').valueAsDate = new Date();
+    
+    // Early requests pagination event listeners
+    document.getElementById('prevEarlyRequests').addEventListener('click', function() {
+        if (currentEarlyRequestsPage > 1) {
+            updateEarlyRequestsTable(currentEarlyRequestsPage - 1, currentEarlyFilterStatus);
+        }
+    });
+    
+    document.getElementById('nextEarlyRequests').addEventListener('click', function() {
+        updateEarlyRequestsTable(currentEarlyRequestsPage + 1, currentEarlyFilterStatus);
+    });
+    
+    // Early requests filter buttons
+    document.querySelectorAll('#viewEarlyRequestsModal .filter-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('#viewEarlyRequestsModal .filter-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            updateEarlyRequestsTable(1, this.dataset.status);
+        });
+    });
 });
 </script>
 {% endblock %}
