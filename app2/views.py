@@ -523,6 +523,17 @@ def daily_task_admin(request):
 def daily_task_user(request):
     daily_tasks = DailyTask.objects.filter(added_by=request.user).order_by('-created_at')
 
+    paginator = Paginator(daily_tasks, 15)  # Change the number of rows per page to 15
+    page = request.GET.get('page', 1)
+    try:
+        page_obj = paginator.page(page)
+    except PageNotAnInteger:
+        page_obj = paginator.page(1)
+    except EmptyPage:
+        page_obj = paginator.page(paginator.num_pages)
+
+    return render(request, 'daily_task_user.html', {'page_obj': page_obj})
+
 
     paginator = Paginator(daily_tasks, 15)
     page = request.GET.get('page', 1)
