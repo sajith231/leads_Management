@@ -163,6 +163,62 @@
             }
         }
     </style>
+    <style>
+    /* Pagination Styles */
+    .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-top: 20px;
+        font-size: 14px;
+    }
+
+    .pagination .step-links {
+        display: flex;
+        gap: 10px;
+    }
+
+    .pagination a {
+        padding: 8px 16px;
+        background-color: #f9f9f9;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        text-decoration: none;
+        color: #333;
+        transition: background-color 0.3s, color 0.3s;
+    }
+
+    .pagination a:hover {
+        background-color: #ddd;
+        color: #212121;
+    }
+
+    .pagination .current {
+        padding: 8px 16px;
+        background-color: #4CAF50;
+        color: white;
+        border: 1px solid #4CAF50;
+        border-radius: 4px;
+        font-weight: bold;
+    }
+
+    /* Responsive Design for Pagination */
+    @media (max-width: 768px) {
+        .pagination {
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .pagination .step-links {
+            gap: 5px;
+        }
+
+        .pagination a, .pagination .current {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+    }
+</style>
 
     {% if messages %}
         <div class="messages">
@@ -175,9 +231,7 @@
         </div>
     {% endif %}
 
-    
     <div>
-        
         <form method="GET" class="mb-3">
             <label for="start_date" class="fw-bold">From:</label>
             <input type="date" name="start_date" id="start_date" class="form-control d-inline-block w-auto" value="{{ request.GET.start_date }}">
@@ -191,12 +245,28 @@
             <button type="button" id="okBtn" class="btn btn-primary ms-2">OK</button>
             <button type="button" id="todayReminderBtn" class="btn btn-secondary ms-2">Today Reminders</button>
             <a href="{% url 'add_reminder' %}" class="add-button" style="margin-left: 8%;">Add New</a>
-            
         </form>
     </div>
     
-    
     <div class="table-container">
+         <!-- Pagination Controls -->
+    <div class="pagination">
+        <span class="step-links">
+            {% if page_obj.has_previous %}
+                <a href="?page=1&start_date={{ request.GET.start_date }}&end_date={{ request.GET.end_date }}&search={{ request.GET.search }}">First</a>
+                <a href="?page={{ page_obj.previous_page_number }}&start_date={{ request.GET.start_date }}&end_date={{ request.GET.end_date }}&search={{ request.GET.search }}">Previous</a>
+            {% endif %}
+
+            <span class="current">
+                Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+            </span>
+
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}&start_date={{ request.GET.start_date }}&end_date={{ request.GET.end_date }}&search={{ request.GET.search }}">Next</a>
+                <a href="?page={{ page_obj.paginator.num_pages }}&start_date={{ request.GET.start_date }}&end_date={{ request.GET.end_date }}&search={{ request.GET.search }}">Last</a>
+            {% endif %}
+        </span>
+    </div>
         <table>
             <thead>
                 <tr>
@@ -212,40 +282,39 @@
                 </tr>
             </thead>
             <tbody>
-                {% if reminders %}
-                    {% for reminder in reminders %}
-                        <tr>
-                            <td>{{ reminder.display_no }}</td>
-                            <td>{{ reminder.added_by.username|default:"Unknown" }}</td>
-                            <td>{{ reminder.entry_date|date:"d-m-Y" }}</td>
-                            <td>{{ reminder.reminder_type.name }}</td>
-                            <td>{{ reminder.remark }}</td>
-                           
-                            <td>
-                                {% if reminder.responsible_people %}
-                                    {% for person in reminder.responsible_people %}
-                                        <div>{{ person.name }}</div>
-                                    {% endfor %}
-                                {% else %}
-                                    <em>No responsible person assigned</em>
-                                {% endif %}
-                            </td>
-                            <td>{{ reminder.remind_date|date:"d-m-Y" }}</td>
-                            <td>{{ reminder.event_date|date:"d-m-Y"|default:"N/A" }}</td> 
-                            <td class="action-buttons">
-                                <a href="{% url 'edit_reminder' reminder.no %}" class="edit-btn">Edit</a>
-                                <button class="delete-btn" onclick="showDeleteModal('{{ reminder.no }}')">Delete</button>
-                            </td>
-                        </tr>
-                    {% endfor %}
-                {% else %}
+                {% for reminder in page_obj %}
+                    <tr>
+                        <td>{{ reminder.display_no }}</td>
+                        <td>{{ reminder.added_by.username|default:"Unknown" }}</td>
+                        <td>{{ reminder.entry_date|date:"d-m-Y" }}</td>
+                        <td>{{ reminder.reminder_type.name }}</td>
+                        <td>{{ reminder.remark }}</td>
+                        <td>
+                            {% if reminder.responsible_people %}
+                                {% for person in reminder.responsible_people %}
+                                    <div>{{ person.name }}</div>
+                                {% endfor %}
+                            {% else %}
+                                <em>No responsible person assigned</em>
+                            {% endif %}
+                        </td>
+                        <td>{{ reminder.remind_date|date:"d-m-Y" }}</td>
+                        <td>{{ reminder.event_date|date:"d-m-Y"|default:"N/A" }}</td> 
+                        <td class="action-buttons">
+                            <a href="{% url 'edit_reminder' reminder.no %}" class="edit-btn">Edit</a>
+                            <button class="delete-btn" onclick="showDeleteModal('{{ reminder.no }}')">Delete</button>
+                        </td>
+                    </tr>
+                {% empty %}
                     <tr>
                         <td colspan="9">No reminders found.</td>
                     </tr>
-                {% endif %}
+                {% endfor %}
             </tbody>
         </table>
     </div>
+
+   
 
     <!-- Delete Confirmation Modal -->
     <div id="deleteModal" class="modal">

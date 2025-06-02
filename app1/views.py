@@ -3739,12 +3739,16 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 import logging
 from .models import Reminder, Employee, ReminderType
+from django.core.paginator import Paginator
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from django.utils import timezone
+from .models import Reminder, ReminderType, Employee
 
 logger = logging.getLogger(__name__)
 
 
 
-# remainder pge views functions
 @login_required
 def reminders(request):
     """View for displaying filtered reminders."""
@@ -3783,8 +3787,13 @@ def reminders(request):
             "responsible_people": responsible_people
         })
     
+    # Pagination
+    paginator = Paginator(reminders_data, 15)  # Show 15 reminders per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
     return render(request, "reminder.html", {
-        "reminders": reminders_data,
+        "page_obj": page_obj,
         "reminder_types": ReminderType.objects.all()
     })
 
