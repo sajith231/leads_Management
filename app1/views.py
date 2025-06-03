@@ -5736,7 +5736,7 @@ def create_early_request(request):
             )
             
             # Send WhatsApp message to managers
-            phone_numbers = ["9061947005", "7025034326",]
+            phone_numbers = ["9946545535", "7593820007", "7593820005","9846754998"]
             message = (
                 f"New early request from {employee.name}. "
                 f"Date: {data['date']}, "
