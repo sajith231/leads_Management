@@ -5778,9 +5778,10 @@ def get_early_requests(request):
     
     return JsonResponse({'success': True, 'early_requests': data})
 
-import logging
+# import logging
 
-logger = logging.getLogger(__name__)
+# logger = logging.getLogger(__name__)
+
 
 @login_required
 def process_early_request(request):
@@ -5799,9 +5800,9 @@ def process_early_request(request):
                 return JsonResponse({'success': False, 'error': 'User not authenticated'})
 
             try:
-                processed_by_user = User.objects.get(id=request.user.id)
+                processed_by_user = DjangoUser.objects.get(id=request.user.id)
                 logger.info(f"User found with ID: {request.user.id}")
-            except User.DoesNotExist:
+            except DjangoUser.DoesNotExist:
                 logger.error(f"User not found with ID: {request.user.id}")
                 return JsonResponse({'success': False, 'error': 'User not found'})
 

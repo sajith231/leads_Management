@@ -944,7 +944,7 @@ class EarlyRequest(models.Model):
     reason = models.TextField()
     status = models.CharField(max_length=20, choices=REQUEST_STATUS_CHOICES, default='pending')
     created_at = models.DateTimeField(auto_now_add=True)
-    processed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    processed_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL)
     processed_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
