@@ -5778,6 +5778,10 @@ def get_early_requests(request):
     
     return JsonResponse({'success': True, 'early_requests': data})
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 @login_required
 def process_early_request(request):
     if request.method == 'POST':
@@ -5785,6 +5789,16 @@ def process_early_request(request):
             data = json.loads(request.body)
             early_request = EarlyRequest.objects.get(id=data['request_id'])
             
+            logger.info(f"Processing early request with ID: {data['request_id']}")
+            
+            # Check if the user exists
+            try:
+                processed_by_user = User.objects.get(id=request.user.id)
+                logger.info(f"User found with ID: {request.user.id}")
+            except User.DoesNotExist:
+                logger.error(f"User not found with ID: {request.user.id}")
+                return JsonResponse({'success': False, 'error': 'User not found'})
+
             if data['action'] == 'approve':
                 early_request.status = 'approved'
                 message = (
@@ -5798,8 +5812,6 @@ def process_early_request(request):
                     f"Early Time: {early_request.early_time.strftime('%H:%M')}, Reason: {early_request.reason}"
                 )
             
-            # Explicitly fetch the User instance
-            processed_by_user = User.objects.get(id=request.user.id)
             early_request.processed_by = processed_by_user
             early_request.processed_at = timezone.now()
             early_request.save()
@@ -5814,10 +5826,10 @@ def process_early_request(request):
                 'action': data['action']
             })
         except EarlyRequest.DoesNotExist:
+            logger.error(f"Early request not found with ID: {data['request_id']}")
             return JsonResponse({'success': False, 'error': 'Early request not found'})
-        except User.DoesNotExist:
-            return JsonResponse({'success': False, 'error': 'User not found'})
         except Exception as e:
+            logger.error(f"Error processing early request: {str(e)}")
             return JsonResponse({'success': False, 'error': str(e)})
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
 
