@@ -5736,7 +5736,7 @@ def create_early_request(request):
             )
             
             # Send WhatsApp message to managers
-            phone_numbers = ["9946545535", "7593820007", "7593820005","9846754998"]
+            phone_numbers = ["9061947005", "7025034326",]
             message = (
                 f"New early request from {employee.name}. "
                 f"Date: {data['date']}, "
@@ -5813,6 +5813,10 @@ def process_early_request(request):
                 'date': early_request.date.strftime('%Y-%m-%d'),
                 'action': data['action']
             })
+        except EarlyRequest.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'Early request not found'})
+        except User.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'User not found'})
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)})
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
