@@ -5787,11 +5787,17 @@ def process_early_request(request):
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
-            early_request = EarlyRequest.objects.get(id=data['request_id'])
-            
-            logger.info(f"Processing early request with ID: {data['request_id']}")
-            
-            # Check if the user exists
+            early_request_id = data['request_id']
+            action = data['action']
+
+            # Fetch the early request
+            early_request = EarlyRequest.objects.get(id=early_request_id)
+
+            # Fetch the currently logged-in user
+            if not request.user.is_authenticated:
+                logger.error("User is not authenticated.")
+                return JsonResponse({'success': False, 'error': 'User not authenticated'})
+
             try:
                 processed_by_user = User.objects.get(id=request.user.id)
                 logger.info(f"User found with ID: {request.user.id}")
@@ -5799,31 +5805,35 @@ def process_early_request(request):
                 logger.error(f"User not found with ID: {request.user.id}")
                 return JsonResponse({'success': False, 'error': 'User not found'})
 
-            if data['action'] == 'approve':
+            # Update the early request status
+            if action == 'approve':
                 early_request.status = 'approved'
                 message = (
                     f"Your early request for {early_request.date.strftime('%d-%m-%Y')} has been approved. "
                     f"Early Time: {early_request.early_time.strftime('%H:%M')}, Reason: {early_request.reason}"
                 )
-            else:
+            elif action == 'reject':
                 early_request.status = 'rejected'
                 message = (
                     f"Your early request for {early_request.date.strftime('%d-%m-%Y')} has been rejected. "
                     f"Early Time: {early_request.early_time.strftime('%H:%M')}, Reason: {early_request.reason}"
                 )
-            
+            else:
+                logger.error(f"Invalid action: {action}")
+                return JsonResponse({'success': False, 'error': 'Invalid action'})
+
             early_request.processed_by = processed_by_user
             early_request.processed_at = timezone.now()
             early_request.save()
-            
+
             # Send WhatsApp message to the employee
             send_whatsapp_message(early_request.employee.phone_personal, message)
-            
+
             return JsonResponse({
                 'success': True,
                 'employee_id': early_request.employee.id,
                 'date': early_request.date.strftime('%Y-%m-%d'),
-                'action': data['action']
+                'action': action
             })
         except EarlyRequest.DoesNotExist:
             logger.error(f"Early request not found with ID: {data['request_id']}")
