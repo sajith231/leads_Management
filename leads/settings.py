@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'ckeditor',
     'app1',
     'app2',  # 👈 Add this line
+    'app3',
     
 ]
 
