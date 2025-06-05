@@ -25,19 +25,6 @@
             <input type="text" class="form-control" id="task" name="task" required value="{{ task.task }}">
         </div>
         <div class="mb-3">
-            <label for="duration" class="form-label">Duration</label>
-            <input type="text" class="form-control" id="duration" name="duration" required value="{{ task.duration }}">
-        </div>
-        <div class="mb-3">
-            <label for="status" class="form-label">Status</label>
-            <select class="form-select" id="status" name="status" required>
-                <option value="complete" {% if task.status == 'complete' %}selected{% endif %}>Complete</option>
-                <option value="started" {% if task.status == 'started' %}selected{% endif %}>Started</option>
-                <option value="finish" {% if task.status == 'finish' %}selected{% endif %}>Finish</option>
-                <option value="in_progress" {% if task.status == 'in_progress' %}selected{% endif %}>In Progress</option>
-            </select>
-        </div>
-        <div class="mb-3">
             <label for="remark" class="form-label">Remark (Optional)</label>
             <textarea class="form-control" id="remark" name="remark" rows="3">{{ task.remark }}</textarea>
         </div>

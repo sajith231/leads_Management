@@ -519,6 +519,13 @@ def daily_task_admin(request):
         'end_date': end_date
     })
 
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
+from django.utils import timezone
+from .models import DailyTask
+from django.views.decorators.http import require_POST
+
 @login_required
 def daily_task_user(request):
     daily_tasks = DailyTask.objects.filter(added_by=request.user).order_by('-created_at')
@@ -534,50 +541,127 @@ def daily_task_user(request):
 
     return render(request, 'daily_task_user.html', {'page_obj': page_obj})
 
+import json
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
+from django.utils import timezone
+from .models import DailyTask
+from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_exempt
 
-    paginator = Paginator(daily_tasks, 15)
-    page = request.GET.get('page', 1)
+@login_required
+@require_POST
+def stop_task(request):
     try:
-        page_obj = paginator.page(page)
-    except PageNotAnInteger:
-        page_obj = paginator.page(1)
-    except EmptyPage:
-        page_obj = paginator.page(paginator.num_pages)
+        # Try to get task_id from POST data (form data)
+        task_id = request.POST.get('task_id')
+        
+        # If not found in POST, try to get from JSON body
+        if not task_id:
+            try:
+                body = json.loads(request.body.decode('utf-8'))
+                task_id = body.get('task_id')
+            except (json.JSONDecodeError, AttributeError):
+                pass
+        
+        print(f"Received task_id: {task_id}")  # Debugging statement
+        
+        if not task_id:
+            return JsonResponse({
+                'success': False, 
+                'error': 'No task_id provided'
+            })
 
-    return render(request, 'daily_task_user.html', {'page_obj': page_obj})
+        try:
+            task = get_object_or_404(DailyTask, id=task_id, added_by=request.user)
+            print(f"Task found: {task}")  # Debugging statement
+            
+            if task.status == 'in_progress':
+                task.status = 'completed'
+                # Calculate duration
+                duration_delta = timezone.now() - task.created_at
+                hours, remainder = divmod(duration_delta.total_seconds(), 3600)
+                minutes, seconds = divmod(remainder, 60)
+                task.duration = f"{int(hours)}h {int(minutes)}m {int(seconds)}s"
+                task.save()
+                
+                print(f"Task stopped successfully. Duration: {task.duration}")
+                return JsonResponse({'success': True})
+            else:
+                return JsonResponse({
+                    'success': False, 
+                    'error': f'Task is not in progress. Current status: {task.status}'
+                })
+                
+        except DailyTask.DoesNotExist:
+            return JsonResponse({
+                'success': False, 
+                'error': 'Task not found or you do not have permission to stop this task'
+            })
+            
+    except Exception as e:
+        print(f"Unexpected error in stop_task: {e}")  # Debugging statement
+        import traceback
+        traceback.print_exc()  # This will print the full traceback
+        return JsonResponse({
+            'success': False, 
+            'error': f'Server error: {str(e)}'
+        })
+    
 
+
+    
 @login_required
 def add_daily_task(request):
     if request.method == 'POST':
         project = request.POST.get('project', '').strip()
         project_assigned = request.POST.get('project_assigned', '').strip()
         task = request.POST.get('task', '').strip()
-        duration = request.POST.get('duration', '').strip()
-        status = request.POST.get('status', '').strip()
-        remark = request.POST.get('remark', '')  # Get the remark field
+        remark = request.POST.get('remark', '')
 
-        # Validate that either project or project_assigned is provided (but not both)
+        # Validate fields
         if not project and not project_assigned:
             messages.error(request, 'Either "Project (Assigned)" or "Project (Manual Entry)" must be filled.')
             return redirect('add_daily_task')
         
-        if project and project_assigned:
-            messages.error(request, 'Please use only one project field - either assigned or manual entry.')
+        if not task:
+            messages.error(request, 'Task field is required.')
             return redirect('add_daily_task')
 
-        # Validate other required fields
-        if not task or not duration or not status:
-            messages.error(request, 'All fields are required.')
-            return redirect('add_daily_task')
+        # Get current time
+        current_time = timezone.now()
 
+        # Get the user's last two tasks
+        last_tasks = DailyTask.objects.filter(added_by=request.user).order_by('-created_at')[:2]
+
+        # Update previous tasks if they exist
+        if len(last_tasks) >= 1:
+            # Mark the last task as completed
+            last_task = last_tasks[0]
+            last_task.status = 'completed'
+            
+            # If there's a second last task, calculate duration
+            if len(last_tasks) >= 2:
+                second_last_task = last_tasks[1]
+                duration = current_time - second_last_task.created_at
+                # Format duration as HH:MM:SS
+                hours, remainder = divmod(duration.total_seconds(), 3600)
+                minutes, seconds = divmod(remainder, 60)
+                last_task.duration = f"{int(hours)}h {int(minutes)}m {int(seconds)}s"
+            
+            last_task.save()
+
+        # Create new task
         DailyTask.objects.create(
             project=project or project_assigned,
             task=task,
-            duration=duration,
-            status=status,
             added_by=request.user,
-            remark=remark  # Add the remark field
+            remark=remark,
+            status='in_progress',  # New task is in progress
+            duration=''  # Duration will be set when next task is added
         )
+
         messages.success(request, 'Task added successfully!')
         return redirect('daily_task_user')
 
@@ -600,8 +684,6 @@ def edit_daily_task(request, task_id):
         project = request.POST.get('project', '')
         project_assigned = request.POST.get('project_assigned', '')
         task.task = request.POST['task']
-        task.duration = request.POST['duration']
-        task.status = request.POST['status']
         task.remark = request.POST.get('remark', '')  # Update the remark field
 
         if not project and not project_assigned:

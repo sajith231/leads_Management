@@ -527,8 +527,8 @@ class Employee(models.Model):
     bank_name = models.CharField(max_length=100, blank=True, null=True)
     branch = models.CharField(max_length=100, blank=True, null=True)  
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')  
-    duty_time_start = models.TimeField(null=True, blank=True)#CREATED AS NEW
-    duty_time_end = models.TimeField(null=True, blank=True)#CREATED AS NEW
+    duty_time_start = models.TimeField(null=True, blank=True)
+    duty_time_end = models.TimeField(null=True, blank=True)
 
     def clean(self):
         """ Ensure the selected User ID is unique. """
@@ -683,7 +683,7 @@ class Attendance(models.Model):
     punch_out_latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     punch_out_longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     verified = models.BooleanField(default=False)  
-    note = models.TextField(blank=True, null=True)  # CREATED AS NEW 
+    note = models.TextField(blank=True, null=True)
 
     class Meta:
         unique_together = ('employee', 'day', 'date')  # Ensure no duplicate entries for the same day
@@ -720,7 +720,7 @@ class LeaveRequest(models.Model):
     employee = models.ForeignKey(Employee, on_delete=models.CASCADE)
     start_date = models.DateField()
     end_date = models.DateField()
-    leave_type = models.CharField(max_length=20, choices=LEAVE_TYPE_CHOICES, default='full_day')#CREATED AS NEW 
+    leave_type = models.CharField(max_length=20, choices=LEAVE_TYPE_CHOICES, default='full_day')
     reason = models.TextField()
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     created_at = models.DateTimeField(auto_now_add=True)

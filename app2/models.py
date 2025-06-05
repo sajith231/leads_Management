@@ -80,9 +80,9 @@ class InformationCenter(models.Model):
     product_category = models.ForeignKey(ProductCategory, on_delete=models.CASCADE)
     thumbnail = models.ImageField(upload_to='information_thumbnails/')
     priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES)
-    language = models.CharField(max_length=50, blank=True)  #CREATED AS NEW
-    duration = models.CharField(max_length=50, blank=True)  #CREATED AS NEW
-    host = models.CharField(max_length=255, blank=True)  # CREATED AS NEW
+    language = models.CharField(max_length=50, blank=True) 
+    duration = models.CharField(max_length=50, blank=True)  
+    host = models.CharField(max_length=255, blank=True)  
     
     def __str__(self):
         return self.title
@@ -108,7 +108,7 @@ class DailyTask(models.Model):
     project = models.CharField(max_length=255)
     task = models.CharField(max_length=255)
     duration = models.CharField(max_length=50)  # Changed to CharField
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='in_progress')#CHANGED AS NEW
     added_by = models.ForeignKey(User, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

@@ -47,6 +47,8 @@ urlpatterns = [
 
     path('category-detail/<int:category_id>/', views.category_detail, name='category_detail'),
 
+    path('stop_task/', views.stop_task, name='stop_task'),
+
 
     
 
