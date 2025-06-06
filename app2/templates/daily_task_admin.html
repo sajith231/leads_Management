@@ -53,7 +53,7 @@
     }
 </style>
 
-<div class="container py-4">
+<div class="">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>Daily Tasks Management</h2>
     </div>
@@ -68,7 +68,6 @@
                     <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completed</option>
                     <option value="in_progress" {% if status_filter == 'in_progress' %}selected{% endif %}>In Progress</option>
                     <option value="started" {% if status_filter == 'started' %}selected{% endif %}>Started</option>
-                    <option value="finish" {% if status_filter == 'finish' %}selected{% endif %}>Finish</option>
                 </select>
             </div>
             <!-- <div class="col-md-3">
@@ -148,7 +147,8 @@
             <thead class="table-dark">
                 <tr class="text-center">
                     <th>No.</th>
-                    <th>Date & Time</th>
+                    <th>Date</th>
+                    <th>Time</th>
                     <th>Added By</th>
                     <th>Project</th>
                     <th>Task</th>
@@ -159,20 +159,18 @@
             </thead>
             <tbody>
                 {% for task in page_obj %}
-                <tr class="text-center">
+                <tr>
                     <td>{{ forloop.counter|add:page_obj.start_index|add:"-1" }}</td>
+                    <td>{{ task.created_at|date:"d-m-Y" }}</td>
+                    <td>{{ task.created_at|time:"H:i" }}</td>
                     <td>
-                        <div>{{ task.created_at|date:"d-m-Y" }}</div>
-                        <small class="text-muted">{{ task.created_at|time:"H:i" }}</small>
-                    </td>
-                    <td>
-                        <span class="badge bg-info text-dark">{{ task.added_by.username }}</span>
+                        <span class="badge bg-info text-dark">{{ task.added_by.name }}</span>
                     </td>
                     <td class="text-capitalize">
                         <strong>{{ task.project }}</strong>
                     </td>
                     <td class="text-start">{{ task.task }}</td>
-                    <td>
+                    <td class="text-center">
                         {% if task.status == 'completed' %}
                             <span class="badge bg-success">Completed</span>
                         {% elif task.status == 'in_progress' %}
@@ -192,7 +190,7 @@
                             <span class="text-muted">-</span>
                         {% endif %}
                     </td>
-                    <td>
+                    <td class="text-center">
                         {% if task.remark %}
                             <button onclick="showRemarkPopup('{{ task.remark|escapejs }}')" 
                                     class="btn btn-sm btn-outline-primary" 
@@ -206,7 +204,7 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="8" class="text-center text-muted py-4">
+                    <td colspan="9" class="text-center text-muted py-4">
                         <i class="fas fa-inbox fa-2x mb-2"></i>
                         <div>No tasks available with current filters.</div>
                     </td>

@@ -17,9 +17,21 @@
             <div class="form-text">OR</div>
         </div>
         <div class="mb-3">
-            <label for="project" class="form-label">Project (Manual Entry)</label>
-            <input type="text" class="form-control" id="project" name="project" placeholder="Enter project name if not in assigned list">
-        </div>
+    
+    <button type="button" class="btn btn-secondary btn-sm" onclick="showProjectInput()"><label class="form-label">Project (Manual Entry)</label></button>
+
+    <!-- Hidden input field -->
+    <div id="projectInputDiv" style="display: none; margin-top: 10px;">
+        <input type="text" class="form-control" id="project" name="project" placeholder="Enter project name if not in assigned list">
+    </div>
+</div>
+
+<script>
+    function showProjectInput() {
+        document.getElementById("projectInputDiv").style.display = "block";
+    }
+</script>
+
         <div class="mb-3">
             <label for="task" class="form-label">Task</label>
             <input type="text" class="form-control" id="task" name="task" required>
