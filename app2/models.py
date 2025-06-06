@@ -97,7 +97,7 @@ class InformationCenter(models.Model):
 
 from django.db import models
 from django.contrib.auth.models import User
-from app1.models import User
+
 
 class DailyTask(models.Model):
     STATUS_CHOICES = [
