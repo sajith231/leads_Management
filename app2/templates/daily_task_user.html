@@ -41,12 +41,12 @@
             </thead>
             <tbody>
 {% for task in page_obj %}
-<tr class="text-center">
+<tr >
     <td>{{ forloop.counter }}</td>
     <td>{{ task.created_at|date:"d-m-Y" }}</td>
     <td class="text-capitalize">{{ task.project }}</td>
     <td>{{ task.task }}</td>
-    <td>
+    <td class="text-center">
         {% if task.status == 'completed' %}
             <span class="badge bg-success">Completed</span>
         {% elif task.status == 'in_progress' %}
@@ -62,7 +62,7 @@
             <span class="text-muted">-</span>
         {% endif %}
     </td>
-    <td>
+    <td class="text-center">
         <button onclick="showRemarkPopup('{{ task.remark|escapejs }}')" style="background: none; border: none; cursor: pointer;">
             <i class="fas fa-comment-dots" style="color: #555; font-size: 18px;"></i>
         </button>
