@@ -6,6 +6,7 @@ from .models import SalaryCertificate
 # from .forms import SalaryCertificateForm
 from django.http import JsonResponse,HttpResponseRedirect
 from django.urls import reverse
+from django.contrib.auth.decorators import user_passes_test
 
 # views.py
 from django.shortcuts import render
@@ -90,16 +91,23 @@ def get_employee_details(request):
     }
     return JsonResponse(data)
 
+from django.shortcuts import get_object_or_404, redirect
+from django.contrib import messages
+from .models import SalaryCertificate
+
 def delete_salary_certificate(request, salary_certificate_id):
     if request.method == 'POST':
         try:
             salary_certificate = get_object_or_404(SalaryCertificate, id=salary_certificate_id)
             salary_certificate.delete()
-            return JsonResponse({'success': True, 'message': 'Salary certificate deleted successfully'})
+            messages.success(request, 'Salary certificate deleted successfully.')
         except Exception as e:
-            return JsonResponse({'success': False, 'message': str(e)})
+            messages.error(request, f'Error deleting certificate: {e}')
     else:
-        return JsonResponse({'success': False, 'message': 'Invalid request'}, status=400)
+        messages.error(request, 'Invalid request method.')
+
+    return redirect('make_salary_certificate')  # Change to your actual list page name
+
 
 # app3/views.py
 
@@ -149,10 +157,23 @@ from app1.models import Employee
 from .models import SalaryCertificate
 from num2words import num2words
 from datetime import date
+from django.shortcuts import render, get_object_or_404
+from app1.models import Employee
+from .models import SalaryCertificate
+from num2words import num2words
+from datetime import date
 
 def view_salary_certificate(request, employee_id):
     employee = get_object_or_404(Employee, id=employee_id)
-    salary_details = get_object_or_404(SalaryCertificate, employee=employee)
+    salary_certificates = SalaryCertificate.objects.filter(employee=employee)
+
+    if not salary_certificates.exists():
+        return render(request, 'view_salary_certificate.html', {
+            'error': 'No salary certificate found for this employee.'
+        })
+
+    # If multiple certificates exist, choose the most recent one
+    salary_details = salary_certificates.latest('id')
 
     # Convert salary to words
     salary_number = int(salary_details.salary)
@@ -169,3 +190,12 @@ def view_salary_certificate(request, employee_id):
         'certificate_date': certificate_date,
     }
     return render(request, 'view_salary_certificate.html', context)
+
+from django.contrib.auth.decorators import user_passes_test
+
+@user_passes_test(lambda u: u.is_superuser)
+def approve_salary_certificate(request, certificate_id):
+    certificate = get_object_or_404(SalaryCertificate, id=certificate_id)
+    certificate.is_approved = True
+    certificate.save()
+    return redirect('make_salary_certificate')

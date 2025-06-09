@@ -10,4 +10,7 @@ urlpatterns = [
     path('save-salary-certificate/', views.save_salary_certificate, name='save_salary_certificate'),
     path('delete-salary-certificate/<int:salary_certificate_id>/', views.delete_salary_certificate, name='delete_salary_certificate'), 
     path('edit-salary-certificate/<int:salary_certificate_id>/', views.edit_salary_certificate, name='edit_salary_certificate'),
-    path('salary-certificate/view/<int:employee_id>/', views.view_salary_certificate, name='view_salary_certificate'),]
+    path('salary-certificate/view/<int:employee_id>/', views.view_salary_certificate, name='view_salary_certificate'),
+    path('salary-certificates/approve/<int:certificate_id>/', views.approve_salary_certificate, name='approve_salary_certificate'),
+
+]
