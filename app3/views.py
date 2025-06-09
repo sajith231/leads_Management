@@ -3,17 +3,17 @@
 from django.shortcuts import get_object_or_404, render, redirect
 from app1.models import Employee
 from .models import SalaryCertificate
-# from .forms import SalaryCertificateForm
 from django.http import JsonResponse,HttpResponseRedirect
 from django.urls import reverse
 from django.contrib.auth.decorators import user_passes_test
+from django.utils import timezone
 
 # views.py
 from django.shortcuts import render
 from .models import SalaryCertificate
 
 def make_salary_certificate(request):
-    certificates = SalaryCertificate.objects.select_related('employee')
+    certificates = SalaryCertificate.objects.select_related('employee', 'added_by', 'approved_by')
     return render(request, 'make_salary_certificate.html', {'employees': certificates})
 
 # views.py
@@ -39,7 +39,8 @@ def add_salary_certificate(request):
                 address=address,
                 joining_date=joining_date,
                 job_title=job_title,
-                salary=salary
+                salary=salary,
+                added_by=request.user  # Set the user who added the certificate
             )
             salary_certificate.save()
             return JsonResponse({'success': True})
@@ -73,7 +74,8 @@ def save_salary_certificate(request):
                 address=address,
                 joining_date=joining_date,
                 job_title=job_title,
-                salary=salary
+                salary=salary,
+                added_by=request.user  # Set the user who added the certificate
             )
             salary_certificate.save()
             return JsonResponse({'success': True})
@@ -197,5 +199,7 @@ from django.contrib.auth.decorators import user_passes_test
 def approve_salary_certificate(request, certificate_id):
     certificate = get_object_or_404(SalaryCertificate, id=certificate_id)
     certificate.is_approved = True
+    certificate.approved_by = request.user  # Set the user who approved the certificate
+    certificate.approved_on = timezone.now()  # Set the approval timestamp
     certificate.save()
     return redirect('make_salary_certificate')
