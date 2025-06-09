@@ -65,6 +65,12 @@ urlpatterns = [
     path('add_daily_task/', views.add_daily_task, name='add_daily_task'),
     path('edit_daily_task/<int:task_id>/', views.edit_daily_task, name='edit_daily_task'),
     path('delete_daily_task/<int:task_id>/', views.delete_daily_task, name='delete_daily_task'),
+
+
+
+
+    path('clients/', views.show_clients, name='show_clients'),
+    
     
 
     

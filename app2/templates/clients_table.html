@@ -1,0 +1,390 @@
+{% extends "base.html" %}
+{% load static custom_filters %}
+
+{% block title %}Client List{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
+<style>
+    body {
+        font-family: 'Roboto', sans-serif;
+    }
+    .dataTables_wrapper {
+        padding: 20px 0;
+    }
+    .card {
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-bottom: 30px;
+    }
+    .card-header {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #eee;
+        padding: 15px 20px;
+        border-radius: 8px 8px 0 0 !important;
+    }
+    .card-title {
+        margin-bottom: 0;
+        font-size: 1.25rem;
+        font-weight: 600;
+    }
+    .table-responsive {
+        overflow-x: auto;
+    }
+    table.dataTable {
+        margin-top: 0 !important;
+        margin-bottom: 0 !important;
+    }
+    .table th {
+        background-color: #f8f9fa;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+    .table td {
+        vertical-align: middle;
+    }
+    .badge {
+        font-weight: 500;
+        padding: 5px 8px;
+        font-size: 0.75rem;
+    }
+    .debug-panel {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 20px;
+        border-left: 4px solid #6c757d;
+    }
+    .debug-panel h5 {
+        color: #6c757d;
+        margin-bottom: 15px;
+    }
+    .debug-info {
+        font-family: monospace;
+        font-size: 0.85rem;
+        margin-bottom: 5px;
+    }
+    .no-data {
+        text-align: center;
+        padding: 40px;
+        color: #6c757d;
+    }
+    .no-data i {
+        font-size: 2rem;
+        margin-bottom: 10px;
+        color: #dee2e6;
+    }
+    .status-active {
+        color: #28a745;
+    }
+    .status-inactive {
+        color: #dc3545;
+    }
+    .action-btns .btn {
+        padding: 3px 8px;
+        font-size: 0.75rem;
+        margin-right: 5px;
+    }
+    /* Custom pagination styles */
+    .pagination-info {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+    .pagination-info .info-text {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+    .pagination-info .page-info {
+        font-weight: 600;
+    }
+    .custom-pagination {
+        display: flex;
+        justify-content: center;
+        margin-top: 20px;
+    }
+    .custom-pagination .pagination {
+        margin: 0;
+    }
+    .custom-pagination .page-link {
+        color: #007bff;
+        border: 1px solid #dee2e6;
+        padding: 8px 12px;
+        margin: 0 2px;
+        border-radius: 4px;
+        text-decoration: none;
+    }
+    .custom-pagination .page-link:hover {
+        background-color: #e9ecef;
+        border-color: #adb5bd;
+    }
+    .custom-pagination .page-item.active .page-link {
+        background-color: #007bff;
+        border-color: #007bff;
+        color: white;
+    }
+    .custom-pagination .page-item.disabled .page-link {
+        color: #6c757d;
+        background-color: #fff;
+        border-color: #dee2e6;
+        cursor: not-allowed;
+    }
+    .search-bar {
+        margin-bottom: 20px;
+    }
+    .search-bar .form-control {
+        border-radius: 20px;
+        padding: 10px 20px;
+    }
+    .text-black {
+    color: black;
+    
+}
+
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="card-title">Client Management</h5>
+                        <!-- <button class="btn btn-primary btn-sm" id="refreshBtn">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button> -->
+                    </div>
+                </div>
+                
+                <!-- Pagination Info -->
+                <div class="card-body" >
+                    <div class="pagination-info" >
+                        <!-- <div class="info-text">
+                            <span class="page-info">
+                                {% if search_query %}
+                                    Found {{ filtered_count }} of {{ total_clients }} clients for "{{ search_query }}"
+                                {% else %}
+                                    Total Clients: {{ total_clients }}
+                                {% endif %}
+                            </span>
+                        </div> -->
+                        <div class="info-text">
+                            {% if clients.has_other_pages %}
+                                <span class="page-info">
+                                    Page {{ clients.number }} of {{ clients.paginator.num_pages }}
+                                    <!-- (Showing {{ clients.start_index }}-{{ clients.end_index }} of {{ clients.paginator.count }}) -->
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Search Bar -->
+                    <div class="search-bar">
+                        <form method="GET" class="d-flex">
+                            <input type="text" name="search" class="form-control" placeholder="Search clients by name, code, mobile, address, branch, district, state..." 
+                                   value="{{ search_query }}" id="searchInput">
+                            <button type="submit" class="btn btn-outline-secondary ms-2">
+                                <i class="fas fa-search"></i>
+                            </button>
+                            {% if search_query %}
+                            <a href="?" class="btn btn-outline-danger ms-2" title="Clear search">
+                                <i class="fas fa-times"></i>
+                            </a>
+                            {% endif %}
+                        </form>
+                    </div>
+                     {% if clients.has_other_pages %}
+<div class="custom-pagination" style="display: flex;justify-content: center;">
+    <nav aria-label="Page navigation">
+        <ul class="pagination">
+            {% if clients.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}" aria-label="First">
+                         First
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ clients.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}" aria-label="Previous">
+                         Previous
+                    </a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link"> First</span>
+                </li>
+                <li class="page-item disabled">
+                    <span class="page-link"> Previous</span>
+                </li>
+            {% endif %}
+
+            {% for num in clients.paginator.page_range %}
+                {% if clients.number == num %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ num }}</span>
+                    </li>
+                {% elif num > clients.number|add:'-3' and num < clients.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">{{ num }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+
+            {% if clients.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ clients.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}" aria-label="Next">
+                        Next 
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ clients.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}" aria-label="Last">
+                        Last 
+                    </a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">Next 
+                </li>
+                <li class="page-item disabled">
+                    <span class="page-link">Last 
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+</div>
+{% endif %}
+                    
+                    <div class="table-responsive">
+                        <table class="table table-hover table-bordered" style="width:100%">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th>Code</th>
+                                    <th>Name</th>
+                                    <th>Address</th>
+                                    <th>Branch</th>
+                                    <th>District</th>
+                                    <th>State</th>
+                                    <th>Software</th>
+                                    <th>Mobile</th>
+                                    <th>Install Date</th>
+                                    <th>Priority</th>
+                                    <th>Direct Dealing</th>
+                                    <th>Route</th>
+                                    <th>AMC</th>
+                                    <th>AMC Amount</th>
+                                    <th>Account Code</th>
+                                    <th>Address 3</th>
+                                    <th>License Type</th>
+                                    <th>Clients</th>
+                                    <th>SP</th>
+                                    <th>Nature</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for client in clients %}
+                                <tr>
+                                    <td>{{ client.code|default:"-" }}</td>
+                                    <td>{{ client.name|default:"-" }}</td>
+                                    <td>{{ client.address|truncatechars:20|default:"-" }}</td>
+                                    <td>{{ client.branch|default:"-" }}</td>
+                                    <td>{{ client.district|trim|default:"-" }}</td>
+                                    <td>{{ client.state|trim|default:"-" }}</td>
+                                    <td>{{ client.software|default:"-" }}</td>
+                                    <td>{{ client.mobile|trim|default:"-" }}</td>
+                                    <td>{{ client.installationdate|default:"-" }}</td>
+                                    <td >
+                                        <span class="badge badge-{% if client.priorty == 'High' %}danger{% elif client.priorty == 'Medium' %}warning{% else %}secondary{% endif %}">
+                                            {{ client.priorty|default:"-" }}
+                                        </span>
+                                    </td>
+                                    <td>{{ client.directdealing|yesno:"Yes,No,Unknown" }}</td>
+                                    <td>{{ client.rout|default:"-" }}</td>
+                                    <td>
+                                        <span class="badge badge-{% if client.amc == 'Yes' %}success{% else %}danger{% endif %}" style="color: black;">
+                                            {{ client.amc|default:"No" }}
+                                        </span>
+                                    </td>
+                                    <td>{{ client.amcamt|default:"-" }}</td>
+                                    <td>{{ client.accountcode|default:"-" }}</td>
+                                    <td>{{ client.address3|default:"-" }}</td>
+                                    <td>{{ client.lictype|default:"-" }}</td>
+                                    <td>{{ client.clients|default:"-" }}</td>
+                                    <td>{{ client.sp|default:"-" }}</td>
+                                    <td>{{ client.nature|default:"-" }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="20" class="no-data">
+                                        <i class="fas fa-{% if search_query %}search{% else %}database{% endif %}"></i>
+                                        <h5>
+                                            {% if search_query %}
+                                                No clients found for "{{ search_query }}"
+                                            {% else %}
+                                                No client data available
+                                            {% endif %}
+                                        </h5>
+                                        <p class="text-muted">
+                                            {% if search_query %}
+                                                Try adjusting your search terms or <a href="?">clear the search</a>
+                                            {% else %}
+                                                Please check your data source or connection
+                                            {% endif %}
+                                        </p>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Pagination Controls -->
+                   
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Refresh Button
+        $('#refreshBtn').on('click', function() {
+            window.location.reload();
+        });
+        
+        // Auto-submit search form after typing (with delay)
+        let searchTimeout;
+        $('#searchInput').on('input', function() {
+            clearTimeout(searchTimeout);
+            const searchValue = $(this).val().trim();
+            
+            searchTimeout = setTimeout(function() {
+                if (searchValue.length >= 2 || searchValue.length === 0) {
+                    $('#searchInput').closest('form').submit();
+                }
+            }, 800); // 800ms delay after user stops typing
+        });
+        
+        // Handle Enter key press
+        $('#searchInput').on('keypress', function(e) {
+            if (e.which === 13) { // Enter key
+                clearTimeout(searchTimeout);
+                $(this).closest('form').submit();
+            }
+        });
+        
+        // Focus search input if there's a search query
+        {% if search_query %}
+        $('#searchInput').focus();
+        {% endif %}
+    });
+</script>
+{% endblock %}

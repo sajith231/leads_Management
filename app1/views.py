@@ -5296,11 +5296,12 @@ def configure_user_menu(request, user_id):
                     'submenus': []
                 },
             ]
-        },
+        },   
         {
             'name': 'Master',
             'icon': 'fas fa-cog',
             'submenus': [
+                {'id': 'show_clients', 'name': 'View Clients', 'icon': 'fas fa-users'},
                 {'id': 'all_districts', 'name': 'District', 'icon': 'fas fa-map'},
                 {'id': 'all_areas', 'name': 'Area', 'icon': 'fas fa-map-marker-alt'},
                 {'id': 'all_locations', 'name': 'Location', 'icon': 'fas fa-chart-area'},
@@ -5467,6 +5468,7 @@ def default_menus(request):
             'name': 'Master',
             'icon': 'fas fa-cog',
             'submenus': [
+                {'id': 'show_clients', 'name': 'View Clients', 'icon': 'fas fa-users'},
                 {'id': 'all_districts', 'name': 'District', 'icon': 'fas fa-map'},
                 {'id': 'all_areas', 'name': 'Area', 'icon': 'fas fa-map-marker-alt'},
                 {'id': 'all_locations', 'name': 'Location', 'icon': 'fas fa-chart-area'},

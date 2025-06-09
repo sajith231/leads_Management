@@ -738,3 +738,95 @@ def category_detail(request, category_id):
         'selected_product_type': product_type_id
     })
 
+
+
+
+
+import requests
+from django.shortcuts import render
+
+import requests
+from django.shortcuts import render
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+import requests
+from django.shortcuts import render
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+
+def show_clients(request):
+    api_url = "https://rrcpython.imcbs.com/api/clients"
+    clients = []
+    error_message = None
+    
+    try:
+        response = requests.get(api_url, timeout=30)
+        response.raise_for_status()
+        
+        data = response.json()
+        
+        # Handle different response formats
+        if isinstance(data, list):
+            clients = data
+        elif isinstance(data, dict):
+            # Try common nested data patterns
+            clients = data.get('data', data.get('clients', data.get('results', [])))
+            
+        print(f"Successfully fetched {len(clients)} clients")
+        
+    except requests.exceptions.Timeout:
+        error_message = "API request timed out"
+    except requests.exceptions.ConnectionError:
+        error_message = "Could not connect to API"
+    except requests.exceptions.HTTPError as e:
+        error_message = f"HTTP Error: {e}"
+    except Exception as e:
+        error_message = f"Error fetching data: {str(e)}"
+    
+    # Search functionality
+    search_query = request.GET.get('search', '').strip()
+    original_count = len(clients)
+    
+    if search_query:
+        filtered_clients = []
+        search_lower = search_query.lower()
+        
+        for client in clients:
+            # Search in multiple fields
+            searchable_fields = [
+                str(client.get('name', '')),
+                str(client.get('code', '')),
+                str(client.get('mobile', '')),
+                str(client.get('address', '')),
+                str(client.get('branch', '')),
+                str(client.get('district', '')),
+                str(client.get('state', '')),
+                str(client.get('software', '')),
+                str(client.get('accountcode', '')),
+            ]
+            
+            # Check if search query matches any field
+            if any(search_lower in field.lower() for field in searchable_fields):
+                filtered_clients.append(client)
+        
+        clients = filtered_clients
+        print(f"Search '{search_query}' found {len(clients)} results out of {original_count} total clients")
+    
+    # Pagination logic
+    paginator = Paginator(clients, 15)  # 15 clients per page
+    page = request.GET.get('page')
+    
+    try:
+        clients_page = paginator.page(page)
+    except PageNotAnInteger:
+        # If page is not an integer, deliver first page.
+        clients_page = paginator.page(1)
+    except EmptyPage:
+        # If page is out of range, deliver last page of results.
+        clients_page = paginator.page(paginator.num_pages)
+    
+    return render(request, 'clients_table.html', {
+        'clients': clients_page,
+        'error_message': error_message,
+        'total_clients': original_count,
+        'filtered_count': len(clients),
+        'search_query': search_query
+    })
