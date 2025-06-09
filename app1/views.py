@@ -4584,9 +4584,6 @@ def attendance_total_summary(request):
 
 
 
-def project_management(request):
-    projects = Project.objects.all()
-    return render(request, 'project_management.html', {'projects': projects})
 
 from django.shortcuts import get_object_or_404
 
@@ -4671,13 +4668,81 @@ def get_active_employees(request):
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
 
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.shortcuts import render
+from .models import Project, Employee
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.shortcuts import render
+from .models import Project, Employee
+
 def project_management(request):
     projects = Project.objects.all()
     employees = Employee.objects.select_related('user').all()
+
+    # Get filter parameters from request
+    search_query = request.GET.get('search', '')
+    status_filter = request.GET.get('status', '')
+    project_name_filter = request.GET.get('project_name', '')
+    languages_filter = request.GET.get('languages', '')
+    database_filter = request.GET.get('database', '')
+    domain_platform_filter = request.GET.get('domain_platform', '')
+    assigned_person_filter = request.GET.get('assigned_person', '')
+    client_filter = request.GET.get('client', '')
+    project_type_filter = request.GET.get('project_type', '')
+
+    # Apply filters
+    if search_query:
+        projects = projects.filter(project_name__icontains=search_query)
+    if status_filter and status_filter != 'all':
+        projects = projects.filter(project_status=status_filter)
+    if project_name_filter:
+        projects = projects.filter(project_name__icontains=project_name_filter)
+    if languages_filter:
+        projects = projects.filter(languages__icontains=languages_filter)
+    if database_filter:
+        projects = projects.filter(database_name__icontains=database_filter)
+    if domain_platform_filter:
+        projects = projects.filter(domain_platform__icontains=domain_platform_filter)
+    if assigned_person_filter:
+        projects = projects.filter(assigned_person__id=assigned_person_filter)
+    if client_filter:
+        projects = projects.filter(client__icontains=client_filter)
+    if project_type_filter and project_type_filter != 'all':
+        projects = projects.filter(project_type=project_type_filter)
+
+    # Set up pagination
+    paginator = Paginator(projects, 15)  # Show 15 projects per page
+    page = request.GET.get('page')
+
+    try:
+        projects = paginator.page(page)
+    except PageNotAnInteger:
+        projects = paginator.page(1)
+    except EmptyPage:
+        projects = paginator.page(paginator.num_pages)
+
+    # Prepare filter parameters to pass to template for pagination links
+    filter_params = {
+        'search': search_query,
+        'status': status_filter,
+        'project_name': project_name_filter,
+        'languages': languages_filter,
+        'database': database_filter,
+        'domain_platform': domain_platform_filter,
+        'assigned_person': assigned_person_filter,
+        'client': client_filter,
+        'project_type': project_type_filter
+    }
+
     return render(request, 'project_management.html', {
         'projects': projects,
-        'employees': employees
+        'employees': employees,
+        'filter_params': filter_params,
+        'search_query': search_query
     })
+
+
+
 
 from django.shortcuts import get_object_or_404
 
