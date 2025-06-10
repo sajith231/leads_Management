@@ -12,10 +12,46 @@ from django.utils import timezone
 from django.shortcuts import render
 from .models import SalaryCertificate
 
-def make_salary_certificate(request):
-    certificates = SalaryCertificate.objects.select_related('employee', 'added_by', 'approved_by')
-    return render(request, 'make_salary_certificate.html', {'employees': certificates})
+from django.core.paginator import Paginator
+from django.shortcuts import render
+from .models import SalaryCertificate
 
+from django.shortcuts import render
+from .models import SalaryCertificate
+
+from django.core.paginator import Paginator
+from django.shortcuts import render
+from .models import SalaryCertificate
+
+def make_salary_certificate(request):
+    # Get the search query from the request
+    search_query = request.GET.get('search', '').strip()
+
+    # Fetch all certificates with related data
+    certificates = SalaryCertificate.objects.select_related('employee', 'added_by', 'approved_by').order_by('-id')
+
+    # Filter certificates based on the search query
+    if search_query:
+        certificates = certificates.filter(employee__name__icontains=search_query)
+
+    # Set up pagination
+    paginator = Paginator(certificates, 10)  # Show 10 rows per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    # Calculate the starting SI NO for the current page
+    start_index = (page_obj.number - 1) * paginator.per_page + 1
+
+    # Add pagination info to page_obj
+    page_obj.start_index = start_index
+    page_obj.end_index = min(start_index + paginator.per_page - 1, paginator.count)
+
+    return render(request, 'make_salary_certificate.html', {
+        'employees': page_obj,
+        'search_query': search_query,
+        'start_index': start_index,
+        'is_first_page': page_obj.number == 1
+    })
 # views.py
 from django.shortcuts import render, redirect
 from django.http import JsonResponse

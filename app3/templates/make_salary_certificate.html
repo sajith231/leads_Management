@@ -85,6 +85,27 @@
     color: #666;
   }
 
+  .search-container {
+    position: relative;
+    margin-bottom: 20px;
+  }
+
+  .search-input {
+    padding-right: 40px;
+  }
+
+  .clear-search {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #666;
+    font-size: 18px;
+  }
+
   @media (max-width: 768px) {
     .allbody {
       margin-top: 15%;
@@ -110,14 +131,34 @@
   </div>
 
   <!-- Search Input -->
-  <div class="mb-3">
-    <input type="text" id="searchInput" class="form-control" placeholder="Search by Employee Name...">
+  <div class="search-container">
+    <form method="get" action="" id="searchForm">
+      <div class="position-relative">
+        <input 
+          type="text" 
+          id="searchInput" 
+          name="search" 
+          class="form-control search-input" 
+          placeholder="Search by Employee Name..." 
+          value="{{ search_query }}"
+          autocomplete="off">
+        {% if search_query %}
+          <button type="button" class="clear-search" onclick="clearSearch()" title="Clear search">
+            &times;
+          </button>
+        {% endif %}
+      </div>
+    </form>
+    {% if search_query %}
+      <small class="text-muted">Showing results for: "<strong>{{ search_query }}</strong>"</small>
+    {% endif %}
   </div>
 
   <div class="table-responsive" style="overflow-x: auto; margin-top: 1%;">
     <table class="table table-bordered table-striped" id="salaryTable">
       <thead>
         <tr>
+          <th>SI NO</th>
           <th>Employee Name</th>
           <th>Employee Address</th>
           <th>Joining Date</th>
@@ -135,6 +176,7 @@
       <tbody>
         {% for certificate in employees %}
         <tr>
+          <td>{{ start_index|add:forloop.counter0 }}</td>
           <td>{{ certificate.employee.name }}</td>
           <td>{{ certificate.address }}</td>
           <td>{{ certificate.joining_date }}</td>
@@ -156,7 +198,6 @@
             {% if certificate.added_on %}
               <div class="user-info">
                 {{ certificate.added_on|date:"d M Y" }}
-                <!-- <br><small>{{ certificate.added_on|time:"H:i" }}</small> -->
               </div>
             {% else %}
               <span class="text-muted">-</span>
@@ -169,9 +210,6 @@
                 {% if certificate.approved_by.first_name or certificate.approved_by.last_name %}
                   <br><small>({{ certificate.approved_by.first_name }} {{ certificate.approved_by.last_name }})</small>
                 {% endif %}
-                <!-- {% if certificate.approved_on %}
-                  <br><small>{{ certificate.approved_on|date:"d M Y H:i" }}</small>
-                {% endif %} -->
               </div>
             {% else %}
               <span class="text-muted">-</span>
@@ -208,28 +246,85 @@
             {% endif %}
           </td>
         </tr>
+        {% empty %}
+        <tr>
+          <td colspan="13" class="text-center">
+            {% if search_query %}
+              No salary certificates found matching "{{ search_query }}".
+            {% else %}
+              No salary certificates found.
+            {% endif %}
+          </td>
+        </tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
+
+  <!-- Pagination Controls -->
+  {% if employees.has_other_pages %}
+  <nav aria-label="Page navigation example">
+      <ul class="pagination">
+          {% if employees.has_previous %}
+              <li class="page-item"><a class="page-link" href="?page=1&search={{ search_query }}">First</a></li>
+              <li class="page-item"><a class="page-link" href="?page={{ employees.previous_page_number }}&search={{ search_query }}">Previous</a></li>
+          {% endif %}
+          
+          <!-- Show page numbers -->
+          {% for num in employees.paginator.page_range %}
+              {% if num == employees.number %}
+                  <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+              {% elif num > employees.number|add:'-3' and num < employees.number|add:'3' %}
+                  <li class="page-item"><a class="page-link" href="?page={{ num }}&search={{ search_query }}">{{ num }}</a></li>
+              {% endif %}
+          {% endfor %}
+          
+          {% if employees.has_next %}
+              <li class="page-item"><a class="page-link" href="?page={{ employees.next_page_number }}&search={{ search_query }}">Next</a></li>
+              <li class="page-item"><a class="page-link" href="?page={{ employees.paginator.num_pages }}&search={{ search_query }}">Last</a></li>
+          {% endif %}
+      </ul>
+      
+      <div class="pagination-info">
+          <small class="text-muted">
+              Showing {{ employees.start_index }} to {{ employees.end_index }} of {{ employees.paginator.count }} entries
+              {% if search_query %}(filtered from total entries){% endif %}
+          </small>
+      </div>
+  </nav>
+  {% endif %}
 </div>
 
 <!-- JavaScript for Search Filter -->
 <script>
   document.addEventListener('DOMContentLoaded', function () {
+    const searchForm = document.getElementById('searchForm');
     const searchInput = document.getElementById('searchInput');
-    const tableRows = document.querySelectorAll('#salaryTable tbody tr');
+    let searchTimeout;
 
-    searchInput.addEventListener('keyup', function () {
-      const query = this.value.toLowerCase();
-      tableRows.forEach(row => {
-        const nameCell = row.querySelector('td');
-        if (nameCell) {
-          const name = nameCell.textContent.toLowerCase();
-          row.style.display = name.includes(query) ? '' : 'none';
-        }
-      });
+    // Auto-submit on typing (with debounce)
+    searchInput.addEventListener('input', function () {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(function() {
+        searchForm.submit();
+      }, 500); // Wait 500ms after user stops typing
+    });
+
+    // Immediate submit on Enter key
+    searchInput.addEventListener('keydown', function (event) {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        clearTimeout(searchTimeout);
+        searchForm.submit();
+      }
     });
   });
+
+  // Clear search function
+  function clearSearch() {
+    const searchInput = document.getElementById('searchInput');
+    searchInput.value = '';
+    document.getElementById('searchForm').submit();
+  }
 </script>
 {% endblock %}
