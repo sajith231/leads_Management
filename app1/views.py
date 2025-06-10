@@ -1181,7 +1181,10 @@ def assign_user(request, log_id):
 
 
 
+
 from django.core.paginator import Paginator
+from django.db.models import Q
+from datetime import datetime
 
 @login_required
 def service_log(request):
@@ -1199,22 +1202,68 @@ def service_log(request):
                 'assigned_person'
             ).all()
 
-            # Optional: Add filtering logic here based on GET parameters
-            # Example: filter by user
+            # Get filter parameters
+            status_filter = request.GET.get('status', 'Not Completed')
             user_filter = request.GET.get('user')
+            assigned_user_filter = request.GET.get('assigned_user')
+            start_date = request.GET.get('start_date')
+            end_date = request.GET.get('end_date')
+
+            # Apply filters
+            if status_filter and status_filter != 'all':
+                logs = logs.filter(status=status_filter)
+            
             if user_filter:
                 logs = logs.filter(added_by_id=user_filter)
+            
+            if assigned_user_filter and assigned_user_filter != 'all':
+                logs = logs.filter(assigned_person_id=assigned_user_filter)
+            
+            if start_date and end_date:
+                try:
+                    start_date_obj = datetime.strptime(start_date, '%Y-%m-%d').date()
+                    end_date_obj = datetime.strptime(end_date, '%Y-%m-%d').date()
+                    logs = logs.filter(assigned_date__range=[start_date_obj, end_date_obj])
+                except ValueError:
+                    pass  # Invalid date format, ignore filter
 
             paginator = Paginator(logs, 15)  # Show 15 logs per page
             page_number = request.GET.get('page')
             page_obj = paginator.get_page(page_number)
 
+            # Calculate start index for continuous numbering
+            start_index = (page_obj.number - 1) * paginator.per_page + 1
+
             all_users = User.objects.all()
 
+            # Create filter parameters string for pagination
+            filter_params = []
+            if status_filter:
+                filter_params.append(f'status={status_filter}')
+            if user_filter:
+                filter_params.append(f'user={user_filter}')
+            if assigned_user_filter:
+                filter_params.append(f'assigned_user={assigned_user_filter}')
+            if start_date:
+                filter_params.append(f'start_date={start_date}')
+            if end_date:
+                filter_params.append(f'end_date={end_date}')
+            
+            filter_query_string = '&'.join(filter_params)
+
             return render(request, 'service_log.html', {
-                'logs': page_obj,  # Send paginated object
+                'logs': page_obj,
                 'all_users': all_users,
-                'current_user': current_user
+                'current_user': current_user,
+                'filter_query_string': filter_query_string,
+                'start_index': start_index,
+                'current_filters': {
+                    'status': status_filter,
+                    'user': user_filter,
+                    'assigned_user': assigned_user_filter,
+                    'start_date': start_date,
+                    'end_date': end_date,
+                }
             })
         else:
             return redirect('user_service_log')

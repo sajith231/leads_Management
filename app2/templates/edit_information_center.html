@@ -1,3 +1,4 @@
+<!-- edit_information_center.html -->
 {% extends 'base.html' %}
 
 {% block content %}
@@ -73,13 +74,15 @@
                         <label for="added_date">Added Date <span class="required">*</span></label>
                         <input type="date" id="added_date" name="added_date" class="form-control" value="{{ item.added_date|date:'Y-m-d' }}" required>
                     </div>
-                    <!-- edit_information_center.html -->
-<div class="form-group">
-    <label for="position">Video Position <span class="required">*</span></label>
-    <input type="number" id="position" name="position" class="form-control" min="1" value="{{ item.position }}" required>
-</div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="position">Video Position <span class="required">*</span></label>
+                    <input type="number" id="position" name="position" class="form-control" min="1" value="{{ item.position }}" required>
+                    <div class="helper-text">Lower numbers appear first in the list</div>
                 </div>
             </div>
+            
             <div class="form-section">
                 <h3 class="section-title">Additional Information</h3>
                 
@@ -134,7 +137,6 @@
 </div>
 
 <style>
-    
     /* Form Container */
     .form-container {
         max-width: 800px;
@@ -407,19 +409,15 @@
                 reader.onload = function(e) {
                     imagePreview.src = e.target.result;
                     imagePreview.style.display = 'block';
-                    noPreview.style.display = 'none';
+                    if (noPreview) noPreview.style.display = 'none';
                 }
                 reader.readAsDataURL(file);
             } else {
                 fileNameDisplay.textContent = 'Choose file...';
-                imagePreview.style.display = 'none';
-                noPreview.style.display = 'flex';
+                imagePreview.style.display = 'block'; // Keep showing current image
+                if (noPreview) noPreview.style.display = 'none';
             }
         });
-
-        // Set today's date as default for the date input
-        const today = new Date().toISOString().split('T')[0];
-        document.getElementById('added_date').value = today;
     });
 </script>
 {% endblock %}
