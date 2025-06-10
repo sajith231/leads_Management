@@ -425,9 +425,9 @@
                 {% if 'attendance' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
                 <a href="{% url 'attendance' %}"><i class="fas fa-user-check"></i> Attendance</a>
                 {% endif %}
-                <!-- {% if 'make_salary_certificate' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+                {% if 'make_salary_certificate' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
                 <a href="{% url 'make_salary_certificate' %}"><i class="fas fa-file-invoice-dollar"></i> Salary Certificate</a>
-                {% endif %} -->
+                {% endif %}
                 {% if 'make_experience_certificate' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
                 <a href="{% url 'make_experience_certificate' %}"><i class="fas fa-award"></i> Experience Certificate</a>
                 {% endif %}
@@ -495,7 +495,7 @@
 
 
             <!-- Planet Menu -->
-<!-- <div class="mainmenu" onclick="togglePlanetMenu()">
+<div class="mainmenu" onclick="togglePlanetMenu()">
     <span>
         <i class="fas fa-globe"></i>
         <span>PLANET</span>
@@ -506,7 +506,7 @@
     {% if 'show_clients' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
         <a href="{% url 'show_clients' %}"><i class="fas fa-users"></i> Clients</a>
     {% endif %}
-</div> -->
+</div>
 
     
             <!-- Master Menu -->
@@ -594,9 +594,9 @@
                 {% if 'attendance_user' in allowed_menus %}
                 <a href="{% url 'attendance_user' %}"><i class="fas fa-user-clock"></i> Punch in / Punch out</a>
                 {% endif %}
-                <!-- {% if 'make_salary_certificate' in allowed_menus %}
+                {% if 'make_salary_certificate' in allowed_menus %}
                 <a href="{% url 'make_salary_certificate' %}"><i class="fas fa-file-invoice-dollar"></i> Salary Certificate</a>
-                {% endif %} -->
+                {% endif %}
                 {% if 'make_experience_certificate' in allowed_menus %}
                 <a href="{% url 'make_experience_certificate' %}"><i class="fas fa-award"></i> Experience Certificate</a>
                 {% endif %}
@@ -682,8 +682,8 @@
             </div>
             {% endif %}
 
-            <!-- {% if 'show_clients' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
-                
+            {% if 'show_clients' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+                <!-- Planet Menu -->
                 <div class="mainmenu" onclick="togglePlanetMenu()">
                     <span>
                         <i class="fas fa-globe"></i>
@@ -694,7 +694,7 @@
                 <div id="planet-menu" class="submenu">
                     <a href="{% url 'show_clients' %}"><i class="fas fa-users"></i> Clients</a>
                 </div>
-            {% endif %} -->
+            {% endif %}
 
 
             {% if 'all_districts' in allowed_menus or 'all_areas' in allowed_menus or 'all_locations' in allowed_menus or 'all_requirements' in allowed_menus or 'business_type_list' in allowed_menus or 'job_titles' in allowed_menus or 'all_hardwares' in allowed_menus or 'all_complaints' in allowed_menus or 'all_branches' in allowed_menus or 'users_table' in allowed_menus or 'reminder_type' in allowed_menus  %}
