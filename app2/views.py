@@ -337,10 +337,31 @@ def edit_information_center(request, pk):
         item.product_type_id = request.POST.get('product_type')
         item.product_category_id = request.POST.get('product_category')
         item.priority = request.POST.get('priority')
-        item.language = request.POST.get('language')  # New field
-        item.duration = request.POST.get('duration')  # New field
-        item.host = request.POST.get('host')  # New field
-        item.position = request.POST.get('position')  # New field
+        item.language = request.POST.get('language')
+        item.duration = request.POST.get('duration')
+        item.host = request.POST.get('host')
+        
+        # Handle position update
+        new_position = int(request.POST.get('position', 1))
+        if new_position != item.position:
+            # Get all items in the same category
+            items_in_category = InformationCenter.objects.filter(
+                product_category=item.product_category
+            ).exclude(id=item.id).order_by('position')
+            
+            # Adjust positions if needed
+            if new_position < 1:
+                new_position = 1
+            elif new_position > items_in_category.count() + 1:
+                new_position = items_in_category.count() + 1
+                
+            # Update positions of other items
+            for idx, other_item in enumerate(items_in_category, start=1):
+                if idx >= new_position:
+                    other_item.position = idx + 1
+                    other_item.save()
+            
+            item.position = new_position
 
         if 'thumbnail' in request.FILES:
             item.thumbnail = request.FILES['thumbnail']
@@ -356,6 +377,7 @@ def edit_information_center(request, pk):
         'product_types': product_types,
         'product_categories': product_categories,
     })
+
 @login_required
 def delete_information_center(request, pk):
     item = get_object_or_404(InformationCenter, pk=pk)
