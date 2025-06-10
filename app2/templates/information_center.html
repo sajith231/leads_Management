@@ -786,108 +786,108 @@
 </div>
         
         <!-- Categorized Content -->
-        {% regroup information_items by product_category as category_list %}
-        {% if category_list %}
-            {% for category_group in category_list %}
-                <div class="category-section">
-                    <div class="category-header">
-                        <h2 class="category-title">
-                            <svg class="category-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
-                                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
-                            </svg>
-                            <span>{{ category_group.grouper.name|default:"Uncategorized" }}</span>
-                            <div class="explore-button-container">
-                                <a href="{% url 'category_detail' category_group.grouper.id %}" class="explore-btn">
-                                    Explore More
-                                    
+        <!-- information_center.html -->
+{% regroup information_items by product_category as category_list %}
+{% if category_list %}
+    {% for category_group in category_list %}
+        <div class="category-section">
+            <div class="category-header">
+                <h2 class="category-title">
+                    <svg class="category-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                    </svg>
+                    <span>{{ category_group.grouper.name|default:"Uncategorized" }}</span>
+                    <div class="explore-button-container">
+                        <a href="{% url 'category_detail' category_group.grouper.id %}" class="explore-btn">
+                            Explore More
+                        </a>
+                    </div>
+                </h2>
+            </div>
+            
+            <div class="gallery-container" data-gallery="gallery-{{ category_group.grouper.id }}">
+                <button class="nav-btn prev" onclick="moveGallery('gallery-{{ category_group.grouper.id }}', -1)">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
+                </button>
+                
+                <div class="gallery-wrapper">
+                    <div class="gallery-track" id="gallery-{{ category_group.grouper.id }}">
+                        {% for item in category_group.list|dictsort:"position" %}
+                        <div class="gallery-item">
+                            <div class="thumbnail-container"> 
+                                <a href="{{ item.url }}" target="_blank" class="thumbnail-link">
+                                    {% if item.thumbnail %}
+                                        <img src="{{ item.thumbnail.url }}" alt="{{ item.title }}" class="thumbnail">
+                                    {% else %}
+                                        <img src="{% static 'default-thumbnail.jpg' %}" alt="No Thumbnail" class="thumbnail">
+                                    {% endif %}
+                                    <div class="play-overlay">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="play-icon">
+                                            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                                        </svg>
+                                    </div>
                                 </a>
                             </div>
-                        </h2>
-                    </div>
-                    
-                    <div class="gallery-container" data-gallery="gallery-{{ category_group.grouper.id }}">
-                        <button class="nav-btn prev" onclick="moveGallery('gallery-{{ category_group.grouper.id }}', -1)">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <polyline points="15 18 9 12 15 6"></polyline>
-                            </svg>
-                        </button>
-                        
-                        <div class="gallery-wrapper">
-                            <div class="gallery-track" id="gallery-{{ category_group.grouper.id }}">
-                                {% for item in category_group.list %}
-                                <div class="gallery-item">
-                                    <div class="thumbnail-container"> 
-                                        <a href="{{ item.url }}" target="_blank" class="thumbnail-link">
-                                            {% if item.thumbnail %}
-                                                <img src="{{ item.thumbnail.url }}" alt="{{ item.title }}" class="thumbnail">
-                                            {% else %}
-                                                <img src="{% static 'default-thumbnail.jpg' %}" alt="No Thumbnail" class="thumbnail">
-                                            {% endif %}
-                                            <div class="play-overlay">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="play-icon">
-                                                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                                                </svg>
-                                            </div>
+                            
+                            <div class="item-content">
+                                <h4 class="item-title">{{ item.title }}</h4>
+                                <div class="item-remark">
+                                    <p class="description" data-full="{{ item.remark }}">{{ item.remark|truncatewords:8 }}</p>
+                                    {% if item.remark|wordcount > 8 %}
+                                    <button class="more-btn" onclick="toggleDescription(this)">More</button>
+                                    {% endif %}
+                                </div>
+                                <div class="additional-info">
+                                    <p> {{ item.language }}</p>
+                                    <p> {{ item.duration }}</p>
+                                    <p>{{ item.host }}</p>
+                                </div>
+                                <div class="item-meta">
+                                    <span class="date">{{ item.added_date|date:"M d" }}</span>
+                                    <div class="item-actions">
+                                        {% if request.user.is_superuser or 'edit_information_center' in request.session.allowed_menus %}
+                                        <a href="{% url 'edit_information_center' item.id %}" class="action-btn edit">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                            </svg>
                                         </a>
-                                    </div>
-                                    
-                                    <div class="item-content">
-                                        <h4 class="item-title">{{ item.title }}</h4>
-                                        <div class="item-remark">
-                                            <p class="description" data-full="{{ item.remark }}">{{ item.remark|truncatewords:8 }}</p>
-                                            {% if item.remark|wordcount > 8 %}
-                                            <button class="more-btn" onclick="toggleDescription(this)">More</button>
-                                            {% endif %}
-                                        </div>
-                                        <div class="additional-info">
-                                            <p> {{ item.language }}</p>
-                                            <p> {{ item.duration }}</p>
-                                            <p>{{ item.host }}</p>
-                                        </div>
-                                        <div class="item-meta">
-                                            <span class="date">{{ item.added_date|date:"M d" }}</span>
-                                            <div class="item-actions">
-                                                {% if request.user.is_superuser or 'edit_information_center' in request.session.allowed_menus %}
-                                                <a href="{% url 'edit_information_center' item.id %}" class="action-btn edit">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                                                    </svg>
-                                                </a>
-                                                {% endif %}
-                                                {% if request.user.is_superuser or 'delete_information_center' in request.session.allowed_menus %}
-                                                <button class="action-btn delete" onclick="openDeleteModal({{ item.id }})">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                        <polyline points="3 6 5 6 21 6"></polyline>
-                                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                                        <line x1="10" y1="11" x2="10" y2="17"></line>
-                                                        <line x1="14" y1="11" x2="14" y2="17"></line>
-                                                    </svg>
-                                                </button>
-                                                {% endif %}
-                                            </div>
-                                        </div>
+                                        {% endif %}
+                                        {% if request.user.is_superuser or 'delete_information_center' in request.session.allowed_menus %}
+                                        <button class="action-btn delete" onclick="openDeleteModal({{ item.id }})">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <polyline points="3 6 5 6 21 6"></polyline>
+                                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                                <line x1="10" y1="11" x2="10" y2="17"></line>
+                                                <line x1="14" y1="11" x2="14" y2="17"></line>
+                                            </svg>
+                                        </button>
+                                        {% endif %}
                                     </div>
                                 </div>
-                                {% endfor %}
                             </div>
                         </div>
-                        
-                        <button class="nav-btn next" onclick="moveGallery('gallery-{{ category_group.grouper.id }}', 1)">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <polyline points="9 18 15 12 9 6"></polyline>
-                            </svg>
-                        </button>
+                        {% endfor %}
                     </div>
                 </div>
-            {% endfor %}
-        {% else %}
-            <div class="no-items">
-                <h3>No Information Items Found</h3>
-                <p>Add your first item to get started!</p>
+                
+                <button class="nav-btn next" onclick="moveGallery('gallery-{{ category_group.grouper.id }}', 1)">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                </button>
             </div>
-        {% endif %}
+        </div>
+    {% endfor %}
+{% else %}
+    <div class="no-items">
+        <h3>No Information Items Found</h3>
+        <p>Add your first item to get started!</p>
+    </div>
+{% endif %}
     </div>
 </div>
 

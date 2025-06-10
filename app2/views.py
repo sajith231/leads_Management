@@ -273,6 +273,7 @@ class InformationCenterListView(ListView):
         
         return context
 
+# views.py
 @login_required
 def add_information_center(request):
     if request.method == 'POST':
@@ -287,10 +288,11 @@ def add_information_center(request):
         language = request.POST.get('language')  # New field
         duration = request.POST.get('duration')  # New field
         host = request.POST.get('host')  # New field
-        
+        position = request.POST.get('position')  # New field
+
         product_type = ProductType.objects.get(id=product_type_id)
         product_category = ProductCategory.objects.get(id=product_category_id)
-        
+
         InformationCenter.objects.create(
             title=title,
             remark=remark,
@@ -303,13 +305,14 @@ def add_information_center(request):
             priority=priority,
             language=language,  # New field
             duration=duration,  # New field
-            host=host  # New field
+            host=host,  # New field
+            position=position  # New field
         )
         return redirect('information_center')
-    
+
     product_types = ProductType.objects.all()
     product_categories = ProductCategory.objects.all()
-    
+
     return render(request, 'add_information_center.html', {
         'product_types': product_types,
         'product_categories': product_categories,
@@ -321,10 +324,11 @@ from django.views.generic import ListView
 from .models import InformationCenter, ProductType, ProductCategory
 from django.contrib.auth.decorators import login_required
 
+# views.py
 @login_required
 def edit_information_center(request, pk):
     item = get_object_or_404(InformationCenter, pk=pk)
-    
+
     if request.method == 'POST':
         item.title = request.POST.get('title')
         item.remark = request.POST.get('remark')
@@ -336,22 +340,22 @@ def edit_information_center(request, pk):
         item.language = request.POST.get('language')  # New field
         item.duration = request.POST.get('duration')  # New field
         item.host = request.POST.get('host')  # New field
-        
+        item.position = request.POST.get('position')  # New field
+
         if 'thumbnail' in request.FILES:
             item.thumbnail = request.FILES['thumbnail']
-        
+
         item.save()
         return redirect('information_center')
-    
+
     product_types = ProductType.objects.all()
     product_categories = ProductCategory.objects.all()
-    
+
     return render(request, 'edit_information_center.html', {
         'item': item,
         'product_types': product_types,
         'product_categories': product_categories,
     })
-
 @login_required
 def delete_information_center(request, pk):
     item = get_object_or_404(InformationCenter, pk=pk)
@@ -632,23 +636,19 @@ def add_daily_task(request):
         # Get current time
         current_time = timezone.now()
 
-        # Get the user's last two tasks
-        last_tasks = DailyTask.objects.filter(added_by=request.user).order_by('-created_at')[:2]
+        # Get the user's last task
+        last_task = DailyTask.objects.filter(added_by=request.user).order_by('-created_at').first()
 
-        # Update previous tasks if they exist
-        if len(last_tasks) >= 1:
+        # Update previous task if it exists
+        if last_task and last_task.status == 'in_progress':
             # Mark the last task as completed
-            last_task = last_tasks[0]
             last_task.status = 'completed'
             
-            # If there's a second last task, calculate duration
-            if len(last_tasks) >= 2:
-                second_last_task = last_tasks[1]
-                duration = current_time - second_last_task.created_at
-                # Format duration as HH:MM:SS
-                hours, remainder = divmod(duration.total_seconds(), 3600)
-                minutes, seconds = divmod(remainder, 60)
-                last_task.duration = f"{int(hours)}h {int(minutes)}m {int(seconds)}s"
+            # Calculate duration
+            duration_delta = current_time - last_task.created_at
+            hours, remainder = divmod(duration_delta.total_seconds(), 3600)
+            minutes, seconds = divmod(remainder, 60)
+            last_task.duration = f"{int(hours)}h {int(minutes)}m {int(seconds)}s"
             
             last_task.save()
 
@@ -659,7 +659,7 @@ def add_daily_task(request):
             added_by=request.user,
             remark=remark,
             status='in_progress',  # New task is in progress
-            duration=''  # Duration will be set when next task is added
+            duration=''  # Duration will be set when next task is added or stopped
         )
 
         messages.success(request, 'Task added successfully!')

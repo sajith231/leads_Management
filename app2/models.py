@@ -83,6 +83,7 @@ class InformationCenter(models.Model):
     language = models.CharField(max_length=50, blank=True) 
     duration = models.CharField(max_length=50, blank=True)  
     host = models.CharField(max_length=255, blank=True)  
+    position = models.PositiveIntegerField(default=1)  # CREATED AS NEW
     
     def __str__(self):
         return self.title

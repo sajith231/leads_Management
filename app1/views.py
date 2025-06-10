@@ -5301,7 +5301,6 @@ def configure_user_menu(request, user_id):
             'name': 'Master',
             'icon': 'fas fa-cog',
             'submenus': [
-                {'id': 'show_clients', 'name': 'View Clients', 'icon': 'fas fa-users'},
                 {'id': 'all_districts', 'name': 'District', 'icon': 'fas fa-map'},
                 {'id': 'all_areas', 'name': 'Area', 'icon': 'fas fa-map-marker-alt'},
                 {'id': 'all_locations', 'name': 'Location', 'icon': 'fas fa-chart-area'},
@@ -5325,6 +5324,13 @@ def configure_user_menu(request, user_id):
         {'id': 'add_information_center', 'name': 'Add New Media', 'icon': 'fas fa-plus'},
         {'id': 'edit_information_center', 'name': 'Edit Media', 'icon': 'fas fa-edit'},
         {'id': 'delete_information_center', 'name': 'Delete Media', 'icon': 'fas fa-trash'}
+    ]
+},
+{
+    'name': 'PLANET',
+    'icon': 'fas fa-globe',
+    'submenus': [
+        {'id': 'show_clients', 'name': 'Clients', 'icon': 'fas fa-users'}
     ]
 }
 
@@ -5468,7 +5474,6 @@ def default_menus(request):
             'name': 'Master',
             'icon': 'fas fa-cog',
             'submenus': [
-                {'id': 'show_clients', 'name': 'View Clients', 'icon': 'fas fa-users'},
                 {'id': 'all_districts', 'name': 'District', 'icon': 'fas fa-map'},
                 {'id': 'all_areas', 'name': 'Area', 'icon': 'fas fa-map-marker-alt'},
                 {'id': 'all_locations', 'name': 'Location', 'icon': 'fas fa-chart-area'},
