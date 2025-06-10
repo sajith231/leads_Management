@@ -190,9 +190,9 @@
         <div class="filter-group">
             <label for="statusFilter">Status</label>
             <select id="statusFilter" class="form-select" onchange="applyFilters()">
-                <option value="Not Completed">Not Completed</option>
-                <option value="all">All Status</option>
-                <option value="Completed">Completed</option>
+                <option value="Not Completed" {% if current_filters.status == 'Not Completed' %}selected{% endif %}>Not Completed</option>
+                <option value="all" {% if current_filters.status == 'all' %}selected{% endif %}>All Status</option>
+                <option value="Completed" {% if current_filters.status == 'Completed' %}selected{% endif %}>Completed</option>
             </select>
         </div>
         
@@ -200,9 +200,9 @@
         <div class="filter-group">
             <label for="assignedUserFilter">Assigned User</label>
             <select id="assignedUserFilter" class="form-select" onchange="applyFilters()">
-                <option value="all">All Users</option>
+                <option value="all" {% if current_filters.assigned_user == 'all' %}selected{% endif %}>All Users</option>
                 {% for user in all_users %}
-                <option value="{{ user.id }}">{{ user.name }}</option>
+                <option value="{{ user.id }}" {% if current_filters.assigned_user == user.id|stringformat:"s" %}selected{% endif %}>{{ user.name }}</option>
                 {% endfor %}
             </select>
         </div>
@@ -210,9 +210,9 @@
         <div class="filter-group">
             <label>Date Range</label>
             <div class="date-filter">
-                <input type="date" id="startDate" class="form-control" onchange="applyFilters()">
+                <input type="date" id="startDate" class="form-control" onchange="applyFilters()" value="{{ current_filters.start_date }}">
                 <span>to</span>
-                <input type="date" id="endDate" class="form-control" onchange="applyFilters()">
+                <input type="date" id="endDate" class="form-control" onchange="applyFilters()" value="{{ current_filters.end_date }}">
             </div>
             
         </div>
@@ -232,20 +232,20 @@
 <div style="display: flex;justify-content: end;"><a href="{% url 'add_service_log' %}" class="btn btn-primary" >Add New Log</a></div>
 <div style="overflow-x:auto; -webkit-overflow-scrolling: touch;">
     <div class="pagination">
-  <span class="step-links">
-    {% if logs.has_previous %}
-      <a href="?{% if request.GET.user %}user={{ request.GET.user }}&{% endif %}page=1">&laquo; first</a>
-      <a href="?{% if request.GET.user %}user={{ request.GET.user }}&{% endif %}page={{ logs.previous_page_number }}">previous</a>
-    {% endif %}
+      <span class="step-links">
+        {% if logs.has_previous %}
+          <a href="?{% if filter_query_string %}{{ filter_query_string }}&{% endif %}page=1">&laquo; first</a>
+          <a href="?{% if filter_query_string %}{{ filter_query_string }}&{% endif %}page={{ logs.previous_page_number }}">previous</a>
+        {% endif %}
 
-    <span class="current">Page {{ logs.number }} of {{ logs.paginator.num_pages }}</span>
+        <span class="current">Page {{ logs.number }} of {{ logs.paginator.num_pages }}</span>
 
-    {% if logs.has_next %}
-      <a href="?{% if request.GET.user %}user={{ request.GET.user }}&{% endif %}page={{ logs.next_page_number }}">next</a>
-      <a href="?{% if request.GET.user %}user={{ request.GET.user }}&{% endif %}page={{ logs.paginator.num_pages }}">last &raquo;</a>
-    {% endif %}
-  </span>
-</div>
+        {% if logs.has_next %}
+          <a href="?{% if filter_query_string %}{{ filter_query_string }}&{% endif %}page={{ logs.next_page_number }}">next</a>
+          <a href="?{% if filter_query_string %}{{ filter_query_string }}&{% endif %}page={{ logs.paginator.num_pages }}">last &raquo;</a>
+        {% endif %}
+      </span>
+    </div>
     <table class="table table-bordered" style="margin-top: 20px; width: 100%; text-align: center;">
         <thead>
             <tr>
@@ -268,7 +268,7 @@
             <tr class="log-row" 
             data-status="{{ log.status }}">
                 
-                <td>{{ forloop.counter }}</td>
+                <td>{{ logs.start_index|add:forloop.counter0 }}</td>
                 <td style="white-space: nowrap;">{{ log.customer_name|upper }}</td>
                 <td>{{ log.type|upper }}</td>
                 <td>
@@ -395,11 +395,15 @@ function getCookie(name) {
 
 function showToast(message) {
     const toast = document.getElementById('toastNotification');
-    toast.textContent = message;
-    toast.classList.add('show');
-    setTimeout(() => {
-        toast.classList.remove('show');
-    }, 3000);
+    if (toast) {
+        toast.textContent = message;
+        toast.classList.add('show');
+        setTimeout(() => {
+            toast.classList.remove('show');
+        }, 3000);
+    } else {
+        alert(message); // Fallback if toast element doesn't exist
+    }
 }
 
 function saveAssignedDate(logId, inputElement) {
@@ -442,59 +446,7 @@ function saveAssignedDate(logId, inputElement) {
     });
 }
 
-// Rest of your existing JavaScript functions remain the same
-</script>
-
-
-<script>
-// Utility function to get CSRF token
-function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
-        }
-    }
-    return cookieValue;
-}
-
-// Status filtering functionality
-function filterTable() {
-    const filterValue = document.getElementById('statusFilter').value.toLowerCase();
-    const rows = document.querySelectorAll('.log-row');
-    
-    rows.forEach(row => {
-        const status = row.getAttribute('data-status').toLowerCase();
-        if (filterValue === 'all' || status === filterValue) {
-            row.classList.remove('hidden');
-        } else {
-            row.classList.add('hidden');
-        }
-    });
-}
-
-
-
 // User assignment functionality
-function toggleUserDropdown(button, logId) {
-    const container = button.parentElement;
-    const dropdown = container.querySelector('.user-dropdown');
-    const allDropdowns = document.querySelectorAll('.user-dropdown');
-    
-    allDropdowns.forEach(d => {
-        if (d !== dropdown) {
-            d.style.display = 'none';
-        }
-    });
-    
-    dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
-}
-
 function assignUser(logId, selectElement) {
     const userId = selectElement.value;
     if (!userId) {
@@ -529,6 +481,7 @@ function assignUser(logId, selectElement) {
                     <span style="white-space: nowrap; background-color: #007bff; color: white; padding: 5px 10px; border-radius: 5px;">${userName}</span>
                 </span>
             `;
+            showToast('User assigned successfully!');
         } else {
             alert('Failed to assign user. Please try again.');
         }
@@ -539,85 +492,13 @@ function assignUser(logId, selectElement) {
     });
 }
 
-
 // Remarks functionality
 function showRemarks(element) {
     var remarks = element.getAttribute('data-remarks');
     document.getElementById('remarksModalBody').innerText = remarks;
 }
 
-// Initialize when page loads
-document.addEventListener('DOMContentLoaded', function() {
-    filterTable();
-    document.getElementById('statusFilter').addEventListener('change', filterTable);
-});
-</script>
-
-
-
-
-
-
-<!-- Existing table structure remains the same -->
-<!-- ... -->
-<!-- filters scripts -->
-<script>
-    function applyFilters() {
-        const statusFilter = document.getElementById('statusFilter').value.toLowerCase();
-        const assignedUserFilter = document.getElementById('assignedUserFilter').value;
-        const startDate = document.getElementById('startDate').value;
-        const endDate = document.getElementById('endDate').value;
-        
-        const rows = document.querySelectorAll('.log-row');
-        
-        rows.forEach(row => {
-            const status = row.getAttribute('data-status').toLowerCase();
-            const assignedDate = row.getAttribute('data-assigned-date');
-            const assignedUserId = row.querySelector('.user-select')?.value || '';
-            
-            // Check status filter
-            const statusMatch = statusFilter === 'all' || status === statusFilter;
-            
-            // Check assigned user filter
-            const userMatch = assignedUserFilter === 'all' || assignedUserId === assignedUserFilter;
-            
-            // Check date filter
-            let dateMatch = true;
-            if (startDate && endDate && assignedDate) {
-                const rowDate = new Date(assignedDate);
-                const start = new Date(startDate);
-                const end = new Date(endDate);
-                end.setHours(23, 59, 59);
-                dateMatch = rowDate >= start && rowDate <= end;
-            }
-            
-            // Show/hide row based on all filters
-            if (statusMatch && userMatch && dateMatch) {
-                row.classList.remove('hidden');
-            } else {
-                row.classList.add('hidden');
-            }
-        });
-    }
-    
-    // Initialize filters when page loads
-    document.addEventListener('DOMContentLoaded', function() {
-        // Add data attributes to rows for filtering
-        const rows = document.querySelectorAll('.log-row');
-        rows.forEach(row => {
-            const assignedDate = row.querySelector('.assigned-date-display span')?.textContent;
-            if (assignedDate) {
-                row.setAttribute('data-assigned-date', assignedDate);
-            }
-        });
-    });
-    
-    // Existing functions (getCookie, toggleStatus, assignUser, etc.) remain the same
-    </script>
-
-
-
-<script>
+// Status toggle functionality
 function toggleStatus(button, logId) {
     const currentStatus = button.textContent.trim();
     const newStatus = currentStatus === "Not Completed" ? "Completed" : "Not Completed";
@@ -640,7 +521,7 @@ function toggleStatus(button, logId) {
             } else {
                 button.classList.remove('completed');
             }
-            filterTable(); // Reapply filter after status change
+            showToast('Status updated successfully!');
         } else {
             alert('Error updating status');
         }
@@ -650,6 +531,58 @@ function toggleStatus(button, logId) {
         alert('Error updating status');
     });
 }
-</script>
+
+// Filter functionality - now uses URL parameters for server-side filtering
+function applyFilters() {
+    const statusFilter = document.getElementById('statusFilter').value;
+    const assignedUserFilter = document.getElementById('assignedUserFilter').value;
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
     
+    // Build URL with filter parameters
+    const params = new URLSearchParams(window.location.search);
+    
+    // Clear existing filter params
+    params.delete('status');
+    params.delete('assigned_user');
+    params.delete('start_date');
+    params.delete('end_date');
+    params.delete('page'); // Reset to first page when filtering
+    
+    // Add new filter params
+    if (statusFilter && statusFilter !== 'all') {
+        params.set('status', statusFilter);
+    }
+    if (assignedUserFilter && assignedUserFilter !== 'all') {
+        params.set('assigned_user', assignedUserFilter);
+    }
+    if (startDate) {
+        params.set('start_date', startDate);
+    }
+    if (endDate) {
+        params.set('end_date', endDate);
+    }
+    
+    // Redirect with filters
+    const newUrl = window.location.pathname + '?' + params.toString();
+    window.location.href = newUrl;
+}
+
+// Initialize when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    // Set filter values from URL parameters on page load
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    const statusFilter = document.getElementById('statusFilter');
+    const assignedUserFilter = document.getElementById('assignedUserFilter');
+    const startDateInput = document.getElementById('startDate');
+    const endDateInput = document.getElementById('endDate');
+    
+    // Set default status filter if no parameter exists
+    if (!urlParams.get('status') && !urlParams.get('page')) {
+        statusFilter.value = 'Not Completed';
+    }
+});
+</script>
+
 {% endblock %}
