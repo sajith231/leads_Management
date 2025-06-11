@@ -239,3 +239,19 @@ def approve_salary_certificate(request, certificate_id):
     certificate.approved_on = timezone.now()  # Set the approval timestamp
     certificate.save()
     return redirect('make_salary_certificate')
+
+
+
+
+
+from django.shortcuts import render
+
+def interview_management(request):
+    return render(request, 'interview_management.html')
+
+
+
+
+
+def make_offer_letter(request):
+    return render(request, 'make_offer_letter.html')

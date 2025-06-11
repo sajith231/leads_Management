@@ -13,4 +13,18 @@ urlpatterns = [
     path('salary-certificate/view/<int:employee_id>/', views.view_salary_certificate, name='view_salary_certificate'),
     path('salary-certificates/approve/<int:certificate_id>/', views.approve_salary_certificate, name='approve_salary_certificate'),
 
+
+
+    path('interview/', views.interview_management, name='interview_management'),
+
+
+
+
+    path('offer-letter/', views.make_offer_letter, name='make_offer_letter'),
+
+
+    
+    
+
+
 ]

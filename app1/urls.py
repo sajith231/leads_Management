@@ -13,8 +13,8 @@ from .views import experience_certificate, save_experience_certificate_details ,
 from .views import add_document_setting, get_document_settings, delete_document_setting,get_interview_taken_by
 from .views import document_detail,save_document_settings
 from .views import get_document_setting_fields
-from .views import interview_management,make_offer_letter
-from .views import toggle_selection_status,view_attachment
+
+from .views import view_attachment
 from .views import save_attendance
 from .views import update_setting_positions
 
@@ -183,10 +183,10 @@ urlpatterns = [
     path('attachment/setting/<int:setting_id>/', views.view_attachment, name='view_setting_attachment'),
     path('attachment/field/<int:field_id>/', view_attachment, name='view_field_attachment'),
 
-    path('interview-management/', interview_management, name='interview_management'),
-    path('make-offer-letter/', views.make_offer_letter, name='make_offer_letter'),
+    
+    
 
-    path('toggle-selection-status/', toggle_selection_status, name='toggle_selection_status'),
+    
     path('generate_offer_letter/<int:cv_id>/', views.generate_offer_letter, name='generate_offer_letter'),
 
     path('save_offer_letter_details/<int:cv_id>/', views.save_offer_letter_details, name='save_offer_letter_details'),

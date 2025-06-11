@@ -2949,64 +2949,11 @@ def view_attachment(request, setting_id=None, field_id=None):
     
 
 
-from django.core.paginator import Paginator
-from django.shortcuts import render
-from .models import CV
-
-@login_required
-def interview_management(request):
-    cv_list = CV.objects.filter(interview_status=True).order_by('-interview_date', '-created_date')  
-    # Ordering by interview_date first, then by created_date (latest first)
-
-    paginator = Paginator(cv_list, 10)  # Show 10 CVs per page
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-
-    return render(request, 'interview_management.html', {'cv_list': page_obj})
-
-
-
-
-from .models import CV
-
-from django.core.paginator import Paginator
-from django.shortcuts import render
-from .models import CV
-
-@login_required
-def make_offer_letter(request):
-    cv_list = CV.objects.filter(selected=True).order_by('-interview_date')
-
-    paginator = Paginator(cv_list, 10)  # Show 10 CVs per page
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-
-    return render(request, 'make_offer_letter.html', {'cv_list': page_obj})
 
 
 
 
 
-
-from django.shortcuts import redirect, get_object_or_404
-from django.contrib import messages
-from .forms import CVSelectionForm
-from .models import CV
-
-@login_required
-def toggle_selection_status(request):
-    if request.method == 'POST':
-        form = CVSelectionForm(request.POST)
-        if form.is_valid():
-            cv_id = form.cleaned_data['cv_id']
-            selected = form.cleaned_data['selected']
-            cv = get_object_or_404(CV, id=cv_id)
-            cv.selected = selected
-            cv.save()
-            messages.success(request, f'Status updated for {cv.name}.')
-        else:
-            messages.error(request, 'Invalid form submission.')
-    return redirect('interview_management')  # Redirect back to the interview management page
 
 
 from django.core.paginator import Paginator
