@@ -1549,7 +1549,7 @@ def add_service_entry(request):
         # Fetch customers from the API
         customers = []
         try:
-            response = requests.get('https://rrc.imcbs.com/api/rrc-clients-data')
+            response = requests.get('https://rrcpython.imcbs.com/api/clients')
             if response.status_code == 200:
                 customers = response.json()
         except Exception as e:
@@ -1628,9 +1628,9 @@ def edit_service_entry(request, entry_id):
     import requests
     customers = []
     try:
-        response = requests.get('https://rrc.imcbs.com/api/rrc-clients-data')
+        response = requests.get('https://rrcpython.imcbs.com/api/clients')
         if response.status_code == 200:
-            customers = response.json()
+            customers = response.json().get('data', [])
     except Exception as e:
         messages.warning(request, f'Could not fetch customers: {str(e)}')
 
@@ -1753,9 +1753,9 @@ def user_edit_service_entry(request, entry_id):
     # Fetch customers from the API
     customers = []
     try:
-        response = requests.get('https://rrc.imcbs.com/api/rrc-clients-data')
+        response = requests.get('https://rrcpython.imcbs.com/api/clients')
         if response.status_code == 200:
-            customers = response.json()
+            customers = response.json().get("data", [])
     except Exception as e:
         messages.warning(request, f'Could not fetch customers: {str(e)}')
 
