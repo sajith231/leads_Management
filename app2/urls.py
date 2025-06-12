@@ -2,6 +2,7 @@
 from django.urls import path
 from . import views
 from .views import InformationCenterListView, add_information_center,edit_information_center,delete_information_center
+from .views import get_next_position
 
 
 urlpatterns = [
@@ -26,6 +27,7 @@ urlpatterns = [
     path('information-center/', InformationCenterListView.as_view(), name='information_center'),
     path('add-information-center/', add_information_center, name='add_information_center'),
     path('edit-information-center/<int:pk>/', edit_information_center, name='edit_information_center'),
+    path('api/get_next_position/', get_next_position, name='get_next_position'),
     
     path('delete-information-center/<int:pk>/', views.delete_information_center, name='delete_information_center'),
 

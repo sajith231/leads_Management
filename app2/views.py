@@ -285,13 +285,18 @@ def add_information_center(request):
         product_category_id = request.POST.get('product_category')
         thumbnail = request.FILES.get('thumbnail')
         priority = request.POST.get('priority')
-        language = request.POST.get('language')  # New field
-        duration = request.POST.get('duration')  # New field
-        host = request.POST.get('host')  # New field
-        position = request.POST.get('position')  # New field
-
+        language = request.POST.get('language')
+        duration = request.POST.get('duration')
+        host = request.POST.get('host')
+        
         product_type = ProductType.objects.get(id=product_type_id)
         product_category = ProductCategory.objects.get(id=product_category_id)
+        
+        # Calculate the next position number for this category
+        last_position = InformationCenter.objects.filter(
+            product_category=product_category
+        ).aggregate(Max('position'))['position__max']
+        position = (last_position or 0) + 1
 
         InformationCenter.objects.create(
             title=title,
@@ -303,10 +308,10 @@ def add_information_center(request):
             product_category=product_category,
             thumbnail=thumbnail,
             priority=priority,
-            language=language,  # New field
-            duration=duration,  # New field
-            host=host,  # New field
-            position=position  # New field
+            language=language,
+            duration=duration,
+            host=host,
+            position=position
         )
         return redirect('information_center')
 
@@ -317,6 +322,23 @@ def add_information_center(request):
         'product_types': product_types,
         'product_categories': product_categories,
     })
+
+from django.http import JsonResponse
+from .models import InformationCenter
+from django.db.models import Max
+
+def get_next_position(request):
+    category_id = request.GET.get('category_id')
+    if not category_id:
+        return JsonResponse({'error': 'Category ID is required'}, status=400)
+    
+    last_position = InformationCenter.objects.filter(
+        product_category_id=category_id
+    ).aggregate(Max('position'))['position__max']
+    
+    next_position = (last_position or 0) + 1
+    
+    return JsonResponse({'next_position': next_position})
 
 # views.py
 from django.shortcuts import render, redirect, get_object_or_404
