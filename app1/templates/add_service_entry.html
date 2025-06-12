@@ -15,7 +15,7 @@
                     <div class="input-group">
                         <input type="text" class="form-control" id="customer" name="customer" placeholder="Search or type new customer" autocomplete="off" required>
                         <button class="btn btn-outline-secondary" type="button" id="newCustomerBtn">New Customer</button>
-                        <button class="btn btn-outline-info" type="button" id="viewCustomerBtn" title="View Customer">
+                        <button class="btn btn-outline-info" type="button" id="viewCustomerBtn" title="View Customer Details" disabled>
                             <i class="fas fa-eye"></i>
                         </button>
                     </div>
@@ -62,10 +62,6 @@
     </select>
 </div>
 
-
-                <!-- Service Type Field -->
-                
-
                 <!-- Remarks Field -->
                 <div class="mb-3">
                     <label for="remarks" class="form-label">Remarks</label>
@@ -76,7 +72,6 @@
                 <div class="mb-3" style="display: none;">
                     <label for="status" class="form-label">Status *</label>
                     <select class="form-control" id="status" name="status" required>
-                        
                         <option value="Solved">Solved</option>
                     </select>
                 </div>
@@ -115,6 +110,31 @@
     </div>
 </div>
 
+<!-- Customer Details Modal -->
+<div class="modal fade" id="customerDetailsModal" tabindex="-1" aria-labelledby="customerDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="customerDetailsModalLabel">Customer Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="customerDetailsContent">
+                    <div class="text-center">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2">Loading customer details...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         const customerInput = document.getElementById("customer");
@@ -124,11 +144,13 @@
         const newCustomerFields = document.getElementById("newCustomerFields");
         const newCustomerName = document.getElementById("new_customer_name");
         const newCustomerAddress = document.getElementById("new_customer_address");
+        const viewCustomerBtn = document.getElementById("viewCustomerBtn");
 
         let isNewCustomer = false;
+        let allCustomers = [];
+        let selectedCustomerData = null;
 
         // Toggle between new customer and existing customer
-        // Inside the newCustomerBtn click event listener
         newCustomerBtn.addEventListener("click", function() {
             isNewCustomer = !isNewCustomer;
             
@@ -144,6 +166,8 @@
                 customerInput.required = false;
                 newCustomerName.required = true;
                 newCustomerAddress.required = true;
+                viewCustomerBtn.disabled = true;  // Disable eye button for new customers
+                selectedCustomerData = null;
                 
                 // Add event listener to auto-fill place when new customer address changes
                 newCustomerAddress.addEventListener("input", function() {
@@ -166,10 +190,73 @@
                 });
             }
         });
+
+        // View Customer Details Button Click Handler
+        viewCustomerBtn.addEventListener("click", function() {
+            if (selectedCustomerData) {
+                showCustomerDetails(selectedCustomerData);
+            }
+        });
+
+        // Function to show customer details in modal
+        function showCustomerDetails(customerData) {
+    const modal = new bootstrap.Modal(document.getElementById('customerDetailsModal'));
+    const content = document.getElementById('customerDetailsContent');
+    
+    content.innerHTML = `
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h6 class="mb-0">Customer Details</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Code:</strong> ${customerData.code || 'N/A'}</p>
+                        <p><strong>Name:</strong> ${customerData.name || 'N/A'}</p>
+                        <p><strong>Mobile:</strong> ${customerData.mobile || 'N/A'}</p>
+                        <p><strong>Account Code:</strong> ${customerData.accountcode || 'N/A'}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Address:</strong> ${customerData.address || 'N/A'}</p>
+                        <p><strong>Address 3:</strong> ${customerData.address3 || 'N/A'}</p>
+                        <p><strong>District:</strong> ${customerData.district || 'N/A'}</p>
+                        <p><strong>State:</strong> ${customerData.state || 'N/A'}</p>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <p><strong>Branch:</strong> ${customerData.branch || 'N/A'}</p>
+                        <p><strong>Route:</strong> ${customerData.route || 'N/A'}</p>
+                        <p><strong>Nature:</strong> ${customerData.nature || 'N/A'}</p>
+                        <p><strong>Direct Dealing:</strong> ${customerData.directdealing || 'N/A'}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Software:</strong> ${customerData.software || 'N/A'}</p>
+                        <p><strong>Installation Date:</strong> ${customerData.installationdate || 'N/A'}</p>
+                        <p><strong>License Type:</strong> ${customerData.lictype || 'N/A'}</p>
+                        <p><strong>Clients:</strong> ${customerData.clients || 'N/A'}</p>
+                        <p><strong>SP:</strong> ${customerData.sp || 'N/A'}</p>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-md-12">
+                        <p><strong>AMC:</strong> ${customerData.amc || 'N/A'}</p>
+                        <p><strong>AMC Amount:</strong> ${customerData.amcamt || 'N/A'}</p>
+                        <p><strong>Priority:</strong> ${customerData.priority || 'N/A'}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    modal.show();
+}
+
         // Fetch customers when the page loads
         fetch('/proxy/customers/')
             .then(response => response.json())
             .then(data => {
+                allCustomers = data; // Store all customers data
                 customerDropdown.innerHTML = ""; // Clear existing options
 
                 // Add customer options with address data
@@ -178,10 +265,15 @@
                     option.classList.add("dropdown-item");
                     option.textContent = `${customer.name}, ${customer.address}`;
                     option.setAttribute("data-address", customer.address);
+                    option.setAttribute("data-customer-code", customer.code);
                     option.addEventListener("click", function () {
                         customerInput.value = customer.name;
                         placeInput.value = option.getAttribute("data-address");
                         customerDropdown.style.display = "none";
+                        
+                        // Store selected customer data and enable eye button
+                        selectedCustomerData = customer;
+                        viewCustomerBtn.disabled = false;
                     });
                     customerDropdown.appendChild(option);
                 });
@@ -217,6 +309,12 @@
             const options = customerDropdown.querySelectorAll(".dropdown-item");
             let hasVisibleItem = false;
 
+            // Reset selected customer data if input is cleared or changed
+            if (selectedCustomerData && customerInput.value !== selectedCustomerData.name) {
+                selectedCustomerData = null;
+                viewCustomerBtn.disabled = true;
+            }
+
             options.forEach(option => {
                 if (option.textContent.toLowerCase().includes(filter)) {
                     option.style.display = "block";
@@ -236,14 +334,6 @@
             }
         });
     });
-
-
-
-
-
-
-
-
 
     // Function to filter complaints based on selected service type
 function filterComplaints() {
@@ -334,6 +424,30 @@ document.addEventListener("DOMContentLoaded", function () {
 
     .card-body {
         padding: 1rem;
+    }
+
+    #viewCustomerBtn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .modal-body .card {
+        border-radius: 0.375rem;
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    }
+
+    .modal-body .card-header {
+        font-weight: 600;
+        border-radius: 0.375rem 0.375rem 0 0;
+    }
+
+    .modal-body .card-body p {
+        margin-bottom: 0.5rem;
+        word-wrap: break-word;
+    }
+
+    .modal-body .card-body p:last-child {
+        margin-bottom: 0;
     }
 </style>
 

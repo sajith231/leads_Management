@@ -1413,9 +1413,17 @@ def get_current_user(request):
 import requests
 from django.http import JsonResponse
 
+from django.http import JsonResponse
+import requests
+
 def get_customers(request):
-    response = requests.get("https://rrc.imcbs.com/api/rrc-clients-data")
-    return JsonResponse(response.json(), safe=False)
+    response = requests.get("https://rrcpython.imcbs.com/api/clients")
+    if response.status_code == 200:
+        json_data = response.json()
+        customers = json_data.get("data", [])  # safely get the data list
+        return JsonResponse(customers, safe=False)  # safe=False because it's a list
+    return JsonResponse({"error": "Failed to fetch data"}, status=500)
+
 
 @login_required
 def add_service_log(request):
@@ -1615,6 +1623,8 @@ def add_service_entry(request):
             return redirect('service_entry')
         else:
             return redirect('user_service_entry')
+
+
 
 
 @login_required
@@ -2165,7 +2175,7 @@ from django.utils import timezone
 
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from .models import CV, Rating, InterviewTakenBy
+from .models import CV, Rating
 import json
 import base64
 import tempfile
@@ -2173,108 +2183,9 @@ from django.core.files import File
 import os
 from django.utils import timezone
 
-@csrf_exempt
-def save_ratings(request, cv_id):
-    if request.method == 'POST':
-        try:
-            cv = CV.objects.get(id=cv_id)
-        except CV.DoesNotExist:
-            return JsonResponse({'success': False, 'error': 'CV not found'})
-
-        data = request.POST
-
-        # Process voice note if present
-        voice_note_data = data.get('voice_note')
-        temp_file_path = None
-        if voice_note_data and voice_note_data.startswith('data:audio/wav;base64,'):
-            format, base64_str = voice_note_data.split(',', 1)
-
-            try:
-                # Decode base64 to binary
-                voice_note_binary = base64.b64decode(base64_str)
-                
-                # Create temporary file
-                with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as temp_file:
-                    temp_file.write(voice_note_binary)
-                    temp_file_path = temp_file.name
-            except Exception as e:
-                return JsonResponse({'success': False, 'error': 'Invalid voice note data'})
-
-        # Create or update rating
-        rating, created = Rating.objects.get_or_create(cv=cv)
-        rating.knowledge = data.get('knowledgeRating')
-        rating.confidence = data.get('confidenceRating')
-        rating.attitude = data.get('attitudeRating')
-        rating.communication = data.get('communicationRating')
-        rating.appearance = data.get('appearanceRating')
-        rating.languages = request.POST.getlist('languages[]')
-        rating.expected_salary = data.get('expectedSalary') or None
-        rating.experience = data.get('experience') or None
-        rating.remark = data.get('remark') or None
-
-        # Save voice note if present
-        if temp_file_path:
-            with open(temp_file_path, 'rb') as temp_file:
-                file_name = f'voice_note_{cv_id}_{timezone.now().strftime("%Y%m%d_%H%M%S")}.wav'
-                rating.voice_note.save(file_name, File(temp_file), save=False)
-            os.unlink(temp_file_path)
-
-        rating.save()
-
-        # Create an entry in InterviewTakenBy model
-        InterviewTakenBy.objects.create(cv=cv, created_by=request.user)
-
-        return JsonResponse({'success': True})
-    
-    return JsonResponse({'success': False})
 
 
-@csrf_exempt
-def get_ratings(request, cv_id):
-    if request.method == 'GET':
-        try:
-            cv = CV.objects.get(id=cv_id)
-        except CV.DoesNotExist:
-            return JsonResponse({'success': False, 'error': 'CV not found'})
 
-        rating = Rating.objects.filter(cv=cv).first()
-        if rating:
-            response_data = {
-                'success': True,
-                'knowledge': rating.knowledge,
-                'confidence': rating.confidence,
-                'attitude': rating.attitude,
-                'communication': rating.communication,
-                'appearance': rating.appearance,
-                'languages': rating.languages,
-                'expected_salary': rating.expected_salary,
-                'experience': rating.experience,
-                'remark': rating.remark,
-            }
-            if rating.voice_note:
-                response_data['voice_note_url'] = rating.voice_note.url
-            return JsonResponse(response_data)
-        
-        return JsonResponse({'success': False, 'error': 'No rating found'})
-    
-    return JsonResponse({'success': False, 'error': 'Invalid request method'})
-
-
-from django.http import JsonResponse
-from .models import InterviewTakenBy
-
-def get_interview_taken_by(request, cv_id):
-    try:
-        interview_taken_by = InterviewTakenBy.objects.filter(cv_id=cv_id).latest('created_at')
-        return JsonResponse({
-            'success': True,
-            'username': interview_taken_by.created_by.username
-        })
-    except InterviewTakenBy.DoesNotExist:
-        return JsonResponse({
-            'success': False,
-            'error': 'No interview taken by information found'
-        })
 
 
 

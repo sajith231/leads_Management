@@ -4,13 +4,13 @@ from .views import edit_lead
 from .views import delete_lead 
 from .views import load_areas,toggle_service_status
 from .views import toggle_interview_status
-from .views import save_ratings, get_ratings
+
 from .views import offer_letter,save_offer_letter_details,get_offer_letter_details
 from .views import employee_management, add_employee,edit_employee,delete_employee
 from .views import experience_certificate
 from .views import experience_certificate, save_experience_certificate_details ,document_list,DocumentSetting,add_document,add_document_setting,edit_document,delete_document,get_document_settings
 
-from .views import add_document_setting, get_document_settings, delete_document_setting,get_interview_taken_by
+from .views import add_document_setting, get_document_settings, delete_document_setting
 from .views import document_detail,save_document_settings
 from .views import get_document_setting_fields
 
@@ -137,11 +137,6 @@ urlpatterns = [
       
       
 
-
-
-    path('save-ratings/<int:cv_id>/', save_ratings, name='save_ratings'),
-    path('get-ratings/<int:cv_id>/', get_ratings, name='get_ratings'),
-    path('get-interview-taken-by/<int:cv_id>/', get_interview_taken_by, name='get_interview_taken_by'),
 
 
     path('business-types/', views.business_type_list, name='business_type_list'),

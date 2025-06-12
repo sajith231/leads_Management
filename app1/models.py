@@ -456,13 +456,7 @@ from django.db import models
 from django.contrib.auth import get_user_model
 from .models import CV
 
-class InterviewTakenBy(models.Model):     
-    cv = models.ForeignKey(CV, on_delete=models.CASCADE, related_name='interview_taken_by')
-    created_by = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, related_name='interview_taken_by')
-    created_at = models.DateTimeField(auto_now_add=True)
 
-    def __str__(self):
-        return f"Interview taken by {self.created_by.username} for CV {self.cv.id}"
 
 class BusinessType(models.Model):
     name = models.CharField(max_length=100, unique=True)
