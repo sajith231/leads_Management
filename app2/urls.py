@@ -28,6 +28,8 @@ urlpatterns = [
     path('add-information-center/', add_information_center, name='add_information_center'),
     path('edit-information-center/<int:pk>/', edit_information_center, name='edit_information_center'),
     path('api/get_next_position/', get_next_position, name='get_next_position'),
+
+    path('information_center_table/', views.information_center_table, name='information_center_table'),
     
     path('delete-information-center/<int:pk>/', views.delete_information_center, name='delete_information_center'),
 

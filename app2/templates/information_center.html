@@ -688,6 +688,11 @@
                 Add New
             </a>
             {% endif %}
+            {% if request.user.is_superuser or 'product_type_list' in request.session.allowed_menus %}
+    <a href="{% url 'information_center_table' %}" class="add-btn" style="background:linear-gradient(red,rgb(128, 0, 0))">
+        All Videos List
+    </a>
+    {% endif %}
         </div>
     </form>
 </div>
