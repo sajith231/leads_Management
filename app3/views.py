@@ -442,11 +442,5 @@ def view_rating(request, pk):
 
 
 
-
-
-
-
-
-
 def make_offer_letter(request):
     return render(request, 'make_offer_letter.html')
