@@ -25,3 +25,41 @@ class SalaryCertificate(models.Model):
         self.joining_date = self.employee.joining_date
         self.job_title = self.employee.job_title
         super().save(*args, **kwargs)
+
+
+from django.db import models
+from django.contrib.auth.models import User
+from app1.models import CV
+
+class Interview(models.Model):
+    name = models.CharField(max_length=255)
+    job_title = models.CharField(max_length=255)
+    cv_attachment = models.FileField(upload_to='cv_attachments/', blank=True, null=True)
+    place = models.CharField(max_length=255)
+    created_user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    gender = models.CharField(max_length=1, choices=[('M', 'Male'), ('F', 'Female')], blank=True)
+    address = models.TextField(blank=True, null=True)
+    district = models.CharField(max_length=255)
+    phone_number = models.CharField(max_length=15, blank=True, null=True)
+    education = models.CharField(max_length=255)
+    experience = models.TextField()
+    dob = models.DateField(blank=True, null=True)
+    remarks = models.TextField(blank=True, null=True)
+    cv_source = models.CharField(max_length=255, blank=True, null=True)
+    created_date = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
+
+class Rating(models.Model):
+    interview = models.ForeignKey(Interview, on_delete=models.CASCADE)
+    appearance = models.IntegerField()
+    knowledge = models.IntegerField()
+    confidence = models.IntegerField()
+    attitude = models.IntegerField()
+    communication = models.IntegerField()
+    languages = models.CharField(max_length=255)
+    expected_salary = models.CharField(max_length=50)
+    experience = models.CharField(max_length=50)
+    remark = models.TextField()
+    voice_note = models.FileField(upload_to='voice_notes/', blank=True, null=True)

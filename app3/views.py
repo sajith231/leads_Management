@@ -245,9 +245,204 @@ def approve_salary_certificate(request, certificate_id):
 
 
 from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
 
+
+
+from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
+from django.shortcuts import render
+from .models import Interview  # Adjust if needed
+
+@login_required
 def interview_management(request):
-    return render(request, 'interview_management.html')
+    search_query = request.GET.get('q', '').strip()
+
+    if search_query:
+        interviews = Interview.objects.filter(name__icontains=search_query)
+    else:
+        interviews = Interview.objects.all()
+
+    interviews = interviews.order_by('-created_date')  # or '-id'
+
+    paginator = Paginator(interviews, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'interview_management.html', {
+        'interviews': page_obj,
+        'search_query': search_query
+    })
+
+
+from django.shortcuts import render, redirect
+from app1.models import CV
+from app1.models import Employee  # Assuming name is stored in Employee model
+from django.contrib.auth.decorators import login_required
+
+from django.shortcuts import render, redirect
+from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
+from app1.models import CV
+from .models import Interview
+
+@login_required
+def add_interview(request):
+    if request.method == 'POST':
+        employee_id = request.POST.get('employee_id')
+        cv = CV.objects.get(id=employee_id)
+        
+        # Create a new Interview instance
+        interview = Interview.objects.create(
+            name=cv.name,
+            job_title=cv.job_title.title,
+            cv_attachment=cv.cv_attachment,
+            place=cv.place,
+            created_user=request.user,
+            gender=cv.gender,
+            address=cv.address,
+            district=cv.district,
+            phone_number=cv.phone_number,
+            education=cv.education,
+            experience=cv.experience,
+            dob=cv.dob,
+            remarks=cv.remarks,
+            cv_source=cv.agent.name if cv.agent else 'DIRECT'
+        )
+        
+        return redirect('interview_management')  # Redirect to the interview management page
+
+    employees = CV.objects.all()
+    return render(request, 'add_interview_management.html', {'employees': employees})
+
+
+from django.shortcuts import get_object_or_404, redirect
+from .models import Interview  # adjust model name if different
+
+def delete_interview(request, pk):
+    interview = get_object_or_404(Interview, pk=pk)
+    if request.method == 'POST':
+        interview.delete()
+        return redirect('interview_management')  # change this to your list view name
+
+from app1.models import CV  # instead of Employee
+
+def edit_interview_management(request, pk):
+    interview = get_object_or_404(Interview, pk=pk)
+    candidates = CV.objects.all()
+
+    if request.method == 'POST':
+        candidate_id = request.POST.get('employee_id')
+        if candidate_id:
+            cv = get_object_or_404(CV, id=candidate_id)
+
+            interview.name = cv.name
+            interview.job_title = cv.job_title.title
+            interview.cv_attachment = cv.cv_attachment
+            interview.place = cv.place
+            interview.gender = cv.gender
+            interview.address = cv.address
+            interview.district = cv.district
+            interview.phone_number = cv.phone_number
+            interview.education = cv.education
+            interview.experience = cv.experience
+            interview.dob = cv.dob
+            interview.remarks = cv.remarks
+            interview.cv_source = cv.agent.name if cv.agent else 'DIRECT'
+
+        interview.save()
+        return redirect('interview_management')
+
+    return render(request, 'edit_interview_management.html', {
+        'interview': interview,
+        'candidates': candidates
+    })
+
+from django.shortcuts import render, get_object_or_404, redirect
+from .models import Interview, Rating
+
+from django.shortcuts import get_object_or_404, render, redirect
+from .models import Interview, Rating
+
+def add_rating(request, interview_id):
+    interview = get_object_or_404(Interview, pk=interview_id)
+    fields = ['appearance', 'knowledge', 'confidence', 'attitude', 'communication']
+    languages = ['English', 'Malayalam', 'Tamil', 'Hindi']
+
+    # Check if a rating already exists
+    existing_rating = Rating.objects.filter(interview=interview).last()
+
+    if request.method == 'POST':
+        voice_file = request.FILES.get('voice_note')
+
+        if existing_rating:
+            # Update only the fields that are submitted (partial update)
+            for field in fields:
+                val = request.POST.get(field)
+                if val:
+                    setattr(existing_rating, field, val)
+
+            selected_languages = request.POST.getlist('languages')
+            if selected_languages:
+                existing_rating.languages = ','.join(selected_languages)
+
+            if request.POST.get('expected_salary'):
+                existing_rating.expected_salary = request.POST.get('expected_salary')
+            if request.POST.get('experience'):
+                existing_rating.experience = request.POST.get('experience')
+            if request.POST.get('remark'):
+                existing_rating.remark = request.POST.get('remark')
+            if voice_file:
+                existing_rating.voice_note = voice_file
+
+            existing_rating.save()
+
+        else:
+            # New rating submission
+            Rating.objects.create(
+                interview=interview,
+                appearance=request.POST.get('appearance'),
+                knowledge=request.POST.get('knowledge'),
+                confidence=request.POST.get('confidence'),
+                attitude=request.POST.get('attitude'),
+                communication=request.POST.get('communication'),
+                languages=','.join(request.POST.getlist('languages')),
+                expected_salary=request.POST.get('expected_salary'),
+                experience=request.POST.get('experience'),
+                remark=request.POST.get('remark'),
+                voice_note=voice_file
+            )
+
+        return redirect('interview_management')
+
+    return render(request, 'add_rating.html', {
+        'interview': interview,
+        'fields': fields,
+        'languages': languages,
+        'existing_rating': existing_rating  # Pass existing data to prefill the form
+    })
+
+
+from django.shortcuts import render, get_object_or_404
+from .models import Interview, Rating  # adjust import paths as needed
+
+def view_rating(request, pk):
+    interview = get_object_or_404(Interview, pk=pk)
+    rating = Rating.objects.filter(interview_id=pk).order_by('-id').first()  # latest rating
+
+    return render(request, 'view_rating.html', {
+        'interview': interview,
+        'rating': rating,
+    })
+
+
+
+
+
+
+
+
 
 
 
