@@ -145,7 +145,15 @@
                 <tr>
                     <td>{{ forloop.counter0|add:page_obj.start_index }}</td>
                     <td>{{ entry.date|date:"d-m-Y H:i" }}</td>
-                    <td>{{ entry.customer|upper }}</td>
+                    <td>
+                    <span 
+                        class="customer-name text-primary" 
+                        style="cursor: pointer;" 
+                        data-customer="{{ entry.customer|escapejs }}"
+                    >
+                        {{ entry.customer|upper }}
+                    </span>
+                </td>
                     <td>{{ entry.complaint|upper }}</td>
                     <td>
                         <i 
@@ -206,6 +214,54 @@
             </div>
         </div>
     </div>
+</div>
+<!-- Customer Details Modal -->
+<div class="modal fade" id="customerDetailsModal" tabindex="-1" aria-labelledby="customerDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="customerDetailsModalLabel">Customer Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="customerDetailsContent">
+                    <div class="text-center">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2">Loading customer details...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Customer Details Modal -->
+<div class="modal fade" id="customerDetailsModal" tabindex="-1" aria-labelledby="customerDetailsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="customerDetailsModalLabel">Customer Details</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div id="customerDetailsContent">
+          <div class="text-center">
+            <div class="spinner-border" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Loading customer details...</p>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -327,4 +383,83 @@ const updateFilters = () => {
         userFilter.addEventListener('change', updateFilters);
     });
 </script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const customerElements = document.querySelectorAll(".customer-name");
+    const modal = new bootstrap.Modal(document.getElementById('customerDetailsModal'));
+    const content = document.getElementById('customerDetailsContent');
+
+    customerElements.forEach(el => {
+        el.addEventListener("click", function () {
+            const customerName = el.getAttribute("data-customer");
+            content.innerHTML = `<div class="text-center">
+                <div class="spinner-border" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2">Loading customer details...</p>
+            </div>`;
+
+            fetch("/proxy/customers/")
+                .then(res => res.json())
+                .then(data => {
+                    const customer = data.find(c => c.name.trim().toLowerCase() === customerName.trim().toLowerCase());
+                    if (customer) {
+                        content.innerHTML = `
+                            <div class="card">
+                                <div class="card-header bg-primary text-white">
+                                    <h6 class="mb-0">Customer Details</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <p><strong>Code:</strong> ${customer.code || 'N/A'}</p>
+                                            <p><strong>Name:</strong> ${customer.name || 'N/A'}</p>
+                                            <p><strong>Mobile:</strong> ${customer.mobile || 'N/A'}</p>
+                                            <p><strong>Account Code:</strong> ${customer.accountcode || 'N/A'}</p>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <p><strong>Address:</strong> ${customer.address || 'N/A'}</p>
+                                            <p><strong>Address 3:</strong> ${customer.address3 || 'N/A'}</p>
+                                            <p><strong>District:</strong> ${customer.district || 'N/A'}</p>
+                                            <p><strong>State:</strong> ${customer.state || 'N/A'}</p>
+                                        </div>
+                                    </div>
+                                    <div class="row mt-3">
+                                        <div class="col-md-6">
+                                            <p><strong>Branch:</strong> ${customer.branch || 'N/A'}</p>
+                                            <p><strong>Route:</strong> ${customer.route || 'N/A'}</p>
+                                            <p><strong>Nature:</strong> ${customer.nature || 'N/A'}</p>
+                                            <p><strong>Direct Dealing:</strong> ${customer.directdealing || 'N/A'}</p>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <p><strong>Software:</strong> ${customer.software || 'N/A'}</p>
+                                            <p><strong>Installation Date:</strong> ${customer.installationdate || 'N/A'}</p>
+                                            <p><strong>License Type:</strong> ${customer.lictype || 'N/A'}</p>
+                                            <p><strong>Clients:</strong> ${customer.clients || 'N/A'}</p>
+                                            <p><strong>SP:</strong> ${customer.sp || 'N/A'}</p>
+                                        </div>
+                                    </div>
+                                    <div class="row mt-3">
+                                        <div class="col-md-12">
+                                            <p><strong>AMC:</strong> ${customer.amc || 'N/A'}</p>
+                                            <p><strong>AMC Amount:</strong> ${customer.amcamt || 'N/A'}</p>
+                                            <p><strong>Priority:</strong> ${customer.priority || 'N/A'}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>`;
+                    } else {
+                        content.innerHTML = `<p class="text-danger">Customer not found.</p>`;
+                    }
+                    modal.show();
+                })
+                .catch(() => {
+                    content.innerHTML = `<p class="text-danger">Error loading customer data.</p>`;
+                    modal.show();
+                });
+        });
+    });
+});
+</script>
+
 {% endblock %}

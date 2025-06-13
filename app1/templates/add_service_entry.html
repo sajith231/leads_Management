@@ -19,9 +19,10 @@
                             <i class="fas fa-eye"></i>
                         </button>
                     </div>
-                    <div id="customerDropdown" class="dropdown-menu" style="display: none; position: absolute; width: 100%; max-height: 200px; overflow-y: auto; z-index: 1000;">
-                        <p style="padding: 10px; margin: 0;">Loading customers...</p>
-                    </div>
+                <div id="customerDropdown" class="dropdown-menu">
+                    <p style="padding: 10px; margin: 0;">Loading customers...</p>
+                </div>
+
                 </div>
 
                 <!-- New Customer Fields (hidden by default) -->
@@ -449,6 +450,22 @@ document.addEventListener("DOMContentLoaded", function () {
     .modal-body .card-body p:last-child {
         margin-bottom: 0;
     }
+#customerDropdown {
+    display: none;
+    position: absolute;
+    width: 1000px;
+    max-height: 500px;
+    overflow-y: auto;
+    z-index: 1000;
+}
+
+/* 📱 Mobile view adjustment */
+@media (max-width: 600px) {
+    #customerDropdown {
+        width: 90vw;  /* Full screen width on mobile */
+        left: 0;       /* Align to the left */
+    }
+}
 </style>
 
 {% endblock %}

@@ -874,3 +874,66 @@ def show_clients(request):
         'filtered_count': len(clients),
         'search_query': search_query
     })
+
+
+
+
+
+
+
+
+
+
+
+# views.py
+
+# views.py
+
+# views.py
+
+from django.shortcuts import render
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
+from .models import InformationCenter
+from django.utils import timezone
+from datetime import datetime
+
+@login_required
+def information_center_table(request):
+    # Get search parameters from request
+    search_query = request.GET.get('search', '')
+    start_date_str = request.GET.get('start_date', '')
+    end_date_str = request.GET.get('end_date', '')
+
+    # Start with all information items
+    information_items = InformationCenter.objects.all().order_by('-added_date')
+
+    # Apply search filter if provided
+    if search_query:
+        information_items = information_items.filter(title__icontains=search_query)
+
+    # Apply date filter if provided
+    if start_date_str:
+        start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+        information_items = information_items.filter(added_date__gte=start_date)
+    
+    if end_date_str:
+        end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+        information_items = information_items.filter(added_date__lte=end_date)
+
+    # Set up pagination
+    paginator = Paginator(information_items, 15)  # 15 items per page
+    page_number = request.GET.get('page', 1)
+
+    try:
+        page_obj = paginator.page(page_number)
+    except PageNotAnInteger:
+        page_obj = paginator.page(1)
+    except EmptyPage:
+        page_obj = paginator.page(paginator.num_pages)
+
+    return render(request, 'information_center_table.html', {
+        'page_obj': page_obj,
+        'search_query': search_query,
+        'start_date': start_date_str,  # Pass the original string, not the date object
+        'end_date': end_date_str,      # Pass the original string, not the date object
+    })
