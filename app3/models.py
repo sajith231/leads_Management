@@ -63,3 +63,6 @@ class Rating(models.Model):
     experience = models.CharField(max_length=50)
     remark = models.TextField()
     voice_note = models.FileField(upload_to='voice_notes/', blank=True, null=True)
+
+
+
