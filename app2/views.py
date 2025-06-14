@@ -797,7 +797,7 @@ from django.shortcuts import render
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 def show_clients(request):
-    api_url = "https://rrcpython.imcbs.com/api/clients"
+    api_url = "https://rrcpython.imcbs.com/api/clients/all"
     clients = []
     error_message = None
     
