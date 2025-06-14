@@ -3943,7 +3943,7 @@ def create_leave_request(request):
 
             
             # List of phone numbers to send the WhatsApp message
-            phone_numbers = ["9946545535", "7593820007", "7593820005","9846754998"]
+            phone_numbers = ["9061947005"]
             
             formatted_start = start_date.strftime('%d %m %Y')
             formatted_end = end_date.strftime('%d %m %Y')
