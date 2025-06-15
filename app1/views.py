@@ -1,4 +1,3 @@
-LateRequestfrom django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login as auth_login  # Alias the imported login function
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
