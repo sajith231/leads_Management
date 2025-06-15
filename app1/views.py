@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect, get_object_or_404
+LateRequestfrom django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login as auth_login  # Alias the imported login function
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -3943,7 +3943,7 @@ def create_leave_request(request):
 
             
             # List of phone numbers to send the WhatsApp message
-            phone_numbers = ["9061947005"]
+            phone_numbers = ["9946545535", "7593820007", "7593820005","9846754998"]
             
             formatted_start = start_date.strftime('%d %m %Y')
             formatted_end = end_date.strftime('%d %m %Y')
