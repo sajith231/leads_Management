@@ -254,37 +254,37 @@
                     </tr>
                 </thead>
                     <tbody id="attendanceBody">
-                        {% for employee in employees %}
-                        <tr class="employee-row" data-employee-id="{{ employee.id }}" data-name="{{ employee.name }}">
-                            <td>{{ forloop.counter }}</td>
-                            <td class="sticky-data" style="background-color: white;">{{ employee.name }}</td>
-                            <td>{{ employee.user.userid|default:'' }}</td>
-                            <td>{{ employee.duty_time_start|time:"H:i" }}</td>  <!-- New column -->
-                            <td>{{ employee.duty_time_end|time:"H:i" }}</td>    <!-- New column -->
-                            <td class="text-center">
-                                <i class="fas fa-eye text-primary" 
-                                   data-bs-toggle="tooltip" 
-                                   title="View summary" 
-                                   onclick="viewSummary('{{ employee.id }}')"
-                                   style="cursor: pointer;"></i>
-                            </td>
-                            
-                            {% for day in days_of_month %}
-                            <td class="text-center">
-                                <i class="fas fa-star text-secondary"
-                                   data-employee-id="{{ employee.id }}"
-                                   data-date="{{ current_year }}-{{ current_month }}-{{ day }}"
-                                   data-state="initial"
-                                   data-bs-toggle="tooltip"
-                                   data-bs-placement="top"
-                                   title="Click to edit"
-                                   onclick="showAttendanceModal('{{ employee.id }}', '{{ employee.name }}', '{{ current_year }}-{{ current_month }}-{{ day }}', this)">
-                                </i>
-                            </td>
-                            {% endfor %}
-                        </tr>
-                        {% endfor %}
-                    </tbody>
+    {% for employee in employees|dictsort:"name" %}
+    <tr class="employee-row" data-employee-id="{{ employee.id }}" data-name="{{ employee.name }}">
+        <td>{{ forloop.counter }}</td>
+        <td class="sticky-data" style="background-color: white;">{{ employee.name }}</td>
+        <td>{{ employee.user.userid|default:'' }}</td>
+        <td>{{ employee.duty_time_start|time:"H:i" }}</td>  <!-- New column -->
+        <td>{{ employee.duty_time_end|time:"H:i" }}</td>    <!-- New column -->
+        <td class="text-center">
+            <i class="fas fa-eye text-primary" 
+               data-bs-toggle="tooltip" 
+               title="View summary" 
+               onclick="viewSummary('{{ employee.id }}')"
+               style="cursor: pointer;"></i>
+        </td>
+        
+        {% for day in days_of_month %}
+        <td class="text-center">
+            <i class="fas fa-star text-secondary"
+               data-employee-id="{{ employee.id }}"
+               data-date="{{ current_year }}-{{ current_month }}-{{ day }}"
+               data-state="initial"
+               data-bs-toggle="tooltip"
+               data-bs-placement="top"
+               title="Click to edit"
+               onclick="showAttendanceModal('{{ employee.id }}', '{{ employee.name }}', '{{ current_year }}-{{ current_month }}-{{ day }}', this)">
+            </i>
+        </td>
+        {% endfor %}
+    </tr>
+    {% endfor %}
+</tbody>
                 </table>
             </div>
         </div>

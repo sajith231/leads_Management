@@ -937,3 +937,76 @@ def information_center_table(request):
         'start_date': start_date_str,  # Pass the original string, not the date object
         'end_date': end_date_str,      # Pass the original string, not the date object
     })
+
+
+
+
+# views.py
+from django.shortcuts import render, redirect, get_object_or_404
+from .models import Department
+
+def all_department(request):
+    departments = Department.objects.all()
+    return render(request, 'all_department.html', {'departments': departments})
+
+def add_department(request):
+    if request.method == 'POST':
+        name = request.POST['name']
+        Department.objects.create(name=name)
+        return redirect('all_department')
+    return render(request, 'add_department.html')
+
+def edit_department(request, id):
+    department = get_object_or_404(Department, id=id)
+    if request.method == 'POST':
+        department.name = request.POST['name']
+        department.save()
+        return redirect('all_department')
+    return render(request, 'edit_department.html', {'department': department})
+
+
+
+def delete_department(request, id):
+    dept = get_object_or_404(Department, id=id)
+    dept.delete()
+    return redirect('all_department')
+
+
+
+
+from django.shortcuts import render, redirect, get_object_or_404
+from .models import JobRole, Department
+
+def job_roles(request):
+    roles = JobRole.objects.select_related('department').all()
+    return render(request, 'job_roles.html', {'roles': roles})
+
+def add_job_role(request):
+    departments = Department.objects.all()
+    if request.method == 'POST':
+        dept_id = request.POST.get('department')
+        title = request.POST.get('title')
+        description = request.POST.get('description')
+        JobRole.objects.create(
+            department_id=dept_id,
+            title=title,
+            description=description
+        )
+        return redirect('job_roles')
+    return render(request, 'add_job_role.html', {'departments': departments})
+
+def edit_job_role(request, id):
+    role = get_object_or_404(JobRole, id=id)
+    departments = Department.objects.all()
+    if request.method == 'POST':
+        role.department_id = request.POST.get('department')
+        role.title = request.POST.get('title')
+        role.description = request.POST.get('description')
+        role.save()
+        return redirect('job_roles')
+    return render(request, 'add_job_role.html', {'departments': departments, 'role': role})
+
+def delete_job_role(request, id):
+    role = get_object_or_404(JobRole, id=id)
+    role.delete()
+    return redirect('job_roles')

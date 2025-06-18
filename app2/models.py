@@ -118,3 +118,27 @@ class DailyTask(models.Model):
 
     def __str__(self):
         return f"{self.task} in {self.project}"
+    
+
+
+
+from django.db import models
+
+class Department(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+
+    def __str__(self):
+        return self.name
+
+
+
+class JobRole(models.Model):
+    department = models.ForeignKey(Department, on_delete=models.CASCADE)
+    title = models.CharField(max_length=100)
+    description = models.TextField(help_text="Separate each point with a new line")
+
+    def get_description_points(self):
+        return self.description.strip().split('\n')
+
+    def __str__(self):
+        return f"{self.title} ({self.department.name})"

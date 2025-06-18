@@ -1,0 +1,247 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if role %}Edit{% else %}Add{% endif %} Job Role{% endblock %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 30px auto;">
+    <h2>{% if role %}Edit{% else %}Add{% endif %} Job Role</h2>
+    <form method="POST" style="background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+        {% csrf_token %}
+        
+        <label>Department:</label>
+        <select name="department" required style="width: 100%; padding: 10px; margin-bottom: 15px;">
+            <option value="">-- Select Department --</option>
+            {% for dept in departments %}
+                <option value="{{ dept.id }}" {% if role and role.department.id == dept.id %}selected{% endif %}>{{ dept.name }}</option>
+            {% endfor %}
+        </select>
+
+        <label>Job Title:</label>
+        <input type="text" name="title" required value="{{ role.title|default_if_none:'' }}" 
+               style="width: 100%; padding: 10px; margin-bottom: 15px;">
+
+        <label>Descriptions (one per line):</label>
+        <textarea id="descriptionField" name="description" rows="6" required 
+                  style="width: 100%; padding: 10px; font-family: monospace;"
+                  placeholder="Start typing your job descriptions...">{{ role.description|default_if_none:'' }}</textarea>
+
+        <button type="submit" style="margin-top: 15px; padding: 10px 16px; background-color: #007bff; color: white; border: none; border-radius: 4px;">
+            {% if role %}<i class="fas fa-save"></i> Update{% else %}<i class="fas fa-plus"></i> Add{% endif %}
+        </button>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const textarea = document.getElementById('descriptionField');
+    let isUpdating = false;
+    let lastProcessedContent = '';
+    
+    // Function to add numbering to lines
+    function addNumbering() {
+        if (isUpdating) return;
+        
+        const currentContent = textarea.value;
+        
+        // Don't process if content is exactly the same
+        if (currentContent === lastProcessedContent) return;
+        
+        isUpdating = true;
+        
+        // Store cursor position
+        const cursorPosition = textarea.selectionStart;
+        
+        const lines = currentContent.split('\n');
+        const numberedLines = [];
+        let needsUpdate = false;
+        
+        // Check if we actually need to update anything
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+            const cleanLine = line.replace(/^\d+\.\s*/, '').trim();
+            
+            if (cleanLine) {
+                const expectedNumbering = `${i + 1}. ${cleanLine}`;
+                if (line !== expectedNumbering) {
+                    needsUpdate = true;
+                }
+                numberedLines.push(expectedNumbering);
+            } else {
+                numberedLines.push('');
+            }
+        }
+        
+        // Only update if numbering actually needs to change
+        if (needsUpdate) {
+            const newContent = numberedLines.join('\n');
+            
+            // Calculate new cursor position more accurately
+            const beforeCursor = currentContent.substring(0, cursorPosition);
+            const beforeCursorLines = beforeCursor.split('\n');
+            const currentLineIndex = beforeCursorLines.length - 1;
+            const positionInCurrentLine = beforeCursorLines[beforeCursorLines.length - 1].length;
+            
+            // Set the new content
+            textarea.value = newContent;
+            
+            // Calculate new cursor position
+            const newLines = newContent.split('\n');
+            let newCursorPosition = 0;
+            
+            // Add lengths of all previous lines
+            for (let i = 0; i < currentLineIndex && i < newLines.length; i++) {
+                newCursorPosition += newLines[i].length + 1; // +1 for newline
+            }
+            
+            // Add position within current line
+            if (currentLineIndex < newLines.length) {
+                const currentNewLine = newLines[currentLineIndex];
+                const originalLine = lines[currentLineIndex];
+                const cleanOriginalLine = originalLine.replace(/^\d+\.\s*/, '');
+                
+                // If we're at the beginning of the line content (after potential numbering)
+                if (positionInCurrentLine <= originalLine.length - cleanOriginalLine.length) {
+                    // Position cursor after the new numbering
+                    const numberingLength = currentNewLine.length - cleanOriginalLine.length;
+                    newCursorPosition += numberingLength;
+                } else {
+                    // Position cursor in the same relative position within the text content
+                    const relativePosition = positionInCurrentLine - (originalLine.length - cleanOriginalLine.length);
+                    const numberingLength = currentNewLine.length - cleanOriginalLine.length;
+                    newCursorPosition += numberingLength + relativePosition;
+                }
+            }
+            
+            // Restore cursor position
+            newCursorPosition = Math.min(newCursorPosition, textarea.value.length);
+            textarea.setSelectionRange(newCursorPosition, newCursorPosition);
+            
+            lastProcessedContent = newContent;
+        } else {
+            lastProcessedContent = currentContent;
+        }
+        
+        isUpdating = false;
+    }
+    
+    // Function to handle Enter key press
+    function handleEnterKey(event) {
+        if (event.key === 'Enter') {
+            // Process after the new line is added
+            setTimeout(() => {
+                addNumbering();
+            }, 10);
+        }
+    }
+    
+    // Function to handle specific input changes
+    function handleInput(event) {
+        const inputType = event.inputType;
+        
+        // Only auto-number on specific actions, not on regular character input
+        if (inputType === 'insertLineBreak' || 
+            inputType === 'insertParagraph' ||
+            inputType === 'deleteByCut' ||
+            inputType === 'deleteContentBackward' && event.target.value.includes('\n')) {
+            
+            setTimeout(() => {
+                addNumbering();
+            }, 10);
+        }
+        // Don't auto-number on regular typing (insertText, insertCompositionText, etc.)
+    }
+    
+    // Function to handle paste events
+    function handlePaste(event) {
+        setTimeout(() => {
+            addNumbering();
+        }, 10);
+    }
+    
+    // Add event listeners
+    textarea.addEventListener('keydown', handleEnterKey);
+    textarea.addEventListener('input', handleInput);
+    textarea.addEventListener('paste', handlePaste);
+    
+    // Initialize numbering for existing content
+    if (textarea.value.trim()) {
+        lastProcessedContent = textarea.value;
+        addNumbering();
+    }
+    
+    // Add numbering when textarea loses focus (final cleanup)
+    textarea.addEventListener('blur', function() {
+        addNumbering();
+    });
+    
+    // Manual trigger for numbering (you can call this if needed)
+    window.triggerNumbering = function() {
+        addNumbering();
+    };
+});
+</script>
+
+<style>
+#descriptionField {
+    line-height: 1.5;
+    resize: vertical;
+    transition: all 0.2s ease;
+}
+
+#descriptionField:focus {
+    outline: 2px solid #007bff;
+    outline-offset: 2px;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #333;
+}
+
+button {
+    transition: background-color 0.2s ease;
+}
+
+button:hover {
+    background-color: #0056b3 !important;
+    cursor: pointer;
+    transform: translateY(-1px);
+}
+
+.form-container {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+/* Additional styling for better UX */
+select, input[type="text"] {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    transition: border-color 0.2s ease;
+}
+
+select:focus, input[type="text"]:focus {
+    border-color: #007bff;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.1);
+}
+
+form {
+    position: relative;
+}
+
+/* Loading indicator (optional) */
+.updating {
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+/* Smooth transitions */
+* {
+    box-sizing: border-box;
+}
+</style>
+
+{% endblock %}

@@ -74,6 +74,17 @@ urlpatterns = [
 
 
     path('clients/', views.show_clients, name='show_clients'),
+
+
+    path('departments/', views.all_department, name='all_department'),
+    path('departments/add/', views.add_department, name='add_department'),
+    path('departments/edit/<int:id>/', views.edit_department, name='edit_department'),
+    path('departments/delete/<int:id>/', views.delete_department, name='delete_department'),
+    path('job-roles/', views.job_roles, name='job_roles'),
+    path('job-roles/add/', views.add_job_role, name='add_job_role'),
+    path('job-roles/edit/<int:id>/', views.edit_job_role, name='edit_job_role'),
+    path('job-roles/delete/<int:id>/', views.delete_job_role, name='delete_job_role'),
+
     
     
 
