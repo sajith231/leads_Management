@@ -73,7 +73,6 @@
         }
         .footer {
             position: absolute;
-            
             width: calc(100% - 40mm);
             text-align: center;
             font-size: 10px;
@@ -149,29 +148,30 @@
             
             <div class="content">
                 <p style="display: flex;justify-content: end;">{{ today_date }}</p>
-                <p>M/s {{ candidate_name }}</p>
+                <p>Mr/Ms {{ candidate_name }}</p>
                 <p style="white-space: pre-line;">{{ candidate_address }}</p>
+                <p>{{ candidate_phone }}</p> <!-- Display candidate's phone number -->
                 <h1>JOB OFFER LETTER</h1>
                 <p>Dear {{ candidate_name }},</p>
                 <p style="text-indent: 35px;text-align: justify;">We are pleased to offer you the position of {% if offer_letter_details %}{{ offer_letter_details.position }}{% else %}{% endif %} 
                     at IMC Business Solutions. We were thoroughly impressed by your qualifications, experience, and interview performance, and we believe you will make a valuable addition to our team.</p>
                 <p>Job Details:</p>
                 <ul>
-                    <div style="margin-top: 4%;"><li><span style="font-weight: bold;font-size: 18px;">Job Title:</span> {% if offer_letter_details %}{{ offer_letter_details.position }}{% else %}{% endif %} </li>
-                    <li><span style="font-weight: bold;font-size: 18px;">Department:</span> {% if offer_letter_details %}{{ offer_letter_details.department }}{% else %}{% endif %} </li>
-                    <li><span style="font-weight: bold;font-size: 18px;">Reporting to:</span> Administrator</li>
-                    <li><span style="font-weight: bold;font-size: 18px;">Start Date:</span> {% if offer_letter_details %}{{ offer_letter_details.start_date|date:"d/m/Y" }}{% else %}{% endif %}</li>
-                    <li><span style="font-weight: bold;font-size: 18px;">Timing:</span> 9.30 Am to 5.30 Pm</li>
-                    <li><span style="font-weight: bold;font-size: 18px;">Salary:</span> INR.{% if offer_letter_details %}{{ offer_letter_details.salary }}{% else %}{% endif %}/- Month (Salary Hike will be considered purely based on performance and Expertise)</li>
-                    <li>If you have to resign from this office under any circumstances, work at least </span> {% if offer_letter_details %}{{ offer_letter_details.notice_period }}{% else %}0{% endif %} days notice period.</li>
-                    </li>
-                </div>
+                    <div style="margin-top: 4%;">
+                        <li><span style="font-weight: bold;font-size: 18px;">Job Title:</span> {% if offer_letter_details %}{{ offer_letter_details.position }}{% else %}{% endif %} </li>
+                        <li><span style="font-weight: bold;font-size: 18px;">Department:</span> {% if offer_letter_details %}{{ offer_letter_details.department }}{% else %}{% endif %} </li>
+                        <li><span style="font-weight: bold;font-size: 18px;">Reporting to:</span><span style="font-size: 18px;"> Administrator</span></li>
+                        <li><span style="font-weight: bold;font-size: 18px;">Start Date:</span> {% if offer_letter_details %}{{ offer_letter_details.start_date|date:"d/m/Y" }}{% else %}{% endif %}</li>
+                        <li><span style="font-weight: bold;font-size: 18px;">Timing:</span><span style="font-size: 18px;margin-left: 2%;">9.30 Am to 5.30 Pm</span> </li>
+                        <li><span style="font-weight: bold;font-size: 18px;">Salary:</span><span style="font-size: 18px;"> INR.{% if offer_letter_details %}{{ offer_letter_details.salary }}{% else %}{% endif %}/- Month (Salary Hike will be considered purely based on performance and Expertise)</li></span>
+                        <li style="font-size: 18px;">If you have to resign from this office under any circumstances, work at least </span> {% if offer_letter_details %}{{ offer_letter_details.notice_period }}{% else %}0{% endif %} days notice period.</li>
+                    </div>
                 </ul>
                 <div class="signature">
                     <p>Sincerely,</p>
                     
-                    <p style="margin-top: 10px;">Naufal K</p>
-                    <p>Managing Partner</p></div>
+                    <p style="margin-top: 10px;">Merin Devasia</p>
+                    <p>HR & Office Administrator</p></div>
                 
             </div>
             <div class="footer">
@@ -204,20 +204,21 @@
             </div>
             <div class="content">
                 <div ><p><strong>Terms & Conditions:</strong></p>
-                    <ol>
+                    <ol style="font-size: 15px;">
                         <li>You will be bound to work according to the rules and manners (Behaviour, Dress code, Punctuality) of this office.</li>
+                        <li>If you have to resign from this office under any circumstances,works in at least 2 months notice period</li>
                         <li>You should work at least one year in this office and you should sign a bond paper.</li>
+                        <li>You should work at least one year in this company to get an experience certificate.</li>
                         <li>All decisions related to work will be vested in the management.</li>
                     </ol></div>
                 <div style="margin-top: 5%;"><p>We are excited to have you join our team and look forward to your contributions.</p>
-                <p>We would like you to start work on {% if offer_letter_details %}{{ offer_letter_details.start_date|date:"d/m/Y" }}{% else %}{% endif %} at 9.30 Am. Please report to M/s Nithila, Office Administrator, for documentation and orientation. If this date is not acceptable, please contact me immediately.</p>
+                <p>We would like you to start work on {% if offer_letter_details %}{{ offer_letter_details.start_date|date:"d/m/Y" }}{% else %}{% endif %} at 9.30 Am. Please report to Ms Merin Devassia,HR and Office Administrator, for documentation and orientation. If this date is not acceptable, please contact me immediately.</p>
                 <p>Please sign the enclosed copy of this letter and return it to me by {% if offer_letter_details %}{{ offer_letter_details.start_date|date:"d/m/Y" }}{% else %}{% endif %} to indicate your acceptance of this offer.</p>
                 <p>We are confident you will be able to make a significant contribution to the success of our Company and look forward to working with you.</p>
                 <div class="signature">
                     <p>Sincerely,</p>
-                    
-                    <p style="margin-top: 20px;">Naufal K</p>
-                    <p>Managing Partner</p></div>
+                    <p style="margin-top: 20px;">Merin Devasia</p>
+                    <p>HR & Office Administrator</p></div>
                 </div>
             </div>
             <div class="footer">

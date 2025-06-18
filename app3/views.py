@@ -441,6 +441,227 @@ def view_rating(request, pk):
 
 
 
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from app3.models import Interview
 
+from django.core.paginator import Paginator
+
+@login_required
 def make_offer_letter(request):
-    return render(request, 'make_offer_letter.html')
+    # Get the search query from the request
+    search_query = request.GET.get('q', '').strip()
+
+    # Fetch all selected candidate IDs from session
+    selected_candidate_ids = request.session.get('selected_candidate_ids', [])
+
+    # Filter interviews based on the search query
+    if search_query:
+        interviews = Interview.objects.filter(name__icontains=search_query)
+    else:
+        interviews = Interview.objects.all()
+
+    # Filter interviews based on selected candidates
+    if selected_candidate_ids:
+        interviews = interviews.filter(id__in=selected_candidate_ids)
+
+    # Set up pagination
+    paginator = Paginator(interviews, 10)  # Show 10 interviews per page
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+
+    # Calculate the starting index for the serial number
+    start_index = (page_obj.number - 1) * paginator.per_page + 1
+
+    return render(request, 'make_offer_letter.html', {'interviews': page_obj, 'start_index': start_index})
+
+
+def add_offer_letter(request):
+    employees = Interview.objects.all()
+
+    if request.method == 'POST':
+        interview_id = request.POST.get('employee_id')
+        if interview_id:
+            interview = get_object_or_404(Interview, id=interview_id)
+            
+            # Get existing selected candidates from session
+            selected_candidate_ids = request.session.get('selected_candidate_ids', [])
+            
+            # Add new candidate if not already selected
+            if int(interview_id) not in selected_candidate_ids:
+                selected_candidate_ids.append(int(interview_id))
+                request.session['selected_candidate_ids'] = selected_candidate_ids
+                messages.success(request, f"Offer letter process initiated for {interview.name}.")
+            else:
+                messages.info(request, f"{interview.name} is already selected for offer letter.")
+            
+            return redirect('make_offer_letter')
+        else:
+            messages.error(request, "No candidate selected.")
+    
+    return render(request, 'add_offer_letter.html', {'employees': employees})
+
+
+def remove_offer_letter_candidate(request, interview_id):
+    """Remove a candidate from the offer letter list"""
+    if request.method == 'POST':
+        selected_candidate_ids = request.session.get('selected_candidate_ids', [])
+        if int(interview_id) in selected_candidate_ids:
+            selected_candidate_ids.remove(int(interview_id))
+            request.session['selected_candidate_ids'] = selected_candidate_ids
+            messages.success(request, "Candidate removed from offer letter list.")
+        else:
+            messages.error(request, "Candidate not found in the list.")
+    
+    return redirect('make_offer_letter')
+
+
+def clear_offer_letter_list(request):
+    """Clear all selected candidates from offer letter list"""
+    if request.method == 'POST':
+        request.session['selected_candidate_ids'] = []
+        messages.success(request, "All candidates cleared from offer letter list.")
+    
+    return redirect('make_offer_letter')
+
+from django.shortcuts import render, get_object_or_404, redirect
+from .models import Interview
+
+
+
+from django.shortcuts import render, get_object_or_404
+from app3.models import OfferLetter
+# Adjust this based on where your Interview model is
+from django.shortcuts import render, get_object_or_404
+from app3.models import OfferLetter
+from django.utils import timezone
+
+def generate_offer_letter(request, interview_id):
+    interview = get_object_or_404(Interview, id=interview_id)
+    offer_letter = get_object_or_404(OfferLetter, interview=interview)
+
+    context = {
+        "today_date": timezone.now().date(),
+        "candidate_name": interview.name,
+        "candidate_address": interview.address,
+        "candidate_phone": interview.phone_number,  # Add candidate's phone number to context
+        "offer_letter_details": offer_letter,
+    }
+    return render(request, 'offer_letter.html', context)
+
+
+from django.shortcuts import render, get_object_or_404, redirect
+from django.views.decorators.csrf import csrf_protect
+from .models import Interview, OfferLetter  # ✅ Import your models
+from datetime import date
+
+from django.views.decorators.csrf import csrf_protect
+from django.shortcuts import redirect
+from django.http import HttpResponseBadRequest
+from app3.models import OfferLetter
+ # adjust app name if Interview is in another app
+
+from django.views.decorators.csrf import csrf_protect
+from django.http import HttpResponseBadRequest
+from django.shortcuts import redirect
+from django.contrib import messages
+from .models import OfferLetter, Interview
+@csrf_protect
+def save_offer_letter(request):
+    if request.method == 'POST':
+        interview_id = request.POST.get('interview_id')
+        position = request.POST.get('position', '').strip()
+        department = request.POST.get('department', '').strip()
+        start_date = request.POST.get('start_date', '').strip()
+        salary = request.POST.get('salary', '').strip()
+        notice_period = request.POST.get('notice_period', '').strip()
+
+        # Validate interview ID
+        if not interview_id:
+            messages.error(request, "Interview ID is required")
+            return redirect('make_offer_letter')
+
+        try:
+            interview = Interview.objects.get(id=interview_id)
+        except Interview.DoesNotExist:
+            messages.error(request, "Invalid Interview ID")
+            return redirect('make_offer_letter')
+
+        # Validate required fields
+        errors = []
+        if not position:
+            errors.append("Position is required")
+        if not department:
+            errors.append("Department is required")
+        if not start_date:
+            errors.append("Start Date is required")
+        if not salary:
+            errors.append("Salary is required")
+        if not notice_period:
+            errors.append("Notice Period is required")
+
+        if errors:
+            messages.error(request, "; ".join(errors))
+            return redirect('make_offer_letter')
+
+        # Validate salary is a valid number
+        try:
+            salary_decimal = float(salary)
+            if salary_decimal <= 0:
+                messages.error(request, "Salary must be greater than 0")
+                return redirect('make_offer_letter')
+        except (ValueError, TypeError):
+            messages.error(request, "Invalid salary amount")
+            return redirect('make_offer_letter')
+
+        # Validate notice period is a valid integer
+        try:
+            notice_period_int = int(notice_period)
+            if notice_period_int < 0:
+                messages.error(request, "Notice period cannot be negative")
+                return redirect('make_offer_letter')
+        except (ValueError, TypeError):
+            messages.error(request, "Invalid notice period")
+            return redirect('make_offer_letter')
+
+        # Validate start_date format
+        try:
+            from datetime import datetime
+            datetime.strptime(start_date, '%Y-%m-%d')
+        except ValueError:
+            messages.error(request, "Invalid start date format. Please use YYYY-MM-DD format")
+            return redirect('make_offer_letter')
+
+        try:
+            # Check if an offer letter already exists for this interview
+            offer_letter, created = OfferLetter.objects.get_or_create(
+                interview=interview,
+                defaults={
+                    'position': position,
+                    'department': department,
+                    'start_date': start_date,
+                    'salary': salary_decimal,
+                    'notice_period': notice_period_int
+                }
+            )
+            
+            if not created:
+                # Update existing offer letter
+                offer_letter.position = position
+                offer_letter.department = department
+                offer_letter.start_date = start_date
+                offer_letter.salary = salary_decimal
+                offer_letter.notice_period = notice_period_int
+                offer_letter.save()
+                messages.success(request, "Offer letter updated successfully.")
+            else:
+                messages.success(request, "Offer letter created successfully.")
+
+        except Exception as e:
+            messages.error(request, f"Error saving offer letter: {str(e)}")
+            return redirect('make_offer_letter')
+
+        return redirect('make_offer_letter')
+
+    messages.error(request, "Only POST method allowed")
+    return redirect('make_offer_letter')

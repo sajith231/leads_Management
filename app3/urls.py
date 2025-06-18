@@ -21,15 +21,22 @@ urlpatterns = [
     path('interview/edit/<int:pk>/', views.edit_interview_management, name='edit_interview_management'),
     path('add-rating/<int:interview_id>/', views.add_rating, name='add_rating'),
     path('view-rating/<int:pk>/', views.view_rating, name='view_rating'),
+    
 
 
-
+#offer letter
 
     path('offer-letter/', views.make_offer_letter, name='make_offer_letter'),
+    path('add-offer-letter/', views.add_offer_letter, name='add_offer_letter'),
+    path('remove-offer-letter-candidate/<int:interview_id>/', views.remove_offer_letter_candidate, name='remove_offer_letter_candidate'),
+    path('clear-offer-letter-list/', views.clear_offer_letter_list, name='clear_offer_letter_list'),
+    path('offer-letter/<int:interview_id>/', views.generate_offer_letter, name='generate_offer_letter'),
+    path('save-offer-letter/', views.save_offer_letter, name='save_offer_letter'),
+
+    
+
 
 
     
     
-
-
 ]

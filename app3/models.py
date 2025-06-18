@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
-from app1.models import Employee  # Adjust import based on app structure
+from app1.models import Employee
+ # Adjust import based on app structure
 
 class SalaryCertificate(models.Model):
     employee = models.ForeignKey(Employee, on_delete=models.CASCADE)
@@ -63,6 +64,29 @@ class Rating(models.Model):
     experience = models.CharField(max_length=50)
     remark = models.TextField()
     voice_note = models.FileField(upload_to='voice_notes/', blank=True, null=True)
+
+from django.db import models
+from app3.models import Interview  # adjust if Interview is from another app
+
+class OfferLetter(models.Model):
+    # Allow null/blank for initial migration if data exists
+    interview = models.OneToOneField(
+        Interview,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='offer_letter'  # optional: allows interview.offer_letter access
+    )
+    position = models.CharField(max_length=100)
+    department = models.CharField(max_length=100)
+    start_date = models.DateField()
+    salary = models.DecimalField(max_digits=10, decimal_places=2)
+    notice_period = models.IntegerField()
+
+    def __str__(self):
+        if self.interview:
+            return f"Offer Letter - {self.position} for {self.interview.name}"
+        return f"Offer Letter - {self.position}"
 
 
 
