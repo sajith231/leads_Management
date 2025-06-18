@@ -972,8 +972,6 @@ def delete_department(request, id):
     return redirect('all_department')
 
 
-
-
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import JobRole, Department
 
@@ -988,7 +986,7 @@ def job_roles(request):
         try:
             # Assuming you have a way to map Django user to your custom User model
             # You might need to adjust this based on your authentication setup
-            user = User.objects.get(userid=request.user.username)
+            custom_user = User.objects.get(userid=request.user.username)
         except User.DoesNotExist:
             # If still no user found, redirect to login or show error
             from django.contrib import messages
@@ -997,25 +995,26 @@ def job_roles(request):
     else:
         # Fetch the user object using session ID
         try:
-            user = User.objects.get(id=custom_user_id)
+            custom_user = User.objects.get(id=custom_user_id)
         except User.DoesNotExist:
             from django.contrib import messages
             messages.error(request, "User not found. Please login again.")
             return redirect('login')
     
     # Check if user is superuser (admin_level or 4level)
-    if user.user_level in ['admin_level', '4level']:
+    if custom_user.user_level in ['admin_level', '4level']:
         # Superuser can see all job roles
         roles = JobRole.objects.select_related('department').all()
     else:
         # Regular users can only see their assigned job role
-        if user.job_role:
-            roles = JobRole.objects.select_related('department').filter(id=user.job_role.id)
+        if custom_user.job_role:
+            roles = JobRole.objects.select_related('department').filter(id=custom_user.job_role.id)
         else:
             # If user has no job role assigned, show empty queryset
             roles = JobRole.objects.none()
     
-    return render(request, 'job_roles.html', {'roles': roles, 'user': user})
+    # Pass custom_user instead of user to avoid overriding request.user
+    return render(request, 'job_roles.html', {'roles': roles, 'custom_user': custom_user})
 
 def add_job_role(request):
     departments = Department.objects.all()
