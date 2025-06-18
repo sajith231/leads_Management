@@ -5211,6 +5211,8 @@ def configure_user_menu(request, user_id):
                 {'id': 'all_areas', 'name': 'Area', 'icon': 'fas fa-map-marker-alt'},
                 {'id': 'all_locations', 'name': 'Location', 'icon': 'fas fa-chart-area'},
                 {'id': 'all_requirements', 'name': 'Requirements', 'icon': 'fas fa-tasks'},
+                {'id': 'all_department', 'name': 'Department', 'icon': 'fas fa-building'},
+                {'id': 'job_roles', 'name': 'Job Role', 'icon': 'fas fa-briefcase'},
                 {'id': 'business_type_list', 'name': 'Business Type', 'icon': 'fas fa-binoculars'},
                 {'id': 'job_titles', 'name': 'Job Title', 'icon': 'fas fa-search'},
                 {'id': 'all_hardwares', 'name': 'Hardware', 'icon': 'fas fa-desktop'},
@@ -5384,6 +5386,12 @@ def default_menus(request):
                 {'id': 'all_areas', 'name': 'Area', 'icon': 'fas fa-map-marker-alt'},
                 {'id': 'all_locations', 'name': 'Location', 'icon': 'fas fa-chart-area'},
                 {'id': 'all_requirements', 'name': 'Requirements', 'icon': 'fas fa-tasks'},
+
+                {'id': 'all_department', 'name': 'Department', 'icon': 'fas fa-building'},
+                {'id': 'job_roles', 'name': 'Job Role', 'icon': 'fas fa-briefcase'},
+
+
+
                 {'id': 'business_type_list', 'name': 'Business Type', 'icon': 'fas fa-binoculars'},
                 {'id': 'job_titles', 'name': 'Job Title', 'icon': 'fas fa-search'},
                 {'id': 'all_hardwares', 'name': 'Hardware', 'icon': 'fas fa-desktop'},

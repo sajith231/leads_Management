@@ -699,7 +699,7 @@
             {% endif %}
 
 
-            {% if 'all_districts' in allowed_menus or 'all_areas' in allowed_menus or 'all_locations' in allowed_menus or 'all_requirements' in allowed_menus or 'business_type_list' in allowed_menus or 'job_titles' in allowed_menus or 'all_hardwares' in allowed_menus or 'all_complaints' in allowed_menus or 'all_branches' in allowed_menus or 'users_table' in allowed_menus or 'reminder_type' in allowed_menus  %}
+            {% if 'all_districts' in allowed_menus or 'all_areas' in allowed_menus or 'all_locations' in allowed_menus or 'all_requirements' in allowed_menus or 'business_type_list' in allowed_menus or 'job_titles' in allowed_menus or 'all_hardwares' in allowed_menus or 'all_complaints' in allowed_menus or 'all_branches' in allowed_menus or 'users_table' in allowed_menus or 'reminder_type' in allowed_menus or 'all_department' in allowed_menus or 'job_roles' in allowed_menus %}
             <!-- Master Menu -->
             <div class="mainmenu" onclick="toggleMasterMenu()">
                 <span>
@@ -720,6 +720,12 @@
                 {% endif %}
                 {% if 'all_requirements' in allowed_menus %}
                 <a href="{% url 'all_requirements' %}"><i class="fas fa-tasks"></i> Requirements</a>
+                {% endif %}
+                {% if 'all_department' in allowed_menus %}
+                <a href="{% url 'all_department' %}"><i class="fas fa-building"></i> Department</a>
+                {% endif %}
+                {% if 'job_roles' in allowed_menus %}
+                <a href="{% url 'job_roles' %}"><i class="fas fa-briefcase"></i> Job Role</a>
                 {% endif %}
                 {% if 'business_type_list' in allowed_menus %}
                 <a href="{% url 'business_type_list' %}"><i class="fas fa-binoculars"></i> Business Type</a>
