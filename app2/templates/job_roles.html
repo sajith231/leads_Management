@@ -6,10 +6,10 @@
 <div style="max-width: 1000px; margin: 30px auto;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
         <h2>Job Roles</h2>
-        {% if request.user.is_superuser %}
-        <a href="{% url 'add_job_role' %}" style="padding: 12px 20px; background-color: blue; color: white; border-radius: 6px; text-decoration: none; font-weight: 600; transition: background-color 0.3s;">
-            <i class="fas fa-plus"></i> Add New
-        </a>
+        {% if request.user.is_superuser or request.user.user_level == 'admin_level' %}
+            <a href="{% url 'add_job_role' %}" style="padding: 12px 20px; background-color: blue; color: white; border-radius: 6px; text-decoration: none; font-weight: 600; transition: background-color 0.3s;">
+                <i class="fas fa-plus"></i> Add New
+            </a>
         {% endif %}
     </div>
 
@@ -21,16 +21,16 @@
                     <span style="color: #6c757d; margin-right: 10px;">{{ forloop.counter }}.</span>
                     <h3 style="margin: 0; font-size: 1.5rem; color: #333;">{{ role.title }}</h3>
                 </div>
-                {% if request.user.is_superuser %}
                 <div style="display: flex; gap: 10px;">
-                    <a href="{% url 'edit_job_role' role.id %}" style="color: #007bff; font-size: 1.2rem; background-color: #f8f9fa; padding: 8px 15px; border-radius: 5px; transition: background-color 0.2s;">
-                        <i class="fas fa-edit"></i>
-                    </a>
-                    <a href="{% url 'delete_job_role' role.id %}" onclick="return confirm('Are you sure you want to delete this job role?');" style="color: #dc3545; font-size: 1.2rem; background-color: #f8f9fa; padding: 8px 15px; border-radius: 5px; transition: background-color 0.2s;">
-                        <i class="fas fa-trash-alt"></i>
-                    </a>
+                    {% if request.user.is_superuser or request.user.user_level == 'admin_level' %}
+                        <a href="{% url 'edit_job_role' role.id %}" style="color: #007bff; font-size: 1.2rem; background-color: #f8f9fa; padding: 8px 15px; border-radius: 5px; transition: background-color 0.2s;">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <a href="{% url 'delete_job_role' role.id %}" onclick="return confirm('Are you sure you want to delete this job role?');" style="color: #dc3545; font-size: 1.2rem; background-color: #f8f9fa; padding: 8px 15px; border-radius: 5px; transition: background-color 0.2s;">
+                            <i class="fas fa-trash-alt"></i>
+                        </a>
+                    {% endif %}
                 </div>
-                {% endif %}
             </div>
             <p style="margin: 5px 0; color: #6c757d; font-size: 1.1rem; font-weight: 500;">Department: {{ role.department.name }}</p>
             
@@ -45,7 +45,7 @@
         </div>
         {% endfor %}
     {% else %}
-        <div style="text-align: center; color: #888; margin: 50px 0; font-size: 1.1rem;">No job roles assigned.</div>
+        <div style="text-align: center; color: #888; margin: 50px 0; font-size: 1.1rem;">No job roles found.</div>
     {% endif %}
 </div>
 
