@@ -977,10 +977,27 @@ def delete_department(request, id):
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import JobRole, Department
 
-def job_roles(request):
-    roles = JobRole.objects.select_related('department').all()
-    return render(request, 'job_roles.html', {'roles': roles})
+from django.shortcuts import render, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from app1.models import User  # Import User from app1
+from .models import JobRole
+from django.shortcuts import render, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from app1.models import User  # Import User from app1
+from .models import JobRole
 
+@login_required
+def job_roles(request):
+    # Get the custom user ID from session
+    custom_user_id = request.session.get('custom_user_id')
+    
+    # Fetch the user object
+    user = get_object_or_404(User, id=custom_user_id)
+    
+    # Fetch job roles for the logged-in user
+    job_roles = JobRole.objects.filter(id=user.job_role_id) if user.job_role_id else JobRole.objects.none()
+    
+    return render(request, 'job_roles.html', {'roles': job_roles})
 def add_job_role(request):
     departments = Department.objects.all()
     if request.method == 'POST':

@@ -254,6 +254,8 @@ from .forms import UserForm
 
 #     return render(request, "add_user.html", {"form": form})
 
+from app2.models import JobRole  # Import JobRole from app2
+
 @login_required
 def add_user(request):
     if request.method == "POST":
@@ -266,6 +268,11 @@ def add_user(request):
         if form.is_valid():
             try:
                 user = form.save(commit=False)
+                
+                # Handle job role assignment
+                job_role_id = request.POST.get('job_role')
+                if job_role_id:
+                    user.job_role = JobRole.objects.get(id=job_role_id)
                 
                 # The cv_name field is just for selection, not saved to model
                 
@@ -294,8 +301,9 @@ def add_user(request):
                     messages.error(request, f"{field}: {error}")
     else:
         form = UserForm()
+        job_roles = JobRole.objects.all()  # Fetch all job roles for the dropdown
 
-    return render(request, "add_user.html", {"form": form})
+    return render(request, "add_user.html", {"form": form, "job_roles": job_roles})
 
 @login_required
 def users_table(request):
@@ -333,7 +341,6 @@ def delete_user(request, user_id):
 
 
 @login_required
-@login_required
 def edit_user(request, user_id):
     user = get_object_or_404(User, id=user_id)
 
@@ -341,6 +348,13 @@ def edit_user(request, user_id):
         form = UserForm(request.POST, request.FILES, instance=user, edit_mode=True)
         if form.is_valid():
             user = form.save(commit=False)
+
+            # Handle job role update
+            job_role_id = request.POST.get('job_role')
+            if job_role_id:
+                user.job_role = JobRole.objects.get(id=job_role_id)
+            else:
+                user.job_role = None
 
             # Handle password update
             password = form.cleaned_data.get("password")
@@ -354,16 +368,25 @@ def edit_user(request, user_id):
             messages.error(request, "Please correct the errors below.")
     else:
         form = UserForm(instance=user, edit_mode=True)
+        job_roles = JobRole.objects.all()  # Fetch all job roles for the dropdown
 
-    return render(request, "edit_user.html", {"form": form, "user": user})
+    return render(request, "edit_user.html", {"form": form, "user": user, "job_roles": job_roles})
 
 
 from django.db.models import Prefetch
+
+from django.shortcuts import render, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from app1.models import User, Lead
+from app2.models import JobRole  # Import JobRole from app2
 
 @login_required
 def user_dashboard(request):
     # Get the custom user ID from session
     custom_user_id = request.session.get('custom_user_id')
+    
+    # Fetch the user object
+    user = get_object_or_404(User, id=custom_user_id)
     
     # Fetch only leads for the logged-in user with related data
     leads = Lead.objects.filter(
@@ -373,9 +396,14 @@ def user_dashboard(request):
         'requirement_amounts',
         'requirement_amounts__requirement'
     ).order_by('-created_at')
+    
+    # Fetch job roles for the logged-in user
+    job_roles = JobRole.objects.filter(id=user.job_role_id) if user.job_role_id else JobRole.objects.none()
+    
     username = f" {request.user.username}" if request.user.is_authenticated else ""
     context = {
         'leads': leads,
+        'job_roles': job_roles,
         'username': username
     }
     return render(request, 'user_dashboard.html', context)

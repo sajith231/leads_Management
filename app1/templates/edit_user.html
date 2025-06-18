@@ -108,6 +108,21 @@
                         </div>
                     {% endif %}
                 </div>
+                <!-- Add this inside the form in edit_user.html -->
+<div class="mb-3">
+    <label for="job_role" class="form-label">Job Role</label>
+    <select id="job_role" name="job_role" class="form-select">
+        <option value="">-- Select Job Role --</option>
+        {% for role in job_roles %}
+        <option value="{{ role.id }}" {% if user.job_role.id == role.id %}selected{% endif %}>{{ role.title }}</option>
+        {% endfor %}
+    </select>
+    {% if form.job_role.errors %}
+        <div class="invalid-feedback d-block">
+            {{ form.job_role.errors|join:", " }}
+        </div>
+    {% endif %}
+</div>
                 <div class="mb-3">
                     <label for="id_status" class="form-label">User Status</label>
                     <select id="id_status" name="{{ form.status.html_name }}" class="form-select">

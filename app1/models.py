@@ -52,6 +52,9 @@ class Location(models.Model):
     def __str__(self):
         return f"{self.name} - {self.area.name} ({self.district.name})"
 
+from django.db import models
+from app2.models import JobRole
+
 
 class User(models.Model):
     STATUS_CHOICES = [
@@ -86,6 +89,7 @@ class User(models.Model):
     is_active = models.BooleanField(default=True)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='active') 
     allowed_menus = models.TextField(blank=True, null=True)
+    job_role = models.ForeignKey(JobRole, on_delete=models.SET_NULL, null=True, blank=True, related_name='users')
 
     
 
