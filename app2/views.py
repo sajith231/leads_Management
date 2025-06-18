@@ -977,9 +977,45 @@ def delete_department(request, id):
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import JobRole, Department
 
+@login_required
 def job_roles(request):
-    roles = JobRole.objects.select_related('department').all()
-    return render(request, 'job_roles.html', {'roles': roles})
+    # Get the custom user ID from session
+    custom_user_id = request.session.get('custom_user_id')
+    
+    # If no custom_user_id in session, try to get from request.user
+    if not custom_user_id:
+        # Fallback: try to find user by username if using Django's built-in auth
+        try:
+            # Assuming you have a way to map Django user to your custom User model
+            # You might need to adjust this based on your authentication setup
+            user = User.objects.get(userid=request.user.username)
+        except User.DoesNotExist:
+            # If still no user found, redirect to login or show error
+            from django.contrib import messages
+            messages.error(request, "User session not found. Please login again.")
+            return redirect('login')
+    else:
+        # Fetch the user object using session ID
+        try:
+            user = User.objects.get(id=custom_user_id)
+        except User.DoesNotExist:
+            from django.contrib import messages
+            messages.error(request, "User not found. Please login again.")
+            return redirect('login')
+    
+    # Check if user is superuser (admin_level or 4level)
+    if user.user_level in ['admin_level', '4level']:
+        # Superuser can see all job roles
+        roles = JobRole.objects.select_related('department').all()
+    else:
+        # Regular users can only see their assigned job role
+        if user.job_role:
+            roles = JobRole.objects.select_related('department').filter(id=user.job_role.id)
+        else:
+            # If user has no job role assigned, show empty queryset
+            roles = JobRole.objects.none()
+    
+    return render(request, 'job_roles.html', {'roles': roles, 'user': user})
 
 def add_job_role(request):
     departments = Department.objects.all()

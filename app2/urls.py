@@ -84,6 +84,7 @@ urlpatterns = [
     path('job-roles/add/', views.add_job_role, name='add_job_role'),
     path('job-roles/edit/<int:id>/', views.edit_job_role, name='edit_job_role'),
     path('job-roles/delete/<int:id>/', views.delete_job_role, name='delete_job_role'),
+    
 
     
     

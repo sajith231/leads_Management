@@ -151,7 +151,13 @@
                                             <span class="user-level-badge level-5">Branch User</span>
                                         {% endif %}
                                     </td>
-                                     <td>{{ role.title }}</td>
+                                     <td>
+                                        {% if user.job_role %}
+                                            {{ user.job_role.title }}
+                                        {% else %}
+                                            <span class="text-muted">Not Assigned</span>
+                                        {% endif %}
+                                    </td>
                                     <td>
                                         {% if user.status == 'active' %}
                                             <span class="badge bg-success">Active</span>
