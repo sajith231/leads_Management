@@ -455,15 +455,19 @@ def make_offer_letter(request):
     # Fetch all selected candidate IDs from session
     selected_candidate_ids = request.session.get('selected_candidate_ids', [])
 
-    # Filter interviews based on the search query
-    if search_query:
-        interviews = Interview.objects.filter(name__icontains=search_query)
-    else:
-        interviews = Interview.objects.all()
-
-    # Filter interviews based on selected candidates
+    # Only show interviews that have been selected for offer letters
     if selected_candidate_ids:
-        interviews = interviews.filter(id__in=selected_candidate_ids)
+        interviews = Interview.objects.filter(id__in=selected_candidate_ids)
+        
+        # Apply search filter if provided
+        if search_query:
+            interviews = interviews.filter(name__icontains=search_query)
+    else:
+        # If no candidates are selected, return empty queryset
+        interviews = Interview.objects.none()
+
+    # Order by creation date (most recent first)
+    interviews = interviews.order_by('-created_date')
 
     # Set up pagination
     paginator = Paginator(interviews, 10)  # Show 10 interviews per page
@@ -473,7 +477,11 @@ def make_offer_letter(request):
     # Calculate the starting index for the serial number
     start_index = (page_obj.number - 1) * paginator.per_page + 1
 
-    return render(request, 'make_offer_letter.html', {'interviews': page_obj, 'start_index': start_index})
+    return render(request, 'make_offer_letter.html', {
+        'interviews': page_obj, 
+        'start_index': start_index,
+        'selected_count': len(selected_candidate_ids)
+    })
 
 
 def add_offer_letter(request):
