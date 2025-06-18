@@ -6,7 +6,7 @@
 <div style="max-width: 1000px; margin: 30px auto;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
         <h2>Job Roles</h2>
-        {% if user.user_level == 'admin_level' %}
+        {% if user.is_superuser %}
             <a href="{% url 'add_job_role' %}" style="padding: 12px 20px; background-color: blue; color: white; border-radius: 6px; text-decoration: none; font-weight: 600; transition: background-color 0.3s;">
                 <i class="fas fa-plus"></i> Add New
             </a>
@@ -22,7 +22,7 @@
                     <h3 style="margin: 0; font-size: 1.5rem; color: #333;">{{ role.title }}</h3>
                 </div>
                 <div style="display: flex; gap: 10px;">
-                    {% if user.user_level == 'admin_level' %}
+                    {% if user.is_superuser %}
                         <a href="{% url 'edit_job_role' role.id %}" style="color: #007bff; font-size: 1.2rem; background-color: #f8f9fa; padding: 8px 15px; border-radius: 5px; transition: background-color 0.2s;">
                             <i class="fas fa-edit"></i>
                         </a>
