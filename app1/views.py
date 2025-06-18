@@ -1,4 +1,3 @@
-from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login as auth_login  # Alias the imported login function
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -1417,7 +1416,7 @@ from django.http import JsonResponse
 import requests
 
 def get_customers(request):
-    response = requests.get("https://rrcpython.imcbs.com/api/clients")
+    response = requests.get("https://rrcpython.imcbs.com/api/clients/all")
     if response.status_code == 200:
         json_data = response.json()
         customers = json_data.get("data", [])  # safely get the data list
@@ -1557,7 +1556,7 @@ def add_service_entry(request):
         # Fetch customers from the API
         customers = []
         try:
-            response = requests.get('https://rrcpython.imcbs.com/api/clients')
+            response = requests.get('https://rrcpython.imcbs.com/api/clients/all')
             if response.status_code == 200:
                 customers = response.json()
         except Exception as e:
@@ -1638,7 +1637,7 @@ def edit_service_entry(request, entry_id):
     import requests
     customers = []
     try:
-        response = requests.get('https://rrcpython.imcbs.com/api/clients')
+        response = requests.get('https://rrcpython.imcbs.com/api/clients/all')
         if response.status_code == 200:
             customers = response.json().get('data', [])
     except Exception as e:
@@ -1763,7 +1762,7 @@ def user_edit_service_entry(request, entry_id):
     # Fetch customers from the API
     customers = []
     try:
-        response = requests.get('https://rrcpython.imcbs.com/api/clients')
+        response = requests.get('https://rrcpython.imcbs.com/api/clients/all')
         if response.status_code == 200:
             customers = response.json().get("data", [])
     except Exception as e:

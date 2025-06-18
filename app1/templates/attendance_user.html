@@ -820,6 +820,23 @@
         return;
     }
 
+    // Show loading state
+    const submitBtn = document.querySelector('#leaveRequestModal .btn-primary');
+    const originalText = submitBtn.textContent;
+    submitBtn.textContent = 'Submitting...';
+    submitBtn.disabled = true;
+
+    // Validate dates
+    const startDate = new Date(document.getElementById('startDate').value);
+    const endDate = new Date(document.getElementById('endDate').value);
+    
+    if (endDate < startDate) {
+        alert('End date cannot be before start date');
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
+        return;
+    }
+
     const data = {
         start_date: document.getElementById('startDate').value,
         end_date: document.getElementById('endDate').value,
@@ -827,26 +844,101 @@
         reason: document.getElementById('reason').value
     };
 
+    // Get CSRF token from meta tag or cookie
+    function getCSRFToken() {
+        // Method 1: From meta tag
+        const csrfToken = document.querySelector('meta[name="csrf-token"]');
+        if (csrfToken) {
+            return csrfToken.getAttribute('content');
+        }
+        
+        // Method 2: From cookie
+        const cookies = document.cookie.split(';');
+        for (let cookie of cookies) {
+            const [name, value] = cookie.trim().split('=');
+            if (name === 'csrftoken') {
+                return value;
+            }
+        }
+        
+        // Method 3: From Django form (if available)
+        const csrfInput = document.querySelector('input[name="csrfmiddlewaretoken"]');
+        if (csrfInput) {
+            return csrfInput.value;
+        }
+        
+        return null;
+    }
+
+    const csrfToken = getCSRFToken();
+    
+    console.log('Submitting leave request:', data);
+    console.log('CSRF Token:', csrfToken);
+
     fetch('/leave_request/create/', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRFToken': '{{ csrf_token }}'
+            'X-CSRFToken': csrfToken
         },
         body: JSON.stringify(data)
     })
-    .then(response => response.json())
+    .then(response => {
+        console.log('Response status:', response.status);
+        console.log('Response headers:', response.headers);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        return response.json();
+    })
     .then(data => {
+        console.log('Response data:', data);
+        
         if (data.success) {
             alert('Leave request submitted successfully!');
-            $('#leaveRequestModal').modal('hide');
+            
+            // Close modal - try multiple methods
+            try {
+                // Bootstrap 5 method
+                const modal = bootstrap.Modal.getInstance(document.getElementById('leaveRequestModal'));
+                if (modal) {
+                    modal.hide();
+                } else {
+                    // Bootstrap 4/jQuery method
+                    $('#leaveRequestModal').modal('hide');
+                }
+            } catch (e) {
+                console.log('Modal close method failed, trying alternative');
+                // Alternative method
+                const modalElement = document.getElementById('leaveRequestModal');
+                modalElement.style.display = 'none';
+                modalElement.classList.remove('show');
+                const backdrop = document.querySelector('.modal-backdrop');
+                if (backdrop) backdrop.remove();
+                document.body.classList.remove('modal-open');
+            }
+            
             form.reset();
-            loadUserLeaveRequests(); // Refresh the leave requests list
+            
+            // Refresh leave requests if function exists
+            if (typeof loadUserLeaveRequests === 'function') {
+                loadUserLeaveRequests();
+            }
         } else {
-            alert('Error: ' + (data.error || 'Unknown error'));
+            alert('Error: ' + (data.error || 'Unknown error occurred'));
         }
     })
-    
+    .catch(error => {
+        console.error('Fetch error:', error);
+        alert('An error occurred while submitting the request: ' + error.message);
+    })
+    .finally(() => {
+        // Reset button state
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
+    });
 }
     </script>
 <script>
