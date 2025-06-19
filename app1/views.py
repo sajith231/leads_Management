@@ -3075,9 +3075,22 @@ def save_attendance(request, employee_id, day, status):
         }, status=500)
 
 
+from app2.models import DailyTask
+from django.utils import timezone
+
 @login_required
 def attendance_user(request):
-    return render(request, 'attendance_user.html')
+    # Get the ongoing task for the user
+    ongoing_task = DailyTask.objects.filter(
+        added_by=request.user,
+        status='in_progress'
+    ).first()
+
+    return render(request, 'attendance_user.html', {
+        'ongoing_task': ongoing_task,
+        'current_date': timezone.now().date(),
+        # other context variables
+    })
 
 
 @login_required

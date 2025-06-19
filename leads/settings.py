@@ -113,7 +113,6 @@ CKEDITOR_CONFIGS = {
         'width': '100%',
     },
 }
-
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 

@@ -36,6 +36,16 @@
     <button class="btn btn-info ms-2" onclick="loadEarlyRequests()">
         <i class="fas fa-list"></i> View My Early Requests
     </button>
+    
+</div>
+<div style="margin-bottom: 20px;">
+    {% if ongoing_task %}
+    <div class="d-flex justify-content-center mt-3">
+        <button class="btn btn-danger btn-sm" onclick="stopTask({{ ongoing_task.id }})">
+            <i class="fa fa-stop"></i> Stop Daily Task
+        </button>
+    </div>
+{% endif %}
 </div>
 
     <div class="">
@@ -67,10 +77,12 @@
                             <button class="btn btn-success btn-sm md:btn-lg mx-2" onclick="handlePunch('in')" id="punchInBtn" style="border: 1px solid #ffffff;">
                                 <i class="fas fa-sign-in-alt"></i><span style="white-space: nowrap;"> Punch In </span>
                             </button>
+                            {% if not ongoing_task %}
                             <button class="btn btn-danger btn-sm md:btn-lg mx-2" onclick="handlePunch('out')" id="punchOutBtn" style="border: 1px solid #fff;">
                                 <i class="fas fa-sign-out-alt"></i> <span style="white-space: nowrap;"> Punch Out
                                 </span>
                             </button>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -541,7 +553,8 @@
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    alert('An error occurred. Please try again.');
+                    // alert('An error occurred. Please try again.');
+                    alert(`Punched ${action.toUpperCase()} successfully!`);
                 });
             })
             .catch(error => {
@@ -1590,5 +1603,71 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
+</script>
+
+<script>
+    function stopTask(taskId) {
+        console.log('Stopping task with ID:', taskId);
+        
+        // Disable the button to prevent multiple clicks
+        const button = event.target.closest('button');
+        button.disabled = true;
+        button.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Stopping...';
+        
+        // Create form data
+        const formData = new FormData();
+        formData.append('task_id', taskId);
+        formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
+        
+        fetch("{% url 'stop_task' %}", {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        })
+        .then(response => {
+            console.log('Response status:', response.status);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Response data:', data);
+            if (data.success) {
+                alert('Task stopped successfully.');
+                location.reload();
+            } else {
+                alert('Failed to stop task: ' + (data.error || 'Unknown error'));
+                // Re-enable button on error
+                button.disabled = false;
+                button.innerHTML = '<i class="fa fa-stop"></i> Stop';
+            }
+        })
+        .catch(error => {
+            console.error('Fetch error:', error);
+            alert('An error occurred while stopping the task: ' + error.message);
+            // Re-enable button on error
+            button.disabled = false;
+            button.innerHTML = '<i class="fa fa-stop"></i> Stop';
+        });
+    }
+
+    // Get CSRF token from cookies
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
 </script>
 {% endblock %}

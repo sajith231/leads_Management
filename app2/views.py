@@ -598,64 +598,37 @@ from .models import DailyTask
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 
+from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
+from .models import DailyTask
+from django.utils import timezone
+from django.contrib.auth.decorators import login_required
+
 @login_required
 @require_POST
 def stop_task(request):
     try:
-        # Try to get task_id from POST data (form data)
         task_id = request.POST.get('task_id')
-        
-        # If not found in POST, try to get from JSON body
         if not task_id:
-            try:
-                body = json.loads(request.body.decode('utf-8'))
-                task_id = body.get('task_id')
-            except (json.JSONDecodeError, AttributeError):
-                pass
-        
-        print(f"Received task_id: {task_id}")  # Debugging statement
-        
-        if not task_id:
-            return JsonResponse({
-                'success': False, 
-                'error': 'No task_id provided'
-            })
+            return JsonResponse({'success': False, 'error': 'No task_id provided'})
 
-        try:
-            task = get_object_or_404(DailyTask, id=task_id, added_by=request.user)
-            print(f"Task found: {task}")  # Debugging statement
-            
-            if task.status == 'in_progress':
-                task.status = 'completed'
-                # Calculate duration
-                duration_delta = timezone.now() - task.created_at
-                hours, remainder = divmod(duration_delta.total_seconds(), 3600)
-                minutes, seconds = divmod(remainder, 60)
-                task.duration = f"{int(hours)}h {int(minutes)}m {int(seconds)}s"
-                task.save()
-                
-                print(f"Task stopped successfully. Duration: {task.duration}")
-                return JsonResponse({'success': True})
-            else:
-                return JsonResponse({
-                    'success': False, 
-                    'error': f'Task is not in progress. Current status: {task.status}'
-                })
-                
-        except DailyTask.DoesNotExist:
-            return JsonResponse({
-                'success': False, 
-                'error': 'Task not found or you do not have permission to stop this task'
-            })
-            
+        task = get_object_or_404(DailyTask, id=task_id, added_by=request.user)
+        if task.status == 'in_progress':
+            task.status = 'completed'
+            duration_delta = timezone.now() - task.created_at
+            hours, remainder = divmod(duration_delta.total_seconds(), 3600)
+            minutes, seconds = divmod(remainder, 60)
+            task.duration = f"{int(hours)}h {int(minutes)}m {int(seconds)}s"
+            task.save()
+            return JsonResponse({'success': True})
+        else:
+            return JsonResponse({'success': False, 'error': f'Task is not in progress. Current status: {task.status}'})
+
+    except DailyTask.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Task not found or you do not have permission to stop this task'})
     except Exception as e:
-        print(f"Unexpected error in stop_task: {e}")  # Debugging statement
-        import traceback
-        traceback.print_exc()  # This will print the full traceback
-        return JsonResponse({
-            'success': False, 
-            'error': f'Server error: {str(e)}'
-        })
+        return JsonResponse({'success': False, 'error': str(e)})
     
 
 
