@@ -142,10 +142,38 @@
         padding: 10px 20px;
     }
     .text-black {
-    color: black;
+        color: black;
+    }
     
-}
-
+    /* Search highlight styles */
+    .search-highlight, mark.search-highlight {
+        background-color: #ffeb3b !important;
+        color: #000 !important;
+        padding: 1px 2px;
+        border-radius: 2px;
+        font-weight: 500;
+        box-shadow: 0 1px 3px rgba(255, 235, 59, 0.3);
+    }
+    
+    /* Search info styles */
+    .search-info {
+        background-color: #e3f2fd;
+        border: 1px solid #bbdefb;
+        border-radius: 4px;
+        padding: 8px 12px;
+        margin-bottom: 15px;
+        color: #1976d2;
+        font-size: 0.9rem;
+    }
+    
+    .search-info .search-term {
+        background-color: #ffeb3b;
+        color: #000;
+        padding: 2px 4px;
+        border-radius: 2px;
+        font-weight: 500;
+        margin: 0 2px;
+    }
 </style>
 {% endblock %}
 
@@ -157,30 +185,17 @@
                 <div class="card-header">
                     <div class="d-flex justify-content-between align-items-center">
                         <h5 class="card-title">Client Management</h5>
-                        <!-- <button class="btn btn-primary btn-sm" id="refreshBtn">
-                            <i class="fas fa-sync-alt"></i> Refresh
-                        </button> -->
                     </div>
                 </div>
                 
                 <!-- Pagination Info -->
-                <div class="card-body" >
-                    <div class="pagination-info" >
-                        <!-- <div class="info-text">
-                            <span class="page-info">
-                                {% if search_query %}
-                                    Found {{ filtered_count }} of {{ total_clients }} clients for "{{ search_query }}"
-                                {% else %}
-                                    Total Clients: {{ total_clients }}
-                                {% endif %}
-                            </span>
-                        </div> -->
+                <div class="card-body">
+                    <div class="pagination-info">
                         Total Clients: {{ total_clients }}
                         <div class="info-text">
                             {% if clients.has_other_pages %}
                                 <span class="page-info">
                                     Page {{ clients.number }} of {{ clients.paginator.num_pages }}
-                                    <!-- (Showing {{ clients.start_index }}-{{ clients.end_index }} of {{ clients.paginator.count }}) -->
                                 </span>
                             {% endif %}
                         </div>
@@ -189,7 +204,7 @@
                     <!-- Search Bar -->
                     <div class="search-bar">
                         <form method="GET" class="d-flex">
-                            <input type="text" name="search" class="form-control" placeholder="Search clients by name, code, mobile, address, branch, district, state..." 
+                            <input type="text" name="search" class="form-control" placeholder="Search clients by name, code, mobile, address, branch, district, state, software, priority, AMC, route, etc..." 
                                    value="{{ search_query }}" id="searchInput">
                             <button type="submit" class="btn btn-outline-secondary ms-2">
                                 <i class="fas fa-search"></i>
@@ -200,66 +215,78 @@
                             </a>
                             {% endif %}
                         </form>
+                        
+                        {% if search_query %}
+                        <div class="search-info">
+                            <i class="fas fa-search"></i>
+                            Searching for: 
+                            {% for term in search_terms %}
+                                <span class="search-term">{{ term }}</span>
+                            {% endfor %}
+                            - Found {{ filtered_count }} of {{ total_clients }} clients
+                        </div>
+                        {% endif %}
                     </div>
-                     {% if clients.has_other_pages %}
-<div class="custom-pagination" style="display: flex;justify-content: center;">
-    <nav aria-label="Page navigation">
-        <ul class="pagination">
-            {% if clients.has_previous %}
-                <li class="page-item">
-                    <a class="page-link" href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}" aria-label="First">
-                         First
-                    </a>
-                </li>
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ clients.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}" aria-label="Previous">
-                         Previous
-                    </a>
-                </li>
-            {% else %}
-                <li class="page-item disabled">
-                    <span class="page-link"> First</span>
-                </li>
-                <li class="page-item disabled">
-                    <span class="page-link"> Previous</span>
-                </li>
-            {% endif %}
+                    
+                    {% if clients.has_other_pages %}
+                    <div class="custom-pagination" style="display: flex;justify-content: center;">
+                        <nav aria-label="Page navigation">
+                            <ul class="pagination">
+                                {% if clients.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}" aria-label="First">
+                                             First
+                                        </a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ clients.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}" aria-label="Previous">
+                                             Previous
+                                        </a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link"> First</span>
+                                    </li>
+                                    <li class="page-item disabled">
+                                        <span class="page-link"> Previous</span>
+                                    </li>
+                                {% endif %}
 
-            {% for num in clients.paginator.page_range %}
-                {% if clients.number == num %}
-                    <li class="page-item active">
-                        <span class="page-link">{{ num }}</span>
-                    </li>
-                {% elif num > clients.number|add:'-3' and num < clients.number|add:'3' %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ num }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">{{ num }}</a>
-                    </li>
-                {% endif %}
-            {% endfor %}
+                                {% for num in clients.paginator.page_range %}
+                                    {% if clients.number == num %}
+                                        <li class="page-item active">
+                                            <span class="page-link">{{ num }}</span>
+                                        </li>
+                                    {% elif num > clients.number|add:'-3' and num < clients.number|add:'3' %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ num }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">{{ num }}</a>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
 
-            {% if clients.has_next %}
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ clients.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}" aria-label="Next">
-                        Next 
-                    </a>
-                </li>
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ clients.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}" aria-label="Last">
-                        Last 
-                    </a>
-                </li>
-            {% else %}
-                <li class="page-item disabled">
-                    <span class="page-link">Next 
-                </li>
-                <li class="page-item disabled">
-                    <span class="page-link">Last 
-                </li>
-            {% endif %}
-        </ul>
-    </nav>
-</div>
-{% endif %}
+                                {% if clients.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ clients.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}" aria-label="Next">
+                                            Next 
+                                        </a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ clients.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}" aria-label="Last">
+                                            Last 
+                                        </a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link">Next</span>
+                                    </li>
+                                    <li class="page-item disabled">
+                                        <span class="page-link">Last</span>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    </div>
+                    {% endif %}
                     
                     <div class="table-responsive">
                         <table class="table table-hover table-bordered" style="width:100%">
@@ -290,34 +317,34 @@
                             <tbody>
                                 {% for client in clients %}
                                 <tr>
-                                    <td>{{ client.code|default:"-" }}</td>
-                                    <td>{{ client.name|default:"-" }}</td>
-                                    <td>{{ client.address|truncatechars:20|default:"-" }}</td>
-                                    <td>{{ client.branch|default:"-" }}</td>
-                                    <td>{{ client.district|trim|default:"-" }}</td>
-                                    <td>{{ client.state|trim|default:"-" }}</td>
-                                    <td>{{ client.software|default:"-" }}</td>
-                                    <td>{{ client.mobile|trim|default:"-" }}</td>
-                                    <td>{{ client.installationdate|default:"-" }}</td>
-                                    <td >
+                                    <td>{{ client.code|default:"-"|highlight_search:search_terms }}</td>
+                                    <td>{{ client.name|default:"-"|highlight_search:search_terms }}</td>
+                                    <td>{{ client.address|truncatechars:20|default:"-"|highlight_search:search_terms }}</td>
+                                    <td>{{ client.branch|default:"-"|highlight_search:search_terms }}</td>
+                                    <td>{{ client.district|trim|default:"-"|highlight_search:search_terms }}</td>
+                                    <td>{{ client.state|trim|default:"-"|highlight_search:search_terms }}</td>
+                                    <td>{{ client.software|default:"-"|highlight_search:search_terms }}</td>
+                                    <td>{{ client.mobile|trim|default:"-"|highlight_search:search_terms }}</td>
+                                    <td>{{ client.installationdate|default:"-"|highlight_search:search_terms }}</td>
+                                    <td>
                                         <span class="badge badge-{% if client.priorty == 'High' %}danger{% elif client.priorty == 'Medium' %}warning{% else %}secondary{% endif %}">
-                                            {{ client.priorty|default:"-" }}
+                                            {{ client.priorty|default:"-"|highlight_search:search_terms }}
                                         </span>
                                     </td>
-                                    <td>{{ client.directdealing|yesno:"Yes,No,Unknown" }}</td>
-                                    <td>{{ client.rout|default:"-" }}</td>
+                                    <td>{{ client.directdealing|yesno:"Yes,No,Unknown"|highlight_search:search_terms }}</td>
+                                    <td>{{ client.rout|default:"-"|highlight_search:search_terms }}</td>
                                     <td>
                                         <span class="badge badge-{% if client.amc == 'Yes' %}success{% else %}danger{% endif %}" style="color: black;">
-                                            {{ client.amc|default:"No" }}
+                                            {{ client.amc|default:"No"|highlight_search:search_terms }}
                                         </span>
                                     </td>
-                                    <td>{{ client.amcamt|default:"-" }}</td>
-                                    <td>{{ client.accountcode|default:"-" }}</td>
-                                    <td>{{ client.address3|default:"-" }}</td>
-                                    <td>{{ client.lictype|default:"-" }}</td>
-                                    <td>{{ client.clients|default:"-" }}</td>
-                                    <td>{{ client.sp|default:"-" }}</td>
-                                    <td>{{ client.nature|default:"-" }}</td>
+                                    <td>{{ client.amcamt|default:"-"|highlight_search:search_terms }}</td>
+                                    <td>{{ client.accountcode|default:"-"|highlight_search:search_terms }}</td>
+                                    <td>{{ client.address3|default:"-"|highlight_search:search_terms }}</td>
+                                    <td>{{ client.lictype|default:"-"|highlight_search:search_terms }}</td>
+                                    <td>{{ client.clients|default:"-"|highlight_search:search_terms }}</td>
+                                    <td>{{ client.sp|default:"-"|highlight_search:search_terms }}</td>
+                                    <td>{{ client.nature|default:"-"|highlight_search:search_terms }}</td>
                                 </tr>
                                 {% empty %}
                                 <tr>
@@ -343,9 +370,6 @@
                             </tbody>
                         </table>
                     </div>
-                    
-                    <!-- Pagination Controls -->
-                   
                 </div>
             </div>
         </div>
@@ -356,11 +380,6 @@
 {% block extra_js %}
 <script>
     $(document).ready(function() {
-        // Refresh Button
-        $('#refreshBtn').on('click', function() {
-            window.location.reload();
-        });
-        
         // Auto-submit search form after typing (with delay)
         let searchTimeout;
         $('#searchInput').on('input', function() {
@@ -386,6 +405,17 @@
         {% if search_query %}
         $('#searchInput').focus();
         {% endif %}
+        
+        // Highlight search terms in real-time as user types
+        $('#searchInput').on('input', function() {
+            const searchValue = $(this).val().trim();
+            if (searchValue.length > 0) {
+                // Add visual feedback for active search
+                $(this).addClass('border-primary');
+            } else {
+                $(this).removeClass('border-primary');
+            }
+        });
     });
 </script>
 {% endblock %}

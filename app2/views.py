@@ -796,6 +796,11 @@ import requests
 from django.shortcuts import render
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
+import requests
+from django.shortcuts import render
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+import re
+
 def show_clients(request):
     api_url = "https://rrcpython.imcbs.com/api/clients/all"
     clients = []
@@ -831,10 +836,10 @@ def show_clients(request):
     
     if search_query:
         filtered_clients = []
-        search_lower = search_query.lower()
+        search_terms = search_query.lower().split()  # Split multiple search terms
         
         for client in clients:
-            # Search in multiple fields
+            # Search in ALL available fields
             searchable_fields = [
                 str(client.get('name', '')),
                 str(client.get('code', '')),
@@ -844,11 +849,26 @@ def show_clients(request):
                 str(client.get('district', '')),
                 str(client.get('state', '')),
                 str(client.get('software', '')),
+                str(client.get('installationdate', '')),
+                str(client.get('priorty', '')),
+                str(client.get('directdealing', '')),
+                str(client.get('rout', '')),
+                str(client.get('amc', '')),
+                str(client.get('amcamt', '')),
                 str(client.get('accountcode', '')),
+                str(client.get('address3', '')),
+                str(client.get('lictype', '')),
+                str(client.get('clients', '')),
+                str(client.get('sp', '')),
+                str(client.get('nature', '')),
             ]
             
-            # Check if search query matches any field
-            if any(search_lower in field.lower() for field in searchable_fields):
+            # Create a combined text for searching
+            combined_text = ' '.join(searchable_fields).lower()
+            
+            # Check if ALL search terms are found (AND logic)
+            # Change to any() for OR logic if preferred
+            if all(term in combined_text for term in search_terms):
                 filtered_clients.append(client)
         
         clients = filtered_clients
@@ -872,9 +892,9 @@ def show_clients(request):
         'error_message': error_message,
         'total_clients': original_count,
         'filtered_count': len(clients),
-        'search_query': search_query
+        'search_query': search_query,
+        'search_terms': search_query.lower().split() if search_query else []
     })
-
 
 
 
