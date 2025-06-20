@@ -936,7 +936,7 @@ def information_center_table(request):
 
 # views.py
 from django.shortcuts import render, redirect, get_object_or_404
-from .models import Department
+from .models import Department,JobRoleDescription
 
 def all_department(request):
     departments = Department.objects.all()
@@ -1009,17 +1009,23 @@ def job_roles(request):
     # Pass custom_user instead of user to avoid overriding request.user
     return render(request, 'job_roles.html', {'roles': roles, 'custom_user': custom_user})
 
+# views.py
+
 def add_job_role(request):
     departments = Department.objects.all()
     if request.method == 'POST':
         dept_id = request.POST.get('department')
         title = request.POST.get('title')
-        description = request.POST.get('description')
-        JobRole.objects.create(
-            department_id=dept_id,
-            title=title,
-            description=description
-        )
+        job_role = JobRole.objects.create(department_id=dept_id, title=title)
+        
+        # Handle multiple headings and descriptions
+        headings = request.POST.getlist('heading')
+        descriptions = request.POST.getlist('description')
+        
+        for heading, description in zip(headings, descriptions):
+            if heading or description:
+                JobRoleDescription.objects.create(job_role=job_role, heading=heading, description=description)
+        
         return redirect('job_roles')
     return render(request, 'add_job_role.html', {'departments': departments})
 
@@ -1029,8 +1035,19 @@ def edit_job_role(request, id):
     if request.method == 'POST':
         role.department_id = request.POST.get('department')
         role.title = request.POST.get('title')
-        role.description = request.POST.get('description')
         role.save()
+        
+        # Clear existing descriptions
+        JobRoleDescription.objects.filter(job_role=role).delete()
+        
+        # Handle multiple headings and descriptions
+        headings = request.POST.getlist('heading')
+        descriptions = request.POST.getlist('description')
+        
+        for heading, description in zip(headings, descriptions):
+            if heading or description:
+                JobRoleDescription.objects.create(job_role=role, heading=heading, description=description)
+        
         return redirect('job_roles')
     return render(request, 'add_job_role.html', {'departments': departments, 'role': role})
 

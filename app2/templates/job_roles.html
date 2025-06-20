@@ -1,3 +1,5 @@
+<!-- job_roles.html -->
+
 {% extends 'base.html' %}
 
 {% block title %}Job Roles{% endblock %}
@@ -35,12 +37,19 @@
             <p style="margin: 5px 0; color: #6c757d; font-size: 1.1rem; font-weight: 500;">Department: {{ role.department.name }}</p>
             
             <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee;">
-                <strong style="color: #495057; margin-bottom: 10px; display: block;">Description:</strong>
-                <div style="margin: 0; padding-left: 0; color: #333;">
-                    {% for point in role.get_description_points %}
-                    <div style="margin-bottom: 5px; font-size: 1rem;">{{ point }}</div>
-                    {% endfor %}
+                {% for description in role.descriptions.all %}
+                <div style="margin-bottom: 15px;">
+                    <strong style="color: #495057; display: block; margin-bottom: 5px;">{{ description.heading }}</strong>
+                    {% with description.description|linebreaksbr as full_description %}
+                        {% for line in full_description.splitlines %}
+                            {% if line %}
+                                <p style="margin: 0; color: #333;"><strong>{{ forloop.counter }}.</strong> {{ line|safe }}</p>
+                            {% endif %}
+                        {% endfor %}
+                    {% endwith %}
+
                 </div>
+                {% endfor %}
             </div>
         </div>
         {% endfor %}
@@ -54,30 +63,4 @@
         </div>
     {% endif %}
 </div>
-
-<style>
-/* Hover effects for action buttons */
-a[href*="edit"]:hover {
-    background-color: #e3f2fd !important;
-    color: #0056b3 !important;
-}
-
-a[href*="delete"]:hover {
-    background-color: #ffebee !important;
-    color: #c62828 !important;
-}
-
-/* Hover effect for Add New button */
-a[href*="add_job_role"]:hover {
-    background-color: #218838 !important;
-}
-
-/* Card hover effect */
-div[style*="background: white"]:hover {
-    box-shadow: 0 8px 25px rgba(0,0,0,0.12) !important;
-    transform: translateY(-2px);
-    transition: all 0.3s ease;
-}
-</style>
-
 {% endblock %}
