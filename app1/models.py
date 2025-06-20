@@ -240,29 +240,6 @@ class Complaint(models.Model):
 
 
 
-from django.db import models
-
-class ServiceLog(models.Model):
-    customer_name = models.CharField(max_length=255)
-    type = models.CharField(max_length=255)
-    complaint = models.ForeignKey(Complaint, on_delete=models.CASCADE)
-    remark = models.TextField()
-    voice_note = models.FileField(upload_to='voice_notes/', null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    added_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
-    assigned_person = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_service_logs')
-    assigned_date = models.DateField(null=True, blank=True)  #
-    status = models.CharField(max_length=20, default='Not Completed', 
-                            choices=[('Not Completed', 'Not Completed'), 
-                                   ('Completed', 'Completed')])
-    
-    def assign_user(self, user):
-        self.assigned_person = user
-        self.assigned_date = timezone.now()
-        self.save()
-
-    def __str__(self):
-        return f"Service Log for {self.customer_name} ({self.created_at})"
     
 
 
