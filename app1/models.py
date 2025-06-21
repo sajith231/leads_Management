@@ -914,3 +914,42 @@ class EarlyRequest(models.Model):
 
     def __str__(self):
         return f"{self.employee.name} - {self.date}"
+
+
+
+
+
+
+import uuid
+
+class ServiceLog(models.Model):
+    COMPLAINT_TYPE_CHOICES = [
+        ('software', 'Software'),
+        ('hardware', 'Hardware'),
+    ]
+
+    ticket_number = models.CharField(max_length=100, unique=True, editable=False)
+    date = models.DateTimeField(auto_now_add=True)
+    customer_name = models.CharField(max_length=200)
+    complaint_type = models.CharField(max_length=20, choices=COMPLAINT_TYPE_CHOICES)
+    complaints = models.ManyToManyField('Complaint', through='ServiceLogComplaint')
+    remarks = models.TextField(blank=True, null=True)
+    phone_number = models.CharField(max_length=20)
+    voice_note = models.FileField(upload_to='service_log_voice_notes/', null=True, blank=True)
+    added_by = models.ForeignKey('User', on_delete=models.SET_NULL, null=True, related_name='added_service_logs')
+    assigned_person = models.ForeignKey('User', on_delete=models.SET_NULL, null=True, related_name='assigned_service_logs')
+    status = models.CharField(max_length=50, default='Pending')
+
+    def save(self, *args, **kwargs):
+        if not self.ticket_number:
+            self.ticket_number = f"TKT-{uuid.uuid4().hex[:8].upper()}"
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.ticket_number} - {self.customer_name}"
+
+class ServiceLogComplaint(models.Model):
+    service_log = models.ForeignKey(ServiceLog, on_delete=models.CASCADE)
+    complaint = models.ForeignKey('Complaint', on_delete=models.CASCADE)
+    note = models.TextField(blank=True, null=True)
+

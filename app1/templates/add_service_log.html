@@ -1,0 +1,444 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+
+<div class="container mt-5" style="max-width: 800px;">
+    <h2 class="mb-4 text-center">{% if log %}Edit{% else %}Add{% endif %} Service Log</h2>
+
+    <form method="post" enctype="multipart/form-data" class="card p-4 shadow-sm">
+        {% csrf_token %}
+
+        <div class="mb-3">
+    <label class="form-label">Customer</label>
+    <select class="form-select" name="customer_code" id="customer_code">
+        <option value="">-- Select Customer --</option>
+        {% if customers %}
+            {% for code, name in customers.items %}
+            <option value="{{ code }}">{{ name }}</option>
+            {% endfor %}
+        {% else %}
+            <option value="">No customers available</option>
+        {% endif %}
+    </select>
+</div>
+<div class="mb-3">
+    <label class="form-label">Customer Name (Manual Entry)</label>
+    <input type="text" class="form-control" name="customer_name" id="customer_name" value="{{ log.customer_name|default_if_none:'' }}" placeholder="Enter customer name manually">
+</div>
+
+        
+
+        <div class="mb-3">
+            <label class="form-label">Complaint Type</label>
+            <select class="form-select" name="complaint_type" id="complaint_type" required>
+                <option value="">-- Select Type --</option>
+                <option value="software" {% if log and log.complaint_type == 'software' %}selected{% endif %}>Software</option>
+                <option value="hardware" {% if log and log.complaint_type == 'hardware' %}selected{% endif %}>Hardware</option>
+            </select>
+        </div>
+
+        <div class="mb-4">
+            <label class="form-label mb-3">Select Complaints</label>
+            <div class="complaints-selection-container">
+                {% for c in complaints %}
+                <div class="complaint-item-wrapper mb-3" data-complaint-type="{{ c.complaint_type }}">
+                    <div class="complaint-header">
+                        <div class="form-check">
+                            <input class="form-check-input complaint-checkbox" 
+                                   type="checkbox" 
+                                   name="complaints" 
+                                   value="{{ c.id }}" 
+                                   id="complaint_{{ c.id }}"
+                                   {% if selected_complaints %}
+                                       {% for sc in selected_complaints %}
+                                           {% if sc.complaint.id == c.id %}checked{% endif %}
+                                       {% endfor %}
+                                   {% endif %}
+                                   onchange="toggleComplaintNote({{ c.id }})">
+                            <label class="form-check-label complaint-label" for="complaint_{{ c.id }}">
+                                {{ c.description }}
+                            </label>
+                        </div>
+                    </div>
+                    <div class="complaint-note-section" id="note_section_{{ c.id }}" style="display: none;">
+                        <div class="note-input-wrapper">
+                            <label class="form-label note-label">Add notes for this complaint:</label>
+                            <textarea class="form-control note-textarea" 
+                                      name="note_{{ c.id }}" 
+                                      rows="3" 
+                                      placeholder="Enter detailed notes about this complaint..."
+                                      >{% if selected_complaints %}{% for sc in selected_complaints %}{% if sc.complaint.id == c.id %}{{ sc.note }}{% endif %}{% endfor %}{% endif %}</textarea>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <div id="no-complaints-selected" class="alert alert-info" style="display: none;">
+                <i class="bi bi-info-circle"></i> Please select at least one complaint to proceed.
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Remarks</label>
+            <textarea class="form-control" name="remarks" rows="3" placeholder="Additional remarks or observations...">{{ log.remarks|default_if_none:'' }}</textarea>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Phone Number</label>
+            <input type="text" class="form-control" name="phone_number" value="{{ log.phone_number|default_if_none:'' }}" placeholder="Customer's contact number">
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Voice Note</label><br>
+            {% if log and log.voice_note %}
+                <div class="existing-voice-note mb-3">
+                    <small class="text-muted">Current voice note:</small>
+                    <audio controls class="w-100">
+                        <source src="{{ log.voice_note.url }}" type="audio/webm">
+                        Your browser does not support the audio element.
+                    </audio>
+                </div>
+            {% endif %}
+            <div class="voice-recording-section">
+                <div class="d-flex gap-2 mb-3">
+                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="startRecording()">
+                        <i class="bi bi-mic"></i> Start Recording
+                    </button>
+                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="stopRecording()" disabled>
+                        <i class="bi bi-stop"></i> Stop Recording
+                    </button>
+                </div>
+                <audio id="player" controls class="w-100" style="display: none;"></audio>
+                <input type="hidden" name="voice_blob" id="voice_blob">
+            </div>
+        </div>
+
+        <div class="d-grid">
+            <button type="submit" class="btn btn-success btn-lg">
+                {% if log %}
+                    <i class="bi bi-check-circle"></i> Update Service Log
+                {% else %}
+                    <i class="bi bi-plus-circle"></i> Create Service Log
+                {% endif %}
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const customerCodeSelect = document.getElementById('customer_code');
+    const customerNameInput = document.getElementById('customer_name');
+    const submitButton = document.querySelector('button[type="submit"]');
+
+    function validateCustomerSelection() {
+        const customerCodeSelected = customerCodeSelect.value !== '';
+        const customerNameEntered = customerNameInput.value.trim() !== '';
+        const isValid = customerCodeSelected || customerNameEntered;
+
+        if (!isValid) {
+            alert('Please select a customer from the dropdown or enter a customer name manually.');
+        }
+
+        submitButton.disabled = !isValid;
+    }
+
+    customerCodeSelect.addEventListener('change', validateCustomerSelection);
+    customerNameInput.addEventListener('input', validateCustomerSelection);
+
+    // Initial validation check
+    validateCustomerSelection();
+});
+
+let mediaRecorder;
+let audioChunks = [];
+
+// Complaint data from Django template
+const complaintsData = {
+    {% for c in complaints %}
+    {{ c.id }}: "{{ c.description|escapejs }}",
+    {% endfor %}
+};
+
+// Selected complaints with notes (for edit mode)
+const selectedComplaintsData = {
+    {% if selected_complaints %}
+        {% for sc in selected_complaints %}
+        {{ sc.complaint.id }}: "{{ sc.note|escapejs }}",
+        {% endfor %}
+    {% endif %}
+};
+
+function toggleComplaintNote(complaintId) {
+    const checkbox = document.getElementById(`complaint_${complaintId}`);
+    const noteSection = document.getElementById(`note_section_${complaintId}`);
+    const textarea = noteSection.querySelector('textarea');
+    
+    if (checkbox.checked) {
+        noteSection.style.display = 'block';
+        textarea.focus();
+    } else {
+        noteSection.style.display = 'none';
+        textarea.value = '';
+    }
+    
+    updateComplaintSelectionStatus();
+}
+
+function updateComplaintSelectionStatus() {
+    const checkboxes = document.querySelectorAll('.complaint-checkbox');
+    const checkedBoxes = document.querySelectorAll('.complaint-checkbox:checked');
+    const noComplaintsAlert = document.getElementById('no-complaints-selected');
+    
+    if (checkedBoxes.length === 0) {
+        noComplaintsAlert.style.display = 'block';
+    } else {
+        noComplaintsAlert.style.display = 'none';
+    }
+}
+
+// Initialize the form state on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const complaintTypeSelect = document.getElementById('complaint_type');
+    const complaintItems = document.querySelectorAll('.complaint-item-wrapper');
+    
+    complaintTypeSelect.addEventListener('change', function() {
+        const selectedType = complaintTypeSelect.value;
+        complaintItems.forEach(item => {
+            const complaintType = item.getAttribute('data-complaint-type');
+            if (selectedType === '' || complaintType === selectedType) {
+                item.style.display = 'block';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    });
+    
+    // Show note sections for already selected complaints (edit mode)
+    const checkboxes = document.querySelectorAll('.complaint-checkbox:checked');
+    checkboxes.forEach(checkbox => {
+        const complaintId = checkbox.value;
+        const noteSection = document.getElementById(`note_section_${complaintId}`);
+        if (noteSection) {
+            noteSection.style.display = 'block';
+        }
+    });
+    
+    updateComplaintSelectionStatus();
+});
+
+function startRecording() {
+    navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+        mediaRecorder = new MediaRecorder(stream);
+        mediaRecorder.start();
+        audioChunks = [];
+
+        // Update UI
+        const startBtn = document.querySelector('[onclick="startRecording()"]');
+        const stopBtn = document.querySelector('[onclick="stopRecording()"]');
+        startBtn.disabled = true;
+        stopBtn.disabled = false;
+        startBtn.innerHTML = '<i class="bi bi-mic"></i> Recording...';
+
+        mediaRecorder.addEventListener("dataavailable", event => {
+            audioChunks.push(event.data);
+        });
+
+        mediaRecorder.addEventListener("stop", () => {
+            const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
+            const audioUrl = URL.createObjectURL(audioBlob);
+            const player = document.getElementById("player");
+            player.src = audioUrl;
+            player.style.display = 'block';
+
+            const fileReader = new FileReader();
+            fileReader.readAsDataURL(audioBlob);
+            fileReader.onloadend = function () {
+                document.getElementById("voice_blob").value = fileReader.result;
+            };
+
+            // Reset button states
+            const startBtn = document.querySelector('[onclick="startRecording()"]');
+            const stopBtn = document.querySelector('[onclick="stopRecording()"]');
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+            startBtn.innerHTML = '<i class="bi bi-mic"></i> Start Recording';
+        });
+    }).catch(error => {
+        alert("Microphone access denied or not supported.");
+        console.error("Mic error:", error);
+    });
+}
+
+function stopRecording() {
+    if (mediaRecorder && mediaRecorder.state !== "inactive") {
+        mediaRecorder.stop();
+        // Stop all tracks to release microphone
+        mediaRecorder.stream.getTracks().forEach(track => track.stop());
+    }
+}
+</script>
+
+<style>
+/* Complaints Selection Styling */
+.complaints-selection-container {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 20px;
+    border: 1px solid #e9ecef;
+}
+
+.complaint-item-wrapper {
+    background: white;
+    border-radius: 8px;
+    border: 2px solid #e9ecef;
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+.complaint-item-wrapper:hover {
+    border-color: #0d6efd;
+    box-shadow: 0 2px 8px rgba(13, 110, 253, 0.1);
+}
+
+.complaint-header {
+    padding: 15px 20px;
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+}
+
+.form-check-input.complaint-checkbox {
+    width: 20px;
+    height: 20px;
+    margin-right: 12px;
+    cursor: pointer;
+    border: 2px solid #dee2e6;
+    transition: all 0.2s ease;
+}
+
+.form-check-input.complaint-checkbox:checked {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+.complaint-label {
+    font-weight: 500;
+    color: #495057;
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1.5;
+    transition: color 0.2s ease;
+}
+
+.form-check-input.complaint-checkbox:checked + .complaint-label {
+    color: #0d6efd;
+    font-weight: 600;
+}
+
+.complaint-note-section {
+    border-top: 1px solid #e9ecef;
+    background: #f8f9fa;
+    transition: all 0.3s ease;
+}
+
+.note-input-wrapper {
+    padding: 20px;
+}
+
+.note-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: #6c757d;
+    margin-bottom: 8px;
+}
+
+.note-textarea {
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 12px;
+    font-size: 14px;
+    line-height: 1.5;
+    resize: vertical;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.note-textarea:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+/* Voice Recording Section */
+.voice-recording-section {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 20px;
+    border: 1px solid #e9ecef;
+}
+
+.existing-voice-note {
+    background: #e3f2fd;
+    border-radius: 6px;
+    padding: 15px;
+    border-left: 4px solid #2196f3;
+}
+
+/* Button Enhancements */
+.btn-sm i {
+    margin-right: 5px;
+}
+
+.btn-lg i {
+    margin-right: 8px;
+}
+
+/* Alert Styling */
+.alert-info {
+    background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
+    border: 1px solid #bee5eb;
+    color: #0c5460;
+    border-radius: 8px;
+    padding: 15px;
+}
+
+.alert-info i {
+    margin-right: 8px;
+}
+
+/* Form Control Enhancements */
+.form-control, .form-select {
+    border-radius: 6px;
+    padding: 12px;
+    font-size: 15px;
+    transition: all 0.2s ease;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+/* Card Styling */
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .container {
+        margin-top: 20px;
+        padding: 10px;
+    }
+    
+    .complaint-header {
+        padding: 12px 15px;
+    }
+    
+    .note-input-wrapper {
+        padding: 15px;
+    }
+}
+</style>
+
+{% endblock %}

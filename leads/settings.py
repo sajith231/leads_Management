@@ -36,7 +36,7 @@ CSRF_TRUSTED_ORIGINS = [
 
 
 
-ALLOWED_HOSTS = ['88.222.215.20','myimc.in','www.myimc.in','127.0.0.1']
+ALLOWED_HOSTS = ['88.222.215.20','myimc.in','www.myimc.in','127.0.0.1','localhost']
 
 LOGIN_REDIRECT_URL = 'admin_dashboard'
 LOGIN_URL = 'login'
@@ -51,12 +51,26 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'ckeditor',
+    'rest_framework',
     'app1',
     'app2',  # 👈 Add this line
     'app3',
+    'flutter',
     
 ]
 
+
+
+
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.AllowAny',
+    ],
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
+    ],
+}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

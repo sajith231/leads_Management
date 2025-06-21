@@ -5557,3 +5557,179 @@ def delete_early_request(request):
 
 
 
+# views.py
+from django.shortcuts import render, redirect
+from .models import ServiceLog, Complaint, ServiceLogComplaint, User
+from django.utils import timezone
+
+def servicelog_list(request):
+    service_logs = ServiceLog.objects.all().order_by('-id')  # Latest first
+    users = User.objects.all()
+    return render(request, 'servic_log_admin.html', {'service_logs': service_logs, 'users': users})
+
+
+from app1.models import User, Complaint, ServiceLog, ServiceLogComplaint
+
+import requests
+import json
+from django.shortcuts import render, redirect
+from .models import ServiceLog, Complaint, ServiceLogComplaint, User
+from django.utils import timezone
+
+import requests
+
+import requests
+
+def fetch_customers():
+    try:
+        response = requests.get('https://rrcpython.imcbs.com/api/clients/all')
+        response.raise_for_status()
+        customers_data = response.json().get('data', [])
+        customers = {customer['code']: customer['name'] for customer in customers_data}
+        return customers
+    except requests.RequestException as e:
+        print(f"Error fetching customers: {e}")
+        return {}
+
+def add_service_log(request):
+    complaints = Complaint.objects.all()
+    customers = fetch_customers()
+
+    if request.method == 'POST':
+        customer_code = request.POST.get('customer_code')
+        customer_name = request.POST.get('customer_name')
+        complaint_type = request.POST['complaint_type']
+        remarks = request.POST.get('remarks')
+        phone_number = request.POST.get('phone_number')
+        voice_blob = request.POST.get('voice_blob')
+
+        if not customer_code and not customer_name:
+            return render(request, 'add_service_log.html', {
+                'complaints': complaints,
+                'customers': customers,
+                'error_message': 'Please select a customer from the dropdown or enter a customer name manually.'
+            })
+
+        custom_user = User.objects.get(userid=request.user.username)
+
+        if customer_code and customer_code in customers:
+            customer_name = customers[customer_code]
+
+        log = ServiceLog.objects.create(
+            customer_name=customer_name or customer_name,
+            complaint_type=complaint_type,
+            remarks=remarks,
+            phone_number=phone_number,
+            added_by=custom_user,
+            assigned_person=custom_user,
+        )
+
+        complaint_ids = request.POST.getlist('complaints')
+        for cid in complaint_ids:
+            note = request.POST.get(f'note_{cid}', '')
+            ServiceLogComplaint.objects.create(
+                service_log=log,
+                complaint_id=cid,
+                note=note
+            )
+
+        if voice_blob:
+            import base64
+            from django.core.files.base import ContentFile
+            format, audio_str = voice_blob.split(';base64,')
+            audio_file = ContentFile(base64.b64decode(audio_str), name=f"voice_{log.id}.webm")
+            log.voice_note.save(audio_file.name, audio_file)
+            log.save()
+
+        if custom_user.user_level == 'admin_level':
+            return redirect('servicelog_list')
+        else:
+            return redirect('user_service_log')
+
+    return render(request, 'add_service_log.html', {'complaints': complaints, 'customers': customers})
+
+def edit_service_log(request, log_id):
+    log = ServiceLog.objects.get(id=log_id)
+    complaints = Complaint.objects.all()
+    selected_complaints = ServiceLogComplaint.objects.filter(service_log=log)
+    customers = fetch_customers()  # Assuming fetch_customers() returns a dictionary
+
+    if request.method == 'POST':
+        customer_code = request.POST.get('customer_code')
+        customer_name = request.POST.get('customer_name')
+        complaint_type = request.POST['complaint_type']
+        remarks = request.POST.get('remarks')
+        phone_number = request.POST.get('phone_number')
+        voice_blob = request.POST.get('voice_blob')
+
+        # Ensure at least one of customer_code or customer_name is provided
+        if not customer_code and not customer_name:
+            return render(request, 'add_service_log.html', {
+                'log': log,
+                'complaints': complaints,
+                'selected_complaints': selected_complaints,
+                'customers': customers,
+                'error_message': 'Please select a customer from the dropdown or enter a customer name manually.'
+            })
+
+        if customer_code and customer_code in customers:
+            customer_name = customers[customer_code].get('name', '')
+
+        log.customer_name = customer_name
+        log.complaint_type = complaint_type
+        log.remarks = remarks
+        log.phone_number = phone_number
+
+        # Handle new voice note
+        if voice_blob:
+            import base64
+            from django.core.files.base import ContentFile
+            format, audio_str = voice_blob.split(';base64,')
+            audio_file = ContentFile(base64.b64decode(audio_str), name=f"voice_{log.id}.webm")
+            log.voice_note.save(audio_file.name, audio_file)
+
+        log.save()
+
+        # Clear old complaints
+        ServiceLogComplaint.objects.filter(service_log=log).delete()
+
+        # Add updated complaints
+        complaint_ids = request.POST.getlist('complaints')
+        for cid in complaint_ids:
+            note = request.POST.get(f'note_{cid}', '')
+            ServiceLogComplaint.objects.create(
+                service_log=log,
+                complaint_id=cid,
+                note=note
+            )
+
+        return redirect('servicelog_list')
+
+    return render(request, 'add_service_log.html', {
+        'log': log,
+        'complaints': complaints,
+        'selected_complaints': selected_complaints,
+        'customers': customers
+    })
+
+
+    
+def delete_service_log(request, log_id):
+    log = ServiceLog.objects.get(id=log_id)
+    log.delete()
+    return redirect('servicelog_list')
+
+
+
+
+
+def user_service_log(request):
+    if request.user.is_authenticated:
+        # Get the custom User instance based on the logged-in user
+        custom_user = User.objects.get(userid=request.user.username)
+        # Filter service logs added by the current user, latest first
+        user_service_logs = ServiceLog.objects.filter(added_by=custom_user).order_by('-id')
+        
+        return render(request, 'user_service_log.html', {'user_service_logs': user_service_logs})
+    else:
+        return redirect('login')  # Redirect to login if the user is not authenticated

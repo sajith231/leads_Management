@@ -1055,3 +1055,8 @@ def delete_job_role(request, id):
     role = get_object_or_404(JobRole, id=id)
     role.delete()
     return redirect('job_roles')
+
+
+
+
+

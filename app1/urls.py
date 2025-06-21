@@ -292,6 +292,23 @@ urlpatterns = [
 
 
 
+    path('service-log/', views.servicelog_list, name='servicelog_list'),
+    path('service-log/add/', views.add_service_log, name='add_service_log'),
+    path('service-log/edit/<int:log_id>/', views.edit_service_log, name='edit_service_log'),
+    path('service-log/delete/<int:log_id>/', views.delete_service_log, name='delete_service_log'),
+
+    path('user-service-logs/', views.user_service_log, name='user_service_log'),
+
+
+
+
+
+
+    
+
+
+
+
 
 
     
