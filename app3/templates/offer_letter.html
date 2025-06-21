@@ -162,7 +162,7 @@
                         <li><span style="font-weight: bold;font-size: 18px;">Department:</span> {% if offer_letter_details %}{{ offer_letter_details.department }}{% else %}{% endif %} </li>
                         <li><span style="font-weight: bold;font-size: 18px;">Reporting to:</span><span style="font-size: 18px;"> Administrator</span></li>
                         <li><span style="font-weight: bold;font-size: 18px;">Start Date:</span> {% if offer_letter_details %}{{ offer_letter_details.start_date|date:"d/m/Y" }}{% else %}{% endif %}</li>
-                        <li><span style="font-weight: bold;font-size: 18px;">Timing:</span><span style="font-size: 18px;margin-left: 2%;">9.30 Am to 5.30 Pm</span> </li>
+                        <li><span style="font-weight: bold;font-size: 18px;">Timing:</span><span style="font-size: 18px;margin-left: 2%;">{% if offer_letter_details %}{{ offer_letter_details.start_time|time:"h:i A" }} to {{ offer_letter_details.end_time|time:"h:i A" }}{% else %}9.30 Am to 5.30 Pm{% endif %}</span> </li>
                         <li><span style="font-weight: bold;font-size: 18px;">Salary:</span><span style="font-size: 18px;"> INR.{% if offer_letter_details %}{{ offer_letter_details.salary }}{% else %}{% endif %}/- Month (Salary Hike will be considered purely based on performance and Expertise)</li></span>
                         <li style="font-size: 18px;">If you have to resign from this office under any circumstances, work at least </span> {% if offer_letter_details %}{{ offer_letter_details.notice_period }}{% else %}0{% endif %} days notice period.</li>
                     </div>

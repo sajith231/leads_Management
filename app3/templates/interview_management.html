@@ -90,6 +90,7 @@
           <th>CV Source</th>
           <th>Voice Note</th>
           <th>Result</th>
+          <th>Status</th> 
           <th>Edit</th>
           <th>Delete</th>
         </tr>
@@ -131,6 +132,35 @@
               {% endif %}
             {% endwith %}
           </td>
+  <td>
+  {% with interview.rating_set.last as rating %}
+    <form method="POST" action="{% url 'update_status' interview.id %}">
+      {% csrf_token %}
+      <div style="display: flex; align-items: center; gap: 5px;">
+        <select name="status" onchange="this.form.submit()" class="form-select form-select-sm" style="width: auto;">
+          <option value="">--Select--</option>
+          <option value="selected" {% if rating and rating.status == 'selected' %}selected{% endif %}>Selected</option>
+          <option value="rejected" {% if rating and rating.status == 'rejected' %}selected{% endif %}>Rejected</option>
+        </select>
+        
+        {% if rating %}
+          {% if rating.status == 'selected' %}
+            <span class="badge bg-success">Selected</span>
+          {% elif rating.status == 'rejected' %}
+            <span class="badge bg-danger">Rejected</span>
+          {% else %}
+            <span class="badge bg-secondary">N/A</span>
+          {% endif %}
+        {% else %}
+          <span class="badge bg-secondary">No Status</span>
+        {% endif %}
+      </div>
+    </form>
+  {% endwith %}
+</td>
+
+
+
           <td>
             <a href="{% url 'add_rating' interview.id %}" title="Add Result">
               <i class="bi bi-plus-circle" style="font-size: 1.2rem; color: green;"></i>

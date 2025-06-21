@@ -61,12 +61,13 @@
     
     <div>
       <label for="name">Select Name:</label>
-      <select id="name" name="employee_id" required>
-        <option value="">-- Select Candidate --</option>
-        {% for emp in employees %}
-          <option value="{{ emp.id }}">{{ emp.name }}</option>
-        {% endfor %}
-      </select>
+    <select id="name" name="employee_id" required>
+  <option value="">-- Select Candidate --</option>
+  {% for emp in employees %}
+    <option value="{{ emp.id }}">{{ emp.name }} - {{ emp.place }} - {{ emp.job_title }}</option>
+  {% endfor %}
+</select>
+
     </div>
 
     <button type="submit" class="btn btn-success">Save</button>

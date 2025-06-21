@@ -1,4 +1,3 @@
-<!-- add_offer_letter.html -->
 {% extends 'base.html' %}
 {% block title %}Add Offer Letter{% endblock %}
 {% block header %}Add Offer Letter{% endblock %}
@@ -52,6 +51,27 @@
     font-size: 16px;
     border-radius: 6px;
   }
+
+  .time-input-group {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .time-input-group input {
+    flex: 1;
+    margin-bottom: 0;
+  }
+
+  .time-separator {
+    font-weight: bold;
+    color: #333;
+    margin: 0 5px;
+  }
+
+  .time-container {
+    margin-bottom: 16px;
+  }
 </style>
 
 <div class="form-container">
@@ -61,13 +81,47 @@
     {% csrf_token %}
     
     <div>
-      <label for="name">Select Name:</label>
+      <label for="name">Select Candidate:</label>
       <select id="name" name="employee_id" required>
         <option value="">-- Select Candidate --</option>
         {% for emp in employees %}
-          <option value="{{ emp.id }}">{{ emp.name }}</option>
+          <option value="{{ emp.id }}">{{ emp.name }} - {{ emp.place }} - {{ emp.job_title }}</option>
         {% endfor %}
       </select>
+    </div>
+
+    <div>
+      <label for="position">Position:</label>
+      <input type="text" id="position" name="position" required>
+    </div>
+
+    <div>
+      <label for="department">Department:</label>
+      <input type="text" id="department" name="department" required>
+    </div>
+
+    <div>
+      <label for="start_date">Start Date:</label>
+      <input type="date" id="start_date" name="start_date" required>
+    </div>
+
+    <div>
+      <label for="salary">Salary:</label>
+      <input type="number" id="salary" name="salary" step="0.01" min="0.01" required>
+    </div>
+
+    <div class="time-container">
+      <label>Working Hours:</label>
+      <div class="time-input-group">
+        <input type="time" id="start_time" name="start_time" value="09:30" required>
+        <span class="time-separator">to</span>
+        <input type="time" id="end_time" name="end_time" value="17:30" required>
+      </div>
+    </div>
+
+    <div>
+      <label for="notice_period">Notice Period (days):</label>
+      <input type="number" id="notice_period" name="notice_period" min="0" required>
     </div>
 
     <button type="submit" class="btn btn-success">Save</button>
