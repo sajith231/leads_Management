@@ -464,7 +464,7 @@
                 <a href="{% url 'service_entry' %}"><i class="fas fa-plus-circle"></i> Service Entry</a>
                 {% endif %}
                 {% if 'service_log' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
-                <a href="{% url 'service_log' %}"><i class="fas fa-book"></i> Service Log</a>
+                <!-- <a href="{% url 'servicelog_list' %}"><i class="fas fa-book"></i> Service Log</a> -->
                 {% endif %}
             </div>
             {% endif %}
@@ -634,13 +634,13 @@
     
             <div id="services-menu" class="submenu">
                 {% if 'service_log' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
-                <a href="{% url 'service_log' %}"><i class="fas fa-book"></i> Service Log</a>
+                <!-- <a href=""><i class="fas fa-book"></i> Service Log</a> -->
                 {% endif %}
                 {% if 'service_entry' in allowed_menus %}
                 <a href="{% url 'service_entry' %}"><i class="fas fa-plus-circle"></i> Service Entry</a>
                 {% endif %}
                 {% if 'user_service_log' in allowed_menus %}
-                <a href="{% url 'user_service_log' %}"><i class="fas fa-book"></i> Service Log</a>
+                <!-- <a href="{% url 'user_service_log' %}"><i class="fas fa-book"></i>Service Log</a> -->
                 {% endif %}
                 {% if 'user_service_entry' in allowed_menus %}
                 <a href="{% url 'user_service_entry' %}"><i class="fas fa-plus-circle"></i> Service Entry</a>
@@ -699,7 +699,7 @@
             {% endif %}
 
 
-            {% if 'all_districts' in allowed_menus or 'all_areas' in allowed_menus or 'all_locations' in allowed_menus or 'all_requirements' in allowed_menus or 'business_type_list' in allowed_menus or 'job_titles' in allowed_menus or 'all_hardwares' in allowed_menus or 'all_complaints' in allowed_menus or 'all_branches' in allowed_menus or 'users_table' in allowed_menus or 'reminder_type' in allowed_menus  %}
+            {% if 'all_districts' in allowed_menus or 'all_areas' in allowed_menus or 'all_locations' in allowed_menus or 'all_requirements' in allowed_menus or 'business_type_list' in allowed_menus or 'job_titles' in allowed_menus or 'all_hardwares' in allowed_menus or 'all_complaints' in allowed_menus or 'all_branches' in allowed_menus or 'users_table' in allowed_menus or 'reminder_type' in allowed_menus or 'all_department' in allowed_menus or 'job_roles' in allowed_menus %}
             <!-- Master Menu -->
             <div class="mainmenu" onclick="toggleMasterMenu()">
                 <span>
@@ -720,6 +720,12 @@
                 {% endif %}
                 {% if 'all_requirements' in allowed_menus %}
                 <a href="{% url 'all_requirements' %}"><i class="fas fa-tasks"></i> Requirements</a>
+                {% endif %}
+                {% if 'all_department' in allowed_menus %}
+                <a href="{% url 'all_department' %}"><i class="fas fa-building"></i> Department</a>
+                {% endif %}
+                {% if 'job_roles' in allowed_menus %}
+                <a href="{% url 'job_roles' %}"><i class="fas fa-briefcase"></i> Job Role</a>
                 {% endif %}
                 {% if 'business_type_list' in allowed_menus %}
                 <a href="{% url 'business_type_list' %}"><i class="fas fa-binoculars"></i> Business Type</a>

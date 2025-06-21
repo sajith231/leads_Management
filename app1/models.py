@@ -52,6 +52,9 @@ class Location(models.Model):
     def __str__(self):
         return f"{self.name} - {self.area.name} ({self.district.name})"
 
+from django.db import models
+from app2.models import JobRole
+
 
 class User(models.Model):
     STATUS_CHOICES = [
@@ -86,6 +89,7 @@ class User(models.Model):
     is_active = models.BooleanField(default=True)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='active') 
     allowed_menus = models.TextField(blank=True, null=True)
+    job_role = models.ForeignKey(JobRole, on_delete=models.SET_NULL, null=True, blank=True, related_name='users')
 
     
 
@@ -236,29 +240,6 @@ class Complaint(models.Model):
 
 
 
-from django.db import models
-
-class ServiceLog(models.Model):
-    customer_name = models.CharField(max_length=255)
-    type = models.CharField(max_length=255)
-    complaint = models.ForeignKey(Complaint, on_delete=models.CASCADE)
-    remark = models.TextField()
-    voice_note = models.FileField(upload_to='voice_notes/', null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    added_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
-    assigned_person = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_service_logs')
-    assigned_date = models.DateField(null=True, blank=True)  #
-    status = models.CharField(max_length=20, default='Not Completed', 
-                            choices=[('Not Completed', 'Not Completed'), 
-                                   ('Completed', 'Completed')])
-    
-    def assign_user(self, user):
-        self.assigned_person = user
-        self.assigned_date = timezone.now()
-        self.save()
-
-    def __str__(self):
-        return f"Service Log for {self.customer_name} ({self.created_at})"
     
 
 
@@ -933,3 +914,42 @@ class EarlyRequest(models.Model):
 
     def __str__(self):
         return f"{self.employee.name} - {self.date}"
+
+
+
+
+
+
+import uuid
+
+class ServiceLog(models.Model):
+    COMPLAINT_TYPE_CHOICES = [
+        ('software', 'Software'),
+        ('hardware', 'Hardware'),
+    ]
+
+    ticket_number = models.CharField(max_length=100, unique=True, editable=False)
+    date = models.DateTimeField(auto_now_add=True)
+    customer_name = models.CharField(max_length=200)
+    complaint_type = models.CharField(max_length=20, choices=COMPLAINT_TYPE_CHOICES)
+    complaints = models.ManyToManyField('Complaint', through='ServiceLogComplaint')
+    remarks = models.TextField(blank=True, null=True)
+    phone_number = models.CharField(max_length=20)
+    voice_note = models.FileField(upload_to='service_log_voice_notes/', null=True, blank=True)
+    added_by = models.ForeignKey('User', on_delete=models.SET_NULL, null=True, related_name='added_service_logs')
+    assigned_person = models.ForeignKey('User', on_delete=models.SET_NULL, null=True, related_name='assigned_service_logs')
+    status = models.CharField(max_length=50, default='Pending')
+
+    def save(self, *args, **kwargs):
+        if not self.ticket_number:
+            self.ticket_number = f"TKT-{uuid.uuid4().hex[:8].upper()}"
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.ticket_number} - {self.customer_name}"
+
+class ServiceLogComplaint(models.Model):
+    service_log = models.ForeignKey(ServiceLog, on_delete=models.CASCADE)
+    complaint = models.ForeignKey('Complaint', on_delete=models.CASCADE)
+    note = models.TextField(blank=True, null=True)
+

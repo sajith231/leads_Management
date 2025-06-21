@@ -254,6 +254,8 @@ from .forms import UserForm
 
 #     return render(request, "add_user.html", {"form": form})
 
+from app2.models import JobRole  # Import JobRole from app2
+
 @login_required
 def add_user(request):
     if request.method == "POST":
@@ -266,6 +268,11 @@ def add_user(request):
         if form.is_valid():
             try:
                 user = form.save(commit=False)
+                
+                # Handle job role assignment
+                job_role_id = request.POST.get('job_role')
+                if job_role_id:
+                    user.job_role = JobRole.objects.get(id=job_role_id)
                 
                 # The cv_name field is just for selection, not saved to model
                 
@@ -294,8 +301,9 @@ def add_user(request):
                     messages.error(request, f"{field}: {error}")
     else:
         form = UserForm()
+        job_roles = JobRole.objects.all()  # Fetch all job roles for the dropdown
 
-    return render(request, "add_user.html", {"form": form})
+    return render(request, "add_user.html", {"form": form, "job_roles": job_roles})
 
 @login_required
 def users_table(request):
@@ -333,7 +341,6 @@ def delete_user(request, user_id):
 
 
 @login_required
-@login_required
 def edit_user(request, user_id):
     user = get_object_or_404(User, id=user_id)
 
@@ -341,6 +348,13 @@ def edit_user(request, user_id):
         form = UserForm(request.POST, request.FILES, instance=user, edit_mode=True)
         if form.is_valid():
             user = form.save(commit=False)
+
+            # Handle job role update
+            job_role_id = request.POST.get('job_role')
+            if job_role_id:
+                user.job_role = JobRole.objects.get(id=job_role_id)
+            else:
+                user.job_role = None
 
             # Handle password update
             password = form.cleaned_data.get("password")
@@ -354,16 +368,25 @@ def edit_user(request, user_id):
             messages.error(request, "Please correct the errors below.")
     else:
         form = UserForm(instance=user, edit_mode=True)
+        job_roles = JobRole.objects.all()  # Fetch all job roles for the dropdown
 
-    return render(request, "edit_user.html", {"form": form, "user": user})
+    return render(request, "edit_user.html", {"form": form, "user": user, "job_roles": job_roles})
 
 
 from django.db.models import Prefetch
+
+from django.shortcuts import render, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from app1.models import User, Lead
+from app2.models import JobRole  # Import JobRole from app2
 
 @login_required
 def user_dashboard(request):
     # Get the custom user ID from session
     custom_user_id = request.session.get('custom_user_id')
+    
+    # Fetch the user object
+    user = get_object_or_404(User, id=custom_user_id)
     
     # Fetch only leads for the logged-in user with related data
     leads = Lead.objects.filter(
@@ -373,9 +396,14 @@ def user_dashboard(request):
         'requirement_amounts',
         'requirement_amounts__requirement'
     ).order_by('-created_at')
+    
+    # Fetch job roles for the logged-in user
+    job_roles = JobRole.objects.filter(id=user.job_role_id) if user.job_role_id else JobRole.objects.none()
+    
     username = f" {request.user.username}" if request.user.is_authenticated else ""
     context = {
         'leads': leads,
+        'job_roles': job_roles,
         'username': username
     }
     return render(request, 'user_dashboard.html', context)
@@ -1155,233 +1183,11 @@ def delete_complaint(request, complaint_id):
 
 
 
-from django.http import JsonResponse
-from .models import User, ServiceLog
 
-@login_required
-def assign_user(request, log_id):
-    if request.method == 'POST':
-        user_id = request.POST.get('user_id')
-        assigned_date = request.POST.get('assigned_date')
-        try:
-            service_log = ServiceLog.objects.get(id=log_id)
-            assigned_user = User.objects.get(id=user_id)
-            service_log.assigned_person = assigned_user
-            service_log.assigned_date = assigned_date
-            service_log.save()
-            return JsonResponse({
-                'success': True,
-                'assigned_person': assigned_user.name,
-                'assigned_date': assigned_date
-            })
-        except (ServiceLog.DoesNotExist, User.DoesNotExist):
-            return JsonResponse({'success': False}, status=400)
-    return JsonResponse({'success': False}, status=405)
-
-
-
-
-from django.core.paginator import Paginator
-from django.db.models import Q
-from datetime import datetime
-
-@login_required
-def service_log(request):
-    try:
-        current_user = get_current_user(request)
-        allowed_menus = request.session.get('allowed_menus', [])
-
-        if (request.user.is_superuser or 
-            current_user.user_level == 'admin_level' or 
-            'service_log' in allowed_menus):
-
-            logs = ServiceLog.objects.select_related(
-                'added_by', 
-                'complaint', 
-                'assigned_person'
-            ).all()
-
-            # Get filter parameters
-            status_filter = request.GET.get('status', 'Not Completed')
-            user_filter = request.GET.get('user')
-            assigned_user_filter = request.GET.get('assigned_user')
-            start_date = request.GET.get('start_date')
-            end_date = request.GET.get('end_date')
-
-            # Apply filters
-            if status_filter and status_filter != 'all':
-                logs = logs.filter(status=status_filter)
-            
-            if user_filter:
-                logs = logs.filter(added_by_id=user_filter)
-            
-            if assigned_user_filter and assigned_user_filter != 'all':
-                logs = logs.filter(assigned_person_id=assigned_user_filter)
-            
-            if start_date and end_date:
-                try:
-                    start_date_obj = datetime.strptime(start_date, '%Y-%m-%d').date()
-                    end_date_obj = datetime.strptime(end_date, '%Y-%m-%d').date()
-                    logs = logs.filter(assigned_date__range=[start_date_obj, end_date_obj])
-                except ValueError:
-                    pass  # Invalid date format, ignore filter
-
-            paginator = Paginator(logs, 15)  # Show 15 logs per page
-            page_number = request.GET.get('page')
-            page_obj = paginator.get_page(page_number)
-
-            # Calculate start index for continuous numbering
-            start_index = (page_obj.number - 1) * paginator.per_page + 1
-
-            all_users = User.objects.all()
-
-            # Create filter parameters string for pagination
-            filter_params = []
-            if status_filter:
-                filter_params.append(f'status={status_filter}')
-            if user_filter:
-                filter_params.append(f'user={user_filter}')
-            if assigned_user_filter:
-                filter_params.append(f'assigned_user={assigned_user_filter}')
-            if start_date:
-                filter_params.append(f'start_date={start_date}')
-            if end_date:
-                filter_params.append(f'end_date={end_date}')
-            
-            filter_query_string = '&'.join(filter_params)
-
-            return render(request, 'service_log.html', {
-                'logs': page_obj,
-                'all_users': all_users,
-                'current_user': current_user,
-                'filter_query_string': filter_query_string,
-                'start_index': start_index,
-                'current_filters': {
-                    'status': status_filter,
-                    'user': user_filter,
-                    'assigned_user': assigned_user_filter,
-                    'start_date': start_date,
-                    'end_date': end_date,
-                }
-            })
-        else:
-            return redirect('user_service_log')
-
-    except Exception as e:
-        messages.error(request, f'Error accessing service logs: {str(e)}')
-        return redirect('login')
-
-
-
-from django.shortcuts import render, get_object_or_404, redirect
-from .models import ServiceLog
-from django.core.exceptions import ValidationError
-
-@login_required
-def edit_service_log(request, log_id):
-    log = get_object_or_404(ServiceLog, id=log_id)
-    complaints = Complaint.objects.all()  # Fetch all complaints
-
-    if request.method == 'POST':
-        # Get the updated data from the request
-        customer_name = request.POST.get('customer_name')
-        log_type = request.POST.get('type')
-        complaint_id = request.POST.get('complaint')
-        remark = request.POST.get('remark')
-        voice_note = request.FILES.get('voice_note')
-
-        # Fetch the complaint instance if it exists
-        complaint = None
-        if complaint_id:
-            complaint = Complaint.objects.filter(id=complaint_id).first()
-
-        try:
-            # Manually update the ServiceLog instance
-            log.customer_name = customer_name
-            log.type = log_type
-            log.complaint = complaint
-            log.remark = remark
-
-            # If a new voice note is uploaded, save it
-            if voice_note:
-                log.voice_note = voice_note
-
-            # Save the updated log
-            log.save()
-
-            return redirect('service_log')  # Redirect to the service log list view (not 'service_log_list')
-
-        except Exception as e:
-            return render(request, 'edit_service_log.html', {'log': log, 'complaints': complaints, 'error': str(e)})
-
-    return render(request, 'edit_service_log.html', {'log': log, 'complaints': complaints})
-
-def delete_service_log(request, log_id):
-    log = get_object_or_404(ServiceLog, id=log_id)
-    log.delete()
-    return redirect('service_log')  # This redirects to the service_log_list view
-
-
-
-
-@login_required
-def user_service_log(request):
-    # Redirect admin users to the admin service log view
-    if request.user.is_superuser:
-        return redirect('service_log')
-    
-    # Get the current user
-    current_user = User.objects.get(id=request.session['custom_user_id'])
-    
-    # Get all service logs, not just the current user's
-    logs = ServiceLog.objects.select_related(
-        'added_by', 
-        'complaint', 
-        'assigned_person'
-    ).all()
-    all_users = User.objects.all()
-    
-    return render(request, 'user_service_log.html', {
-        'logs': logs,
-        'current_user': current_user,  # Pass the current user to the template
-        'all_users': all_users
-    })
-
-
-
-@login_required
-@require_POST
-def toggle_service_status(request, log_id):
-    try:
-        log = ServiceLog.objects.get(id=log_id)
-        # Toggle the status
-        log.status = 'Completed' if log.status == 'Not Completed' else 'Not Completed'
-        log.save()
-        return JsonResponse({
-            'success': True,
-            'status': log.status
-        })
-    except ServiceLog.DoesNotExist:
-        return JsonResponse({
-            'success': False,
-            'error': 'Log not found'
-        }, status=404)
-
-
-@require_POST
-def save_assigned_date(request, log_id):
-    try:
-        data = json.loads(request.body)
-        log = ServiceLog.objects.get(id=log_id)
-        log.assigned_date = data['assigned_date']
-        log.save()
-        return JsonResponse({'success': True})
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)})
     
 
 
-from .models import ServiceLog
+
 
 def get_current_user(request):
     """Helper function to get current user for both superuser and regular users"""
@@ -1423,44 +1229,6 @@ def get_customers(request):
         return JsonResponse(customers, safe=False)  # safe=False because it's a list
     return JsonResponse({"error": "Failed to fetch data"}, status=500)
 
-
-@login_required
-def add_service_log(request):
-    try:
-        current_user = get_current_user(request)
-        complaints = Complaint.objects.all()
-
-        if request.method == 'POST':
-            customer_name = request.POST.get('customer_name')
-            type = request.POST.get('type')
-            complaint_id = request.POST.get('complaint')
-            remark = request.POST.get('remark')
-            voice_note = request.FILES.get('voice_note')
-
-            complaint = Complaint.objects.get(id=complaint_id) if complaint_id else None
-
-            service_log = ServiceLog(
-                customer_name=customer_name,  # This will store the selected customer name
-                type=type,
-                complaint=complaint,
-                remark=remark,
-                voice_note=voice_note,
-                added_by=current_user
-            )
-            service_log.save()
-            
-            messages.success(request, 'Service log added successfully!')
-            
-            if current_user.user_level == 'admin_level' or request.user.is_superuser:
-                return redirect('service_log')
-            else:
-                return redirect('user_service_log')
-                
-        return render(request, 'add_service.html', {'complaints': complaints})
-        
-    except Exception as e:
-        messages.error(request, f'Error adding service log: {str(e)}')
-        return redirect('service_log')
     
 
 
@@ -3047,9 +2815,22 @@ def save_attendance(request, employee_id, day, status):
         }, status=500)
 
 
+from app2.models import DailyTask
+from django.utils import timezone
+
 @login_required
 def attendance_user(request):
-    return render(request, 'attendance_user.html')
+    # Get the ongoing task for the user
+    ongoing_task = DailyTask.objects.filter(
+        added_by=request.user,
+        status='in_progress'
+    ).first()
+
+    return render(request, 'attendance_user.html', {
+        'ongoing_task': ongoing_task,
+        'current_date': timezone.now().date(),
+        # other context variables
+    })
 
 
 @login_required
@@ -5211,6 +4992,8 @@ def configure_user_menu(request, user_id):
                 {'id': 'all_areas', 'name': 'Area', 'icon': 'fas fa-map-marker-alt'},
                 {'id': 'all_locations', 'name': 'Location', 'icon': 'fas fa-chart-area'},
                 {'id': 'all_requirements', 'name': 'Requirements', 'icon': 'fas fa-tasks'},
+                {'id': 'all_department', 'name': 'Department', 'icon': 'fas fa-building'},
+                {'id': 'job_roles', 'name': 'Job Role', 'icon': 'fas fa-briefcase'},
                 {'id': 'business_type_list', 'name': 'Business Type', 'icon': 'fas fa-binoculars'},
                 {'id': 'job_titles', 'name': 'Job Title', 'icon': 'fas fa-search'},
                 {'id': 'all_hardwares', 'name': 'Hardware', 'icon': 'fas fa-desktop'},
@@ -5384,6 +5167,12 @@ def default_menus(request):
                 {'id': 'all_areas', 'name': 'Area', 'icon': 'fas fa-map-marker-alt'},
                 {'id': 'all_locations', 'name': 'Location', 'icon': 'fas fa-chart-area'},
                 {'id': 'all_requirements', 'name': 'Requirements', 'icon': 'fas fa-tasks'},
+
+                {'id': 'all_department', 'name': 'Department', 'icon': 'fas fa-building'},
+                {'id': 'job_roles', 'name': 'Job Role', 'icon': 'fas fa-briefcase'},
+
+
+
                 {'id': 'business_type_list', 'name': 'Business Type', 'icon': 'fas fa-binoculars'},
                 {'id': 'job_titles', 'name': 'Job Title', 'icon': 'fas fa-search'},
                 {'id': 'all_hardwares', 'name': 'Hardware', 'icon': 'fas fa-desktop'},
@@ -5768,3 +5557,179 @@ def delete_early_request(request):
 
 
 
+# views.py
+from django.shortcuts import render, redirect
+from .models import ServiceLog, Complaint, ServiceLogComplaint, User
+from django.utils import timezone
+
+def servicelog_list(request):
+    service_logs = ServiceLog.objects.all().order_by('-id')  # Latest first
+    users = User.objects.all()
+    return render(request, 'servic_log_admin.html', {'service_logs': service_logs, 'users': users})
+
+
+from app1.models import User, Complaint, ServiceLog, ServiceLogComplaint
+
+import requests
+import json
+from django.shortcuts import render, redirect
+from .models import ServiceLog, Complaint, ServiceLogComplaint, User
+from django.utils import timezone
+
+import requests
+
+import requests
+
+def fetch_customers():
+    try:
+        response = requests.get('https://rrcpython.imcbs.com/api/clients/all')
+        response.raise_for_status()
+        customers_data = response.json().get('data', [])
+        customers = {customer['code']: customer['name'] for customer in customers_data}
+        return customers
+    except requests.RequestException as e:
+        print(f"Error fetching customers: {e}")
+        return {}
+
+def add_service_log(request):
+    complaints = Complaint.objects.all()
+    customers = fetch_customers()
+
+    if request.method == 'POST':
+        customer_code = request.POST.get('customer_code')
+        customer_name = request.POST.get('customer_name')
+        complaint_type = request.POST['complaint_type']
+        remarks = request.POST.get('remarks')
+        phone_number = request.POST.get('phone_number')
+        voice_blob = request.POST.get('voice_blob')
+
+        if not customer_code and not customer_name:
+            return render(request, 'add_service_log.html', {
+                'complaints': complaints,
+                'customers': customers,
+                'error_message': 'Please select a customer from the dropdown or enter a customer name manually.'
+            })
+
+        custom_user = User.objects.get(userid=request.user.username)
+
+        if customer_code and customer_code in customers:
+            customer_name = customers[customer_code]
+
+        log = ServiceLog.objects.create(
+            customer_name=customer_name or customer_name,
+            complaint_type=complaint_type,
+            remarks=remarks,
+            phone_number=phone_number,
+            added_by=custom_user,
+            assigned_person=custom_user,
+        )
+
+        complaint_ids = request.POST.getlist('complaints')
+        for cid in complaint_ids:
+            note = request.POST.get(f'note_{cid}', '')
+            ServiceLogComplaint.objects.create(
+                service_log=log,
+                complaint_id=cid,
+                note=note
+            )
+
+        if voice_blob:
+            import base64
+            from django.core.files.base import ContentFile
+            format, audio_str = voice_blob.split(';base64,')
+            audio_file = ContentFile(base64.b64decode(audio_str), name=f"voice_{log.id}.webm")
+            log.voice_note.save(audio_file.name, audio_file)
+            log.save()
+
+        if custom_user.user_level == 'admin_level':
+            return redirect('servicelog_list')
+        else:
+            return redirect('user_service_log')
+
+    return render(request, 'add_service_log.html', {'complaints': complaints, 'customers': customers})
+
+def edit_service_log(request, log_id):
+    log = ServiceLog.objects.get(id=log_id)
+    complaints = Complaint.objects.all()
+    selected_complaints = ServiceLogComplaint.objects.filter(service_log=log)
+    customers = fetch_customers()  # Assuming fetch_customers() returns a dictionary
+
+    if request.method == 'POST':
+        customer_code = request.POST.get('customer_code')
+        customer_name = request.POST.get('customer_name')
+        complaint_type = request.POST['complaint_type']
+        remarks = request.POST.get('remarks')
+        phone_number = request.POST.get('phone_number')
+        voice_blob = request.POST.get('voice_blob')
+
+        # Ensure at least one of customer_code or customer_name is provided
+        if not customer_code and not customer_name:
+            return render(request, 'add_service_log.html', {
+                'log': log,
+                'complaints': complaints,
+                'selected_complaints': selected_complaints,
+                'customers': customers,
+                'error_message': 'Please select a customer from the dropdown or enter a customer name manually.'
+            })
+
+        if customer_code and customer_code in customers:
+            customer_name = customers[customer_code].get('name', '')
+
+        log.customer_name = customer_name
+        log.complaint_type = complaint_type
+        log.remarks = remarks
+        log.phone_number = phone_number
+
+        # Handle new voice note
+        if voice_blob:
+            import base64
+            from django.core.files.base import ContentFile
+            format, audio_str = voice_blob.split(';base64,')
+            audio_file = ContentFile(base64.b64decode(audio_str), name=f"voice_{log.id}.webm")
+            log.voice_note.save(audio_file.name, audio_file)
+
+        log.save()
+
+        # Clear old complaints
+        ServiceLogComplaint.objects.filter(service_log=log).delete()
+
+        # Add updated complaints
+        complaint_ids = request.POST.getlist('complaints')
+        for cid in complaint_ids:
+            note = request.POST.get(f'note_{cid}', '')
+            ServiceLogComplaint.objects.create(
+                service_log=log,
+                complaint_id=cid,
+                note=note
+            )
+
+        return redirect('servicelog_list')
+
+    return render(request, 'add_service_log.html', {
+        'log': log,
+        'complaints': complaints,
+        'selected_complaints': selected_complaints,
+        'customers': customers
+    })
+
+
+    
+def delete_service_log(request, log_id):
+    log = ServiceLog.objects.get(id=log_id)
+    log.delete()
+    return redirect('servicelog_list')
+
+
+
+
+
+def user_service_log(request):
+    if request.user.is_authenticated:
+        # Get the custom User instance based on the logged-in user
+        custom_user = User.objects.get(userid=request.user.username)
+        # Filter service logs added by the current user, latest first
+        user_service_logs = ServiceLog.objects.filter(added_by=custom_user).order_by('-id')
+        
+        return render(request, 'user_service_log.html', {'user_service_logs': user_service_logs})
+    else:
+        return redirect('login')  # Redirect to login if the user is not authenticated

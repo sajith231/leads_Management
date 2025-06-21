@@ -107,6 +107,7 @@
                                     <th>Password</th>
                                     <th>Branch</th>
                                     <th>User Level</th>
+                                    <th>Job Role</th>
                                     <th>Status</th>       
                                     <th>Edit</th>
                                     <th>Delete</th>
@@ -148,6 +149,13 @@
                                             <span class="user-level-badge level-4">Superuser</span>
                                         {% elif user.user_level == '5level' %}
                                             <span class="user-level-badge level-5">Branch User</span>
+                                        {% endif %}
+                                    </td>
+                                     <td>
+                                        {% if user.job_role %}
+                                            {{ user.job_role.title }}
+                                        {% else %}
+                                            <span class="text-muted">Not Assigned</span>
                                         {% endif %}
                                     </td>
                                     <td>

@@ -598,64 +598,37 @@ from .models import DailyTask
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 
+from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
+from .models import DailyTask
+from django.utils import timezone
+from django.contrib.auth.decorators import login_required
+
 @login_required
 @require_POST
 def stop_task(request):
     try:
-        # Try to get task_id from POST data (form data)
         task_id = request.POST.get('task_id')
-        
-        # If not found in POST, try to get from JSON body
         if not task_id:
-            try:
-                body = json.loads(request.body.decode('utf-8'))
-                task_id = body.get('task_id')
-            except (json.JSONDecodeError, AttributeError):
-                pass
-        
-        print(f"Received task_id: {task_id}")  # Debugging statement
-        
-        if not task_id:
-            return JsonResponse({
-                'success': False, 
-                'error': 'No task_id provided'
-            })
+            return JsonResponse({'success': False, 'error': 'No task_id provided'})
 
-        try:
-            task = get_object_or_404(DailyTask, id=task_id, added_by=request.user)
-            print(f"Task found: {task}")  # Debugging statement
-            
-            if task.status == 'in_progress':
-                task.status = 'completed'
-                # Calculate duration
-                duration_delta = timezone.now() - task.created_at
-                hours, remainder = divmod(duration_delta.total_seconds(), 3600)
-                minutes, seconds = divmod(remainder, 60)
-                task.duration = f"{int(hours)}h {int(minutes)}m {int(seconds)}s"
-                task.save()
-                
-                print(f"Task stopped successfully. Duration: {task.duration}")
-                return JsonResponse({'success': True})
-            else:
-                return JsonResponse({
-                    'success': False, 
-                    'error': f'Task is not in progress. Current status: {task.status}'
-                })
-                
-        except DailyTask.DoesNotExist:
-            return JsonResponse({
-                'success': False, 
-                'error': 'Task not found or you do not have permission to stop this task'
-            })
-            
+        task = get_object_or_404(DailyTask, id=task_id, added_by=request.user)
+        if task.status == 'in_progress':
+            task.status = 'completed'
+            duration_delta = timezone.now() - task.created_at
+            hours, remainder = divmod(duration_delta.total_seconds(), 3600)
+            minutes, seconds = divmod(remainder, 60)
+            task.duration = f"{int(hours)}h {int(minutes)}m {int(seconds)}s"
+            task.save()
+            return JsonResponse({'success': True})
+        else:
+            return JsonResponse({'success': False, 'error': f'Task is not in progress. Current status: {task.status}'})
+
+    except DailyTask.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Task not found or you do not have permission to stop this task'})
     except Exception as e:
-        print(f"Unexpected error in stop_task: {e}")  # Debugging statement
-        import traceback
-        traceback.print_exc()  # This will print the full traceback
-        return JsonResponse({
-            'success': False, 
-            'error': f'Server error: {str(e)}'
-        })
+        return JsonResponse({'success': False, 'error': str(e)})
     
 
 
@@ -796,6 +769,11 @@ import requests
 from django.shortcuts import render
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
+import requests
+from django.shortcuts import render
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+import re
+
 def show_clients(request):
     api_url = "https://rrcpython.imcbs.com/api/clients/all"
     clients = []
@@ -831,10 +809,10 @@ def show_clients(request):
     
     if search_query:
         filtered_clients = []
-        search_lower = search_query.lower()
+        search_terms = search_query.lower().split()  # Split multiple search terms
         
         for client in clients:
-            # Search in multiple fields
+            # Search in ALL available fields
             searchable_fields = [
                 str(client.get('name', '')),
                 str(client.get('code', '')),
@@ -844,11 +822,26 @@ def show_clients(request):
                 str(client.get('district', '')),
                 str(client.get('state', '')),
                 str(client.get('software', '')),
+                str(client.get('installationdate', '')),
+                str(client.get('priorty', '')),
+                str(client.get('directdealing', '')),
+                str(client.get('rout', '')),
+                str(client.get('amc', '')),
+                str(client.get('amcamt', '')),
                 str(client.get('accountcode', '')),
+                str(client.get('address3', '')),
+                str(client.get('lictype', '')),
+                str(client.get('clients', '')),
+                str(client.get('sp', '')),
+                str(client.get('nature', '')),
             ]
             
-            # Check if search query matches any field
-            if any(search_lower in field.lower() for field in searchable_fields):
+            # Create a combined text for searching
+            combined_text = ' '.join(searchable_fields).lower()
+            
+            # Check if ALL search terms are found (AND logic)
+            # Change to any() for OR logic if preferred
+            if all(term in combined_text for term in search_terms):
                 filtered_clients.append(client)
         
         clients = filtered_clients
@@ -872,9 +865,9 @@ def show_clients(request):
         'error_message': error_message,
         'total_clients': original_count,
         'filtered_count': len(clients),
-        'search_query': search_query
+        'search_query': search_query,
+        'search_terms': search_query.lower().split() if search_query else []
     })
-
 
 
 
@@ -943,7 +936,7 @@ def information_center_table(request):
 
 # views.py
 from django.shortcuts import render, redirect, get_object_or_404
-from .models import Department
+from .models import Department,JobRoleDescription
 
 def all_department(request):
     departments = Department.objects.all()
@@ -972,26 +965,67 @@ def delete_department(request, id):
     return redirect('all_department')
 
 
-
-
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import JobRole, Department
 
+@login_required
 def job_roles(request):
-    roles = JobRole.objects.select_related('department').all()
-    return render(request, 'job_roles.html', {'roles': roles})
+    # Get the custom user ID from session
+    custom_user_id = request.session.get('custom_user_id')
+    
+    # If no custom_user_id in session, try to get from request.user
+    if not custom_user_id:
+        # Fallback: try to find user by username if using Django's built-in auth
+        try:
+            # Assuming you have a way to map Django user to your custom User model
+            # You might need to adjust this based on your authentication setup
+            custom_user = User.objects.get(userid=request.user.username)
+        except User.DoesNotExist:
+            # If still no user found, redirect to login or show error
+            from django.contrib import messages
+            messages.error(request, "User session not found. Please login again.")
+            return redirect('login')
+    else:
+        # Fetch the user object using session ID
+        try:
+            custom_user = User.objects.get(id=custom_user_id)
+        except User.DoesNotExist:
+            from django.contrib import messages
+            messages.error(request, "User not found. Please login again.")
+            return redirect('login')
+    
+    # Check if user is superuser (admin_level or 4level)
+    if custom_user.user_level in ['admin_level', '4level']:
+        # Superuser can see all job roles
+        roles = JobRole.objects.select_related('department').all()
+    else:
+        # Regular users can only see their assigned job role
+        if custom_user.job_role:
+            roles = JobRole.objects.select_related('department').filter(id=custom_user.job_role.id)
+        else:
+            # If user has no job role assigned, show empty queryset
+            roles = JobRole.objects.none()
+    
+    # Pass custom_user instead of user to avoid overriding request.user
+    return render(request, 'job_roles.html', {'roles': roles, 'custom_user': custom_user})
+
+# views.py
 
 def add_job_role(request):
     departments = Department.objects.all()
     if request.method == 'POST':
         dept_id = request.POST.get('department')
         title = request.POST.get('title')
-        description = request.POST.get('description')
-        JobRole.objects.create(
-            department_id=dept_id,
-            title=title,
-            description=description
-        )
+        job_role = JobRole.objects.create(department_id=dept_id, title=title)
+        
+        # Handle multiple headings and descriptions
+        headings = request.POST.getlist('heading')
+        descriptions = request.POST.getlist('description')
+        
+        for heading, description in zip(headings, descriptions):
+            if heading or description:
+                JobRoleDescription.objects.create(job_role=job_role, heading=heading, description=description)
+        
         return redirect('job_roles')
     return render(request, 'add_job_role.html', {'departments': departments})
 
@@ -1001,8 +1035,19 @@ def edit_job_role(request, id):
     if request.method == 'POST':
         role.department_id = request.POST.get('department')
         role.title = request.POST.get('title')
-        role.description = request.POST.get('description')
         role.save()
+        
+        # Clear existing descriptions
+        JobRoleDescription.objects.filter(job_role=role).delete()
+        
+        # Handle multiple headings and descriptions
+        headings = request.POST.getlist('heading')
+        descriptions = request.POST.getlist('description')
+        
+        for heading, description in zip(headings, descriptions):
+            if heading or description:
+                JobRoleDescription.objects.create(job_role=role, heading=heading, description=description)
+        
         return redirect('job_roles')
     return render(request, 'add_job_role.html', {'departments': departments, 'role': role})
 
@@ -1010,3 +1055,8 @@ def delete_job_role(request, id):
     role = get_object_or_404(JobRole, id=id)
     role.delete()
     return redirect('job_roles')
+
+
+
+
+

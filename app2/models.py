@@ -142,3 +142,12 @@ class JobRole(models.Model):
 
     def __str__(self):
         return f"{self.title} ({self.department.name})"
+    
+
+class JobRoleDescription(models.Model):
+    job_role = models.ForeignKey(JobRole, on_delete=models.CASCADE, related_name='descriptions')
+    heading = models.CharField(max_length=255, blank=True)
+    description = models.TextField(blank=True)
+
+    def __str__(self):
+        return f"{self.heading} - {self.description}"
