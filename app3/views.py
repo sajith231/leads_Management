@@ -867,3 +867,12 @@ def update_candidate_status(request):
         'success': False, 
         'message': 'Only POST method allowed'
     })
+
+
+
+
+
+from django.shortcuts import render
+
+def make_experience_certificate(request):
+    return render(request, 'experience_certificate.html')

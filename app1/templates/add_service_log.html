@@ -11,20 +11,27 @@
         <div class="mb-3">
     <label class="form-label">Customer</label>
     <select class="form-select" name="customer_code" id="customer_code">
-        <option value="">-- Select Customer --</option>
-        {% if customers %}
-            {% for code, name in customers.items %}
-            <option value="{{ code }}">{{ name }}</option>
-            {% endfor %}
-        {% else %}
-            <option value="">No customers available</option>
-        {% endif %}
-    </select>
+    <option value="">-- Select Customer --</option>
+    {% for code, customer in customers.items %}
+        <option value="{{ code }}" data-address="{{ customer.address|default:'' }}">
+            {{ customer.name }}{% if customer.address %} - {{ customer.address }}{% endif %}
+        </option>
+    {% endfor %}
+</select>
+
 </div>
+
 <div class="mb-3">
     <label class="form-label">Customer Name (Manual Entry)</label>
     <input type="text" class="form-control" name="customer_name" id="customer_name" value="{{ log.customer_name|default_if_none:'' }}" placeholder="Enter customer name manually">
 </div>
+
+<div class="mb-3">
+    <label class="form-label">Place</label>
+    <input type="text" class="form-control" name="place" id="place" value="{{ log.place|default_if_none:'' }}" placeholder="Enter place">
+</div>
+
+
 
         
 
@@ -37,7 +44,7 @@
             </select>
         </div>
 
-        <div class="mb-4">
+        <div class="mb-4" id="complaints-container" style="display: none;">
             <label class="form-label mb-3">Select Complaints</label>
             <div class="complaints-selection-container">
                 {% for c in complaints %}
@@ -204,15 +211,19 @@ document.addEventListener('DOMContentLoaded', function() {
     
     complaintTypeSelect.addEventListener('change', function() {
         const selectedType = complaintTypeSelect.value;
-        complaintItems.forEach(item => {
-            const complaintType = item.getAttribute('data-complaint-type');
-            if (selectedType === '' || complaintType === selectedType) {
-                item.style.display = 'block';
-            } else {
-                item.style.display = 'none';
-            }
-        });
+        const container = document.getElementById('complaints-container');
+        
+        if (selectedType) {
+            container.style.display = 'block';
+            complaintItems.forEach(item => {
+                const complaintType = item.getAttribute('data-complaint-type');
+                item.style.display = (complaintType === selectedType) ? 'block' : 'none';
+            });
+        } else {
+            container.style.display = 'none';
+        }
     });
+
     
     // Show note sections for already selected complaints (edit mode)
     const checkboxes = document.querySelectorAll('.complaint-checkbox:checked');
@@ -440,5 +451,17 @@ function stopRecording() {
     }
 }
 </style>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const customerSelect = document.getElementById('customer_code');
+    const placeInput = document.getElementById('place');
+
+    customerSelect.addEventListener('change', function () {
+        const selectedOption = customerSelect.options[customerSelect.selectedIndex];
+        const address = selectedOption.getAttribute('data-address') || '';
+        placeInput.value = address;
+    });
+});
+</script>
 
 {% endblock %}

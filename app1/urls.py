@@ -5,10 +5,9 @@ from .views import delete_lead
 from .views import load_areas
 from .views import toggle_interview_status
 
-from .views import offer_letter,save_offer_letter_details,get_offer_letter_details
+from .views import save_offer_letter_details,get_offer_letter_details
 from .views import employee_management, add_employee,edit_employee,delete_employee
-from .views import experience_certificate
-from .views import experience_certificate, save_experience_certificate_details ,document_list,DocumentSetting,add_document,add_document_setting,edit_document,delete_document,get_document_settings
+from .views import document_list,DocumentSetting,add_document,add_document_setting,edit_document,delete_document,get_document_settings
 
 from .views import add_document_setting, get_document_settings, delete_document_setting
 from .views import document_detail,save_document_settings
@@ -149,8 +148,7 @@ urlpatterns = [
 
     
 
-    path('save_experience_certificate_details/<int:employee_id>/', save_experience_certificate_details, name='save_experience_certificate_details'),
-    path('experience_certificate/<int:employee_id>/', views.experience_certificate, name='experience_certificate'),
+    
 
 
     path('documents/', document_list, name='document_list'),
@@ -181,7 +179,7 @@ urlpatterns = [
     path('get_offer_letter_details/<int:cv_id>/', views.get_offer_letter_details, name='get_offer_letter_details'),
     path('generate_offer_letter/<int:cv_id>/', views.generate_offer_letter, name='generate_offer_letter'),
 
-    path('make-experience-certificate/', views.make_experience_certificate, name='make_experience_certificate'),
+    
     path('user-control/<int:user_id>/', views.user_control, name='user_control'),
 
 

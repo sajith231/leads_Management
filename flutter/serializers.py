@@ -34,3 +34,17 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['userid', 'name', 'user_level', 'status']
+
+
+
+
+
+
+# flutter/serializers.py
+from rest_framework import serializers
+from app1.models import Attendance
+
+class AttendanceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Attendance
+        fields = ['employee', 'date', 'day', 'status', 'punch_in', 'punch_out', 'punch_in_location', 'punch_out_location']

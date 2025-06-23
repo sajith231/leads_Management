@@ -48,3 +48,110 @@ class UserListView(APIView):
 #     "userid": "sajiththomas231@gmail.com",
 #     "password": "8"
 # }
+
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from .serializers import AttendanceSerializer
+from app1.models import Attendance, Employee, User
+from django.utils import timezone
+# from rest_framework.permissions import IsAuthenticated
+# from rest_framework.authentication import SessionAuthentication, BasicAuthentication
+
+
+class PunchInView(APIView):
+    def post(self, request):
+        userid = request.data.get('userid')
+        password = request.data.get('password')
+
+        # ✅ Validate User login
+        try:
+            user = User.objects.get(userid=userid, password=password)
+        except User.DoesNotExist:
+            return Response({'error': 'Invalid userid or password'}, status=status.HTTP_401_UNAUTHORIZED)
+
+        # ✅ Validate Employee (linked via ForeignKey)
+        try:
+            employee = Employee.objects.get(user=user)
+        except Employee.DoesNotExist:
+            return Response({'error': 'Employee not found for this user'}, status=status.HTTP_404_NOT_FOUND)
+
+        # ✅ Attendance logic
+        today = timezone.now().date()
+        day_number = today.weekday()
+
+        attendance, created = Attendance.objects.get_or_create(
+            employee=employee,
+            date=today,
+            defaults={
+                'status': 'half',
+                'day': day_number
+            }
+        )
+
+        if not created and attendance.punch_in:
+            return Response({'error': 'You have already punched in today'}, status=status.HTTP_400_BAD_REQUEST)
+
+        attendance.punch_in = timezone.now()
+        attendance.save()
+
+        serializer = AttendanceSerializer(attendance)
+        return Response({
+            'message': 'Punch in successful',
+            'date': str(today),
+            'attendance': serializer.data
+        }, status=status.HTTP_200_OK)
+
+
+
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from .serializers import AttendanceSerializer
+from app1.models import Attendance, Employee, User
+from django.utils import timezone
+
+class PunchOutView(APIView):
+    def post(self, request):
+        userid = request.data.get('userid')
+        password = request.data.get('password')
+        today = timezone.now().date()
+
+        # ✅ Validate User login
+        try:
+            user = User.objects.get(userid=userid, password=password)
+        except User.DoesNotExist:
+            return Response({'error': 'Invalid userid or password'}, status=status.HTTP_401_UNAUTHORIZED)
+
+        # ✅ Get Employee linked to this user
+        try:
+            employee = Employee.objects.get(user=user)
+        except Employee.DoesNotExist:
+            return Response({'error': 'Employee not found for this user'}, status=status.HTTP_404_NOT_FOUND)
+
+        # ✅ Get today's attendance
+        try:
+            attendance = Attendance.objects.get(employee=employee, date=today)
+        except Attendance.DoesNotExist:
+            return Response({'error': 'No punch-in record found for today'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if attendance.punch_out:
+            return Response({'error': 'You have already punched out today'}, status=status.HTTP_400_BAD_REQUEST)
+
+        attendance.punch_out = timezone.now()
+        attendance.status = 'full'
+        attendance.save()
+
+        serializer = AttendanceSerializer(attendance)
+        return Response({
+            'message': 'Punch out successful',
+            'date': str(today),
+            'attendance': serializer.data
+        }, status=status.HTTP_200_OK)
+
+
+
+
+#http://localhost:8000/flutter/punch-in/
+
+#http://localhost:8000/flutter/punch-out/

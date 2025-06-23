@@ -2300,49 +2300,6 @@ def edit_employee(request, emp_id):
 
 
 
-from django.http import JsonResponse
-from django.shortcuts import get_object_or_404
-from .models import Employee
-
-def save_experience_certificate_details(request, employee_id):
-    if request.method == "POST":
-        employee = get_object_or_404(Employee, id=employee_id)
-        start_date = request.POST.get("start_date")
-        end_date = request.POST.get("end_date")
-
-        # Save data to the employee model
-        employee.experience_start_date = start_date
-        employee.experience_end_date = end_date
-        employee.save()
-
-        return JsonResponse({
-            "success": True,
-            "employee": {
-                "name": employee.name,
-                "address": employee.address,
-                "phone_personal": employee.phone_personal,
-                "phone_residential": employee.phone_residential,
-                "job_title": employee.job_title,
-                "joining_date": employee.joining_date.strftime("%Y-%m-%d"),
-                "dob": employee.dob.strftime("%Y-%m-%d"),
-                "experience_start_date": employee.experience_start_date,
-                "experience_end_date": employee.experience_end_date,
-            }
-        })
-
-    return JsonResponse({"success": False, "error": "Invalid request"})
-
-
-def experience_certificate(request, employee_id):
-    employee = get_object_or_404(Employee, id=employee_id)
-    clicked_date = request.GET.get("date", employee.joining_date.strftime("%d/%m/%Y"))
-
-    context = {
-        'employee': employee,
-        'clicked_date': clicked_date,
-    }
-    return render(request, 'experience_certificate.html', context)
-
 
 
 
@@ -2632,28 +2589,6 @@ def view_attachment(request, setting_id=None, field_id=None):
 
 
 
-
-
-from django.core.paginator import Paginator
-from django.shortcuts import render
-from django.contrib.auth.decorators import login_required
-from .models import Employee
-
-def make_experience_certificate(request):
-    search_query = request.GET.get('q', '')
-    employees = Employee.objects.all().order_by('name')
-
-    if search_query:
-        employees = employees.filter(name__icontains=search_query)
-
-    paginator = Paginator(employees, 15)  # 15 per page
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-
-    return render(request, 'make_experience_certificate.html', {
-        'page_obj': page_obj,
-        'search_query': search_query
-    })
 
 
 
@@ -5561,12 +5496,51 @@ def delete_early_request(request):
 from django.shortcuts import render, redirect
 from .models import ServiceLog, Complaint, ServiceLogComplaint, User
 from django.utils import timezone
+from django.db.models import Q
 
 def servicelog_list(request):
     service_logs = ServiceLog.objects.all().order_by('-id')  # Latest first
     users = User.objects.all()
-    return render(request, 'servic_log_admin.html', {'service_logs': service_logs, 'users': users})
-
+    
+    # Get search parameters from request - matching HTML template parameter names
+    customer_search = request.GET.get('customer_search', '')
+    added_by_filter = request.GET.get('added_by', '')  # Changed from 'added_by_search'
+    assigned_person_filter = request.GET.get('assigned_person', '')  # Changed from 'assigned_person_search'
+    
+    # Debug: Print the filter values
+    print(f"DEBUG: customer_search = '{customer_search}'")
+    print(f"DEBUG: added_by_filter = '{added_by_filter}'")
+    print(f"DEBUG: assigned_person_filter = '{assigned_person_filter}'")
+    
+    # Apply filters based on search terms
+    if customer_search:
+        service_logs = service_logs.filter(
+            customer_name__icontains=customer_search
+        )
+    
+    # Filter by added_by user ID (not name)
+    if added_by_filter:
+        try:
+            added_by_id = int(added_by_filter)
+            service_logs = service_logs.filter(added_by_id=added_by_id)
+        except (ValueError, TypeError):
+            pass  # Invalid ID, skip filter
+    
+    # Filter by assigned_person user ID (not name)
+    if assigned_person_filter:
+        try:
+            assigned_person_id = int(assigned_person_filter)
+            service_logs = service_logs.filter(assigned_person_id=assigned_person_id)
+        except (ValueError, TypeError):
+            pass  # Invalid ID, skip filter
+    
+    return render(request, 'servic_log_admin.html', {
+        'service_logs': service_logs, 
+        'users': users,
+        'customer_search': customer_search,
+        'added_by_filter': added_by_filter,  # Pass the filter values to template
+        'assigned_person_filter': assigned_person_filter
+    })
 
 from app1.models import User, Complaint, ServiceLog, ServiceLogComplaint
 
@@ -5585,7 +5559,12 @@ def fetch_customers():
         response = requests.get('https://rrcpython.imcbs.com/api/clients/all')
         response.raise_for_status()
         customers_data = response.json().get('data', [])
-        customers = {customer['code']: customer['name'] for customer in customers_data}
+        customers = {
+            customer['code']: {
+                'name': customer['name'],
+                'address': customer.get('address', '')
+            } for customer in customers_data
+        }
         return customers
     except requests.RequestException as e:
         print(f"Error fetching customers: {e}")
@@ -5598,6 +5577,7 @@ def add_service_log(request):
     if request.method == 'POST':
         customer_code = request.POST.get('customer_code')
         customer_name = request.POST.get('customer_name')
+        place = request.POST.get('place')  # ⬅️ New field
         complaint_type = request.POST['complaint_type']
         remarks = request.POST.get('remarks')
         phone_number = request.POST.get('phone_number')
@@ -5613,10 +5593,13 @@ def add_service_log(request):
         custom_user = User.objects.get(userid=request.user.username)
 
         if customer_code and customer_code in customers:
-            customer_name = customers[customer_code]
+            name = customers[customer_code]['name']
+            address = customers[customer_code].get('address', '')
+            customer_name = f"{name} - {address}" if address else name
 
         log = ServiceLog.objects.create(
             customer_name=customer_name or customer_name,
+            place=place,  # ⬅️ Save place
             complaint_type=complaint_type,
             remarks=remarks,
             phone_number=phone_number,
@@ -5648,21 +5631,22 @@ def add_service_log(request):
 
     return render(request, 'add_service_log.html', {'complaints': complaints, 'customers': customers})
 
+
 def edit_service_log(request, log_id):
     log = ServiceLog.objects.get(id=log_id)
     complaints = Complaint.objects.all()
     selected_complaints = ServiceLogComplaint.objects.filter(service_log=log)
-    customers = fetch_customers()  # Assuming fetch_customers() returns a dictionary
+    customers = fetch_customers()
 
     if request.method == 'POST':
         customer_code = request.POST.get('customer_code')
         customer_name = request.POST.get('customer_name')
+        place = request.POST.get('place')  # ⬅️ New field
         complaint_type = request.POST['complaint_type']
         remarks = request.POST.get('remarks')
         phone_number = request.POST.get('phone_number')
         voice_blob = request.POST.get('voice_blob')
 
-        # Ensure at least one of customer_code or customer_name is provided
         if not customer_code and not customer_name:
             return render(request, 'add_service_log.html', {
                 'log': log,
@@ -5673,14 +5657,16 @@ def edit_service_log(request, log_id):
             })
 
         if customer_code and customer_code in customers:
-            customer_name = customers[customer_code].get('name', '')
+            name = customers[customer_code]['name']
+            address = customers[customer_code].get('address', '')
+            customer_name = f"{name} - {address}" if address else name
 
         log.customer_name = customer_name
+        log.place = place  # ⬅️ Save updated place
         log.complaint_type = complaint_type
         log.remarks = remarks
         log.phone_number = phone_number
 
-        # Handle new voice note
         if voice_blob:
             import base64
             from django.core.files.base import ContentFile
@@ -5690,10 +5676,8 @@ def edit_service_log(request, log_id):
 
         log.save()
 
-        # Clear old complaints
         ServiceLogComplaint.objects.filter(service_log=log).delete()
 
-        # Add updated complaints
         complaint_ids = request.POST.getlist('complaints')
         for cid in complaint_ids:
             note = request.POST.get(f'note_{cid}', '')
@@ -5711,6 +5695,7 @@ def edit_service_log(request, log_id):
         'selected_complaints': selected_complaints,
         'customers': customers
     })
+
 
 
     

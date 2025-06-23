@@ -35,6 +35,9 @@ urlpatterns = [
     path('offer-letter/<int:interview_id>/', views.generate_offer_letter, name='generate_offer_letter'),
     path('save-offer-letter/', views.save_offer_letter, name='save_offer_letter'),
     path('update-candidate-status/', views.update_candidate_status, name='update_candidate_status'),
+
+
+    path('experience-certificate/', views.make_experience_certificate, name='make_experience_certificate'),
     
 
 

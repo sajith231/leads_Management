@@ -931,6 +931,7 @@ class ServiceLog(models.Model):
     ticket_number = models.CharField(max_length=100, unique=True, editable=False)
     date = models.DateTimeField(auto_now_add=True)
     customer_name = models.CharField(max_length=200)
+    place = models.CharField(max_length=255, blank=True, null=True)
     complaint_type = models.CharField(max_length=20, choices=COMPLAINT_TYPE_CHOICES)
     complaints = models.ManyToManyField('Complaint', through='ServiceLogComplaint')
     remarks = models.TextField(blank=True, null=True)
