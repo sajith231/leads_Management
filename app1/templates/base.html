@@ -429,7 +429,7 @@
                 <a href="{% url 'make_salary_certificate' %}"><i class="fas fa-file-invoice-dollar"></i> Salary Certificate</a>
                 {% endif %}
                 {% if 'make_experience_certificate' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
-                <!-- <a href="{% url 'make_experience_certificate' %}"><i class="fas fa-award"></i> Experience Certificate</a> -->
+                <a href="{% url 'make_experience_certificate' %}"><i class="fas fa-award"></i> Experience Certificate</a>
                 {% endif %}
             </div>
             {% endif %}
@@ -464,7 +464,7 @@
                 <a href="{% url 'service_entry' %}"><i class="fas fa-plus-circle"></i> Service Entry</a>
                 {% endif %}
                 {% if 'service_log' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
-                <a href=""><i class="fas fa-book"></i> Service Log</a>
+                <!-- <a href="{% url 'servicelog_list' %}"><i class="fas fa-book"></i> Service Log</a> -->
                 {% endif %}
             </div>
             {% endif %}
@@ -600,7 +600,7 @@
                 <a href="{% url 'make_salary_certificate' %}"><i class="fas fa-file-invoice-dollar"></i> Salary Certificate</a>
                 {% endif %}
                 {% if 'make_experience_certificate' in allowed_menus %}
-                <!-- <a href="{% url 'make_experience_certificate' %}"><i class="fas fa-award"></i> Experience Certificate</a> -->
+                <a href="{% url 'make_experience_certificate' %}"><i class="fas fa-award"></i> Experience Certificate</a>
                 {% endif %}
             </div>
             {% endif %}
@@ -634,13 +634,13 @@
     
             <div id="services-menu" class="submenu">
                 {% if 'service_log' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
-                <a href=""><i class="fas fa-book"></i> Service Log</a>
+                <!-- <a href=""><i class="fas fa-book"></i> Service Log</a> -->
                 {% endif %}
                 {% if 'service_entry' in allowed_menus %}
                 <a href="{% url 'service_entry' %}"><i class="fas fa-plus-circle"></i> Service Entry</a>
                 {% endif %}
                 {% if 'user_service_log' in allowed_menus %}
-                <a href=""><i class="fas fa-book"></i>Service Log</a>
+                <!-- <a href="{% url 'user_service_log' %}"><i class="fas fa-book"></i>Service Log</a> -->
                 {% endif %}
                 {% if 'user_service_entry' in allowed_menus %}
                 <a href="{% url 'user_service_entry' %}"><i class="fas fa-plus-circle"></i> Service Entry</a>

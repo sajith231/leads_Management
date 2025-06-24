@@ -5575,15 +5575,15 @@ def add_service_log(request):
     customers = fetch_customers()
 
     if request.method == 'POST':
-        customer_code = request.POST.get('customer_code')
-        customer_name = request.POST.get('customer_name')
-        place = request.POST.get('place')  # ⬅️ New field
+        customer_input = request.POST.get('customer')  # dropdown search input
+        customer_name = request.POST.get('customer_name')  # manual entry
+        place = request.POST.get('place')
         complaint_type = request.POST['complaint_type']
         remarks = request.POST.get('remarks')
         phone_number = request.POST.get('phone_number')
         voice_blob = request.POST.get('voice_blob')
 
-        if not customer_code and not customer_name:
+        if not customer_input and not customer_name:
             return render(request, 'add_service_log.html', {
                 'complaints': complaints,
                 'customers': customers,
@@ -5592,14 +5592,21 @@ def add_service_log(request):
 
         custom_user = User.objects.get(userid=request.user.username)
 
-        if customer_code and customer_code in customers:
-            name = customers[customer_code]['name']
-            address = customers[customer_code].get('address', '')
-            customer_name = f"{name} - {address}" if address else name
+        # Check and format customer name from fetched data
+        if customer_input:
+            matched = False
+            for code, data in customers.items():
+                if data['name'].strip().lower() == customer_input.strip().lower():
+                    address = data.get('address', '')
+                    customer_name = f"{data['name']} - {address}" if address else data['name']
+                    matched = True
+                    break
+            if not matched:
+                customer_name = customer_input  # fallback to raw input if not matched
 
         log = ServiceLog.objects.create(
-            customer_name=customer_name or customer_name,
-            place=place,  # ⬅️ Save place
+            customer_name=customer_name,
+            place=place,
             complaint_type=complaint_type,
             remarks=remarks,
             phone_number=phone_number,
@@ -5639,15 +5646,15 @@ def edit_service_log(request, log_id):
     customers = fetch_customers()
 
     if request.method == 'POST':
-        customer_code = request.POST.get('customer_code')
-        customer_name = request.POST.get('customer_name')
-        place = request.POST.get('place')  # ⬅️ New field
+        customer_input = request.POST.get('customer')  # dropdown search input
+        customer_name = request.POST.get('customer_name')  # manual entry
+        place = request.POST.get('place')
         complaint_type = request.POST['complaint_type']
         remarks = request.POST.get('remarks')
         phone_number = request.POST.get('phone_number')
         voice_blob = request.POST.get('voice_blob')
 
-        if not customer_code and not customer_name:
+        if not customer_input and not customer_name:
             return render(request, 'add_service_log.html', {
                 'log': log,
                 'complaints': complaints,
@@ -5656,13 +5663,20 @@ def edit_service_log(request, log_id):
                 'error_message': 'Please select a customer from the dropdown or enter a customer name manually.'
             })
 
-        if customer_code and customer_code in customers:
-            name = customers[customer_code]['name']
-            address = customers[customer_code].get('address', '')
-            customer_name = f"{name} - {address}" if address else name
+        # Check and format customer name from fetched data
+        if customer_input:
+            matched = False
+            for code, data in customers.items():
+                if data['name'].strip().lower() == customer_input.strip().lower():
+                    address = data.get('address', '')
+                    customer_name = f"{data['name']} - {address}" if address else data['name']
+                    matched = True
+                    break
+            if not matched:
+                customer_name = customer_input  # fallback
 
         log.customer_name = customer_name
-        log.place = place  # ⬅️ Save updated place
+        log.place = place
         log.complaint_type = complaint_type
         log.remarks = remarks
         log.phone_number = phone_number
@@ -5677,7 +5691,6 @@ def edit_service_log(request, log_id):
         log.save()
 
         ServiceLogComplaint.objects.filter(service_log=log).delete()
-
         complaint_ids = request.POST.getlist('complaints')
         for cid in complaint_ids:
             note = request.POST.get(f'note_{cid}', '')
@@ -5698,6 +5711,7 @@ def edit_service_log(request, log_id):
 
 
 
+
     
 def delete_service_log(request, log_id):
     log = ServiceLog.objects.get(id=log_id)
@@ -5715,6 +5729,12 @@ def user_service_log(request):
         # Filter service logs added by the current user, latest first
         user_service_logs = ServiceLog.objects.filter(added_by=custom_user).order_by('-id')
         
-        return render(request, 'user_service_log.html', {'user_service_logs': user_service_logs})
+        # Get all users to display assigned person names
+        users = User.objects.all()
+        
+        return render(request, 'user_service_log.html', {
+            'user_service_logs': user_service_logs,
+            'users': users
+        })
     else:
         return redirect('login')  # Redirect to login if the user is not authenticated

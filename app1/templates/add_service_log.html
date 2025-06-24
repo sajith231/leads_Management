@@ -8,23 +8,26 @@
     <form method="post" enctype="multipart/form-data" class="card p-4 shadow-sm">
         {% csrf_token %}
 
-        <div class="mb-3">
-    <label class="form-label">Customer</label>
-    <select class="form-select" name="customer_code" id="customer_code">
-    <option value="">-- Select Customer --</option>
-    {% for code, customer in customers.items %}
-        <option value="{{ code }}" data-address="{{ customer.address|default:'' }}">
-            {{ customer.name }}{% if customer.address %} - {{ customer.address }}{% endif %}
-        </option>
-    {% endfor %}
-</select>
-
+        <div class="mb-3" style="position: relative;">
+    <label for="customer" class="form-label">Customer</label>
+    <div class="input-group">
+        <input type="text" class="form-control" id="customer" name="customer" placeholder="Search or type new customer" autocomplete="off">
+        <button class="btn btn-outline-secondary" type="button" id="newCustomerBtn">New Customer</button>
+        <button class="btn btn-outline-info" type="button" id="viewCustomerBtn" title="View Customer Details" disabled>
+            <i class="fas fa-eye"></i>
+        </button>
+    </div>
+    <div id="customerDropdown" class="dropdown-menu">
+        <p style="padding: 10px; margin: 0;">Loading customers...</p>
+    </div>
 </div>
 
-<div class="mb-3">
+<div class="mb-3 new-customer-section" style="display: none;">
     <label class="form-label">Customer Name (Manual Entry)</label>
     <input type="text" class="form-control" name="customer_name" id="customer_name" value="{{ log.customer_name|default_if_none:'' }}" placeholder="Enter customer name manually">
 </div>
+
+
 
 <div class="mb-3">
     <label class="form-label">Place</label>
@@ -44,46 +47,20 @@
             </select>
         </div>
 
-        <div class="mb-4" id="complaints-container" style="display: none;">
-            <label class="form-label mb-3">Select Complaints</label>
-            <div class="complaints-selection-container">
-                {% for c in complaints %}
-                <div class="complaint-item-wrapper mb-3" data-complaint-type="{{ c.complaint_type }}">
-                    <div class="complaint-header">
-                        <div class="form-check">
-                            <input class="form-check-input complaint-checkbox" 
-                                   type="checkbox" 
-                                   name="complaints" 
-                                   value="{{ c.id }}" 
-                                   id="complaint_{{ c.id }}"
-                                   {% if selected_complaints %}
-                                       {% for sc in selected_complaints %}
-                                           {% if sc.complaint.id == c.id %}checked{% endif %}
-                                       {% endfor %}
-                                   {% endif %}
-                                   onchange="toggleComplaintNote({{ c.id }})">
-                            <label class="form-check-label complaint-label" for="complaint_{{ c.id }}">
-                                {{ c.description }}
-                            </label>
-                        </div>
-                    </div>
-                    <div class="complaint-note-section" id="note_section_{{ c.id }}" style="display: none;">
-                        <div class="note-input-wrapper">
-                            <label class="form-label note-label">Add notes for this complaint:</label>
-                            <textarea class="form-control note-textarea" 
-                                      name="note_{{ c.id }}" 
-                                      rows="3" 
-                                      placeholder="Enter detailed notes about this complaint..."
-                                      >{% if selected_complaints %}{% for sc in selected_complaints %}{% if sc.complaint.id == c.id %}{{ sc.note }}{% endif %}{% endfor %}{% endif %}</textarea>
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-            <div id="no-complaints-selected" class="alert alert-info" style="display: none;">
-                <i class="bi bi-info-circle"></i> Please select at least one complaint to proceed.
-            </div>
-        </div>
+        <!-- 🔽 Insert this inside your existing complaints-container div, replacing only the inner content -->
+<div class="mb-4" id="complaints-container" style="display: none;">
+    <label class="form-label mb-3">Select Complaints</label>
+    <div id="complaint-blocks-container">
+        <!-- Dynamic complaint blocks will be added here -->
+    </div>
+    <button type="button" class="btn btn-outline-secondary btn-sm mt-2" onclick="addComplaintBlock()">
+        <i class="bi bi-plus-circle"></i> Add Another Complaint
+    </button>
+    <div id="no-complaints-selected" class="alert alert-info mt-3" style="display: none;">
+        <i class="bi bi-info-circle"></i> Please select at least one complaint to proceed.
+    </div>
+</div>
+
 
         <div class="mb-3">
             <label class="form-label">Remarks</label>
@@ -131,7 +108,30 @@
         </div>
     </form>
 </div>
-
+<!-- Customer Details Modal -->
+<div class="modal fade" id="customerDetailsModal" tabindex="-1" aria-labelledby="customerDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="customerDetailsModalLabel">Customer Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="customerDetailsContent">
+                    <div class="text-center">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2">Loading customer details...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const customerCodeSelect = document.getElementById('customer_code');
@@ -461,6 +461,488 @@ document.addEventListener('DOMContentLoaded', function () {
         const address = selectedOption.getAttribute('data-address') || '';
         placeInput.value = address;
     });
+});
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const customerInput = document.getElementById("customer");
+    const customerDropdown = document.getElementById("customerDropdown");
+    const placeInput = document.getElementById("place");
+    const newCustomerBtn = document.getElementById("newCustomerBtn");
+    const newCustomerFields = document.getElementById("newCustomerFields");
+    const newCustomerName = document.getElementById("new_customer_name");
+    const newCustomerAddress = document.getElementById("new_customer_address");
+    const viewCustomerBtn = document.getElementById("viewCustomerBtn");
+
+    let isNewCustomer = false;
+    let allCustomers = [];
+    let selectedCustomerData = null;
+
+    // Toggle between new customer and existing customer
+    newCustomerBtn.addEventListener("click", function() {
+        isNewCustomer = !isNewCustomer;
+        
+        if (isNewCustomer) {
+            newCustomerBtn.textContent = "Select Existing";
+            newCustomerBtn.classList.remove("btn-outline-secondary");
+            newCustomerBtn.classList.add("btn-outline-primary");
+            newCustomerFields.style.display = "block";
+            customerDropdown.style.display = "none";
+            customerInput.value = "";
+            customerInput.placeholder = "Will use new customer details below";
+            customerInput.readOnly = true;
+            customerInput.required = false;
+            newCustomerName.required = true;
+            newCustomerAddress.required = true;
+            viewCustomerBtn.disabled = true;  // Disable eye button for new customers
+            
+            // Add event listener to auto-fill place when new customer address changes
+            newCustomerAddress.addEventListener("input", function() {
+                placeInput.value = newCustomerAddress.value;
+            });
+        } else {
+            newCustomerBtn.textContent = "New Customer";
+            newCustomerBtn.classList.remove("btn-outline-primary");
+            newCustomerBtn.classList.add("btn-outline-secondary");
+            newCustomerFields.style.display = "none";
+            customerInput.placeholder = "Search or type new customer";
+            customerInput.readOnly = false;
+            customerInput.required = true;
+            newCustomerName.required = false;
+            newCustomerAddress.required = false;
+            
+            // Remove the event listener when switching back to existing customer
+            newCustomerAddress.removeEventListener("input", function() {
+                placeInput.value = newCustomerAddress.value;
+            });
+        }
+    });
+
+    // View Customer Details Button Click Handler
+    viewCustomerBtn.addEventListener("click", function() {
+        if (selectedCustomerData) {
+            showCustomerDetails(selectedCustomerData);
+        }
+    });
+
+    // Function to show customer details in modal
+    function showCustomerDetails(customerData) {
+        const modal = new bootstrap.Modal(document.getElementById('customerDetailsModal'));
+        const content = document.getElementById('customerDetailsContent');
+        
+        content.innerHTML = `
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h6 class="mb-0">Customer Details</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Code:</strong> ${customerData.code || 'N/A'}</p>
+                            <p><strong>Name:</strong> ${customerData.name || 'N/A'}</p>
+                            <p><strong>Mobile:</strong> ${customerData.mobile || 'N/A'}</p>
+                            <p><strong>Account Code:</strong> ${customerData.accountcode || 'N/A'}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Address:</strong> ${customerData.address || 'N/A'}</p>
+                            <p><strong>Address 3:</strong> ${customerData.address3 || 'N/A'}</p>
+                            <p><strong>District:</strong> ${customerData.district || 'N/A'}</p>
+                            <p><strong>State:</strong> ${customerData.state || 'N/A'}</p>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <p><strong>Branch:</strong> ${customerData.branch || 'N/A'}</p>
+                            <p><strong>Route:</strong> ${customerData.route || 'N/A'}</p>
+                            <p><strong>Nature:</strong> ${customerData.nature || 'N/A'}</p>
+                            <p><strong>Direct Dealing:</strong> ${customerData.directdealing || 'N/A'}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Software:</strong> ${customerData.software || 'N/A'}</p>
+                            <p><strong>Installation Date:</strong> ${customerData.installationdate || 'N/A'}</p>
+                            <p><strong>License Type:</strong> ${customerData.lictype || 'N/A'}</p>
+                            <p><strong>Clients:</strong> ${customerData.clients || 'N/A'}</p>
+                            <p><strong>SP:</strong> ${customerData.sp || 'N/A'}</p>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-12">
+                            <p><strong>AMC:</strong> ${customerData.amc || 'N/A'}</p>
+                            <p><strong>AMC Amount:</strong> ${customerData.amcamt || 'N/A'}</p>
+                            <p><strong>Priority:</strong> ${customerData.priority || 'N/A'}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        modal.show();
+    }
+
+    // Fetch customers when the page loads
+    fetch('/proxy/customers/')
+        .then(response => response.json())
+        .then(data => {
+            allCustomers = data; // Store all customers data
+            customerDropdown.innerHTML = ""; // Clear existing options
+
+            // Add customer options with address data
+            data.forEach(customer => {
+                const option = document.createElement("div");
+                option.classList.add("dropdown-item");
+                option.textContent = `${customer.name}, ${customer.address}`;
+                option.setAttribute("data-address", customer.address);
+                option.setAttribute("data-customer-code", customer.code);
+                option.addEventListener("click", function () {
+                    customerInput.value = customer.name;
+                    placeInput.value = option.getAttribute("data-address");
+                    customerDropdown.style.display = "none";
+                    
+                    // Store selected customer data and enable eye button
+                    selectedCustomerData = customer;
+                    viewCustomerBtn.disabled = false;
+                });
+                customerDropdown.appendChild(option);
+            });
+
+            if (data.length === 0) {
+                customerDropdown.innerHTML = '<p style="padding: 10px; margin: 0;">No customers found</p>';
+            }
+        })
+        .catch(error => {
+            console.error("Error loading customers:", error);
+            customerDropdown.innerHTML = '<p style="padding: 10px; margin: 0;">Failed to load customers. You can add a new customer.</p>';
+        });
+
+    // Show dropdown on focus
+    customerInput.addEventListener("focus", function () {
+        if (!isNewCustomer) {
+            customerDropdown.style.display = "block";
+        }
+    });
+
+    // Hide dropdown when clicking outside
+    document.addEventListener("click", function (e) {
+        if (!customerInput.contains(e.target) && !customerDropdown.contains(e.target)) {
+            customerDropdown.style.display = "none";
+        }
+    });
+
+    // Filter customers as the user types
+    customerInput.addEventListener("input", function () {
+        if (isNewCustomer) return;
+        
+        const filter = customerInput.value.toLowerCase();
+        const options = customerDropdown.querySelectorAll(".dropdown-item");
+        let hasVisibleItem = false;
+
+        // Reset selected customer data if input is cleared or changed
+        if (selectedCustomerData && customerInput.value !== selectedCustomerData.name) {
+            selectedCustomerData = null;
+            viewCustomerBtn.disabled = true;
+        }
+
+        options.forEach(option => {
+            if (option.textContent.toLowerCase().includes(filter)) {
+                option.style.display = "block";
+                hasVisibleItem = true;
+            } else {
+                option.style.display = "none";
+            }
+        });
+
+        customerDropdown.style.display = hasVisibleItem ? "block" : "none";
+    });
+
+    // Auto-fill place when selecting from dropdown
+    customerDropdown.addEventListener("click", function(e) {
+        if (e.target.classList.contains("dropdown-item")) {
+            placeInput.value = e.target.getAttribute("data-address");
+        }
+    });
+});
+
+// Function to filter complaints based on selected service type
+function filterComplaints() {
+    const serviceType = document.getElementById('service_type').value.toLowerCase();
+    const complaintSelect = document.getElementById('complaint');
+    
+    Array.from(complaintSelect.options).forEach(option => {
+        if (option.value === "") { // Keep the default "Select a complaint" option
+            option.hidden = false;
+            return;
+        }
+        const complaintType = option.getAttribute('data-type');
+        const show = (complaintType === serviceType || complaintType === 'both');
+        option.hidden = !show;
+    });
+
+    // Reset selection if current value is hidden
+    if (complaintSelect.value && complaintSelect.options[complaintSelect.selectedIndex].hidden) {
+        complaintSelect.value = "";
+    }
+}
+
+// Initial filter on page load
+filterComplaints();
+
+// Add event listener for service type changes
+document.getElementById('service_type').addEventListener('change', filterComplaints);
+
+document.addEventListener("DOMContentLoaded", function () {
+    const modeSelect = document.getElementById('mode_of_service');
+    const phoneGroup = document.getElementById('phoneNumberGroup');
+    const phoneInput = document.getElementById('phone_number');
+
+    function togglePhoneField() {
+        const isOnline = modeSelect.value === 'Online';
+        phoneGroup.style.display = isOnline ? 'block' : 'none';
+        phoneInput.required = isOnline;
+    }
+
+    modeSelect.addEventListener('change', togglePhoneField);
+    togglePhoneField();  // Initial check on page load
+});
+</script>
+<script>
+    newCustomerBtn.addEventListener("click", function() {
+    isNewCustomer = !isNewCustomer;
+    
+    if (isNewCustomer) {
+        newCustomerBtn.textContent = "Select Existing";
+        newCustomerBtn.classList.remove("btn-outline-secondary");
+        newCustomerBtn.classList.add("btn-outline-primary");
+        newCustomerFields.style.display = "block";
+        customerDropdown.style.display = "none";
+        customerInput.value = "";
+        customerInput.placeholder = "Will use new customer details below";
+        customerInput.readOnly = true;
+        customerInput.required = false;
+        newCustomerName.required = true;
+        newCustomerAddress.required = true;
+        viewCustomerBtn.disabled = true;  // Disable eye button for new customers
+        
+        // Show the "Customer Name (Manual Entry)" section
+        document.querySelector('.new-customer-section').style.display = 'block';
+        
+        // Add event listener to auto-fill place when new customer address changes
+        newCustomerAddress.addEventListener("input", function() {
+            placeInput.value = newCustomerAddress.value;
+        });
+    } else {
+        newCustomerBtn.textContent = "New Customer";
+        newCustomerBtn.classList.remove("btn-outline-primary");
+        newCustomerBtn.classList.add("btn-outline-secondary");
+        newCustomerFields.style.display = "none";
+        customerInput.placeholder = "Search or type new customer";
+        customerInput.readOnly = false;
+        customerInput.required = true;
+        newCustomerName.required = false;
+        newCustomerAddress.required = false;
+        
+        // Hide the "Customer Name (Manual Entry)" section
+        document.querySelector('.new-customer-section').style.display = 'none';
+        
+        // Remove the event listener when switching back to existing customer
+        newCustomerAddress.removeEventListener("input", function() {
+            placeInput.value = newCustomerAddress.value;
+        });
+    }
+});
+</script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+    const newCustomerBtn = document.getElementById("newCustomerBtn");
+    const customerInput = document.getElementById("customer");
+    const customerNameInput = document.getElementById("customer_name");
+    const newCustomerSection = document.querySelector('.new-customer-section');
+
+    newCustomerBtn.addEventListener("click", function() {
+        const isNewCustomer = newCustomerBtn.textContent === "New Customer";
+        
+        if (isNewCustomer) {
+            newCustomerBtn.textContent = "Select Existing";
+            newCustomerBtn.classList.remove("btn-outline-secondary");
+            newCustomerBtn.classList.add("btn-outline-primary");
+            customerInput.required = false;
+            customerNameInput.required = true;
+            newCustomerSection.style.display = 'block';
+        } else {
+            newCustomerBtn.textContent = "New Customer";
+            newCustomerBtn.classList.remove("btn-outline-primary");
+            newCustomerBtn.classList.add("btn-outline-secondary");
+            customerInput.required = true;
+            customerNameInput.required = false;
+            newCustomerSection.style.display = 'none';
+        }
+    });
+});
+</script>
+<script>
+// Updated JavaScript code to replace the existing script in add_service_log.html
+
+let complaintIndex = 0;
+let currentComplaintType = '';
+
+function addComplaintBlock(selectedId = '', note = '') {
+    const container = document.getElementById('complaint-blocks-container');
+
+    const div = document.createElement('div');
+    div.classList.add('complaint-block', 'mb-3');
+    div.setAttribute('data-index', complaintIndex);
+
+    // Create the complaint options based on current complaint type
+    let complaintOptions = '<option value="">-- Select Complaint --</option>';
+    
+    // Note: This assumes you have complaints data available in your template
+    // You'll need to replace this with your actual Django template loop
+    {% for c in complaints %}
+        // Only include complaints that match the selected complaint type
+        if (currentComplaintType && '{{ c.complaint_type }}' === currentComplaintType) {
+            const selected = selectedId === '{{ c.id }}' ? 'selected' : '';
+            complaintOptions += `<option value="{{ c.id }}" ${selected}>{{ c.description }}</option>`;
+        }
+    {% endfor %}
+
+    div.innerHTML = `
+        <div class="row align-items-center g-2">
+            <div class="col-md-6">
+                <select class="form-select complaint-select" name="complaints" required onchange="updateNoteFieldName(this)">
+                    ${complaintOptions}
+                </select>
+            </div>
+            <div class="col-md-5">
+                <input type="text" class="form-control note-input" name="note_placeholder_${complaintIndex}" placeholder="Note for this complaint" value="${note}">
+            </div>
+            <div class="col-md-1 text-end">
+                <button type="button" class="btn btn-danger btn-sm" onclick="removeComplaintBlock(this)">
+                    <i class="bi bi-x"></i>
+                </button>
+            </div>
+        </div>
+    `;
+
+    container.appendChild(div);
+    
+    // If a complaint is pre-selected, update the note field name
+    if (selectedId) {
+        const selectElement = div.querySelector('.complaint-select');
+        const noteInput = div.querySelector('.note-input');
+        noteInput.name = `note_${selectedId}`;
+    }
+    
+    complaintIndex++;
+    updateComplaintSelectionStatus();
+}
+
+function updateNoteFieldName(selectElement) {
+    const block = selectElement.closest('.complaint-block');
+    const noteInput = block.querySelector('.note-input');
+    const selectedComplaintId = selectElement.value;
+    
+    if (selectedComplaintId) {
+        noteInput.name = `note_${selectedComplaintId}`;
+        noteInput.disabled = false;
+    } else {
+        noteInput.name = `note_placeholder_${block.getAttribute('data-index')}`;
+        noteInput.disabled = true;
+        noteInput.value = '';
+    }
+}
+
+function removeComplaintBlock(button) {
+    const block = button.closest('.complaint-block');
+    block.remove();
+    updateComplaintSelectionStatus();
+}
+
+function updateComplaintSelectionStatus() {
+    const blocks = document.querySelectorAll('.complaint-block');
+    const alertBox = document.getElementById('no-complaints-selected');
+    if (blocks.length === 0) {
+        alertBox.style.display = 'block';
+    } else {
+        alertBox.style.display = 'none';
+    }
+}
+
+function updateComplaintOptions() {
+    // Update all existing complaint dropdowns with the new complaint type
+    const complaintSelects = document.querySelectorAll('.complaint-select');
+    
+    complaintSelects.forEach(select => {
+        const currentValue = select.value;
+        let newOptions = '<option value="">-- Select Complaint --</option>';
+        
+        // Add complaints that match the selected type
+        {% for c in complaints %}
+            if (currentComplaintType === '{{ c.complaint_type }}') {
+                const selected = currentValue === '{{ c.id }}' ? 'selected' : '';
+                newOptions += `<option value="{{ c.id }}" ${selected}>{{ c.description }}</option>`;
+            }
+        {% endfor %}
+        
+        select.innerHTML = newOptions;
+        
+        // Update the note field name based on selection
+        updateNoteFieldName(select);
+        
+        // If the previously selected complaint doesn't match the new type, reset
+        if (currentValue) {
+            let foundMatch = false;
+            {% for c in complaints %}
+                if ('{{ c.id }}' === currentValue && '{{ c.complaint_type }}' === currentComplaintType) {
+                    foundMatch = true;
+                }
+            {% endfor %}
+            if (!foundMatch) {
+                select.value = '';
+                updateNoteFieldName(select);
+            }
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    const complaintTypeSelect = document.getElementById('complaint_type');
+    
+    complaintTypeSelect.addEventListener('change', function () {
+        const container = document.getElementById('complaints-container');
+        const blocks = document.getElementById('complaint-blocks-container');
+        
+        currentComplaintType = this.value;
+
+        if (this.value) {
+            container.style.display = 'block';
+            
+            // Update existing complaint dropdowns
+            updateComplaintOptions();
+            
+            // If no blocks exist, add the first one
+            if (blocks.children.length === 0) {
+                addComplaintBlock();
+            }
+        } else {
+            container.style.display = 'none';
+            blocks.innerHTML = '';
+            complaintIndex = 0;
+            currentComplaintType = '';
+        }
+    });
+
+    // Initialize on page load if editing
+    {% if log and log.complaint_type %}
+        currentComplaintType = '{{ log.complaint_type }}';
+        if (currentComplaintType) {
+            document.getElementById('complaints-container').style.display = 'block';
+            // Add existing complaint blocks for edit mode
+            {% for sc in selected_complaints %}
+                addComplaintBlock('{{ sc.complaint.id }}', '{{ sc.note|escapejs }}');
+            {% endfor %}
+        }
+    {% endif %}
+
+    updateComplaintSelectionStatus();
 });
 </script>
 

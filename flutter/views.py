@@ -40,9 +40,9 @@ class UserListView(APIView):
 
 
 
-# http://localhost:8000/flutter/login/
+# https://localhost:8000/flutter/login/
 
-# http://localhost:8000/flutter/users/
+# https://localhost:8000/flutter/users/
 
 # {
 #     "userid": "sajiththomas231@gmail.com",
@@ -152,6 +152,6 @@ class PunchOutView(APIView):
 
 
 
-#http://localhost:8000/flutter/punch-in/
+#https://localhost:8000/flutter/punch-in/
 
-#http://localhost:8000/flutter/punch-out/
+#https://localhost:8000/flutter/punch-out/

@@ -67,10 +67,19 @@ class UserForm(forms.ModelForm):
             'id': 'cv-name-select'
         })
     )
+    phone_number = forms.CharField(
+        required=False,
+        label='Phone Number',
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Enter Phone Number'
+        })
+    )
+
 
     class Meta:
         model = User
-        fields = ['name', 'userid', 'password', 'branch', 'user_level', 'image', 'status']
+        fields = ['name', 'userid', 'password', 'branch', 'user_level', 'image','phone_number', 'status']
         widgets = {
             'name': forms.TextInput(attrs={
                 'class': 'form-control',

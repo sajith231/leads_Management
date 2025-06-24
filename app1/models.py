@@ -90,6 +90,8 @@ class User(models.Model):
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='active') 
     allowed_menus = models.TextField(blank=True, null=True)
     job_role = models.ForeignKey(JobRole, on_delete=models.SET_NULL, null=True, blank=True, related_name='users')
+    phone_number = models.CharField(max_length=20, null=True, blank=True)
+
 
     
 
@@ -888,11 +890,7 @@ class BreakTime(models.Model):
         return f"{self.employee.name} - Break Time on {self.date}"
 
 
-    #CREATED AS NEW
-
-    #CREATED AS NEW
-
-    #CREATED AS NEWF
+    
 
 
     # models.py
@@ -917,7 +915,11 @@ class EarlyRequest(models.Model):
 
 
 
+    #CREATED AS NEW
 
+    #CREATED AS NEW
+
+    #CREATED AS NEW
 
 
 import uuid

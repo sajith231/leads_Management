@@ -1,9 +1,11 @@
 {% extends "base.html" %}
 {% block content %}
+<div style="overflow: hidden;">
 <h2>My Service Logs</h2>
 <a href="{% url 'add_service_log' %}" class="btn btn-primary mb-3">Add New Log</a>
 
 {% if user_service_logs %}
+<div style="overflow: scroll;">
 <table class="table table-bordered">
     <thead>
         <tr>
@@ -11,9 +13,11 @@
             <th>Date</th>
             <th>Ticket Number</th>
             <th>Customer Name</th>
+            <th>Phone</th>
             <th>Place</th>
             <th>Complaint Type</th>
             <th>Complaints & Notes</th>
+            <th>Assigned Person</th>
             <th>Status</th>
             <th>Voice Note</th>
             <th>Actions</th>
@@ -26,6 +30,7 @@
             <td>{{ log.date|date:"Y-m-d H:i" }}</td>
             <td>{{ log.ticket_number }}</td>
             <td>{{ log.customer_name }}</td>
+             <td>{{ log.phone_number }}</td>
             <td>{{ log.place }}</td>
             <td>{{ log.get_complaint_type_display }}</td>
             <td>
@@ -42,6 +47,13 @@
                     <span class="text-muted">No complaints assigned</span>
                 {% endfor %}
             </td>
+             <td>
+            {% for user in users %}
+                {% if user.id == log.assigned_person.id %}
+                    {{ user.name }}
+                {% endif %}
+            {% endfor %}
+        </td>
             <td>
                 <span class="badge 
                     {% if log.status == 'Completed' %}bg-success
@@ -71,7 +83,7 @@
         </tr>
         {% endfor %}
     </tbody>
-</table>
+</table></div></div>
 {% else %}
 <p>No service logs found.</p>
 {% endif %}
