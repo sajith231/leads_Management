@@ -9,34 +9,28 @@
         {% csrf_token %}
 
         <div class="mb-3" style="position: relative;">
-    <label for="customer" class="form-label">Customer</label>
-    <div class="input-group">
-        <input type="text" class="form-control" id="customer" name="customer" placeholder="Search or type new customer" autocomplete="off">
-        <button class="btn btn-outline-secondary" type="button" id="newCustomerBtn">New Customer</button>
-        <button class="btn btn-outline-info" type="button" id="viewCustomerBtn" title="View Customer Details" disabled>
-            <i class="fas fa-eye"></i>
-        </button>
-    </div>
-    <div id="customerDropdown" class="dropdown-menu">
-        <p style="padding: 10px; margin: 0;">Loading customers...</p>
-    </div>
-</div>
+            <label for="customer" class="form-label">Customer</label>
+            <div class="input-group">
+                <input type="text" class="form-control" id="customer" name="customer" placeholder="Search or type new customer" autocomplete="off">
+                <button class="btn btn-outline-secondary" type="button" id="newCustomerBtn">New Customer</button>
+                <button class="btn btn-outline-info" type="button" id="viewCustomerBtn" title="View Customer Details" disabled>
+                    <i class="fas fa-eye"></i>
+                </button>
+            </div>
+            <div id="customerDropdown" class="dropdown-menu">
+                <p style="padding: 10px; margin: 0;">Loading customers...</p>
+            </div>
+        </div>
 
-<div class="mb-3 new-customer-section" style="display: none;">
-    <label class="form-label">Customer Name (Manual Entry)</label>
-    <input type="text" class="form-control" name="customer_name" id="customer_name" value="{{ log.customer_name|default_if_none:'' }}" placeholder="Enter customer name manually">
-</div>
+        <div class="mb-3 new-customer-section" style="display: none;">
+            <label class="form-label">Customer Name (Manual Entry)</label>
+            <input type="text" class="form-control" name="customer_name" id="customer_name" value="{{ log.customer_name|default_if_none:'' }}" placeholder="Enter customer name manually">
+        </div>
 
-
-
-<div class="mb-3">
-    <label class="form-label">Place</label>
-    <input type="text" class="form-control" name="place" id="place" value="{{ log.place|default_if_none:'' }}" placeholder="Enter place">
-</div>
-
-
-
-        
+        <div class="mb-3">
+            <label class="form-label">Place</label>
+            <input type="text" class="form-control" name="place" id="place" value="{{ log.place|default_if_none:'' }}" placeholder="Enter place">
+        </div>
 
         <div class="mb-3">
             <label class="form-label">Complaint Type</label>
@@ -47,20 +41,18 @@
             </select>
         </div>
 
-        <!-- 🔽 Insert this inside your existing complaints-container div, replacing only the inner content -->
-<div class="mb-4" id="complaints-container" style="display: none;">
-    <label class="form-label mb-3">Select Complaints</label>
-    <div id="complaint-blocks-container">
-        <!-- Dynamic complaint blocks will be added here -->
-    </div>
-    <button type="button" class="btn btn-outline-secondary btn-sm mt-2" onclick="addComplaintBlock()">
-        <i class="bi bi-plus-circle"></i> Add Another Complaint
-    </button>
-    <div id="no-complaints-selected" class="alert alert-info mt-3" style="display: none;">
-        <i class="bi bi-info-circle"></i> Please select at least one complaint to proceed.
-    </div>
-</div>
-
+        <div class="mb-4" id="complaints-container" style="display: none;">
+            <label class="form-label mb-3">Select Complaints</label>
+            <div id="complaint-blocks-container">
+                <!-- Dynamic complaint blocks will be added here -->
+            </div>
+            <button type="button" class="btn btn-outline-secondary btn-sm mt-2" onclick="addComplaintBlock()">
+                <i class="bi bi-plus-circle"></i> Add Another Complaint
+            </button>
+            <div id="no-complaints-selected" class="alert alert-info mt-3" style="display: none;">
+                <i class="bi bi-info-circle"></i> Please select at least one complaint to proceed.
+            </div>
+        </div>
 
         <div class="mb-3">
             <label class="form-label">Remarks</label>
@@ -108,6 +100,7 @@
         </div>
     </form>
 </div>
+
 <!-- Customer Details Modal -->
 <div class="modal fade" id="customerDetailsModal" tabindex="-1" aria-labelledby="customerDetailsModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
@@ -132,6 +125,7 @@
         </div>
     </div>
 </div>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const customerCodeSelect = document.getElementById('customer_code');
@@ -224,7 +218,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    
     // Show note sections for already selected complaints (edit mode)
     const checkboxes = document.querySelectorAll('.complaint-checkbox:checked');
     checkboxes.forEach(checkbox => {

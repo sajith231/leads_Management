@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Reassign Work for Ticket {{ service_log.ticket_number }}</h2>
+<form method="post">
+    {% csrf_token %}
+    <div class="mb-3">
+        <label for="assigned_person" class="form-label">Reassign to:</label>
+        <select class="form-select" name="assigned_person" id="assigned_person" required>
+            <option value="">-- Select User --</option>
+            {% for user in users %}
+            <option value="{{ user.id }}">{{ user.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <button type="submit" class="btn btn-primary">Reassign</button>
+</form>
+{% endblock %}

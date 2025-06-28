@@ -27,7 +27,7 @@
         {% for log in user_service_logs %}
         <tr>
             <td>{{ forloop.counter }}</td>
-            <td>{{ log.date|date:"Y-m-d H:i" }}</td>
+            <td>{{ log.date|date:"d-m-Y H:i" }}</td>
             <td>{{ log.ticket_number }}</td>
             <td>{{ log.customer_name }}</td>
              <td>{{ log.phone_number }}</td>
@@ -63,6 +63,9 @@
                     {% endif %}">
                     {{ log.status }}
                 </span>
+                <button class="btn btn-sm btn-{{ log.status|lower }} status-btn" data-log-id="{{ log.id }}" data-status="{{ log.status }}">
+                    {{ log.status }}
+                </button>
             </td>
             <td>
                 {% if log.voice_note %}

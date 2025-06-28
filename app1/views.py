@@ -4893,10 +4893,17 @@ def configure_user_menu(request, user_id):
             'name': 'Services',
             'icon': 'fas fa-wrench',
             'submenus': [
-                {'id': 'service_log', 'name': 'Service Log (Admin Dashboard)', 'icon': 'fas fa-book'},
-                {'id': 'service_entry', 'name': 'Service Entry (Admin Dashboard)', 'icon': 'fas fa-plus-circle'},
-                {'id': 'user_service_log', 'name': 'Service Log(User Dashboard)', 'icon': 'fas fa-book'},
-                {'id': 'user_service_entry', 'name': 'Service Entry(User Dashboard)', 'icon': 'fas fa-plus-circle'}
+                {'id': 'service_log',  'name': 'Service Log (Admin Dashboard)',  'icon': 'fas fa-book'},
+                {'id': 'user_service_log',   'name': 'Service Log (User Dashboard)',   'icon': 'fas fa-book'},
+                {'id': 'service_entry','name': 'Service Entry (Admin Dashboard)', 'icon': 'fas fa-plus-circle'},
+                {'id': 'user_service_entry', 'name': 'Service Entry (User Dashboard)', 'icon': 'fas fa-plus-circle'},
+
+                # ⬇️  NEW LINES
+                {'id': 'assign_service_logs',      'name': 'Assign Service Logs(Admin Dashboard)',      'icon': 'fas fa-edit'},
+                {'id': 'my_assigned_service_logs', 'name': 'My Assigned Service Logs(User Dashboard)', 'icon': 'fas fa-user'},
+
+                
+                
             ]
         },
         {
@@ -5068,12 +5075,18 @@ def default_menus(request):
             'name': 'Services',
             'icon': 'fas fa-wrench',
             'submenus': [
-                {'id': 'service_log', 'name': 'Service Log (Admin Dashboard)', 'icon': 'fas fa-book'},
-                {'id': 'service_entry', 'name': 'Service Entry (Admin Dashboard)', 'icon': 'fas fa-plus-circle'},
-                {'id': 'user_service_log', 'name': 'Service Log(User Dashboard)', 'icon': 'fas fa-book'},
-                {'id': 'user_service_entry', 'name': 'Service Entry(User Dashboard)', 'icon': 'fas fa-plus-circle'}
+                {'id': 'service_log',  'name': 'Service Log (Admin Dashboard)',  'icon': 'fas fa-book'},
+                {'id': 'service_entry','name': 'Service Entry (Admin Dashboard)', 'icon': 'fas fa-plus-circle'},
+
+                # ⬇️  NEW LINES
+                {'id': 'assign_service_logs',      'name': 'Assign Service Logs(Admin Dashboard)',      'icon': 'fas fa-edit'},
+                {'id': 'my_assigned_service_logs', 'name': 'My Assigned Service Logs(User Dashboard)', 'icon': 'fas fa-user'},
+
+                {'id': 'user_service_log',   'name': 'Service Log (User Dashboard)',   'icon': 'fas fa-book'},
+                {'id': 'user_service_entry', 'name': 'Service Entry (User Dashboard)', 'icon': 'fas fa-plus-circle'},
             ]
         },
+
         {
             'name': 'Projects',
             'icon': 'fas fa-project-diagram',
@@ -5493,53 +5506,57 @@ def delete_early_request(request):
 
 
 # views.py
+from django.core.paginator import Paginator
 from django.shortcuts import render, redirect
 from .models import ServiceLog, Complaint, ServiceLogComplaint, User
 from django.utils import timezone
 from django.db.models import Q
 
 def servicelog_list(request):
-    service_logs = ServiceLog.objects.all().order_by('-id')  # Latest first
-    users = User.objects.all()
-    
-    # Get search parameters from request - matching HTML template parameter names
+    # Get search parameters from request
     customer_search = request.GET.get('customer_search', '')
-    added_by_filter = request.GET.get('added_by', '')  # Changed from 'added_by_search'
-    assigned_person_filter = request.GET.get('assigned_person', '')  # Changed from 'assigned_person_search'
-    
-    # Debug: Print the filter values
-    print(f"DEBUG: customer_search = '{customer_search}'")
-    print(f"DEBUG: added_by_filter = '{added_by_filter}'")
-    print(f"DEBUG: assigned_person_filter = '{assigned_person_filter}'")
-    
+    added_by_filter = request.GET.get('added_by', '')
+    assigned_person_filter = request.GET.get('assigned_person', '')
+    status_filter = request.GET.get('status', 'Pending')  # Default to Pending
+
+    # Get all service logs
+    service_logs = ServiceLog.objects.all().order_by('-id')
+
     # Apply filters based on search terms
     if customer_search:
-        service_logs = service_logs.filter(
-            customer_name__icontains=customer_search
-        )
-    
-    # Filter by added_by user ID (not name)
+        service_logs = service_logs.filter(customer_name__icontains=customer_search)
+
     if added_by_filter:
         try:
             added_by_id = int(added_by_filter)
             service_logs = service_logs.filter(added_by_id=added_by_id)
         except (ValueError, TypeError):
-            pass  # Invalid ID, skip filter
-    
-    # Filter by assigned_person user ID (not name)
+            pass
+
     if assigned_person_filter:
         try:
             assigned_person_id = int(assigned_person_filter)
             service_logs = service_logs.filter(assigned_person_id=assigned_person_id)
         except (ValueError, TypeError):
-            pass  # Invalid ID, skip filter
-    
+            pass
+
+    if status_filter:
+        service_logs = service_logs.filter(status=status_filter)
+
+    # Set up pagination
+    paginator = Paginator(service_logs, 10)  # Show 10 service logs per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    users = User.objects.all()
+
     return render(request, 'servic_log_admin.html', {
-        'service_logs': service_logs, 
+        'page_obj': page_obj,
         'users': users,
         'customer_search': customer_search,
-        'added_by_filter': added_by_filter,  # Pass the filter values to template
-        'assigned_person_filter': assigned_person_filter
+        'added_by_filter': added_by_filter,
+        'assigned_person_filter': assigned_person_filter,
+        'status_filter': status_filter
     })
 
 from app1.models import User, Complaint, ServiceLog, ServiceLogComplaint
@@ -5570,6 +5587,15 @@ def fetch_customers():
         print(f"Error fetching customers: {e}")
         return {}
 
+
+import requests
+from django.contrib import messages
+from django.shortcuts import render, redirect
+from .models import ServiceLog, Complaint, ServiceLogComplaint, User
+from django.utils import timezone
+from django.core.files.base import ContentFile
+import base64
+@login_required
 def add_service_log(request):
     complaints = Complaint.objects.all()
     customers = fetch_customers()
@@ -5602,7 +5628,7 @@ def add_service_log(request):
                     matched = True
                     break
             if not matched:
-                customer_name = customer_input  # fallback to raw input if not matched
+                customer_name = customer_input  # fallback
 
         log = ServiceLog.objects.create(
             customer_name=customer_name,
@@ -5611,7 +5637,7 @@ def add_service_log(request):
             remarks=remarks,
             phone_number=phone_number,
             added_by=custom_user,
-            assigned_person=custom_user,
+            assigned_person=custom_user,  # Set the added_by user as the default assigned person
         )
 
         complaint_ids = request.POST.getlist('complaints')
@@ -5620,16 +5646,34 @@ def add_service_log(request):
             ServiceLogComplaint.objects.create(
                 service_log=log,
                 complaint_id=cid,
-                note=note
+                note=note,
+                assigned_person=custom_user  # Set the added_by user as the default assigned person
             )
 
         if voice_blob:
-            import base64
-            from django.core.files.base import ContentFile
             format, audio_str = voice_blob.split(';base64,')
             audio_file = ContentFile(base64.b64decode(audio_str), name=f"voice_{log.id}.webm")
             log.voice_note.save(audio_file.name, audio_file)
             log.save()
+
+        # Prepare the WhatsApp message
+        complaint_list = ', '.join([c.description for c in Complaint.objects.filter(id__in=complaint_ids)])
+        registered_person_name = custom_user.name
+        registered_person_phone = custom_user.phone_number  # Assuming the phone number is stored in the User model
+
+        message = (
+                    f"Dear {customer_name.split('-')[0].strip()},\n\n"
+                    f"Your complaint has been added successfully.\n"
+                    f"Ticket Number: {log.ticket_number}\n"
+                    f"Registered by: {registered_person_name}\n"
+                    f"Registered Person's Phone: {registered_person_phone}\n"
+                    f"Thank you for choosing our services.\n"
+                    f"Best regards,\n"
+                    f"IMC Business Solutions"
+                )
+
+        # Send WhatsApp message
+        send_whatsapp_message(phone_number, message)
 
         if custom_user.user_level == 'admin_level':
             return redirect('servicelog_list')
@@ -5637,6 +5681,16 @@ def add_service_log(request):
             return redirect('user_service_log')
 
     return render(request, 'add_service_log.html', {'complaints': complaints, 'customers': customers})
+
+def send_whatsapp_message(phone_number, message):
+    secret = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
+    account = "1748250982812b4ba287f5ee0bc9d43bbf5bbe87fb683431662a427"
+    url = f"https://app.dxing.in/api/send/whatsapp?secret={secret}&account={account}&recipient={phone_number}&type=text&message={message}&priority=1"
+    response = requests.get(url)
+    if response.status_code == 200:
+        print(f"WhatsApp message sent successfully to {phone_number}")
+    else:
+        print(f"Failed to send WhatsApp message to {phone_number}. Status code: {response.status_code}, Response: {response.text}")
 
 
 def edit_service_log(request, log_id):
@@ -5738,3 +5792,315 @@ def user_service_log(request):
         })
     else:
         return redirect('login')  # Redirect to login if the user is not authenticated
+
+
+
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_exempt
+from .models import ServiceLog
+
+@csrf_exempt
+@require_POST
+def update_status(request):
+    data = json.loads(request.body)
+    log_id = data.get('log_id')
+    new_status = data.get('status')
+
+    try:
+        service_log = ServiceLog.objects.get(id=log_id)
+        service_log.status = new_status
+        service_log.save()
+        return JsonResponse({'success': True})
+    except ServiceLog.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Service log not found'})
+
+
+
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
+from .models import ServiceLog
+
+@login_required
+def assign_service_logs(request):
+    # Get the status filter from the request, default to 'Pending'
+    status_filter = request.GET.get('status', 'Pending')
+    
+    # Fetch all service logs based on the status filter
+    if status_filter == 'all':
+        service_logs = ServiceLog.objects.all().order_by('-date')
+    else:
+        service_logs = ServiceLog.objects.filter(status=status_filter).order_by('-date')
+    
+    # Pagination - 10 items per page
+    paginator = Paginator(service_logs, 10)
+    page_number = request.GET.get('page')
+    pending_service_logs = paginator.get_page(page_number)
+    
+    return render(request, 'assign_service_logs.html', {
+        'pending_service_logs': pending_service_logs,
+        'status_filter': status_filter,
+        'paginator': paginator,
+    })
+
+import json
+import requests
+from django.contrib import messages
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_exempt
+from django.utils import timezone
+from django.core.files.base import ContentFile
+import base64
+from .models import ServiceLog, Complaint, ServiceLogComplaint, User
+
+
+
+@login_required
+def assign_work(request, log_id):
+    service_log = get_object_or_404(ServiceLog, id=log_id)
+    users = User.objects.filter(status='active').order_by('name')
+    complaints = service_log.servicelogcomplaint_set.all()
+    
+    if request.method == 'POST':
+        # Handle individual complaint assignments
+        for complaint_log in complaints:
+            assigned_person_id = request.POST.get(f'assigned_person_{complaint_log.id}')
+            if assigned_person_id:
+                assigned_person = get_object_or_404(User, id=assigned_person_id)
+                complaint_log.assigned_person = assigned_person
+                complaint_log.save()
+                
+                # Send WhatsApp message to the assigned user
+                message = (
+                    f"Dear {assigned_person.name},\n\n"
+                    f"You have been assigned a new service log.\n"
+                    f"Ticket Number: {service_log.ticket_number}\n"
+                    f"Customer Name: {service_log.customer_name}\n"
+                    f"Complaint: {complaint_log.complaint.description}\n"
+                    f"Please check the details and take necessary action.\n"
+                    f"Best regards,\n"
+                    f"IMC Business Solutions"
+                )
+                send_whatsapp_message(assigned_person.phone_number, message)
+        
+        messages.success(request, "Complaints assigned successfully")
+        return redirect('assign_service_logs')
+    
+    return render(request, 'assign_work.html', {
+        'service_log': service_log,
+        'users': users,
+        'complaints': complaints,
+    })
+
+
+
+
+@login_required
+def my_assigned_service_logs(request):
+    # Get the custom User instance based on the logged-in user
+    custom_user = User.objects.get(userid=request.user.username)
+    
+    # Get the status filter from the request, default to 'Pending'
+    status_filter = request.GET.get('status', 'Pending')
+    
+    # Fetch service logs where user has assigned complaints
+    if status_filter == 'all':
+        assigned_complaints = ServiceLogComplaint.objects.filter(
+            assigned_person=custom_user
+        ).select_related('service_log', 'complaint').order_by('-assigned_date')
+    else:
+        assigned_complaints = ServiceLogComplaint.objects.filter(
+            assigned_person=custom_user, 
+            status=status_filter
+        ).select_related('service_log', 'complaint').order_by('-assigned_date')
+    
+    # Group complaints by service log
+    service_logs_dict = {}
+    for complaint_log in assigned_complaints:
+        service_log = complaint_log.service_log
+        if service_log.id not in service_logs_dict:
+            service_logs_dict[service_log.id] = {
+                'service_log': service_log,
+                'assigned_complaints': []
+            }
+        service_logs_dict[service_log.id]['assigned_complaints'].append(complaint_log)
+    
+    return render(request, 'my_assigned_service_logs.html', {
+        'service_logs_data': service_logs_dict.values(),
+        'status_filter': status_filter,
+        'default_assigned_person': custom_user
+    })
+
+
+@csrf_exempt
+@require_POST
+def update_complaint_status(request):
+    """Update individual complaint status"""
+    data = json.loads(request.body)
+    complaint_log_id = data.get('complaint_log_id')
+    new_status = data.get('status')
+
+    try:
+        complaint_log = ServiceLogComplaint.objects.get(id=complaint_log_id)
+        complaint_log.status = new_status
+        if new_status == 'Completed':
+            complaint_log.completed_date = timezone.now()
+        complaint_log.save()
+        
+        return JsonResponse({
+            'success': True,
+            'main_status': complaint_log.service_log.status
+        })
+    except ServiceLogComplaint.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Complaint log not found'})
+    
+@login_required
+def reassign_work(request, log_id):
+    service_log = get_object_or_404(ServiceLog, id=log_id)
+    users = User.objects.filter(status='active').order_by('name')
+    complaints = service_log.servicelogcomplaint_set.all()
+    
+    if request.method == 'POST':
+        # Handle individual complaint reassignments
+        for complaint_log in complaints:
+            assigned_person_id = request.POST.get(f'assigned_person_{complaint_log.id}')
+            if assigned_person_id:
+                assigned_person = get_object_or_404(User, id=assigned_person_id)
+                complaint_log.assigned_person = assigned_person
+                complaint_log.assigned_date = timezone.now()  # Update assignment date
+                complaint_log.status = 'Pending'  # Reset status to Pending
+                complaint_log.completed_date = None  # Clear completed date
+                
+                # Send WhatsApp message to the assigned user
+                message = (
+                    f"Dear {assigned_person.name},\n\n"
+                    f"You have been reassigned a service log.\n"
+                    f"Ticket Number: {service_log.ticket_number}\n"
+                    f"Customer Name: {service_log.customer_name}\n"
+                    f"Complaint: {complaint_log.complaint.description}\n"
+                    f"Please check the details and take necessary action.\n"
+                    f"Best regards,\n"
+                    f"IMC Business Solutions"
+                )
+                send_whatsapp_message(assigned_person.phone_number, message)
+        
+        messages.success(request, "Complaints reassigned successfully")
+        return redirect('my_assigned_service_logs')
+    
+    return render(request, 'reassign_work.html', {
+        'service_log': service_log,
+        'users': users,
+        'complaints': complaints,
+    })
+
+@csrf_exempt
+@require_POST
+def reassign_complaint(request):
+    """Reassign a complaint from current user to another user"""
+    data = json.loads(request.body)
+    complaint_log_id = data.get('complaint_log_id')
+    user_id = data.get('user_id')
+    reason = data.get('reason', '')
+
+    try:
+        # Get the current user
+        current_user = User.objects.get(userid=request.user.username)
+        
+        # Get the complaint log
+        complaint_log = ServiceLogComplaint.objects.get(id=complaint_log_id)
+        
+        # Verify that the current user is the one assigned to this complaint
+        if complaint_log.assigned_person != current_user:
+            return JsonResponse({
+                'success': False, 
+                'error': 'You can only reassign complaints assigned to you'
+            })
+        
+        # Get the new user to assign to
+        new_user = User.objects.get(id=user_id)
+        
+        # Update the complaint log
+        complaint_log.assigned_person = new_user
+        complaint_log.assigned_date = timezone.now()  # Update assignment date
+        complaint_log.status = 'Pending'  # Reset status to Pending
+        complaint_log.completed_date = None  # Clear completed date
+        
+        # Add reassignment reason to note if provided
+        if reason:
+            original_note = complaint_log.note or ''
+            reassignment_note = f"\n[Reassigned from {current_user.name} to {new_user.name}]\nReason: {reason}"
+            complaint_log.note = original_note + reassignment_note
+        
+        complaint_log.save()
+        
+        # Send WhatsApp message to the new assigned user
+        service_log = complaint_log.service_log
+        message = (
+            f"Dear {new_user.name},\n\n"
+            f"You have been reassigned a service log.\n"
+            f"Ticket Number: {service_log.ticket_number}\n"
+            f"Customer Name: {service_log.customer_name}\n"
+            f"Complaint: {complaint_log.complaint.description}\n"
+            f"Please review the details and take the necessary actions.\n"
+            f"Thank you for your prompt attention to this matter.\n"
+            f"Best regards,\n"
+            f"IMC Business Solutions"
+        )
+        send_whatsapp_message(new_user.phone_number, message)
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'Complaint successfully reassigned to {new_user.name}'
+        })
+        
+    except ServiceLogComplaint.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Complaint log not found'})
+    except User.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'User not found'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+
+# Also update your my_assigned_service_logs view to include users list
+@login_required
+def my_assigned_service_logs(request):
+    # Get the custom User instance based on the logged-in user
+    custom_user = User.objects.get(userid=request.user.username)
+    
+    # Get the status filter from the request, default to 'Pending'
+    status_filter = request.GET.get('status', 'Pending')
+    
+    # Fetch service logs where user has assigned complaints
+    if status_filter == 'all':
+        assigned_complaints = ServiceLogComplaint.objects.filter(
+            assigned_person=custom_user
+        ).select_related('service_log', 'complaint').order_by('-assigned_date')
+    else:
+        assigned_complaints = ServiceLogComplaint.objects.filter(
+            assigned_person=custom_user, 
+            status=status_filter
+        ).select_related('service_log', 'complaint').order_by('-assigned_date')
+    
+    # Group complaints by service log
+    service_logs_dict = {}
+    for complaint_log in assigned_complaints:
+        service_log = complaint_log.service_log
+        if service_log.id not in service_logs_dict:
+            service_logs_dict[service_log.id] = {
+                'service_log': service_log,
+                'assigned_complaints': []
+            }
+        service_logs_dict[service_log.id]['assigned_complaints'].append(complaint_log)
+    
+    # Get all active users for reassignment dropdown
+    users = User.objects.filter(status='active').exclude(id=custom_user.id).order_by('name')
+    
+    return render(request, 'my_assigned_service_logs.html', {
+        'service_logs_data': service_logs_dict.values(),
+        'status_filter': status_filter,
+        'users': users  # Add users to context
+    })
