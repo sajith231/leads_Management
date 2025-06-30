@@ -1001,3 +1001,10 @@ class ServiceLogComplaint(models.Model):
 
     def __str__(self):
         return f"{self.service_log.ticket_number} - {self.complaint.description}"
+
+
+
+class ComplaintImage(models.Model):
+    complaint_log = models.ForeignKey(ServiceLogComplaint, on_delete=models.CASCADE, related_name='images')
+    image = models.ImageField(upload_to='complaint_images/')
+    uploaded_at = models.DateTimeField(auto_now_add=True)

@@ -1,7 +1,37 @@
 {% extends "base.html" %}
 {% load static %}
 {% block content %}
+<style>
+    .image-thumbnail {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+}
+/* Add this to your existing CSS */
+.image-preview-container {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 10px;
+    margin-top: 10px;
+}
 
+.image-preview-container .d-flex {
+    gap: 10px;
+}
+
+.image-preview-container img {
+    border-radius: 4px;
+    border: 1px solid #dee2e6;
+    transition: all 0.2s ease;
+}
+
+.image-preview-container img:hover {
+    transform: scale(1.05);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+</style>
 <div class="container mt-5" style="max-width: 800px;">
     <h2 class="mb-4 text-center">{% if log %}Edit{% else %}Add{% endif %} Service Log</h2>
 
@@ -38,6 +68,7 @@
                 <option value="">-- Select Type --</option>
                 <option value="software" {% if log and log.complaint_type == 'software' %}selected{% endif %}>Software</option>
                 <option value="hardware" {% if log and log.complaint_type == 'hardware' %}selected{% endif %}>Hardware</option>
+                <option value="both" {% if log and log.complaint_type == 'both' %}selected{% endif %}>Both</option>
             </select>
         </div>
 
@@ -779,69 +810,124 @@ let currentComplaintType = '';
 
 function addComplaintBlock(selectedId = '', note = '') {
     const container = document.getElementById('complaint-blocks-container');
-
     const div = document.createElement('div');
-    div.classList.add('complaint-block', 'mb-3');
+    div.classList.add('complaint-block', 'p-3', 'border', 'rounded', 'mb-3');
     div.setAttribute('data-index', complaintIndex);
 
-    // Create the complaint options based on current complaint type
     let complaintOptions = '<option value="">-- Select Complaint --</option>';
-    
-    // Note: This assumes you have complaints data available in your template
-    // You'll need to replace this with your actual Django template loop
     {% for c in complaints %}
-        // Only include complaints that match the selected complaint type
-        if (currentComplaintType && '{{ c.complaint_type }}' === currentComplaintType) {
+        if (currentComplaintType === 'both' || currentComplaintType === '{{ c.complaint_type }}') {
             const selected = selectedId === '{{ c.id }}' ? 'selected' : '';
-            complaintOptions += `<option value="{{ c.id }}" ${selected}>{{ c.description }}</option>`;
+            complaintOptions += `<option value="{{ c.id }}" ${selected}>{{ c.description }} ({{ c.complaint_type|title }})</option>`;
         }
     {% endfor %}
 
     div.innerHTML = `
-        <div class="row align-items-center g-2">
-            <div class="col-md-6">
+        <div class="row g-3 align-items-start">
+            <div class="col-md-4">
+                <label class="form-label">Complaint</label>
                 <select class="form-select complaint-select" name="complaints" required onchange="updateNoteFieldName(this)">
                     ${complaintOptions}
                 </select>
             </div>
-            <div class="col-md-5">
-                <input type="text" class="form-control note-input" name="note_placeholder_${complaintIndex}" placeholder="Note for this complaint" value="${note}">
+            <div class="col-md-4">
+                <label class="form-label">Note</label>
+                <input type="text" class="form-control note-input" name="note_placeholder_${complaintIndex}" placeholder="Optional note" value="${note}">
             </div>
-            <div class="col-md-1 text-end">
-                <button type="button" class="btn btn-danger btn-sm" onclick="removeComplaintBlock(this)">
+            <div class="col-md-3">
+                <label class="form-label">Upload Images</label>
+                <input type="file" class="form-control image-input" name="images_placeholder_${complaintIndex}" multiple accept="image/*">
+                <small class="text-muted">Hold Ctrl to select multiple images</small>
+            </div>
+            <div class="col-md-1 text-end d-flex align-items-end">
+                <button type="button" class="btn btn-danger btn-sm mt-auto" onclick="removeComplaintBlock(this)">
                     <i class="bi bi-x"></i>
                 </button>
             </div>
         </div>
+        <div class="image-preview-container mt-2" id="image-preview-${complaintIndex}" style="display: none;">
+            <div class="d-flex flex-wrap gap-2"></div>
+        </div>
     `;
 
     container.appendChild(div);
-    
-    // If a complaint is pre-selected, update the note field name
+
+    // Initialize image preview for this block
+    const imageInput = div.querySelector('.image-input');
+    imageInput.addEventListener('change', function() {
+        previewImages(this);
+    });
+
     if (selectedId) {
-        const selectElement = div.querySelector('.complaint-select');
+        const imageInput = div.querySelector('.image-input');
         const noteInput = div.querySelector('.note-input');
+        imageInput.name = `images_${selectedId}`;
         noteInput.name = `note_${selectedId}`;
     }
-    
+
     complaintIndex++;
     updateComplaintSelectionStatus();
 }
 
+function previewImages(input) {
+    const previewContainer = input.closest('.complaint-block').querySelector('.image-preview-container');
+    const previewDiv = previewContainer.querySelector('.d-flex');
+    previewDiv.innerHTML = '';
+    
+    if (input.files.length > 0) {
+        previewContainer.style.display = 'block';
+        
+        for (let i = 0; i < input.files.length; i++) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const previewItem = document.createElement('div');
+                previewItem.style.position = 'relative';
+                previewItem.style.width = '80px';
+                previewItem.style.height = '80px';
+                previewItem.style.border = '1px solid #ddd';
+                previewItem.style.borderRadius = '4px';
+                previewItem.style.overflow = 'hidden';
+                
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.style.width = '100%';
+                img.style.height = '100%';
+                img.style.objectFit = 'cover';
+                
+                previewItem.appendChild(img);
+                previewDiv.appendChild(previewItem);
+            }
+            reader.readAsDataURL(input.files[i]);
+        }
+    } else {
+        previewContainer.style.display = 'none';
+    }
+}
+
+
+
 function updateNoteFieldName(selectElement) {
     const block = selectElement.closest('.complaint-block');
     const noteInput = block.querySelector('.note-input');
+    const imageInput = block.querySelector('.image-input');
     const selectedComplaintId = selectElement.value;
-    
+
     if (selectedComplaintId) {
         noteInput.name = `note_${selectedComplaintId}`;
+        imageInput.name = `images_${selectedComplaintId}`;
         noteInput.disabled = false;
+        imageInput.disabled = false;
     } else {
-        noteInput.name = `note_placeholder_${block.getAttribute('data-index')}`;
+        const idx = block.getAttribute('data-index');
+        noteInput.name = `note_placeholder_${idx}`;
+        imageInput.name = `images_placeholder_${idx}`;
         noteInput.disabled = true;
+        imageInput.disabled = true;
         noteInput.value = '';
     }
 }
+
+
 
 function removeComplaintBlock(button) {
     const block = button.closest('.complaint-block');
@@ -869,7 +955,7 @@ function updateComplaintOptions() {
         
         // Add complaints that match the selected type
         {% for c in complaints %}
-            if (currentComplaintType === '{{ c.complaint_type }}') {
+             if (currentComplaintType === 'both' || currentComplaintType === '{{ c.complaint_type }}') {
                 const selected = currentValue === '{{ c.id }}' ? 'selected' : '';
                 newOptions += `<option value="{{ c.id }}" ${selected}>{{ c.description }}</option>`;
             }
@@ -938,5 +1024,43 @@ document.addEventListener('DOMContentLoaded', function () {
     updateComplaintSelectionStatus();
 });
 </script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const complaintTypeSelect = document.getElementById('complaint_type');
+    const complaintSelect = document.getElementById('complaint');
 
+    // Complaint data from Django template
+    const complaintsData = {
+        {% for c in complaints %}
+        {{ c.id }}: {
+            "description": "{{ c.description|escapejs }}",
+            "type": "{{ c.complaint_type }}"
+        },
+        {% endfor %}
+    };
+
+    function updateComplaintOptions() {
+        const selectedType = complaintTypeSelect.value;
+        const options = complaintSelect.options;
+        let optionCount = 0;
+
+        for (const complaintId in complaintsData) {
+            const complaint = complaintsData[complaintId];
+            const option = options[optionCount + 1]; // +1 to skip the default option
+
+            if (selectedType === 'both' || complaint.type === selectedType) {
+                option.value = complaintId;
+                option.text = `${complaint.description} (${complaint.type})`;
+                option.hidden = false;
+            } else {
+                option.hidden = true;
+            }
+            optionCount++;
+        }
+    }
+
+    complaintTypeSelect.addEventListener('change', updateComplaintOptions);
+    updateComplaintOptions(); // Initial call to populate the dropdown
+});
+</script>
 {% endblock %}

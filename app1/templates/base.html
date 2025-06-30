@@ -460,24 +460,27 @@
             </div>
     
             <div id="services-menu" class="submenu">
-                {% if 'service_entry' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
-                <a href="{% url 'service_entry' %}"><i class="fas fa-plus-circle"></i> Service Entry</a>
+                {% if 'service_log' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+                <a href="{% url 'servicelog_list' %}"><i class="fas fa-book"></i> Service Log</a>
+                {% endif %}
+                {% if 'my_assigned_service_logs' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+                    <a href="{% url 'my_assigned_service_logs' %}">
+                        <i class="fas fa-user"></i> My Assigned Service Logs
+                    </a>
                 {% endif %}
                 {% if 'assign_service_logs' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
                     <a href="{% url 'assign_service_logs' %}">
                         <i class="fas fa-edit"></i> Assign Service Logs
                     </a>
                 {% endif %}
-
-                {% if 'my_assigned_service_logs' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
-                    <a href="{% url 'my_assigned_service_logs' %}">
-                        <i class="fas fa-user"></i> My Assigned Service Logs
-                    </a>
+                {% if 'service_entry' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+                <a href="{% url 'service_entry' %}"><i class="fas fa-plus-circle"></i> Logs</a>
                 {% endif %}
+                
 
-                {% if 'service_log' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
-                <a href="{% url 'servicelog_list' %}"><i class="fas fa-book"></i> Service Log</a>
-                {% endif %}
+                
+
+                
             </div>
             {% endif %}
 
@@ -649,7 +652,7 @@
                 <a href=""><i class="fas fa-book"></i> Service Log</a>
                 {% endif %}
                 {% if 'service_entry' in allowed_menus %}
-                <a href="{% url 'service_entry' %}"><i class="fas fa-plus-circle"></i> Service Entry</a>
+                <a href="{% url 'service_entry' %}"><i class="fas fa-plus-circle"></i> Logs</a>
                 {% endif %}
                 {% if 'assign_service_logs' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
                     <a href="{% url 'assign_service_logs' %}">
@@ -666,7 +669,7 @@
                 <a href="{% url 'user_service_log' %}"><i class="fas fa-book"></i>Service Log</a>
                 {% endif %}
                 {% if 'user_service_entry' in allowed_menus %}
-                <a href="{% url 'user_service_entry' %}"><i class="fas fa-plus-circle"></i> Service Entry</a>
+                <a href="{% url 'user_service_entry' %}"><i class="fas fa-plus-circle"></i> Logs</a>
                 {% endif %}
             </div>
             {% endif %}

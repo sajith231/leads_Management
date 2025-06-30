@@ -5518,11 +5518,12 @@ def servicelog_list(request):
     added_by_filter = request.GET.get('added_by', '')
     assigned_person_filter = request.GET.get('assigned_person', '')
     status_filter = request.GET.get('status', 'Pending')  # Default to Pending
+    complaint_status_filter = request.GET.get('complaint_status', '')  # New complaint status filter
 
     # Get all service logs
     service_logs = ServiceLog.objects.all().order_by('-id')
 
-    # Apply filters based on search terms
+    # Apply filters
     if customer_search:
         service_logs = service_logs.filter(customer_name__icontains=customer_search)
 
@@ -5543,6 +5544,10 @@ def servicelog_list(request):
     if status_filter:
         service_logs = service_logs.filter(status=status_filter)
 
+    if complaint_status_filter:
+        # Filter logs that have at least one complaint with the selected status
+        service_logs = service_logs.filter(servicelogcomplaint__status=complaint_status_filter).distinct()
+
     # Set up pagination
     paginator = Paginator(service_logs, 10)  # Show 10 service logs per page
     page_number = request.GET.get('page')
@@ -5556,9 +5561,9 @@ def servicelog_list(request):
         'customer_search': customer_search,
         'added_by_filter': added_by_filter,
         'assigned_person_filter': assigned_person_filter,
-        'status_filter': status_filter
+        'status_filter': status_filter,
+        'complaint_status_filter': complaint_status_filter,  # Pass to template
     })
-
 from app1.models import User, Complaint, ServiceLog, ServiceLogComplaint
 
 import requests
@@ -5591,10 +5596,11 @@ def fetch_customers():
 import requests
 from django.contrib import messages
 from django.shortcuts import render, redirect
-from .models import ServiceLog, Complaint, ServiceLogComplaint, User
+from .models import ServiceLog, Complaint, ServiceLogComplaint, User,ComplaintImage
 from django.utils import timezone
 from django.core.files.base import ContentFile
 import base64
+
 @login_required
 def add_service_log(request):
     complaints = Complaint.objects.all()
@@ -5643,12 +5649,17 @@ def add_service_log(request):
         complaint_ids = request.POST.getlist('complaints')
         for cid in complaint_ids:
             note = request.POST.get(f'note_{cid}', '')
-            ServiceLogComplaint.objects.create(
+            complaint_log = ServiceLogComplaint.objects.create(
                 service_log=log,
                 complaint_id=cid,
                 note=note,
-                assigned_person=custom_user  # Set the added_by user as the default assigned person
+                assigned_person=custom_user
             )
+
+            # Handle multiple images per complaint - this is the key change
+            images = request.FILES.getlist(f'images_{cid}')
+            for image in images:
+                ComplaintImage.objects.create(complaint_log=complaint_log, image=image)
 
         if voice_blob:
             format, audio_str = voice_blob.split(';base64,')
@@ -5662,15 +5673,15 @@ def add_service_log(request):
         registered_person_phone = custom_user.phone_number  # Assuming the phone number is stored in the User model
 
         message = (
-                    f"Dear {customer_name.split('-')[0].strip()},\n\n"
-                    f"Your complaint has been added successfully.\n"
-                    f"Ticket Number: {log.ticket_number}\n"
-                    f"Registered by: {registered_person_name}\n"
-                    f"Registered Person's Phone: {registered_person_phone}\n"
-                    f"Thank you for choosing our services.\n"
-                    f"Best regards,\n"
-                    f"IMC Business Solutions"
-                )
+            f"Dear {customer_name.split('-')[0].strip()},\n\n"
+            f"Your complaint has been added successfully.\n"
+            f"Ticket Number: {log.ticket_number}\n"
+            f"Registered by: {registered_person_name}\n"
+            f"Registered Person's Phone: {registered_person_phone}\n"
+            f"Thank you for choosing our services.\n"
+            f"Best regards,\n"
+            f"IMC Business Solutions"
+        )
 
         # Send WhatsApp message
         send_whatsapp_message(phone_number, message)
@@ -5692,6 +5703,11 @@ def send_whatsapp_message(phone_number, message):
     else:
         print(f"Failed to send WhatsApp message to {phone_number}. Status code: {response.status_code}, Response: {response.text}")
 
+from django.shortcuts import render, redirect
+from .models import ServiceLog, Complaint, ServiceLogComplaint, ComplaintImage, User
+from django.core.files.base import ContentFile
+from django.utils import timezone
+import base64
 
 def edit_service_log(request, log_id):
     log = ServiceLog.objects.get(id=log_id)
@@ -5735,24 +5751,30 @@ def edit_service_log(request, log_id):
         log.remarks = remarks
         log.phone_number = phone_number
 
+        # Handle new voice recording (optional)
         if voice_blob:
-            import base64
-            from django.core.files.base import ContentFile
             format, audio_str = voice_blob.split(';base64,')
             audio_file = ContentFile(base64.b64decode(audio_str), name=f"voice_{log.id}.webm")
             log.voice_note.save(audio_file.name, audio_file)
 
         log.save()
 
+        # Clear old complaints and images
         ServiceLogComplaint.objects.filter(service_log=log).delete()
+
         complaint_ids = request.POST.getlist('complaints')
         for cid in complaint_ids:
             note = request.POST.get(f'note_{cid}', '')
-            ServiceLogComplaint.objects.create(
+            complaint_log = ServiceLogComplaint.objects.create(
                 service_log=log,
                 complaint_id=cid,
                 note=note
             )
+
+            # Handle multiple images per complaint
+            images = request.FILES.getlist(f'images_{cid}')
+            for image in images:
+                ComplaintImage.objects.create(complaint_log=complaint_log, image=image)
 
         return redirect('servicelog_list')
 
