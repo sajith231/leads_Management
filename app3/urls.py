@@ -36,12 +36,19 @@ urlpatterns = [
     path('save-offer-letter/', views.save_offer_letter, name='save_offer_letter'),
     path('update-candidate-status/', views.update_candidate_status, name='update_candidate_status'),
 
-
-    path('experience-certificate/', views.make_experience_certificate, name='make_experience_certificate'),
-    
-
+#experience certificate
+    # urls.py
 
 
-    
-    
+    path('add-experience-certificate/', views.add_experience_certificate, name='add_experience_certificate'),
+    path('make-experience-certificate/', views.make_experience_certificate, name='make_experience_certificate'),
+    path('make-experience-certificate/<int:employee_id>/', views.make_experience_certificate, name='make_experience_certificate_with_id'),
+    path('approve-experience-certificate/<int:employee_id>/', views.approve_experience_certificate, name='approve_experience_certificate'),
+    path('delete-experience-certificate/<int:employee_id>/', views.delete_experience_certificate, name='delete_experience_certificate'),
+    path('experience-certificate/view/<int:employee_id>/', views.view_experience_certificate, name='view_experience_certificate'),
+    path('edit-experience-certificate/<int:employee_id>/', views.edit_experience_certificate, name='edit_experience_certificate'),
+
+
+
+
 ]

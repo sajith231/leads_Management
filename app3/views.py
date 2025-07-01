@@ -871,8 +871,281 @@ def update_candidate_status(request):
 
 
 
+from django.shortcuts import render, get_object_or_404, redirect
+from app1.models import Employee  # Adjust the import based on your app structure
+
+from django.shortcuts import render, get_object_or_404, redirect
+
+
+
+
 
 from django.shortcuts import render
+from app1.models import Employee  # Adjust the import based on your app structure
 
-def make_experience_certificate(request):
-    return render(request, 'experience_certificate.html')
+# app3/views.py
+from django.shortcuts import render, redirect, get_object_or_404
+from django.http import JsonResponse
+from app1.models import Employee
+
+# views.py
+from django.shortcuts import render, redirect, get_object_or_404
+from django.http import JsonResponse
+from django.contrib import messages
+from django.utils import timezone
+from app1.models import Employee
+from .models import ExperienceCertificate
+
+from django.shortcuts import render, get_object_or_404, redirect
+from django.http import JsonResponse
+from django.contrib import messages
+from django.utils import timezone
+from app1.models import Employee
+from .models import ExperienceCertificate
+
+def add_experience_certificate(request):
+    if request.method == 'POST':
+        employee_id = request.POST.get('employee_name')
+        start_date = request.POST.get('start_date')
+        end_date = request.POST.get('end_date')
+        if employee_id and start_date and end_date:
+            try:
+                employee = Employee.objects.get(id=employee_id)
+                
+                # Check if experience certificate already exists
+                experience_cert, created = ExperienceCertificate.objects.get_or_create(
+                    employee=employee,
+                    defaults={
+                        'added_by': request.user if request.user.is_authenticated else None,
+                        'start_date': start_date,
+                        'end_date': end_date,
+                    }
+                )
+                
+                if created:
+                    return JsonResponse({
+                        'success': True, 
+                        'employee_id': employee.id,
+                        'message': 'Experience certificate created successfully'
+                    })
+                else:
+                    return JsonResponse({
+                        'success': True, 
+                        'employee_id': employee.id,
+                        'message': 'Experience certificate already exists'
+                    })
+                    
+            except Employee.DoesNotExist:
+                return JsonResponse({
+                    'success': False, 
+                    'message': 'Employee not found'
+                })
+        else:
+            return JsonResponse({
+                'success': False, 
+                'message': 'Employee ID, start date, and end date are required'
+            })
+    
+    # GET request - display the form
+    employees = Employee.objects.all().order_by('name')
+    return render(request, 'add_experience_certificate.html', {'employees': employees})
+
+def make_experience_certificate(request, employee_id=None):
+    search_query = request.GET.get('q', '').strip()
+    page = request.GET.get('page', 1)
+    
+    # Base queryset - employees that have experience certificates
+    employees_queryset = Employee.objects.filter(
+        experience_certificate__isnull=False
+    ).select_related('experience_certificate').distinct()
+    
+    # Apply search filter ACROSS ALL PAGES if query exists
+    if search_query:
+        employees_queryset = employees_queryset.filter(
+            name__icontains=search_query
+        ).order_by('name')
+    else:
+        employees_queryset = employees_queryset.order_by('-id')
+
+    # Pagination AFTER filtering
+    paginator = Paginator(employees_queryset, 10)  # Show 10 employees per page
+    
+    try:
+        employees = paginator.page(page)
+    except PageNotAnInteger:
+        # If page is not an integer, deliver first page
+        employees = paginator.page(1)
+    except EmptyPage:
+        # If page is out of range, deliver last page
+        employees = paginator.page(paginator.num_pages)
+
+    context = {
+        'employees': employees,
+        'search_query': search_query,
+        'highlighted_employee_id': int(employee_id) if employee_id else None,
+        'total_results': employees_queryset.count(),  # Total filtered results
+    }
+
+    return render(request, 'make_experience_certificate.html', context)
+
+def approve_experience_certificate(request, employee_id):
+    if request.method == 'POST':
+        try:
+            employee = get_object_or_404(Employee, id=employee_id)
+            experience_cert = get_object_or_404(ExperienceCertificate, employee=employee)
+            
+            experience_cert.is_approved = True
+            experience_cert.approved_by = request.user if request.user.is_authenticated else None
+            experience_cert.approved_on = timezone.now()
+            experience_cert.save()
+            
+            messages.success(request, f'Experience certificate for {employee.name} has been approved.')
+        except Exception as e:
+            messages.error(request, f'Error approving certificate: {str(e)}')
+    
+    return redirect('make_experience_certificate')
+
+def delete_experience_certificate(request, employee_id):
+    if request.method == 'POST':
+        try:
+            employee = get_object_or_404(Employee, id=employee_id)
+            experience_cert = get_object_or_404(ExperienceCertificate, employee=employee)
+            experience_cert.delete()
+            
+            messages.success(request, f'Experience certificate for {employee.name} has been deleted.')
+        except Exception as e:
+            messages.error(request, f'Error deleting certificate: {str(e)}')
+    
+    return redirect('make_experience_certificate')
+
+def view_experience_certificate(request, employee_id):
+    employee = get_object_or_404(Employee, id=employee_id)
+
+    try:
+        experience_cert = ExperienceCertificate.objects.get(employee=employee)
+    except ExperienceCertificate.DoesNotExist:
+        return render(request, 'experience_certificate.html', {
+            'error': 'No experience certificate found.'
+        })
+
+    certificate_date = request.GET.get('date', timezone.now().strftime('%d-%m-%Y'))
+
+    return render(request, 'experience_certificate.html', {
+        'employee': employee,
+        'experience_certificate': experience_cert,
+        'certificate_date': certificate_date,
+    })
+
+from django.shortcuts import render, get_object_or_404, redirect
+from django.http import JsonResponse
+from django.contrib import messages
+from django.utils import timezone
+from app1.models import Employee
+from .models import ExperienceCertificate
+
+from django.shortcuts import render, get_object_or_404, redirect
+from django.http import JsonResponse
+from django.contrib import messages
+from django.utils import timezone
+from app1.models import Employee
+from .models import ExperienceCertificate
+
+def edit_experience_certificate(request, employee_id):
+    employee = get_object_or_404(Employee, id=employee_id)
+    experience_cert = get_object_or_404(ExperienceCertificate, employee=employee)
+
+    if request.method == 'POST':
+        # Check if this is an AJAX request (JSON expected)
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.content_type == 'application/json':
+            try:
+                start_date = request.POST.get('start_date')
+                end_date = request.POST.get('end_date')
+
+                # Validate the input dates
+                if not start_date or not end_date:
+                    return JsonResponse({
+                        'success': False,
+                        'message': 'Start date and end date are required.'
+                    })
+
+                # Additional validation: ensure end_date is after start_date
+                from datetime import datetime
+                try:
+                    start_date_obj = datetime.strptime(start_date, '%Y-%m-%d').date()
+                    end_date_obj = datetime.strptime(end_date, '%Y-%m-%d').date()
+                    
+                    if end_date_obj <= start_date_obj:
+                        return JsonResponse({
+                            'success': False,
+                            'message': 'End date must be after start date.'
+                        })
+                except ValueError:
+                    return JsonResponse({
+                        'success': False,
+                        'message': 'Invalid date format.'
+                    })
+
+                # Update the experience certificate
+                experience_cert.start_date = start_date
+                experience_cert.end_date = end_date
+                experience_cert.save()
+                
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Experience certificate updated successfully.'
+                })
+                
+            except Exception as e:
+                return JsonResponse({
+                    'success': False,
+                    'message': f'Failed to update experience certificate: {str(e)}'
+                })
+        
+        # Handle regular form submission (non-AJAX)
+        else:
+            start_date = request.POST.get('start_date')
+            end_date = request.POST.get('end_date')
+
+            # Validate the input dates
+            if not start_date or not end_date:
+                messages.error(request, 'Start date and end date are required.')
+                return render(request, 'edit_experience_certificate.html', {
+                    'employee': employee,
+                    'experience_cert': experience_cert,
+                    'initial_data': {
+                        'start_date': start_date,
+                        'end_date': end_date,
+                    }
+                })
+
+            try:
+                # Update the experience certificate
+                experience_cert.start_date = start_date
+                experience_cert.end_date = end_date
+                experience_cert.save()
+                messages.success(request, 'Experience certificate updated successfully.')
+                return redirect('make_experience_certificate')
+            except Exception as e:
+                messages.error(request, f'Failed to update experience certificate: {str(e)}')
+                return render(request, 'edit_experience_certificate.html', {
+                    'employee': employee,
+                    'experience_cert': experience_cert,
+                    'initial_data': {
+                        'start_date': start_date,
+                        'end_date': end_date,
+                    }
+                })
+    
+    # GET request - show the form
+    else:
+        # Pre-fill the form with existing data
+        initial_data = {
+            'start_date': experience_cert.start_date.strftime('%Y-%m-%d') if experience_cert.start_date else '',
+            'end_date': experience_cert.end_date.strftime('%Y-%m-%d') if experience_cert.end_date else '',
+        }
+
+        return render(request, 'edit_experience_certificate.html', {
+            'employee': employee,
+            'experience_cert': experience_cert,
+            'initial_data': initial_data,
+        })
