@@ -22,6 +22,7 @@ from .models import SalaryCertificate
 from django.core.paginator import Paginator
 from django.shortcuts import render
 from .models import SalaryCertificate
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 def make_salary_certificate(request):
     # Get the search query from the request
