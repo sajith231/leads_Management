@@ -5937,7 +5937,6 @@ def assign_work(request, log_id):
 
 
 
-
 @login_required
 def my_assigned_service_logs(request):
     # Get the custom User instance based on the logged-in user
@@ -5951,7 +5950,14 @@ def my_assigned_service_logs(request):
         assigned_complaints = ServiceLogComplaint.objects.filter(
             assigned_person=custom_user
         ).select_related('service_log', 'complaint').order_by('-assigned_date')
+    elif status_filter == 'Pending':
+        # For Pending filter, include both Pending and In Progress statuses
+        assigned_complaints = ServiceLogComplaint.objects.filter(
+            assigned_person=custom_user, 
+            status__in=['Pending', 'In Progress']
+        ).select_related('service_log', 'complaint').order_by('-assigned_date')
     else:
+        # For other filters (Completed, In Progress), use exact status match
         assigned_complaints = ServiceLogComplaint.objects.filter(
             assigned_person=custom_user, 
             status=status_filter
@@ -5973,7 +5979,6 @@ def my_assigned_service_logs(request):
         'status_filter': status_filter,
         'default_assigned_person': custom_user
     })
-
 
 @csrf_exempt
 @require_POST
@@ -6103,43 +6108,3 @@ def reassign_complaint(request):
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
 
-
-# Also update your my_assigned_service_logs view to include users list
-@login_required
-def my_assigned_service_logs(request):
-    # Get the custom User instance based on the logged-in user
-    custom_user = User.objects.get(userid=request.user.username)
-    
-    # Get the status filter from the request, default to 'Pending'
-    status_filter = request.GET.get('status', 'Pending')
-    
-    # Fetch service logs where user has assigned complaints
-    if status_filter == 'all':
-        assigned_complaints = ServiceLogComplaint.objects.filter(
-            assigned_person=custom_user
-        ).select_related('service_log', 'complaint').order_by('-assigned_date')
-    else:
-        assigned_complaints = ServiceLogComplaint.objects.filter(
-            assigned_person=custom_user, 
-            status=status_filter
-        ).select_related('service_log', 'complaint').order_by('-assigned_date')
-    
-    # Group complaints by service log
-    service_logs_dict = {}
-    for complaint_log in assigned_complaints:
-        service_log = complaint_log.service_log
-        if service_log.id not in service_logs_dict:
-            service_logs_dict[service_log.id] = {
-                'service_log': service_log,
-                'assigned_complaints': []
-            }
-        service_logs_dict[service_log.id]['assigned_complaints'].append(complaint_log)
-    
-    # Get all active users for reassignment dropdown
-    users = User.objects.filter(status='active').exclude(id=custom_user.id).order_by('name')
-    
-    return render(request, 'my_assigned_service_logs.html', {
-        'service_logs_data': service_logs_dict.values(),
-        'status_filter': status_filter,
-        'users': users  # Add users to context
-    })
