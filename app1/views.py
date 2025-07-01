@@ -5789,10 +5789,27 @@ def edit_service_log(request, log_id):
 
 
     
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import get_object_or_404, redirect
+from .models import ServiceLog, User
+
+@login_required
 def delete_service_log(request, log_id):
-    log = ServiceLog.objects.get(id=log_id)
+    # grab the log (404 if it doesn’t exist)
+    log = get_object_or_404(ServiceLog, id=log_id)
+
+    # delete it
     log.delete()
-    return redirect('servicelog_list')
+
+    # decide where to go next
+    custom_user = User.objects.get(userid=request.user.username)
+    if custom_user.user_level == 'admin_level':
+        # admins → full admin list
+        return redirect('servicelog_list')      #  renders servic_log_admin.html
+    else:
+        # normal users → their own list
+        return redirect('user_service_log')     #  renders user_service_log.html
+
 
 
 
