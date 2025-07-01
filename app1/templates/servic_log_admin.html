@@ -97,66 +97,66 @@
                     <td>{{ log.place }}</td>
                     <td>{{ log.get_complaint_type_display }}</td>
                     <td>
-                        {% for complaint_log in log.servicelogcomplaint_set.all %}
-                            <div class="complaint-item mb-2 p-2 border-start border-3 
-                                {% if complaint_log.status == 'Completed' %}border-success
-                                {% elif complaint_log.status == 'In Progress' %}border-warning
-                                {% else %}border-secondary
-                                {% endif %}">
-                                <div class="d-flex justify-content-between align-items-start">
-                                    <div class="complaint-details flex-grow-1">
-                                        {% if complaint_log.images.all %}
-                                            <div class="mt-2 d-flex flex-wrap gap-2">
-                                                {% for img in complaint_log.images.all %}
-                                                    <a href="{{ img.image.url }}" target="_blank">
-                                                        <img src="{{ img.image.url }}" style="height: 50px; border-radius: 4px; border: 1px solid #ccc;" alt="Complaint Image">
-                                                    </a>
-                                                {% endfor %}
-                                            </div>
-                                        {% endif %}
-
-                                        {% if complaint_log.note %}
-                                            <div class="text-muted small mt-1">
-                                                <em>Note: {{ complaint_log.note }}</em>
-                                            </div>
-                                        {% endif %}
-                                    </div>
-                                    <div class="assignment-info ms-2 text-end">
-                                        <div class="assigned-person mb-1">
-                                            {% if complaint_log.assigned_person %}
-                                                <span class="badge bg-info small">
-                                                    <i class="fas fa-user"></i> {{ complaint_log.assigned_person.name }}
-                                                </span>
-                                            {% else %}
-                                                <span class="badge bg-secondary small">
-                                                    <i class="fas fa-user-slash"></i> Not Assigned
-                                                </span>
-                                            {% endif %}
-                                        </div>
-                                        <div class="complaint-status">
-                                            <span class="badge 
-                                                {% if complaint_log.status == 'Completed' %}bg-success
-                                                {% elif complaint_log.status == 'In Progress' %}bg-warning
-                                                {% else %}bg-secondary
-                                                {% endif %} small">
-                                                {{ complaint_log.status }}
-                                            </span>
-                                        </div>
-                                        {% if complaint_log.completed_date %}
-                                            <div class="completion-date mt-1">
-                                                <small class="text-success">
-                                                    <i class="fas fa-check-circle"></i> 
-                                                    {{ complaint_log.completed_date|date:"d-m H:i" }}
-                                                </small>
-                                            </div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </div>
-                        {% empty %}
-                            <span class="text-muted">No complaints assigned</span>
-                        {% endfor %}
-                    </td>
+    {% for complaint_log in log.servicelogcomplaint_set.all %}
+        <div class="complaint-item mb-2 p-2 border-start border-3 
+            {% if complaint_log.status == 'Completed' %}border-success
+            {% elif complaint_log.status == 'In Progress' %}border-warning
+            {% else %}border-secondary
+            {% endif %}">
+            <div class="d-flex justify-content-between align-items-start">
+                <div class="complaint-details flex-grow-1">
+                    <strong>{{ complaint_log.complaint.description }}</strong> <!-- Display the complaint name -->
+                    {% if complaint_log.note %}
+                        <div class="text-muted small mt-1">
+                            <em>Note: {{ complaint_log.note }}</em>
+                        </div>
+                    {% endif %}
+                    {% if complaint_log.images.all %}
+                        <div class="mt-2 d-flex flex-wrap gap-2">
+                            {% for img in complaint_log.images.all %}
+                                <a href="{{ img.image.url }}" target="_blank">
+                                    <img src="{{ img.image.url }}" style="height: 50px; border-radius: 4px; border: 1px solid #ccc;" alt="Complaint Image">
+                                </a>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="assignment-info ms-2 text-end">
+                    <div class="assigned-person mb-1">
+                        {% if complaint_log.assigned_person %}
+                            <span class="badge bg-info small">
+                                <i class="fas fa-user"></i> {{ complaint_log.assigned_person.name }}
+                            </span>
+                        {% else %}
+                            <span class="badge bg-secondary small">
+                                <i class="fas fa-user-slash"></i> Not Assigned
+                            </span>
+                        {% endif %}
+                    </div>
+                    <div class="complaint-status">
+                        <span class="badge 
+                            {% if complaint_log.status == 'Completed' %}bg-success
+                            {% elif complaint_log.status == 'In Progress' %}bg-warning
+                            {% else %}bg-secondary
+                            {% endif %} small">
+                            {{ complaint_log.status }}
+                        </span>
+                    </div>
+                    {% if complaint_log.completed_date %}
+                        <div class="completion-date mt-1">
+                            <small class="text-success">
+                                <i class="fas fa-check-circle"></i> 
+                                {{ complaint_log.completed_date|date:"d-m H:i" }}
+                            </small>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    {% empty %}
+        <span class="text-muted">No complaints assigned</span>
+    {% endfor %}
+</td>
                     <td>
                         {% for user in users %}
                             {% if user.id == log.added_by.id %}
