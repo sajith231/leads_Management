@@ -5695,7 +5695,7 @@ def add_service_log(request):
 
 def send_whatsapp_message(phone_number, message):
     secret = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
-    account = "1748250982812b4ba287f5ee0bc9d43bbf5bbe87fb683431662a427"
+    account = "1751352651812b4ba287f5ee0bc9d43bbf5bbe87fb6863854b166a3"
     url = f"https://app.dxing.in/api/send/whatsapp?secret={secret}&account={account}&recipient={phone_number}&type=text&message={message}&priority=1"
     response = requests.get(url)
     if response.status_code == 200:
@@ -5936,33 +5936,34 @@ def assign_work(request, log_id):
     })
 
 
-
 @login_required
 def my_assigned_service_logs(request):
-    # Get the custom User instance based on the logged-in user
-    custom_user = User.objects.get(userid=request.user.username)
-    
+    try:
+        # Get the custom User instance based on the logged-in user
+        custom_user = User.objects.get(userid=request.user.username)
+    except User.DoesNotExist:
+        messages.error(request, "User not found.")
+        return redirect('login')
+
     # Get the status filter from the request, default to 'Pending'
     status_filter = request.GET.get('status', 'Pending')
-    
+
     # Fetch service logs where user has assigned complaints
     if status_filter == 'all':
         assigned_complaints = ServiceLogComplaint.objects.filter(
             assigned_person=custom_user
         ).select_related('service_log', 'complaint').order_by('-assigned_date')
     elif status_filter == 'Pending':
-        # For Pending filter, include both Pending and In Progress statuses
         assigned_complaints = ServiceLogComplaint.objects.filter(
             assigned_person=custom_user, 
             status__in=['Pending', 'In Progress']
         ).select_related('service_log', 'complaint').order_by('-assigned_date')
     else:
-        # For other filters (Completed, In Progress), use exact status match
         assigned_complaints = ServiceLogComplaint.objects.filter(
             assigned_person=custom_user, 
             status=status_filter
         ).select_related('service_log', 'complaint').order_by('-assigned_date')
-    
+
     # Group complaints by service log
     service_logs_dict = {}
     for complaint_log in assigned_complaints:
@@ -5970,15 +5971,20 @@ def my_assigned_service_logs(request):
         if service_log.id not in service_logs_dict:
             service_logs_dict[service_log.id] = {
                 'service_log': service_log,
-                'assigned_complaints': []
+                'assigned_complaints': [],
             }
         service_logs_dict[service_log.id]['assigned_complaints'].append(complaint_log)
-    
+
+    # Get all active users
+    users = User.objects.filter(status='active').order_by('name')
+
     return render(request, 'my_assigned_service_logs.html', {
         'service_logs_data': service_logs_dict.values(),
         'status_filter': status_filter,
-        'default_assigned_person': custom_user
+        'default_assigned_person': custom_user,
+        'users': users  # Ensure this is passed to the template
     })
+
 
 @csrf_exempt
 @require_POST
