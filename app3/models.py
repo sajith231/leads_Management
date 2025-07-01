@@ -69,7 +69,7 @@ class Rating(models.Model):
         ('selected', 'Selected'),
         ('rejected', 'Rejected'),
     ]
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='selected')
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
 
 from django.db import models
 from app3.models import Interview  # adjust if Interview is from another app
@@ -126,3 +126,56 @@ class OfferLetter(models.Model):
         if self.interview:
             return f"Offer Letter - {self.position} for {self.interview.name}"
         return f"Offer Letter - {self.position}"
+
+from django.db import models
+from django.contrib.auth.models import User
+from app1.models import Employee
+from django.conf import settings  # Ensure this import is correct
+
+# models.py
+from django.db import models
+from django.contrib.auth.models import User
+
+class ExperienceCertificate(models.Model):
+    employee = models.OneToOneField('app1.Employee', on_delete=models.CASCADE, related_name='experience_certificate')
+    # Remove these fields since they'll be fetched from Employee model
+    # address = models.CharField(max_length=255, blank=True, null=True)
+    # joining_date = models.DateField(blank=True, null=True)
+    # job_title = models.CharField(max_length=100, blank=True, null=True)
+    
+    experience_details = models.TextField(blank=True, null=True)
+    certificate = models.FileField(upload_to='certificates/', blank=True, null=True)
+    is_approved = models.BooleanField(default=False)
+    added_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='added_experience_certificates')
+    added_on = models.DateTimeField(auto_now_add=True)
+    approved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='approved_experience_certificates')
+    approved_on = models.DateTimeField(null=True, blank=True)
+    start_date = models.DateField(blank=True, null=True)  # Start date field
+    end_date = models.DateField(blank=True, null=True)
+
+    def __str__(self):
+        return f"Experience Certificate - {self.employee.name}"
+
+    class Meta:
+        db_table = 'experience_certificates'
+        verbose_name = 'Experience Certificate'
+        verbose_name_plural = 'Experience Certificates'
+
+    # Property methods to access employee data
+    @property
+    def address(self):
+        return self.employee.address if self.employee else None
+
+    @property
+    def joining_date(self):
+        return self.employee.joining_date if self.employee else None
+
+    @property
+    def job_title(self):
+        return self.employee.job_title if self.employee else None
+
+
+
+
+
+
