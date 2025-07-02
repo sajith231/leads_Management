@@ -5512,12 +5512,18 @@ from .models import ServiceLog, Complaint, ServiceLogComplaint, User
 from django.utils import timezone
 from django.db.models import Q
 
+from django.core.paginator import Paginator
+from django.shortcuts import render, redirect
+from .models import ServiceLog, Complaint, ServiceLogComplaint, User
+from django.utils import timezone
+from django.db.models import Q, Count, Case, When
+
 def servicelog_list(request):
     # Get search parameters from request
     customer_search = request.GET.get('customer_search', '')
     added_by_filter = request.GET.get('added_by', '')
     assigned_person_filter = request.GET.get('assigned_person', '')
-    status_filter = request.GET.get('status', 'Pending')  # Default to Pending
+    status_filter = request.GET.get('status', '')  # Changed: Default to empty string (All Status)
     complaint_status_filter = request.GET.get('complaint_status', '')  # New complaint status filter
 
     # Get all service logs
@@ -5541,12 +5547,30 @@ def servicelog_list(request):
         except (ValueError, TypeError):
             pass
 
+    # Only apply status filter if a specific status is selected
     if status_filter:
         service_logs = service_logs.filter(status=status_filter)
 
     if complaint_status_filter:
-        # Filter logs that have at least one complaint with the selected status
-        service_logs = service_logs.filter(servicelogcomplaint__status=complaint_status_filter).distinct()
+        # Filter logs where ALL complaints have the selected status
+        # Get logs that have complaints with the selected status
+        logs_with_matching_status = set(
+            service_logs.filter(servicelogcomplaint__status=complaint_status_filter)
+            .values_list('id', flat=True)
+        )
+        
+        # Get logs that have complaints with different status
+        logs_with_different_status = set(
+            service_logs.exclude(servicelogcomplaint__status=complaint_status_filter)
+            .filter(servicelogcomplaint__isnull=False)
+            .values_list('id', flat=True)
+        )
+        
+        # Only include logs where ALL complaints have the selected status
+        # (logs with matching status but no different status)
+        logs_with_all_matching = logs_with_matching_status - logs_with_different_status
+        
+        service_logs = service_logs.filter(id__in=logs_with_all_matching)
 
     # Set up pagination
     paginator = Paginator(service_logs, 10)  # Show 10 service logs per page
