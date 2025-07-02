@@ -3658,7 +3658,7 @@ def create_leave_request(request):
 
             
             # List of phone numbers to send the WhatsApp message
-            phone_numbers = ["9946545535", "7593820007", "7593820005","9846754998"]
+            phone_numbers = ["9946545535", "7593820007", "7593820005","9846754998","9061947005"]
             
             formatted_start = start_date.strftime('%d %m %Y')
             formatted_end = end_date.strftime('%d %m %Y')
@@ -3873,7 +3873,7 @@ def create_late_request(request):
             )
             
             # Send WhatsApp message to managers
-            phone_numbers = ["9946545535", "7593820007", "7593820005","9846754998"]
+            phone_numbers = ["9946545535", "7593820007", "7593820005","9846754998","9061947005"]
             message = (
                 f"New late request from {employee.name}. "
                 f"Date: {date_obj.strftime('%d-%m-%Y')}, "
@@ -3882,14 +3882,14 @@ def create_late_request(request):
             )
             
             for number in phone_numbers:
-                send_whatsapp_message(number, message)
+                send_whatsapp_message_new(number, message)
             
             return JsonResponse({'success': True, 'message': 'Late request submitted successfully'})
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)})
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
 
-def send_whatsapp_message(phone_number, message):
+def send_whatsapp_message_new(phone_number, message):
     secret = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
     account = "1748250982812b4ba287f5ee0bc9d43bbf5bbe87fb683431662a427"
     
@@ -3901,7 +3901,6 @@ def send_whatsapp_message(phone_number, message):
         print(f"WhatsApp message sent successfully to {phone_number}")
     else:
         print(f"Failed to send WhatsApp message to {phone_number}. Status code: {response.status_code}, Response: {response.text}")
-    return JsonResponse({'success': False, 'error': 'Invalid request method'})
 
 # views.py
 # views.py
@@ -4012,11 +4011,26 @@ from django.utils.timezone import localtime
 from datetime import datetime
 from .models import Employee, Attendance, Holiday
 
+from django.shortcuts import render, get_object_or_404
+from django.http import JsonResponse
+from django.utils import timezone
+from django.utils.timezone import localtime
+from datetime import datetime
+from .models import Employee, Attendance, Holiday
+
+from django.shortcuts import render, get_object_or_404
+from django.http import JsonResponse
+from django.utils import timezone
+from django.utils.timezone import localtime
+from datetime import datetime
+from .models import Employee, Attendance, Holiday
+
 def attendance_summary(request, employee_id):
     employee = get_object_or_404(Employee, id=employee_id)
     now = timezone.now()
     year = request.GET.get('year', now.year)
     month = request.GET.get('month', now.month)
+    user_name_filter = request.GET.get('user_name', '')
 
     try:
         year = int(year)
@@ -4025,11 +4039,23 @@ def attendance_summary(request, employee_id):
         year = now.year
         month = now.month
 
-    attendance_records = Attendance.objects.filter(
-        employee=employee,
-        date__year=year,
-        date__month=month
-    ).order_by('date')
+    # Filter attendance records based on user name if provided
+    if user_name_filter:
+        selected_employee = Employee.objects.filter(name__icontains=user_name_filter).first()
+        if selected_employee:
+            attendance_records = Attendance.objects.filter(
+                employee=selected_employee,
+                date__year=year,
+                date__month=month
+            ).order_by('date')
+        else:
+            attendance_records = Attendance.objects.none()
+    else:
+        attendance_records = Attendance.objects.filter(
+            employee=employee,
+            date__year=year,
+            date__month=month
+        ).order_by('date')
 
     holidays = Holiday.objects.filter(
         date__year=year,
@@ -4122,6 +4148,9 @@ def attendance_summary(request, employee_id):
         'not_marked_count': not_marked_count,
         'current_year': now.year,
         'current_month': now.month,
+        'user_name_filter': user_name_filter,
+        'selected_employee_name': selected_employee.name if user_name_filter and selected_employee else employee.name,
+        'employees': Employee.objects.filter(status='active').order_by('name'),
     }
 
     return render(request, 'attendance_summary.html', context)
@@ -5370,7 +5399,7 @@ def create_early_request(request):
             )
             
             # Send WhatsApp message to managers
-            phone_numbers = ["9946545535", "7593820007", "7593820005","9846754998"]
+            phone_numbers = ["9946545535", "7593820007", "7593820005","9846754998","9061947005"]
             message = (
                 f"New early request from {employee.name}. "
                 f"Date: {data['date']}, "
@@ -5379,7 +5408,7 @@ def create_early_request(request):
             )
             
             for number in phone_numbers:
-                send_whatsapp_message(number, message)
+                send_whatsapp_message_new(number, message)
             
             return JsonResponse({'success': True, 'message': 'Early request submitted successfully'})
         except Exception as e:
@@ -5506,17 +5535,6 @@ def delete_early_request(request):
 
 
 # views.py
-from django.core.paginator import Paginator
-from django.shortcuts import render, redirect
-from .models import ServiceLog, Complaint, ServiceLogComplaint, User
-from django.utils import timezone
-from django.db.models import Q
-
-from django.core.paginator import Paginator
-from django.shortcuts import render, redirect
-from .models import ServiceLog, Complaint, ServiceLogComplaint, User
-from django.utils import timezone
-from django.db.models import Q, Count, Case, When
 
 from django.core.paginator import Paginator
 from django.shortcuts import render, redirect

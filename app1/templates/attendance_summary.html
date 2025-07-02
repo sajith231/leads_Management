@@ -5,6 +5,18 @@
     .allbody{
         margin-top: 5%;
     }
+    @media (max-width: 768px) {
+        .allbody{
+            margin-top: 15%;
+        }
+    }
+    .input-group {
+        display: flex;
+        align-items: center;
+    }
+    .form-control {
+        margin-right: 8px;
+    }
 </style>
 <style>
     @media (max-width: 768px) {
@@ -18,10 +30,16 @@
         <div class="card-body">
             <div class="row align-items-center">
                 <div class="col-md-6">
-                    <h2 class="card-title mb-0">Attendance Summary for {{ employee.name }}</h2>
+                    <h2 class="card-title mb-0" id="attendanceSummaryTitle">Attendance Summary for {{ selected_employee_name }}</h2>
                 </div>
                 <div class="col-md-6 text-end">
                     <div class="input-group" style="max-width: 300px; margin-left: auto;">
+                        <select class="form-control" id="userNameFilter">
+                            <option value="">Select User</option>
+                            {% for emp in employees %}
+                                <option value="{{ emp.name }}" {% if emp.name == user_name_filter %}selected{% endif %}>{{ emp.name }}</option>
+                            {% endfor %}
+                        </select>
                         <input type="month" class="form-control" id="monthFilter" 
                                value="{{ year }}-{{ month|stringformat:'02d' }}">
                         <button class="btn btn-primary" onclick="filterByMonth()">Go</button>
@@ -186,9 +204,21 @@
 <script>
     function filterByMonth() {
         const monthFilter = document.getElementById('monthFilter').value;
+        const userNameFilter = document.getElementById('userNameFilter').value;
+
         const [year, month] = monthFilter.split('-');
-        window.location.href = `{% url 'attendance_summary' employee.id %}?year=${year}&month=${month}`;
+        const url = new URL(window.location.href);
+        url.searchParams.set('year', year);
+        url.searchParams.set('month', month);
+        url.searchParams.set('user_name', userNameFilter);
+
+        window.location.href = url.toString();
     }
+
+    // Add an event listener to the dropdown to update the summary title on change
+    document.getElementById('userNameFilter').addEventListener('change', function() {
+        filterByMonth();
+    });
 </script>
 
 <style>
