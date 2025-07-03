@@ -5537,21 +5537,28 @@ def delete_early_request(request):
 # views.py
 
 from django.core.paginator import Paginator
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from .models import ServiceLog, Complaint, ServiceLogComplaint, User
 from django.utils import timezone
 from django.db.models import Q, Count, Case, When
 from datetime import datetime
+from datetime import datetime, date
+from django.contrib.auth.decorators import login_required
+from .forms import ComplaintForm
 
 def servicelog_list(request):
-    # Get search parameters from request
+    # Get current date for default values
+    today = date.today().strftime('%Y-%m-%d')
+    
+    # Get search parameters from request with default values
     customer_search = request.GET.get('customer_search', '')
     added_by_filter = request.GET.get('added_by', '')
     assigned_person_filter = request.GET.get('assigned_person', '')
     status_filter = request.GET.get('status', '')
     complaint_status_filter = request.GET.get('complaint_status', '')
-    start_date_filter = request.GET.get('start_date', '')  # New date filter
-    end_date_filter = request.GET.get('end_date', '')      # New date filter
+    complaint_filter = request.GET.get('complaint_type', '')  # New complaint filter
+    start_date_filter = request.GET.get('start_date', today)  # Default to today
+    end_date_filter = request.GET.get('end_date', today)      # Default to today
 
     # Get all service logs
     service_logs = ServiceLog.objects.all().order_by('-id')
@@ -5594,6 +5601,22 @@ def servicelog_list(request):
         logs_with_all_matching = logs_with_matching_status - logs_with_different_status
         service_logs = service_logs.filter(id__in=logs_with_all_matching)
 
+    # New complaint type filter
+    if complaint_filter:
+        if complaint_filter == 'all':
+            # Show all complaints - no additional filtering needed
+            pass
+        elif complaint_filter == 'hardware':
+            # Filter logs that have hardware complaints
+            service_logs = service_logs.filter(
+                servicelogcomplaint__complaint__complaint_type='hardware'
+            ).distinct()
+        elif complaint_filter == 'software':
+            # Filter logs that have software complaints
+            service_logs = service_logs.filter(
+                servicelogcomplaint__complaint__complaint_type='software'
+            ).distinct()
+
     # Apply date range filter
     if start_date_filter:
         try:
@@ -5615,6 +5638,7 @@ def servicelog_list(request):
     page_obj = paginator.get_page(page_number)
 
     users = User.objects.all()
+    start_index = page_obj.start_index()
 
     return render(request, 'servic_log_admin.html', {
         'page_obj': page_obj,
@@ -5624,8 +5648,10 @@ def servicelog_list(request):
         'assigned_person_filter': assigned_person_filter,
         'status_filter': status_filter,
         'complaint_status_filter': complaint_status_filter,
+        'complaint_filter': complaint_filter,  # Pass complaint filter to template
         'start_date_filter': start_date_filter,    # Pass to template
         'end_date_filter': end_date_filter,        # Pass to template
+        'start_index': start_index,
     })
 
 from app1.models import User, Complaint, ServiceLog, ServiceLogComplaint

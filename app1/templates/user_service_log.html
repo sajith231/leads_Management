@@ -18,6 +18,7 @@
                     <th>Assigned Person</th>
                     <th>Status</th>
                     <th>Voice Note</th>
+                    <th>Remark</th> 
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -95,6 +96,27 @@
                             <span class="text-muted">No Voice Note</span>
                         {% endif %}
                     </td>
+                    <td>
+    <!-- Icon to trigger the modal -->
+    <a href="#" data-bs-toggle="modal" data-bs-target="#remarksModal{{ log.id }}">
+        <i class="fas fa-comment-dots text-info" style="display: flex;justify-content: center;"></i>
+    </a>
+
+    <!-- Modal -->
+    <div class="modal fade" id="remarksModal{{ log.id }}" tabindex="-1" aria-labelledby="remarksModalLabel{{ log.id }}" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="remarksModalLabel{{ log.id }}">Remarks</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            {{ log.remarks|default:"No remarks available" }}
+          </div>
+        </div>
+      </div>
+    </div>
+</td>
                     <td>
                         <div class="btn-group" role="group">
                             <a href="{% url 'edit_service_log' log.id %}" class="btn btn-sm btn-outline-primary">Edit</a>
