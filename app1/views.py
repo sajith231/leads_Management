@@ -5555,7 +5555,7 @@ def servicelog_list(request):
     added_by_filter = request.GET.get('added_by', '')
     assigned_person_filter = request.GET.get('assigned_person', '')
     status_filter = request.GET.get('status', '')
-    complaint_status_filter = request.GET.get('complaint_status', '')
+    complaint_status_filter = request.GET.get('complaint_status', 'Pending')
     complaint_filter = request.GET.get('complaint_type', '')  # New complaint filter
     start_date_filter = request.GET.get('start_date', today)  # Default to today
     end_date_filter = request.GET.get('end_date', today)      # Default to today
@@ -6025,7 +6025,6 @@ def assign_work(request, log_id):
         'complaints': complaints,
     })
 
-
 @login_required
 def my_assigned_service_logs(request):
     try:
@@ -6035,23 +6034,23 @@ def my_assigned_service_logs(request):
         messages.error(request, "User not found.")
         return redirect('login')
 
-    # Get the status filter from the request, default to 'Pending'
-    status_filter = request.GET.get('status', 'Pending')
+    # Get the status filter from the request, default to 'Active'
+    status_filter = request.GET.get('status', 'Active')
 
     # Fetch service logs where user has assigned complaints
     if status_filter == 'all':
         assigned_complaints = ServiceLogComplaint.objects.filter(
             assigned_person=custom_user
         ).select_related('service_log', 'complaint').order_by('-assigned_date')
-    elif status_filter == 'Pending':
+    elif status_filter == 'Active':
         assigned_complaints = ServiceLogComplaint.objects.filter(
             assigned_person=custom_user, 
             status__in=['Pending', 'In Progress']
         ).select_related('service_log', 'complaint').order_by('-assigned_date')
-    else:
+    elif status_filter == 'Completed':
         assigned_complaints = ServiceLogComplaint.objects.filter(
             assigned_person=custom_user, 
-            status=status_filter
+            status='Completed'
         ).select_related('service_log', 'complaint').order_by('-assigned_date')
 
     # Group complaints by service log
@@ -6072,7 +6071,7 @@ def my_assigned_service_logs(request):
         'service_logs_data': service_logs_dict.values(),
         'status_filter': status_filter,
         'default_assigned_person': custom_user,
-        'users': users  # Ensure this is passed to the template
+        'users': users
     })
 
 

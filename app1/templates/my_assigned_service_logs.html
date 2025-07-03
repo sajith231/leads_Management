@@ -6,29 +6,27 @@
             <h2>My Assigned Complaints</h2>
             
             <!-- Status Filter -->
-            <div class="card mb-3">
-                <div class="card-body">
-                    <div class="row align-items-center">
-                        <div class="col-md-6">
-                            <h6>Filter by Status:</h6>
-                            <div class="btn-group" role="group">
-                                <a href="?status=Pending" class="btn {% if status_filter == 'Pending' %}btn-primary{% else %}btn-outline-primary{% endif %}">
-                                    Pending
-                                </a>
-                                <a href="?status=In Progress" class="btn {% if status_filter == 'In Progress' %}btn-warning{% else %}btn-outline-warning{% endif %}">
-                                    In Progress
-                                </a>
-                                <a href="?status=Completed" class="btn {% if status_filter == 'Completed' %}btn-success{% else %}btn-outline-success{% endif %}">
-                                    Completed
-                                </a>
-                                <a href="?status=all" class="btn {% if status_filter == 'all' %}btn-info{% else %}btn-outline-info{% endif %}">
-                                    All
-                                </a>
-                            </div>
-                        </div>
-                    </div>
+            <!-- Status Filter -->
+<div class="card mb-3">
+    <div class="card-body">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h6>Filter by Status:</h6>
+                <div class="btn-group" role="group">
+                    <a href="?status=Active" class="btn {% if status_filter == 'Active' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                        Active
+                    </a>
+                    <a href="?status=Completed" class="btn {% if status_filter == 'Completed' %}btn-success{% else %}btn-outline-success{% endif %}">
+                        Completed
+                    </a>
+                    <a href="?status=all" class="btn {% if status_filter == 'all' %}btn-info{% else %}btn-outline-info{% endif %}">
+                        All
+                    </a>
                 </div>
             </div>
+        </div>
+    </div>
+</div>
 
             {% if service_logs_data %}
                 {% for data in service_logs_data %}
