@@ -5904,24 +5904,57 @@ def delete_service_log(request, log_id):
 
 
 
+from django.core.paginator import Paginator
+from django.utils import timezone
+from django.shortcuts import render, redirect
+from .models import ServiceLog, User
+from django.contrib.auth.decorators import login_required
 
+@login_required
 def user_service_log(request):
     if request.user.is_authenticated:
-        # Get the custom User instance based on the logged-in user
         custom_user = User.objects.get(userid=request.user.username)
-        # Filter service logs added by the current user, latest first
         user_service_logs = ServiceLog.objects.filter(added_by=custom_user).order_by('-id')
-        
-        # Get all users to display assigned person names
+
+        status_filter = request.GET.get('status', '')
+        complaint_status_filter = request.GET.get('complaint_status', '')
+        customer_search = request.GET.get('customer_search', '')
+        start_date_filter = request.GET.get('start_date')
+        end_date_filter = request.GET.get('end_date')
+
+        if status_filter:
+            user_service_logs = user_service_logs.filter(status=status_filter)
+
+        if complaint_status_filter:
+            user_service_logs = user_service_logs.filter(servicelogcomplaint__status=complaint_status_filter).distinct()
+
+        if customer_search:
+            user_service_logs = user_service_logs.filter(customer_name__icontains=customer_search)
+
+        if start_date_filter and end_date_filter:
+            user_service_logs = user_service_logs.filter(date__date__range=[start_date_filter, end_date_filter])
+
         users = User.objects.all()
-        
+
+        today_date = timezone.now().date().isoformat()
+
+        # Pagination
+        paginator = Paginator(user_service_logs, 10)  # Show 10 logs per page
+        page_number = request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+
         return render(request, 'user_service_log.html', {
-            'user_service_logs': user_service_logs,
-            'users': users
+            'page_obj': page_obj,
+            'users': users,
+            'status_filter': status_filter,
+            'complaint_status_filter': complaint_status_filter,
+            'customer_search': customer_search,
+            'start_date_filter': start_date_filter,
+            'end_date_filter': end_date_filter,
+            'today_date': today_date,
         })
     else:
-        return redirect('login')  # Redirect to login if the user is not authenticated
-
+        return redirect('login')
 
 
 from django.http import JsonResponse
