@@ -5546,6 +5546,11 @@ from datetime import datetime, date
 from django.contrib.auth.decorators import login_required
 from .forms import ComplaintForm
 
+from django.shortcuts import render
+from django.core.paginator import Paginator
+from datetime import datetime, date
+from .models import ServiceLog, User
+
 def servicelog_list(request):
     # Get current date for default values
     today = date.today().strftime('%Y-%m-%d')
@@ -5631,6 +5636,11 @@ def servicelog_list(request):
             service_logs = service_logs.filter(date__date__lte=end_date)
         except ValueError:
             pass
+
+    # Preprocess customer_name to extract only the name part
+    for log in service_logs:
+        if '-' in log.customer_name:
+            log.customer_name = log.customer_name.split('-')[0].strip()
 
     # Set up pagination
     paginator = Paginator(service_logs, 10)
@@ -5910,11 +5920,17 @@ from django.shortcuts import render, redirect
 from .models import ServiceLog, User
 from django.contrib.auth.decorators import login_required
 
-@login_required
+# views.py
+
 def user_service_log(request):
     if request.user.is_authenticated:
         custom_user = User.objects.get(userid=request.user.username)
         user_service_logs = ServiceLog.objects.filter(added_by=custom_user).order_by('-id')
+
+        # Preprocess customer_name to extract only the name part
+        for log in user_service_logs:
+            if '-' in log.customer_name:
+                log.customer_name = log.customer_name.split('-')[0].strip()
 
         status_filter = request.GET.get('status', '')
         complaint_status_filter = request.GET.get('complaint_status', '')
