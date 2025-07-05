@@ -1060,3 +1060,77 @@ def delete_job_role(request, id):
 
 
 
+from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
+from app1.models import BusinessType
+from .models import Customer
+
+def all_customers(request):
+    customers = Customer.objects.all().select_related('business_type')
+    return render(request, 'all_customers_table.html', {'customers': customers})
+
+def add_customer(request):
+    business_types = BusinessType.objects.all()
+    
+    if request.method == 'POST':
+        # Create new customer from POST data
+        customer = Customer(
+            customer_name=request.POST.get('customerName'),
+            firm_name=request.POST.get('firmName'),
+            place=request.POST.get('place'),
+            district=request.POST.get('district'),
+            state=request.POST.get('state'),
+            country=request.POST.get('country'),
+            phone=request.POST.get('phone'),
+            business_type_id=request.POST.get('businessType'),
+            contact_person=request.POST.get('contactPerson'),
+            phone1=request.POST.get('phone1'),
+            phone2=request.POST.get('phone2'),
+            email=request.POST.get('email')
+        )
+        customer.save()
+        return redirect(reverse('all_customers'))
+    
+    return render(request, 'add_customer.html', {'business_types': business_types})
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
+from app1.models import BusinessType
+from .models import Customer
+
+def edit_customer(request, id):
+    customer = get_object_or_404(Customer, id=id)
+    business_types = BusinessType.objects.all()
+    districts = [
+        'Alappuzha', 'Ernakulam', 'Idukki', 'Kannur', 'Kasaragod', 
+        'Kollam', 'Kottayam', 'Kozhikode', 'Malappuram', 'Palakkad',
+        'Pathanamthitta', 'Thiruvananthapuram', 'Thrissur', 'Wayanad'
+    ]
+    
+    if request.method == 'POST':
+        # Update customer from POST data
+        customer.customer_name = request.POST.get('customerName')
+        customer.firm_name = request.POST.get('firmName')
+        customer.place = request.POST.get('place')
+        customer.district = request.POST.get('district')
+        customer.state = request.POST.get('state')
+        customer.country = request.POST.get('country')
+        customer.phone = request.POST.get('phone')
+        customer.business_type_id = request.POST.get('businessType')
+        customer.contact_person = request.POST.get('contactPerson')
+        customer.phone1 = request.POST.get('phone1')
+        customer.phone2 = request.POST.get('phone2')
+        customer.email = request.POST.get('email')
+        customer.save()
+        return redirect(reverse('all_customers'))
+    
+    return render(request, 'edit_customer.html', {  # Corrected template path
+        'customer': customer,
+        'business_types': business_types,
+        'districts': districts
+    })
+
+def delete_customer(request, id):
+    customer = get_object_or_404(Customer, id=id)
+    customer.delete()
+    return redirect(reverse('all_customers'))

@@ -151,3 +151,38 @@ class JobRoleDescription(models.Model):
 
     def __str__(self):
         return f"{self.heading} - {self.description}"
+    
+
+
+
+
+from django.db import models
+
+
+class Customer(models.Model):
+    customer_name   = models.CharField(max_length=100)
+    firm_name       = models.CharField(max_length=100)
+    place           = models.CharField(max_length=100)
+    district        = models.CharField(max_length=100)
+    state           = models.CharField(max_length=100)
+    country         = models.CharField(max_length=100)
+    phone           = models.CharField(max_length=15)
+
+    # avoid circular import by using a string reference
+    business_type   = models.ForeignKey(
+        'app1.BusinessType',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
+
+    contact_person  = models.CharField(max_length=100)
+    phone1          = models.CharField(max_length=15)
+    phone2          = models.CharField(max_length=15, blank=True, null=True)
+    email           = models.EmailField()
+
+    created_at      = models.DateTimeField(auto_now_add=True)
+    updated_at      = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.customer_name

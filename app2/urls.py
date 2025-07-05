@@ -84,6 +84,14 @@ urlpatterns = [
     path('job-roles/add/', views.add_job_role, name='add_job_role'),
     path('job-roles/edit/<int:id>/', views.edit_job_role, name='edit_job_role'),
     path('job-roles/delete/<int:id>/', views.delete_job_role, name='delete_job_role'),
+
+
+
+
+    path('customers/', views.all_customers, name='all_customers'),
+    path('customers/add/', views.add_customer, name='add_customer'),
+    path('customers/edit/<int:id>/', views.edit_customer, name='edit_customer'),
+    path('customers/delete/<int:id>/', views.delete_customer, name='delete_customer'),
     
 
     

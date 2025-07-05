@@ -523,6 +523,19 @@
     {% endif %}
 </div>
 
+<div class="mainmenu" onclick="toggleSocialMediaMenu()">
+            <span>
+                <i class="fas fa-share-alt"></i>
+                <span>Social Media</span>
+            </span>
+        </div>
+
+        <div id="social-media-menu" class="submenu">
+                <a href="{% url 'all_customers' %}"><i class="fas fa-users"></i> Customer Master</a>
+                <a href=""><i class="fas fa-project-diagram"></i> Projects</a>
+                <a href=""><i class="fas fa-tasks"></i> Task Master</a>
+        </div>
+
 
 <!-- Debters Menu -->
 <div class="mainmenu" onclick="toggleDebtersMenu()">
@@ -690,6 +703,8 @@
             </div>
             {% endif %}
 
+            
+
             <!-- Project Menu for regular users -->
             {% if 'project_work' in allowed_menus or 'user_projects' in allowed_menus %}
             <div class="mainmenu" onclick="toggleProjectMenu()">
@@ -716,6 +731,8 @@
                 {% endif %}
             </div>
             {% endif %}
+
+            
             
             {% if 'information_center' in allowed_menus %}
             <div class="information_center">
@@ -931,7 +948,11 @@
 function toggleDebtersMenu() {
     toggleMenu('debters-menu');
 }
+function toggleSocialMediaMenu() {
+    toggleMenu('social-media-menu');
+}
 
     </script>
+    
 </body>
 </html>
