@@ -49,6 +49,9 @@ urlpatterns = [
     path('edit-experience-certificate/<int:employee_id>/', views.edit_experience_certificate, name='edit_experience_certificate'),
 
 
+    path('debtors1/', views.debtors1_list, name='debtors1_list')
+
+
 
 
 ]
