@@ -22,6 +22,7 @@ from .models import SalaryCertificate
 from django.core.paginator import Paginator
 from django.shortcuts import render
 from .models import SalaryCertificate
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 def make_salary_certificate(request):
     # Get the search query from the request
@@ -1159,7 +1160,7 @@ import requests
 from django.shortcuts import render
 
 def debtors1_list(request):
-    api_url = "https://rrcpython.imcbs.com/api/master/all   "
+    api_url = "https://rrcpython.imcbs.com/api/master/all"
     data = []
     error_message = None
 

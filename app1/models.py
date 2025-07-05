@@ -90,6 +90,8 @@ class User(models.Model):
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='active') 
     allowed_menus = models.TextField(blank=True, null=True)
     job_role = models.ForeignKey(JobRole, on_delete=models.SET_NULL, null=True, blank=True, related_name='users')
+    phone_number = models.CharField(max_length=20, null=True, blank=True)
+
 
     
 
@@ -888,11 +890,7 @@ class BreakTime(models.Model):
         return f"{self.employee.name} - Break Time on {self.date}"
 
 
-    #CREATED AS NEW
-
-    #CREATED AS NEW
-
-    #CREATED AS NEWF
+    
 
 
     # models.py
@@ -917,10 +915,13 @@ class EarlyRequest(models.Model):
 
 
 
+    #CREATED AS NEW
 
+    #CREATED AS NEW
 
-
+    #CREATED AS NEW
 import uuid
+from django.db import models
 
 class ServiceLog(models.Model):
     COMPLAINT_TYPE_CHOICES = [
@@ -945,12 +946,65 @@ class ServiceLog(models.Model):
         if not self.ticket_number:
             self.ticket_number = f"TKT-{uuid.uuid4().hex[:8].upper()}"
         super().save(*args, **kwargs)
+        
+        # Auto-update status based on complaint completion
+        self.update_status_based_on_complaints()
+
+    def update_status_based_on_complaints(self):
+        """Update the main status based on individual complaint statuses"""
+        complaint_logs = self.servicelogcomplaint_set.all()
+        if not complaint_logs.exists():
+            return
+            
+        total_complaints = complaint_logs.count()
+        completed_complaints = complaint_logs.filter(status='Completed').count()
+        
+        if completed_complaints == total_complaints:
+            if self.status != 'Completed':
+                self.status = 'Completed'
+                ServiceLog.objects.filter(id=self.id).update(status='Completed')
+        elif completed_complaints > 0:
+            if self.status not in ['In Progress', 'Completed']:
+                self.status = 'In Progress'
+                ServiceLog.objects.filter(id=self.id).update(status='In Progress')
+        else:
+            if self.status != 'Pending':
+                self.status = 'Pending'
+                ServiceLog.objects.filter(id=self.id).update(status='Pending')
 
     def __str__(self):
         return f"{self.ticket_number} - {self.customer_name}"
 
 class ServiceLogComplaint(models.Model):
+    STATUS_CHOICES = [
+        ('Pending', 'Pending'),
+        ('In Progress', 'In Progress'),
+        ('Completed', 'Completed'),
+    ]
+    
     service_log = models.ForeignKey(ServiceLog, on_delete=models.CASCADE)
     complaint = models.ForeignKey('Complaint', on_delete=models.CASCADE)
     note = models.TextField(blank=True, null=True)
+    assigned_person = models.ForeignKey('User', on_delete=models.SET_NULL, null=True, related_name='assigned_complaints')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending')
+    assigned_date = models.DateTimeField(auto_now_add=True)
+    completed_date = models.DateTimeField(null=True, blank=True)
+    
+    def save(self, *args, **kwargs):
+        if self.status == 'Completed' and not self.completed_date:
+            from django.utils import timezone
+            self.completed_date = timezone.now()
+        super().save(*args, **kwargs)
+        
+        # Update the main service log status
+        self.service_log.update_status_based_on_complaints()
 
+    def __str__(self):
+        return f"{self.service_log.ticket_number} - {self.complaint.description}"
+
+
+
+class ComplaintImage(models.Model):
+    complaint_log = models.ForeignKey(ServiceLogComplaint, on_delete=models.CASCADE, related_name='images')
+    image = models.ImageField(upload_to='complaint_images/')
+    uploaded_at = models.DateTimeField(auto_now_add=True)

@@ -1,80 +1,138 @@
 {% extends "base.html" %}
 {% block content %}
-<h2>My Service Logs</h2>
-<a href="{% url 'add_service_log' %}" class="btn btn-primary mb-3">Add New Log</a>
+<div style="overflow: hidden;">
+    <h2>My Service Logs</h2>
+    <a href="{% url 'add_service_log' %}" class="btn btn-primary mb-3">Add New Log</a>
 
-{% if user_service_logs %}
-<table class="table table-bordered">
-    <thead>
-        <tr>
-            <th>No</th>
-            <th>Date</th>
-            <th>Ticket Number</th>
-            <th>Customer Name</th>
-            <th>Place</th>
-            <th>Complaint Type</th>
-            <th>Complaints & Notes</th>
-            <th>Status</th>
-            <th>Voice Note</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for log in user_service_logs %}
-        <tr>
-            <td>{{ forloop.counter }}</td>
-            <td>{{ log.date|date:"Y-m-d H:i" }}</td>
-            <td>{{ log.ticket_number }}</td>
-            <td>{{ log.customer_name }}</td>
-            <td>{{ log.place }}</td>
-            <td>{{ log.get_complaint_type_display }}</td>
-            <td>
-                {% for complaint_log in log.servicelogcomplaint_set.all %}
-                    <div class="complaint-item mb-2 p-2 border-start border-3 border-info">
-                        <strong>{{ complaint_log.complaint.description }}</strong>
-                        {% if complaint_log.note %}
-                            <div class="text-muted small mt-1">
-                                <em>Note: {{ complaint_log.note }}</em>
+    {% if user_service_logs %}
+    <div style="overflow: scroll;">
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>No</th>
+                    <th>Date</th>
+                    <th>Ticket Number</th>
+                    <th>Customer Name</th>
+                    <th>Complaint Type</th>
+                    <th>Complaints & Notes</th>
+                    <th>Assigned Person</th>
+                    <th>Status</th>
+                    <th>Voice Note</th>
+                    <th>Remark</th> 
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in user_service_logs %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ log.date|date:"d-m-Y H:i" }}</td>
+                    <td>
+                        <span style="font-weight: bold; background-color: #f8d7da; color: #721c24; padding: 2px 6px; border-radius: 4px;">
+                            {{ log.ticket_number }}
+                        </span>
+                    </td>
+
+
+                    <td class="py-2">
+                        <i class="fas fa-user me-1 text-primary"></i>
+                        <span style="font-weight: bold; background-color: #e0f7fa; padding: 2px 6px; border-radius: 4px;">
+                            {{ log.customer_name }}
+                        </span><br>
+                        
+                        <i class="fas fa-phone-alt me-1 text-success"></i>{{ log.phone_number }}<br>
+                        <i class="fas fa-map-marker-alt me-1 text-danger"></i>{{ log.place }}
+                    </td>
+                    <td>{{ log.get_complaint_type_display }}</td>
+                    <td>
+                        {% for complaint_log in log.servicelogcomplaint_set.all %}
+                            <div class="complaint-item mb-2 p-2 border-start border-3 border-info">
+                                <strong>{{ complaint_log.complaint.description }}</strong>
+                                {% if complaint_log.note %}
+                                    <div class="text-muted small mt-1">
+                                        <em>Note: {{ complaint_log.note }}</em>
+                                    </div>
+                                {% endif %}
+                                {% if complaint_log.images.all %}
+                                    <div class="mt-2 d-flex flex-wrap gap-2">
+                                        {% for img in complaint_log.images.all %}
+                                            <a href="{{ img.image.url }}" target="_blank">
+                                                <img src="{{ img.image.url }}" style="height: 50px; border-radius: 4px; border: 1px solid #ccc;" alt="Complaint Image">
+                                            </a>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
                             </div>
+                        {% empty %}
+                            <span class="text-muted">No complaints assigned</span>
+                        {% endfor %}
+                    </td>
+                    <td>
+                        {% for user in users %}
+                            {% if user.id == log.assigned_person.id %}
+                                {{ user.name }}
+                            {% endif %}
+                        {% endfor %}
+                    </td>
+                    <td>
+                        <span class="badge 
+                            {% if log.status == 'Completed' %}bg-success
+                            {% elif log.status == 'In Progress' %}bg-warning
+                            {% elif log.status == 'Pending' %}bg-secondary
+                            {% else %}bg-info
+                            {% endif %}">
+                            {{ log.status }}
+                        </span>
+                        <button class="btn btn-sm btn-{{ log.status|lower }} status-btn" data-log-id="{{ log.id }}" data-status="{{ log.status }}">
+                            {{ log.status }}
+                        </button>
+                    </td>
+                    <td>
+                        {% if log.voice_note %}
+                            <audio controls style="width: 200px;">
+                                <source src="{{ log.voice_note.url }}" type="audio/webm">
+                            </audio>
+                        {% else %}
+                            <span class="text-muted">No Voice Note</span>
                         {% endif %}
-                    </div>
-                {% empty %}
-                    <span class="text-muted">No complaints assigned</span>
+                    </td>
+                    <td>
+    <!-- Icon to trigger the modal -->
+    <a href="#" data-bs-toggle="modal" data-bs-target="#remarksModal{{ log.id }}">
+        <i class="fas fa-comment-dots text-info" style="display: flex;justify-content: center;"></i>
+    </a>
+
+    <!-- Modal -->
+    <div class="modal fade" id="remarksModal{{ log.id }}" tabindex="-1" aria-labelledby="remarksModalLabel{{ log.id }}" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="remarksModalLabel{{ log.id }}">Remarks</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            {{ log.remarks|default:"No remarks available" }}
+          </div>
+        </div>
+      </div>
+    </div>
+</td>
+                    <td>
+                        <div class="btn-group" role="group">
+                            <a href="{% url 'edit_service_log' log.id %}" class="btn btn-sm btn-outline-primary">Edit</a>
+                            <a href="{% url 'delete_service_log' log.id %}" class="btn btn-sm btn-outline-danger" 
+                               onclick="return confirm('Are you sure you want to delete this service log?')">Delete</a>
+                        </div>
+                    </td>
+                </tr>
                 {% endfor %}
-            </td>
-            <td>
-                <span class="badge 
-                    {% if log.status == 'Completed' %}bg-success
-                    {% elif log.status == 'In Progress' %}bg-warning
-                    {% elif log.status == 'Pending' %}bg-secondary
-                    {% else %}bg-info
-                    {% endif %}">
-                    {{ log.status }}
-                </span>
-            </td>
-            <td>
-                {% if log.voice_note %}
-                    <audio controls style="width: 200px;">
-                        <source src="{{ log.voice_note.url }}" type="audio/webm">
-                    </audio>
-                {% else %}
-                    <span class="text-muted">No Voice Note</span>
-                {% endif %}
-            </td>
-            <td>
-                <div class="btn-group" role="group">
-                    <a href="{% url 'edit_service_log' log.id %}" class="btn btn-sm btn-outline-primary">Edit</a>
-                    <a href="{% url 'delete_service_log' log.id %}" class="btn btn-sm btn-outline-danger" 
-                       onclick="return confirm('Are you sure you want to delete this service log?')">Delete</a>
-                </div>
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-{% else %}
-<p>No service logs found.</p>
-{% endif %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p>No service logs found.</p>
+    {% endif %}
+</div>
 
 <style>
 .complaint-item {

@@ -296,6 +296,13 @@ urlpatterns = [
     path('service-log/delete/<int:log_id>/', views.delete_service_log, name='delete_service_log'),
 
     path('user-service-logs/', views.user_service_log, name='user_service_log'),
+    path('update_status/', views.update_status, name='update_status'),
+    path('assign_service_logs/', views.assign_service_logs, name='assign_service_logs'),
+    path('assign_work/<int:log_id>/', views.assign_work, name='assign_work'),
+    path('my_assigned_service_logs/', views.my_assigned_service_logs, name='my_assigned_service_logs'),
+    path('reassign_work/<int:log_id>/', views.reassign_work, name='reassign_work'),
+    path('update_complaint_status/', views.update_complaint_status, name='update_complaint_status'),
+    path('reassign_complaint/', views.reassign_complaint, name='reassign_complaint'),
 
 
 

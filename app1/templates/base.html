@@ -460,12 +460,27 @@
             </div>
     
             <div id="services-menu" class="submenu">
-                {% if 'service_entry' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
-                <a href="{% url 'service_entry' %}"><i class="fas fa-plus-circle"></i> Service Entry</a>
-                {% endif %}
                 {% if 'service_log' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
-                <a href=""><i class="fas fa-book"></i> Service Log</a>
+                <a href="{% url 'servicelog_list' %}"><i class="fas fa-book"></i> Service Log</a>
                 {% endif %}
+                {% if 'my_assigned_service_logs' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+                    <a href="{% url 'my_assigned_service_logs' %}">
+                        <i class="fas fa-user"></i> My Assigned Service Logs
+                    </a>
+                {% endif %}
+                {% if 'assign_service_logs' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+                    <a href="{% url 'assign_service_logs' %}">
+                        <i class="fas fa-edit"></i> Assign Service Logs
+                    </a>
+                {% endif %}
+                {% if 'service_entry' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+                <a href="{% url 'service_entry' %}"><i class="fas fa-plus-circle"></i> Logs</a>
+                {% endif %}
+                
+
+                
+
+                
             </div>
             {% endif %}
 
@@ -506,6 +521,22 @@
     {% if 'show_clients' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
         <a href="{% url 'show_clients' %}"><i class="fas fa-users"></i> Clients</a>
     {% endif %}
+</div>
+
+
+<!-- Debters Menu -->
+<div class="mainmenu" onclick="toggleDebtersMenu()">
+    <span>
+        <i class="fas fa-money-bill-wave"></i>
+        <span>Debtors</span>
+    </span>
+</div>
+
+<div id="debters-menu" class="submenu">
+        <a href="{% url 'debtors1_list' %}">
+    <i class="fas fa-file-invoice-dollar"></i> Debtors1
+</a>
+
 </div>
 
     
@@ -637,13 +668,24 @@
                 <a href=""><i class="fas fa-book"></i> Service Log</a>
                 {% endif %}
                 {% if 'service_entry' in allowed_menus %}
-                <a href="{% url 'service_entry' %}"><i class="fas fa-plus-circle"></i> Service Entry</a>
+                <a href="{% url 'service_entry' %}"><i class="fas fa-plus-circle"></i> Logs</a>
+                {% endif %}
+                {% if 'assign_service_logs' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+                    <a href="{% url 'assign_service_logs' %}">
+                        <i class="fas fa-edit"></i> Assign Service Logs
+                    </a>
+                {% endif %}
+
+                {% if 'my_assigned_service_logs' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+                    <a href="{% url 'my_assigned_service_logs' %}">
+                        <i class="fas fa-user"></i> My Assigned Service Logs
+                    </a>
                 {% endif %}
                 {% if 'user_service_log' in allowed_menus %}
-                <a href=""><i class="fas fa-book"></i>Service Log</a>
+                <a href="{% url 'user_service_log' %}"><i class="fas fa-book"></i>Service Log</a>
                 {% endif %}
                 {% if 'user_service_entry' in allowed_menus %}
-                <a href="{% url 'user_service_entry' %}"><i class="fas fa-plus-circle"></i> Service Entry</a>
+                <a href="{% url 'user_service_entry' %}"><i class="fas fa-plus-circle"></i> Logs</a>
                 {% endif %}
             </div>
             {% endif %}
@@ -882,6 +924,14 @@
                 }
             }
         });
+
+
+
+        
+function toggleDebtersMenu() {
+    toggleMenu('debters-menu');
+}
+
     </script>
 </body>
 </html>
