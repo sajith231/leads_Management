@@ -1149,3 +1149,83 @@ def edit_experience_certificate(request, employee_id):
             'experience_cert': experience_cert,
             'initial_data': initial_data,
         })
+
+
+
+
+
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
+import requests
+from django.shortcuts import render
+
+def debtors1_list(request):
+    api_url = "https://rrcpython.imcbs.com/api/master/all   "
+    data = []
+    error_message = None
+
+    try:
+        response = requests.get(api_url, timeout=30)
+        response.raise_for_status()
+        json_data = response.json()
+        data = json_data.get('data', [])
+        for item in data:
+            item['name'] = item.get('name', '').strip()
+        print(f"Successfully fetched {len(data)} records")
+
+    except requests.exceptions.Timeout:
+        error_message = "API request timed out"
+    except requests.exceptions.ConnectionError:
+        error_message = "Could not connect to API"
+    except requests.exceptions.HTTPError as e:
+        error_message = f"HTTP Error: {e}"
+    except Exception as e:
+        error_message = f"Error fetching data: {str(e)}"
+
+    # Search logic
+    query = request.GET.get('q', '').strip()
+    original_count = len(data)
+
+    if query:
+        search_terms = query.lower().split()
+        filtered_data = []
+
+        for item in data:
+            searchable_fields = [
+                str(item.get('code', '')),
+                str(item.get('name', '')),
+                str(item.get('super_code', '')),
+                str(item.get('opening_balance', '')),
+                str(item.get('debit', '')),
+                str(item.get('credit', '')),
+                str(item.get('place', '')),
+                str(item.get('phone2', '')),
+                str(item.get('openingdepartment', '')),
+            ]
+            combined_text = ' '.join(searchable_fields).lower()
+
+            # AND logic: all terms must match somewhere
+            if all(term in combined_text for term in search_terms):
+                filtered_data.append(item)
+
+        data = filtered_data
+        print(f"Search '{query}' matched {len(data)} out of {original_count} records")
+
+    # Pagination
+    paginator = Paginator(data, 15)
+    page = request.GET.get('page')
+
+    try:
+        page_obj = paginator.page(page)
+    except PageNotAnInteger:
+        page_obj = paginator.page(1)
+    except EmptyPage:
+        page_obj = paginator.page(paginator.num_pages)
+
+    return render(request, 'debtors1_list.html', {
+        'page_obj': page_obj,
+        'error_message': error_message,
+        'total_records': original_count,
+        'filtered_count': len(data),
+        'query': query,
+        'search_terms': query.lower().split() if query else []
+    })
