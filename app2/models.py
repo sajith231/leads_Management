@@ -202,3 +202,14 @@ class SocialMediaProject(models.Model):
 
     def __str__(self):
         return self.project_name
+    
+
+
+
+class Task(models.Model):
+    task_name = models.CharField(max_length=255)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.task_name

@@ -24,7 +24,29 @@ from django.db import models
 from .models import Employee, Attendance, LeaveRequest, Holiday,LateRequest,DefaultSettings,EarlyRequest
 from .utils import is_holiday
 
+def send_whatsapp_message(phone_number, message):
+    secret = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
+    account = "1748250982812b4ba287f5ee0bc9d43bbf5bbe87fb683431662a427"
+    url = f"https://app.dxing.in/api/send/whatsapp?secret={secret}&account={account}&recipient={phone_number}&type=text&message={message}&priority=1"
+    response = requests.get(url)
+    if response.status_code == 200:
+        print(f"WhatsApp message sent successfully to {phone_number}")
+    else:
+        print(f"Failed to send WhatsApp message to {phone_number}. Status code: {response.status_code}, Response: {response.text}")
 
+
+
+import requests
+
+def send_whatsapp_message_for_service_log(phone_number, message):
+    secret = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
+    account = "1751352651812b4ba287f5ee0bc9d43bbf5bbe87fb6863854b166a3"
+    url = f"https://app.dxing.in/api/send/whatsapp?secret={secret}&account={account}&recipient={phone_number}&type=text&message={message}&priority=1"
+    response = requests.get(url)
+    if response.status_code == 200:
+        print(f"WhatsApp message sent successfully to {phone_number}")
+    else:
+        print(f"Failed to send WhatsApp message to {phone_number}. Status code: {response.status_code}, Response: {response.text}")
 
 def login(request):
     if request.method == "POST":
@@ -5784,7 +5806,7 @@ def add_service_log(request):
         )
 
         # Send WhatsApp message
-        send_whatsapp_message(phone_number, message)
+        send_whatsapp_message_for_service_log(phone_number, message)
 
         if custom_user.user_level == 'admin_level':
             return redirect('servicelog_list')
@@ -5793,15 +5815,8 @@ def add_service_log(request):
 
     return render(request, 'add_service_log.html', {'complaints': complaints, 'customers': customers})
 
-def send_whatsapp_message(phone_number, message):
-    secret = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
-    account = "1751352651812b4ba287f5ee0bc9d43bbf5bbe87fb6863854b166a3"
-    url = f"https://app.dxing.in/api/send/whatsapp?secret={secret}&account={account}&recipient={phone_number}&type=text&message={message}&priority=1"
-    response = requests.get(url)
-    if response.status_code == 200:
-        print(f"WhatsApp message sent successfully to {phone_number}")
-    else:
-        print(f"Failed to send WhatsApp message to {phone_number}. Status code: {response.status_code}, Response: {response.text}")
+
+
 
 from django.shortcuts import render, redirect
 from .models import ServiceLog, Complaint, ServiceLogComplaint, ComplaintImage, User
@@ -6063,7 +6078,7 @@ def assign_work(request, log_id):
                     f"Best regards,\n"
                     f"IMC Business Solutions"
                 )
-                send_whatsapp_message(assigned_person.phone_number, message)
+                send_whatsapp_message_for_service_log(assigned_person.phone_number, message)
         
         messages.success(request, "Complaints assigned successfully")
         return redirect('assign_service_logs')
@@ -6174,7 +6189,7 @@ def reassign_work(request, log_id):
                     f"Best regards,\n"
                     f"IMC Business Solutions"
                 )
-                send_whatsapp_message(assigned_person.phone_number, message)
+                send_whatsapp_message_for_service_log(assigned_person.phone_number, message)
         
         messages.success(request, "Complaints reassigned successfully")
         return redirect('my_assigned_service_logs')
@@ -6238,7 +6253,7 @@ def reassign_complaint(request):
             f"Best regards,\n"
             f"IMC Business Solutions"
         )
-        send_whatsapp_message(new_user.phone_number, message)
+        send_whatsapp_message_for_service_log(new_user.phone_number, message)
         
         return JsonResponse({
             'success': True,

@@ -1182,3 +1182,42 @@ def socialmedia_delete_project(request, id):
     project = get_object_or_404(SocialMediaProject, id=id)
     project.delete()
     return redirect(reverse('socialmedia_all_projects'))
+
+
+
+
+
+
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
+from .models import Task, SocialMediaProject
+
+def socialmedia_all_tasks(request):
+    tasks = Task.objects.all().order_by('-created_at')
+    return render(request, 'socialmedia_all_tasks.html', {'tasks': tasks})
+
+def socialmedia_add_task(request):
+    if request.method == 'POST':
+        task = Task(
+            task_name=request.POST.get('taskName')
+        )
+        task.save()
+        return redirect(reverse('socialmedia_all_tasks'))
+    
+    return render(request, 'add_socialmedia_task.html')
+
+def socialmedia_edit_task(request, id):
+    task = get_object_or_404(Task, id=id)
+    
+    if request.method == 'POST':
+        task.task_name = request.POST.get('taskName')
+        task.save()
+        return redirect(reverse('socialmedia_all_tasks'))
+    
+    return render(request, 'edit_socialmedia_task.html', {'task': task})
+
+def socialmedia_delete_task(request, id):
+    task = get_object_or_404(Task, id=id)
+    task.delete()
+    return redirect(reverse('socialmedia_all_tasks'))
