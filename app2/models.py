@@ -186,3 +186,19 @@ class Customer(models.Model):
 
     def __str__(self):
         return self.customer_name
+
+
+
+
+
+from django.db import models
+from .models import Customer
+
+class SocialMediaProject(models.Model):
+    project_name = models.CharField(max_length=100)
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
+    project_description = models.TextField()
+    deadline = models.DateField()
+
+    def __str__(self):
+        return self.project_name

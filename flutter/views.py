@@ -63,20 +63,24 @@ class PunchInView(APIView):
     def post(self, request):
         userid = request.data.get('userid')
         password = request.data.get('password')
+        location = request.data.get('location')
+        latitude = request.data.get('latitude')
+        longitude = request.data.get('longitude')
+        enhanced_location = request.data.get('enhanced_location', {})
 
-        # ✅ Validate User login
+        # Validate User login
         try:
             user = User.objects.get(userid=userid, password=password)
         except User.DoesNotExist:
             return Response({'error': 'Invalid userid or password'}, status=status.HTTP_401_UNAUTHORIZED)
 
-        # ✅ Validate Employee (linked via ForeignKey)
+        # Validate Employee (linked via ForeignKey)
         try:
             employee = Employee.objects.get(user=user)
         except Employee.DoesNotExist:
             return Response({'error': 'Employee not found for this user'}, status=status.HTTP_404_NOT_FOUND)
 
-        # ✅ Attendance logic
+        # Attendance logic
         today = timezone.now().date()
         day_number = today.weekday()
 
@@ -93,6 +97,9 @@ class PunchInView(APIView):
             return Response({'error': 'You have already punched in today'}, status=status.HTTP_400_BAD_REQUEST)
 
         attendance.punch_in = timezone.now()
+        attendance.punch_in_location = location
+        attendance.punch_in_latitude = latitude
+        attendance.punch_in_longitude = longitude
         attendance.save()
 
         serializer = AttendanceSerializer(attendance)
@@ -115,21 +122,25 @@ class PunchOutView(APIView):
     def post(self, request):
         userid = request.data.get('userid')
         password = request.data.get('password')
+        location = request.data.get('location')
+        latitude = request.data.get('latitude')
+        longitude = request.data.get('longitude')
+        enhanced_location = request.data.get('enhanced_location', {})
         today = timezone.now().date()
 
-        # ✅ Validate User login
+        # Validate User login
         try:
             user = User.objects.get(userid=userid, password=password)
         except User.DoesNotExist:
             return Response({'error': 'Invalid userid or password'}, status=status.HTTP_401_UNAUTHORIZED)
 
-        # ✅ Get Employee linked to this user
+        # Get Employee linked to this user
         try:
             employee = Employee.objects.get(user=user)
         except Employee.DoesNotExist:
             return Response({'error': 'Employee not found for this user'}, status=status.HTTP_404_NOT_FOUND)
 
-        # ✅ Get today's attendance
+        # Get today's attendance
         try:
             attendance = Attendance.objects.get(employee=employee, date=today)
         except Attendance.DoesNotExist:
@@ -139,6 +150,9 @@ class PunchOutView(APIView):
             return Response({'error': 'You have already punched out today'}, status=status.HTTP_400_BAD_REQUEST)
 
         attendance.punch_out = timezone.now()
+        attendance.punch_out_location = location
+        attendance.punch_out_latitude = latitude
+        attendance.punch_out_longitude = longitude
         attendance.status = 'full'
         attendance.save()
 
@@ -155,3 +169,20 @@ class PunchOutView(APIView):
 #https://localhost:8000/flutter/punch-in/
 
 #https://localhost:8000/flutter/punch-out/
+
+
+
+
+
+# {
+#   "userid": "john123",
+#   "password": "secret",
+#   "location": "Calicut",
+#   "latitude": 11.1234,
+#   "longitude": 75.1234,
+#   "enhanced_location": {
+#     "address": "Calicut, Kerala",
+#     "city": "Calicut",
+#     "timezone": "Asia/Kolkata"
+#   }
+# }

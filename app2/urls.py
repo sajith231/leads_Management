@@ -3,7 +3,7 @@ from django.urls import path
 from . import views
 from .views import InformationCenterListView, add_information_center,edit_information_center,delete_information_center
 from .views import get_next_position
-
+from .views import socialmedia_all_projects, socialmedia_add_project, socialmedia_edit_project, socialmedia_delete_project
 
 urlpatterns = [
     path('credential-management/', views.credential_management, name='credential_management'),
@@ -92,6 +92,11 @@ urlpatterns = [
     path('customers/add/', views.add_customer, name='add_customer'),
     path('customers/edit/<int:id>/', views.edit_customer, name='edit_customer'),
     path('customers/delete/<int:id>/', views.delete_customer, name='delete_customer'),
+
+    path('socialmedia/projects/', socialmedia_all_projects, name='socialmedia_all_projects'),
+    path('socialmedia/projects/add/', socialmedia_add_project, name='socialmedia_add_project'),
+    path('socialmedia/projects/edit/<int:id>/', socialmedia_edit_project, name='socialmedia_edit_project'),
+    path('socialmedia/projects/delete/<int:id>/', socialmedia_delete_project, name='socialmedia_delete_project'),
     
 
     

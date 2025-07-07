@@ -1065,8 +1065,12 @@ from django.urls import reverse
 from app1.models import BusinessType
 from .models import Customer
 
+from django.shortcuts import render
+from .models import Customer
+
 def all_customers(request):
-    customers = Customer.objects.all().select_related('business_type')
+    # Order customers by creation date in descending order
+    customers = Customer.objects.all().select_related('business_type').order_by('-created_at')
     return render(request, 'all_customers_table.html', {'customers': customers})
 
 def add_customer(request):
@@ -1134,3 +1138,47 @@ def delete_customer(request, id):
     customer = get_object_or_404(Customer, id=id)
     customer.delete()
     return redirect(reverse('all_customers'))
+
+
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
+from .models import Customer, SocialMediaProject
+
+def socialmedia_all_projects(request):
+    projects = SocialMediaProject.objects.all().select_related('customer').order_by('-id')
+    return render(request, 'socialmedia_all_projects.html', {'projects': projects})
+
+def socialmedia_add_project(request):
+    customers = Customer.objects.all()
+    
+    if request.method == 'POST':
+        project = SocialMediaProject(
+            project_name=request.POST.get('projectName'),
+            customer_id=request.POST.get('customerName'),
+            project_description=request.POST.get('projectDescription'),
+            deadline=request.POST.get('deadline')
+        )
+        project.save()
+        return redirect(reverse('socialmedia_all_projects'))
+    
+    return render(request, 'add_socialmedia_project.html', {'customers': customers})
+
+def socialmedia_edit_project(request, id):
+    project = get_object_or_404(SocialMediaProject, id=id)
+    customers = Customer.objects.all()
+    
+    if request.method == 'POST':
+        project.project_name = request.POST.get('projectName')
+        project.customer_id = request.POST.get('customerName')
+        project.project_description = request.POST.get('projectDescription')
+        project.deadline = request.POST.get('deadline')
+        project.save()
+        return redirect(reverse('socialmedia_all_projects'))
+    
+    return render(request, 'edit_socialmedia_project.html', {'project': project, 'customers': customers})
+
+def socialmedia_delete_project(request, id):
+    project = get_object_or_404(SocialMediaProject, id=id)
+    project.delete()
+    return redirect(reverse('socialmedia_all_projects'))
