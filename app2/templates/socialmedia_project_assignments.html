@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="header">
+  <h2 style="display: flex;justify-content: center;"> Project Assignments</h2>
+  <a href="{% url 'add_assign_socialmedia_project' %}" class="btn btn-add">Add New</a>
+</div>
+
+<style>
+  .btn-add {
+    background-color: #007bff;
+    color: white;
+    padding: 10px 20px;
+    text-decoration: none;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+
+  .btn-add:hover {
+    background-color: #0056b3;
+  }
+
+  .assigned-users {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+
+  .user-tag {
+    background-color: #e9ecef;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    border: 1px solid #dee2e6;
+  }
+</style>
+
+<table style="width: 100%; border-collapse: collapse; margin-top: 2%;">
+  <thead>
+    <tr style="background-color: #e9f1ff;">
+      <th style="padding: 10px; border: 1px solid #ccc;">No</th>
+      <th style="padding: 10px; border: 1px solid #ccc;">Created Date</th>
+      <th style="padding: 10px; border: 1px solid #ccc;">Project Name</th>
+      <th style="padding: 10px; border: 1px solid #ccc;">Task Name</th>
+      <th style="padding: 10px; border: 1px solid #ccc;">Assigned To</th>
+      <th style="padding: 10px; border: 1px solid #ccc;">Deadline</th>
+      <th style="padding: 10px; border: 1px solid #ccc;">Status</th>
+      
+      <th style="padding: 10px; border: 1px solid #ccc;">Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for assignment in assignments %}
+    <tr>
+      <td style="padding: 10px; border: 1px solid #ccc; text-align: center;">{{ forloop.counter }}</td>
+       <td style="padding: 10px; border: 1px solid #ccc; text-align: center;">{{ assignment.created_at|date:"d-m-Y" }}</td>
+      <td style="padding: 10px; border: 1px solid #ccc;">{{ assignment.project.project_name }}</td>
+      <td style="padding: 10px; border: 1px solid #ccc;">{{ assignment.task.task_name }}</td>
+      <td style="padding: 10px; border: 1px solid #ccc;">
+        <div class="assigned-users">
+          {% for user in assignment.assigned_to.all %}
+            <span class="user-tag">{{ user.name }}</span>
+          {% empty %}
+            <span>No users assigned</span>
+          {% endfor %}
+        </div>
+      </td>
+      <td style="padding: 10px; border: 1px solid #ccc;">
+  {{ assignment.deadline|date:"d-m-Y" }}
+</td>
+      <td></td>
+     
+      <td style="padding: 10px; border: 1px solid #ccc; text-align: center;">
+        <a href="{% url 'edit_assign_socialmedia_project' assignment.id %}" title="Edit" style="color: orange; margin-right: 10px;">
+          <i class="fas fa-edit"></i>
+        </a>
+        <a href="{% url 'delete_assign_socialmedia_project' assignment.id %}" title="Delete" 
+           onclick="return confirm('Are you sure you want to delete this assignment?')" style="color: red;">
+          <i class="fas fa-trash-alt"></i>
+        </a>
+      </td>
+    </tr>
+    {% empty %}
+    <tr>
+      <td colspan="6" style="padding: 10px; border: 1px solid #ccc; text-align: center;">No assignments found</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% endblock %}

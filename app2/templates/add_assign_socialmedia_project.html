@@ -1,0 +1,231 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="header">
+  <h2 style="display: ;">Add Project Assignment</h2>
+</div>
+
+<style>
+  .form-container {
+    max-width: 600px;
+    margin: 20px auto;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+  }
+
+  .form-group {
+    margin-bottom: 15px;
+  }
+
+  .form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+  }
+
+  .form-group select,
+  .form-group input {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+  }
+
+  .btn-submit {
+    background-color: #28a745;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+  }
+
+  .btn-submit:hover {
+    background-color: #218838;
+  }
+
+  .btn-cancel {
+    background-color: #6c757d;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    margin-left: 10px;
+    text-decoration: none;
+    display: inline-block;
+  }
+
+  .btn-cancel:hover {
+    background-color: #5a6268;
+  }
+
+  .user-selection {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 10px;
+    min-height: 100px;
+    background-color: white;
+  }
+
+  .user-selector {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+
+  .user-selector select {
+    flex: 1;
+    margin-right: 10px;
+  }
+
+  .add-user-btn {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    cursor: pointer;
+    font-size: 16px;
+  }
+
+  .add-user-btn:hover {
+    background-color: #0056b3;
+  }
+
+  .selected-users {
+    margin-top: 10px;
+  }
+
+  .selected-user {
+    display: inline-block;
+    background-color: #e9ecef;
+    padding: 5px 10px;
+    margin: 2px;
+    border-radius: 15px;
+    font-size: 12px;
+  }
+
+  .remove-user {
+    color: red;
+    cursor: pointer;
+    margin-left: 5px;
+  }
+
+  .remove-user:hover {
+    color: darkred;
+  }
+</style>
+
+<div class="form-container">
+  <form method="post">
+    {% csrf_token %}
+    
+    <div class="form-group">
+      <label for="project">Project:</label>
+      <select name="project" id="project" required>
+        <option value="">Select a project</option>
+        {% for project in projects %}
+          <option value="{{ project.id }}">{{ project.project_name }} - {{ project.customer.customer_name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="task">Task:</label>
+      <select name="task" id="task" required>
+        <option value="">Select a task</option>
+        {% for task in tasks %}
+          <option value="{{ task.id }}">{{ task.task_name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Assign to Users:</label>
+      <div class="user-selection">
+        <div class="user-selector">
+          <select id="userSelect">
+            <option value="">Select a user</option>
+            {% for user in users %}
+              <option value="{{ user.id }}">{{ user.name }}</option>
+            {% endfor %}
+          </select>
+          <button type="button" class="add-user-btn" onclick="addUser()">+</button>
+        </div>
+        <div class="selected-users" id="selectedUsers"></div>
+      </div>
+    </div>
+
+
+    <div class="form-group">
+  <label for="deadline">Deadline:</label>
+  <input type="date" name="deadline" id="deadline">
+</div>
+
+    <div class="form-group">
+      <button type="submit" class="btn-submit">Save Assignment</button>
+      <a href="{% url 'socialmedia_project_assignments' %}" class="btn-cancel">Cancel</a>
+    </div>
+  </form>
+</div>
+
+<script>
+let selectedUsers = [];
+
+function addUser() {
+  const userSelect = document.getElementById('userSelect');
+  const selectedUserId = userSelect.value;
+  const selectedUserName = userSelect.options[userSelect.selectedIndex].text;
+  
+  if (selectedUserId && !selectedUsers.find(user => user.id === selectedUserId)) {
+    selectedUsers.push({ id: selectedUserId, name: selectedUserName });
+    updateSelectedUsersDisplay();
+    updateHiddenInputs();
+  }
+  
+  userSelect.value = '';
+}
+
+function removeUser(userId) {
+  selectedUsers = selectedUsers.filter(user => user.id !== userId);
+  updateSelectedUsersDisplay();
+  updateHiddenInputs();
+}
+
+function updateSelectedUsersDisplay() {
+  const selectedUsersDiv = document.getElementById('selectedUsers');
+  selectedUsersDiv.innerHTML = '';
+  
+  selectedUsers.forEach(user => {
+    const userSpan = document.createElement('span');
+    userSpan.className = 'selected-user';
+    userSpan.innerHTML = `${user.name} <span class="remove-user" onclick="removeUser('${user.id}')">×</span>`;
+    selectedUsersDiv.appendChild(userSpan);
+  });
+}
+
+function updateHiddenInputs() {
+  // Remove existing hidden inputs
+  const existingInputs = document.querySelectorAll('input[name="assigned_to"]');
+  existingInputs.forEach(input => input.remove());
+  
+  // Add new hidden inputs
+  const form = document.querySelector('form');
+  selectedUsers.forEach(user => {
+    const hiddenInput = document.createElement('input');
+    hiddenInput.type = 'hidden';
+    hiddenInput.name = 'assigned_to';
+    hiddenInput.value = user.id;
+    form.appendChild(hiddenInput);
+  });
+}
+</script>
+
+{% endblock %}

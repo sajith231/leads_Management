@@ -104,6 +104,16 @@ urlpatterns = [
     path('tasks/add/', socialmedia_add_task, name='socialmedia_add_task'),
     path('tasks/edit/<int:id>/', socialmedia_edit_task, name='socialmedia_edit_task'),
     path('tasks/delete/<int:id>/', socialmedia_delete_task, name='socialmedia_delete_task'),
+
+
+    path('socialmedia/assignments/', views.socialmedia_project_assignments, name='socialmedia_project_assignments'),
+    path('socialmedia/assignments/add/', views.add_assign_socialmedia_project, name='add_assign_socialmedia_project'),
+    path('socialmedia/assignments/edit/<int:id>/', views.edit_assign_socialmedia_project, name='edit_assign_socialmedia_project'),
+    path('socialmedia/assignments/delete/<int:id>/', views.delete_assign_socialmedia_project, name='delete_assign_socialmedia_project'),
+    path('socialmedia/your-assignments/', views.user_socialmedia_project_assignments, name='user_socialmedia_project_assignments'),
+
+    
+
     
 
     

@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="header">
+    <h2 style="display: flex; justify-content: center; align-items: center;">
+        <i class="fas fa-tasks" style="margin-right: 10px;"></i>
+        Your Project Assignments
+    </h2>
+</div>
+
+<style>
+    .assigned-users {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+    }
+
+    .user-tag {
+        background-color: #e9ecef;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 12px;
+        border: 1px solid #ece2e6;
+    }
+
+    .current-user {
+        background-color: #007bff;
+        color: white;
+        font-weight: bold;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 2%;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    th, td {
+        padding: 12px;
+        border: 1px solid #ddd;
+        text-align: center;
+    }
+
+    th {
+        background-color: #e9f1ff;
+        font-weight: 600;
+        color: #333;
+    }
+
+    tr:hover {
+        background-color: #f5f5f5;
+    }
+
+    .no-assignments {
+        text-align: center;
+        padding: 50px;
+        color: #666;
+        font-size: 18px;
+    }
+
+    .assignment-count {
+        margin-bottom: 20px;
+        font-size: 16px;
+        color: #666;
+        text-align: right;
+    }
+
+    .deadline-approaching {
+        color: #ff6b35;
+        font-weight: bold;
+    }
+
+    .deadline-passed {
+        color: #dc3545;
+        font-weight: bold;
+    }
+
+    .status-badge {
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+    .status-pending {
+        background-color: #ffc107;
+        color: #212529;
+    }
+
+    .status-in-progress {
+        background-color: #17a2b8;
+        color: white;
+    }
+
+    .status-completed {
+        background-color: #28a745;
+        color: white;
+    }
+</style>
+
+<div class="assignment-count">
+    <strong>Total Assignments: {{ total_assignments }}</strong>
+</div>
+
+{% if processed_assignments %}
+<table>
+    <thead>
+        <tr>
+            <th>No</th>
+            <th>Created Date</th>
+            <th>Project Name</th>
+            <th>Customer</th>
+            <th>Task Name</th>
+            <th>Team Members</th>
+            <th>Deadline</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in processed_assignments %}
+        <tr>
+            <td>{{ forloop.counter }}</td>
+            <td>{{ item.assignment.created_at|date:"d-m-Y" }}</td>
+            <td>
+                <strong>{{ item.assignment.project.project_name }}</strong>
+                <br>
+                <small class="text-muted">{{ item.assignment.project.project_description|truncatechars:50 }}</small>
+            </td>
+            <td>{{ item.assignment.project.customer.customer_name }}</td>
+            <td>{{ item.assignment.task.task_name }}</td>
+            <td>
+                <div class="assigned-users">
+                    {% for user in item.assignment.assigned_to.all %}
+                        <span class="user-tag {% if user.id == request.user.id %}current-user{% endif %}">
+                            {{ user.name }}
+                        </span>
+                    {% empty %}
+                        <span class="text-muted">No users assigned</span>
+                    {% endfor %}
+                </div>
+            </td>
+           <td>
+    {% if item.effective_deadline %}
+        <span class="
+            {% if item.deadline_status == 'passed' %}deadline-passed
+            {% elif item.deadline_status == 'approaching' %}deadline-approaching
+            {% endif %}">
+            {{ item.effective_deadline|date:"d-m-Y" }}
+        </span>
+    {% else %}
+        <span class="text-muted">No deadline</span>
+    {% endif %}
+</td>
+            <td>
+                <span class="status-badge status-pending">Pending</span>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<div style="margin-top: 20px; text-align: center; color: #666;">
+    <small><i class="fas fa-info-circle"></i> Your assignments are highlighted in blue</small>
+</div>
+{% else %}
+<div class="no-assignments">
+    <div>
+        <i class="fas fa-clipboard-list" style="font-size: 48px; color: #ccc; margin-bottom: 20px;"></i>
+        <br>
+        <h4>No assignments found</h4>
+        <p>You don't have any project assignments yet.</p>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}

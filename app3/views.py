@@ -1230,3 +1230,7 @@ def debtors1_list(request):
         'query': query,
         'search_terms': query.lower().split() if query else []
     })
+
+
+
+

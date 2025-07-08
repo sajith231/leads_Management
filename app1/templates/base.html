@@ -523,7 +523,7 @@
     {% endif %}
 </div>
 
-<!-- <div class="mainmenu" onclick="toggleSocialMediaMenu()">
+<div class="mainmenu" onclick="toggleSocialMediaMenu()">
             <span>
                 <i class="fas fa-share-alt"></i>
                 <span>Social Media</span>
@@ -533,8 +533,19 @@
         <div id="social-media-menu" class="submenu">
                 <a href="{% url 'all_customers' %}"><i class="fas fa-users"></i> Customer Master</a>
                 <a href="{% url 'socialmedia_all_projects' %}"><i class="fas fa-project-diagram"></i> Projects</a>
+                <a href="{% url 'socialmedia_project_assignments' %}"><i class="fas fa-clipboard"></i> Projects Assign</a>
                 <a href="{% url 'socialmedia_all_tasks' %}"><i class="fas fa-tasks"></i> Task Master</a>
-        </div> -->
+                {% if user.is_authenticated %}
+
+    <a class="nav-link" href="{% url 'user_socialmedia_project_assignments' %}">
+    <i class="fas fa-user-check ms-1"></i>
+    Your Assignments
+</a>
+
+
+
+{% endif %}
+        </div>
 
 
 <!-- Debters Menu -->
@@ -756,6 +767,10 @@
                     <a href="{% url 'show_clients' %}"><i class="fas fa-users"></i> Clients</a>
                 </div>
             {% endif %}
+
+
+
+
 
 
             {% if 'all_districts' in allowed_menus or 'all_areas' in allowed_menus or 'all_locations' in allowed_menus or 'all_requirements' in allowed_menus or 'business_type_list' in allowed_menus or 'job_titles' in allowed_menus or 'all_hardwares' in allowed_menus or 'all_complaints' in allowed_menus or 'all_branches' in allowed_menus or 'users_table' in allowed_menus or 'reminder_type' in allowed_menus or 'all_department' in allowed_menus or 'job_roles' in allowed_menus %}

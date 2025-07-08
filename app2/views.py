@@ -1068,9 +1068,26 @@ from .models import Customer
 from django.shortcuts import render
 from .models import Customer
 
+from django.core.paginator import Paginator
+from django.shortcuts import render
+from django.db import models
+from .models import Customer
+
 def all_customers(request):
-    # Order customers by creation date in descending order
-    customers = Customer.objects.all().select_related('business_type').order_by('-created_at')
+    search_query = request.GET.get('q', '').strip()
+
+    if search_query:
+        customers_list = Customer.objects.filter(
+            models.Q(customer_name__icontains=search_query) |
+            models.Q(firm_name__icontains=search_query)
+        ).select_related('business_type').order_by('-created_at')
+    else:
+        customers_list = Customer.objects.all().select_related('business_type').order_by('-created_at')
+
+    paginator = Paginator(customers_list, 15)
+    page_number = request.GET.get('page')
+    customers = paginator.get_page(page_number)
+
     return render(request, 'all_customers_table.html', {'customers': customers})
 
 def add_customer(request):
@@ -1141,12 +1158,28 @@ def delete_customer(request, id):
 
 
 
-from django.shortcuts import render, redirect, get_object_or_404
-from django.urls import reverse
-from .models import Customer, SocialMediaProject
+
+
+from django.shortcuts import render
+from django.core.paginator import Paginator
+from django.db import models
+from .models import SocialMediaProject
 
 def socialmedia_all_projects(request):
-    projects = SocialMediaProject.objects.all().select_related('customer').order_by('-id')
+    search_query = request.GET.get('q', '').strip()
+
+    if search_query:
+        projects_list = SocialMediaProject.objects.filter(
+            models.Q(project_name__icontains=search_query) |
+            models.Q(customer__customer_name__icontains=search_query)
+        ).select_related('customer').order_by('-id')
+    else:
+        projects_list = SocialMediaProject.objects.all().select_related('customer').order_by('-id')
+
+    paginator = Paginator(projects_list, 15)  # Show 15 projects per page
+    page_number = request.GET.get('page')
+    projects = paginator.get_page(page_number)
+
     return render(request, 'socialmedia_all_projects.html', {'projects': projects})
 
 def socialmedia_add_project(request):
@@ -1221,3 +1254,153 @@ def socialmedia_delete_task(request, id):
     task = get_object_or_404(Task, id=id)
     task.delete()
     return redirect(reverse('socialmedia_all_tasks'))
+
+
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
+from django.contrib.auth.decorators import login_required
+from django.apps import apps
+from .models import SocialMediaProject, Task, SocialMediaProjectAssignment
+
+# Get User model from app1 to avoid circular import
+def get_user_model():
+    return apps.get_model('app1', 'User')
+
+@login_required
+def socialmedia_project_assignments(request):
+    assignments = SocialMediaProjectAssignment.objects.all().select_related('project', 'task').prefetch_related('assigned_to')
+    return render(request, 'socialmedia_project_assignments.html', {'assignments': assignments})
+
+@login_required
+def add_assign_socialmedia_project(request):
+    projects = SocialMediaProject.objects.all()
+    tasks = Task.objects.all()
+    User = get_user_model()
+    users = User.objects.all()
+
+    if request.method == 'POST':
+        project_id = request.POST.get('project')
+        task_id = request.POST.get('task')
+        assigned_to_ids = request.POST.getlist('assigned_to')
+        deadline = request.POST.get('deadline')
+
+        project = get_object_or_404(SocialMediaProject, id=project_id)
+        task = get_object_or_404(Task, id=task_id)
+        assigned_to = User.objects.filter(id__in=assigned_to_ids)
+
+        assignment = SocialMediaProjectAssignment.objects.create(
+            project=project, 
+            task=task,
+            deadline=deadline if deadline else None
+        )
+        assignment.assigned_to.set(assigned_to)
+        return redirect(reverse('socialmedia_project_assignments'))
+
+    return render(request, 'add_assign_socialmedia_project.html', {
+        'projects': projects,
+        'tasks': tasks,
+        'users': users
+    })
+
+@login_required
+def edit_assign_socialmedia_project(request, id):
+    assignment = get_object_or_404(SocialMediaProjectAssignment, id=id)
+    projects = SocialMediaProject.objects.all()
+    tasks = Task.objects.all()
+    User = get_user_model()
+    users = User.objects.all()
+
+    if request.method == 'POST':
+        project_id = request.POST.get('project')
+        task_id = request.POST.get('task')
+        assigned_to_ids = request.POST.getlist('assigned_to')
+        deadline = request.POST.get('deadline')
+
+        project = get_object_or_404(SocialMediaProject, id=project_id)
+        task = get_object_or_404(Task, id=task_id)
+        assigned_to = User.objects.filter(id__in=assigned_to_ids)
+
+        assignment.project = project
+        assignment.task = task
+        assignment.deadline = deadline if deadline else None
+        assignment.assigned_to.set(assigned_to)
+        assignment.save()
+        return redirect(reverse('socialmedia_project_assignments'))
+
+    return render(request, 'edit_assign_socialmedia_project.html', {
+        'assignment': assignment,
+        'projects': projects,
+        'tasks': tasks,
+        'users': users
+    })
+
+@login_required
+def delete_assign_socialmedia_project(request, id):
+    assignment = get_object_or_404(SocialMediaProjectAssignment, id=id)
+    assignment.delete()
+    return redirect(reverse('socialmedia_project_assignments'))
+
+
+
+
+
+from datetime import datetime, timedelta
+from django.apps import apps
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
+from .models import SocialMediaProjectAssignment
+
+@login_required
+def user_socialmedia_project_assignments(request):
+    try:
+        # Get the custom User model
+        User = apps.get_model('app1', 'User')
+        
+        # Try to get the custom user instance using the logged-in user's username
+        custom_user = User.objects.get(userid=request.user.username)
+        
+        # Filter assignments where the current user is assigned
+        assignments = SocialMediaProjectAssignment.objects.filter(
+            assigned_to=custom_user
+        ).select_related('project', 'task', 'project__customer').order_by('-created_at')
+        
+    except User.DoesNotExist:
+        # If no custom user found, return empty queryset
+        assignments = SocialMediaProjectAssignment.objects.none()
+    
+    # Calculate dates for deadline indicators
+    today = datetime.now().date()
+    week_from_now = today + timedelta(days=7)
+    
+    # Process assignments to add deadline status
+    processed_assignments = []
+    for assignment in assignments:
+        deadline_status = None
+        deadline_date = None
+        
+        # Check both assignment deadline and project deadline
+        if assignment.deadline:
+            deadline_date = assignment.deadline
+        elif assignment.project.deadline:
+            deadline_date = assignment.project.deadline
+            
+        if deadline_date:
+            if deadline_date < today:
+                deadline_status = 'passed'
+            elif deadline_date <= week_from_now:
+                deadline_status = 'approaching'
+        
+        processed_assignments.append({
+            'assignment': assignment,
+            'deadline_status': deadline_status,
+            'effective_deadline': deadline_date
+        })
+    
+    context = {
+        'processed_assignments': processed_assignments,
+        'today': today,
+        'total_assignments': len(processed_assignments),
+    }
+    
+    return render(request, 'user_socialmedia_project_assignments.html', context)

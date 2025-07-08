@@ -213,3 +213,22 @@ class Task(models.Model):
 
     def __str__(self):
         return self.task_name
+    
+
+
+
+# app2/models.py
+
+class SocialMediaProjectAssignment(models.Model):
+    project = models.ForeignKey(SocialMediaProject, on_delete=models.CASCADE)
+    task = models.ForeignKey(Task, on_delete=models.CASCADE)
+    assigned_to = models.ManyToManyField('app1.User', related_name='project_assignments')
+    deadline = models.DateField(null=True, blank=True)  # <-- Add this line
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.project.project_name} - {self.task.task_name}"
+    
+
+
