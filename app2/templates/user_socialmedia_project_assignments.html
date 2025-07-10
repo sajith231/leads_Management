@@ -39,7 +39,6 @@
     th, td {
         padding: 12px;
         border: 1px solid #ddd;
-        text-align: center;
     }
 
     th {
@@ -81,6 +80,9 @@
         border-radius: 4px;
         font-size: 12px;
         font-weight: 500;
+        cursor: pointer;
+        position: relative;
+        display: inline-block;
     }
 
     .status-pending {
@@ -97,12 +99,125 @@
         background-color: #28a745;
         color: white;
     }
+
+    .status-hold {
+        background-color: #6c757d;
+        color: white;
+    }
+
+    .status-dropdown {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        z-index: 1000;
+        min-width: 100px;
+        display: none;
+    }
+
+    .status-dropdown.show {
+        display: block;
+    }
+
+    .status-option {
+        padding: 8px 12px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+    .status-option:hover {
+        background-color: #f8f9fa;
+    }
+
+    .status-option.selected {
+        background-color: #007bff;
+        color: white;
+    }
+
+    .loading {
+        opacity: 0.6;
+        pointer-events: none;
+    }
+
+    .success-message {
+        background-color: #d4edda;
+        color: #155724;
+        padding: 10px;
+        border-radius: 4px;
+        margin-bottom: 20px;
+        display: none;
+    }
+
+    .error-message {
+        background-color: #f8d7da;
+        color: #721c24;
+        padding: 10px;
+        border-radius: 4px;
+        margin-bottom: 20px;
+        display: none;
+    }
+
+    /* Pagination Styles */
+    .pagination {
+        display: flex;
+        justify-content: center;
+        margin: 20px 0;
+    }
+
+    .pagination a {
+        color: #007bff;
+        padding: 8px 16px;
+        text-decoration: none;
+        border: 1px solid #ddd;
+        margin: 0 4px;
+    }
+
+    .pagination a.active {
+        background-color: #007bff;
+        color: white;
+        border: 1px solid #007bff;
+    }
+
+    .pagination a:hover:not(.active) {
+        background-color: #ddd;
+    }
+
+    .pagination-info {
+        text-align: center;
+        margin: 10px 0;
+        color: #666;
+    }
 </style>
+
+<div id="successMessage" class="success-message"></div>
+<div id="errorMessage" class="error-message"></div>
 
 <div class="assignment-count">
     <strong>Total Assignments: {{ total_assignments }}</strong>
 </div>
+<!-- Pagination Controls -->
+<div class="pagination">
+    {% if assignments.has_previous %}
+        <a href="?page=1">&laquo; First</a>
+        <a href="?page={{ assignments.previous_page_number }}">Previous</a>
+    {% endif %}
 
+    {% for num in assignments.paginator.page_range %}
+        {% if assignments.number == num %}
+            <a class="active" href="?page={{ num }}">{{ num }}</a>
+        {% elif num > assignments.number|add:'-3' and num < assignments.number|add:'3' %}
+            <a href="?page={{ num }}">{{ num }}</a>
+        {% endif %}
+    {% endfor %}
+
+    {% if assignments.has_next %}
+        <a href="?page={{ assignments.next_page_number }}">Next</a>
+        <a href="?page={{ assignments.paginator.num_pages }}">Last &raquo;</a>
+    {% endif %}
+</div>
 {% if processed_assignments %}
 <table>
     <thead>
@@ -120,7 +235,7 @@
     <tbody>
         {% for item in processed_assignments %}
         <tr>
-            <td>{{ forloop.counter }}</td>
+            <td>{{ forloop.counter0|add:assignments.start_index }}</td>
             <td>{{ item.assignment.created_at|date:"d-m-Y" }}</td>
             <td>
                 <strong>{{ item.assignment.project.project_name }}</strong>
@@ -132,7 +247,7 @@
             <td>
                 <div class="assigned-users">
                     {% for user in item.assignment.assigned_to.all %}
-                        <span class="user-tag {% if user.id == request.user.id %}current-user{% endif %}">
+                        <span class="user-tag {% if user.userid == request.user.username %}current-user{% endif %}">
                             {{ user.name }}
                         </span>
                     {% empty %}
@@ -140,28 +255,55 @@
                     {% endfor %}
                 </div>
             </td>
-           <td>
-    {% if item.effective_deadline %}
-        <span class="
-            {% if item.deadline_status == 'passed' %}deadline-passed
-            {% elif item.deadline_status == 'approaching' %}deadline-approaching
-            {% endif %}">
-            {{ item.effective_deadline|date:"d-m-Y" }}
-        </span>
-    {% else %}
-        <span class="text-muted">No deadline</span>
-    {% endif %}
-</td>
             <td>
-                <span class="status-badge status-pending">Pending</span>
+                {% if item.effective_deadline %}
+                    <span class="
+                        {% if item.deadline_status == 'passed' %}deadline-passed
+                        {% elif item.deadline_status == 'approaching' %}deadline-approaching
+                        {% endif %}">
+                        {{ item.effective_deadline|date:"d-m-Y" }}
+                    </span>
+                {% else %}
+                    <span class="text-muted">No deadline</span>
+                {% endif %}
+            </td>
+            <td>
+                <div class="status-container" style="position: relative;">
+                    <span class="status-badge {{ item.assignment.get_status_display_class }}" 
+                          onclick="toggleStatusDropdown({{ item.assignment.id }})"
+                          id="status-{{ item.assignment.id }}">
+                        {{ item.assignment.get_status_display }}
+                    </span>
+                    <div class="status-dropdown" id="dropdown-{{ item.assignment.id }}">
+                        <div class="status-option" data-status="pending" onclick="updateStatus({{ item.assignment.id }}, 'pending')">
+                            Pending
+                        </div>
+                        <div class="status-option" data-status="started" onclick="updateStatus({{ item.assignment.id }}, 'started')">
+                            Started
+                        </div>
+                        <div class="status-option" data-status="completed" onclick="updateStatus({{ item.assignment.id }}, 'completed')">
+                            Completed
+                        </div>
+                        <div class="status-option" data-status="hold" onclick="updateStatus({{ item.assignment.id }}, 'hold')">
+                            On Hold
+                        </div>
+                    </div>
+                </div>
             </td>
         </tr>
         {% endfor %}
     </tbody>
 </table>
 
+<!-- Pagination Information -->
+<div class="pagination-info">
+    Showing {{ assignments.start_index }} to {{ assignments.end_index }} of {{ assignments.paginator.count }} assignments
+</div>
+
+
+
 <div style="margin-top: 20px; text-align: center; color: #666;">
-    <small><i class="fas fa-info-circle"></i> Your assignments are highlighted in blue</small>
+    <small><i class="fas fa-info-circle"></i> Your assignments are highlighted in blue. Click on status to change it.</small>
 </div>
 {% else %}
 <div class="no-assignments">
@@ -173,5 +315,113 @@
     </div>
 </div>
 {% endif %}
+
+<script>
+// Close dropdown when clicking outside
+document.addEventListener('click', function(event) {
+    const dropdowns = document.querySelectorAll('.status-dropdown');
+    dropdowns.forEach(dropdown => {
+        if (!dropdown.contains(event.target) && !event.target.classList.contains('status-badge')) {
+            dropdown.classList.remove('show');
+        }
+    });
+});
+
+function toggleStatusDropdown(assignmentId) {
+    const dropdown = document.getElementById(`dropdown-${assignmentId}`);
+    
+    // Close all other dropdowns
+    const allDropdowns = document.querySelectorAll('.status-dropdown');
+    allDropdowns.forEach(d => {
+        if (d.id !== `dropdown-${assignmentId}`) {
+            d.classList.remove('show');
+        }
+    });
+    
+    // Toggle current dropdown
+    dropdown.classList.toggle('show');
+}
+
+function updateStatus(assignmentId, newStatus) {
+    const statusBadge = document.getElementById(`status-${assignmentId}`);
+    const dropdown = document.getElementById(`dropdown-${assignmentId}`);
+    
+    // Show loading state
+    statusBadge.classList.add('loading');
+    statusBadge.textContent = 'Updating...';
+    
+    // Hide dropdown
+    dropdown.classList.remove('show');
+    
+    // Send AJAX request
+    fetch('{% url "update_assignment_status" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            assignment_id: assignmentId,
+            status: newStatus
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update status badge
+            statusBadge.textContent = data.new_status;
+            statusBadge.className = `status-badge ${data.status_class}`;
+            
+            // Show success message
+            showMessage('Status updated successfully!', 'success');
+        } else {
+            // Show error message
+            showMessage(data.error || 'Failed to update status', 'error');
+            
+            // Reset status badge (you might want to keep original status)
+            statusBadge.textContent = 'Error';
+            statusBadge.className = 'status-badge status-pending';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showMessage('Network error occurred', 'error');
+        
+        // Reset status badge
+        statusBadge.textContent = 'Error';
+        statusBadge.className = 'status-badge status-pending';
+    })
+    .finally(() => {
+        // Remove loading state
+        statusBadge.classList.remove('loading');
+    });
+}
+
+function showMessage(message, type) {
+    const messageDiv = document.getElementById(type === 'success' ? 'successMessage' : 'errorMessage');
+    messageDiv.textContent = message;
+    messageDiv.style.display = 'block';
+    
+    // Hide message after 3 seconds
+    setTimeout(() => {
+        messageDiv.style.display = 'none';
+    }, 3000);
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
 
 {% endblock %}

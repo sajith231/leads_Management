@@ -1267,10 +1267,20 @@ from .models import SocialMediaProject, Task, SocialMediaProjectAssignment
 def get_user_model():
     return apps.get_model('app1', 'User')
 
+from django.core.paginator import Paginator
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
+
 @login_required
 def socialmedia_project_assignments(request):
     assignments = SocialMediaProjectAssignment.objects.all().select_related('project', 'task').prefetch_related('assigned_to')
-    return render(request, 'socialmedia_project_assignments.html', {'assignments': assignments})
+    
+    # Pagination
+    paginator = Paginator(assignments, 15)  # Show 10 assignments per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    return render(request, 'socialmedia_project_assignments.html', {'assignments': page_obj})
 
 @login_required
 def add_assign_socialmedia_project(request):
@@ -1351,6 +1361,66 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from .models import SocialMediaProjectAssignment
 
+# Add this new view to your existing views.py
+
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+import json
+
+@login_required
+@csrf_exempt
+@require_POST
+def update_assignment_status(request):
+    """AJAX view to update assignment status"""
+    try:
+        data = json.loads(request.body)
+        assignment_id = data.get('assignment_id')
+        new_status = data.get('status')
+        
+        if not assignment_id or not new_status:
+            return JsonResponse({'success': False, 'error': 'Missing required data'})
+        
+        # Get the assignment
+        assignment = get_object_or_404(SocialMediaProjectAssignment, id=assignment_id)
+        
+        # Get the custom user model
+        User = get_user_model()
+        
+        # Check if the logged-in user is assigned to this project
+        try:
+            custom_user = User.objects.get(userid=request.user.username)
+            if not assignment.assigned_to.filter(id=custom_user.id).exists():
+                return JsonResponse({'success': False, 'error': 'You are not assigned to this project'})
+        except User.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'User not found'})
+        
+        # Validate status choice
+        valid_statuses = ['pending', 'started', 'completed', 'hold']
+        if new_status not in valid_statuses:
+            return JsonResponse({'success': False, 'error': 'Invalid status'})
+        
+        # Update the status
+        assignment.status = new_status
+        assignment.save()
+        
+        return JsonResponse({
+            'success': True, 
+            'message': 'Status updated successfully',
+            'new_status': assignment.get_status_display(),
+            'status_class': assignment.get_status_display_class()
+        })
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+# Update your existing user_socialmedia_project_assignments view
+from django.core.paginator import Paginator
+from django.shortcuts import render
+from django.apps import apps
+from django.contrib.auth.decorators import login_required
+from datetime import datetime, timedelta
+
 @login_required
 def user_socialmedia_project_assignments(request):
     try:
@@ -1397,8 +1467,14 @@ def user_socialmedia_project_assignments(request):
             'effective_deadline': deadline_date
         })
     
+    # Pagination
+    paginator = Paginator(processed_assignments, 10)  # Show 10 assignments per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
     context = {
-        'processed_assignments': processed_assignments,
+        'assignments': page_obj,  # Changed from processed_assignments to page_obj
+        'processed_assignments': page_obj,  # Keep this for backward compatibility
         'today': today,
         'total_assignments': len(processed_assignments),
     }

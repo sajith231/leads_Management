@@ -111,6 +111,7 @@ urlpatterns = [
     path('socialmedia/assignments/edit/<int:id>/', views.edit_assign_socialmedia_project, name='edit_assign_socialmedia_project'),
     path('socialmedia/assignments/delete/<int:id>/', views.delete_assign_socialmedia_project, name='delete_assign_socialmedia_project'),
     path('socialmedia/your-assignments/', views.user_socialmedia_project_assignments, name='user_socialmedia_project_assignments'),
+    path('update-assignment-status/', views.update_assignment_status, name='update_assignment_status'),
 
     
 

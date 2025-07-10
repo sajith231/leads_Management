@@ -220,15 +220,31 @@ class Task(models.Model):
 # app2/models.py
 
 class SocialMediaProjectAssignment(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('started', 'Started'),
+        ('completed', 'Completed'),
+        ('hold', 'On Hold'),
+    ]
+    
     project = models.ForeignKey(SocialMediaProject, on_delete=models.CASCADE)
     task = models.ForeignKey(Task, on_delete=models.CASCADE)
     assigned_to = models.ManyToManyField('app1.User', related_name='project_assignments')
-    deadline = models.DateField(null=True, blank=True)  # <-- Add this line
+    deadline = models.DateField(null=True, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"{self.project.project_name} - {self.task.task_name}"
     
-
+    def get_status_display_class(self):
+        """Return CSS class based on status"""
+        status_classes = {
+            'pending': 'status-pending',
+            'started': 'status-in-progress',
+            'completed': 'status-completed',
+            'hold': 'status-hold'
+        }
+        return status_classes.get(self.status, 'status-pending')
 

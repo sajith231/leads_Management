@@ -771,6 +771,30 @@
 
 
 
+            <div class="mainmenu" onclick="toggleSocialMediaMenu()">
+            <span>
+                <i class="fas fa-share-alt"></i>
+                <span>Social Media</span>
+            </span>
+        </div>
+
+        <div id="social-media-menu" class="submenu">
+                {% if user.is_authenticated %}
+
+    <a class="nav-link" href="{% url 'user_socialmedia_project_assignments' %}">
+    <i class="fas fa-user-check ms-1"></i>
+    Your Assignments
+</a>
+
+
+
+{% endif %}
+        </div>
+
+
+
+
+
 
 
             {% if 'all_districts' in allowed_menus or 'all_areas' in allowed_menus or 'all_locations' in allowed_menus or 'all_requirements' in allowed_menus or 'business_type_list' in allowed_menus or 'job_titles' in allowed_menus or 'all_hardwares' in allowed_menus or 'all_complaints' in allowed_menus or 'all_branches' in allowed_menus or 'users_table' in allowed_menus or 'reminder_type' in allowed_menus or 'all_department' in allowed_menus or 'job_roles' in allowed_menus %}
