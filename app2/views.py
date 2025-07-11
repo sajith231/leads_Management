@@ -1273,14 +1273,79 @@ from django.shortcuts import render
 
 @login_required
 def socialmedia_project_assignments(request):
-    assignments = SocialMediaProjectAssignment.objects.all().select_related('project', 'task').prefetch_related('assigned_to')
-    
-    # Pagination
-    paginator = Paginator(assignments, 15)  # Show 10 assignments per page
+    assignments = SocialMediaProjectAssignment.objects.all().select_related('project', 'task').prefetch_related('assigned_to', 'status_history')
+    paginator = Paginator(assignments, 15)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    
-    return render(request, 'socialmedia_project_assignments.html', {'assignments': page_obj})
+
+    assignment_durations = []
+    for assignment in page_obj:
+        history = list(assignment.status_history.all())
+        # Only get started to completed duration
+        duration_started_completed = get_status_duration(history, 'started', 'completed')
+        assignment_durations.append({
+            'assignment': assignment,
+            'duration_started_completed': duration_started_completed,
+        })
+
+    return render(request, 'socialmedia_project_assignments.html', {
+        'assignments': page_obj, 
+        'assignment_durations': assignment_durations
+    })
+
+# Update the user_socialmedia_project_assignments view:
+@login_required
+def user_socialmedia_project_assignments(request):
+    try:
+        User = apps.get_model('app1', 'User')
+        custom_user = User.objects.get(userid=request.user.username)
+        assignments = SocialMediaProjectAssignment.objects.filter(
+            assigned_to=custom_user
+        ).select_related('project', 'task', 'project__customer').prefetch_related('status_history').order_by('-created_at')
+    except User.DoesNotExist:
+        assignments = SocialMediaProjectAssignment.objects.none()
+
+    today = datetime.now().date()
+    week_from_now = today + timedelta(days=7)
+
+    processed_assignments = []
+    for assignment in assignments:
+        deadline_status = None
+        deadline_date = None
+
+        if assignment.deadline:
+            deadline_date = assignment.deadline
+        elif assignment.project.deadline:
+            deadline_date = assignment.project.deadline
+
+        if deadline_date:
+            if deadline_date < today:
+                deadline_status = 'passed'
+            elif deadline_date <= week_from_now:
+                deadline_status = 'approaching'
+
+        # Only get started to completed duration
+        history = list(assignment.status_history.all())
+        duration_started_completed = get_status_duration(history, 'started', 'completed')
+
+        processed_assignments.append({
+            'assignment': assignment,
+            'deadline_status': deadline_status,
+            'effective_deadline': deadline_date,
+            'duration_started_completed': duration_started_completed,
+        })
+
+    paginator = Paginator(processed_assignments, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    context = {
+        'assignments': page_obj,
+        'processed_assignments': page_obj,
+        'today': today,
+        'total_assignments': len(processed_assignments),
+    }
+    return render(request, 'user_socialmedia_project_assignments.html', context)
 
 @login_required
 def add_assign_socialmedia_project(request):
@@ -1367,116 +1432,136 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 import json
+from .models import AssignmentStatusHistory
 
 @login_required
 @csrf_exempt
 @require_POST
 def update_assignment_status(request):
-    """AJAX view to update assignment status"""
     try:
         data = json.loads(request.body)
         assignment_id = data.get('assignment_id')
         new_status = data.get('status')
-        
+
         if not assignment_id or not new_status:
             return JsonResponse({'success': False, 'error': 'Missing required data'})
-        
-        # Get the assignment
+
         assignment = get_object_or_404(SocialMediaProjectAssignment, id=assignment_id)
-        
-        # Get the custom user model
         User = get_user_model()
-        
-        # Check if the logged-in user is assigned to this project
-        try:
-            custom_user = User.objects.get(userid=request.user.username)
-            if not assignment.assigned_to.filter(id=custom_user.id).exists():
-                return JsonResponse({'success': False, 'error': 'You are not assigned to this project'})
-        except User.DoesNotExist:
-            return JsonResponse({'success': False, 'error': 'User not found'})
-        
-        # Validate status choice
+        custom_user = User.objects.get(userid=request.user.username)
+        if not assignment.assigned_to.filter(id=custom_user.id).exists():
+            return JsonResponse({'success': False, 'error': 'You are not assigned to this project'})
+
         valid_statuses = ['pending', 'started', 'completed', 'hold']
         if new_status not in valid_statuses:
             return JsonResponse({'success': False, 'error': 'Invalid status'})
-        
-        # Update the status
-        assignment.status = new_status
-        assignment.save()
-        
+
+        # Only add to history if status is actually changing
+        if assignment.status != new_status:
+            AssignmentStatusHistory.objects.create(
+                assignment=assignment,
+                status=new_status,
+                changed_by=request.user
+            )
+            assignment.status = new_status
+            assignment.save()
+
         return JsonResponse({
-            'success': True, 
+            'success': True,
             'message': 'Status updated successfully',
             'new_status': assignment.get_status_display(),
             'status_class': assignment.get_status_display_class()
         })
-        
+
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
 
+
+
+
+
+
 # Update your existing user_socialmedia_project_assignments view
-from django.core.paginator import Paginator
-from django.shortcuts import render
+from datetime import datetime, timedelta
 from django.apps import apps
 from django.contrib.auth.decorators import login_required
-from datetime import datetime, timedelta
+from django.core.paginator import Paginator
+from django.shortcuts import render
+from django.utils.timesince import timesince
+from .models import SocialMediaProjectAssignment, AssignmentStatusHistory
+
+def get_status_duration(history, start_status, end_status):
+    """Get duration between start status and end status"""
+    start_time = None
+    end_time = None
+    
+    # Find the first 'started' entry
+    for entry in history:
+        if entry.status == start_status and start_time is None:
+            start_time = entry.changed_at
+    
+    # Find the last 'completed' entry after start
+    for entry in reversed(history):
+        if entry.status == end_status and start_time and entry.changed_at > start_time:
+            end_time = entry.changed_at
+            break
+            
+    if start_time and end_time:
+        return timesince(start_time, end_time)
+    elif start_time and not end_time:
+        # If started but not completed yet
+        return f"{timesince(start_time)}"
+    return None
 
 @login_required
 def user_socialmedia_project_assignments(request):
     try:
-        # Get the custom User model
         User = apps.get_model('app1', 'User')
-        
-        # Try to get the custom user instance using the logged-in user's username
         custom_user = User.objects.get(userid=request.user.username)
-        
-        # Filter assignments where the current user is assigned
         assignments = SocialMediaProjectAssignment.objects.filter(
             assigned_to=custom_user
-        ).select_related('project', 'task', 'project__customer').order_by('-created_at')
-        
+        ).select_related('project', 'task', 'project__customer').prefetch_related('status_history').order_by('-created_at')
     except User.DoesNotExist:
-        # If no custom user found, return empty queryset
         assignments = SocialMediaProjectAssignment.objects.none()
-    
-    # Calculate dates for deadline indicators
+
     today = datetime.now().date()
     week_from_now = today + timedelta(days=7)
-    
-    # Process assignments to add deadline status
+
     processed_assignments = []
     for assignment in assignments:
         deadline_status = None
         deadline_date = None
-        
-        # Check both assignment deadline and project deadline
+
         if assignment.deadline:
             deadline_date = assignment.deadline
         elif assignment.project.deadline:
             deadline_date = assignment.project.deadline
-            
+
         if deadline_date:
             if deadline_date < today:
                 deadline_status = 'passed'
             elif deadline_date <= week_from_now:
                 deadline_status = 'approaching'
-        
+
+        # Only get started to completed duration
+        history = list(assignment.status_history.all())
+        duration_started_completed = get_status_duration(history, 'started', 'completed')
+
         processed_assignments.append({
             'assignment': assignment,
             'deadline_status': deadline_status,
-            'effective_deadline': deadline_date
+            'effective_deadline': deadline_date,
+            'duration_started_completed': duration_started_completed,
         })
-    
-    # Pagination
-    paginator = Paginator(processed_assignments, 10)  # Show 10 assignments per page
+
+    paginator = Paginator(processed_assignments, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    
+
     context = {
-        'assignments': page_obj,  # Changed from processed_assignments to page_obj
-        'processed_assignments': page_obj,  # Keep this for backward compatibility
+        'assignments': page_obj,
+        'processed_assignments': page_obj,
         'today': today,
         'total_assignments': len(processed_assignments),
     }
-    
     return render(request, 'user_socialmedia_project_assignments.html', context)

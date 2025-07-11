@@ -65,15 +65,9 @@
         text-align: right;
     }
 
-    .deadline-approaching {
-        color: #ff6b35;
-        font-weight: bold;
-    }
+    
 
-    .deadline-passed {
-        color: #dc3545;
-        font-weight: bold;
-    }
+    
 
     .status-badge {
         padding: 4px 8px;
@@ -230,6 +224,7 @@
             <th>Team Members</th>
             <th>Deadline</th>
             <th>Status</th>
+            <th>Duration (Started to Completed)</th>
         </tr>
     </thead>
     <tbody>
@@ -238,12 +233,11 @@
             <td>{{ forloop.counter0|add:assignments.start_index }}</td>
             <td>{{ item.assignment.created_at|date:"d-m-Y" }}</td>
             <td>
-                <strong>{{ item.assignment.project.project_name }}</strong>
+                <strong style="background-color: #d9f0ff; padding: 4px 8px; border-radius: 6px; font-weight: bold;">{{ item.assignment.project.project_name }}</strong>
                 <br>
-                <small class="text-muted">{{ item.assignment.project.project_description|truncatechars:50 }}</small>
             </td>
             <td>{{ item.assignment.project.customer.customer_name }}</td>
-            <td>{{ item.assignment.task.task_name }}</td>
+            <td style="background-color: #d4fdd4; padding: 4px 8px; border-radius: 6px; font-weight: bold;">{{ item.assignment.task.task_name }}</td>
             <td>
                 <div class="assigned-users">
                     {% for user in item.assignment.assigned_to.all %}
@@ -290,6 +284,13 @@
                     </div>
                 </div>
             </td>
+            <td>
+                {% if item.duration_started_completed %}
+                    <span class="text-success">{{ item.duration_started_completed }}</span>
+                {% else %}
+                    <span class="text-muted">--</span>
+                {% endif %}
+            </td>
         </tr>
         {% endfor %}
     </tbody>
@@ -299,8 +300,6 @@
 <div class="pagination-info">
     Showing {{ assignments.start_index }} to {{ assignments.end_index }} of {{ assignments.paginator.count }} assignments
 </div>
-
-
 
 <div style="margin-top: 20px; text-align: center; color: #666;">
     <small><i class="fas fa-info-circle"></i> Your assignments are highlighted in blue. Click on status to change it.</small>
@@ -374,11 +373,16 @@ function updateStatus(assignmentId, newStatus) {
             
             // Show success message
             showMessage('Status updated successfully!', 'success');
+            
+            // Reload page after 1 second to update duration
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
         } else {
             // Show error message
             showMessage(data.error || 'Failed to update status', 'error');
             
-            // Reset status badge (you might want to keep original status)
+            // Reset status badge
             statusBadge.textContent = 'Error';
             statusBadge.className = 'status-badge status-pending';
         }
@@ -425,3 +429,8 @@ function getCookie(name) {
 </script>
 
 {% endblock %}
+
+
+
+
+

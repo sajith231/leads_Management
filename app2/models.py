@@ -218,6 +218,10 @@ class Task(models.Model):
 
 
 # app2/models.py
+# models.py
+
+from django.db import models
+from django.conf import settings
 
 class SocialMediaProjectAssignment(models.Model):
     STATUS_CHOICES = [
@@ -226,9 +230,8 @@ class SocialMediaProjectAssignment(models.Model):
         ('completed', 'Completed'),
         ('hold', 'On Hold'),
     ]
-    
-    project = models.ForeignKey(SocialMediaProject, on_delete=models.CASCADE)
-    task = models.ForeignKey(Task, on_delete=models.CASCADE)
+    project = models.ForeignKey('SocialMediaProject', on_delete=models.CASCADE)
+    task = models.ForeignKey('Task', on_delete=models.CASCADE)
     assigned_to = models.ManyToManyField('app1.User', related_name='project_assignments')
     deadline = models.DateField(null=True, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
@@ -237,9 +240,8 @@ class SocialMediaProjectAssignment(models.Model):
 
     def __str__(self):
         return f"{self.project.project_name} - {self.task.task_name}"
-    
+
     def get_status_display_class(self):
-        """Return CSS class based on status"""
         status_classes = {
             'pending': 'status-pending',
             'started': 'status-in-progress',
@@ -248,3 +250,11 @@ class SocialMediaProjectAssignment(models.Model):
         }
         return status_classes.get(self.status, 'status-pending')
 
+class AssignmentStatusHistory(models.Model):
+    assignment = models.ForeignKey(SocialMediaProjectAssignment, on_delete=models.CASCADE, related_name='status_history')
+    status = models.CharField(max_length=20, choices=SocialMediaProjectAssignment.STATUS_CHOICES)
+    changed_at = models.DateTimeField(auto_now_add=True)
+    changed_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+
+    class Meta:
+        ordering = ['changed_at']

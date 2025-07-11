@@ -150,19 +150,26 @@
       <th>Assigned To</th>
       <th>Deadline</th>
       <th>Status</th>
+      <th>Duration (Started to Completed)</th> 
       <th>Actions</th>
     </tr>
   </thead>
   <tbody>
-    {% for assignment in assignments %}
+    {% for item in assignment_durations %}
     <tr>
       <td>{{ forloop.counter0|add:assignments.start_index }}</td>
-      <td>{{ assignment.created_at|date:"d-m-Y" }}</td>
-      <td>{{ assignment.project.project_name }}</td>
-      <td>{{ assignment.task.task_name }}</td>
+      <td>{{ item.assignment.created_at|date:"d-m-Y" }}</td>
+      <td><span style="background-color: #d9f0ff; padding: 4px 8px; border-radius: 6px; font-weight: bold;">
+        {{ item.assignment.project.project_name }}
+      </span></td>
+
+      <td><span style="background-color: #d4fdd4; padding: 4px 8px; border-radius: 6px; font-weight: bold;">
+        {{ item.assignment.task.task_name }}
+      </span></td>
+
       <td>
         <div class="assigned-users">
-          {% for user in assignment.assigned_to.all %}
+          {% for user in item.assignment.assigned_to.all %}
             <span class="user-tag">{{ user.name }}</span>
           {% empty %}
             <span>No users assigned</span>
@@ -170,18 +177,26 @@
         </div>
       </td>
       <td>
-        {{ assignment.deadline|date:"d-m-Y" }}
+        {{ item.assignment.deadline|date:"d-m-Y" }}
       </td>
       <td>
-        <span class="status-badge {{ assignment.get_status_display_class }}">
-          {{ assignment.get_status_display }}
+        <span class="status-badge {{ item.assignment.get_status_display_class }}">
+          {{ item.assignment.get_status_display }}
         </span>
       </td>
+       <td>
+        {% if item.duration_started_completed %}
+            {{ item.duration_started_completed }}
+        {% else %}
+            --
+        {% endif %}
+    </td>
+
       <td>
-        <a href="{% url 'edit_assign_socialmedia_project' assignment.id %}" title="Edit" style="color: orange; margin-right: 10px;">
+        <a href="{% url 'edit_assign_socialmedia_project' item.assignment.id %}" title="Edit" style="color: orange; margin-right: 10px;">
           <i class="fas fa-edit"></i>
         </a>
-        <a href="{% url 'delete_assign_socialmedia_project' assignment.id %}" title="Delete" 
+        <a href="{% url 'delete_assign_socialmedia_project' item.assignment.id %}" title="Delete" 
            onclick="return confirm('Are you sure you want to delete this assignment?')" style="color: red;">
           <i class="fas fa-trash-alt"></i>
         </a>
@@ -189,12 +204,10 @@
     </tr>
     {% empty %}
     <tr>
-      <td colspan="8" style="padding: 10px; border: 1px solid #ccc; text-align: center;">No assignments found</td>
+      <td colspan="9" style="padding: 10px; border: 1px solid #ccc; text-align: center;">No assignments found</td>
     </tr>
     {% endfor %}
   </tbody>
 </table>
-
-
 
 {% endblock %}
