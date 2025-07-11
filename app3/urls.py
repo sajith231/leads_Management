@@ -37,8 +37,7 @@ urlpatterns = [
     path('update-candidate-status/', views.update_candidate_status, name='update_candidate_status'),
 
 #experience certificate
-    # urls.py
-
+    
 
     path('add-experience-certificate/', views.add_experience_certificate, name='add_experience_certificate'),
     path('make-experience-certificate/', views.make_experience_certificate, name='make_experience_certificate'),
@@ -48,9 +47,13 @@ urlpatterns = [
     path('experience-certificate/view/<int:employee_id>/', views.view_experience_certificate, name='view_experience_certificate'),
     path('edit-experience-certificate/<int:employee_id>/', views.edit_experience_certificate, name='edit_experience_certificate'),
 
+#debtors
 
-    path('debtors1/', views.debtors1_list, name='debtors1_list')
-
+    path('debtors1/', views.debtors1_list, name='debtors1_list'),
+    path('imc1-list/', views.imc1_list, name='imc1_list'),
+    path('imc2-list/', views.imc2_list, name='imc2_list'),
+    path('sysmac-info-list/', views.sysmac_info_list, name='sysmac_info_list'),
+    path('dq-list/', views.dq_list, name='dq_list'),
 
 
 

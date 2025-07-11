@@ -1,43 +1,45 @@
 {% extends 'base.html' %}
-{% block title %}Debtors List{% endblock %}
+{% block title %}Sysmac Info List{% endblock %}
 {% block content %}
 <div class="">
-    <h2 class="mb-4">Debtors List</h2>
+    <h2 class="mb-4">Sysmac Info List</h2>
 
     <!-- Search Form -->
     <form method="get" class="form-inline mb-3">
         <div class="input-group">
-            <input type="text" name="q" class="form-control" placeholder="Search by Name,Code,Super Code,Opening Balance,Debit,Credit,Place,Phone,Department..." value="{{ query }}">
+            <input type="text" name="q" class="form-control" placeholder="Search by Code, Name, Place, Phone, Department..." value="{{ query }}">
             <div class="input-group-append">
                 <button type="submit" class="btn btn-primary">Search</button>
             </div>
         </div>
-        <div class="input-group ml-3" style="max-width: 200px;">
+       <div class="input-group ml-3" style="max-width: 200px;">
     <input type="number" name="min_balance" class="form-control" placeholder="Min Balance" value="{{ min_balance }}">
        </div>
     </form>
+
     <!-- Paginator -->
     <nav aria-label="Page navigation example">
         <ul class="pagination">
             {% if page_obj.has_previous %}
-                <li class="page-item"><a class="page-link" href="?page=1&q={{ query }}">First</a></li>
-                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ query }}">Previous</a></li>
+                <li class="page-item"><a class="page-link" href="?page=1&q={{ query }}{% if positive_only %}&positive_only=on{% endif %}">First</a></li>
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ query }}{% if positive_only %}&positive_only=on{% endif %}">Previous</a></li>
             {% endif %}
             <li class="page-item"><span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
             {% if page_obj.has_next %}
-                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ query }}">Next</a></li>
-                <li class="page-item"><a class="page-link" href="?page={{ page_obj.paginator.num_pages }}&q={{ query }}">Last</a></li>
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ query }}{% if positive_only %}&positive_only=on{% endif %}">Next</a></li>
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.paginator.num_pages }}&q={{ query }}{% if positive_only %}&positive_only=on{% endif %}">Last</a></li>
             {% endif %}
         </ul>
     </nav>
 
+    <!-- Table -->
     <div class="table-responsive">
         <table class="table table-bordered table-striped">
             <thead class="thead-dark">
                 <tr>
+                    <th>ID</th>
                     <th>Code</th>
                     <th>Name</th>
-                    <th>Super Code</th>
                     <th class="text-center">OB</th>
                     <th>Debit</th>
                     <th>Credit</th>
@@ -45,25 +47,24 @@
                     <th>Place</th>
                     <th>Phone</th>
                     <th>Department</th>
-                    
                 </tr>
             </thead>
             <tbody>
                 {% for item in page_obj %}
-              <tr>
-                <td>{{ item.code }}</td>
-                <td>{{ item.name|linebreaksbr }}</td>
-                <td>{{ item.super_code }}</td>
-                <td class="text-end">{{ item.opening_balance|floatformat:2 }}</td>
-                <td class="text-end">{{ item.debit|floatformat:2 }}</td>
-                <td class="text-end">{{ item.credit|floatformat:2 }}</td>
-                <td class="text-end">{{ item.balance|floatformat:2 }}</td>
-                <td>{{ item.place }}</td>
-                <td>{{ item.phone2 }}</td>
-                <td>{{ item.openingdepartment }}</td>
-              </tr>
+                <tr>
+                    <td>{{ item.id }}</td>
+                    <td>{{ item.code }}</td>
+                    <td>{{ item.name|linebreaksbr }}</td>
+                    <td class="text-end">{{ item.opening_balance|floatformat:2 }}</td>
+                    <td class="text-end">{{ item.debit|floatformat:2 }}</td>
+                    <td class="text-end">{{ item.credit|floatformat:2 }}</td>
+                    <td class="text-end">{{ item.balance|floatformat:2 }}</td>
+                    <td>{{ item.place }}</td>
+                    <td>{{ item.phone2 }}</td>
+                    <td>{{ item.openingdepartment }}</td>
+                </tr>
                 {% empty %}
-                <tr><td colspan="9">No data available</td></tr>
+                <tr><td colspan="10">No data available</td></tr>
                 {% endfor %}
             </tbody>
         </table>

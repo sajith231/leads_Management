@@ -1198,9 +1198,11 @@ def debtors1_list(request):
                 str(item.get('opening_balance', '')),
                 str(item.get('debit', '')),
                 str(item.get('credit', '')),
+                str(item.get('balance', '')),
                 str(item.get('place', '')),
                 str(item.get('phone2', '')),
                 str(item.get('openingdepartment', '')),
+                
             ]
             combined_text = ' '.join(searchable_fields).lower()
 
@@ -1210,6 +1212,15 @@ def debtors1_list(request):
 
         data = filtered_data
         print(f"Search '{query}' matched {len(data)} out of {original_count} records")
+
+        # Filter by minimum balance value (instead of checkbox)
+    min_balance = request.GET.get('min_balance')
+    if min_balance:
+        try:
+            min_balance_value = float(min_balance)
+            data = [item for item in data if float(item.get('balance') or 0) >= min_balance_value]
+        except ValueError:
+            pass  # Invalid input ignored
 
     # Pagination
     paginator = Paginator(data, 15)
@@ -1229,4 +1240,350 @@ def debtors1_list(request):
         'filtered_count': len(data),
         'query': query,
         'search_terms': query.lower().split() if query else []
+    })
+
+
+
+import requests
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
+from django.shortcuts import render
+
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+import requests
+
+def imc1_list(request):
+    api_url = "https://accmaster.imcbs.com/api/sync/imc1/"
+    data = []
+    error_message = None
+
+    try:
+        response = requests.get(api_url, timeout=30)
+        response.raise_for_status()
+        data = response.json()
+        for item in data:
+            item['name'] = item.get('name', '').strip()
+        print(f"Successfully fetched {len(data)} records")
+    except requests.exceptions.Timeout:
+        error_message = "API request timed out"
+    except requests.exceptions.ConnectionError:
+        error_message = "Could not connect to API"
+    except requests.exceptions.HTTPError as e:
+        error_message = f"HTTP Error: {e}"
+    except Exception as e:
+        error_message = f"Error fetching data: {str(e)}"
+
+    # Search logic
+    query = request.GET.get('q', '').strip()
+    original_count = len(data)
+
+    if query:
+        search_terms = query.lower().split()
+        filtered_data = []
+
+        for item in data:
+            searchable_fields = [
+                str(item.get('code', '')),
+                str(item.get('name', '')),
+                str(item.get('place', '')),
+                str(item.get('phone2', '')),
+                str(item.get('opening_balance', '')),
+                str(item.get('debit', '')),
+                str(item.get('credit', '')),
+                str(item.get('balance', '')),
+                str(item.get('openingdepartment', '')),
+            ]
+            combined_text = ' '.join(searchable_fields).lower()
+
+            if all(term in combined_text for term in search_terms):
+                filtered_data.append(item)
+
+        data = filtered_data
+        print(f"Search '{query}' matched {len(data)} out of {original_count} records")
+
+    # Filter by minimum balance value (instead of checkbox)
+    min_balance = request.GET.get('min_balance')
+    if min_balance:
+        try:
+            min_balance_value = float(min_balance)
+            data = [item for item in data if float(item.get('balance') or 0) >= min_balance_value]
+        except ValueError:
+            pass  # Invalid input ignored
+
+    # Pagination
+    paginator = Paginator(data, 15)
+    page = request.GET.get('page')
+
+    try:
+        page_obj = paginator.page(page)
+    except PageNotAnInteger:
+        page_obj = paginator.page(1)
+    except EmptyPage:
+        page_obj = paginator.page(paginator.num_pages)
+
+    return render(request, 'imc1_list.html', {
+        'page_obj': page_obj,
+        'error_message': error_message,
+        'total_records': original_count,
+        'filtered_count': len(data),
+        'query': query,
+        'search_terms': query.lower().split() if query else [],
+        'min_balance': min_balance,
+    })
+
+
+
+from django.shortcuts import render
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
+import requests
+
+def imc2_list(request):
+    api_url = "https://accmaster.imcbs.com/api/sync/imc2/"
+    data = []
+    error_message = None
+
+    try:
+        response = requests.get(api_url, timeout=30)
+        response.raise_for_status()
+        data = response.json()
+        for item in data:
+            item['name'] = item.get('name', '').strip()
+        print(f"Successfully fetched {len(data)} records")
+    except requests.exceptions.Timeout:
+        error_message = "API request timed out"
+    except requests.exceptions.ConnectionError:
+        error_message = "Could not connect to API"
+    except requests.exceptions.HTTPError as e:
+        error_message = f"HTTP Error: {e}"
+    except Exception as e:
+        error_message = f"Error fetching data: {str(e)}"
+
+    # Search logic
+    query = request.GET.get('q', '').strip()
+    original_count = len(data)
+
+    if query:
+        search_terms = query.lower().split()
+        filtered_data = []
+
+        for item in data:
+            searchable_fields = [
+                str(item.get('code', '')),
+                str(item.get('name', '')),
+                str(item.get('place', '')),
+                str(item.get('phone2', '')),
+                str(item.get('opening_balance', '')),
+                str(item.get('debit', '')),
+                str(item.get('credit', '')),
+                str(item.get('balance', '')),
+                str(item.get('openingdepartment', '')),
+            ]
+            combined_text = ' '.join(searchable_fields).lower()
+
+            if all(term in combined_text for term in search_terms):
+                filtered_data.append(item)
+
+        data = filtered_data
+        print(f"Search '{query}' matched {len(data)} out of {original_count} records")
+
+    # Filter by minimum balance value
+    min_balance = request.GET.get('min_balance')
+    if min_balance:
+        try:
+            min_balance_value = float(min_balance)
+            data = [item for item in data if float(item.get('balance') or 0) >= min_balance_value]
+        except ValueError:
+            pass  # Ignore invalid inputs
+
+    # Pagination
+    paginator = Paginator(data, 15)
+    page = request.GET.get('page')
+
+    try:
+        page_obj = paginator.page(page)
+    except PageNotAnInteger:
+        page_obj = paginator.page(1)
+    except EmptyPage:
+        page_obj = paginator.page(paginator.num_pages)
+
+    return render(request, 'imc2_list.html', {
+        'page_obj': page_obj,
+        'error_message': error_message,
+        'total_records': original_count,
+        'filtered_count': len(data),
+        'query': query,
+        'search_terms': query.lower().split() if query else [],
+        'min_balance': min_balance,
+    })
+
+
+
+from django.shortcuts import render
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
+import requests
+
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+import requests
+
+def sysmac_info_list(request):
+    api_url = "https://accmaster.imcbs.com/api/sync/sysmac-info/"
+    data = []
+    error_message = None
+
+    try:
+        response = requests.get(api_url, timeout=30)
+        response.raise_for_status()
+        data = response.json()
+        for item in data:
+            item['name'] = item.get('name', '').strip()
+        print(f"Successfully fetched {len(data)} records")
+    except requests.exceptions.Timeout:
+        error_message = "API request timed out"
+    except requests.exceptions.ConnectionError:
+        error_message = "Could not connect to API"
+    except requests.exceptions.HTTPError as e:
+        error_message = f"HTTP Error: {e}"
+    except Exception as e:
+        error_message = f"Error fetching data: {str(e)}"
+
+    # Search logic
+    query = request.GET.get('q', '').strip()
+    original_count = len(data)
+
+    if query:
+        search_terms = query.lower().split()
+        filtered_data = []
+
+        for item in data:
+            searchable_fields = [
+                str(item.get('code', '')),
+                str(item.get('name', '')),
+                str(item.get('place', '')),
+                str(item.get('phone2', '')),
+                str(item.get('opening_balance', '')),
+                str(item.get('debit', '')),
+                str(item.get('credit', '')),
+                str(item.get('balance', '')),
+                str(item.get('openingdepartment', '')),
+            ]
+            combined_text = ' '.join(searchable_fields).lower()
+
+            if all(term in combined_text for term in search_terms):
+                filtered_data.append(item)
+
+        data = filtered_data
+        print(f"Search '{query}' matched {len(data)} out of {original_count} records")
+
+    # Filter by minimum balance value
+    min_balance = request.GET.get('min_balance')
+    if min_balance:
+        try:
+            min_balance_value = float(min_balance)
+            data = [item for item in data if float(item.get('balance') or 0) >= min_balance_value]
+        except ValueError:
+            pass  # Ignore invalid inputs
+
+    # Pagination
+    paginator = Paginator(data, 15)
+    page = request.GET.get('page')
+
+    try:
+        page_obj = paginator.page(page)
+    except PageNotAnInteger:
+        page_obj = paginator.page(1)
+    except EmptyPage:
+        page_obj = paginator.page(paginator.num_pages)
+
+    return render(request, 'sysmac_info_list.html', {
+        'page_obj': page_obj,
+        'error_message': error_message,
+        'total_records': original_count,
+        'filtered_count': len(data),
+        'query': query,
+        'search_terms': query.lower().split() if query else [],
+        'min_balance': min_balance,
+    })
+
+
+
+from django.shortcuts import render
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
+import requests
+
+def dq_list(request):
+    api_url = "https://accmaster.imcbs.com/api/sync/dq/"
+    data = []
+    error_message = None
+
+    try:
+        response = requests.get(api_url, timeout=30)
+        response.raise_for_status()
+        data = response.json()
+        for item in data:
+            item['name'] = item.get('name', '').strip()
+        print(f"Successfully fetched {len(data)} records")
+    except requests.exceptions.Timeout:
+        error_message = "API request timed out"
+    except requests.exceptions.ConnectionError:
+        error_message = "Could not connect to API"
+    except requests.exceptions.HTTPError as e:
+        error_message = f"HTTP Error: {e}"
+    except Exception as e:
+        error_message = f"Error fetching data: {str(e)}"
+
+    # Search logic
+    query = request.GET.get('q', '').strip()
+    original_count = len(data)
+
+    if query:
+        search_terms = query.lower().split()
+        filtered_data = []
+
+        for item in data:
+            searchable_fields = [
+                str(item.get('code', '')),
+                str(item.get('name', '')),
+                str(item.get('place', '')),
+                str(item.get('phone2', '')),
+                str(item.get('opening_balance', '')),
+                str(item.get('debit', '')),
+                str(item.get('credit', '')),
+                str(item.get('balance', '')),
+                str(item.get('openingdepartment', '')),
+            ]
+            combined_text = ' '.join(searchable_fields).lower()
+
+            if all(term in combined_text for term in search_terms):
+                filtered_data.append(item)
+
+        data = filtered_data
+        print(f"Search '{query}' matched {len(data)} out of {original_count} records")
+
+    # ✅ Filter by minimum balance value (instead of positive_only)
+    min_balance = request.GET.get('min_balance')
+    if min_balance:
+        try:
+            min_balance_value = float(min_balance)
+            data = [item for item in data if float(item.get('balance') or 0) >= min_balance_value]
+        except ValueError:
+            pass  # Ignore invalid input
+
+    # Pagination
+    paginator = Paginator(data, 15)
+    page = request.GET.get('page')
+
+    try:
+        page_obj = paginator.page(page)
+    except PageNotAnInteger:
+        page_obj = paginator.page(1)
+    except EmptyPage:
+        page_obj = paginator.page(paginator.num_pages)
+
+    return render(request, 'dq_list.html', {
+        'page_obj': page_obj,
+        'error_message': error_message,
+        'total_records': original_count,
+        'filtered_count': len(data),
+        'query': query,
+        'search_terms': query.lower().split() if query else [],
+        'min_balance': min_balance,
     })
