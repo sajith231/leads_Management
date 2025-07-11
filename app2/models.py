@@ -151,3 +151,110 @@ class JobRoleDescription(models.Model):
 
     def __str__(self):
         return f"{self.heading} - {self.description}"
+    
+
+
+
+
+from django.db import models
+
+
+class Customer(models.Model):
+    customer_name   = models.CharField(max_length=100)
+    firm_name       = models.CharField(max_length=100)
+    place           = models.CharField(max_length=100)
+    district        = models.CharField(max_length=100)
+    state           = models.CharField(max_length=100)
+    country         = models.CharField(max_length=100)
+    phone           = models.CharField(max_length=15)
+
+    # avoid circular import by using a string reference
+    business_type   = models.ForeignKey(
+        'app1.BusinessType',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
+
+    contact_person  = models.CharField(max_length=100)
+    phone1          = models.CharField(max_length=15)
+    phone2          = models.CharField(max_length=15, blank=True, null=True)
+    email           = models.EmailField()
+
+    created_at      = models.DateTimeField(auto_now_add=True)
+    updated_at      = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.customer_name
+
+
+
+
+
+from django.db import models
+from .models import Customer
+
+class SocialMediaProject(models.Model):
+    project_name = models.CharField(max_length=100)
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
+    project_description = models.TextField()
+    deadline = models.DateField()
+
+    def __str__(self):
+        return self.project_name
+    
+
+
+
+class Task(models.Model):
+    task_name = models.CharField(max_length=255)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.task_name
+    
+
+
+
+# app2/models.py
+# models.py
+
+from django.db import models
+from django.conf import settings
+
+class SocialMediaProjectAssignment(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('started', 'Started'),
+        ('completed', 'Completed'),
+        ('hold', 'On Hold'),
+    ]
+    project = models.ForeignKey('SocialMediaProject', on_delete=models.CASCADE)
+    task = models.ForeignKey('Task', on_delete=models.CASCADE)
+    assigned_to = models.ManyToManyField('app1.User', related_name='project_assignments')
+    deadline = models.DateField(null=True, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.project.project_name} - {self.task.task_name}"
+
+    def get_status_display_class(self):
+        status_classes = {
+            'pending': 'status-pending',
+            'started': 'status-in-progress',
+            'completed': 'status-completed',
+            'hold': 'status-hold'
+        }
+        return status_classes.get(self.status, 'status-pending')
+
+class AssignmentStatusHistory(models.Model):
+    assignment = models.ForeignKey(SocialMediaProjectAssignment, on_delete=models.CASCADE, related_name='status_history')
+    status = models.CharField(max_length=20, choices=SocialMediaProjectAssignment.STATUS_CHOICES)
+    changed_at = models.DateTimeField(auto_now_add=True)
+    changed_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+
+    class Meta:
+        ordering = ['changed_at']

@@ -3,7 +3,8 @@ from django.urls import path
 from . import views
 from .views import InformationCenterListView, add_information_center,edit_information_center,delete_information_center
 from .views import get_next_position
-
+from .views import socialmedia_all_projects, socialmedia_add_project, socialmedia_edit_project, socialmedia_delete_project
+from .views import socialmedia_all_tasks, socialmedia_add_task, socialmedia_edit_task, socialmedia_delete_task
 
 urlpatterns = [
     path('credential-management/', views.credential_management, name='credential_management'),
@@ -84,6 +85,36 @@ urlpatterns = [
     path('job-roles/add/', views.add_job_role, name='add_job_role'),
     path('job-roles/edit/<int:id>/', views.edit_job_role, name='edit_job_role'),
     path('job-roles/delete/<int:id>/', views.delete_job_role, name='delete_job_role'),
+
+
+
+
+    path('customers/', views.all_customers, name='all_customers'),
+    path('customers/add/', views.add_customer, name='add_customer'),
+    path('customers/edit/<int:id>/', views.edit_customer, name='edit_customer'),
+    path('customers/delete/<int:id>/', views.delete_customer, name='delete_customer'),
+
+    path('socialmedia/projects/', socialmedia_all_projects, name='socialmedia_all_projects'),
+    path('socialmedia/projects/add/', socialmedia_add_project, name='socialmedia_add_project'),
+    path('socialmedia/projects/edit/<int:id>/', socialmedia_edit_project, name='socialmedia_edit_project'),
+    path('socialmedia/projects/delete/<int:id>/', socialmedia_delete_project, name='socialmedia_delete_project'),
+
+
+    path('tasks/', socialmedia_all_tasks, name='socialmedia_all_tasks'),
+    path('tasks/add/', socialmedia_add_task, name='socialmedia_add_task'),
+    path('tasks/edit/<int:id>/', socialmedia_edit_task, name='socialmedia_edit_task'),
+    path('tasks/delete/<int:id>/', socialmedia_delete_task, name='socialmedia_delete_task'),
+
+
+    path('socialmedia/assignments/', views.socialmedia_project_assignments, name='socialmedia_project_assignments'),
+    path('socialmedia/assignments/add/', views.add_assign_socialmedia_project, name='add_assign_socialmedia_project'),
+    path('socialmedia/assignments/edit/<int:id>/', views.edit_assign_socialmedia_project, name='edit_assign_socialmedia_project'),
+    path('socialmedia/assignments/delete/<int:id>/', views.delete_assign_socialmedia_project, name='delete_assign_socialmedia_project'),
+    path('socialmedia/your-assignments/', views.user_socialmedia_project_assignments, name='user_socialmedia_project_assignments'),
+    path('update-assignment-status/', views.update_assignment_status, name='update_assignment_status'),
+
+    
+
     
 
     

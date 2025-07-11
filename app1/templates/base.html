@@ -523,6 +523,30 @@
     {% endif %}
 </div>
 
+<!-- <div class="mainmenu" onclick="toggleSocialMediaMenu()">
+            <span>
+                <i class="fas fa-share-alt"></i>
+                <span>Social Media</span>
+            </span>
+        </div>
+
+        <div id="social-media-menu" class="submenu">
+                <a href="{% url 'all_customers' %}"><i class="fas fa-users"></i> Customer Master</a>
+                <a href="{% url 'socialmedia_all_projects' %}"><i class="fas fa-project-diagram"></i> Projects</a>
+                <a href="{% url 'socialmedia_project_assignments' %}"><i class="fas fa-clipboard"></i> Projects Assign</a>
+                <a href="{% url 'socialmedia_all_tasks' %}"><i class="fas fa-tasks"></i> Task Master</a>
+                {% if user.is_authenticated %}
+
+    <a class="nav-link" href="{% url 'user_socialmedia_project_assignments' %}">
+    <i class="fas fa-user-check ms-1"></i>
+    Your Assignments
+</a>
+
+
+
+{% endif %}
+        </div> -->
+
 
 <!-- Debters Menu -->
 <div class="mainmenu" onclick="toggleDebtersMenu()">
@@ -681,7 +705,7 @@
     
             <div id="services-menu" class="submenu">
                 {% if 'service_log' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
-                <a href=""><i class="fas fa-book"></i> Service Log</a>
+                <a href="{% url 'servicelog_list' %}"><i class="fas fa-book"></i> Service Log</a>
                 {% endif %}
                 {% if 'service_entry' in allowed_menus %}
                 <a href="{% url 'service_entry' %}"><i class="fas fa-plus-circle"></i> Logs</a>
@@ -705,6 +729,8 @@
                 {% endif %}
             </div>
             {% endif %}
+
+            
 
             <!-- Project Menu for regular users -->
             {% if 'project_work' in allowed_menus or 'user_projects' in allowed_menus %}
@@ -732,6 +758,8 @@
                 {% endif %}
             </div>
             {% endif %}
+
+            
             
             {% if 'information_center' in allowed_menus %}
             <div class="information_center">
@@ -755,6 +783,34 @@
                     <a href="{% url 'show_clients' %}"><i class="fas fa-users"></i> Clients</a>
                 </div>
             {% endif %}
+
+
+
+
+            <!-- <div class="mainmenu" onclick="toggleSocialMediaMenu()">
+            <span>
+                <i class="fas fa-share-alt"></i>
+                <span>Social Media</span>
+            </span>
+        </div>
+
+        <div id="social-media-menu" class="submenu">
+                {% if user.is_authenticated %}
+
+    <a class="nav-link" href="{% url 'user_socialmedia_project_assignments' %}">
+    <i class="fas fa-user-check ms-1"></i>
+    Your Assignments
+</a>
+
+
+
+{% endif %}
+        </div> -->
+
+
+
+
+
 
 
             {% if 'all_districts' in allowed_menus or 'all_areas' in allowed_menus or 'all_locations' in allowed_menus or 'all_requirements' in allowed_menus or 'business_type_list' in allowed_menus or 'job_titles' in allowed_menus or 'all_hardwares' in allowed_menus or 'all_complaints' in allowed_menus or 'all_branches' in allowed_menus or 'users_table' in allowed_menus or 'reminder_type' in allowed_menus or 'all_department' in allowed_menus or 'job_roles' in allowed_menus %}
@@ -947,7 +1003,11 @@
 function toggleDebtersMenu() {
     toggleMenu('debters-menu');
 }
+function toggleSocialMediaMenu() {
+    toggleMenu('social-media-menu');
+}
 
     </script>
+    
 </body>
 </html>

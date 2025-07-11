@@ -24,7 +24,29 @@ from django.db import models
 from .models import Employee, Attendance, LeaveRequest, Holiday,LateRequest,DefaultSettings,EarlyRequest
 from .utils import is_holiday
 
+def send_whatsapp_message(phone_number, message):
+    secret = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
+    account = "1748250982812b4ba287f5ee0bc9d43bbf5bbe87fb683431662a427"
+    url = f"https://app.dxing.in/api/send/whatsapp?secret={secret}&account={account}&recipient={phone_number}&type=text&message={message}&priority=1"
+    response = requests.get(url)
+    if response.status_code == 200:
+        print(f"WhatsApp message sent successfully to {phone_number}")
+    else:
+        print(f"Failed to send WhatsApp message to {phone_number}. Status code: {response.status_code}, Response: {response.text}")
 
+
+
+import requests
+
+def send_whatsapp_message_for_service_log(phone_number, message):
+    secret = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
+    account = "1751352651812b4ba287f5ee0bc9d43bbf5bbe87fb6863854b166a3"
+    url = f"https://app.dxing.in/api/send/whatsapp?secret={secret}&account={account}&recipient={phone_number}&type=text&message={message}&priority=1"
+    response = requests.get(url)
+    if response.status_code == 200:
+        print(f"WhatsApp message sent successfully to {phone_number}")
+    else:
+        print(f"Failed to send WhatsApp message to {phone_number}. Status code: {response.status_code}, Response: {response.text}")
 
 def login(request):
     if request.method == "POST":
@@ -5546,6 +5568,11 @@ from datetime import datetime, date
 from django.contrib.auth.decorators import login_required
 from .forms import ComplaintForm
 
+from django.shortcuts import render
+from django.core.paginator import Paginator
+from datetime import datetime, date
+from .models import ServiceLog, User
+
 def servicelog_list(request):
     # Get current date for default values
     today = date.today().strftime('%Y-%m-%d')
@@ -5555,7 +5582,7 @@ def servicelog_list(request):
     added_by_filter = request.GET.get('added_by', '')
     assigned_person_filter = request.GET.get('assigned_person', '')
     status_filter = request.GET.get('status', '')
-    complaint_status_filter = request.GET.get('complaint_status', '')
+    complaint_status_filter = request.GET.get('complaint_status', 'Pending')
     complaint_filter = request.GET.get('complaint_type', '')  # New complaint filter
     start_date_filter = request.GET.get('start_date', today)  # Default to today
     end_date_filter = request.GET.get('end_date', today)      # Default to today
@@ -5631,6 +5658,11 @@ def servicelog_list(request):
             service_logs = service_logs.filter(date__date__lte=end_date)
         except ValueError:
             pass
+
+    # Preprocess customer_name to extract only the name part
+    for log in service_logs:
+        if '-' in log.customer_name:
+            log.customer_name = log.customer_name.split('-')[0].strip()
 
     # Set up pagination
     paginator = Paginator(service_logs, 10)
@@ -5774,7 +5806,7 @@ def add_service_log(request):
         )
 
         # Send WhatsApp message
-        send_whatsapp_message(phone_number, message)
+        send_whatsapp_message_for_service_log(phone_number, message)
 
         if custom_user.user_level == 'admin_level':
             return redirect('servicelog_list')
@@ -5783,15 +5815,8 @@ def add_service_log(request):
 
     return render(request, 'add_service_log.html', {'complaints': complaints, 'customers': customers})
 
-def send_whatsapp_message(phone_number, message):
-    secret = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
-    account = "1751352651812b4ba287f5ee0bc9d43bbf5bbe87fb6863854b166a3"
-    url = f"https://app.dxing.in/api/send/whatsapp?secret={secret}&account={account}&recipient={phone_number}&type=text&message={message}&priority=1"
-    response = requests.get(url)
-    if response.status_code == 200:
-        print(f"WhatsApp message sent successfully to {phone_number}")
-    else:
-        print(f"Failed to send WhatsApp message to {phone_number}. Status code: {response.status_code}, Response: {response.text}")
+
+
 
 from django.shortcuts import render, redirect
 from .models import ServiceLog, Complaint, ServiceLogComplaint, ComplaintImage, User
@@ -5904,24 +5929,63 @@ def delete_service_log(request, log_id):
 
 
 
+from django.core.paginator import Paginator
+from django.utils import timezone
+from django.shortcuts import render, redirect
+from .models import ServiceLog, User
+from django.contrib.auth.decorators import login_required
+
+# views.py
 
 def user_service_log(request):
     if request.user.is_authenticated:
-        # Get the custom User instance based on the logged-in user
         custom_user = User.objects.get(userid=request.user.username)
-        # Filter service logs added by the current user, latest first
         user_service_logs = ServiceLog.objects.filter(added_by=custom_user).order_by('-id')
-        
-        # Get all users to display assigned person names
+
+        # Preprocess customer_name to extract only the name part
+        for log in user_service_logs:
+            if '-' in log.customer_name:
+                log.customer_name = log.customer_name.split('-')[0].strip()
+
+        status_filter = request.GET.get('status', '')
+        complaint_status_filter = request.GET.get('complaint_status', '')
+        customer_search = request.GET.get('customer_search', '')
+        start_date_filter = request.GET.get('start_date')
+        end_date_filter = request.GET.get('end_date')
+
+        if status_filter:
+            user_service_logs = user_service_logs.filter(status=status_filter)
+
+        if complaint_status_filter:
+            user_service_logs = user_service_logs.filter(servicelogcomplaint__status=complaint_status_filter).distinct()
+
+        if customer_search:
+            user_service_logs = user_service_logs.filter(customer_name__icontains=customer_search)
+
+        if start_date_filter and end_date_filter:
+            user_service_logs = user_service_logs.filter(date__date__range=[start_date_filter, end_date_filter])
+
         users = User.objects.all()
-        
+
+        today_date = timezone.now().date().isoformat()
+
+        # Pagination
+        paginator = Paginator(user_service_logs, 10)  # Show 10 logs per page
+        page_number = request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+
         return render(request, 'user_service_log.html', {
-            'user_service_logs': user_service_logs,
-            'users': users
+            'page_obj': page_obj,
+            'users': users,
+            'status_filter': status_filter,
+            'complaint_status_filter': complaint_status_filter,
+            'customer_search': customer_search,
+            'start_date_filter': start_date_filter,
+            'end_date_filter': end_date_filter,
+            'today_date': today_date,
         })
     else:
-        return redirect('login')  # Redirect to login if the user is not authenticated
-
+        return redirect('login')
 
 
 from django.http import JsonResponse
@@ -6014,7 +6078,7 @@ def assign_work(request, log_id):
                     f"Best regards,\n"
                     f"IMC Business Solutions"
                 )
-                send_whatsapp_message(assigned_person.phone_number, message)
+                send_whatsapp_message_for_service_log(assigned_person.phone_number, message)
         
         messages.success(request, "Complaints assigned successfully")
         return redirect('assign_service_logs')
@@ -6025,7 +6089,6 @@ def assign_work(request, log_id):
         'complaints': complaints,
     })
 
-
 @login_required
 def my_assigned_service_logs(request):
     try:
@@ -6035,23 +6098,23 @@ def my_assigned_service_logs(request):
         messages.error(request, "User not found.")
         return redirect('login')
 
-    # Get the status filter from the request, default to 'Pending'
-    status_filter = request.GET.get('status', 'Pending')
+    # Get the status filter from the request, default to 'Active'
+    status_filter = request.GET.get('status', 'Active')
 
     # Fetch service logs where user has assigned complaints
     if status_filter == 'all':
         assigned_complaints = ServiceLogComplaint.objects.filter(
             assigned_person=custom_user
         ).select_related('service_log', 'complaint').order_by('-assigned_date')
-    elif status_filter == 'Pending':
+    elif status_filter == 'Active':
         assigned_complaints = ServiceLogComplaint.objects.filter(
             assigned_person=custom_user, 
             status__in=['Pending', 'In Progress']
         ).select_related('service_log', 'complaint').order_by('-assigned_date')
-    else:
+    elif status_filter == 'Completed':
         assigned_complaints = ServiceLogComplaint.objects.filter(
             assigned_person=custom_user, 
-            status=status_filter
+            status='Completed'
         ).select_related('service_log', 'complaint').order_by('-assigned_date')
 
     # Group complaints by service log
@@ -6072,7 +6135,7 @@ def my_assigned_service_logs(request):
         'service_logs_data': service_logs_dict.values(),
         'status_filter': status_filter,
         'default_assigned_person': custom_user,
-        'users': users  # Ensure this is passed to the template
+        'users': users
     })
 
 
@@ -6126,7 +6189,7 @@ def reassign_work(request, log_id):
                     f"Best regards,\n"
                     f"IMC Business Solutions"
                 )
-                send_whatsapp_message(assigned_person.phone_number, message)
+                send_whatsapp_message_for_service_log(assigned_person.phone_number, message)
         
         messages.success(request, "Complaints reassigned successfully")
         return redirect('my_assigned_service_logs')
@@ -6190,7 +6253,7 @@ def reassign_complaint(request):
             f"Best regards,\n"
             f"IMC Business Solutions"
         )
-        send_whatsapp_message(new_user.phone_number, message)
+        send_whatsapp_message_for_service_log(new_user.phone_number, message)
         
         return JsonResponse({
             'success': True,

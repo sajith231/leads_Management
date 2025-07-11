@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="header">
+  <h2 style="display: flex;justify-content: center;"> Project Assignments</h2>
+  <a href="{% url 'add_assign_socialmedia_project' %}" class="btn btn-add">Add New</a>
+</div>
+
+<style>
+  .btn-add {
+    background-color: #007bff;
+    color: white;
+    padding: 10px 20px;
+    text-decoration: none;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+
+  .btn-add:hover {
+    background-color: #0056b3;
+  }
+
+  .assigned-users {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+
+  .user-tag {
+    background-color: #e9ecef;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    border: 1px solid #dee2e6;
+  }
+
+  .status-badge {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    display: inline-block;
+  }
+
+  .status-pending {
+    background-color: #ffc107;
+    color: #212529;
+  }
+
+  .status-in-progress {
+    background-color: #17a2b8;
+    color: white;
+  }
+
+  .status-completed {
+    background-color: #28a745;
+    color: white;
+  }
+
+  .status-hold {
+    background-color: #6c757d;
+    color: white;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 2%;
+  }
+
+  th, td {
+    padding: 10px;
+    border: 1px solid #ccc;
+  }
+
+  th {
+    background-color: #e9f1ff;
+  }
+
+  tr:hover {
+    background-color: #f5f5f5;
+  }
+
+  /* Pagination Styles */
+  .pagination {
+    display: flex;
+    justify-content: center;
+    margin: 20px 0;
+  }
+
+  .pagination a {
+    color: #007bff;
+    padding: 8px 16px;
+    text-decoration: none;
+    border: 1px solid #ddd;
+    margin: 0 4px;
+  }
+
+  .pagination a.active {
+    background-color: #007bff;
+    color: white;
+    border: 1px solid #007bff;
+  }
+
+  .pagination a:hover:not(.active) {
+    background-color: #ddd;
+  }
+
+  .pagination-info {
+    text-align: center;
+    margin: 10px 0;
+    color: #666;
+  }
+</style>
+{% if assignments %}
+<!-- Pagination Information -->
+<div class="pagination-info">
+    Showing {{ assignments.start_index }} to {{ assignments.end_index }} of {{ assignments.paginator.count }} assignments
+</div>
+
+<!-- Pagination Controls -->
+<div class="pagination">
+    {% if assignments.has_previous %}
+        <a href="?page=1">&laquo; First</a>
+        <a href="?page={{ assignments.previous_page_number }}">Previous</a>
+    {% endif %}
+
+    {% for num in assignments.paginator.page_range %}
+        {% if assignments.number == num %}
+            <a class="active" href="?page={{ num }}">{{ num }}</a>
+        {% elif num > assignments.number|add:'-3' and num < assignments.number|add:'3' %}
+            <a href="?page={{ num }}">{{ num }}</a>
+        {% endif %}
+    {% endfor %}
+
+    {% if assignments.has_next %}
+        <a href="?page={{ assignments.next_page_number }}">Next</a>
+        <a href="?page={{ assignments.paginator.num_pages }}">Last &raquo;</a>
+    {% endif %}
+</div>
+{% endif %}
+<table>
+  <thead>
+    <tr>
+      <th>No</th>
+      <th>Created Date</th>
+      <th>Project Name</th>
+      <th>Task Name</th>
+      <th>Assigned To</th>
+      <th>Deadline</th>
+      <th>Status</th>
+      <th>Duration (Started to Completed)</th> 
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for item in assignment_durations %}
+    <tr>
+      <td>{{ forloop.counter0|add:assignments.start_index }}</td>
+      <td>{{ item.assignment.created_at|date:"d-m-Y" }}</td>
+      <td><span style="background-color: #d9f0ff; padding: 4px 8px; border-radius: 6px; font-weight: bold;">
+        {{ item.assignment.project.project_name }}
+      </span></td>
+
+      <td><span style="background-color: #d4fdd4; padding: 4px 8px; border-radius: 6px; font-weight: bold;">
+        {{ item.assignment.task.task_name }}
+      </span></td>
+
+      <td>
+        <div class="assigned-users">
+          {% for user in item.assignment.assigned_to.all %}
+            <span class="user-tag">{{ user.name }}</span>
+          {% empty %}
+            <span>No users assigned</span>
+          {% endfor %}
+        </div>
+      </td>
+      <td>
+        {{ item.assignment.deadline|date:"d-m-Y" }}
+      </td>
+      <td>
+        <span class="status-badge {{ item.assignment.get_status_display_class }}">
+          {{ item.assignment.get_status_display }}
+        </span>
+      </td>
+       <td>
+        {% if item.duration_started_completed %}
+            {{ item.duration_started_completed }}
+        {% else %}
+            --
+        {% endif %}
+    </td>
+
+      <td>
+        <a href="{% url 'edit_assign_socialmedia_project' item.assignment.id %}" title="Edit" style="color: orange; margin-right: 10px;">
+          <i class="fas fa-edit"></i>
+        </a>
+        <a href="{% url 'delete_assign_socialmedia_project' item.assignment.id %}" title="Delete" 
+           onclick="return confirm('Are you sure you want to delete this assignment?')" style="color: red;">
+          <i class="fas fa-trash-alt"></i>
+        </a>
+      </td>
+    </tr>
+    {% empty %}
+    <tr>
+      <td colspan="9" style="padding: 10px; border: 1px solid #ccc; text-align: center;">No assignments found</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% endblock %}
