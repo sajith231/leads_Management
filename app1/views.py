@@ -5014,7 +5014,18 @@ def configure_user_menu(request, user_id):
     'submenus': [
         {'id': 'show_clients', 'name': 'Clients', 'icon': 'fas fa-users'}
     ]
-}
+},
+{
+    'name': 'Social Media',
+    'icon': 'fas fa-share-alt',
+    'submenus': [
+        {'id': 'all_customers', 'name': 'Customer Master', 'icon': 'fas fa-users'},
+        {'id': 'socialmedia_all_projects', 'name': 'Projects', 'icon': 'fas fa-project-diagram'},
+        {'id': 'socialmedia_project_assignments', 'name': 'Projects Assign', 'icon': 'fas fa-clipboard'},
+        {'id': 'socialmedia_all_tasks', 'name': 'Task Master', 'icon': 'fas fa-tasks'},
+        {'id': 'user_socialmedia_project_assignments', 'name': 'Your Assignments', 'icon': 'fas fa-user-check'}
+    ]
+},
 
     ]
     
@@ -5192,7 +5203,18 @@ def default_menus(request):
                 {'id': 'edit_information_center', 'name': 'Edit Media', 'icon': 'fas fa-edit'},
                 {'id': 'delete_information_center', 'name': 'Delete Media', 'icon': 'fas fa-trash'}
             ]
-        }
+        },
+        {
+    'name': 'Social Media',
+    'icon': 'fas fa-share-alt',
+    'submenus': [
+        {'id': 'all_customers', 'name': 'Customer Master', 'icon': 'fas fa-users'},
+        {'id': 'socialmedia_all_projects', 'name': 'Projects', 'icon': 'fas fa-project-diagram'},
+        {'id': 'socialmedia_project_assignments', 'name': 'Projects Assign', 'icon': 'fas fa-clipboard'},
+        {'id': 'socialmedia_all_tasks', 'name': 'Task Master', 'icon': 'fas fa-tasks'},
+        {'id': 'user_socialmedia_project_assignments', 'name': 'Your Assignments', 'icon': 'fas fa-user-check'}
+    ]
+},
     ]
     
     # Fetch current default menus from settings or database
