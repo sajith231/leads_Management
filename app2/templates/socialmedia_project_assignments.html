@@ -1,10 +1,189 @@
 {% extends "base.html" %}
 
 {% block content %}
+<style>
+  /* Filter Section Styling */
+.filter-form {
+  margin-bottom: 1rem;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.filter-form label {
+  font-weight: 600;
+  color: #495057;
+  margin-right: 5px;
+  font-size: 14px;
+}
+
+.filter-form select {
+  padding: 8px 12px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  background-color: white;
+  color: #495057;
+  font-size: 14px;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+  min-width: 150px;
+}
+
+.filter-form select:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.filter-form select:hover {
+  border-color: #adb5bd;
+}
+
+/* Option styling (limited browser support) */
+.filter-form select option {
+  padding: 8px 12px;
+  background-color: white;
+  color: #495057;
+}
+
+.filter-form select option:checked {
+  background-color: #007bff;
+  color: white;
+}
+
+/* Alternative styling - more modern look */
+.filter-form-modern {
+  margin-bottom: 1rem;
+  padding: 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.filter-form-modern label {
+  color: white;
+  font-weight: 600;
+  font-size: 16px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.filter-form-modern select {
+  padding: 10px 15px;
+  border: none;
+  border-radius: 25px;
+  background-color: rgba(255, 255, 255, 0.9);
+  color: #333;
+  font-size: 14px;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.3s ease;
+  min-width: 160px;
+  backdrop-filter: blur(10px);
+}
+
+.filter-form-modern select:focus {
+  background-color: white;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);
+  transform: scale(1.02);
+}
+
+.filter-form-modern select:hover {
+  background-color: white;
+  transform: translateY(-1px);
+}
+
+/* Card-style filter */
+.filter-card {
+  margin-bottom: 1rem;
+  padding: 20px;
+  background-color: white;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  border-left: 4px solid #007bff;
+}
+
+.filter-card label {
+  display: block;
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 8px;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.filter-card select {
+  width: 100%;
+  max-width: 200px;
+  padding: 12px 16px;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  background-color: #f8f9fa;
+  color: #495057;
+  font-size: 14px;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.filter-card select:focus {
+  border-color: #007bff;
+  background-color: white;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.filter-card select:hover {
+  border-color: #007bff;
+  background-color: white;
+}
+
+/* Minimal style */
+.filter-minimal {
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-top: 2%;
+}
+
+.filter-minimal label {
+  font-weight: 500;
+  color: #6c757d;
+  font-size: 14px;
+}
+
+.filter-minimal select {
+  padding: 6px 12px;
+  border: none;
+  border-bottom: 2px solid #e9ecef;
+  background-color: transparent;
+  color: #495057;
+  font-size: 14px;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.3s ease;
+}
+
+.filter-minimal select:focus {
+  border-bottom-color: #007bff;
+}
+
+.filter-minimal select:hover {
+  border-bottom-color: #6c757d;
+}
+</style>
 <div class="header">
   <h2 style="display: flex;justify-content: center;"> Project Assignments</h2>
   <a href="{% url 'add_assign_socialmedia_project' %}" class="btn btn-add">Add New</a>
 </div>
+<!-- Filter dropdown -->
 
 <style>
   .btn-add {
@@ -113,11 +292,24 @@
     color: #666;
   }
 </style>
+<form method="get" class="filter-minimal">
+  <label for="status_filter">Status:</label>
+  <select name="status" id="status_filter" onchange="this.form.submit()">
+    <option value="all"     {% if request.GET.status == 'all' %}selected{% endif %}>All</option>
+    <option value="pending" {% if request.GET.status == 'pending' %}selected{% endif %}>Pending</option>
+    <option value="in_progress"
+            {% if request.GET.status == 'in_progress' or not request.GET.status %}selected{% endif %}>
+        Pending & Started
+    </option>
+    <option value="completed" {% if request.GET.status == 'completed' %}selected{% endif %}>Completed</option>
+  </select>
+</form>
 {% if assignments %}
 <!-- Pagination Information -->
 <div class="pagination-info">
     Showing {{ assignments.start_index }} to {{ assignments.end_index }} of {{ assignments.paginator.count }} assignments
 </div>
+
 
 <!-- Pagination Controls -->
 <div class="pagination">
