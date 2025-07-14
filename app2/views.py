@@ -775,7 +775,7 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 import re
 
 def show_clients(request):
-    api_url = "https://rrcpython.imcbs.com/api/clients/all"
+    api_url = "https://accmaster.imcbs.com/api/sync/rrc-clients/"
     clients = []
     error_message = None
     
@@ -785,7 +785,7 @@ def show_clients(request):
         
         data = response.json()
         
-        # Handle different response formats
+        # Han1dle different response formats
         if isinstance(data, list):
             clients = data
         elif isinstance(data, dict):
@@ -824,13 +824,13 @@ def show_clients(request):
                 str(client.get('software', '')),
                 str(client.get('installationdate', '')),
                 str(client.get('priorty', '')),
-                str(client.get('directdealing', '')),
+                str(client.get('directdealing_label', '')),
                 str(client.get('rout', '')),
-                str(client.get('amc', '')),
+                str(client.get('amc_label', '')),
                 str(client.get('amcamt', '')),
                 str(client.get('accountcode', '')),
                 str(client.get('address3', '')),
-                str(client.get('lictype', '')),
+                str(client.get('lictype_label', '')),
                 str(client.get('clients', '')),
                 str(client.get('sp', '')),
                 str(client.get('nature', '')),
@@ -1267,31 +1267,55 @@ from .models import SocialMediaProject, Task, SocialMediaProjectAssignment
 def get_user_model():
     return apps.get_model('app1', 'User')
 
+
+
 from django.core.paginator import Paginator
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
+from .models import SocialMediaProjectAssignment
+# NOTE: make sure get_status_duration is imported/defined somewhere
+# from .utils import get_status_duration
 
 @login_required
 def socialmedia_project_assignments(request):
-    assignments = SocialMediaProjectAssignment.objects.all().select_related('project', 'task').prefetch_related('assigned_to', 'status_history')
-    paginator = Paginator(assignments, 15)
+    # 1. Grab the filter parameter – default to 'in_progress'
+    status_filter = request.GET.get('status', 'in_progress')
+
+    # 2. Base queryset
+    assignments_qs = SocialMediaProjectAssignment.objects.all() \
+                      .select_related('project', 'task') \
+                      .prefetch_related('assigned_to', 'status_history')
+
+    # 3. Apply status filter
+    if status_filter == 'pending':
+        assignments_qs = assignments_qs.filter(status='pending')
+    elif status_filter == 'in_progress':
+        assignments_qs = assignments_qs.filter(status__in=['pending', 'started'])
+    elif status_filter == 'completed':
+        assignments_qs = assignments_qs.filter(status='completed')
+
+    # 4. Pagination
+    paginator = Paginator(assignments_qs, 15)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
+    # 5. Build durations
     assignment_durations = []
     for assignment in page_obj:
         history = list(assignment.status_history.all())
-        # Only get started to completed duration
         duration_started_completed = get_status_duration(history, 'started', 'completed')
         assignment_durations.append({
             'assignment': assignment,
             'duration_started_completed': duration_started_completed,
         })
 
+    # 6. Return to template
     return render(request, 'socialmedia_project_assignments.html', {
-        'assignments': page_obj, 
-        'assignment_durations': assignment_durations
+        'assignments': page_obj,
+        'assignment_durations': assignment_durations,
+        'status_filter': status_filter,   # so the dropdown can remember selection
     })
+
 
 # Update the user_socialmedia_project_assignments view:
 @login_required

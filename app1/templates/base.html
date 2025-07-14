@@ -523,36 +523,43 @@
     {% endif %}
 </div>
 
-<!-- <div class="mainmenu" onclick="toggleSocialMediaMenu()">
-            <span>
-                <i class="fas fa-share-alt"></i>
-                <span>Social Media</span>
-            </span>
-        </div>
+{% if 'all_customers' in allowed_menus or 'socialmedia_all_projects' in allowed_menus or 'socialmedia_project_assignments' in allowed_menus or 'socialmedia_all_tasks' in allowed_menus or 'user_socialmedia_project_assignments' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+<div class="mainmenu" onclick="toggleSocialMediaMenu()">
+    <span>
+        <i class="fas fa-share-alt"></i>
+        <span>Social Media</span>
+    </span>
+</div>
 
-        <div id="social-media-menu" class="submenu">
-                <a href="{% url 'all_customers' %}"><i class="fas fa-users"></i> Customer Master</a>
-                <a href="{% url 'socialmedia_all_projects' %}"><i class="fas fa-project-diagram"></i> Projects</a>
-                <a href="{% url 'socialmedia_project_assignments' %}"><i class="fas fa-clipboard"></i> Projects Assign</a>
-                <a href="{% url 'socialmedia_all_tasks' %}"><i class="fas fa-tasks"></i> Task Master</a>
-                {% if user.is_authenticated %}
-
-    <a class="nav-link" href="{% url 'user_socialmedia_project_assignments' %}">
-    <i class="fas fa-user-check ms-1"></i>
-    Your Assignments
-</a>
-
-
-
+<div id="social-media-menu" class="submenu">
+    {% if 'all_customers' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+    <a href="{% url 'all_customers' %}"><i class="fas fa-users"></i> Customer Master</a>
+    {% endif %}
+    {% if 'socialmedia_all_tasks' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+    <a href="{% url 'socialmedia_all_tasks' %}"><i class="fas fa-tasks"></i> Task Master</a>
+    {% endif %}
+    {% if 'socialmedia_all_projects' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+    <a href="{% url 'socialmedia_all_projects' %}"><i class="fas fa-project-diagram"></i> Projects</a>
+    {% endif %}
+    {% if 'socialmedia_project_assignments' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+    <a href="{% url 'socialmedia_project_assignments' %}"><i class="fas fa-clipboard"></i> Projects Assign</a>
+    {% endif %}
+    
+    {% if 'user_socialmedia_project_assignments' in allowed_menus and user.is_authenticated %}
+    <a href="{% url 'user_socialmedia_project_assignments' %}">
+        <i class="fas fa-user-check"></i> Your Assignments
+    </a>
+    {% endif %}
+</div>
 {% endif %}
-        </div> -->
 
 
 <!-- Debters Menu -->
+{% if 'debtors1_list' in allowed_menus or 'imc1_list' in allowed_menus or 'imc2_list' in allowed_menus or 'sysmac_info_list' in allowed_menus or 'dq_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
 <div class="mainmenu" onclick="toggleDebtersMenu()">
     <span>
         <i class="fas fa-money-bill-wave"></i>
-        <span>ACCOUNTS</span>
+        <span style="font-size: 14px;">ACCOUNTS</span>
     </span>
 </div>
 
@@ -578,6 +585,7 @@
 </a>
 
 </div>
+{% endif %}
 
     
             <!-- Master Menu -->
@@ -787,25 +795,35 @@
 
 
 
-            <!-- <div class="mainmenu" onclick="toggleSocialMediaMenu()">
-            <span>
-                <i class="fas fa-share-alt"></i>
-                <span>Social Media</span>
-            </span>
-        </div>
+            <!-- Social Media Menu - Simplified Version -->
+{% if 'all_customers' in allowed_menus or 'socialmedia_all_projects' in allowed_menus or 'socialmedia_project_assignments' in allowed_menus or 'socialmedia_all_tasks' in allowed_menus or 'user_socialmedia_project_assignments' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+<div class="mainmenu" onclick="toggleSocialMediaMenu()">
+    <span>
+        <i class="fas fa-share-alt"></i>
+        <span>Social Media</span>
+    </span>
+</div>
 
-        <div id="social-media-menu" class="submenu">
-                {% if user.is_authenticated %}
-
-    <a class="nav-link" href="{% url 'user_socialmedia_project_assignments' %}">
-    <i class="fas fa-user-check ms-1"></i>
-    Your Assignments
-</a>
-
-
-
+<div id="social-media-menu" class="submenu">
+    {% if 'all_customers' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+    <a href="{% url 'all_customers' %}"><i class="fas fa-users"></i> Customer Master</a>
+    {% endif %}
+    {% if 'socialmedia_all_tasks' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+    <a href="{% url 'socialmedia_all_tasks' %}"><i class="fas fa-tasks"></i> Task Master</a>
+    {% endif %}
+    {% if 'socialmedia_all_projects' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+    <a href="{% url 'socialmedia_all_projects' %}"><i class="fas fa-project-diagram"></i> Projects</a>
+    {% endif %}
+    {% if 'socialmedia_project_assignments' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+    <a href="{% url 'socialmedia_project_assignments' %}"><i class="fas fa-clipboard"></i> Projects Assign</a>
+    {% endif %}
+    {% if 'user_socialmedia_project_assignments' in allowed_menus and user.is_authenticated %}
+    <a href="{% url 'user_socialmedia_project_assignments' %}">
+        <i class="fas fa-user-check"></i> Your Assignments
+    </a>
+    {% endif %}
+</div>
 {% endif %}
-        </div> -->
 
 
 
