@@ -1156,22 +1156,43 @@ def edit_experience_certificate(request, employee_id):
 
 
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
-import requests
 from django.shortcuts import render
+import requests
+import traceback
 
 def debtors1_list(request):
-    api_url = "https://rrcpython.imcbs.com/api/master/all"
+    api_url = "https://accmaster.imcbs.com/api/sync/sysmac/"
     data = []
     error_message = None
 
     try:
         response = requests.get(api_url, timeout=30)
-        response.raise_for_status()
-        json_data = response.json()
-        data = json_data.get('data', [])
-        for item in data:
-            item['name'] = item.get('name', '').strip()
-        print(f"Successfully fetched {len(data)} records")
+        print("Status Code:", response.status_code)
+        print("Headers:", response.headers)
+
+        response.raise_for_status()  # Raise exception for bad status
+
+        try:
+            json_data = response.json()
+            print("JSON Data Sample:", str(json_data)[:500])
+
+            # Check if response is a dict with 'data' or a list directly
+            if isinstance(json_data, dict):
+                data = json_data.get('data', [])
+            elif isinstance(json_data, list):
+                data = json_data
+            else:
+                error_message = "Unexpected JSON structure."
+
+            for item in data:
+                item['name'] = item.get('name', '').strip()
+
+            print(f"Successfully fetched {len(data)} records")
+
+        except ValueError as e:
+            error_message = "Invalid JSON response"
+            print("JSON Decode Error:", e)
+            print("Raw Response:", response.text[:500])
 
     except requests.exceptions.Timeout:
         error_message = "API request timed out"
@@ -1180,7 +1201,8 @@ def debtors1_list(request):
     except requests.exceptions.HTTPError as e:
         error_message = f"HTTP Error: {e}"
     except Exception as e:
-        error_message = f"Error fetching data: {str(e)}"
+        traceback.print_exc()
+        error_message = f"Unexpected error: {str(e)}"
 
     # Search logic
     query = request.GET.get('q', '').strip()
@@ -1202,30 +1224,29 @@ def debtors1_list(request):
                 str(item.get('place', '')),
                 str(item.get('phone2', '')),
                 str(item.get('openingdepartment', '')),
-                
             ]
             combined_text = ' '.join(searchable_fields).lower()
-
-            # AND logic: all terms must match somewhere
             if all(term in combined_text for term in search_terms):
                 filtered_data.append(item)
 
         data = filtered_data
         print(f"Search '{query}' matched {len(data)} out of {original_count} records")
 
-        # Filter by minimum balance value (instead of checkbox)
-    min_balance = request.GET.get('min_balance')
+    # Filter by minimum balance
+    min_balance = request.GET.get('min_balance', '1')  # default is '1'
+
     if min_balance:
         try:
             min_balance_value = float(min_balance)
             data = [item for item in data if float(item.get('balance') or 0) >= min_balance_value]
         except ValueError:
-            pass  # Invalid input ignored
+            pass  # Ignore invalid input
+
+    data.sort(key=lambda x: x.get('name', '').lower())#sort the name in albhabetical order
 
     # Pagination
     paginator = Paginator(data, 15)
     page = request.GET.get('page')
-
     try:
         page_obj = paginator.page(page)
     except PageNotAnInteger:
@@ -1239,8 +1260,10 @@ def debtors1_list(request):
         'total_records': original_count,
         'filtered_count': len(data),
         'query': query,
+        'min_balance': min_balance,
         'search_terms': query.lower().split() if query else []
     })
+
 
 
 
@@ -1300,15 +1323,14 @@ def imc1_list(request):
         data = filtered_data
         print(f"Search '{query}' matched {len(data)} out of {original_count} records")
 
-    # Filter by minimum balance value (instead of checkbox)
-    min_balance = request.GET.get('min_balance')
+    min_balance = request.GET.get('min_balance', '1')  # default is '1'
     if min_balance:
         try:
             min_balance_value = float(min_balance)
             data = [item for item in data if float(item.get('balance') or 0) >= min_balance_value]
         except ValueError:
-            pass  # Invalid input ignored
-
+            pass  # Ignore invalid input
+    data.sort(key=lambda x: x.get('name', '').lower())#sort the name in albhabetical order
     # Pagination
     paginator = Paginator(data, 15)
     page = request.GET.get('page')
@@ -1386,14 +1408,14 @@ def imc2_list(request):
         print(f"Search '{query}' matched {len(data)} out of {original_count} records")
 
     # Filter by minimum balance value
-    min_balance = request.GET.get('min_balance')
+    min_balance = request.GET.get('min_balance', '1') 
     if min_balance:
         try:
             min_balance_value = float(min_balance)
             data = [item for item in data if float(item.get('balance') or 0) >= min_balance_value]
         except ValueError:
             pass  # Ignore invalid inputs
-
+    data.sort(key=lambda x: x.get('name', '').lower())#sort the name in albhabetical order
     # Pagination
     paginator = Paginator(data, 15)
     page = request.GET.get('page')
@@ -1474,14 +1496,14 @@ def sysmac_info_list(request):
         print(f"Search '{query}' matched {len(data)} out of {original_count} records")
 
     # Filter by minimum balance value
-    min_balance = request.GET.get('min_balance')
+    min_balance = request.GET.get('min_balance', '1') 
     if min_balance:
         try:
             min_balance_value = float(min_balance)
             data = [item for item in data if float(item.get('balance') or 0) >= min_balance_value]
         except ValueError:
             pass  # Ignore invalid inputs
-
+    data.sort(key=lambda x: x.get('name', '').lower())#sort the name in albhabetical order
     # Pagination
     paginator = Paginator(data, 15)
     page = request.GET.get('page')
@@ -1559,14 +1581,14 @@ def dq_list(request):
         print(f"Search '{query}' matched {len(data)} out of {original_count} records")
 
     # ✅ Filter by minimum balance value (instead of positive_only)
-    min_balance = request.GET.get('min_balance')
+    min_balance = request.GET.get('min_balance', '1') 
     if min_balance:
         try:
             min_balance_value = float(min_balance)
             data = [item for item in data if float(item.get('balance') or 0) >= min_balance_value]
         except ValueError:
             pass  # Ignore invalid input
-
+    data.sort(key=lambda x: x.get('name', '').lower()) #sort the name in albhabetical order
     # Pagination
     paginator = Paginator(data, 15)
     page = request.GET.get('page')
