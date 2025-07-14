@@ -775,7 +775,7 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 import re
 
 def show_clients(request):
-    api_url = "https://rrcpython.imcbs.com/api/clients/all"
+    api_url = "https://accmaster.imcbs.com/api/sync/rrc-clients/"
     clients = []
     error_message = None
     
@@ -824,13 +824,13 @@ def show_clients(request):
                 str(client.get('software', '')),
                 str(client.get('installationdate', '')),
                 str(client.get('priorty', '')),
-                str(client.get('directdealing', '')),
+                str(client.get('directdealing_label', '')),
                 str(client.get('rout', '')),
-                str(client.get('amc', '')),
+                str(client.get('amc_label', '')),
                 str(client.get('amcamt', '')),
                 str(client.get('accountcode', '')),
                 str(client.get('address3', '')),
-                str(client.get('lictype', '')),
+                str(client.get('lictype_label', '')),
                 str(client.get('clients', '')),
                 str(client.get('sp', '')),
                 str(client.get('nature', '')),

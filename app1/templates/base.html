@@ -535,15 +535,16 @@
     {% if 'all_customers' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
     <a href="{% url 'all_customers' %}"><i class="fas fa-users"></i> Customer Master</a>
     {% endif %}
+    {% if 'socialmedia_all_tasks' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+    <a href="{% url 'socialmedia_all_tasks' %}"><i class="fas fa-tasks"></i> Task Master</a>
+    {% endif %}
     {% if 'socialmedia_all_projects' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
     <a href="{% url 'socialmedia_all_projects' %}"><i class="fas fa-project-diagram"></i> Projects</a>
     {% endif %}
     {% if 'socialmedia_project_assignments' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
     <a href="{% url 'socialmedia_project_assignments' %}"><i class="fas fa-clipboard"></i> Projects Assign</a>
     {% endif %}
-    {% if 'socialmedia_all_tasks' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
-    <a href="{% url 'socialmedia_all_tasks' %}"><i class="fas fa-tasks"></i> Task Master</a>
-    {% endif %}
+    
     {% if 'user_socialmedia_project_assignments' in allowed_menus and user.is_authenticated %}
     <a href="{% url 'user_socialmedia_project_assignments' %}">
         <i class="fas fa-user-check"></i> Your Assignments
@@ -812,14 +813,14 @@
     {% if 'all_customers' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
     <a href="{% url 'all_customers' %}"><i class="fas fa-users"></i> Customer Master</a>
     {% endif %}
+    {% if 'socialmedia_all_tasks' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+    <a href="{% url 'socialmedia_all_tasks' %}"><i class="fas fa-tasks"></i> Task Master</a>
+    {% endif %}
     {% if 'socialmedia_all_projects' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
     <a href="{% url 'socialmedia_all_projects' %}"><i class="fas fa-project-diagram"></i> Projects</a>
     {% endif %}
     {% if 'socialmedia_project_assignments' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
     <a href="{% url 'socialmedia_project_assignments' %}"><i class="fas fa-clipboard"></i> Projects Assign</a>
-    {% endif %}
-    {% if 'socialmedia_all_tasks' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
-    <a href="{% url 'socialmedia_all_tasks' %}"><i class="fas fa-tasks"></i> Task Master</a>
     {% endif %}
     {% if 'user_socialmedia_project_assignments' in allowed_menus and user.is_authenticated %}
     <a href="{% url 'user_socialmedia_project_assignments' %}">
