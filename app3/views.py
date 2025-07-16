@@ -1155,7 +1155,7 @@ def edit_experience_certificate(request, employee_id):
 
 
 
-from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.shortcuts import render
 import requests
 import traceback
@@ -1169,14 +1169,12 @@ def debtors1_list(request):
         response = requests.get(api_url, timeout=30)
         print("Status Code:", response.status_code)
         print("Headers:", response.headers)
-
-        response.raise_for_status()  # Raise exception for bad status
+        response.raise_for_status()
 
         try:
             json_data = response.json()
             print("JSON Data Sample:", str(json_data)[:500])
 
-            # Check if response is a dict with 'data' or a list directly
             if isinstance(json_data, dict):
                 data = json_data.get('data', [])
             elif isinstance(json_data, list):
@@ -1211,7 +1209,6 @@ def debtors1_list(request):
     if query:
         search_terms = query.lower().split()
         filtered_data = []
-
         for item in data:
             searchable_fields = [
                 str(item.get('code', '')),
@@ -1228,23 +1225,25 @@ def debtors1_list(request):
             combined_text = ' '.join(searchable_fields).lower()
             if all(term in combined_text for term in search_terms):
                 filtered_data.append(item)
-
         data = filtered_data
         print(f"Search '{query}' matched {len(data)} out of {original_count} records")
 
     # Filter by minimum balance
-    min_balance = request.GET.get('min_balance', '1')  # default is '1'
-
+    min_balance = request.GET.get('min_balance', '1')
     if min_balance:
         try:
             min_balance_value = float(min_balance)
             data = [item for item in data if float(item.get('balance') or 0) >= min_balance_value]
         except ValueError:
-            pass  # Ignore invalid input
+            pass
 
-    data.sort(key=lambda x: x.get('name', '').lower())#sort the name in albhabetical order
+    # Grand Totals
+    total_balance = sum(float(item.get('balance') or 0) for item in data)
+    total_debit = sum(float(item.get('debit') or 0) for item in data)
+    total_credit = sum(float(item.get('credit') or 0) for item in data)
 
-    # Pagination
+    data.sort(key=lambda x: x.get('name', '').lower())
+
     paginator = Paginator(data, 15)
     page = request.GET.get('page')
     try:
@@ -1261,8 +1260,11 @@ def debtors1_list(request):
         'filtered_count': len(data),
         'query': query,
         'min_balance': min_balance,
-        'search_terms': query.lower().split() if query else []
+        'total_balance': total_balance,
+        'total_debit': total_debit,
+        'total_credit': total_credit,
     })
+
 
 
 
@@ -1295,7 +1297,6 @@ def imc1_list(request):
     except Exception as e:
         error_message = f"Error fetching data: {str(e)}"
 
-    # Search logic
     query = request.GET.get('q', '').strip()
     original_count = len(data)
 
@@ -1316,21 +1317,28 @@ def imc1_list(request):
                 str(item.get('openingdepartment', '')),
             ]
             combined_text = ' '.join(searchable_fields).lower()
-
             if all(term in combined_text for term in search_terms):
                 filtered_data.append(item)
 
         data = filtered_data
         print(f"Search '{query}' matched {len(data)} out of {original_count} records")
 
-    min_balance = request.GET.get('min_balance', '1')  # default is '1'
+    min_balance = request.GET.get('min_balance', '1')
     if min_balance:
         try:
             min_balance_value = float(min_balance)
             data = [item for item in data if float(item.get('balance') or 0) >= min_balance_value]
         except ValueError:
-            pass  # Ignore invalid input
-    data.sort(key=lambda x: x.get('name', '').lower())#sort the name in albhabetical order
+            pass
+
+    # Sort by name
+    data.sort(key=lambda x: x.get('name', '').lower())
+
+    # Totals
+    total_balance = sum(float(item.get('balance') or 0) for item in data)
+    total_debit = sum(float(item.get('debit') or 0) for item in data)
+    total_credit = sum(float(item.get('credit') or 0) for item in data)
+
     # Pagination
     paginator = Paginator(data, 15)
     page = request.GET.get('page')
@@ -1350,9 +1358,10 @@ def imc1_list(request):
         'query': query,
         'search_terms': query.lower().split() if query else [],
         'min_balance': min_balance,
+        'total_balance': total_balance,
+        'total_debit': total_debit,
+        'total_credit': total_credit,
     })
-
-
 
 from django.shortcuts import render
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
@@ -1379,7 +1388,7 @@ def imc2_list(request):
     except Exception as e:
         error_message = f"Error fetching data: {str(e)}"
 
-    # Search logic
+    # Search
     query = request.GET.get('q', '').strip()
     original_count = len(data)
 
@@ -1407,15 +1416,23 @@ def imc2_list(request):
         data = filtered_data
         print(f"Search '{query}' matched {len(data)} out of {original_count} records")
 
-    # Filter by minimum balance value
-    min_balance = request.GET.get('min_balance', '1') 
+    # Min Balance Filter
+    min_balance = request.GET.get('min_balance', '1')
     if min_balance:
         try:
             min_balance_value = float(min_balance)
             data = [item for item in data if float(item.get('balance') or 0) >= min_balance_value]
         except ValueError:
-            pass  # Ignore invalid inputs
-    data.sort(key=lambda x: x.get('name', '').lower())#sort the name in albhabetical order
+            pass
+
+    # Sort alphabetically
+    data.sort(key=lambda x: x.get('name', '').lower())
+
+    # Totals
+    total_balance = sum(float(item.get('balance') or 0) for item in data)
+    total_debit = sum(float(item.get('debit') or 0) for item in data)
+    total_credit = sum(float(item.get('credit') or 0) for item in data)
+
     # Pagination
     paginator = Paginator(data, 15)
     page = request.GET.get('page')
@@ -1435,9 +1452,10 @@ def imc2_list(request):
         'query': query,
         'search_terms': query.lower().split() if query else [],
         'min_balance': min_balance,
+        'total_balance': total_balance,
+        'total_debit': total_debit,
+        'total_credit': total_credit,
     })
-
-
 
 from django.shortcuts import render
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
@@ -1504,6 +1522,11 @@ def sysmac_info_list(request):
         except ValueError:
             pass  # Ignore invalid inputs
     data.sort(key=lambda x: x.get('name', '').lower())#sort the name in albhabetical order
+
+    total_balance = sum(float(item.get('balance') or 0) for item in data)
+    total_debit = sum(float(item.get('debit') or 0) for item in data)
+    total_credit = sum(float(item.get('credit') or 0) for item in data)
+
     # Pagination
     paginator = Paginator(data, 15)
     page = request.GET.get('page')
@@ -1523,6 +1546,9 @@ def sysmac_info_list(request):
         'query': query,
         'search_terms': query.lower().split() if query else [],
         'min_balance': min_balance,
+        'total_balance': total_balance,
+        'total_debit': total_debit,
+        'total_credit': total_credit,
     })
 
 
@@ -1589,6 +1615,11 @@ def dq_list(request):
         except ValueError:
             pass  # Ignore invalid input
     data.sort(key=lambda x: x.get('name', '').lower()) #sort the name in albhabetical order
+
+    total_balance = sum(float(item.get('balance') or 0) for item in data)
+    total_debit = sum(float(item.get('debit') or 0) for item in data)
+    total_credit = sum(float(item.get('credit') or 0) for item in data)
+
     # Pagination
     paginator = Paginator(data, 15)
     page = request.GET.get('page')
@@ -1608,4 +1639,7 @@ def dq_list(request):
         'query': query,
         'search_terms': query.lower().split() if query else [],
         'min_balance': min_balance,
+        'total_balance': total_balance,
+        'total_debit': total_debit,
+        'total_credit': total_credit,
     })
