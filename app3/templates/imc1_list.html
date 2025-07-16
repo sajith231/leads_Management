@@ -5,49 +5,54 @@
     <h2 class="mb-4">IMCB-LLP List</h2>
 
     <!-- Search Form -->
+
     <form method="get" class="form-inline mb-3">
         <div class="input-group">
-            <input type="text" name="q" class="form-control" placeholder="Search by Code, Name, Place, Phone, Department..." value="{{ query }}">
+            <input type="text" name="q" class="form-control" placeholder="Search by Name,code,place,phone,Department..." value="{{ query }}">
             <div class="input-group-append">
                 <button type="submit" class="btn btn-primary">Search</button>
             </div>
         </div>
-       <div class="input-group ml-3" style="max-width: 200px;">
-    <input type="number" name="min_balance" class="form-control" placeholder="Min Balance" value="{{ min_balance }}">
-       </div>
-
+        <div class="input-group ml-3" style="max-width: 200px;">
+            <input type="number" name="min_balance" class="form-control" placeholder="Min Balance" value="{{ min_balance }}">
+        </div>
     </form>
-
-    <!-- Paginator -->
-  <nav aria-label="Page navigation example">
-    <ul class="pagination">
-        {% if page_obj.has_previous %}
-            <li class="page-item">
-                <a class="page-link" href="?page=1&q={{ query }}&min_balance={{ min_balance }}">First</a>
-            </li>
-            <li class="page-item">
-                <a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ query }}&min_balance={{ min_balance }}">Previous</a>
-            </li>
-        {% endif %}
-        <li class="page-item">
-            <span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
-        </li>
-        {% if page_obj.has_next %}
-            <li class="page-item">
-                <a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ query }}&min_balance={{ min_balance }}">Next</a>
-            </li>
-            <li class="page-item">
-                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}&q={{ query }}&min_balance={{ min_balance }}">Last</a>
-            </li>
-        {% endif %}
-    </ul>
-</nav>
-
-    <!-- Table -->
+   <!-- Pagination -->
+    <nav aria-label="Page navigation">
+        <ul class="pagination">
+            {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1&q={{ query }}&min_balance={{ min_balance }}">First</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ query }}&min_balance={{ min_balance }}">Previous</a>
+                </li>
+            {% endif %}
+            <li class="page-item"><span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
+            {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ query }}&min_balance={{ min_balance }}">Next</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}&q={{ query }}&min_balance={{ min_balance }}">Last</a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+<!-- Show total summary on first page -->
+    {% if page_obj.number == 1 %}
+    <div class="p-3 mb-3 rounded" style="background-color: #eaf4fc; border-left: 5px solid #007bff;">
+        <strong>Total Balance:</strong> <span style="color:#f41616;">₹{{ total_balance|floatformat:2 }}</span> &nbsp;&nbsp;
+        <strong>Total Debit:</strong> ₹{{ total_debit|floatformat:2 }} &nbsp;&nbsp;
+        <strong>Total Credit:</strong> ₹{{ total_credit|floatformat:2 }}
+    </div>
+    {% endif %}
+<!-- Table -->
     <div class="table-responsive">
         <table class="table table-bordered table-striped">
             <thead class="thead-dark">
                 <tr>
+                    <th class="text-center">S.No</th>
                     <th class="text-center">ID</th>
                     <th class="text-center">Code</th>
                     <th class="text-center">Name</th>
@@ -58,33 +63,45 @@
                     <th class="text-center">Place</th>
                     <th class="text-center">Phone</th>
                     <th class="text-center">Department</th>
+                    <th class="text-center">Ledgers</th>
                 </tr>
             </thead>
             <tbody>
                 {% for item in page_obj %}
                 <tr>
+                    <td class="text-center">{{ forloop.counter0|add:page_obj.start_index }}</td>
                     <td>{{ item.id }}</td>
                     <td>{{ item.code }}</td>
                     <td>{{ item.name|linebreaksbr }}</td>
-                    <td class="text-end" style="color: #f41616;">
-                        {{ item.balance|floatformat:2 }}
-                    </td>
+                    <td class="text-end text-danger">{{ item.balance|floatformat:2 }}</td>
                     <td class="text-end">{{ item.opening_balance|floatformat:2 }}</td>
                     <td class="text-end">{{ item.debit|floatformat:2 }}</td>
                     <td class="text-end">{{ item.credit|floatformat:2 }}</td>
                     <td>{{ item.place }}</td>
                     <td>{{ item.phone2 }}</td>
                     <td>{{ item.openingdepartment }}</td>
+                     <td class="text-center">
+                        <a href="#" class="btn btn-sm btn-outline-dark" title="View Ledger">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                    </td>
                 </tr>
-                {% empty %}
-                <tr><td colspan="10">No data available</td></tr>
                 {% endfor %}
+                {% if page_obj.number == page_obj.paginator.num_pages %}
+                <tr class="table-info font-weight-bold">
+                    <td colspan="4" class="text-end">Total</td>
+                    <td class="text-end text-danger">{{ total_balance|floatformat:2 }}</td>
+                    <td></td>
+                    <td class="text-end">{{ total_debit|floatformat:2 }}</td>
+                    <td class="text-end">{{ total_credit|floatformat:2 }}</td>
+                    <td colspan="3"></td>
+                </tr>
+                {% endif %}
             </tbody>
         </table>
     </div>
 </div>
 
-<!-- Highlight Search Terms -->
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const query = "{{ query }}";
