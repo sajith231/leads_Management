@@ -48,3 +48,18 @@ class AttendanceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Attendance
         fields = ['employee', 'date', 'day', 'status', 'punch_in', 'punch_out', 'punch_in_location', 'punch_out_location']
+
+
+
+from rest_framework import serializers
+from app1.models import BreakTime
+
+class BreakTimeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BreakTime
+        fields = ['employee', 'date', 'break_punch_in', 'break_punch_out', 'is_active']
+
+class BreakStatusSerializer(serializers.Serializer):
+    punch_in = serializers.DateTimeField(allow_null=True)
+    punch_out = serializers.DateTimeField(allow_null=True)
+    is_active = serializers.BooleanField()
