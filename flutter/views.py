@@ -383,5 +383,7 @@ class BreakStatusView(APIView):
 
     # http://localhost:8000/flutter/break-punch-out/                break-punch-out
 
+    # http://localhost:8000/flutter/break-status/                   break-status
+
 
     
