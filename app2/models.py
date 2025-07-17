@@ -179,8 +179,7 @@ class Customer(models.Model):
     contact_person  = models.CharField(max_length=100)
     phone1          = models.CharField(max_length=15)
     phone2          = models.CharField(max_length=15, blank=True, null=True)
-    # email           = models.EmailField()
-    email = models.EmailField(blank=True, null=True)  #changed
+    email = models.EmailField(blank=True, null=True)  
 
     created_at      = models.DateTimeField(auto_now_add=True)
     updated_at      = models.DateTimeField(auto_now=True)
@@ -238,6 +237,8 @@ class SocialMediaProjectAssignment(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    remark = models.TextField(blank=True, null=True)   # <-- NEW
+
 
     def __str__(self):
         return f"{self.project.project_name} - {self.task.task_name}"

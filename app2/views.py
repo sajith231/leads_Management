@@ -1370,6 +1370,11 @@ def user_socialmedia_project_assignments(request):
         'total_assignments': len(processed_assignments),
     }
     return render(request, 'user_socialmedia_project_assignments.html', context)
+from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
+from django.contrib.auth.decorators import login_required
+from django.apps import apps
+from .models import SocialMediaProject, Task, SocialMediaProjectAssignment
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
@@ -1381,9 +1386,7 @@ from .models import SocialMediaProject, Task, SocialMediaProjectAssignment
 def add_assign_socialmedia_project(request):
     """
     Create a new SocialMediaProjectAssignment.
-    Accepts either an existing Task id (dropdown)
-    or a plain task name (manual input).  In the latter case
-    a new Task is created on the fly.
+    Uses existing tasks from dropdown selection only.
     """
     projects = SocialMediaProject.objects.all()
     tasks    = Task.objects.all()
@@ -1392,29 +1395,29 @@ def add_assign_socialmedia_project(request):
 
     if request.method == 'POST':
         project_id      = request.POST.get('project')
-        task_value      = request.POST.get('task_name', '').strip()
+        task_id         = request.POST.get('task')
         assigned_to_ids = request.POST.getlist('assigned_to')
         deadline        = request.POST.get('deadline') or None
+        remark          = request.POST.get('remark', '').strip()
 
-        # --- project ---
-        project = get_object_or_404(SocialMediaProject, id=project_id)
+        # --- basic validation ---
+        try:
+            project = get_object_or_404(SocialMediaProject, id=project_id)
+            task    = get_object_or_404(Task, id=int(task_id))
+        except ValueError:
+            return render(request, 'add_assign_socialmedia_project.html', {
+                'projects': projects,
+                'tasks': tasks,
+                'users': users,
+                'error': 'Invalid project or task selection.'
+            })
 
-        # --- task ---
-        if task_value.isdigit():
-            # existing task (dropdown)
-            task = get_object_or_404(Task, id=int(task_value))
-        else:
-            # manual task
-            task, _ = Task.objects.get_or_create(
-                task_name__iexact=task_value,
-                defaults={'task_name': task_value}
-            )
-
-        # --- assignment ---
+        # --- create ---
         assignment = SocialMediaProjectAssignment.objects.create(
             project=project,
             task=task,
-            deadline=deadline
+            deadline=deadline,
+            remark=remark
         )
         assigned_users = User.objects.filter(id__in=assigned_to_ids)
         assignment.assigned_to.set(assigned_users)
@@ -1426,15 +1429,12 @@ def add_assign_socialmedia_project(request):
         'tasks': tasks,
         'users': users
     })
-
-from django.shortcuts import render, redirect, get_object_or_404
-from django.urls import reverse
-from django.contrib.auth.decorators import login_required
-from django.apps import apps
-from .models import SocialMediaProject, Task, SocialMediaProjectAssignment
-
 @login_required
 def edit_assign_socialmedia_project(request, id):
+    """
+    Edit an existing SocialMediaProjectAssignment.
+    Uses existing tasks from dropdown selection only.
+    """
     assignment = get_object_or_404(SocialMediaProjectAssignment, id=id)
     projects   = SocialMediaProject.objects.all()
     tasks      = Task.objects.all()
@@ -1443,26 +1443,29 @@ def edit_assign_socialmedia_project(request, id):
 
     if request.method == 'POST':
         project_id      = request.POST.get('project')
-        task_value      = request.POST.get('task_name', '').strip()
+        task_id         = request.POST.get('task')
         assigned_to_ids = request.POST.getlist('assigned_to')
         deadline        = request.POST.get('deadline') or None
+        remark          = request.POST.get('remark', '').strip()
 
-        # --- project ---
-        project = get_object_or_404(SocialMediaProject, id=project_id)
+        # --- basic validation ---
+        try:
+            project = get_object_or_404(SocialMediaProject, id=project_id)
+            task    = get_object_or_404(Task, id=int(task_id))
+        except ValueError:
+            return render(request, 'edit_assign_socialmedia_project.html', {
+                'assignment': assignment,
+                'projects': projects,
+                'tasks': tasks,
+                'users': users,
+                'error': 'Invalid project or task selection.'
+            })
 
-        # --- task (numeric id OR new string) ---
-        if task_value.isdigit():
-            task = get_object_or_404(Task, id=int(task_value))
-        else:
-            task, _ = Task.objects.get_or_create(
-                task_name__iexact=task_value,
-                defaults={'task_name': task_value}
-            )
-
-        # --- assignment ---
-        assignment.project = project
-        assignment.task    = task
+        # --- update ---
+        assignment.project  = project
+        assignment.task     = task
         assignment.deadline = deadline
+        assignment.remark   = remark
         assignment.assigned_to.set(User.objects.filter(id__in=assigned_to_ids))
         assignment.save()
 

@@ -6,11 +6,6 @@
 </div>
 
 <style>
-
-
-
-  .manual-task-box {display:none;margin-top:10px;}
-
   .form-container {
     max-width: 600px;
     margin: 20px auto;
@@ -128,11 +123,17 @@
   }
 </style>
 
-<div class="form-container">
+<div class="container">
+  {% if error %}
+    <div class="alert alert-danger" style="background-color: #f8d7da; color: #721c24; padding: 10px; margin-bottom: 20px; border: 1px solid #f1aeb5; border-radius: 4px;">
+      {{ error }}
+    </div>
+  {% endif %}
+  
   <form method="post">
     {% csrf_token %}
 
-    <!-- Project (unchanged) -->
+    <!-- Project -->
     <div class="form-group">
       <label for="project">Project:</label>
       <select name="project" id="project" required>
@@ -145,31 +146,16 @@
 
     <!-- Task section -->
     <div class="form-group">
-      <label>Task:</label>
-
-      <!-- original dropdown -->
-      <select name="task" id="taskSelect">
+      <label for="task">Task:</label>
+      <select name="task" id="task" required>
         <option value="">Select a task</option>
         {% for task in tasks %}
-          <option value="{{ task.task_name }}">{{ task.task_name }}</option>
+          <option value="{{ task.id }}">{{ task.task_name }}</option>
         {% endfor %}
       </select>
-
-      <!-- “Add manually” trigger -->
-      <button type="button" id="manualTaskBtn" style="margin-left:8px;padding:4px 10px;font-size:12px;"
-              onclick="showManualTask()">Add task manually</button>
-
-      <!-- hidden manual input -->
-      <div id="manualTaskBox" class="manual-task-box">
-        <input type="text" id="manualTaskInput" placeholder="Enter task name"
-               oninput="syncManualTask()">
-      </div>
-
-      <!-- single hidden field that the view will read -->
-      <input type="hidden" name="task_name" id="finalTaskName" required>
     </div>
 
-    <!-- Assigned-to users (unchanged) -->
+    <!-- Assigned-to users -->
     <div class="form-group">
       <label>Assign to Users:</label>
       <div class="user-selection">
@@ -190,6 +176,11 @@
       <label for="deadline">Deadline:</label>
       <input type="date" name="deadline" id="deadline">
     </div>
+    <div class="form-group">
+  <label for="remark">Remark:</label>
+  <textarea name="remark" id="remark" rows="3" class="form-control"
+            placeholder="Any extra details..."></textarea>
+</div>
 
     <div class="form-group">
       <button type="submit" class="btn-submit">Save Assignment</button>
@@ -199,32 +190,9 @@
 </div>
 
 <script>
-/* ---------- Task manual / dropdown synchronisation ---------- */
-function showManualTask() {
-  document.getElementById('manualTaskBox').style.display = 'block';
-  document.getElementById('manualTaskBtn').style.display = 'none';
-  document.getElementById('taskSelect').value = '';
-  document.getElementById('finalTaskName').value = '';
-  document.getElementById('manualTaskInput').focus();
-}
-
-function syncManualTask() {
-  document.getElementById('finalTaskName').value =
-    document.getElementById('manualTaskInput').value.trim();
-}
-
-document.getElementById('taskSelect').addEventListener('change', function () {
-  const val = this.value;
-  if (val) {
-    document.getElementById('manualTaskBox').style.display = 'none';
-    document.getElementById('manualTaskBtn').style.display = 'inline-block';
-    document.getElementById('manualTaskInput').value = '';
-    document.getElementById('finalTaskName').value = val;
-  }
-});
-
-/* ---------- keep the existing user-selection JS untouched ---------- */
+/* ---------- User selection functionality ---------- */
 let selectedUsers = [];
+
 function addUser() {
   const sel = document.getElementById('userSelect');
   if (!sel.value) return;
@@ -236,24 +204,32 @@ function addUser() {
   }
   sel.value = '';
 }
+
 function removeUser(uid) {
   selectedUsers = selectedUsers.filter(u => u.id !== uid);
-  updateSelectedUsersDisplay(); updateHiddenInputs();
+  updateSelectedUsersDisplay(); 
+  updateHiddenInputs();
 }
+
 function updateSelectedUsersDisplay() {
   const box = document.getElementById('selectedUsers');
   box.innerHTML = '';
-  selectedUsers.forEach(u=>{
-    const sp=document.createElement('span'); sp.className='selected-user';
-    sp.innerHTML=`${u.name} <span class="remove-user" onclick="removeUser('${u.id}')">×</span>`;
+  selectedUsers.forEach(u => {
+    const sp = document.createElement('span'); 
+    sp.className = 'selected-user';
+    sp.innerHTML = `${u.name} <span class="remove-user" onclick="removeUser('${u.id}')">×</span>`;
     box.appendChild(sp);
   });
 }
+
 function updateHiddenInputs() {
-  document.querySelectorAll('input[name="assigned_to"]').forEach(i=>i.remove());
-  const form=document.querySelector('form');
-  selectedUsers.forEach(u=>{
-    const i=document.createElement('input'); i.type='hidden'; i.name='assigned_to'; i.value=u.id;
+  document.querySelectorAll('input[name="assigned_to"]').forEach(i => i.remove());
+  const form = document.querySelector('form');
+  selectedUsers.forEach(u => {
+    const i = document.createElement('input'); 
+    i.type = 'hidden'; 
+    i.name = 'assigned_to'; 
+    i.value = u.id;
     form.appendChild(i);
   });
 }

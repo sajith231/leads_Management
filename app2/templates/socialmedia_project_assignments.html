@@ -341,6 +341,7 @@
       <th>Task Name</th>
       <th>Assigned To</th>
       <th>Deadline</th>
+      <th>Remark</th>
       <th>Status</th>
       <th>Duration (Started to Completed)</th> 
       <th>Actions</th>
@@ -371,6 +372,32 @@
       <td>
         {{ item.assignment.deadline|date:"d-m-Y" }}
       </td>
+     <td>
+  {% if item.assignment.remark %}
+      <i class="fa fa-comment" style="cursor:pointer;color:#007bff;" 
+         data-bs-toggle="modal" data-bs-target="#remarkModal{{ item.id }}"></i>
+
+      
+
+      <!-- Modal -->
+      <div class="modal fade" id="remarkModal{{ item.id }}" tabindex="-1" aria-labelledby="remarkModalLabel{{ item.id }}" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="remarkModalLabel{{ item.id }}">Remark</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              {{ item.assignment.remark }}
+            </div>
+          </div>
+        </div>
+      </div>
+  {% else %}
+      --
+  {% endif %}
+</td>
+
       <td>
         <span class="status-badge {{ item.assignment.get_status_display_class }}">
           {{ item.assignment.get_status_display }}
