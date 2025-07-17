@@ -50,10 +50,16 @@ urlpatterns = [
 #debtors
 
     path('debtors1/', views.debtors1_list, name='debtors1_list'),
+    path('get_sysmac_ledger/', views.get_sysmac_ledger, name='get_sysmac_ledger'),
     path('imc1-list/', views.imc1_list, name='imc1_list'),
+    path('get_imc1_ledger/', views.get_imc1_ledger, name='get_imc1_ledger'),
     path('imc2-list/', views.imc2_list, name='imc2_list'),
+    path('get_imc2_ledger/', views.get_imc2_ledger, name='get_imc2_ledger'),
     path('sysmac-info-list/', views.sysmac_info_list, name='sysmac_info_list'),
+    path('get_sysmac_info_ledger/', views.get_sysmac_info_ledger, name='get_sysmac_info_ledger'),
     path('dq-list/', views.dq_list, name='dq_list'),
+    path('get_dq_ledger/', views.get_dq_ledger, name='get_dq_ledger'),
+
 
 
 

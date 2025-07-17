@@ -1157,8 +1157,10 @@ def edit_experience_certificate(request, employee_id):
 
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.shortcuts import render
+from django.http import JsonResponse
 import requests
 import traceback
+import json
 
 def debtors1_list(request):
     api_url = "https://accmaster.imcbs.com/api/sync/sysmac/"
@@ -1265,6 +1267,38 @@ def debtors1_list(request):
         'total_credit': total_credit,
     })
 
+from django.http import JsonResponse
+import requests
+
+
+def get_sysmac_ledger(request):
+    code = request.GET.get('code')
+    if not code:
+        return JsonResponse({'error': 'Missing code'}, status=400)
+
+    try:
+        url = "https://accmaster.imcbs.com/api/sync/sysmac-ledgers/" 
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
+                          '(KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
+            'Accept': 'application/json',
+        }
+
+        print("Fetching URL:", url)
+        r = requests.get(url, headers=headers, timeout=10)
+        r.raise_for_status()
+
+        full_data = r.json()
+
+        # ✅ Filter only the entries matching the requested code
+        filtered = [entry for entry in full_data if str(entry.get('code')) == str(code)]
+
+        return JsonResponse(filtered, safe=False)
+
+    except Exception as e:
+        print("External API fetch failed:", e)
+        return JsonResponse({'error': 'Failed to fetch ledger'}, status=500)
+
 
 
 
@@ -1362,6 +1396,42 @@ def imc1_list(request):
         'total_debit': total_debit,
         'total_credit': total_credit,
     })
+from django.http import JsonResponse
+import requests
+
+def get_imc1_ledger(request):
+    code = request.GET.get('code')
+    if not code:
+        return JsonResponse({'error': 'Missing code'}, status=400)
+
+    try:
+        url = "https://accmaster.imcbs.com/api/sync/imc1-ledgers/" 
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
+                          '(KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
+            'Accept': 'application/json',
+        }
+
+        print("Fetching URL:", url)
+        r = requests.get(url, headers=headers, timeout=10)
+        r.raise_for_status()
+
+        full_data = r.json()
+
+        # ✅ Filter only the entries matching the requested code
+        filtered = [entry for entry in full_data if str(entry.get('code')) == str(code)]
+
+        return JsonResponse(filtered, safe=False)
+
+    except Exception as e:
+        print("External API fetch failed:", e)
+        return JsonResponse({'error': 'Failed to fetch ledger'}, status=500)
+        
+       
+
+
+
+    
 
 from django.shortcuts import render
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
@@ -1456,6 +1526,34 @@ def imc2_list(request):
         'total_debit': total_debit,
         'total_credit': total_credit,
     })
+def get_imc2_ledger(request):
+    code = request.GET.get('code')
+    if not code:
+        return JsonResponse({'error': 'Missing code'}, status=400)
+
+    try:
+        url = "https://accmaster.imcbs.com/api/sync/imc2-ledgers/"
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
+                          '(KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
+            'Accept': 'application/json',
+        }
+
+        print("Fetching URL:", url)
+        r = requests.get(url, headers=headers, timeout=10)
+        r.raise_for_status()
+
+        full_data = r.json()
+
+        # ✅ Filter only the entries matching the requested code
+        filtered = [entry for entry in full_data if str(entry.get('code')) == str(code)]
+
+        return JsonResponse(filtered, safe=False)
+
+    except Exception as e:
+        print("External API fetch failed:", e)
+        return JsonResponse({'error': 'Failed to fetch ledger'}, status=500)
+    
 
 from django.shortcuts import render
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
@@ -1550,7 +1648,33 @@ def sysmac_info_list(request):
         'total_debit': total_debit,
         'total_credit': total_credit,
     })
+def get_sysmac_info_ledger(request):
+    code = request.GET.get('code')
+    if not code:
+        return JsonResponse({'error': 'Missing code'}, status=400)
 
+    try:
+        url = "https://accmaster.imcbs.com/api/sync/sysmac-info-ledgers/"
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
+                          '(KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
+            'Accept': 'application/json',
+        }
+
+        print("Fetching URL:", url)
+        r = requests.get(url, headers=headers, timeout=10)
+        r.raise_for_status()
+
+        full_data = r.json()
+
+        # ✅ Filter only the entries matching the requested code
+        filtered = [entry for entry in full_data if str(entry.get('code')) == str(code)]
+
+        return JsonResponse(filtered, safe=False)
+
+    except Exception as e:
+        print("External API fetch failed:", e)
+        return JsonResponse({'error': 'Failed to fetch ledger'}, status=500)
 
 
 from django.shortcuts import render
@@ -1643,3 +1767,30 @@ def dq_list(request):
         'total_debit': total_debit,
         'total_credit': total_credit,
     })
+def get_dq_ledger(request):
+    code = request.GET.get('code')
+    if not code:
+        return JsonResponse({'error': 'Missing code'}, status=400)
+
+    try:
+        url = "https://accmaster.imcbs.com/api/sync/dq-ledgers/"
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
+                          '(KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
+            'Accept': 'application/json',
+        }
+
+        print("Fetching URL:", url)
+        r = requests.get(url, headers=headers, timeout=10)
+        r.raise_for_status()
+
+        full_data = r.json()
+
+        # ✅ Filter only the entries matching the requested code
+        filtered = [entry for entry in full_data if str(entry.get('code')) == str(code)]
+
+        return JsonResponse(filtered, safe=False)
+
+    except Exception as e:
+        print("External API fetch failed:", e)
+        return JsonResponse({'error': 'Failed to fetch ledger'}, status=500)

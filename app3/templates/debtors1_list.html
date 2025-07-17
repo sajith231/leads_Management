@@ -45,7 +45,8 @@
             {% endif %}
         </ul>
     </nav>
-<!-- Show total summary on first page -->
+
+    <!-- Show total summary on first page -->
     {% if page_obj.number == 1 %}
     <div class="p-3 mb-3 rounded" style="background-color: #eaf4fc; border-left: 5px solid #007bff;">
         <strong>Total Balance:</strong> <span style="color:#f41616;">₹{{ total_balance|floatformat:2 }}</span> &nbsp;&nbsp;
@@ -56,12 +57,13 @@
 
     <!-- Table -->
     <div class="table-responsive">
-        <table class="table table-bordered table-striped">
+            <table class="table table-bordered table-striped main-table">
             <thead class="thead-dark">
                 <tr>
                     <th class="text-center">S.No</th>
                     <th class="text-center">Code</th>
                     <th class="text-center">Name</th>
+                    <th class="text-center">View Ledger</th>
                     <th class="text-center">Balance</th>
                     <th class="text-center">OB</th>
                     <th class="text-center">Debit</th>
@@ -69,32 +71,37 @@
                     <th class="text-center">Place</th>
                     <th class="text-center">Phone</th>
                     <th class="text-center">Department</th>
-                    <th class="text-center">Ledgers</th>
                 </tr>
             </thead>
-            <tbody>
-                {% for item in page_obj %}
-                <tr>
-                    <td class="text-center">{{ forloop.counter0|add:page_obj.start_index }}</td>
-                    <td>{{ item.code }}</td>
-                    <td>{{ item.name|linebreaksbr }}</td>
-                    <td class="text-end" style="color: #f41616;">{{ item.balance|floatformat:2 }}</td>
-                    <td class="text-end">{{ item.opening_balance|floatformat:2 }}</td>
-                    <td class="text-end">{{ item.debit|floatformat:2 }}</td>
-                    <td class="text-end">{{ item.credit|floatformat:2 }}</td>
-                    <td>{{ item.place }}</td>
-                    <td>{{ item.phone2 }}</td>
-                    <td>{{ item.openingdepartment }}</td>
-                      <td class="text-center">
-                        <a href="#" class="btn btn-sm btn-outline-dark" title="View Ledger">
-                            <i class="fas fa-eye"></i>
-                        </a>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr><td colspan="11">No data available</td></tr>
-                {% endfor %}
-            </tbody>
+          <tbody>
+    {% for item in page_obj %}
+    <tr>
+        <td class="text-center">{{ forloop.counter0|add:page_obj.start_index }}</td>
+        <td class="text-center">{{ item.code }}</td>
+        <td>{{ item.name|linebreaksbr }}</td>
+
+        <!-- ✅ New "View Ledger" column with eye icon -->
+        <td class="text-center">
+            <button class="btn btn-sm btn-outline-dark ledger-link" 
+                    data-code="{{ item.code }}" 
+                    data-name="{{ item.name }}" 
+                    title="View Ledger">
+                <i class="fas fa-eye"></i>
+            </button>
+        </td>
+
+        <td class="text-end" style="color: #f41616;">{{ item.balance|floatformat:2 }}</td>
+        <td class="text-end">{{ item.opening_balance|floatformat:2 }}</td>
+        <td class="text-end">{{ item.debit|floatformat:2 }}</td>
+        <td class="text-end">{{ item.credit|floatformat:2 }}</td>
+        <td>{{ item.place }}</td>
+        <td>{{ item.phone2 }}</td>
+        <td>{{ item.openingdepartment }}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="12">No data available</td></tr>
+    {% endfor %}
+</tbody>
 
             {% if page_obj.number == page_obj.paginator.num_pages %}
             <tfoot>
@@ -112,17 +119,115 @@
     </div>
 </div>
 
+<!-- Error Alert for Debugging -->
+<div id="debugAlert" class="alert alert-warning" style="display: none;">
+    <h6>Debug Information:</h6>
+    <pre id="debugContent"></pre>
+</div>
+
+<!-- Simple Ledger Modal -->
+<div class="modal fade" id="ledgerModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header bg-dark text-white">
+        <h5 class="modal-title">Ledger</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="ledgerContent">
+        Loading...
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.ledger-link').forEach(link => {
+        link.addEventListener('click', function (e) {
+            e.preventDefault();
+            const code = this.dataset.code;
+            const modal = new bootstrap.Modal(document.getElementById('ledgerModal'));
+            const content = document.getElementById('ledgerContent');
+            content.innerHTML = "Loading...";
+
+            fetch(`/app3/get_sysmac_ledger/?code=${code}`) 
+                .then(r => {
+                    if (!r.ok) throw new Error("Network response was not ok");
+                    return r.json();
+                })
+                .then(data => {
+                    if (!Array.isArray(data) || data.length === 0) {
+                        content.innerHTML = "No ledger entries available.";
+                    } else {
+                        const rows = data.map(entry => `
+                            <tr>
+                                <td>${entry.code}</td>
+                                <td>${entry.entry_date || ''}</td>
+                                <td>${entry.voucher_no || ''}</td>
+                                <td>${entry.particulars || ''}</td>
+                                <td>${entry.debit || ''}</td>
+                                <td>${entry.credit || ''}</td>
+                                <td>${entry.narration || ''}</td>
+                            </tr>`).join('');
+
+                        content.innerHTML = `
+                            <table class="table table-bordered table-sm">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Code</th>
+                                        <th>Date</th>
+                                        <th>Voucher</th>
+                                        <th>Particulars</th>
+                                        <th>Debit</th>
+                                        <th>Credit</th>
+                                        <th>Narration</th>
+                                    </tr>
+                                </thead>
+                                <tbody>${rows}</tbody>
+                            </table>`;
+                    }
+
+                    modal.show();
+                })
+                .catch(err => {
+                    console.error(err);
+                    content.innerHTML = "<div class='text-danger'>Error loading ledger.</div>";
+                    modal.show();
+                });
+        });
+    });
+});
+</script>
+
+
 <!-- Highlight search matches -->
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const query = "{{ query }}";
-        if (query) {
-            const searchTerms = query.toLowerCase().split(' ');
-            const tableRows = document.querySelectorAll('table tbody tr');
-            tableRows.forEach(row => {
-                row.innerHTML = row.innerHTML.replace(new RegExp(`(${searchTerms.join('|')})`, 'gi'), match => `<mark class="search-highlight">${match}</mark>`);
+document.addEventListener('DOMContentLoaded', function () {
+    const query = "{{ query }}";
+    if (query) {
+        const searchTerms = query.toLowerCase().split(' ');
+
+        document.querySelectorAll('.main-table tbody tr').forEach(row => {
+            row.querySelectorAll('td').forEach((cell, idx) => {
+                // Skip columns like eye icon button (column index 3 is "View Ledger")
+                if (idx === 3) return;
+
+                let text = cell.textContent;
+                let originalHTML = cell.innerHTML;
+
+                // Only apply mark if match is found in textContent
+                searchTerms.forEach(term => {
+                    const regex = new RegExp(`(${term})`, 'gi');
+                    if (regex.test(text)) {
+                        // Replace only text nodes inside the cell
+                        cell.innerHTML = originalHTML.replace(regex, '<mark class="search-highlight">$1</mark>');
+                    }
+                });
             });
-        }
-    });
+        });
+    }
+});
 </script>
+
+
 {% endblock %}
