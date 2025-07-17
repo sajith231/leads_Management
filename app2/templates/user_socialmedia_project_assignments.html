@@ -1,10 +1,21 @@
 {% extends "base.html" %}
 
 {% block content %}
+<style>
+    @media only screen and (max-width: 768px) {
+  .header {
+    margin-top: 15% !important;
+  }
+  .assignment-count{
+    display: flex;
+    justify-content: center;
+  }
+}
+</style>
 <div class="header">
     <h2 style="display: flex; justify-content: center; align-items: center;">
         <i class="fas fa-tasks" style="margin-right: 10px;"></i>
-        Your Project Assignments
+        Your Projects
     </h2>
 </div>
 
@@ -184,8 +195,12 @@
         margin: 10px 0;
         color: #666;
     }
-</style>
 
+
+    
+
+</style>
+<div style="overflow: hidden;">
 <div id="successMessage" class="success-message"></div>
 <div id="errorMessage" class="error-message"></div>
 
@@ -213,6 +228,7 @@
     {% endif %}
 </div>
 {% if processed_assignments %}
+<div style="overflow: scroll;">
 <table>
     <thead>
         <tr>
@@ -321,7 +337,7 @@
         </tr>
         {% endfor %}
     </tbody>
-</table>
+</table></div>
 
 <!-- Pagination Information -->
 <div class="pagination-info">
@@ -339,7 +355,7 @@
         <h4>No assignments found</h4>
         <p>You don't have any project assignments yet.</p>
     </div>
-</div>
+</div></div>
 {% endif %}
 
 <script>

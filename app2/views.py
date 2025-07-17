@@ -759,20 +759,11 @@ def category_detail(request, category_id):
 
 
 
-import requests
-from django.shortcuts import render
+
 
 import requests
 from django.shortcuts import render
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-import requests
-from django.shortcuts import render
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-
-import requests
-from django.shortcuts import render
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-import re
 
 def show_clients(request):
     api_url = "https://accmaster.imcbs.com/api/sync/rrc-clients/"
@@ -782,18 +773,16 @@ def show_clients(request):
     try:
         response = requests.get(api_url, timeout=30)
         response.raise_for_status()
-        
         data = response.json()
         
-        # Han1dle different response formats
+        # Handle different response formats
         if isinstance(data, list):
             clients = data
         elif isinstance(data, dict):
-            # Try common nested data patterns
             clients = data.get('data', data.get('clients', data.get('results', [])))
-            
-        print(f"Successfully fetched {len(clients)} clients")
         
+        print(f"Successfully fetched {len(clients)} clients")
+    
     except requests.exceptions.Timeout:
         error_message = "API request timed out"
     except requests.exceptions.ConnectionError:
@@ -803,16 +792,47 @@ def show_clients(request):
     except Exception as e:
         error_message = f"Error fetching data: {str(e)}"
     
-    # Search functionality
-    search_query = request.GET.get('search', '').strip()
-    original_count = len(clients)
+    # Get unique values for filters
+    unique_branches = sorted(set(client.get('branch', '') for client in clients if client.get('branch')))
+    unique_software = sorted(set(client.get('software', '') for client in clients if client.get('software')))
+    unique_natures = sorted(set(client.get('nature', '') for client in clients if client.get('nature')))
+    unique_amc_labels = sorted(set(client.get('amc_label', '') for client in clients if client.get('amc_label')))  # ✅ Added
+
+    # Apply filters
+    filtered_clients = clients.copy()
+    original_count = len(filtered_clients)
     
+    if request.GET.get('branch'):
+        filtered_clients = [c for c in filtered_clients if c.get('branch') == request.GET['branch']]
+
+    if request.GET.get('software'):
+        filtered_clients = [c for c in filtered_clients if c.get('software') == request.GET['software']]
+
+    if request.GET.get('direct_dealing'):
+        filtered_clients = [
+            c for c in filtered_clients
+            if str(c.get('directdealing_label', '')).lower() == request.GET['direct_dealing'].lower()
+        ]
+
+    if request.GET.get('amc'):
+        filtered_clients = [
+            c for c in filtered_clients
+            if str(c.get('amc_label', '')).strip().lower() == request.GET['amc'].strip().lower()
+        ]
+
+    if request.GET.get('nature'):
+        filtered_clients = [
+            c for c in filtered_clients
+            if str(c.get('nature', '')).lower() == request.GET['nature'].lower()
+        ]
+
+    # Search filter
+    search_query = request.GET.get('search', '').strip()
     if search_query:
-        filtered_clients = []
-        search_terms = search_query.lower().split()  # Split multiple search terms
-        
-        for client in clients:
-            # Search in ALL available fields
+        search_terms = search_query.lower().split()
+        temp_filtered = []
+
+        for client in filtered_clients:
             searchable_fields = [
                 str(client.get('name', '')),
                 str(client.get('code', '')),
@@ -835,39 +855,37 @@ def show_clients(request):
                 str(client.get('sp', '')),
                 str(client.get('nature', '')),
             ]
-            
-            # Create a combined text for searching
+
             combined_text = ' '.join(searchable_fields).lower()
-            
-            # Check if ALL search terms are found (AND logic)
-            # Change to any() for OR logic if preferred
             if all(term in combined_text for term in search_terms):
-                filtered_clients.append(client)
+                temp_filtered.append(client)
         
-        clients = filtered_clients
-        print(f"Search '{search_query}' found {len(clients)} results out of {original_count} total clients")
-    
-    # Pagination logic
-    paginator = Paginator(clients, 15)  # 15 clients per page
+        filtered_clients = temp_filtered
+
+    # Pagination
+    paginator = Paginator(filtered_clients, 15)
     page = request.GET.get('page')
-    
+
     try:
         clients_page = paginator.page(page)
     except PageNotAnInteger:
-        # If page is not an integer, deliver first page.
         clients_page = paginator.page(1)
     except EmptyPage:
-        # If page is out of range, deliver last page of results.
         clients_page = paginator.page(paginator.num_pages)
-    
+
     return render(request, 'clients_table.html', {
         'clients': clients_page,
         'error_message': error_message,
         'total_clients': original_count,
-        'filtered_count': len(clients),
+        'filtered_count': len(filtered_clients),
         'search_query': search_query,
-        'search_terms': search_query.lower().split() if search_query else []
+        'search_terms': search_query.lower().split() if search_query else [],
+        'unique_branches': unique_branches,
+        'unique_software': unique_software,
+        'unique_natures': unique_natures,
+        'unique_amc_labels': unique_amc_labels,  # ✅ Passed to template
     })
+
 
 
 
