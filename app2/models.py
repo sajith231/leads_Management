@@ -179,7 +179,8 @@ class Customer(models.Model):
     contact_person  = models.CharField(max_length=100)
     phone1          = models.CharField(max_length=15)
     phone2          = models.CharField(max_length=15, blank=True, null=True)
-    email           = models.EmailField()
+    # email           = models.EmailField()
+    email = models.EmailField(blank=True, null=True)  #changed
 
     created_at      = models.DateTimeField(auto_now_add=True)
     updated_at      = models.DateTimeField(auto_now=True)

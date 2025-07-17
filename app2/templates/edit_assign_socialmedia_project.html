@@ -14,151 +14,83 @@
     border-radius: 8px;
     background-color: #f9f9f9;
   }
+  .form-group{margin-bottom:15px}
+  .form-group label{display:block;margin-bottom:5px;font-weight:bold}
+  .form-group select,.form-group input{width:100%;padding:8px;border:1px solid #ccc;border-radius:4px;font-size:14px}
+  .btn-submit{background:#28a745;color:#fff;padding:10px 20px;border:none;border-radius:4px;cursor:pointer;font-size:16px}
+  .btn-submit:hover{background:#218838}
+  .btn-cancel{background:#6c757d;color:#fff;padding:10px 20px;border:none;border-radius:4px;font-size:16px;margin-left:10px;text-decoration:none;display:inline-block}
+  .btn-cancel:hover{background:#5a6268}
 
-  .form-group {
-    margin-bottom: 15px;
-  }
+  .user-selection{border:1px solid #ddd;border-radius:4px;padding:10px;min-height:100px;background:#fff}
+  .user-selector{display:flex;align-items:center;margin-bottom:10px}
+  .user-selector select{flex:1;margin-right:10px}
+  .add-user-btn{background:#007bff;color:#fff;border:none;border-radius:50%;width:30px;height:30px;cursor:pointer;font-size:16px}
+  .add-user-btn:hover{background:#0056b3}
+  .selected-users{margin-top:10px}
+  .selected-user{display:inline-block;background:#e9ecef;padding:5px 10px;margin:2px;border-radius:15px;font-size:12px}
+  .remove-user{color:red;cursor:pointer;margin-left:5px}
+  .remove-user:hover{color:darkred}
 
-  .form-group label {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: bold;
-  }
-
-  .form-group select,
-  .form-group input {
-    width: 100%;
-    padding: 8px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    font-size: 14px;
-  }
-
-  .btn-submit {
-    background-color: #28a745;
-    color: white;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 16px;
-  }
-
-  .btn-submit:hover {
-    background-color: #218838;
-  }
-
-  .btn-cancel {
-    background-color: #6c757d;
-    color: white;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 16px;
-    margin-left: 10px;
-    text-decoration: none;
-    display: inline-block;
-  }
-
-  .btn-cancel:hover {
-    background-color: #5a6268;
-  }
-
-  .user-selection {
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    padding: 10px;
-    min-height: 100px;
-    background-color: white;
-  }
-
-  .user-selector {
-    display: flex;
-    align-items: center;
-    margin-bottom: 10px;
-  }
-
-  .user-selector select {
-    flex: 1;
-    margin-right: 10px;
-  }
-
-  .add-user-btn {
-    background-color: #007bff;
-    color: white;
-    border: none;
-    border-radius: 50%;
-    width: 30px;
-    height: 30px;
-    cursor: pointer;
-    font-size: 16px;
-  }
-
-  .add-user-btn:hover {
-    background-color: #0056b3;
-  }
-
-  .selected-users {
-    margin-top: 10px;
-  }
-
-  .selected-user {
-    display: inline-block;
-    background-color: #e9ecef;
-    padding: 5px 10px;
-    margin: 2px;
-    border-radius: 15px;
-    font-size: 12px;
-  }
-
-  .remove-user {
-    color: red;
-    cursor: pointer;
-    margin-left: 5px;
-  }
-
-  .remove-user:hover {
-    color: darkred;
-  }
+  .manual-task-box{display:none;margin-top:8px}
 </style>
 
 <div class="form-container">
   <form method="post">
     {% csrf_token %}
-    
+
+    <!-- Project -->
     <div class="form-group">
       <label for="project">Project:</label>
       <select name="project" id="project" required>
         <option value="">Select a project</option>
-        {% for project in projects %}
-          <option value="{{ project.id }}" {% if project.id == assignment.project.id %}selected{% endif %}>
-            {{ project.project_name }} - {{ project.customer.customer_name }}
+        {% for p in projects %}
+          <option value="{{ p.id }}" {% if p.id == assignment.project.id %}selected{% endif %}>
+            {{ p.project_name }} - {{ p.customer.customer_name }}
           </option>
         {% endfor %}
       </select>
     </div>
 
+    <!-- Task (dropdown OR manual) -->
     <div class="form-group">
-      <label for="task">Task:</label>
-      <select name="task" id="task" required>
+      <label>Task:</label>
+
+      <!-- Existing tasks dropdown -->
+      <select id="taskSelect" onchange="syncFromSelect()">
         <option value="">Select a task</option>
-        {% for task in tasks %}
-          <option value="{{ task.id }}" {% if task.id == assignment.task.id %}selected{% endif %}>
-            {{ task.task_name }}
+        {% for t in tasks %}
+          <option value="{{ t.id }}" {% if t.id == assignment.task.id %}selected{% endif %}>
+            {{ t.task_name }}
           </option>
         {% endfor %}
       </select>
+
+      <!-- “Add manually” button -->
+      <button type="button" id="manualTaskBtn"
+              style="margin-left:8px;padding:4px 10px;font-size:12px"
+              onclick="showManualTask()">Add task manually</button>
+
+      <!-- Manual input box (hidden by default) -->
+      <div id="manualTaskBox" class="manual-task-box">
+        <input type="text" id="manualTaskInput"
+               placeholder="Enter new task name"
+               oninput="syncFromManual()">
+      </div>
+
+      <!-- Single hidden field the view reads -->
+      <input type="hidden" name="task_name" id="finalTaskName" required>
     </div>
 
+    <!-- Assigned users -->
     <div class="form-group">
       <label>Assign to Users:</label>
       <div class="user-selection">
         <div class="user-selector">
           <select id="userSelect">
             <option value="">Select a user</option>
-            {% for user in users %}
-              <option value="{{ user.id }}">{{ user.name }}</option>
+            {% for u in users %}
+              <option value="{{ u.id }}">{{ u.name }}</option>
             {% endfor %}
           </select>
           <button type="button" class="add-user-btn" onclick="addUser()">+</button>
@@ -166,11 +98,15 @@
         <div class="selected-users" id="selectedUsers"></div>
       </div>
     </div>
-    <div class="form-group">
-  <label for="deadline">Deadline:</label>
-  <input type="date" name="deadline" id="deadline" value="{{ assignment.deadline|date:'Y-m-d' }}">
-</div>
 
+    <!-- Deadline -->
+    <div class="form-group">
+      <label for="deadline">Deadline:</label>
+      <input type="date" name="deadline" id="deadline"
+             value="{{ assignment.deadline|date:'Y-m-d' }}">
+    </div>
+
+    <!-- Buttons -->
     <div class="form-group">
       <button type="submit" class="btn-submit">Update Assignment</button>
       <a href="{% url 'socialmedia_project_assignments' %}" class="btn-cancel">Cancel</a>
@@ -179,66 +115,72 @@
 </div>
 
 <script>
-let selectedUsers = [];
+/* ---------- Task toggling ---------- */
+function showManualTask() {
+  document.getElementById('manualTaskBox').style.display = 'block';
+  document.getElementById('manualTaskBtn').style.display = 'none';
+  document.getElementById('taskSelect').value = '';
+  document.getElementById('finalTaskName').value = document.getElementById('manualTaskInput').value.trim();
+  document.getElementById('manualTaskInput').focus();
+}
+function syncFromSelect() {
+  const val = document.getElementById('taskSelect').value;
+  if (val) {
+    document.getElementById('manualTaskBox').style.display = 'none';
+    document.getElementById('manualTaskBtn').style.display = 'inline-block';
+    document.getElementById('manualTaskInput').value = '';
+    document.getElementById('finalTaskName').value = val;
+  }
+}
+function syncFromManual() {
+  document.getElementById('finalTaskName').value =
+    document.getElementById('manualTaskInput').value.trim();
+}
 
-// Initialize with existing assigned users
+/* ---------- Assigned-users handling ---------- */
+let selectedUsers = [];
 {% for user in assignment.assigned_to.all %}
   selectedUsers.push({ id: '{{ user.id }}', name: '{{ user.name }}' });
 {% endfor %}
 
-// Update display on page load
-document.addEventListener('DOMContentLoaded', function() {
-  updateSelectedUsersDisplay();
-  updateHiddenInputs();
-});
-
 function addUser() {
-  const userSelect = document.getElementById('userSelect');
-  const selectedUserId = userSelect.value;
-  const selectedUserName = userSelect.options[userSelect.selectedIndex].text;
-  
-  if (selectedUserId && !selectedUsers.find(user => user.id === selectedUserId)) {
-    selectedUsers.push({ id: selectedUserId, name: selectedUserName });
-    updateSelectedUsersDisplay();
-    updateHiddenInputs();
+  const sel = document.getElementById('userSelect');
+  const id   = sel.value;
+  const name = sel.options[sel.selectedIndex].text;
+  if (id && !selectedUsers.find(u => u.id === id)) {
+    selectedUsers.push({id, name});
+    updateDisplay();
   }
-  
-  userSelect.value = '';
+  sel.value = '';
 }
-
-function removeUser(userId) {
-  selectedUsers = selectedUsers.filter(user => user.id !== userId);
-  updateSelectedUsersDisplay();
-  updateHiddenInputs();
+function removeUser(uid) {
+  selectedUsers = selectedUsers.filter(u => u.id !== uid);
+  updateDisplay();
 }
-
-function updateSelectedUsersDisplay() {
-  const selectedUsersDiv = document.getElementById('selectedUsers');
-  selectedUsersDiv.innerHTML = '';
-  
-  selectedUsers.forEach(user => {
-    const userSpan = document.createElement('span');
-    userSpan.className = 'selected-user';
-    userSpan.innerHTML = `${user.name} <span class="remove-user" onclick="removeUser('${user.id}')">×</span>`;
-    selectedUsersDiv.appendChild(userSpan);
+function updateDisplay() {
+  const box = document.getElementById('selectedUsers');
+  box.innerHTML = '';
+  selectedUsers.forEach(u => {
+    const span = document.createElement('span');
+    span.className = 'selected-user';
+    span.innerHTML = `${u.name} <span class="remove-user" onclick="removeUser('${u.id}')">×</span>`;
+    box.appendChild(span);
   });
-}
-
-function updateHiddenInputs() {
-  // Remove existing hidden inputs
-  const existingInputs = document.querySelectorAll('input[name="assigned_to"]');
-  existingInputs.forEach(input => input.remove());
-  
-  // Add new hidden inputs
+  /* sync hidden inputs */
+  document.querySelectorAll('input[name="assigned_to"]').forEach(i => i.remove());
   const form = document.querySelector('form');
-  selectedUsers.forEach(user => {
-    const hiddenInput = document.createElement('input');
-    hiddenInput.type = 'hidden';
-    hiddenInput.name = 'assigned_to';
-    hiddenInput.value = user.id;
-    form.appendChild(hiddenInput);
+  selectedUsers.forEach(u => {
+    const inp = document.createElement('input');
+    inp.type = 'hidden';
+    inp.name = 'assigned_to';
+    inp.value = u.id;
+    form.appendChild(inp);
   });
 }
+/* initial render */
+document.addEventListener('DOMContentLoaded', () => {
+  updateDisplay();
+  syncFromSelect();   // set initial hidden task value
+});
 </script>
-
 {% endblock %}
