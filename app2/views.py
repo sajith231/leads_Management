@@ -760,10 +760,10 @@ def category_detail(request, category_id):
 
 
 
-
 import requests
 from django.shortcuts import render
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from datetime import datetime
 
 def show_clients(request):
     api_url = "https://accmaster.imcbs.com/api/sync/rrc-clients/"
@@ -792,11 +792,57 @@ def show_clients(request):
     except Exception as e:
         error_message = f"Error fetching data: {str(e)}"
     
+    # Function to format installation date
+    def format_installation_date(date_str):
+        """Format installation date to DD-MM-YYYY format"""
+        if not date_str or date_str.strip() == '' or date_str.strip() == '-':
+            return '-'
+        
+        try:
+            # Try different date formats that might be in your data
+            date_formats = [
+                '%Y-%m-%d',        # 2023-12-01
+                '%d-%m-%Y',        # 01-12-2023
+                '%m/%d/%Y',        # 12/01/2023
+                '%d/%m/%Y',        # 01/12/2023
+                '%Y-%m-%d %H:%M:%S',  # 2023-12-01 10:30:00
+                '%d-%m-%Y %H:%M:%S',  # 01-12-2023 10:30:00
+            ]
+            
+            for fmt in date_formats:
+                try:
+                    parsed_date = datetime.strptime(str(date_str).strip(), fmt)
+                    return parsed_date.strftime('%d-%m-%Y')  # Format as DD-MM-YYYY
+                except ValueError:
+                    continue
+            
+            # If no format matches, try to extract just the date part
+            date_part = str(date_str).strip().split()[0]  # Get first part before space
+            for fmt in ['%Y-%m-%d', '%d-%m-%Y', '%m/%d/%Y', '%d/%m/%Y']:
+                try:
+                    parsed_date = datetime.strptime(date_part, fmt)
+                    return parsed_date.strftime('%d-%m-%Y')  # Format as DD-MM-YYYY
+                except ValueError:
+                    continue
+            
+            # If still no match, return original string
+            return str(date_str).strip()
+            
+        except Exception:
+            return str(date_str).strip()
+    
+    # Format installation dates for all clients
+    for client in clients:
+        if 'installationdate' in client:
+            client['formatted_installationdate'] = format_installation_date(client['installationdate'])
+    
     # Get unique values for filters
     unique_branches = sorted(set(client.get('branch', '') for client in clients if client.get('branch')))
     unique_software = sorted(set(client.get('software', '') for client in clients if client.get('software')))
     unique_natures = sorted(set(client.get('nature', '') for client in clients if client.get('nature')))
-    unique_amc_labels = sorted(set(client.get('amc_label', '') for client in clients if client.get('amc_label')))  # ✅ Added
+    unique_amc_labels = sorted(set(client.get('amc_label', '') for client in clients if client.get('amc_label')))
+    unique_sp = sorted(set(client.get('sp', '') for client in clients if client.get('sp')))
+    unique_lic_types = sorted(set(client.get('lictype_label', '') for client in clients if client.get('lictype_label')))
 
     # Apply filters
     filtered_clients = clients.copy()
@@ -825,6 +871,18 @@ def show_clients(request):
             c for c in filtered_clients
             if str(c.get('nature', '')).lower() == request.GET['nature'].lower()
         ]
+        
+    if request.GET.get('sp'):
+        filtered_clients = [
+            c for c in filtered_clients
+            if str(c.get('sp', '')).lower() == request.GET['sp'].lower()
+        ]
+        
+    if request.GET.get('lictype'):
+        filtered_clients = [
+            c for c in filtered_clients
+            if str(c.get('lictype_label', '')).lower() == request.GET['lictype'].lower()
+        ]
 
     # Search filter
     search_query = request.GET.get('search', '').strip()
@@ -842,7 +900,7 @@ def show_clients(request):
                 str(client.get('district', '')),
                 str(client.get('state', '')),
                 str(client.get('software', '')),
-                str(client.get('installationdate', '')),
+                str(client.get('formatted_installationdate', '')),  # Use formatted date for search
                 str(client.get('priorty', '')),
                 str(client.get('directdealing_label', '')),
                 str(client.get('rout', '')),
@@ -861,6 +919,47 @@ def show_clients(request):
                 temp_filtered.append(client)
         
         filtered_clients = temp_filtered
+
+    # Sort by installation date (oldest first)
+    def parse_date(date_str):
+        """Parse date string and return datetime object for sorting"""
+        if not date_str or date_str.strip() == '' or date_str.strip() == '-':
+            # Return a very old date for empty/null dates to put them at the end
+            return datetime(1900, 1, 1)
+        
+        try:
+            # Try different date formats that might be in your data
+            date_formats = [
+                '%Y-%m-%d',        # 2023-12-01
+                '%d-%m-%Y',        # 01-12-2023
+                '%m/%d/%Y',        # 12/01/2023
+                '%d/%m/%Y',        # 01/12/2023
+                '%Y-%m-%d %H:%M:%S',  # 2023-12-01 10:30:00
+                '%d-%m-%Y %H:%M:%S',  # 01-12-2023 10:30:00
+            ]
+            
+            for fmt in date_formats:
+                try:
+                    return datetime.strptime(str(date_str).strip(), fmt)
+                except ValueError:
+                    continue
+            
+            # If no format matches, try to extract just the date part
+            date_part = str(date_str).strip().split()[0]  # Get first part before space
+            for fmt in ['%Y-%m-%d', '%d-%m-%Y', '%m/%d/%Y', '%d/%m/%Y']:
+                try:
+                    return datetime.strptime(date_part, fmt)
+                except ValueError:
+                    continue
+            
+            # If still no match, return very old date
+            return datetime(1900, 1, 1)
+            
+        except Exception:
+            return datetime(1900, 1, 1)
+
+    # Sort filtered clients by installation date (oldest first)
+    filtered_clients.sort(key=lambda x: parse_date(x.get('installationdate', '')))
 
     # Pagination
     paginator = Paginator(filtered_clients, 15)
@@ -883,9 +982,10 @@ def show_clients(request):
         'unique_branches': unique_branches,
         'unique_software': unique_software,
         'unique_natures': unique_natures,
-        'unique_amc_labels': unique_amc_labels,  # ✅ Passed to template
+        'unique_amc_labels': unique_amc_labels,
+        'unique_sp': unique_sp,
+        'unique_lic_types': unique_lic_types,
     })
-
 
 
 

@@ -3,8 +3,6 @@
 
 {% block title %}Client List{% endblock %}
 
-
-
 <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
 <style>
     .filter-section {
@@ -348,7 +346,8 @@
                 <select name="direct_dealing" id="direct_dealing" class="form-select" onchange="this.form.submit()">
                     <option value="">All</option>
                     <option value="Yes" {% if request.GET.direct_dealing == 'Yes' %}selected{% endif %}>Yes</option>
-                    <option value="No" {% if request.GET.direct_dealing == 'No' %}selected{% endif %}>No</option>
+                    <option value="Dealing No" {% if request.GET.direct_dealing == 'Dealing No' %}selected{% endif %}>Dealing No</option>
+                    <option value="Self" {% if request.GET.direct_dealing == 'Self' %}selected{% endif %}>Self</option>
                 </select>
             </div>
 
@@ -363,7 +362,6 @@
                         </option>
                     {% endfor %}
                 </select>
-
             </div>
 
             <!-- Business Nature -->
@@ -373,6 +371,28 @@
                     <option value="">All</option>
                     {% for nature in unique_natures %}
                         <option value="{{ nature }}" {% if request.GET.nature == nature %}selected{% endif %}>{{ nature }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- SP -->
+            <div class="col-md-2">
+                <label for="sp" class="form-label">SP</label>
+                <select name="sp" id="sp" class="form-select" onchange="this.form.submit()">
+                    <option value="">All SP</option>
+                    {% for sp in unique_sp %}
+                        <option value="{{ sp }}" {% if request.GET.sp == sp %}selected{% endif %}>{{ sp }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- License Type -->
+            <div class="col-md-2">
+                <label for="lictype" class="form-label">License Type</label>
+                <select name="lictype" id="lictype" class="form-select" onchange="this.form.submit()">
+                    <option value="">All License Types</option>
+                    {% for lic_type in unique_lic_types %}
+                        <option value="{{ lic_type }}" {% if request.GET.lictype == lic_type %}selected{% endif %}>{{ lic_type }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -387,7 +407,6 @@
         </div>
     </form>
 </div>
-
 
                     
                     <!-- Search Bar -->
@@ -514,7 +533,7 @@
                                     <td>{{ client.state|trim|default:"-"|highlight_search:search_terms }}</td>
                                     <td>{{ client.software|default:"-"|highlight_search:search_terms }}</td>
                                     <td>{{ client.mobile|trim|default:"-"|highlight_search:search_terms }}</td>
-                                    <td>{{ client.installationdate|default:"-"|highlight_search:search_terms }}</td>
+                                    <td>{{ client.formatted_installationdate|default:"-"|highlight_search:search_terms }}</td>
                                     <td>
                                         <span class="badge badge-{% if client.priorty == 'High' %}danger{% elif client.priorty == 'Medium' %}warning{% else %}secondary{% endif %}">
                                             {{ client.priorty|default:"-"|highlight_search:search_terms }}
