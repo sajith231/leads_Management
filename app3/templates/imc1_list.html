@@ -1,23 +1,74 @@
 {% extends 'base.html' %}
 {% block title %}IMCB-LLP List{% endblock %}
 {% block content %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+
+<style>
+    .custom-tabs .nav-link.active {
+        background-color: #007bff;
+        color: white;
+        font-weight: 600;
+    }
+    .custom-tabs .nav-link {
+        color: #007bff;
+        border: 1px solid #007bff;
+        margin-left: 5px;
+        border-radius: 5px;
+        padding: 5px 15px;
+    }
+    .custom-tabs .nav-link:hover {
+        background-color: #0056b3;
+        color: white;
+    }
+</style>
 <div class="">
     <h2 class="mb-4">IMCB-LLP List</h2>
 
-    <!-- Search Form -->
+    <!-- 🔷 Tabs -->
+    <div class="d-flex justify-content-end mb-3">
+        <ul class="nav nav-tabs custom-tabs" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link {% if request.resolver_match.url_name == 'debtors1_list' %}active{% endif %}" href="{% url 'imc1_list' %}">
+                    <i class="fas fa-user-friends me-1"></i> Debtors
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.resolver_match.url_name == 'bank_cash_book' %}active{% endif %}" href="#">
+                    <i class="fas fa-university me-1"></i> Bank/Cash Book
+                </a>
+            </li>
+        </ul>
+    </div>
 
-    <form method="get" class="form-inline mb-3">
-        <div class="input-group">
-            <input type="text" name="q" class="form-control" placeholder="Search by Name,code,place,phone,Department..." value="{{ query }}">
-            <div class="input-group-append">
-                <button type="submit" class="btn btn-primary">Search</button>
-            </div>
+  <!-- Search Form -->
+<form method="get" class="form-inline mb-3 d-flex flex-wrap gap-2 align-items-center">
+    <div class="input-group">
+        <input type="text" name="q" class="form-control" placeholder="Search by Name, code, place, phone, Department..." value="{{ query }}">
+        <div class="input-group-append">
+            <button type="submit" class="btn btn-primary">Search</button>
         </div>
-        <div class="input-group ml-3" style="max-width: 200px;">
-            <input type="number" name="min_balance" class="form-control" placeholder="Min Balance" value="{{ min_balance }}">
-        </div>
-    </form>
-   <!-- Pagination -->
+    </div>
+
+    <div class="input-group ml-3" style="max-width: 200px;">
+        <input type="number" name="min_balance" class="form-control" placeholder="Min Balance" value="{{ min_balance }}">
+    </div>
+
+    <div class="input-group ml-2" style="max-width: 150px;">
+        <select name="department" class="form-select form-select-sm" onchange="this.form.submit()">
+            <option value="">All Dept</option>
+            {% for dept in department_list %}
+                <option value="{{ dept }}" {% if selected_department == dept %}selected{% endif %}>{{ dept }}</option>
+            {% endfor %}
+        </select>
+    </div>
+</form>
+
+
+    <button id="toggleColumnsBtn" class="btn btn-sm btn-outline-primary mb-3">
+        Show OB/Debit/Credit
+    </button>
+
+    <!-- Pagination -->
     <nav aria-label="Page navigation">
         <ul class="pagination">
             {% if page_obj.has_previous %}
@@ -39,71 +90,60 @@
             {% endif %}
         </ul>
     </nav>
-<!-- Show total summary on first page -->
+
+    <!-- Total Balance (on first page) -->
     {% if page_obj.number == 1 %}
     <div class="p-3 mb-3 rounded" style="background-color: #eaf4fc; border-left: 5px solid #007bff;">
-        <strong>Total Balance:</strong> <span style="color:#f41616;">₹{{ total_balance|floatformat:2 }}</span> &nbsp;&nbsp;
-        <strong>Total Debit:</strong> ₹{{ total_debit|floatformat:2 }} &nbsp;&nbsp;
-        <strong>Total Credit:</strong> ₹{{ total_credit|floatformat:2 }}
+        <strong>Total Balance:</strong> <span style="color:#f41616;">₹{{ total_balance|floatformat:2 }}</span>
     </div>
     {% endif %}
-<!-- Table -->
+
+    <!-- Data Table -->
     <div class="table-responsive">
-            <table class="table table-bordered table-striped main-table">
+        <table class="table table-bordered table-striped main-table">
             <thead class="thead-dark">
                 <tr>
                     <th class="text-center">S.No</th>
-                    <!-- <th class="text-center">ID</th> -->
                     <th class="text-center">Code</th>
                     <th class="text-center">Name</th>
                     <th class="text-center">View Ledger</th>
+                    <th class="text-center toggle-col d-none">OB</th>
+                    <th class="text-center toggle-col d-none">Debit</th>
+                    <th class="text-center toggle-col d-none">Credit</th>
                     <th class="text-center">Balance</th>
-                    <th class="text-center">OB</th>
-                    <th class="text-center">Debit</th>
-                    <th class="text-center">Credit</th>
                     <th class="text-center">Place</th>
                     <th class="text-center">Phone</th>
                     <th class="text-center">Department</th>
-                    <th class="text-center">Ledgers</th>
                 </tr>
             </thead>
             <tbody>
                 {% for item in page_obj %}
                 <tr>
-                    <td class="text-center">{{ forloop.counter0|add:page_obj.start_index }}</td>
-                    <!-- <td>{{ item.id }}</td> -->
+                    <td class="text-center">{{ forloop.counter|add:page_obj.start_index|add:"-1" }}</td>
                     <td>{{ item.code }}</td>
                     <td>{{ item.name|linebreaksbr }}</td>
                     <td class="text-center">
-    <button class="btn btn-sm btn-outline-dark ledger-link"
-            data-code="{{ item.code }}"
-            data-name="{{ item.name }}"
-            title="View Ledger">
-        <i class="fas fa-eye"></i>
-    </button>
-</td>
-
+                        <button class="btn btn-sm btn-outline-dark ledger-link" data-code="{{ item.code }}" data-name="{{ item.name }}" title="View Ledger" aria-label="View Ledger">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </td>
+                    <td class="text-end toggle-col d-none">{{ item.opening_balance|floatformat:2 }}</td>
+                    <td class="text-end toggle-col d-none">{{ item.debit|floatformat:2 }}</td>
+                    <td class="text-end toggle-col d-none">{{ item.credit|floatformat:2 }}</td>
                     <td class="text-end text-danger">{{ item.balance|floatformat:2 }}</td>
-                    <td class="text-end">{{ item.opening_balance|floatformat:2 }}</td>
-                    <td class="text-end">{{ item.debit|floatformat:2 }}</td>
-                    <td class="text-end">{{ item.credit|floatformat:2 }}</td>
                     <td>{{ item.place }}</td>
                     <td>{{ item.phone2 }}</td>
                     <td>{{ item.openingdepartment }}</td>
-                     <td class="text-center">
-                        <a href="#" class="btn btn-sm btn-outline-dark" title="View Ledger">
-                            <i class="fas fa-eye"></i>
-                        </a>
-                    </td>
                 </tr>
                 {% endfor %}
+
                 {% if page_obj.number == page_obj.paginator.num_pages %}
-                <tr class="table-info font-weight-bold">
-                    <td colspan="4" class="text-end">Total</td>
-                    <td class="text-end text-danger">{{ total_balance|floatformat:2 }}</td>
-                    <td></td>
-                    <td class="text-end">{{ total_debit|floatformat:2 }}</td>
-                    <td class="text-end">{{ total_credit|floatformat:2 }}</td>
+                <tr class="table-info fw-bold text-end">
+                    <td colspan="4" class="text-center">Grand Totals</td>
+                    <td class="text-end toggle-col d-none"></td>
+                    <td class="text-end toggle-col d-none">₹{{ total_debit|floatformat:2 }}</td>
+                    <td class="text-end toggle-col d-none">₹{{ total_credit|floatformat:2 }}</td>
+                    <td class="text-end text-danger">₹{{ total_balance|floatformat:2 }}</td>
                     <td colspan="3"></td>
                 </tr>
                 {% endif %}
@@ -111,19 +151,37 @@
         </table>
     </div>
 </div>
+
 <!-- Ledger Modal -->
 <div class="modal fade" id="ledgerModal" tabindex="-1">
-  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header bg-dark text-white">
-        <h5 class="modal-title">Ledger - <span id="ledgerClientName"></span></h5>
+        <h5 class="modal-title">LEDGER - <span id="ledgerClientName"></span></h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body" id="ledgerContent">Loading...</div>
     </div>
   </div>
 </div>
+
+<!-- JavaScript Section -->
 <script>
+// Toggle OB/Debit/Credit Columns
+document.addEventListener("DOMContentLoaded", function () {
+    const toggleBtn = document.getElementById("toggleColumnsBtn");
+    const toggleCols = document.querySelectorAll(".toggle-col");
+    toggleBtn.addEventListener("click", () => {
+        toggleCols.forEach(col => col.classList.toggle("d-none"));
+        toggleBtn.textContent = toggleCols[0].classList.contains("d-none")
+            ? "Show OB/Debit/Credit"
+            : "Hide OB/Debit/Credit";
+    });
+});
+</script>
+
+<script>
+// AJAX to fetch ledger data with totals
 document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('.ledger-link').forEach(btn => {
         btn.addEventListener('click', function (e) {
@@ -133,7 +191,6 @@ document.addEventListener('DOMContentLoaded', function () {
             const modal = new bootstrap.Modal(document.getElementById('ledgerModal'));
             const content = document.getElementById('ledgerContent');
             const clientName = document.getElementById('ledgerClientName');
-
             content.innerHTML = "Loading...";
             clientName.textContent = name;
 
@@ -143,16 +200,26 @@ document.addEventListener('DOMContentLoaded', function () {
                     if (!Array.isArray(data) || data.length === 0) {
                         content.innerHTML = "No ledger entries available.";
                     } else {
-                        const rows = data.map(entry => `
-                            <tr>
-                                <td>${entry.code}</td>
-                                <td>${entry.entry_date || ''}</td>
-                                <td>${entry.voucher_no || ''}</td>
-                                <td>${entry.particulars || ''}</td>
-                                <td>${entry.debit || ''}</td>
-                                <td>${entry.credit || ''}</td>
-                                <td>${entry.narration || ''}</td>
-                            </tr>`).join('');
+                        let totalDebit = 0;
+                        let totalCredit = 0;
+
+                        const rows = data.map(entry => {
+                            const debit = parseFloat(entry.debit || 0);
+                            const credit = parseFloat(entry.credit || 0);
+                            totalDebit += debit;
+                            totalCredit += credit;
+
+                            return `
+                                <tr>
+                                    <td>${entry.code}</td>
+                                    <td>${formatDate(entry.entry_date)}</td>
+                                    <td>${entry.voucher_no || ''}</td>
+                                    <td>${entry.particulars || ''}</td>
+                                    <td class="text-end">${debit.toFixed(2)}</td>
+                                    <td class="text-end">${credit.toFixed(2)}</td>
+                                    <td>${entry.narration || ''}</td>
+                                </tr>`;
+                        }).join('');
 
                         content.innerHTML = `
                             <table class="table table-bordered table-sm">
@@ -168,9 +235,16 @@ document.addEventListener('DOMContentLoaded', function () {
                                     </tr>
                                 </thead>
                                 <tbody>${rows}</tbody>
+                                <tfoot class="fw-bold bg-light">
+                                    <tr>
+                                        <td colspan="4" class="text-end">Total</td>
+                                        <td class="text-end text-dark">₹${totalDebit.toFixed(2)}</td>
+                                        <td class="text-end text-dark">₹${totalCredit.toFixed(2)}</td>
+                                        <td></td>
+                                    </tr>
+                                </tfoot>
                             </table>`;
                     }
-
                     modal.show();
                 })
                 .catch(err => {
@@ -178,11 +252,20 @@ document.addEventListener('DOMContentLoaded', function () {
                     content.innerHTML = "<div class='text-danger'>Error loading ledger.</div>";
                     modal.show();
                 });
+
+            function formatDate(dateStr) {
+                if (!dateStr) return '';
+                const date = new Date(dateStr);
+                if (isNaN(date)) return dateStr;
+                const day = String(date.getDate()).padStart(2, '0');
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const year = date.getFullYear();
+                return `${day}/${month}/${year}`;
+            }
         });
     });
 });
 </script>
-
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const query = "{{ query }}";
@@ -210,4 +293,5 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 });
 </script>
+
 {% endblock %}
