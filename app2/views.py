@@ -1507,21 +1507,21 @@ def add_assign_socialmedia_project(request):
     Uses existing tasks from dropdown selection only.
     """
     projects = SocialMediaProject.objects.all()
-    tasks    = Task.objects.all()
-    User     = apps.get_model('app1', 'User')
-    users    = User.objects.all()
+    tasks = Task.objects.all()
+    User = apps.get_model('app1', 'User')
+    users = User.objects.all()
 
     if request.method == 'POST':
-        project_id      = request.POST.get('project')
-        task_id         = request.POST.get('task')
+        project_id = request.POST.get('project')
+        task_id = request.POST.get('task')
         assigned_to_ids = request.POST.getlist('assigned_to')
-        deadline        = request.POST.get('deadline') or None
-        remark          = request.POST.get('remark', '').strip()
+        deadline = request.POST.get('deadline') or None  # ✅ FIXED
+        remark = request.POST.get('remark', '').strip()
 
         # --- basic validation ---
         try:
             project = get_object_or_404(SocialMediaProject, id=project_id)
-            task    = get_object_or_404(Task, id=int(task_id))
+            task = get_object_or_404(Task, id=int(task_id))
         except ValueError:
             return render(request, 'add_assign_socialmedia_project.html', {
                 'projects': projects,
@@ -1547,6 +1547,8 @@ def add_assign_socialmedia_project(request):
         'tasks': tasks,
         'users': users
     })
+
+
 @login_required
 def edit_assign_socialmedia_project(request, id):
     """
@@ -1554,22 +1556,22 @@ def edit_assign_socialmedia_project(request, id):
     Uses existing tasks from dropdown selection only.
     """
     assignment = get_object_or_404(SocialMediaProjectAssignment, id=id)
-    projects   = SocialMediaProject.objects.all()
-    tasks      = Task.objects.all()
-    User       = apps.get_model('app1', 'User')
-    users      = User.objects.all()
+    projects = SocialMediaProject.objects.all()
+    tasks = Task.objects.all()
+    User = apps.get_model('app1', 'User')
+    users = User.objects.all()
 
     if request.method == 'POST':
-        project_id      = request.POST.get('project')
-        task_id         = request.POST.get('task')
+        project_id = request.POST.get('project')
+        task_id = request.POST.get('task')
         assigned_to_ids = request.POST.getlist('assigned_to')
-        deadline        = request.POST.get('deadline') or None
-        remark          = request.POST.get('remark', '').strip()
+        deadline = request.POST.get('deadline') or None  # ✅ FIXED
+        remark = request.POST.get('remark', '').strip()
 
         # --- basic validation ---
         try:
             project = get_object_or_404(SocialMediaProject, id=project_id)
-            task    = get_object_or_404(Task, id=int(task_id))
+            task = get_object_or_404(Task, id=int(task_id))
         except ValueError:
             return render(request, 'edit_assign_socialmedia_project.html', {
                 'assignment': assignment,
@@ -1580,10 +1582,10 @@ def edit_assign_socialmedia_project(request, id):
             })
 
         # --- update ---
-        assignment.project  = project
-        assignment.task     = task
+        assignment.project = project
+        assignment.task = task
         assignment.deadline = deadline
-        assignment.remark   = remark
+        assignment.remark = remark
         assignment.assigned_to.set(User.objects.filter(id__in=assigned_to_ids))
         assignment.save()
 
@@ -1591,9 +1593,9 @@ def edit_assign_socialmedia_project(request, id):
 
     return render(request, 'edit_assign_socialmedia_project.html', {
         'assignment': assignment,
-        'projects'  : projects,
-        'tasks'     : tasks,
-        'users'     : users
+        'projects': projects,
+        'tasks': tasks,
+        'users': users
     })
 
 @login_required
