@@ -113,6 +113,14 @@ urlpatterns = [
     path('socialmedia/your-assignments/', views.user_socialmedia_project_assignments, name='user_socialmedia_project_assignments'),
     path('update-assignment-status/', views.update_assignment_status, name='update_assignment_status'),
 
+
+
+    path('feeder/',views.feeder,name='feeder'),
+    path('feeder/list/', views.feeder_list, name='feeder_list'),
+    path('feeder_edit/<int:feeder_id>/', views.feeder_edit, name='feeder_edit'),
+    path('feeder_delete/<int:feeder_id>/', views.feeder_delete, name='feeder_delete'),
+
+
     
 
     

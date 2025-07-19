@@ -1753,3 +1753,117 @@ def user_socialmedia_project_assignments(request):
         'total_assignments': len(processed_assignments),
     }
     return render(request, 'user_socialmedia_project_assignments.html', context)
+
+
+
+
+
+
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.core.paginator import Paginator
+from django.db.models import Q
+from .models import Feeder
+
+# ----------  ADD / CREATE  ----------
+def feeder(request):
+    if request.method == 'POST':
+        Feeder.objects.create(
+            name=request.POST.get('name'),
+            address=request.POST.get('address'),
+            location=request.POST.get('location'),
+            area=request.POST.get('area'),
+            district=request.POST.get('district'),
+            state=request.POST.get('state'),
+            contact_person=request.POST.get('contact_person'),
+            contact_number=request.POST.get('contact_number'),
+            email=request.POST.get('email'),
+            reputed_person_name=request.POST.get('reputed_person_name', ''),
+            reputed_person_number=request.POST.get('reputed_person_number', ''),
+            software=request.POST.get('software'),
+            nature=request.POST.get('nature'),
+            branch=request.POST.get('branch'),
+            no_of_system=request.POST.get('no_of_system'),
+            pincode=request.POST.get('pincode'),
+            country=request.POST.get('country', 'India'),
+            installation_date=request.POST.get('installation_date'),
+            remarks=request.POST.get('remarks', ''),
+            software_amount=request.POST.get('software_amount'),
+            module_charges=request.POST.get('module_charges'),
+            modules=', '.join(request.POST.getlist('modules')),
+            more_modules=', '.join(request.POST.getlist('more_modules'))
+        )
+        return redirect('feeder_list')
+    return render(request, 'add_feeder.html')
+
+# ----------  LIST  ----------
+def feeder_list(request):
+    query = request.GET.get('q', '')
+    feeders_list = Feeder.objects.all().order_by('-id')
+
+    if query:
+        feeders_list = feeders_list.filter(
+            Q(name__icontains=query) |
+            Q(software__icontains=query) |
+            Q(branch__icontains=query)
+        )
+
+    # prepare clean list for each feeder
+    for feeder in feeders_list:
+        feeder.more_modules_list = [m.strip() for m in (feeder.more_modules or '').split(',') if m.strip()]
+
+    paginator = Paginator(feeders_list, 10)
+    page_obj = paginator.get_page(request.GET.get('page'))
+
+    return render(request, 'feeder_list.html', {
+        'page_obj': page_obj,
+        'query': query
+    })
+
+# ----------  EDIT  ----------
+def feeder_edit(request, feeder_id):
+    feeder = get_object_or_404(Feeder, id=feeder_id)
+
+    # pre-split lists for template
+    selected_modules = [m.strip() for m in (feeder.modules or '').split(',') if m.strip()]
+    selected_more_modules = [m.strip() for m in (feeder.more_modules or '').split(',') if m.strip()]
+
+    if request.method == 'POST':
+        feeder.name = request.POST.get('name')
+        feeder.address = request.POST.get('address')
+        feeder.location = request.POST.get('location')
+        feeder.area = request.POST.get('area')
+        feeder.district = request.POST.get('district')
+        feeder.state = request.POST.get('state')
+        feeder.contact_person = request.POST.get('contact_person')
+        feeder.contact_number = request.POST.get('contact_number')
+        feeder.email = request.POST.get('email')
+        feeder.reputed_person_name = request.POST.get('reputed_person_name', '')
+        feeder.reputed_person_number = request.POST.get('reputed_person_number', '')
+        feeder.software = request.POST.get('software')
+        feeder.nature = request.POST.get('nature')
+        feeder.branch = request.POST.get('branch')
+        feeder.no_of_system = request.POST.get('no_of_system')
+        feeder.pincode = request.POST.get('pincode')
+        feeder.country = request.POST.get('country', 'India')
+        feeder.installation_date = request.POST.get('installation_date')
+        feeder.remarks = request.POST.get('remarks', '')
+        feeder.software_amount = request.POST.get('software_amount')
+        feeder.module_charges = request.POST.get('module_charges')
+        feeder.modules = ', '.join(request.POST.getlist('modules'))
+        feeder.more_modules = ', '.join(request.POST.getlist('more_modules'))
+        feeder.save()
+        return redirect('feeder_list')
+
+    return render(request, 'feeder_edit.html', {
+        'feeder': feeder,
+        'selected_modules': selected_modules,
+        'selected_more_modules': selected_more_modules
+    })
+
+# ----------  DELETE  ----------
+def feeder_delete(request, feeder_id):
+    feeder = get_object_or_404(Feeder, id=feeder_id)
+    if request.method == 'POST':
+        feeder.delete()
+    return redirect('feeder_list')

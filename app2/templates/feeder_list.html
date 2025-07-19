@@ -1,0 +1,350 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <style>
+    .module-badge {
+        display: block;
+        background: #e9ecef;
+        color: #495057;
+        padding: 2px 6px;
+        border-radius: 3px;
+        margin-bottom: 2px;
+        font-size: 11px;
+        white-space: nowrap;
+    }
+
+    .container {
+      background: #fff;
+      padding: 30px;
+      border-radius: 10px;
+      max-width: 1400px;
+      margin: auto;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .breadcrumb {
+      font-size: 14px;
+      color: #888;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 24px;
+      color: #333;
+    }
+
+    .add-btn {
+      background-color: #4d6bf9;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      text-decoration: none;
+      font-size: 14px;
+    }
+
+    .add-btn:hover {
+      background-color: #3d5af1;
+    }
+
+    .search-box {
+      margin-bottom: 20px;
+    }
+
+    .search-box input {
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      width: 100%;
+      max-width: 300px;
+      font-size: 14px;
+    }
+
+    .total-count {
+      color: #666;
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+
+    .table-container {
+      overflow-x: auto;
+      margin-top: 20px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 1200px;
+    }
+
+    th, td {
+      padding: 12px 8px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+      font-size: 14px;
+    }
+
+    th {
+      background-color: #f8f9fa;
+      font-weight: bold;
+      color: #333;
+      position: sticky;
+      top: 0;
+    }
+
+    tr:hover {
+      background-color: #f5f5f5;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 5px 10px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      text-decoration: none;
+    }
+
+    .btn-edit {
+      background-color: #17a2b8;
+      color: white;
+    }
+
+    .btn-delete {
+      background-color: #dc3545;
+      color: white;
+    }
+
+    .btn-view {
+      background-color: #28a745;
+      color: white;
+    }
+
+    .no-data {
+      text-align: center;
+      padding: 40px;
+      color: #888;
+    }
+
+    .status {
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    .status-active {
+      background-color: #d4edda;
+      color: #155724;
+    }
+
+    .modules-cell {
+      max-width: 200px;
+      overflow: hidden;
+    }
+
+    .pagination-wrapper {
+      display: flex;
+      justify-content: center;
+      margin-top: 30px;
+    }
+
+    .pagination {
+      display: flex;
+      list-style: none;
+      padding: 0;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .pagination li {
+      display: inline-block;
+    }
+
+    .pagination a, .pagination span {
+      display: block;
+      padding: 8px 14px;
+      text-decoration: none;
+      color: #333;
+      border-right: 1px solid #ccc;
+      font-size: 14px;
+      background: white;
+    }
+
+    .pagination li:last-child a, .pagination li:last-child span {
+      border-right: none;
+    }
+
+    .pagination .active span {
+      background-color: #4d6bf9;
+      color: white;
+      font-weight: bold;
+    }
+
+    .pagination a:hover {
+      background-color: #f0f0f0;
+    }
+
+    .pagination .disabled a {
+      pointer-events: none;
+      color: #ccc;
+      background-color: #f9f9f9;
+    }
+
+    @media (max-width: 768px) {
+      .header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .add-btn {
+        width: 100%;
+        text-align: center;
+      }
+
+      .search-box input {
+        width: 100%;
+      }
+
+      .actions {
+        flex-direction: column;
+        gap: 5px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      h2 {
+        font-size: 20px;
+      }
+
+      .btn {
+        font-size: 11px;
+        padding: 6px 8px;
+      }
+
+      .status {
+        font-size: 10px;
+      }
+    }
+  </style>
+
+  <div class="container-fluid">
+    <div class="header">
+      <div>
+        <div class="breadcrumb">Home / Feeder / List</div>
+        <h2>Feeder List</h2>
+      </div>
+      <a href="{% url 'feeder' %}" class="add-btn">+ Add New Feeder</a>
+    </div>
+
+    <form method="get" class="search-box">
+      <input type="text" name="q" placeholder="Search feeders..." value="{{ query }}">
+    </form>
+
+    <div class="total-count">
+      Total Records: {{ page_obj.paginator.count }}
+    </div>
+
+    <div class="table-container">
+      {% if page_obj %}
+      <table>
+        <thead>
+          <tr>
+            <th>S.No</th>
+            <th>Name</th>
+            <th>Software</th>
+            <th>Branch</th>
+            <th>Installation Date</th>
+            <th>Software Amount</th>
+            <th>Module Charges</th>
+            <th>More Modules</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for feeder in page_obj %}
+          <tr>
+            <td>{{ forloop.counter0|add:page_obj.start_index }}</td>
+            <td>{{ feeder.name }}</td>
+            <td>{{ feeder.software }}</td>
+            <td>{{ feeder.branch }}</td>
+            <td>{{ feeder.installation_date|date:"d-m-Y" }}</td>
+            <td>₹{{ feeder.software_amount }}</td>
+            <td>₹{{ feeder.module_charges }}</td>
+            <td class="modules-cell">
+              {% if feeder.more_modules_list %}
+                {% for m in feeder.more_modules_list %}
+                  <span class="module-badge">{{ m }}</span>
+                {% endfor %}
+              {% else %}
+                <span class="text-muted">None</span>
+              {% endif %}
+            </td>
+            <td class="">
+              <a href="{% url 'feeder_edit' feeder.id %}" class="btn btn-edit">Edit</a>
+              <form method="post" action="{% url 'feeder_delete' feeder.id %}" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this feeder?')">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-delete">Delete</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="no-data">
+        <p>No feeders found. <a href="{% url 'feeder' %}">Add your first feeder</a></p>
+      </div>
+      {% endif %}
+
+      <div class="pagination-wrapper">
+        <ul class="pagination">
+          {% if page_obj.has_previous %}
+            <li><a href="?page=1{% if query %}&q={{ query }}{% endif %}">&laquo;</a></li>
+            <li><a href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}">&lsaquo;</a></li>
+          {% else %}
+            <li class="disabled"><a>&laquo;</a></li>
+            <li class="disabled"><a>&lsaquo;</a></li>
+          {% endif %}
+
+          {% for num in page_obj.paginator.page_range %}
+            {% if num == page_obj.number %}
+              <li class="active"><span>{{ num }}</span></li>
+            {% elif num >= page_obj.number|add:'-2' and num <= page_obj.number|add:'2' %}
+              <li><a href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}">{{ num }}</a></li>
+            {% elif num == 1 or num == page_obj.paginator.num_pages %}
+              <li><a href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}">{{ num }}</a></li>
+            {% elif num == page_obj.number|add:'-3' or num == page_obj.number|add:'3' %}
+              <li><span>…</span></li>
+            {% endif %}
+          {% endfor %}
+
+          {% if page_obj.has_next %}
+            <li><a href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}">&rsaquo;</a></li>
+            <li><a href="?page={{ page_obj.paginator.num_pages }}{% if query %}&q={{ query }}{% endif %}">&raquo;</a></li>
+          {% else %}
+            <li class="disabled"><a>&rsaquo;</a></li>
+            <li class="disabled"><a>&raquo;</a></li>
+          {% endif %}
+        </ul>
+      </div>
+    </div>
+  </div>
+{% endblock %}

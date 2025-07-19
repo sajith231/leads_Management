@@ -260,3 +260,43 @@ class AssignmentStatusHistory(models.Model):
 
     class Meta:
         ordering = ['changed_at']
+
+
+
+
+
+
+from django.db import models
+from django.db import models
+
+class Feeder(models.Model):
+    name = models.CharField(max_length=200)
+    address = models.TextField()
+    location = models.CharField(max_length=200)
+    area = models.CharField(max_length=200)
+    district = models.CharField(max_length=100)
+    state = models.CharField(max_length=100)
+    contact_person = models.CharField(max_length=100)
+    contact_number = models.CharField(max_length=15)
+    email = models.EmailField()
+    reputed_person_name = models.CharField(max_length=100, blank=True)
+    reputed_person_number = models.CharField(max_length=15, blank=True)
+    
+    software = models.CharField(max_length=100)
+    nature = models.CharField(max_length=100)
+    branch = models.CharField(max_length=100)
+    no_of_system = models.IntegerField()
+    pincode = models.CharField(max_length=10)
+    country = models.CharField(max_length=100, default='India')
+    installation_date = models.DateField()
+    remarks = models.TextField(blank=True)
+    software_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    module_charges = models.DecimalField(max_digits=10, decimal_places=2)
+    more_modules = models.TextField(blank=True, null=True)
+
+    modules = models.TextField(blank=True)  # store module list as comma separated values
+
+    def _str_(self):
+        return self.name
+
+# Create your models here.
