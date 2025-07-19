@@ -1,6 +1,27 @@
 {% extends 'base.html' %}
 {% block title %}SYSMAC COMPUTERS-1{% endblock %}
 {% block content %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+
+<style>
+    .custom-tabs .nav-link.active {
+        background-color: #007bff;
+        color: white;
+        font-weight: 600;
+    }
+    .custom-tabs .nav-link {
+        color: #007bff;
+        border: 1px solid #007bff;
+        margin-left: 5px;
+        border-radius: 5px;
+        padding: 5px 15px;
+    }
+    .custom-tabs .nav-link:hover {
+        background-color: #0056b3;
+        color: white;
+    }
+</style>
+
 <div class="">
     <h2 class="mb-4">SYSMAC COMPUTERS-1</h2>
 
@@ -8,10 +29,26 @@
         <div class="alert alert-danger">{{ error_message }}</div>
     {% endif %}
 
-    <!-- Search Form -->
-    <form method="get" class="form-inline mb-3">
+    <!-- 🔷 Tabs -->
+    <div class="d-flex justify-content-end mb-3">
+        <ul class="nav nav-tabs custom-tabs" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link {% if request.resolver_match.url_name == 'debtors1_list' %}active{% endif %}" href="{% url 'debtors1_list' %}">
+                    <i class="fas fa-user-friends me-1"></i> Debtors
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.resolver_match.url_name == 'bank_cash_book' %}active{% endif %}" href="{% url 'bank_cash_book' %}">
+                    <i class="fas fa-university me-1"></i> Bank/Cash Book
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <!-- 🔍 Search Form -->
+    <form method="get" class="form-inline mb-3 d-flex flex-wrap gap-2 align-items-center">
         <div class="input-group">
-            <input type="text" name="q" class="form-control" placeholder="Search by Name,code,place,phone,Department..." value="{{ query }}">
+            <input type="text" name="q" class="form-control" placeholder="Search by Name, code, place, phone, Department..." value="{{ query }}">
             <div class="input-group-append">
                 <button type="submit" class="btn btn-primary">Search</button>
             </div>
@@ -19,17 +56,30 @@
         <div class="input-group ml-3" style="max-width: 200px;">
             <input type="number" name="min_balance" class="form-control" placeholder="Min Balance" value="{{ min_balance }}">
         </div>
+        <div class="input-group ml-2" style="max-width: 150px;">
+            <select name="department" class="form-control form-select form-select-sm" onchange="this.form.submit()">
+                <option value="">All Dept</option>
+                {% for dept in department_list %}
+                    <option value="{{ dept }}" {% if selected_department == dept %}selected{% endif %}>{{ dept }}</option>
+                {% endfor %}
+            </select>
+        </div>
     </form>
 
+    <!-- Toggle Column Button -->
+    <button id="toggleColumnsBtn" class="btn btn-sm btn-outline-primary mb-3">
+        Show OB/Debit/Credit
+    </button>
+
     <!-- Pagination -->
-    <nav aria-label="Page navigation example">
+    <nav>
         <ul class="pagination">
             {% if page_obj.has_previous %}
                 <li class="page-item">
-                    <a class="page-link" href="?page=1&q={{ query }}&min_balance={{ min_balance }}">First</a>
+                    <a class="page-link" href="?page=1&q={{ query }}&min_balance={{ min_balance }}&department={{ selected_department }}">First</a>
                 </li>
                 <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ query }}&min_balance={{ min_balance }}">Previous</a>
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ query }}&min_balance={{ min_balance }}&department={{ selected_department }}">Previous</a>
                 </li>
             {% endif %}
             <li class="page-item">
@@ -37,80 +87,73 @@
             </li>
             {% if page_obj.has_next %}
                 <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ query }}&min_balance={{ min_balance }}">Next</a>
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ query }}&min_balance={{ min_balance }}&department={{ selected_department }}">Next</a>
                 </li>
                 <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}&q={{ query }}&min_balance={{ min_balance }}">Last</a>
+                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}&q={{ query }}&min_balance={{ min_balance }}&department={{ selected_department }}">Last</a>
                 </li>
             {% endif %}
         </ul>
     </nav>
 
-    <!-- Show total summary on first page -->
+    <!-- Totals on Page 1 -->
     {% if page_obj.number == 1 %}
     <div class="p-3 mb-3 rounded" style="background-color: #eaf4fc; border-left: 5px solid #007bff;">
-        <strong>Total Balance:</strong> <span style="color:#f41616;">₹{{ total_balance|floatformat:2 }}</span> &nbsp;&nbsp;
-        <strong>Total Debit:</strong> ₹{{ total_debit|floatformat:2 }} &nbsp;&nbsp;
-        <strong>Total Credit:</strong> ₹{{ total_credit|floatformat:2 }}
+        <strong>Total Balance:</strong> <span style="color:#f41616;">₹{{ total_balance|floatformat:2 }}</span>
     </div>
     {% endif %}
 
     <!-- Table -->
     <div class="table-responsive">
-            <table class="table table-bordered table-striped main-table">
+        <table class="table table-bordered table-striped main-table">
             <thead class="thead-dark">
                 <tr>
                     <th class="text-center">S.No</th>
                     <th class="text-center">Code</th>
                     <th class="text-center">Name</th>
                     <th class="text-center">View Ledger</th>
+                    <th class="text-center toggle-col d-none">OB</th>
+                    <th class="text-center toggle-col d-none">Debit</th>
+                    <th class="text-center toggle-col d-none">Credit</th>
                     <th class="text-center">Balance</th>
-                    <th class="text-center">OB</th>
-                    <th class="text-center">Debit</th>
-                    <th class="text-center">Credit</th>
                     <th class="text-center">Place</th>
                     <th class="text-center">Phone</th>
                     <th class="text-center">Department</th>
                 </tr>
             </thead>
-          <tbody>
-    {% for item in page_obj %}
-    <tr>
-        <td class="text-center">{{ forloop.counter0|add:page_obj.start_index }}</td>
-        <td class="text-center">{{ item.code }}</td>
-        <td>{{ item.name|linebreaksbr }}</td>
-
-        <!-- ✅ New "View Ledger" column with eye icon -->
-        <td class="text-center">
-            <button class="btn btn-sm btn-outline-dark ledger-link" 
-                    data-code="{{ item.code }}" 
-                    data-name="{{ item.name }}" 
-                    title="View Ledger">
-                <i class="fas fa-eye"></i>
-            </button>
-        </td>
-
-        <td class="text-end" style="color: #f41616;">{{ item.balance|floatformat:2 }}</td>
-        <td class="text-end">{{ item.opening_balance|floatformat:2 }}</td>
-        <td class="text-end">{{ item.debit|floatformat:2 }}</td>
-        <td class="text-end">{{ item.credit|floatformat:2 }}</td>
-        <td>{{ item.place }}</td>
-        <td>{{ item.phone2 }}</td>
-        <td>{{ item.openingdepartment }}</td>
-    </tr>
-    {% empty %}
-    <tr><td colspan="12">No data available</td></tr>
-    {% endfor %}
-</tbody>
-
+            <tbody>
+                {% for item in page_obj %}
+                <tr>
+                    <td class="text-center">{{ forloop.counter0|add:page_obj.start_index }}</td>
+                    <td class="text-center">{{ item.code }}</td>
+                    <td>{{ item.name|linebreaksbr }}</td>
+                    <td class="text-center">
+                        <button class="btn btn-sm btn-outline-dark ledger-link" 
+                                data-code="{{ item.code }}" 
+                                data-name="{{ item.name }}">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </td>
+                    <td class="text-end toggle-col d-none">{{ item.opening_balance|floatformat:2 }}</td>
+                    <td class="text-end toggle-col d-none">{{ item.debit|floatformat:2 }}</td>
+                    <td class="text-end toggle-col d-none">{{ item.credit|floatformat:2 }}</td>
+                    <td class="text-end text-danger">{{ item.balance|floatformat:2 }}</td>
+                    <td>{{ item.place }}</td>
+                    <td>{{ item.phone2 }}</td>
+                    <td>{{ item.openingdepartment }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="12" class="text-center">No data available</td></tr>
+                {% endfor %}
+            </tbody>
             {% if page_obj.number == page_obj.paginator.num_pages %}
             <tfoot>
-                <tr class="table-info font-weight-bold text-end">
+                <tr class="table-info fw-bold text-end">
                     <td colspan="4" class="text-center">Grand Totals</td>
-                    <td style="color: #f41616;">₹{{ total_balance|floatformat:2 }}</td>
-                    <td></td>
-                    <td>₹{{ total_debit|floatformat:2 }}</td>
-                    <td>₹{{ total_credit|floatformat:2 }}</td>
+                    <td class="toggle-col d-none"></td>
+                    <td class="toggle-col d-none">₹{{ total_debit|floatformat:2 }}</td>
+                    <td class="toggle-col d-none">₹{{ total_credit|floatformat:2 }}</td>
+                    <td class="text-danger">₹{{ total_balance|floatformat:2 }}</td>
                     <td colspan="3"></td>
                 </tr>
             </tfoot>
@@ -119,115 +162,119 @@
     </div>
 </div>
 
-<!-- Error Alert for Debugging -->
-<div id="debugAlert" class="alert alert-warning" style="display: none;">
-    <h6>Debug Information:</h6>
-    <pre id="debugContent"></pre>
-</div>
-
-<!-- Simple Ledger Modal -->
+<!-- Ledger Modal -->
 <div class="modal fade" id="ledgerModal" tabindex="-1">
-  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header bg-dark text-white">
-        <h5 class="modal-title">Ledger</h5>
+        <h5 class="modal-title">LEDGER - <span id="ledgerClientName"></span></h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
       </div>
-      <div class="modal-body" id="ledgerContent">
-        Loading...
-      </div>
+      <div class="modal-body" id="ledgerContent">Loading...</div>
     </div>
   </div>
 </div>
 
+<!-- Scripts -->
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    const toggleBtn = document.getElementById('toggleColumnsBtn');
+    toggleBtn.addEventListener('click', () => {
+        document.querySelectorAll('.toggle-col').forEach(col => col.classList.toggle('d-none'));
+        toggleBtn.textContent = toggleBtn.textContent.includes('Show')
+            ? 'Hide OB/Debit/Credit'
+            : 'Show OB/Debit/Credit';
+    });
+
     document.querySelectorAll('.ledger-link').forEach(link => {
-        link.addEventListener('click', function (e) {
-            e.preventDefault();
+        link.addEventListener('click', function () {
             const code = this.dataset.code;
+            const name = this.dataset.name;
             const modal = new bootstrap.Modal(document.getElementById('ledgerModal'));
             const content = document.getElementById('ledgerContent');
+            document.getElementById('ledgerClientName').textContent = name;
             content.innerHTML = "Loading...";
 
-            fetch(`/app3/get_sysmac_ledger/?code=${code}`) 
-                .then(r => {
-                    if (!r.ok) throw new Error("Network response was not ok");
-                    return r.json();
-                })
+            fetch(`/app3/get_sysmac_ledger/?code=${code}`)
+                .then(r => r.json())
                 .then(data => {
                     if (!Array.isArray(data) || data.length === 0) {
-                        content.innerHTML = "No ledger entries available.";
-                    } else {
-                        const rows = data.map(entry => `
-                            <tr>
-                                <td>${entry.code}</td>
-                                <td>${entry.entry_date || ''}</td>
-                                <td>${entry.voucher_no || ''}</td>
-                                <td>${entry.particulars || ''}</td>
-                                <td>${entry.debit || ''}</td>
-                                <td>${entry.credit || ''}</td>
-                                <td>${entry.narration || ''}</td>
-                            </tr>`).join('');
-
-                        content.innerHTML = `
-                            <table class="table table-bordered table-sm">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>Code</th>
-                                        <th>Date</th>
-                                        <th>Voucher</th>
-                                        <th>Particulars</th>
-                                        <th>Debit</th>
-                                        <th>Credit</th>
-                                        <th>Narration</th>
-                                    </tr>
-                                </thead>
-                                <tbody>${rows}</tbody>
-                            </table>`;
+                        content.innerHTML = "<div class='text-dark'>No ledger entries available.</div>";
+                        modal.show();
+                        return;
                     }
 
+                    let totalDebit = 0, totalCredit = 0;
+                    const rows = data.map(entry => {
+                        const debit = parseFloat(entry.debit || 0);
+                        const credit = parseFloat(entry.credit || 0);
+                        totalDebit += debit;
+                        totalCredit += credit;
+                        return `
+                            <tr>
+                                <td>${entry.code}</td>
+                                <td>${formatDate(entry.entry_date)}</td>
+                                <td>${entry.voucher_no || ''}</td>
+                                <td>${entry.particulars || ''}</td>
+                                <td class="text-end">${debit.toFixed(2)}</td>
+                                <td class="text-end">${credit.toFixed(2)}</td>
+                                <td>${entry.narration || ''}</td>
+                            </tr>`;
+                    }).join('');
+
+                    content.innerHTML = `
+                        <table class="table table-bordered table-sm">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Code</th>
+                                    <th>Date</th>
+                                    <th>Voucher</th>
+                                    <th>Particulars</th>
+                                    <th>Debit</th>
+                                    <th>Credit</th>
+                                    <th>Narration</th>
+                                </tr>
+                            </thead>
+                            <tbody>${rows}</tbody>
+                            <tfoot class="table-light fw-bold">
+                                <tr>
+                                    <td colspan="4" class="text-end">Total</td>
+                                    <td class="text-end text-dark">₹${totalDebit.toFixed(2)}</td>
+                                    <td class="text-end text-dark">₹${totalCredit.toFixed(2)}</td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                        </table>`;
                     modal.show();
                 })
-                .catch(err => {
-                    console.error(err);
+                .catch(() => {
                     content.innerHTML = "<div class='text-danger'>Error loading ledger.</div>";
                     modal.show();
                 });
         });
     });
-});
-</script>
 
+    function formatDate(dateStr) {
+        if (!dateStr) return '';
+        const date = new Date(dateStr);
+        if (isNaN(date)) return dateStr;
+        return `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth()+1).padStart(2, '0')}/${date.getFullYear()}`;
+    }
 
-<!-- Highlight search matches -->
-<script>
-document.addEventListener('DOMContentLoaded', function () {
     const query = "{{ query }}";
     if (query) {
-        const searchTerms = query.toLowerCase().split(' ');
-
+        const terms = query.toLowerCase().split(' ');
         document.querySelectorAll('.main-table tbody tr').forEach(row => {
             row.querySelectorAll('td').forEach((cell, idx) => {
-                // Skip columns like eye icon button (column index 3 is "View Ledger")
                 if (idx === 3) return;
-
-                let text = cell.textContent;
-                let originalHTML = cell.innerHTML;
-
-                // Only apply mark if match is found in textContent
-                searchTerms.forEach(term => {
-                    const regex = new RegExp(`(${term})`, 'gi');
-                    if (regex.test(text)) {
-                        // Replace only text nodes inside the cell
-                        cell.innerHTML = originalHTML.replace(regex, '<mark class="search-highlight">$1</mark>');
-                    }
+                let html = cell.innerHTML;
+                terms.forEach(term => {
+                    html = html.replace(new RegExp(`(${term})`, 'gi'), '<mark>$1</mark>');
                 });
+                cell.innerHTML = html;
             });
         });
     }
 });
 </script>
-
-
 {% endblock %}

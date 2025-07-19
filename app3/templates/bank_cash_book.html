@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block title %}Bank/Cash Book{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <style>
+    .custom-tabs .nav-link.active {
+        background-color: #007bff;
+        color: white;
+        font-weight: 600;
+    }
+    .custom-tabs .nav-link {
+        color: #007bff;
+        border: 1px solid #007bff;
+        margin-left: 5px;
+        border-radius: 5px;
+        padding: 5px 15px;
+    }
+    .custom-tabs .nav-link:hover {
+        background-color: #0056b3;
+        color: white;
+    }
+</style>
+
+    <!-- Tab Navigation -->
+<div class="d-flex justify-content-end mb-3">
+    <ul class="nav nav-tabs custom-tabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <a class="nav-link {% if request.resolver_match.url_name == 'debtors1_list' %}active{% endif %}" href="{% url 'debtors1_list' %}">
+                <i class="fas fa-user-friends me-1"></i> Debtors
+            </a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link {% if request.resolver_match.url_name == 'bank_cash_book' %}active{% endif %}" href="{% url 'bank_cash_book' %}">
+                <i class="fas fa-university me-1"></i> Bank/Cash Book
+            </a>
+        </li>
+    </ul>
+</div>
+
+
+    <h1>Updating...</h1>
+
+</div>
+{% endblock %}

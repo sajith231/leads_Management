@@ -1162,6 +1162,11 @@ import requests
 import traceback
 import json
 
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
+from django.shortcuts import render
+import requests
+import traceback
+
 def debtors1_list(request):
     api_url = "https://accmaster.imcbs.com/api/sync/sysmac/"
     data = []
@@ -1169,30 +1174,18 @@ def debtors1_list(request):
 
     try:
         response = requests.get(api_url, timeout=30)
-        print("Status Code:", response.status_code)
-        print("Headers:", response.headers)
         response.raise_for_status()
+        json_data = response.json()
 
-        try:
-            json_data = response.json()
-            print("JSON Data Sample:", str(json_data)[:500])
+        if isinstance(json_data, dict):
+            data = json_data.get('data', [])
+        elif isinstance(json_data, list):
+            data = json_data
+        else:
+            error_message = "Unexpected JSON structure."
 
-            if isinstance(json_data, dict):
-                data = json_data.get('data', [])
-            elif isinstance(json_data, list):
-                data = json_data
-            else:
-                error_message = "Unexpected JSON structure."
-
-            for item in data:
-                item['name'] = item.get('name', '').strip()
-
-            print(f"Successfully fetched {len(data)} records")
-
-        except ValueError as e:
-            error_message = "Invalid JSON response"
-            print("JSON Decode Error:", e)
-            print("Raw Response:", response.text[:500])
+        for item in data:
+            item['name'] = item.get('name', '').strip()
 
     except requests.exceptions.Timeout:
         error_message = "API request timed out"
@@ -1204,10 +1197,18 @@ def debtors1_list(request):
         traceback.print_exc()
         error_message = f"Unexpected error: {str(e)}"
 
-    # Search logic
+    # Query parameters
     query = request.GET.get('q', '').strip()
+    min_balance = request.GET.get('min_balance', '1')
+    selected_department = request.GET.get('department', '')
+
+    # Original Count
     original_count = len(data)
 
+    # Department List (unique)
+    department_list = sorted(set(item.get('openingdepartment', '').strip() for item in data if item.get('openingdepartment')))
+
+    # Search filter
     if query:
         search_terms = query.lower().split()
         filtered_data = []
@@ -1228,10 +1229,12 @@ def debtors1_list(request):
             if all(term in combined_text for term in search_terms):
                 filtered_data.append(item)
         data = filtered_data
-        print(f"Search '{query}' matched {len(data)} out of {original_count} records")
 
-    # Filter by minimum balance
-    min_balance = request.GET.get('min_balance', '1')
+    # Department filter
+    if selected_department:
+        data = [item for item in data if item.get('openingdepartment', '') == selected_department]
+
+    # Minimum balance filter
     if min_balance:
         try:
             min_balance_value = float(min_balance)
@@ -1239,7 +1242,7 @@ def debtors1_list(request):
         except ValueError:
             pass
 
-    # Grand Totals
+    # Totals
     total_balance = sum(float(item.get('balance') or 0) for item in data)
     total_debit = sum(float(item.get('debit') or 0) for item in data)
     total_credit = sum(float(item.get('credit') or 0) for item in data)
@@ -1265,7 +1268,10 @@ def debtors1_list(request):
         'total_balance': total_balance,
         'total_debit': total_debit,
         'total_credit': total_credit,
+        'department_list': department_list,
+        'selected_department': selected_department,
     })
+
 
 from django.http import JsonResponse
 import requests
@@ -1299,7 +1305,8 @@ def get_sysmac_ledger(request):
         print("External API fetch failed:", e)
         return JsonResponse({'error': 'Failed to fetch ledger'}, status=500)
 
-
+def bank_cash_book(request):
+    return render(request, 'bank_cash_book.html')
 
 
 
@@ -1307,7 +1314,8 @@ import requests
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.shortcuts import render
 
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
+from django.shortcuts import render
 import requests
 
 def imc1_list(request):
@@ -1321,7 +1329,6 @@ def imc1_list(request):
         data = response.json()
         for item in data:
             item['name'] = item.get('name', '').strip()
-        print(f"Successfully fetched {len(data)} records")
     except requests.exceptions.Timeout:
         error_message = "API request timed out"
     except requests.exceptions.ConnectionError:
@@ -1332,12 +1339,15 @@ def imc1_list(request):
         error_message = f"Error fetching data: {str(e)}"
 
     query = request.GET.get('q', '').strip()
+    min_balance = request.GET.get('min_balance', '1')
+    selected_department = request.GET.get('department', '').strip()
+
     original_count = len(data)
 
+    # Filtering by search
     if query:
         search_terms = query.lower().split()
         filtered_data = []
-
         for item in data:
             searchable_fields = [
                 str(item.get('code', '')),
@@ -1353,11 +1363,9 @@ def imc1_list(request):
             combined_text = ' '.join(searchable_fields).lower()
             if all(term in combined_text for term in search_terms):
                 filtered_data.append(item)
-
         data = filtered_data
-        print(f"Search '{query}' matched {len(data)} out of {original_count} records")
 
-    min_balance = request.GET.get('min_balance', '1')
+    # Filtering by min balance
     if min_balance:
         try:
             min_balance_value = float(min_balance)
@@ -1365,8 +1373,15 @@ def imc1_list(request):
         except ValueError:
             pass
 
-    # Sort by name
+    # Filter by department
+    if selected_department:
+        data = [item for item in data if item.get('openingdepartment', '') == selected_department]
+
+    # Sort data
     data.sort(key=lambda x: x.get('name', '').lower())
+
+    # Distinct department list for dropdown
+    department_list = sorted(set(item.get('openingdepartment', '') for item in data if item.get('openingdepartment', '')))
 
     # Totals
     total_balance = sum(float(item.get('balance') or 0) for item in data)
@@ -1376,7 +1391,6 @@ def imc1_list(request):
     # Pagination
     paginator = Paginator(data, 15)
     page = request.GET.get('page')
-
     try:
         page_obj = paginator.page(page)
     except PageNotAnInteger:
@@ -1392,10 +1406,13 @@ def imc1_list(request):
         'query': query,
         'search_terms': query.lower().split() if query else [],
         'min_balance': min_balance,
+        'selected_department': selected_department,
+        'department_list': department_list,
         'total_balance': total_balance,
         'total_debit': total_debit,
         'total_credit': total_credit,
     })
+
 from django.http import JsonResponse
 import requests
 
@@ -1437,6 +1454,10 @@ from django.shortcuts import render
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 import requests
 
+from django.shortcuts import render
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
+import requests
+
 def imc2_list(request):
     api_url = "https://accmaster.imcbs.com/api/sync/imc2/"
     data = []
@@ -1458,14 +1479,18 @@ def imc2_list(request):
     except Exception as e:
         error_message = f"Error fetching data: {str(e)}"
 
-    # Search
     query = request.GET.get('q', '').strip()
+    min_balance = request.GET.get('min_balance', '1')
+    selected_department = request.GET.get('department', '')
+
     original_count = len(data)
 
+    department_list = sorted(set(item.get('openingdepartment', '').strip() for item in data if item.get('openingdepartment')))
+
+    # Search
     if query:
         search_terms = query.lower().split()
         filtered_data = []
-
         for item in data:
             searchable_fields = [
                 str(item.get('code', '')),
@@ -1479,15 +1504,16 @@ def imc2_list(request):
                 str(item.get('openingdepartment', '')),
             ]
             combined_text = ' '.join(searchable_fields).lower()
-
             if all(term in combined_text for term in search_terms):
                 filtered_data.append(item)
-
         data = filtered_data
         print(f"Search '{query}' matched {len(data)} out of {original_count} records")
 
-    # Min Balance Filter
-    min_balance = request.GET.get('min_balance', '1')
+    # Department filter
+    if selected_department:
+        data = [item for item in data if item.get('openingdepartment', '') == selected_department]
+
+    # Minimum balance filter
     if min_balance:
         try:
             min_balance_value = float(min_balance)
@@ -1495,7 +1521,7 @@ def imc2_list(request):
         except ValueError:
             pass
 
-    # Sort alphabetically
+    # Sort
     data.sort(key=lambda x: x.get('name', '').lower())
 
     # Totals
@@ -1503,7 +1529,6 @@ def imc2_list(request):
     total_debit = sum(float(item.get('debit') or 0) for item in data)
     total_credit = sum(float(item.get('credit') or 0) for item in data)
 
-    # Pagination
     paginator = Paginator(data, 15)
     page = request.GET.get('page')
 
@@ -1520,12 +1545,14 @@ def imc2_list(request):
         'total_records': original_count,
         'filtered_count': len(data),
         'query': query,
-        'search_terms': query.lower().split() if query else [],
         'min_balance': min_balance,
         'total_balance': total_balance,
         'total_debit': total_debit,
         'total_credit': total_credit,
+        'department_list': department_list,
+        'selected_department': selected_department,
     })
+
 def get_imc2_ledger(request):
     code = request.GET.get('code')
     if not code:
@@ -1559,7 +1586,8 @@ from django.shortcuts import render
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 import requests
 
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
+from django.shortcuts import render
 import requests
 
 def sysmac_info_list(request):
@@ -1573,7 +1601,6 @@ def sysmac_info_list(request):
         data = response.json()
         for item in data:
             item['name'] = item.get('name', '').strip()
-        print(f"Successfully fetched {len(data)} records")
     except requests.exceptions.Timeout:
         error_message = "API request timed out"
     except requests.exceptions.ConnectionError:
@@ -1583,14 +1610,20 @@ def sysmac_info_list(request):
     except Exception as e:
         error_message = f"Error fetching data: {str(e)}"
 
-    # Search logic
+    # Filters
     query = request.GET.get('q', '').strip()
+    min_balance = request.GET.get('min_balance', '1')
+    selected_department = request.GET.get('department', '')
+
     original_count = len(data)
 
+    # Get department list
+    department_list = sorted(set(item.get('openingdepartment', '').strip() for item in data if item.get('openingdepartment')))
+
+    # Search filter
     if query:
         search_terms = query.lower().split()
         filtered_data = []
-
         for item in data:
             searchable_fields = [
                 str(item.get('code', '')),
@@ -1604,31 +1637,30 @@ def sysmac_info_list(request):
                 str(item.get('openingdepartment', '')),
             ]
             combined_text = ' '.join(searchable_fields).lower()
-
             if all(term in combined_text for term in search_terms):
                 filtered_data.append(item)
-
         data = filtered_data
-        print(f"Search '{query}' matched {len(data)} out of {original_count} records")
 
-    # Filter by minimum balance value
-    min_balance = request.GET.get('min_balance', '1') 
+    # Department filter
+    if selected_department:
+        data = [item for item in data if item.get('openingdepartment', '') == selected_department]
+
+    # Minimum balance filter
     if min_balance:
         try:
             min_balance_value = float(min_balance)
             data = [item for item in data if float(item.get('balance') or 0) >= min_balance_value]
         except ValueError:
-            pass  # Ignore invalid inputs
-    data.sort(key=lambda x: x.get('name', '').lower())#sort the name in albhabetical order
+            pass
 
+    # Sort and Totals
+    data.sort(key=lambda x: x.get('name', '').lower())
     total_balance = sum(float(item.get('balance') or 0) for item in data)
     total_debit = sum(float(item.get('debit') or 0) for item in data)
     total_credit = sum(float(item.get('credit') or 0) for item in data)
 
-    # Pagination
     paginator = Paginator(data, 15)
     page = request.GET.get('page')
-
     try:
         page_obj = paginator.page(page)
     except PageNotAnInteger:
@@ -1642,12 +1674,14 @@ def sysmac_info_list(request):
         'total_records': original_count,
         'filtered_count': len(data),
         'query': query,
-        'search_terms': query.lower().split() if query else [],
         'min_balance': min_balance,
+        'selected_department': selected_department,
+        'department_list': department_list,
         'total_balance': total_balance,
         'total_debit': total_debit,
         'total_credit': total_credit,
     })
+
 def get_sysmac_info_ledger(request):
     code = request.GET.get('code')
     if not code:
@@ -1692,7 +1726,6 @@ def dq_list(request):
         data = response.json()
         for item in data:
             item['name'] = item.get('name', '').strip()
-        print(f"Successfully fetched {len(data)} records")
     except requests.exceptions.Timeout:
         error_message = "API request timed out"
     except requests.exceptions.ConnectionError:
@@ -1702,14 +1735,19 @@ def dq_list(request):
     except Exception as e:
         error_message = f"Error fetching data: {str(e)}"
 
-    # Search logic
     query = request.GET.get('q', '').strip()
+    min_balance = request.GET.get('min_balance', '1')
+    selected_department = request.GET.get('department', '')
+
     original_count = len(data)
 
+    # Get department list
+    department_list = sorted(set(item.get('openingdepartment', '').strip() for item in data if item.get('openingdepartment')))
+
+    # Search filter
     if query:
         search_terms = query.lower().split()
         filtered_data = []
-
         for item in data:
             searchable_fields = [
                 str(item.get('code', '')),
@@ -1723,31 +1761,30 @@ def dq_list(request):
                 str(item.get('openingdepartment', '')),
             ]
             combined_text = ' '.join(searchable_fields).lower()
-
             if all(term in combined_text for term in search_terms):
                 filtered_data.append(item)
-
         data = filtered_data
-        print(f"Search '{query}' matched {len(data)} out of {original_count} records")
 
-    # ✅ Filter by minimum balance value (instead of positive_only)
-    min_balance = request.GET.get('min_balance', '1') 
+    # Department filter
+    if selected_department:
+        data = [item for item in data if item.get('openingdepartment', '') == selected_department]
+
+    # Minimum balance filter
     if min_balance:
         try:
             min_balance_value = float(min_balance)
             data = [item for item in data if float(item.get('balance') or 0) >= min_balance_value]
         except ValueError:
-            pass  # Ignore invalid input
-    data.sort(key=lambda x: x.get('name', '').lower()) #sort the name in albhabetical order
+            pass
+
+    data.sort(key=lambda x: x.get('name', '').lower())
 
     total_balance = sum(float(item.get('balance') or 0) for item in data)
     total_debit = sum(float(item.get('debit') or 0) for item in data)
     total_credit = sum(float(item.get('credit') or 0) for item in data)
 
-    # Pagination
     paginator = Paginator(data, 15)
     page = request.GET.get('page')
-
     try:
         page_obj = paginator.page(page)
     except PageNotAnInteger:
@@ -1761,8 +1798,9 @@ def dq_list(request):
         'total_records': original_count,
         'filtered_count': len(data),
         'query': query,
-        'search_terms': query.lower().split() if query else [],
         'min_balance': min_balance,
+        'selected_department': selected_department,
+        'department_list': department_list,
         'total_balance': total_balance,
         'total_debit': total_debit,
         'total_credit': total_credit,

@@ -51,6 +51,7 @@ urlpatterns = [
 
     path('debtors1/', views.debtors1_list, name='debtors1_list'),
     path('get_sysmac_ledger/', views.get_sysmac_ledger, name='get_sysmac_ledger'),
+    path('bank-cash-book/', views.bank_cash_book, name='bank_cash_book'),
     path('imc1-list/', views.imc1_list, name='imc1_list'),
     path('get_imc1_ledger/', views.get_imc1_ledger, name='get_imc1_ledger'),
     path('imc2-list/', views.imc2_list, name='imc2_list'),
