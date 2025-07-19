@@ -386,4 +386,178 @@ class BreakStatusView(APIView):
     # http://localhost:8000/flutter/break-status/                   break-status
 
 
-    
+    # {
+    # "userid":"2",
+    # "password":"2"
+    # }
+
+
+
+
+
+
+
+import json
+import requests
+from datetime import datetime, timedelta
+from django.http import JsonResponse
+from django.utils import timezone
+from app1.models import LeaveRequest, Employee, Attendance, User
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+
+
+# ---------- CREATE ----------
+@csrf_exempt 
+def create_leave_request(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            userid   = data.get('userid')
+            password = data.get('password')
+            try:
+                user = User.objects.get(userid=userid, password=password)
+                employee = Employee.objects.get(user=user)
+            except (User.DoesNotExist, Employee.DoesNotExist):
+                return JsonResponse({'success': False, 'error': 'Invalid credentials'})
+
+            start_date = datetime.strptime(data['start_date'], '%Y-%m-%d').date()
+            end_date   = datetime.strptime(data['end_date'],   '%Y-%m-%d').date()
+
+            leave_request = LeaveRequest.objects.create(
+                employee   = employee,
+                start_date = start_date,
+                end_date   = end_date,
+                leave_type = data['leave_type'],
+                reason     = data['reason'],
+                status     = 'pending'
+            )
+
+            # Optional WhatsApp notification
+            phone_numbers = ["9946545535", "7593820007", "7593820005", "9846754998"]
+            msg = (f"New leave request from {employee.name}. "
+                   f"{start_date:%d-%m-%Y} → {end_date:%d-%m-%Y} "
+                   f"Type: {leave_request.get_leave_type_display()} "
+                   f"Reason: {data['reason']}")
+            for number in phone_numbers:
+                _send_whatsapp(number, msg)
+
+            return JsonResponse({'success': True, 'message': 'Leave request submitted'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    return JsonResponse({'success': False, 'error': 'Only POST allowed'})
+
+# ---------- LIST ----------
+def get_leave_requests(request):
+    from .serializers import LeaveRequestListQuerySerializer
+
+    serializer = LeaveRequestListQuerySerializer(data=request.GET)
+    if not serializer.is_valid():
+        return JsonResponse({'success': False, 'error': serializer.errors})
+
+    cleaned = serializer.validated_data
+    userid   = cleaned['userid']
+    password = cleaned['password']
+    status_filter = cleaned.get('status')
+
+    try:
+        user = User.objects.get(userid=userid, password=password)
+        employee = Employee.objects.get(user=user)
+    except (User.DoesNotExist, Employee.DoesNotExist):
+        return JsonResponse({'success': False, 'error': 'Invalid credentials'})
+
+    qs = LeaveRequest.objects.filter(employee=employee)
+    if status_filter:
+        qs = qs.filter(status=status_filter)
+    qs = qs.order_by('-created_at')
+
+    payload = [{
+        'id': lr.id,
+        'start_date': lr.start_date.strftime('%d-%m-%Y'),
+        'end_date':   lr.end_date.strftime('%d-%m-%Y'),
+        'leave_type': lr.get_leave_type_display(),
+        'reason':     lr.reason,
+        'status':     lr.status
+    } for lr in qs]
+    return JsonResponse({'leave_requests': payload})
+
+# ---------- DELETE ----------
+@csrf_exempt
+def delete_leave_request(request):
+    from .serializers import LeaveRequestDeleteSerializer
+
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            serializer = LeaveRequestDeleteSerializer(data=data)
+            if not serializer.is_valid():
+                return JsonResponse({'success': False, 'error': serializer.errors})
+
+            cleaned = serializer.validated_data
+            userid     = cleaned['userid']
+            password   = cleaned['password']
+            request_id = cleaned['request_id']
+
+            try:
+                user = User.objects.get(userid=userid, password=password)
+                employee = Employee.objects.get(user=user)
+            except (User.DoesNotExist, Employee.DoesNotExist):
+                return JsonResponse({'success': False, 'error': 'Invalid credentials'})
+
+            lr = LeaveRequest.objects.get(
+                id=request_id,
+                employee=employee,
+                status='pending'
+            )
+            lr.delete()
+            return JsonResponse({'success': True})
+        except LeaveRequest.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'Leave request not found or not in pending'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    return JsonResponse({'success': False, 'error': 'Only POST allowed'})
+
+# ---------- helper ----------
+def _send_whatsapp(phone, message):
+    secret  = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
+    account = "1748250982812b4ba287f5ee0bc9d43bbf5bbe87fb683431662a427"
+    url = (
+        f"https://app.dxing.in/api/send/whatsapp?secret={secret}&account={account}"
+        f"&recipient={phone}&type=text&message={message}&priority=1"
+    )
+    requests.get(url)
+
+
+
+
+
+
+
+# http://127.0.0.1:8000/flutter/leave/create/       POST CREATE LEAVE REQUEST
+
+
+
+# {
+#   "userid": "2",
+#   "password": "2",
+#   "start_date": "2025-07-20",
+#   "end_date": "2025-07-20",
+#   "leave_type": "full_day",
+#   "reason": "TEST TEST TEST TEST"
+# }
+
+
+
+
+# http://127.0.0.1:8000/flutter/leave/list/?userid=2&password=2         GET ALL LEAVE REQUEST
+
+
+#http://127.0.0.1:8000/flutter/leave/delete/                            POST DELETE LEAVE REQUEST
+
+
+# {
+#   "userid": "2",
+#   "password": "2",
+#   "request_id": 12
+# }
+

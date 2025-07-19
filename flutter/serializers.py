@@ -63,3 +63,22 @@ class BreakStatusSerializer(serializers.Serializer):
     punch_in = serializers.DateTimeField(allow_null=True)
     punch_out = serializers.DateTimeField(allow_null=True)
     is_active = serializers.BooleanField()
+
+
+
+# flutter/serializers.py
+
+from rest_framework import serializers
+
+class LeaveRequestListQuerySerializer(serializers.Serializer):
+    userid   = serializers.CharField()
+    password = serializers.CharField()
+    status   = serializers.ChoiceField(
+        choices=[('pending', 'Pending'), ('approved', 'Approved'), ('rejected', 'Rejected')],
+        required=False
+    )
+
+class LeaveRequestDeleteSerializer(serializers.Serializer):
+    userid     = serializers.CharField()
+    password   = serializers.CharField()
+    request_id = serializers.IntegerField()
