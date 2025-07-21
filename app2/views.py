@@ -1765,6 +1765,12 @@ from django.core.paginator import Paginator
 from django.db.models import Q
 from .models import Feeder
 
+from django.shortcuts import render, redirect, get_object_or_404
+from django.core.paginator import Paginator
+from django.db.models import Q
+from .models import Feeder
+from app1.models import BusinessType          # NEW
+
 # ----------  ADD / CREATE  ----------
 def feeder(request):
     if request.method == 'POST':
@@ -1781,7 +1787,7 @@ def feeder(request):
             reputed_person_name=request.POST.get('reputed_person_name', ''),
             reputed_person_number=request.POST.get('reputed_person_number', ''),
             software=request.POST.get('software'),
-            nature=request.POST.get('nature'),
+            nature=request.POST.get('nature'),          # <── now comes from dropdown
             branch=request.POST.get('branch'),
             no_of_system=request.POST.get('no_of_system'),
             pincode=request.POST.get('pincode'),
@@ -1794,7 +1800,13 @@ def feeder(request):
             more_modules=', '.join(request.POST.getlist('more_modules'))
         )
         return redirect('feeder_list')
-    return render(request, 'add_feeder.html')
+
+    business_types = BusinessType.objects.all()          # NEW
+    return render(request, 'add_feeder.html',
+                  {'business_types': business_types})    # NEW
+
+
+
 
 # ----------  LIST  ----------
 def feeder_list(request):
@@ -1824,7 +1836,6 @@ def feeder_list(request):
 def feeder_edit(request, feeder_id):
     feeder = get_object_or_404(Feeder, id=feeder_id)
 
-    # pre-split lists for template
     selected_modules = [m.strip() for m in (feeder.modules or '').split(',') if m.strip()]
     selected_more_modules = [m.strip() for m in (feeder.more_modules or '').split(',') if m.strip()]
 
@@ -1841,7 +1852,7 @@ def feeder_edit(request, feeder_id):
         feeder.reputed_person_name = request.POST.get('reputed_person_name', '')
         feeder.reputed_person_number = request.POST.get('reputed_person_number', '')
         feeder.software = request.POST.get('software')
-        feeder.nature = request.POST.get('nature')
+        feeder.nature = request.POST.get('nature')         # <── dropdown value
         feeder.branch = request.POST.get('branch')
         feeder.no_of_system = request.POST.get('no_of_system')
         feeder.pincode = request.POST.get('pincode')
@@ -1855,11 +1866,12 @@ def feeder_edit(request, feeder_id):
         feeder.save()
         return redirect('feeder_list')
 
-    return render(request, 'feeder_edit.html', {
-        'feeder': feeder,
-        'selected_modules': selected_modules,
-        'selected_more_modules': selected_more_modules
-    })
+    business_types = BusinessType.objects.all()          # NEW
+    return render(request, 'feeder_edit.html',
+                  {'feeder': feeder,
+                   'selected_modules': selected_modules,
+                   'selected_more_modules': selected_more_modules,
+                   'business_types': business_types})    # NEW
 
 # ----------  DELETE  ----------
 def feeder_delete(request, feeder_id):

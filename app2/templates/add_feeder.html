@@ -166,22 +166,11 @@
 
         <div class="form-group">
           <label>Nature</label>
-          <select name="nature">
-            <option value="">Select</option>
-            <option value="Retail">Retail</option>
-            <option value="Wholesale">Wholesale</option>
-            <option value="Automobiles">Automobiles</option>
-            <option value="Pharmacy">Pharmacy</option>
-            <option value="Textiles">Textiles</option>
-            <option value="Agencies">Agencies</option>
-            <option value="Hospitality">Hospitality</option>
-            <option value="Super Market">Super Market</option>
-            <option value="Hardware & Eelectricals">Hardware & Eelectricals</option>
-            <option value="Live stock">Live stock</option>
-            <option value="School">School</option>
-            <option value="Restaurants and Hotels">Restaurants and Hotels</option>
-           <option value="Stationery">Stationery</option>
-            
+          <select name="nature" required>
+            <option value="">Select Business Type</option>
+            {% for bt in business_types %}
+              <option value="{{ bt.name }}">{{ bt.name }}</option>
+            {% endfor %}
           </select>
         </div>
 

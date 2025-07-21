@@ -174,12 +174,15 @@
                 </div>
 
                 <div class="form-group">
-                    <label>Nature</label>
-                    <select name="nature">
-                        <option value="">Select</option>
-                        <option value="Retail" {% if feeder.nature == 'Retail' %}selected{% endif %}>Retail</option>
-                        <option value="Wholesale" {% if feeder.nature == 'Wholesale' %}selected{% endif %}>Wholesale</option>
-                    </select>
+                  <label>Nature</label>
+                  <select name="nature" required>
+                    <option value="">Select Business Type</option>
+                    {% for bt in business_types %}
+                      <option value="{{ bt.name }}" {% if feeder.nature == bt.name %}selected{% endif %}>
+                        {{ bt.name }}
+                      </option>
+                    {% endfor %}
+                  </select>
                 </div>
 
                 <div class="form-group">
