@@ -5026,6 +5026,17 @@ def configure_user_menu(request, user_id):
         {'id': 'user_socialmedia_project_assignments', 'name': 'Your Assignments', 'icon': 'fas fa-user-check'}
     ]
 },
+        {
+            'name': 'ACCOUNTS',
+            'icon': 'fas fa-money-bill-wave',
+            'submenus': [
+                {'id': 'debtors1_list',       'name': 'SYSMAC COMPUTERS-1', 'icon': 'fas fa-file-invoice-dollar'},
+                {'id': 'imc1_list',           'name': 'IMCB LLP',           'icon': 'fas fa-coins'},
+                {'id': 'imc2_list',           'name': 'IMC',                'icon': 'fas fa-hand-holding-usd'},
+                {'id': 'sysmac_info_list',    'name': 'SYSMAC-INFO',        'icon': 'fas fa-money-check'},
+                {'id': 'dq_list',             'name': 'DQ',                 'icon': 'fas fa-credit-card'},
+            ]
+        },
 
     ]
     
@@ -5215,6 +5226,17 @@ def default_menus(request):
         {'id': 'user_socialmedia_project_assignments', 'name': 'Your Assignments', 'icon': 'fas fa-user-check'}
     ]
 },
+        {
+            'name': 'ACCOUNTS',
+            'icon': 'fas fa-money-bill-wave',
+            'submenus': [
+                {'id': 'debtors1_list',       'name': 'SYSMAC COMPUTERS-1', 'icon': 'fas fa-file-invoice-dollar'},
+                {'id': 'imc1_list',           'name': 'IMCB LLP',           'icon': 'fas fa-coins'},
+                {'id': 'imc2_list',           'name': 'IMC',                'icon': 'fas fa-hand-holding-usd'},
+                {'id': 'sysmac_info_list',    'name': 'SYSMAC-INFO',        'icon': 'fas fa-money-check'},
+                {'id': 'dq_list',             'name': 'DQ',                 'icon': 'fas fa-credit-card'},
+            ]
+        },
     ]
     
     # Fetch current default menus from settings or database

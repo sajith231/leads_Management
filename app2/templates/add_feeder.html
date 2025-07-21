@@ -76,24 +76,111 @@
     }
 
     .module-section {
-      margin-top: 30px;
+      margin-top: 40px;
+      background: #f8f9fa;
+      padding: 25px;
+      border-radius: 12px;
+      border: 1px solid #e9ecef;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
     }
 
     .module-section h3 {
+      font-size: 22px;
+      margin-bottom: 25px;
+      color: #2c3e50;
+      text-align: center;
+      font-weight: 600;
+      border-bottom: 2px solid #4d6bf9;
+      padding-bottom: 10px;
+      display: inline-block;
+      width: 100%;
+    }
+
+    .module-category {
+      margin-bottom: 30px;
+      background: #ffffff;
+      border-radius: 10px;
+      padding: 20px;
+      border: 1px solid #dee2e6;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      transition: all 0.3s ease;
+    }
+
+    .module-category:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+    }
+
+    .module-category h4 {
+      font-size: 16px;
+      margin-bottom: 15px;
+      color: #495057;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-left: 4px solid #4d6bf9;
+      padding-left: 15px;
+    }
+
+    .module-category h4::before {
+      content: "📱";
       font-size: 18px;
-      margin-bottom: 10px;
+    }
+
+    .module-category:nth-child(3) h4::before {
+      content: "⚙️";
+    }
+
+    .module-category:nth-child(4) h4::before {
+      content: "🔧";
     }
 
     .module-grid {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 10px;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
     }
 
     .module-grid label {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 10px;
+      padding: 12px 15px;
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 14px;
+      font-weight: 500;
+      color: #495057;
+    }
+
+    .module-grid label:hover {
+      background: #e3f2fd;
+      border-color: #4d6bf9;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 6px rgba(77, 107, 249, 0.15);
+    }
+
+    .module-grid input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      margin: 0;
+      accent-color: #4d6bf9;
+      cursor: pointer;
+    }
+
+    .module-grid label:has(input:checked) {
+      background: linear-gradient(135deg, #4d6bf9, #667eea);
+      color: white;
+      border-color: #4d6bf9;
+      box-shadow: 0 3px 8px rgba(77, 107, 249, 0.3);
+    }
+
+    .module-grid label:has(input:checked) input[type="checkbox"] {
+      accent-color: white;
     }
 
     /* ✅ Responsive Design */
@@ -129,12 +216,35 @@
 
       .module-section h3 {
         text-align: center;
+        font-size: 20px;
+      }
+
+      .module-category h4 {
+        font-size: 15px;
+      }
+
+      .module-section {
+        padding: 20px 15px;
+      }
+
+      .module-category {
+        padding: 15px;
       }
     }
 
     @media (max-width: 480px) {
       .module-grid {
         grid-template-columns: 1fr;
+      }
+
+      .module-grid label {
+        padding: 10px 12px;
+        font-size: 13px;
+      }
+
+      .module-category h4 {
+        font-size: 14px;
+        padding-left: 12px;
       }
     }
   </style>
@@ -156,11 +266,24 @@
           <label>Software</label>
           <select name="software">
             <option value="">Select</option>
-            <option value="TASK BGR">Task BGR</option>
-            <option value="Task BGR4">Task BGR4</option>
-            <option value="Shade">Shade</option>
-            <option value="Dine">Dine</option>
-            <option value="Magnet">Magnet</option>
+            <option value="TASK BGR">BGR</option>
+            <option value="TASK BGR">BGR 4</option>
+            <option value="TASK BGR">B-CARE BGR</option>
+            <option value="TASK BGR">B-CARE BGR 4</option>
+            <option value="TASK BGR">AURIC</option>
+            <option value="TASK BGR">DINE</option>
+            <option value="TASK BGR">TASK-ER</option>
+            <option value="TASK BGR">FLAIMES</option>
+            <option value="TASK BGR">I-CARE BGR</option>
+            <option value="TASK BGR">I-CARE BGR 4</option>
+            <option value="TASK BGR">EASY LAB</option>
+            <option value="TASK BGR">MARUTI</option>
+            <option value="TASK BGR">MAGNET</option>
+            <option value="TASK BGR">SHADE</option>
+            <option value="TASK BGR">STAR STAY</option>
+            <option value="TASK BGR">VITAMINE</option>
+            <option value="TASK BGR">V-TASK</option>
+            
           </select>
         </div>
 
@@ -330,30 +453,43 @@
 
     
 
- <div class="module-section">
-  <h3>More Modules</h3>
-  <div class="module-grid">
-    <label><input type="checkbox" name="more_modules" value="MagicPDA Full(MST)"> MagicPDA Full(MST)</label>
-    <label><input type="checkbox" name="more_modules" value="Magic PDA"> Magic PDA</label>
-    <label><input type="checkbox" name="more_modules" value="E Invoice"> E Invoice</label>
-    <label><input type="checkbox" name="more_modules" value="TASKLite"> TASKLite</label>
-    <label><input type="checkbox" name="more_modules" value="iCare"> iCare</label>
-    <label><input type="checkbox" name="more_modules" value="bCare"> bCare</label>
-    <label><input type="checkbox" name="more_modules" value="DINE Reporter"> DINE Reporter</label>
-    <label><input type="checkbox" name="more_modules" value="E WI Json"> E WI Json</label>
-    <label><input type="checkbox" name="more_modules" value="Dine KOT"> Dine KOT</label>
-    <label><input type="checkbox" name="more_modules" value="EWAY Task"> EWAY Task</label>
-    <label><input type="checkbox" name="more_modules" value="Mpos"> Mpos</label>
-    <label><input type="checkbox" name="more_modules" value="T2C"> T2C</label>
-    <label><input type="checkbox" name="more_modules" value="E-Watch"> E-Watch</label>
-    <label><input type="checkbox" name="more_modules" value="MagNet Pay"> MagNet Pay</label>
-    <label><input type="checkbox" name="more_modules" value="TASK Pro"> TASK Pro</label>
-    <label><input type="checkbox" name="more_modules" value="HC"> HC</label>
-    <label><input type="checkbox" name="more_modules" value="Dental"> Dental</label>
-    <label><input type="checkbox" name="more_modules" value="TPOS"> TPOS</label>
-    <label><input type="checkbox" name="more_modules" value="New Module 1"> New Module 1</label>
-    <label><input type="checkbox" name="more_modules" value="New Module 2"> New Module 2</label>
-    <label><input type="checkbox" name="more_modules" value="New Module 3"> New Module 3</label>
+<div class="module-section">
+  <h3>Modules Selection</h3>
+
+  <!-- MOBILE APPS -->
+  <div class="module-category">
+    <h4>Mobile Apps</h4>
+    <div class="module-grid">
+      <label><input type="checkbox" name="more_modules" value="Dine KOT"> Dine KOT</label>
+      <label><input type="checkbox" name="more_modules" value="MagicPDA Full(MST)"> MagicPDA Full(MST)</label>
+      <label><input type="checkbox" name="more_modules" value="MagicPDA Super Scanner"> MagicPDA Super Scanner</label>
+      <label><input type="checkbox" name="more_modules" value="EWAY Task"> EWAY Task</label>
+      <label><input type="checkbox" name="more_modules" value="MagNet Pay"> MagNet Pay</label>
+      <label><input type="checkbox" name="more_modules" value="DINE Reporter"> DINE Reporter</label>
+      <label><input type="checkbox" name="more_modules" value="TASK Pro"> TASK Pro</label>
+    </div>
+  </div>
+
+  <!-- ADVANCED TASK -->
+  <div class="module-category">
+    <h4>Advanced Task</h4>
+    <div class="module-grid">
+      <label><input type="checkbox" name="more_modules" value="E Invoice"> E Invoice</label>
+      <label><input type="checkbox" name="more_modules" value="TPOS"> TPOS</label>
+      <label><input type="checkbox" name="more_modules" value="Mpos"> Mpos</label>
+      <label><input type="checkbox" name="more_modules" value="Hosted"> Hosted</label>
+      <label><input type="checkbox" name="more_modules" value="Hosted +"> Hosted +</label>
+    </div>
+  </div>
+
+  <!-- VERSION -->
+  <div class="module-category">
+    <h4>Version</h4>
+    <div class="module-grid">
+      <label><input type="checkbox" name="more_modules" value="B-care"> B-care</label>
+      <label><input type="checkbox" name="more_modules" value="I-care"> I-care</label>
+      <label><input type="checkbox" name="more_modules" value="Ultimate"> Ultimate</label>
+    </div>
   </div>
 </div>
 
