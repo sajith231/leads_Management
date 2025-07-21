@@ -24,7 +24,9 @@ class Credentials(models.Model):
 class CredentialDetail(models.Model):
     credential = models.ForeignKey(Credentials, on_delete=models.CASCADE, related_name='details')
     field = models.ForeignKey(Field, on_delete=models.CASCADE)
-    value = models.CharField(max_length=255)
+    # value = models.CharField(max_length=255)
+    value = models.TextField()
+
 
     def __str__(self):
         return f"{self.credential.name} - {self.field.name}"
