@@ -6193,27 +6193,59 @@ def my_assigned_service_logs(request):
 
 
 from django.utils import timezone
+# views.py
+import json
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+from django.utils import timezone
+from .models import ServiceLogComplaint
 
 @csrf_exempt
 @require_POST
 def update_complaint_status(request):
-    data = json.loads(request.body)
-    cid = data.get('complaint_log_id')
-    new_status = data.get('status')
+    """
+    Update the status of a ServiceLogComplaint.
+    Automatically sets started_time when status becomes 'In Progress'
+    and completed_time when status becomes 'Completed'.
+    """
+    try:
+        data = json.loads(request.body)
+        cid = data.get('complaint_log_id')
+        new_status = data.get('status')
 
-    c = ServiceLogComplaint.objects.get(id=cid)
+        if not cid or not new_status:
+            return JsonResponse({'success': False, 'error': 'Missing complaint_log_id or status'}, status=400)
 
-    # when moving to "In Progress"
-    if new_status == 'In Progress' and not c.started_time:
-        c.started_time = timezone.now()
+        try:
+            cid = int(cid)
+        except ValueError:
+            return JsonResponse({'success': False, 'error': 'complaint_log_id must be an integer'}, status=400)
 
-    # when moving to "Completed"
-    if new_status == 'Completed' and not c.completed_time:
-        c.completed_time = timezone.now()
+        try:
+            complaint_log = ServiceLogComplaint.objects.get(id=cid)
+        except ServiceLogComplaint.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'Complaint log not found'}, status=404)
 
-    c.status = new_status
-    c.save()
-    return JsonResponse({'success': True})
+        # Update timestamps
+        if new_status == 'In Progress' and not complaint_log.started_time:
+            complaint_log.started_time = timezone.now()
+        elif new_status == 'Completed' and not complaint_log.completed_time:
+            complaint_log.completed_time = timezone.now()
+
+        complaint_log.status = new_status
+        complaint_log.save()
+
+        return JsonResponse({
+            'success': True,
+            'started_time': complaint_log.started_time.isoformat() if complaint_log.started_time else None,
+            'completed_time': complaint_log.completed_time.isoformat() if complaint_log.completed_time else None,
+        })
+
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Invalid JSON'}, status=400)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
     
 @login_required
 def reassign_work(request, log_id):
