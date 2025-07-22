@@ -264,13 +264,16 @@ class AssignmentStatusHistory(models.Model):
 
 
 
-
-
-
-from django.db import models
 from django.db import models
 
 class Feeder(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('accepted', 'Accepted'),
+        ('rejected', 'Rejected'),
+        ('under_process', 'Under Process'),
+    ]
+    
     name = models.CharField(max_length=200)
     address = models.TextField()
     location = models.CharField(max_length=200)
@@ -284,8 +287,18 @@ class Feeder(models.Model):
     reputed_person_number = models.CharField(max_length=15, blank=True)
     
     software = models.CharField(max_length=100)
-    nature = models.CharField(max_length=100)
-    branch = models.CharField(max_length=100)
+    nature = models.ForeignKey(
+        'app1.BusinessType',     # points to app1.BusinessType
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
+    branch = models.ForeignKey(
+        'app1.Branch',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
     no_of_system = models.IntegerField()
     pincode = models.CharField(max_length=10)
     country = models.CharField(max_length=100, default='India')
@@ -296,8 +309,20 @@ class Feeder(models.Model):
     more_modules = models.TextField(blank=True, null=True)
 
     modules = models.TextField(blank=True)  # store module list as comma separated values
+    module_prices = models.JSONField(default=dict, blank=True)
+    
+    # New status field with default as 'pending'
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
 
-    def _str_(self):
+    def __str__(self):
         return self.name
 
-# Create your models here.
+    def get_status_display_class(self):
+        """Return CSS class for status display"""
+        status_classes = {
+            'pending': 'status-pending',
+            'accepted': 'status-accepted',
+            'rejected': 'status-rejected',
+            'under_process': 'status-under-process',
+        }
+        return status_classes.get(self.status, 'status-pending')

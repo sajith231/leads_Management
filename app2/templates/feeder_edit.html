@@ -1,356 +1,277 @@
+{% load app2_extras %}
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Feeder Form</title>
+  <title>Edit Feeder</title>
   <style>
-    * {
-      box-sizing: border-box;
-    }
-
-    body {
-      font-family: Arial, sans-serif;
-      background: #f8f9fa;
-      padding: 20px;
-      margin: 0;
-    }
-
-    .container {
-      background: #fff;
-      padding: 30px;
-      border-radius: 10px;
-      max-width: 1100px;
-      margin: auto;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    }
-
-    h2 {
-      margin-bottom: 20px;
-      font-size: 24px;
-    }
-
-    .form-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr); /* Changed from 3 to 2 columns */
-  gap: 20px;
-}
-
-
-    .form-group {
-      display: flex;
-      flex-direction: column;
-    }
-
-    .form-group label {
-      margin-bottom: 5px;
-      font-weight: bold;
-    }
-
-    .form-group input,
-    .form-group select,
-    .form-group textarea {
-      padding: 8px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      font-size: 14px;
-    }
-
-    .buttons {
-      margin-top: 30px;
-      text-align: right;
-    }
-
-    .buttons button {
-      padding: 10px 20px;
-      font-size: 14px;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-
-    .buttons .save {
-      background-color: #4d6bf9;
-      color: white;
-    }
-
-    .buttons .cancel {
-      background-color: #eee;
-      margin-right: 10px;
-    }
-
-    .breadcrumb {
-      text-align: right;
-      font-size: 14px;
-      color: #888;
-      margin-bottom: 10px;
-    }
-
-    .module-section {
-      margin-top: 30px;
-    }
-
-    .module-section h3 {
-      font-size: 18px;
-      margin-bottom: 10px;
-    }
-
-    .module-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 10px;
-    }
-
-    .module-grid label {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    /* ✅ Responsive Design */
-    @media (max-width: 768px) {
-      .form-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .module-grid {
-        grid-template-columns: repeat(2, 1fr);
-      }
-
-      .buttons {
-        text-align: center;
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-      }
-
-      .buttons button {
-        width: 100%;
-      }
-
-      .breadcrumb {
-        text-align: left;
-        font-size: 12px;
-      }
-
-      h2 {
-        font-size: 20px;
-        text-align: center;
-      }
-
-      .module-section h3 {
-        text-align: center;
-      }
-    }
-
-    @media (max-width: 480px) {
-      .module-grid {
-        grid-template-columns: 1fr;
-      }
-    }
+    *{box-sizing:border-box}
+    body{font-family:Arial,sans-serif;background:#f8f9fa;padding:20px;margin:0}
+    .container{background:#fff;padding:30px;border-radius:10px;max-width:1100px;margin:auto;box-shadow:0 0 10px rgba(0,0,0,.1)}
+    h2{margin-bottom:20px;font-size:24px}
+    .form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px}
+    .form-group{display:flex;flex-direction:column}
+    .form-group label{margin-bottom:5px;font-weight:bold}
+    .form-group input,.form-group select,.form-group textarea{padding:8px;border:1px solid #ccc;border-radius:6px;font-size:14px}
+    .module-section{margin-top:40px;background:#f8f9fa;padding:25px;border-radius:12px;border:1px solid #e9ecef}
+    .module-category{margin-bottom:30px;background:#ffffff;border-radius:10px;padding:20px;border:1px solid #dee2e6}
+    .module-category h4{margin-bottom:15px;font-weight:600}
+    .module-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:15px}
+    .module-item{display:flex;align-items:center;gap:10px}
+    .module-item input[type=checkbox]{width:18px;height:18px}
+    .price-input{width:120px;margin-left:8px}
+    .buttons{margin-top:30px;text-align:right}
+    .buttons button{padding:10px 20px;border:none;border-radius:6px;cursor:pointer}
+    .save{background:#4d6bf9;color:#fff}
+    .cancel{background:#eee;margin-right:10px}
   </style>
 </head>
-<body> 
-    <div class="container">
-        <h2>Edit Feeder</h2>
-        <form method="POST">
-            {% csrf_token %}
-            <div class="form-grid">
-                <div class="form-group">
-                    <label>Name</label>
-                    <input type="text" name="name" value="{{ feeder.name }}">
-                </div>
-
-                <div class="form-group">
-                    <label>Software</label>
-                    <select name="software">
-                        <option value="">Select</option>
-                        <option value="TaskBGR" {% if feeder.software == 'TaskBGR' %}selected{% endif %}>TaskBGR</option>
-                        <option value="Task" {% if feeder.software == 'Task' %}selected{% endif %}>Task</option>
-                        <option value="Shade" {% if feeder.software == 'Shade' %}selected{% endif %}>Shade</option>
-                        <option value="Dine" {% if feeder.software == 'Dine' %}selected{% endif %}>Dine</option>
-                        <option value="Magnet" {% if feeder.software == 'Magnet' %}selected{% endif %}>Magnet</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                  <label>Nature</label>
-                  <select name="nature" required>
-                    <option value="">Select Business Type</option>
-                    {% for bt in business_types %}
-                      <option value="{{ bt.name }}" {% if feeder.nature == bt.name %}selected{% endif %}>
-                        {{ bt.name }}
-                      </option>
-                    {% endfor %}
-                  </select>
-                </div>
-
-                <div class="form-group">
-                    <label>Address/Landmark</label>
-                    <textarea name="address">{{ feeder.address }}</textarea>
-                </div>
-
-                <div class="form-group">
-                    <label>Branch</label>
-                    <select name="branch">
-                        <option value="">Select</option>
-                        <option value="Main" {% if feeder.branch == 'Main' %}selected{% endif %}>Main</option>
-                        <option value="Sub" {% if feeder.branch == 'Sub' %}selected{% endif %}>Sub</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label>No. of System</label>
-                    <input type="number" name="no_of_system" value="{{ feeder.no_of_system }}">
-                </div>
-
-                <div class="form-group">
-                    <label>Location</label>
-                    <input type="text" name="location" value="{{ feeder.location }}">
-                </div>
-
-                <div class="form-group">
-                    <label>Pincode</label>
-                    <input type="text" name="pincode" value="{{ feeder.pincode }}">
-                </div>
-
-                <div class="form-group">
-                    <label>Area</label>
-                    <input type="text" name="area" value="{{ feeder.area }}">
-                </div>
-
-                <div class="form-group">
-                    <label>Country</label>
-                    <input type="text" name="country" value="{{ feeder.country }}">
-                </div>
-
-                <div class="form-group">
-                    <label>District</label>
-                    <select name="district">
-                        <option value="">Select</option>
-                        <option value="Wayanad">Wayanad</option>
-                        <option value="Thiruvanathapuram">Thiruvanathapuram</option>
-            <option value="Kollam ">Kollam </option>
-            <option value="Pathanamthitta">Pathanamthitta</option>
-            <option value="Alappuzha ">Alappuzha </option>
-            <option value="Kottayam">Kottayam</option>
-            <option value="Idukki">Idukki</option>
-            <option value="Ernakulam">Ernakulam</option>
-            <option value="Thrissur ">Thrissur </option>
-            <option value="Palakkad ">Palakkad </option>
-            <option value="Malappuram">Malappuram</option>
-            <option value="Kozhikode ">Kozhikode</option>
-            <option value="Kannur ">Kannur </option>
-            <option value="Kasaragod">Kasaragod</option>
-                        {% for district in districts %}
-                        <option value="{{ district }}" {% if feeder.district == district %}selected{% endif %}>{{ district }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
- 
-                <div class="form-group">
-                    <label>Installation Date</label>
-                    <input type="date" name="installation_date" value="{{ feeder.installation_date|date:'Y-m-d' }}">
-                </div>
-
-                <div class="form-group">
-                    <label>State</label>
-                    <select name="state">
-                        <option value="">Select</option>
-                        <option value="Tamil Nadu" {% if feeder.state == 'Tamil Nadu' %}selected{% endif %}>Tamil Nadu</option>
-                        <option value="Kerala" {% if feeder.state == 'Kerala' %}selected{% endif %}>Kerala</option>
-                        <option value="Karnataka" {% if feeder.state == 'Karnataka' %}selected{% endif %}>Karnataka</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label>Remarks</label>
-                    <input type="text" name="remarks" value="{{ feeder.remarks }}">
-                </div>
-
-                <div class="form-group">
-                    <label>Contact Person</label>
-                    <input type="text" name="contact_person" value="{{ feeder.contact_person }}">
-                </div>
-
-                <div class="form-group">
-                    <label>Software Amount</label>
-                    <input type="text" name="software_amount" value="{{ feeder.software_amount }}">
-                </div>
-
-                <div class="form-group">
-                    <label>Contact Number</label>
-                    <input type="text" name="contact_number" value="{{ feeder.contact_number }}">
-                </div>
-
-                <div class="form-group">
-                    <label>Module Charges</label>
-                    <input type="text" name="module_charges" value="{{ feeder.module_charges }}">
-                </div>
-
-                <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" name="email" value="{{ feeder.email }}">
-                </div>
-
-                <div class="form-group">
-                    <label>Reputed Person Name</label>
-                    <input type="text" name="reputed_person_name" value="{{ feeder.reputed_person_name }}">
-                </div>
-
-                <div class="form-group">
-                    <label>Reputed Person Number</label>
-                    <input type="text" name="reputed_person_number" value="{{ feeder.reputed_person_number }}">
-                </div>
-            </div>
-
-           <div class="module-section">
-  <h3>Modules</h3>
-
-  <!-- MOBILE APPS -->
-  <h4>Mobile Apps</h4>
-  <div class="module-grid">
-    {% for item in "Dine KOT,MagicPDA Full(MST),MagicPDA Super Scanner,EWAY Task,MagNet Pay,DINE Reporter,TASK Pro"|split:"," %}
-      <label>
-        <input type="checkbox" name="more_modules" value="{{ item|trim }}"
-               {% if item|trim in selected_more_modules %}checked{% endif %}>
-        {{ item|trim }}
-      </label>
-    {% endfor %}
-  </div>
-
-  <!-- ADVANCED TASK -->
-  <h4 style="margin-top:20px;">Advanced Task</h4>
-  <div class="module-grid">
-    {% for item in "E Invoice,TPOS,Mpos,Hosted,Hosted +"|split:"," %}
-      <label>
-        <input type="checkbox" name="more_modules" value="{{ item|trim }}"
-               {% if item|trim in selected_more_modules %}checked{% endif %}>
-        {{ item|trim }}
-      </label>
-    {% endfor %}
-  </div>
-
-  <!-- VERSION -->
-  <h4 style="margin-top:20px;">Version</h4>
-  <div class="module-grid">
-    {% for item in "B-care,I-care,Ultimate"|split:"," %}
-      <label>
-        <input type="checkbox" name="more_modules" value="{{ item|trim }}"
-               {% if item|trim in selected_more_modules %}checked{% endif %}>
-        {{ item|trim }}
-      </label>
-    {% endfor %}
-  </div>
-</div>
-
-
-
-            <div class="buttons">
-                <button type="button" class="cancel">Cancel</button>
-                <button type="submit" class="save">Update</button>
-            </div>
-        </form>
+<body>
+<div class="container">
+  <div style="text-align:right;font-size:14px;color:#888;margin-bottom:10px">Home / Feeder / Edit</div>
+  <h2>Edit Feeder</h2>
+  
+  <form method="POST">
+    {% csrf_token %}
+    <div class="form-grid">
+      <!-- Basic form fields -->
+      <div class="form-group">
+        <label>Name</label>
+        <input type="text" name="name" value="{{ feeder.name }}">
+      </div>
+      
+      <div class="form-group">
+        <label>Software</label>
+        <select name="software">
+          <option value="">Select</option>
+          <option value="TASK BGR" {% if feeder.software == 'TASK BGR' %}selected{% endif %}>BGR</option>
+          <option value="BGR 4" {% if feeder.software == 'BGR 4' %}selected{% endif %}>BGR 4</option>
+          <option value="B-CARE BGR" {% if feeder.software == 'B-CARE BGR' %}selected{% endif %}>B-CARE BGR</option>
+          <option value="B-CARE BGR 4" {% if feeder.software == 'B-CARE BGR 4' %}selected{% endif %}>B-CARE BGR 4</option>
+          <option value="AURIC" {% if feeder.software == 'AURIC' %}selected{% endif %}>AURIC</option>
+          <option value="DINE" {% if feeder.software == 'DINE' %}selected{% endif %}>DINE</option>
+          <option value="TASK-ER" {% if feeder.software == 'TASK-ER' %}selected{% endif %}>TASK-ER</option>
+          <option value="FLAIMES" {% if feeder.software == 'FLAIMES' %}selected{% endif %}>FLAIMES</option>
+          <option value="I-CARE BGR" {% if feeder.software == 'I-CARE BGR' %}selected{% endif %}>I-CARE BGR</option>
+          <option value="I-CARE BGR 4" {% if feeder.software == 'I-CARE BGR 4' %}selected{% endif %}>I-CARE BGR 4</option>
+          <option value="EASY LAB" {% if feeder.software == 'EASY LAB' %}selected{% endif %}>EASY LAB</option>
+          <option value="MARUTI" {% if feeder.software == 'MARUTI' %}selected{% endif %}>MARUTI</option>
+          <option value="MAGNET" {% if feeder.software == 'MAGNET' %}selected{% endif %}>MAGNET</option>
+          <option value="SHADE" {% if feeder.software == 'SHADE' %}selected{% endif %}>SHADE</option>
+          <option value="STAR STAY" {% if feeder.software == 'STAR STAY' %}selected{% endif %}>STAR STAY</option>
+          <option value="VITAMINE" {% if feeder.software == 'VITAMINE' %}selected{% endif %}>VITAMINE</option>
+          <option value="V-TASK" {% if feeder.software == 'V-TASK' %}selected{% endif %}>V-TASK</option>
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label>Nature</label>
+        <select name="nature" required>
+            <option value="" disabled>Select Business Type</option>
+            {% for bt in business_types %}
+                <option value="{{ bt.id }}"
+                        {% if feeder.nature_id == bt.id %}selected{% endif %}>
+                    {{ bt.name }}
+                </option>
+            {% endfor %}
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label>Address/Landmark</label>
+        <textarea name="address">{{ feeder.address }}</textarea>
+      </div>
+      
+      <div class="form-group">
+        <label>Branch</label>
+        <input type="text" name="branch" value="{{ feeder.branch }}" placeholder="Enter branch name">
+      </div>
+      
+      <div class="form-group">
+        <label>No. of System</label>
+        <input type="number" name="no_of_system" value="{{ feeder.no_of_system }}">
+      </div>
+      
+      <div class="form-group">
+        <label>Location</label>
+        <input type="text" name="location" value="{{ feeder.location }}">
+      </div>
+      
+      <div class="form-group">
+        <label>Pincode</label>
+        <input type="text" name="pincode" value="{{ feeder.pincode }}">
+      </div>
+      
+      <div class="form-group">
+        <label>Area</label>
+        <input type="text" name="area" value="{{ feeder.area }}">
+      </div>
+      
+      <div class="form-group">
+        <label>Country</label>
+        <input type="text" name="country" value="{{ feeder.country|default:'India' }}">
+      </div>
+      
+      <div class="form-group">
+        <label>District</label>
+        <select name="district" class="form-control">
+            <option value="">-- Select District --</option>
+            <option value="Thiruvananthapuram" {% if feeder.district == 'Thiruvananthapuram' %}selected{% endif %}>Thiruvananthapuram</option>
+            <option value="Kollam" {% if feeder.district == 'Kollam' %}selected{% endif %}>Kollam</option>
+            <option value="Pathanamthitta" {% if feeder.district == 'Pathanamthitta' %}selected{% endif %}>Pathanamthitta</option>
+            <option value="Alappuzha" {% if feeder.district == 'Alappuzha' %}selected{% endif %}>Alappuzha</option>
+            <option value="Kottayam" {% if feeder.district == 'Kottayam' %}selected{% endif %}>Kottayam</option>
+            <option value="Idukki" {% if feeder.district == 'Idukki' %}selected{% endif %}>Idukki</option>
+            <option value="Ernakulam" {% if feeder.district == 'Ernakulam' %}selected{% endif %}>Ernakulam</option>
+            <option value="Thrissur" {% if feeder.district == 'Thrissur' %}selected{% endif %}>Thrissur</option>
+            <option value="Palakkad" {% if feeder.district == 'Palakkad' %}selected{% endif %}>Palakkad</option>
+            <option value="Malappuram" {% if feeder.district == 'Malappuram' %}selected{% endif %}>Malappuram</option>
+            <option value="Kozhikode" {% if feeder.district == 'Kozhikode' %}selected{% endif %}>Kozhikode</option>
+            <option value="Wayanad" {% if feeder.district == 'Wayanad' %}selected{% endif %}>Wayanad</option>
+            <option value="Kannur" {% if feeder.district == 'Kannur' %}selected{% endif %}>Kannur</option>
+            <option value="Kasaragod" {% if feeder.district == 'Kasaragod' %}selected{% endif %}>Kasaragod</option>
+            <option value="Other" {% if feeder.district == 'Other' %}selected{% endif %}>Other</option>
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label>Installation Date</label>
+        <input type="date" name="installation_date" value="{{ feeder.installation_date|date:'Y-m-d' }}">
+      </div>
+      
+      <div class="form-group">
+        <label>State</label>
+        <select name="state" class="form-control">
+            <option value="">-- Select State --</option>
+            <option value="Andhra Pradesh" {% if feeder.state == 'Andhra Pradesh' %}selected{% endif %}>Andhra Pradesh</option>
+            <option value="Arunachal Pradesh" {% if feeder.state == 'Arunachal Pradesh' %}selected{% endif %}>Arunachal Pradesh</option>
+            <option value="Assam" {% if feeder.state == 'Assam' %}selected{% endif %}>Assam</option>
+            <option value="Bihar" {% if feeder.state == 'Bihar' %}selected{% endif %}>Bihar</option>
+            <option value="Chhattisgarh" {% if feeder.state == 'Chhattisgarh' %}selected{% endif %}>Chhattisgarh</option>
+            <option value="Goa" {% if feeder.state == 'Goa' %}selected{% endif %}>Goa</option>
+            <option value="Gujarat" {% if feeder.state == 'Gujarat' %}selected{% endif %}>Gujarat</option>
+            <option value="Haryana" {% if feeder.state == 'Haryana' %}selected{% endif %}>Haryana</option>
+            <option value="Himachal Pradesh" {% if feeder.state == 'Himachal Pradesh' %}selected{% endif %}>Himachal Pradesh</option>
+            <option value="Jharkhand" {% if feeder.state == 'Jharkhand' %}selected{% endif %}>Jharkhand</option>
+            <option value="Karnataka" {% if feeder.state == 'Karnataka' %}selected{% endif %}>Karnataka</option>
+            <option value="Kerala" {% if feeder.state == 'Kerala' %}selected{% endif %}>Kerala</option>
+            <option value="Madhya Pradesh" {% if feeder.state == 'Madhya Pradesh' %}selected{% endif %}>Madhya Pradesh</option>
+            <option value="Maharashtra" {% if feeder.state == 'Maharashtra' %}selected{% endif %}>Maharashtra</option>
+            <option value="Manipur" {% if feeder.state == 'Manipur' %}selected{% endif %}>Manipur</option>
+            <option value="Meghalaya" {% if feeder.state == 'Meghalaya' %}selected{% endif %}>Meghalaya</option>
+            <option value="Mizoram" {% if feeder.state == 'Mizoram' %}selected{% endif %}>Mizoram</option>
+            <option value="Nagaland" {% if feeder.state == 'Nagaland' %}selected{% endif %}>Nagaland</option>
+            <option value="Odisha" {% if feeder.state == 'Odisha' %}selected{% endif %}>Odisha</option>
+            <option value="Punjab" {% if feeder.state == 'Punjab' %}selected{% endif %}>Punjab</option>
+            <option value="Rajasthan" {% if feeder.state == 'Rajasthan' %}selected{% endif %}>Rajasthan</option>
+            <option value="Sikkim" {% if feeder.state == 'Sikkim' %}selected{% endif %}>Sikkim</option>
+            <option value="Tamil Nadu" {% if feeder.state == 'Tamil Nadu' %}selected{% endif %}>Tamil Nadu</option>
+            <option value="Telangana" {% if feeder.state == 'Telangana' %}selected{% endif %}>Telangana</option>
+            <option value="Tripura" {% if feeder.state == 'Tripura' %}selected{% endif %}>Tripura</option>
+            <option value="Uttar Pradesh" {% if feeder.state == 'Uttar Pradesh' %}selected{% endif %}>Uttar Pradesh</option>
+            <option value="Uttarakhand" {% if feeder.state == 'Uttarakhand' %}selected{% endif %}>Uttarakhand</option>
+            <option value="West Bengal" {% if feeder.state == 'West Bengal' %}selected{% endif %}>West Bengal</option>
+            <option value="Other" {% if feeder.state == 'Other' %}selected{% endif %}>Other</option>
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label>Remarks</label>
+        <input type="text" name="remarks" value="{{ feeder.remarks }}">
+      </div>
+      
+      <div class="form-group">
+        <label>Contact Person</label>
+        <input type="text" name="contact_person" value="{{ feeder.contact_person }}">
+      </div>
+      
+      <div class="form-group">
+        <label>Software Amount</label>
+        <input type="text" name="software_amount" value="{{ feeder.software_amount }}">
+      </div>
+      
+      <div class="form-group">
+        <label>Contact Number</label>
+        <input type="text" name="contact_number" value="{{ feeder.contact_number }}">
+      </div>
+      
+      <div class="form-group">
+        <label>Module Charges</label>
+        <input type="text" name="module_charges" value="{{ feeder.module_charges }}">
+      </div>
+      
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" name="email" value="{{ feeder.email }}">
+      </div>
+      
+      <div class="form-group">
+        <label>Reputed Person Name</label>
+        <input type="text" name="reputed_person_name" value="{{ feeder.reputed_person_name }}">
+      </div>
+      
+      <div class="form-group">
+        <label>Reputed Person Number</label>
+        <input type="text" name="reputed_person_number" value="{{ feeder.reputed_person_number }}">
+      </div>
     </div>
+
+    <!-- modules with price -->
+    <div class="module-section">
+      <h3>Modules Selection</h3>
+
+      <!-- MOBILE APPS -->
+      <div class="module-category">
+        <h4>Mobile Apps</h4>
+        <div class="module-grid">
+          {% for item in "Dine KOT,MagicPDA Full(MST),MagicPDA Super Scanner,EWAY Task,MagNet Pay,DINE Reporter,TASK Pro"|split:"," %}
+          <div class="module-item">
+            <input type="checkbox" name="more_modules" value="{{ item|trim }}" {% if item|trim in selected_modules %}checked{% endif %}>
+            <label>{{ item|trim }}</label>
+            <input type="number" step="0.01" class="price-input" name="price_{{ item|trim }}" placeholder="₹"
+                   value="{{ price_dict|get_item:item|trim|default:'0' }}">
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- ADVANCED TASK -->
+      <div class="module-category">
+        <h4>Advanced Task</h4>
+        <div class="module-grid">
+          {% for item in "E Invoice,TPOS,Mpos,Hosted,Hosted +"|split:"," %}
+          <div class="module-item">
+            <input type="checkbox" name="more_modules" value="{{ item|trim }}" {% if item|trim in selected_modules %}checked{% endif %}>
+            <label>{{ item|trim }}</label>
+            <input type="number" step="0.01" class="price-input" name="price_{{ item|trim }}" placeholder="₹"
+                   value="{{ price_dict|get_item:item|trim|default:'0' }}">
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- VERSION -->
+      <div class="module-category">
+        <h4>Version</h4>
+        <div class="module-grid">
+          {% for item in "B-care,I-care,Ultimate"|split:"," %}
+          <div class="module-item">
+            <input type="checkbox" name="more_modules" value="{{ item|trim }}" {% if item|trim in selected_modules %}checked{% endif %}>
+            <label>{{ item|trim }}</label>
+            <input type="number" step="0.01" class="price-input" name="price_{{ item|trim }}" placeholder="₹"
+                   value="{{ price_dict|get_item:item|trim|default:'0' }}">
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="buttons">
+      <button type="button" class="cancel" onclick="window.location.href='{% url 'feeder_list' %}'">Cancel</button>
+      <button type="submit" class="save">Update</button>
+    </div>
+  </form>
+</div>
 </body>
 </html>

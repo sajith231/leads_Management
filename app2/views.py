@@ -1753,28 +1753,25 @@ def user_socialmedia_project_assignments(request):
         'total_assignments': len(processed_assignments),
     }
     return render(request, 'user_socialmedia_project_assignments.html', context)
-
-
-
-
-
-
-
+# app2/views.py
+import json
 from django.shortcuts import render, redirect, get_object_or_404
 from django.core.paginator import Paginator
 from django.db.models import Q
+from django.http import JsonResponse
 from .models import Feeder
-
-from django.shortcuts import render, redirect, get_object_or_404
-from django.core.paginator import Paginator
-from django.db.models import Q
-from .models import Feeder
-from app1.models import BusinessType          # NEW
+from app1.models import BusinessType, Branch   # <-- Import Branch from app1
 
 # ----------  ADD / CREATE  ----------
 def feeder(request):
+    """
+    Create a new Feeder.
+    Nature is now a ForeignKey to app1.BusinessType.
+    Branch is now a ForeignKey to app1.Branch.
+    """
     if request.method == 'POST':
-        Feeder.objects.create(
+        # 1. Build the basic Feeder instance
+        feeder_obj = Feeder(
             name=request.POST.get('name'),
             address=request.POST.get('address'),
             location=request.POST.get('location'),
@@ -1787,8 +1784,8 @@ def feeder(request):
             reputed_person_name=request.POST.get('reputed_person_name', ''),
             reputed_person_number=request.POST.get('reputed_person_number', ''),
             software=request.POST.get('software'),
-            nature=request.POST.get('nature'),          # <── now comes from dropdown
-            branch=request.POST.get('branch'),
+            nature_id=request.POST.get('nature'),          # <-- FK to BusinessType
+            branch_id=request.POST.get('branch'),          # <-- FK to Branch
             no_of_system=request.POST.get('no_of_system'),
             pincode=request.POST.get('pincode'),
             country=request.POST.get('country', 'India'),
@@ -1797,49 +1794,75 @@ def feeder(request):
             software_amount=request.POST.get('software_amount'),
             module_charges=request.POST.get('module_charges'),
             modules=', '.join(request.POST.getlist('modules')),
-            more_modules=', '.join(request.POST.getlist('more_modules'))
+            more_modules=', '.join(request.POST.getlist('more_modules')),
+            # status will default to 'pending' from model
         )
+        feeder_obj.save()
+
+        # 2. Handle module prices (JSON)
+        module_prices = {
+            m: request.POST.get(f'price_{m}', '0')
+            for m in request.POST.getlist('more_modules')
+        }
+        feeder_obj.module_prices = module_prices
+        feeder_obj.save()
+
         return redirect('feeder_list')
 
-    business_types = BusinessType.objects.all()          # NEW
-    return render(request, 'add_feeder.html',
-                  {'business_types': business_types})    # NEW
-
-
+    business_types = BusinessType.objects.all()
+    branches = Branch.objects.all()  # <-- Get all branches
+    return render(request, 'add_feeder.html', {
+        'business_types': business_types,
+        'branches': branches
+    })
 
 
 # ----------  LIST  ----------
 def feeder_list(request):
     query = request.GET.get('q', '')
-    feeders_list = Feeder.objects.all().order_by('-id')
+    feeders_list = Feeder.objects.select_related('nature', 'branch').all().order_by('-id')  # <-- Include branch in select_related
 
     if query:
         feeders_list = feeders_list.filter(
             Q(name__icontains=query) |
             Q(software__icontains=query) |
-            Q(branch__icontains=query)
+            Q(branch__name__icontains=query)  # <-- Update to use branch.name
         )
 
-    # prepare clean list for each feeder
     for feeder in feeders_list:
-        feeder.more_modules_list = [m.strip() for m in (feeder.more_modules or '').split(',') if m.strip()]
+        feeder.more_modules_list = [
+            m.strip() for m in (feeder.more_modules or '').split(',') if m.strip()
+        ]
+        try:
+            feeder.price_dict = (
+                json.loads(feeder.module_prices)
+                if isinstance(feeder.module_prices, str)
+                else feeder.module_prices
+            )
+        except (ValueError, TypeError):
+            feeder.price_dict = {}
 
     paginator = Paginator(feeders_list, 10)
     page_obj = paginator.get_page(request.GET.get('page'))
+    return render(request, 'feeder_list.html', {'page_obj': page_obj, 'query': query})
 
-    return render(request, 'feeder_list.html', {
-        'page_obj': page_obj,
-        'query': query
-    })
 
 # ----------  EDIT  ----------
 def feeder_edit(request, feeder_id):
     feeder = get_object_or_404(Feeder, id=feeder_id)
 
-    selected_modules = [m.strip() for m in (feeder.modules or '').split(',') if m.strip()]
-    selected_more_modules = [m.strip() for m in (feeder.more_modules or '').split(',') if m.strip()]
+    selected_modules = [m.strip() for m in (feeder.more_modules or '').split(',') if m.strip()]
+    try:
+        price_dict = (
+            json.loads(feeder.module_prices)
+            if isinstance(feeder.module_prices, str)
+            else feeder.module_prices
+        )
+    except (ValueError, TypeError):
+        price_dict = {}
 
     if request.method == 'POST':
+        # Update all simple fields
         feeder.name = request.POST.get('name')
         feeder.address = request.POST.get('address')
         feeder.location = request.POST.get('location')
@@ -1852,8 +1875,8 @@ def feeder_edit(request, feeder_id):
         feeder.reputed_person_name = request.POST.get('reputed_person_name', '')
         feeder.reputed_person_number = request.POST.get('reputed_person_number', '')
         feeder.software = request.POST.get('software')
-        feeder.nature = request.POST.get('nature')         # <── dropdown value
-        feeder.branch = request.POST.get('branch')
+        feeder.nature_id = request.POST.get('nature')  # <-- FK to BusinessType
+        feeder.branch_id = request.POST.get('branch')  # <-- FK to Branch
         feeder.no_of_system = request.POST.get('no_of_system')
         feeder.pincode = request.POST.get('pincode')
         feeder.country = request.POST.get('country', 'India')
@@ -1863,15 +1886,26 @@ def feeder_edit(request, feeder_id):
         feeder.module_charges = request.POST.get('module_charges')
         feeder.modules = ', '.join(request.POST.getlist('modules'))
         feeder.more_modules = ', '.join(request.POST.getlist('more_modules'))
+
+        # Re-save module prices
+        new_prices = {
+            m: request.POST.get(f'price_{m}', '0')
+            for m in request.POST.getlist('more_modules')
+        }
+        feeder.module_prices = new_prices
         feeder.save()
         return redirect('feeder_list')
 
-    business_types = BusinessType.objects.all()          # NEW
-    return render(request, 'feeder_edit.html',
-                  {'feeder': feeder,
-                   'selected_modules': selected_modules,
-                   'selected_more_modules': selected_more_modules,
-                   'business_types': business_types})    # NEW
+    business_types = BusinessType.objects.all()
+    branches = Branch.objects.all()  # <-- Get all branches
+    return render(request, 'feeder_edit.html', {
+        'feeder': feeder,
+        'selected_modules': selected_modules,
+        'price_dict': price_dict,
+        'business_types': business_types,
+        'branches': branches,
+    })
+
 
 # ----------  DELETE  ----------
 def feeder_delete(request, feeder_id):
@@ -1879,3 +1913,37 @@ def feeder_delete(request, feeder_id):
     if request.method == 'POST':
         feeder.delete()
     return redirect('feeder_list')
+
+
+# ----------  STATUS UPDATE (NEW)  ----------
+def feeder_status_update(request, feeder_id):
+    """
+    Update feeder status via AJAX request
+    """
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Invalid request method'})
+    
+    try:
+        feeder = get_object_or_404(Feeder, id=feeder_id)
+        new_status = request.POST.get('status')
+        
+        if not new_status:
+            return JsonResponse({'success': False, 'error': 'Status not provided'})
+        
+        # Validate status
+        valid_statuses = [choice[0] for choice in Feeder.STATUS_CHOICES]
+        if new_status not in valid_statuses:
+            return JsonResponse({'success': False, 'error': f'Invalid status. Valid options: {valid_statuses}'})
+        
+        # Update the status
+        feeder.status = new_status
+        feeder.save()
+        
+        return JsonResponse({
+            'success': True,
+            'new_status': feeder.get_status_display(),
+            'status_class': feeder.get_status_display_class()
+        })
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})

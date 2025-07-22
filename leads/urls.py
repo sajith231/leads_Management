@@ -26,6 +26,7 @@ urlpatterns = [
     path('app3/', include('app3.urls')),
     path('flutter/', include('flutter.urls')),
     path('edit-field/<int:field_id>/', views.edit_field, name='edit_field'),
+    path('feeder/', include('app2.urls')), 
 
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 if settings.DEBUG:
