@@ -5026,6 +5026,17 @@ def configure_user_menu(request, user_id):
         {'id': 'user_socialmedia_project_assignments', 'name': 'Your Assignments', 'icon': 'fas fa-user-check'}
     ]
 },
+        {
+            'name': 'ACCOUNTS',
+            'icon': 'fas fa-money-bill-wave',
+            'submenus': [
+                {'id': 'debtors1_list',       'name': 'SYSMAC COMPUTERS-1', 'icon': 'fas fa-file-invoice-dollar'},
+                {'id': 'imc1_list',           'name': 'IMCB LLP',           'icon': 'fas fa-coins'},
+                {'id': 'imc2_list',           'name': 'IMC',                'icon': 'fas fa-hand-holding-usd'},
+                {'id': 'sysmac_info_list',    'name': 'SYSMAC-INFO',        'icon': 'fas fa-money-check'},
+                {'id': 'dq_list',             'name': 'DQ',                 'icon': 'fas fa-credit-card'},
+            ]
+        },
 
     ]
     
@@ -5215,6 +5226,17 @@ def default_menus(request):
         {'id': 'user_socialmedia_project_assignments', 'name': 'Your Assignments', 'icon': 'fas fa-user-check'}
     ]
 },
+        {
+            'name': 'ACCOUNTS',
+            'icon': 'fas fa-money-bill-wave',
+            'submenus': [
+                {'id': 'debtors1_list',       'name': 'SYSMAC COMPUTERS-1', 'icon': 'fas fa-file-invoice-dollar'},
+                {'id': 'imc1_list',           'name': 'IMCB LLP',           'icon': 'fas fa-coins'},
+                {'id': 'imc2_list',           'name': 'IMC',                'icon': 'fas fa-hand-holding-usd'},
+                {'id': 'sysmac_info_list',    'name': 'SYSMAC-INFO',        'icon': 'fas fa-money-check'},
+                {'id': 'dq_list',             'name': 'DQ',                 'icon': 'fas fa-credit-card'},
+            ]
+        },
     ]
     
     # Fetch current default menus from settings or database
@@ -5590,29 +5612,46 @@ from datetime import datetime, date
 from django.contrib.auth.decorators import login_required
 from .forms import ComplaintForm
 
-from django.shortcuts import render
-from django.core.paginator import Paginator
 from datetime import datetime, date
+from django.core.paginator import Paginator
+from django.db.models import Count, Q
+from django.shortcuts import render
 from .models import ServiceLog, User
 
+
 def servicelog_list(request):
-    # Get current date for default values
+    # ------------------------------------------------------------------
+    # 1. Default / filter parameters
+    # ------------------------------------------------------------------
     today = date.today().strftime('%Y-%m-%d')
-    
-    # Get search parameters from request with default values
-    customer_search = request.GET.get('customer_search', '')
-    added_by_filter = request.GET.get('added_by', '')
+
+    customer_search        = request.GET.get('customer_search', '')
+    added_by_filter        = request.GET.get('added_by', '')
     assigned_person_filter = request.GET.get('assigned_person', '')
-    status_filter = request.GET.get('status', '')
+    status_filter          = request.GET.get('status', '')
     complaint_status_filter = request.GET.get('complaint_status', 'Pending')
-    complaint_filter = request.GET.get('complaint_type', '')  # New complaint filter
-    start_date_filter = request.GET.get('start_date', today)  # Default to today
-    end_date_filter = request.GET.get('end_date', today)      # Default to today
+    complaint_filter       = request.GET.get('complaint_type', '')
+    start_date_filter      = request.GET.get('start_date', today)
+    end_date_filter        = request.GET.get('end_date', today)
 
-    # Get all service logs
-    service_logs = ServiceLog.objects.all().order_by('-id')
+    # ------------------------------------------------------------------
+    # 2. Base queryset with annotations
+    # ------------------------------------------------------------------
+    service_logs = (
+        ServiceLog.objects
+        .annotate(
+            total_complaints=Count('servicelogcomplaint'),
+            completed_complaints=Count(
+                'servicelogcomplaint',
+                filter=Q(servicelogcomplaint__status='Completed')
+            )
+        )
+        .order_by('-id')
+    )
 
-    # Apply filters
+    # ------------------------------------------------------------------
+    # 3. Apply filters (unchanged logic)
+    # ------------------------------------------------------------------
     if customer_search:
         service_logs = service_logs.filter(customer_name__icontains=customer_search)
 
@@ -5630,43 +5669,32 @@ def servicelog_list(request):
         except (ValueError, TypeError):
             pass
 
-    # Only apply status filter if a specific status is selected
     if status_filter:
         service_logs = service_logs.filter(status=status_filter)
 
     if complaint_status_filter:
-        # Filter logs where ALL complaints have the selected status
         logs_with_matching_status = set(
             service_logs.filter(servicelogcomplaint__status=complaint_status_filter)
             .values_list('id', flat=True)
         )
-        
         logs_with_different_status = set(
             service_logs.exclude(servicelogcomplaint__status=complaint_status_filter)
             .filter(servicelogcomplaint__isnull=False)
             .values_list('id', flat=True)
         )
-        
         logs_with_all_matching = logs_with_matching_status - logs_with_different_status
         service_logs = service_logs.filter(id__in=logs_with_all_matching)
 
-    # New complaint type filter
     if complaint_filter:
-        if complaint_filter == 'all':
-            # Show all complaints - no additional filtering needed
-            pass
-        elif complaint_filter == 'hardware':
-            # Filter logs that have hardware complaints
+        if complaint_filter == 'hardware':
             service_logs = service_logs.filter(
                 servicelogcomplaint__complaint__complaint_type='hardware'
             ).distinct()
         elif complaint_filter == 'software':
-            # Filter logs that have software complaints
             service_logs = service_logs.filter(
                 servicelogcomplaint__complaint__complaint_type='software'
             ).distinct()
 
-    # Apply date range filter
     if start_date_filter:
         try:
             start_date = datetime.strptime(start_date_filter, '%Y-%m-%d').date()
@@ -5681,18 +5709,21 @@ def servicelog_list(request):
         except ValueError:
             pass
 
-    # Preprocess customer_name to extract only the name part
+    # ------------------------------------------------------------------
+    # 4. Post-processing: strip address from customer_name
+    # ------------------------------------------------------------------
     for log in service_logs:
         if '-' in log.customer_name:
             log.customer_name = log.customer_name.split('-')[0].strip()
 
-    # Set up pagination
+    # ------------------------------------------------------------------
+    # 5. Pagination
+    # ------------------------------------------------------------------
     paginator = Paginator(service_logs, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
     users = User.objects.all()
-    start_index = page_obj.start_index()
 
     return render(request, 'servic_log_admin.html', {
         'page_obj': page_obj,
@@ -5702,10 +5733,10 @@ def servicelog_list(request):
         'assigned_person_filter': assigned_person_filter,
         'status_filter': status_filter,
         'complaint_status_filter': complaint_status_filter,
-        'complaint_filter': complaint_filter,  # Pass complaint filter to template
-        'start_date_filter': start_date_filter,    # Pass to template
-        'end_date_filter': end_date_filter,        # Pass to template
-        'start_index': start_index,
+        'complaint_filter': complaint_filter,
+        'start_date_filter': start_date_filter,
+        'end_date_filter': end_date_filter,
+        'start_index': page_obj.start_index(),
     })
 
 from app1.models import User, Complaint, ServiceLog, ServiceLogComplaint
@@ -6161,27 +6192,60 @@ def my_assigned_service_logs(request):
     })
 
 
+from django.utils import timezone
+# views.py
+import json
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+from django.utils import timezone
+from .models import ServiceLogComplaint
+
 @csrf_exempt
 @require_POST
 def update_complaint_status(request):
-    """Update individual complaint status"""
-    data = json.loads(request.body)
-    complaint_log_id = data.get('complaint_log_id')
-    new_status = data.get('status')
-
+    """
+    Update the status of a ServiceLogComplaint.
+    Automatically sets started_time when status becomes 'In Progress'
+    and completed_time when status becomes 'Completed'.
+    """
     try:
-        complaint_log = ServiceLogComplaint.objects.get(id=complaint_log_id)
+        data = json.loads(request.body)
+        cid = data.get('complaint_log_id')
+        new_status = data.get('status')
+
+        if not cid or not new_status:
+            return JsonResponse({'success': False, 'error': 'Missing complaint_log_id or status'}, status=400)
+
+        try:
+            cid = int(cid)
+        except ValueError:
+            return JsonResponse({'success': False, 'error': 'complaint_log_id must be an integer'}, status=400)
+
+        try:
+            complaint_log = ServiceLogComplaint.objects.get(id=cid)
+        except ServiceLogComplaint.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'Complaint log not found'}, status=404)
+
+        # Update timestamps
+        if new_status == 'In Progress' and not complaint_log.started_time:
+            complaint_log.started_time = timezone.now()
+        elif new_status == 'Completed' and not complaint_log.completed_time:
+            complaint_log.completed_time = timezone.now()
+
         complaint_log.status = new_status
-        if new_status == 'Completed':
-            complaint_log.completed_date = timezone.now()
         complaint_log.save()
-        
+
         return JsonResponse({
             'success': True,
-            'main_status': complaint_log.service_log.status
+            'started_time': complaint_log.started_time.isoformat() if complaint_log.started_time else None,
+            'completed_time': complaint_log.completed_time.isoformat() if complaint_log.completed_time else None,
         })
-    except ServiceLogComplaint.DoesNotExist:
-        return JsonResponse({'success': False, 'error': 'Complaint log not found'})
+
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Invalid JSON'}, status=400)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
     
 @login_required
 def reassign_work(request, log_id):

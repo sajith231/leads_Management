@@ -520,7 +520,8 @@
 <div id="planet-menu" class="submenu">
     {% if 'show_clients' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
         <a href="{% url 'show_clients' %}"><i class="fas fa-users"></i> Clients</a>
-        <!-- <a href="{% url 'feeder_list' %}"><i class="fas fa-users"></i> Feeder</a> -->
+        <a href="{% url 'feeder_list' %}"><i class="fas fa-tools" style="margin-left: 5px;"></i> Feeder</a>
+
     {% endif %}
 </div>
 
@@ -790,7 +791,7 @@
 
                 <div id="planet-menu" class="submenu">
                     <a href="{% url 'show_clients' %}"><i class="fas fa-users"></i> Clients</a>
-                    <!-- <a href="{% url 'feeder_list' %}"><i class="fas fa-users"></i> Feeder</a> -->
+                    <a href="{% url 'feeder_list' %}"><i class="fas fa-tools" style="margin-left: 5px;"></i> Feeder</a>
                 </div>
             {% endif %}
 
@@ -829,6 +830,47 @@
 
 
 
+<!-- ACCOUNTS Menu (Debtors) -->
+{% if 'debtors1_list' in allowed_menus or 'imc1_list' in allowed_menus or 'imc2_list' in allowed_menus or 'sysmac_info_list' in allowed_menus or 'dq_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+    <div class="mainmenu" onclick="toggleDebtersMenu()">
+        <span>
+            <i class="fas fa-money-bill-wave"></i>
+            <span style="font-size: 14px;">ACCOUNTS</span>
+        </span>
+    </div>
+
+    <div id="debters-menu" class="submenu">
+        {% if 'debtors1_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+        <a href="{% url 'debtors1_list' %}">
+            <i class="fas fa-file-invoice-dollar"></i> SYSMAC COMPUTERS-1
+        </a>
+        {% endif %}
+
+        {% if 'imc1_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+        <a href="{% url 'imc1_list' %}">
+            <i class="fas fa-coins"></i> IMCB LLP
+        </a>
+        {% endif %}
+
+        {% if 'imc2_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+        <a href="{% url 'imc2_list' %}">
+            <i class="fas fa-hand-holding-usd"></i> IMC
+        </a>
+        {% endif %}
+
+        {% if 'sysmac_info_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+        <a href="{% url 'sysmac_info_list' %}">
+            <i class="fas fa-money-check"></i> SYSMAC-INFO
+        </a>
+        {% endif %}
+
+        {% if 'dq_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+        <a href="{% url 'dq_list' %}">
+            <i class="fas fa-credit-card"></i> DQ
+        </a>
+        {% endif %}
+    </div>
+{% endif %}
 
 
 

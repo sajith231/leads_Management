@@ -1,378 +1,204 @@
 {% extends "base.html" %}
-
+{% load app2_extras %}
 {% block content %}
-  <style>
+<style>
+    .container{background:#fff;padding:30px;border-radius:10px;max-width:1100px;margin:auto;box-shadow:0 0 10px rgba(0,0,0,.1)}
+    h2{margin-bottom:20px;font-size:24px}
+    .form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px}
+    .form-group{display:flex;flex-direction:column}
+    .form-group label{margin-bottom:5px;font-weight:bold}
+    .form-group input,.form-group select,.form-group textarea{padding:8px;border:1px solid #ccc;border-radius:6px;font-size:14px}
+    .module-section{margin-top:40px;background:#f8f9fa;padding:25px;border-radius:12px;border:1px solid #e9ecef}
+    .module-category{margin-bottom:30px;background:#ffffff;border-radius:10px;padding:20px;border:1px solid #dee2e6}
+    .module-category h4{margin-bottom:15px;font-weight:600}
+    .module-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:15px}
+    .module-item{display:flex;align-items:center;gap:10px}
+    .module-item input[type=checkbox]{width:18px;height:18px}
+    .price-input{width:120px;margin-left:8px}
+    .buttons{margin-top:30px;text-align:right}
+    .buttons button{padding:10px 20px;border:none;border-radius:6px;cursor:pointer}
+    .save{background:#4d6bf9;color:#fff}
+    .cancel{background:#eee;margin-right:10px}
+</style>
 
-    
-
-    .container {
-      background: #fff;
-      padding: 30px;
-      border-radius: 10px;
-      max-width: 1100px;
-      margin: auto;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    }
-
-    h2 {
-      margin-bottom: 20px;
-      font-size: 24px;
-    }
-
-    .form-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr); /* Changed from 3 to 2 columns */
-  gap: 20px;
-}
-
-
-    .form-group {
-      display: flex;
-      flex-direction: column;
-    }
-
-    .form-group label {
-      margin-bottom: 5px;
-      font-weight: bold;
-    }
-
-    .form-group input,
-    .form-group select,
-    .form-group textarea {
-      padding: 8px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      font-size: 14px;
-    }
-
-    .buttons {
-      margin-top: 30px;
-      text-align: right;
-    }
-
-    .buttons button {
-      padding: 10px 20px;
-      font-size: 14px;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-
-    .buttons .save {
-      background-color: #4d6bf9;
-      color: white;
-    }
-
-    .buttons .cancel {
-      background-color: #eee;
-      margin-right: 10px;
-    }
-
-    .breadcrumb {
-      text-align: right;
-      font-size: 14px;
-      color: #888;
-      margin-bottom: 10px;
-    }
-
-    .module-section {
-      margin-top: 30px;
-    }
-
-    .module-section h3 {
-      font-size: 18px;
-      margin-bottom: 10px;
-    }
-
-    .module-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 10px;
-    }
-
-    .module-grid label {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    /* ✅ Responsive Design */
-    @media (max-width: 768px) {
-      .form-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .module-grid {
-        grid-template-columns: repeat(2, 1fr);
-      }
-
-      .buttons {
-        text-align: center;
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-      }
-
-      .buttons button {
-        width: 100%;
-      }
-
-      .breadcrumb {
-        text-align: left;
-        font-size: 12px;
-      }
-
-      h2 {
-        font-size: 20px;
-        text-align: center;
-      }
-
-      .module-section h3 {
-        text-align: center;
-      }
-    }
-
-    @media (max-width: 480px) {
-      .module-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-  </style>
-
-
-  <div class="container">
-    <div class="breadcrumb">Home / Feeder</div>
-    <h2>Feeder</h2>
+<div class="">
+    <div style="text-align:right;font-size:14px;color:#888;margin-bottom:10px">Home / Feeder</div>
+    <h2>Add Feeder</h2>
 
     <form method="POST">
-      {% csrf_token %}
-      <div class="form-grid">
-        <div class="form-group">
-          <label>Name</label>
-          <input type="text" name="name">
-        </div>
-
-        <div class="form-group">
+        {% csrf_token %}
+        <div class="form-grid">
+            <!-- all existing simple fields exactly as before -->
+            <div class="form-group"><label>Name</label><input type="text" name="name"></div>
+            <div class="form-group">
           <label>Software</label>
           <select name="software">
             <option value="">Select</option>
-            <option value="TASK BGR">Task BGR</option>
-            <option value="Task BGR4">Task BGR4</option>
-            <option value="Shade">Shade</option>
-            <option value="Dine">Dine</option>
-            <option value="Magnet">Magnet</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label>Nature</label>
-          <select name="nature">
-            <option value="">Select</option>
-            <option value="Retail">Retail</option>
-            <option value="Wholesale">Wholesale</option>
-            <option value="Automobiles">Automobiles</option>
-            <option value="Pharmacy">Pharmacy</option>
-            <option value="Textiles">Textiles</option>
-            <option value="Agencies">Agencies</option>
-            <option value="Hospitality">Hospitality</option>
-            <option value="Super Market">Super Market</option>
-            <option value="Hardware & Eelectricals">Hardware & Eelectricals</option>
-            <option value="Live stock">Live stock</option>
-            <option value="School">School</option>
-            <option value="Restaurants and Hotels">Restaurants and Hotels</option>
-           <option value="Stationery">Stationery</option>
+            <option value="TASK BGR">BGR</option>
+            <option value="BGR 4">BGR 4</option>
+            <option value="B-CARE BGR">B-CARE BGR</option>
+            <option value="B-CARE BGR 4">B-CARE BGR 4</option>
+            <option value="AURIC">AURIC</option>
+            <option value="DINE">DINE</option>
+            <option value="TASK-ER">TASK-ER</option>
+            <option value="FLAIMES">FLAIMES</option>
+            <option value="I-CARE BGR">I-CARE BGR</option>
+            <option value="I-CARE BGR 4">I-CARE BGR 4</option>
+            <option value="EASY LAB">EASY LAB</option>
+            <option value="MARUTI">MARUTI</option>
+            <option value="MAGNET">MAGNET</option>
+            <option value="SHADE">SHADE</option>
+            <option value="STAR STAY">STAR STAY</option>
+            <option value="VITAMINE">VITAMINE</option>
+            <option value="V-TASK">V-TASK</option>
             
           </select>
         </div>
+            <div class="form-group">
+              <label>Nature</label>
+              <select name="nature" required>
+                  <option value="" disabled selected>Select Business Type</option>
+                  {% for bt in business_types %}
+                      <option value="{{ bt.id }}">{{ bt.name }}</option>
+                  {% endfor %}
+              </select>
+          </div>
+            <div class="form-group"><label>Address/Landmark</label><textarea name="address"></textarea></div>
+            <div class="form-group">
+              <label>Branch</label>
+              <select name="branch" class="form-control">
+                  <option value="">-- Select Branch --</option>
+                  {% for branch in branches %}
+                      <option value="{{ branch.id }}">{{ branch.name }}</option>
+                  {% endfor %}
+              </select>
+          </div>
 
-        <div class="form-group">
-          <label>Address/Landmark</label>
-          <textarea name="address"></textarea>
-        </div>
-
-        <div class="form-group">
-          <label>Branch</label>
-          <select name="branch">
-            <option value="">Select</option>
-            <option value="Main">Main</option>
-            <option value="Sub">Sub</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label>No. of System</label>
-          <input type="number" name="no_of_system">
-        </div>
-
-        <div class="form-group">
-          <label>Location</label>
-          <input type="text" name="location">
-        </div>
-
-        <div class="form-group">
-          <label>Pincode</label>
-          <input type="text" name="pincode">
-        </div>
-
-        <div class="form-group">
-          <label>Area</label>
-          <input type="text" name="area">
-        </div>
-
-        <div class="form-group">
-          <label>Country</label>
-          <input type="text" name="country" value="India">
-        </div>
-
-        <div class="form-group">
-          <label>District</label>
-          <select name="district">
-            <option value="">Select</option>
-            <option value="Wayanad">Wayanad</option>
-            <option value="Thiruvanathapuram">Thiruvanathapuram</option>
-            <option value="Kollam ">Kollam </option>
-            <option value="Pathanamthitta">Pathanamthitta</option>
-            <option value="Alappuzha ">Alappuzha </option>
-            <option value="Kottayam">Kottayam</option>
-            <option value="Idukki">Idukki</option>
-            <option value="Ernakulam">Ernakulam</option>
-            <option value="Thrissur ">Thrissur </option>
-            <option value="Palakkad ">Palakkad </option>
-            <option value="Malappuram">Malappuram</option>
-            <option value="Kozhikode ">Kozhikode</option>
-            <option value="Kannur ">Kannur </option>
-            <option value="Kasaragod">Kasaragod</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label>Installation Date</label>
-          <input type="date" name="installation_date">
-        </div>
-
-        <div class="form-group">
-  <label>State</label>
-  <select name="state" class="form-control">
-    <option value="Kerala">Kerala</option>
-    <option value="Karnataka">Karnataka</option>
-    <option value="Tamil Nadu">Tamil Nadu</option>
-    
-    <option value="">Select</option>
-    <option value="Andhra Pradesh">Andhra Pradesh</option>
-    <option value="Arunachal Pradesh">Arunachal Pradesh</option>
-    <option value="Assam">Assam</option>
-    <option value="Bihar">Bihar</option>
-    <option value="Chhattisgarh">Chhattisgarh</option>
-    <option value="Goa">Goa</option>
-    <option value="Gujarat">Gujarat</option>
-    <option value="Haryana">Haryana</option>
-    <option value="Himachal Pradesh">Himachal Pradesh</option>
-    <option value="Jharkhand">Jharkhand</option>
-    
-    <option value="Madhya Pradesh">Madhya Pradesh</option>
-    <option value="Maharashtra">Maharashtra</option>
-    <option value="Manipur">Manipur</option>
-    <option value="Meghalaya">Meghalaya</option>
-    <option value="Mizoram">Mizoram</option>
-    <option value="Nagaland">Nagaland</option>
-    <option value="Odisha">Odisha</option>
-    <option value="Punjab">Punjab</option>
-    <option value="Rajasthan">Rajasthan</option>
-    <option value="Sikkim">Sikkim</option>
-    
-    <option value="Telangana">Telangana</option>
-    <option value="Tripura">Tripura</option>
-    <option value="Uttar Pradesh">Uttar Pradesh</option>
-    <option value="Uttarakhand">Uttarakhand</option>
-    <option value="West Bengal">West Bengal</option>
-    <option value="Andaman and Nicobar Islands">Andaman and Nicobar Islands</option>
-    <option value="Chandigarh">Chandigarh</option>
-    <option value="Dadra and Nagar Haveli and Daman and Diu">Dadra and Nagar Haveli and Daman and Diu</option>
-    <option value="Delhi">Delhi</option>
-    <option value="Jammu and Kashmir">Jammu and Kashmir</option>
-    <option value="Ladakh">Ladakh</option>
-    <option value="Lakshadweep">Lakshadweep</option>
-    <option value="Puducherry">Puducherry</option>
-    <option value="Puducherry">Other</option>
-  </select>
+            <div class="form-group"><label>No. of System</label><input type="number" name="no_of_system"></div>
+            <div class="form-group"><label>Location</label><input type="text" name="location"></div>
+            <div class="form-group"><label>Pincode</label><input type="text" name="pincode"></div>
+            <div class="form-group"><label>Area</label><input type="text" name="area"></div>
+            <div class="form-group"><label>Country</label><input type="text" name="country" value="India"></div>
+            <div class="form-group">
+    <label>District</label>
+    <select name="district" class="form-control">
+        <option value="">-- Select District --</option>
+        <option value="Thiruvananthapuram">Thiruvananthapuram</option>
+        <option value="Kollam">Kollam</option>
+        <option value="Pathanamthitta">Pathanamthitta</option>
+        <option value="Alappuzha">Alappuzha</option>
+        <option value="Kottayam">Kottayam</option>
+        <option value="Idukki">Idukki</option>
+        <option value="Ernakulam">Ernakulam</option>
+        <option value="Thrissur">Thrissur</option>
+        <option value="Palakkad">Palakkad</option>
+        <option value="Malappuram">Malappuram</option>
+        <option value="Kozhikode">Kozhikode</option>
+        <option value="Wayanad">Wayanad</option>
+        <option value="Kannur">Kannur</option>
+        <option value="Kasaragod">Kasaragod</option>
+        <option value="Other">Other</option>
+    </select>
 </div>
 
+            <div class="form-group"><label>Installation Date</label><input type="date" name="installation_date"></div>
+            <div class="form-group">
+              <label>State</label>
+              <select name="state" class="form-control">
+                  <option value="">-- Select State --</option>
+                  <option value="Andhra Pradesh">Andhra Pradesh</option>
+                  <option value="Arunachal Pradesh">Arunachal Pradesh</option>
+                  <option value="Assam">Assam</option>
+                  <option value="Bihar">Bihar</option>
+                  <option value="Chhattisgarh">Chhattisgarh</option>
+                  <option value="Goa">Goa</option>
+                  <option value="Gujarat">Gujarat</option>
+                  <option value="Haryana">Haryana</option>
+                  <option value="Himachal Pradesh">Himachal Pradesh</option>
+                  <option value="Jharkhand">Jharkhand</option>
+                  <option value="Karnataka">Karnataka</option>
+                  <option value="Kerala">Kerala</option>
+                  <option value="Madhya Pradesh">Madhya Pradesh</option>
+                  <option value="Maharashtra">Maharashtra</option>
+                  <option value="Manipur">Manipur</option>
+                  <option value="Meghalaya">Meghalaya</option>
+                  <option value="Mizoram">Mizoram</option>
+                  <option value="Nagaland">Nagaland</option>
+                  <option value="Odisha">Odisha</option>
+                  <option value="Punjab">Punjab</option>
+                  <option value="Rajasthan">Rajasthan</option>
+                  <option value="Sikkim">Sikkim</option>
+                  <option value="Tamil Nadu">Tamil Nadu</option>
+                  <option value="Telangana">Telangana</option>
+                  <option value="Tripura">Tripura</option>
+                  <option value="Uttar Pradesh">Uttar Pradesh</option>
+                  <option value="Uttarakhand">Uttarakhand</option>
+                  <option value="West Bengal">West Bengal</option>
+                  <option value="Other">Other</option>
+              </select>
+          </div>
 
-        <div class="form-group">
-          <label>Remarks</label>
-          <input type="text" name="remarks">
+            <div class="form-group"><label>Remarks</label><input type="text" name="remarks"></div>
+            <div class="form-group"><label>Contact Person</label><input type="text" name="contact_person"></div>
+            <div class="form-group"><label>Software Amount</label><input type="text" name="software_amount"></div>
+            <div class="form-group"><label>Contact Number</label><input type="text" name="contact_number"></div>
+            <div class="form-group"><label>Module Charges</label><input type="text" name="module_charges"></div>
+            <div class="form-group"><label>Email</label><input type="email" name="email"></div>
+            <div class="form-group"><label>Reputed Person Name</label><input type="text" name="reputed_person_name"></div>
+            <div class="form-group"><label>Reputed Person Number</label><input type="text" name="reputed_person_number"></div>
         </div>
 
-        <div class="form-group">
-          <label>Contact Person</label>
-          <input type="text" name="contact_person">
+        <!-- modules with price -->
+        <div class="module-section">
+            <h3>Modules Selection</h3>
+
+            <!-- MOBILE APPS -->
+            <div class="module-category">
+                <h4>Mobile Apps</h4>
+                <div class="module-grid">
+                    {% for item in "Dine KOT,MagicPDA Full(MST),MagicPDA Super Scanner,EWAY Task,MagNet Pay,DINE Reporter,TASK Pro"|split:"," %}
+                    <div class="module-item">
+                        <input type="checkbox" name="more_modules" value="{{ item|trim }}">
+                        <label>{{ item|trim }}</label>
+                        <input type="number" step="0.01" class="price-input" name="price_{{ item|trim }}" placeholder="₹">
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- ADVANCED TASK -->
+            <div class="module-category">
+                <h4>Advanced Task</h4>
+                <div class="module-grid">
+                    {% for item in "E Invoice,TPOS,Mpos,Hosted,Hosted +"|split:"," %}
+                    <div class="module-item">
+                        <input type="checkbox" name="more_modules" value="{{ item|trim }}">
+                        <label>{{ item|trim }}</label>
+                        <input type="number" step="0.01" class="price-input" name="price_{{ item|trim }}" placeholder="₹">
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- VERSION -->
+            <div class="module-category">
+                <h4>Version</h4>
+                <div class="module-grid">
+                    {% for item in "B-care,I-care,Ultimate"|split:"," %}
+                    <div class="module-item">
+                        <input type="checkbox" name="more_modules" value="{{ item|trim }}">
+                        <label>{{ item|trim }}</label>
+                        <input type="number" step="0.01" class="price-input" name="price_{{ item|trim }}" placeholder="₹">
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
         </div>
 
-        <div class="form-group">
-          <label>Software Amount</label>
-          <input type="text" name="software_amount">
+        <div class="buttons">
+            <button type="button" class="cancel">Cancel</button>
+            <button type="submit" class="save">Save</button>
         </div>
-
-        <div class="form-group">
-          <label>Contact Number</label>
-          <input type="text" name="contact_number">
-        </div>
-
-        <div class="form-group">
-          <label>Module Charges</label>
-          <input type="text" name="module_charges">
-        </div>
-
-        <div class="form-group">
-          <label>Email</label>
-          <input type="email" name="email">
-        </div>
-
-        <div class="form-group">
-          <label>Reputed Person Name</label>
-          <input type="text" name="reputed_person_name">
-        </div>
-
-        <div class="form-group">
-          <label>Reputed Person Number</label>
-          <input type="text" name="reputed_person_number">
-        </div>
-      </div>
-
-    
-
- <div class="module-section">
-  <h3>More Modules</h3>
-  <div class="module-grid">
-    <label><input type="checkbox" name="more_modules" value="MagicPDA Full(MST)"> MagicPDA Full(MST)</label>
-    <label><input type="checkbox" name="more_modules" value="Magic PDA"> Magic PDA</label>
-    <label><input type="checkbox" name="more_modules" value="E Invoice"> E Invoice</label>
-    <label><input type="checkbox" name="more_modules" value="TASKLite"> TASKLite</label>
-    <label><input type="checkbox" name="more_modules" value="iCare"> iCare</label>
-    <label><input type="checkbox" name="more_modules" value="bCare"> bCare</label>
-    <label><input type="checkbox" name="more_modules" value="DINE Reporter"> DINE Reporter</label>
-    <label><input type="checkbox" name="more_modules" value="E WI Json"> E WI Json</label>
-    <label><input type="checkbox" name="more_modules" value="Dine KOT"> Dine KOT</label>
-    <label><input type="checkbox" name="more_modules" value="EWAY Task"> EWAY Task</label>
-    <label><input type="checkbox" name="more_modules" value="Mpos"> Mpos</label>
-    <label><input type="checkbox" name="more_modules" value="T2C"> T2C</label>
-    <label><input type="checkbox" name="more_modules" value="E-Watch"> E-Watch</label>
-    <label><input type="checkbox" name="more_modules" value="MagNet Pay"> MagNet Pay</label>
-    <label><input type="checkbox" name="more_modules" value="TASK Pro"> TASK Pro</label>
-    <label><input type="checkbox" name="more_modules" value="HC"> HC</label>
-    <label><input type="checkbox" name="more_modules" value="Dental"> Dental</label>
-    <label><input type="checkbox" name="more_modules" value="TPOS"> TPOS</label>
-    <label><input type="checkbox" name="more_modules" value="New Module 1"> New Module 1</label>
-    <label><input type="checkbox" name="more_modules" value="New Module 2"> New Module 2</label>
-    <label><input type="checkbox" name="more_modules" value="New Module 3"> New Module 3</label>
-  </div>
-</div>
-
-
-      <div class="buttons">
-        <button type="button" class="cancel">Cancel</button>
-        <button type="submit" class="save">Save</button>
-      </div>
     </form>
-  </div>
+</div>
 {% endblock %}

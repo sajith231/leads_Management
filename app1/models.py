@@ -988,6 +988,8 @@ class ServiceLogComplaint(models.Model):
     assigned_person = models.ForeignKey('User', on_delete=models.SET_NULL, null=True, related_name='assigned_complaints')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending')
     assigned_date = models.DateTimeField(auto_now_add=True)
+    started_time    = models.DateTimeField(null=True, blank=True) #CREATED AS NEW
+    completed_time  = models.DateTimeField(null=True, blank=True) #CREATED AS NEW
     completed_date = models.DateTimeField(null=True, blank=True)
     
     def save(self, *args, **kwargs):

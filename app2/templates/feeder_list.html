@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-
+{% load app2_extras %}
 {% block content %}
   <style>
     .module-badge {
@@ -84,7 +84,7 @@
     table {
       width: 100%;
       border-collapse: collapse;
-      min-width: 1200px;
+      min-width: 1300px;
     }
 
     th, td {
@@ -142,16 +142,74 @@
       color: #888;
     }
 
-    .status {
-      padding: 4px 8px;
-      border-radius: 4px;
-      font-size: 12px;
-      font-weight: bold;
+    /* Status Styles */
+    .status-dropdown {
+      position: relative;
+      display: inline-block;
     }
 
-    .status-active {
+    .status-btn {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: bold;
+      min-width: 100px;
+      text-align: center;
+    }
+
+    .status-pending {
+      background-color: #fff3cd;
+      color: #856404;
+    }
+
+    .status-accepted {
       background-color: #d4edda;
       color: #155724;
+    }
+
+    .status-rejected {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+
+    .status-under-process {
+      background-color: #d1ecf1;
+      color: #0c5460;
+    }
+
+    .status-dropdown-content {
+      display: none;
+      position: absolute;
+      background-color: #f9f9f9;
+      min-width: 160px;
+      box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+      z-index: 1;
+      border-radius: 4px;
+      top: 100%;
+      left: 0;
+    }
+
+    .status-dropdown-content button {
+      background-color: transparent;
+      color: black;
+      padding: 8px 16px;
+      text-decoration: none;
+      display: block;
+      border: none;
+      width: 100%;
+      text-align: left;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .status-dropdown-content button:hover {
+      background-color: #f1f1f1;
+    }
+
+    .status-dropdown:hover .status-dropdown-content {
+      display: block;
     }
 
     .modules-cell {
@@ -239,7 +297,7 @@
         padding: 6px 8px;
       }
 
-      .status {
+      .status-btn {
         font-size: 10px;
       }
     }
@@ -275,6 +333,7 @@
             <th>Software Amount</th>
             <th>Module Charges</th>
             <th>More Modules</th>
+            <th>Status</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -291,13 +350,31 @@
             <td class="modules-cell">
               {% if feeder.more_modules_list %}
                 {% for m in feeder.more_modules_list %}
-                  <span class="module-badge">{{ m }}</span>
+                  <span class="module-badge">
+                    {{ m }}
+                    <span class="module-price">
+                      ₹{{ feeder.price_dict|get_item:m|floatformat:2|default:"0.00" }}
+                    </span>
+                  </span>
                 {% endfor %}
               {% else %}
                 <span class="text-muted">None</span>
               {% endif %}
             </td>
-            <td class="">
+            <td>
+              <div class="status-dropdown">
+                <button class="status-btn {{ feeder.get_status_display_class }}" id="status-btn-{{ feeder.id }}">
+                  {{ feeder.get_status_display }}
+                </button>
+                <div class="status-dropdown-content">
+                  <button onclick="updateStatus({{ feeder.id }}, 'pending')">Pending</button>
+                  <button onclick="updateStatus({{ feeder.id }}, 'accepted')">Accepted</button>
+                  <button onclick="updateStatus({{ feeder.id }}, 'rejected')">Rejected</button>
+                  <button onclick="updateStatus({{ feeder.id }}, 'under_process')">Under Process</button>
+                </div>
+              </div>
+            </td>
+            <td class="actions">
               <a href="{% url 'feeder_edit' feeder.id %}" class="btn btn-edit">Edit</a>
               <form method="post" action="{% url 'feeder_delete' feeder.id %}" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this feeder?')">
                 {% csrf_token %}
@@ -347,4 +424,65 @@
       </div>
     </div>
   </div>
+
+  <script>
+    function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.substring(0, name.length + 1) === (name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
+
+function updateStatus(feederId, newStatus) {
+  const csrftoken = getCookie('csrftoken');
+  const statusBtn = document.getElementById(`status-btn-${feederId}`);
+  
+  // Show loading state
+  const originalText = statusBtn.textContent;
+  statusBtn.textContent = 'Updating...';
+  statusBtn.disabled = true;
+  
+  // Update the URL to match your URL pattern
+  fetch(`/feeder/${feederId}/status-update/`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'X-CSRFToken': csrftoken
+    },
+    body: `status=${newStatus}`
+  })
+  .then(response => {
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return response.json();
+  })
+  .then(data => {
+    if (data.success) {
+      statusBtn.textContent = data.new_status;
+      statusBtn.className = `status-btn ${data.status_class}`;
+    } else {
+      alert('Error updating status: ' + (data.error || 'Unknown error'));
+      statusBtn.textContent = originalText; // Restore original text on error
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    alert('Error updating status: ' + error.message);
+    statusBtn.textContent = originalText; // Restore original text on error
+  })
+  .finally(() => {
+    statusBtn.disabled = false; // Re-enable button
+  });
+}
+
+  </script>
 {% endblock %}
