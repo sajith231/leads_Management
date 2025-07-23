@@ -1167,6 +1167,11 @@ from django.shortcuts import render
 import requests
 import traceback
 
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
+from django.shortcuts import render
+import requests
+import traceback
+
 def debtors1_list(request):
     api_url = "https://accmaster.imcbs.com/api/sync/sysmac/"
     data = []
@@ -1201,6 +1206,7 @@ def debtors1_list(request):
     query = request.GET.get('q', '').strip()
     min_balance = request.GET.get('min_balance', '1')
     selected_department = request.GET.get('department', '')
+    selected_rows = request.GET.get('rows', '15')
 
     # Original Count
     original_count = len(data)
@@ -1249,7 +1255,15 @@ def debtors1_list(request):
 
     data.sort(key=lambda x: x.get('name', '').lower())
 
-    paginator = Paginator(data, 15)
+    # Pagination rows handling
+    try:
+        selected_rows_int = int(selected_rows)
+        if selected_rows_int not in [10, 20, 50, 100]:
+            selected_rows_int = 15
+    except ValueError:
+        selected_rows_int = 15
+
+    paginator = Paginator(data, selected_rows_int)
     page = request.GET.get('page')
     try:
         page_obj = paginator.page(page)
@@ -1257,6 +1271,8 @@ def debtors1_list(request):
         page_obj = paginator.page(1)
     except EmptyPage:
         page_obj = paginator.page(paginator.num_pages)
+
+    rows_options = [10, 20, 50, 100]
 
     return render(request, 'debtors1_list.html', {
         'page_obj': page_obj,
@@ -1270,6 +1286,8 @@ def debtors1_list(request):
         'total_credit': total_credit,
         'department_list': department_list,
         'selected_department': selected_department,
+        'selected_rows': selected_rows_int,
+        'rows_options': rows_options,  
     })
 
 
@@ -1338,9 +1356,11 @@ def imc1_list(request):
     except Exception as e:
         error_message = f"Error fetching data: {str(e)}"
 
+    # Query params
     query = request.GET.get('q', '').strip()
     min_balance = request.GET.get('min_balance', '1')
     selected_department = request.GET.get('department', '').strip()
+    selected_rows = request.GET.get('rows', '15')  # ✅ new
 
     original_count = len(data)
 
@@ -1388,8 +1408,15 @@ def imc1_list(request):
     total_debit = sum(float(item.get('debit') or 0) for item in data)
     total_credit = sum(float(item.get('credit') or 0) for item in data)
 
-    # Pagination
-    paginator = Paginator(data, 15)
+    # ✅ Convert selected_rows to int safely
+    try:
+        selected_rows_int = int(selected_rows)
+        if selected_rows_int not in [10, 20, 50, 100]:
+            selected_rows_int = 15
+    except ValueError:
+        selected_rows_int = 15
+
+    paginator = Paginator(data, selected_rows_int)
     page = request.GET.get('page')
     try:
         page_obj = paginator.page(page)
@@ -1397,6 +1424,8 @@ def imc1_list(request):
         page_obj = paginator.page(1)
     except EmptyPage:
         page_obj = paginator.page(paginator.num_pages)
+
+    rows_options = [10, 20, 50, 100]  # ✅ dropdown options
 
     return render(request, 'imc1_list.html', {
         'page_obj': page_obj,
@@ -1411,6 +1440,8 @@ def imc1_list(request):
         'total_balance': total_balance,
         'total_debit': total_debit,
         'total_credit': total_credit,
+        'selected_rows': selected_rows_int,  # ✅ for dropdown
+        'rows_options': rows_options,        # ✅ for dropdown loop
     })
 
 from django.http import JsonResponse
@@ -1482,6 +1513,7 @@ def imc2_list(request):
     query = request.GET.get('q', '').strip()
     min_balance = request.GET.get('min_balance', '1')
     selected_department = request.GET.get('department', '')
+    selected_rows = request.GET.get('rows', '15')  # ✅ rows from query
 
     original_count = len(data)
 
@@ -1529,7 +1561,15 @@ def imc2_list(request):
     total_debit = sum(float(item.get('debit') or 0) for item in data)
     total_credit = sum(float(item.get('credit') or 0) for item in data)
 
-    paginator = Paginator(data, 15)
+    # ✅ Validate selected_rows
+    try:
+        selected_rows_int = int(selected_rows)
+        if selected_rows_int not in [10, 20, 50, 100]:
+            selected_rows_int = 15
+    except ValueError:
+        selected_rows_int = 15
+
+    paginator = Paginator(data, selected_rows_int)
     page = request.GET.get('page')
 
     try:
@@ -1538,6 +1578,8 @@ def imc2_list(request):
         page_obj = paginator.page(1)
     except EmptyPage:
         page_obj = paginator.page(paginator.num_pages)
+
+    rows_options = [10, 20, 50, 100]  # ✅ Options for dropdown
 
     return render(request, 'imc2_list.html', {
         'page_obj': page_obj,
@@ -1551,6 +1593,8 @@ def imc2_list(request):
         'total_credit': total_credit,
         'department_list': department_list,
         'selected_department': selected_department,
+        'selected_rows': selected_rows_int,  # ✅ for template use
+        'rows_options': rows_options         # ✅ for dropdown
     })
 
 def get_imc2_ledger(request):
@@ -1614,6 +1658,7 @@ def sysmac_info_list(request):
     query = request.GET.get('q', '').strip()
     min_balance = request.GET.get('min_balance', '1')
     selected_department = request.GET.get('department', '')
+    selected_rows = request.GET.get('rows', '15')  # 👈 New
 
     original_count = len(data)
 
@@ -1659,7 +1704,15 @@ def sysmac_info_list(request):
     total_debit = sum(float(item.get('debit') or 0) for item in data)
     total_credit = sum(float(item.get('credit') or 0) for item in data)
 
-    paginator = Paginator(data, 15)
+    # ✅ Handle row count
+    try:
+        selected_rows_int = int(selected_rows)
+        if selected_rows_int not in [10, 20, 50, 100]:
+            selected_rows_int = 15
+    except ValueError:
+        selected_rows_int = 15
+
+    paginator = Paginator(data, selected_rows_int)
     page = request.GET.get('page')
     try:
         page_obj = paginator.page(page)
@@ -1667,6 +1720,9 @@ def sysmac_info_list(request):
         page_obj = paginator.page(1)
     except EmptyPage:
         page_obj = paginator.page(paginator.num_pages)
+
+    # ✅ Define row options
+    rows_options = [10, 20, 50, 100]
 
     return render(request, 'sysmac_info_list.html', {
         'page_obj': page_obj,
@@ -1680,6 +1736,8 @@ def sysmac_info_list(request):
         'total_balance': total_balance,
         'total_debit': total_debit,
         'total_credit': total_credit,
+        'selected_rows': selected_rows_int,  # 👈 for template dropdown
+        'rows_options': rows_options,        # 👈 for loop in template
     })
 
 def get_sysmac_info_ledger(request):
@@ -1738,6 +1796,7 @@ def dq_list(request):
     query = request.GET.get('q', '').strip()
     min_balance = request.GET.get('min_balance', '1')
     selected_department = request.GET.get('department', '')
+    selected_rows = request.GET.get('rows', '15')  # ✅ Get rows param
 
     original_count = len(data)
 
@@ -1783,7 +1842,15 @@ def dq_list(request):
     total_debit = sum(float(item.get('debit') or 0) for item in data)
     total_credit = sum(float(item.get('credit') or 0) for item in data)
 
-    paginator = Paginator(data, 15)
+    # ✅ Validate and use selected_rows
+    try:
+        selected_rows_int = int(selected_rows)
+        if selected_rows_int not in [10, 20, 50, 100]:
+            selected_rows_int = 15
+    except ValueError:
+        selected_rows_int = 15
+
+    paginator = Paginator(data, selected_rows_int)
     page = request.GET.get('page')
     try:
         page_obj = paginator.page(page)
@@ -1791,6 +1858,8 @@ def dq_list(request):
         page_obj = paginator.page(1)
     except EmptyPage:
         page_obj = paginator.page(paginator.num_pages)
+
+    rows_options = [10, 20, 50, 100]  # ✅ For dropdown in template
 
     return render(request, 'dq_list.html', {
         'page_obj': page_obj,
@@ -1804,7 +1873,10 @@ def dq_list(request):
         'total_balance': total_balance,
         'total_debit': total_debit,
         'total_credit': total_credit,
+        'selected_rows': selected_rows_int,  # ✅ Pass to template
+        'rows_options': rows_options         # ✅ Pass to template
     })
+    
 def get_dq_ledger(request):
     code = request.GET.get('code')
     if not code:
