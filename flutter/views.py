@@ -561,3 +561,188 @@ def _send_whatsapp(phone, message):
 #   "request_id": 12
 # }
 
+
+
+
+
+
+import json
+import requests
+from datetime import datetime
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+from rest_framework import status
+from rest_framework.decorators import api_view
+from app1.models import Employee, User, LateRequest, EarlyRequest
+from .serializers import (
+    LateRequestCreateSerializer, LateRequestListQuerySerializer, LateRequestDeleteSerializer,
+    EarlyRequestCreateSerializer, EarlyRequestListQuerySerializer, EarlyRequestDeleteSerializer,
+)
+
+# ---------- HELPERS ----------
+def _auth_user(userid, password):
+    try:
+        user = User.objects.get(userid=userid, password=password)
+        return Employee.objects.get(user=user)
+    except (User.DoesNotExist, Employee.DoesNotExist):
+        return None
+
+def _send_whatsapp(phone, message):
+    secret  = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
+    account = "1748250982812b4ba287f5ee0bc9d43bbf5bbe87fb683431662a427"
+    url = f"https://app.dxing.in/api/send/whatsapp?secret={secret}&account={account}&recipient={phone}&type=text&message={message}&priority=1"
+    requests.get(url)
+
+# ---------- LATE ----------
+@csrf_exempt
+@api_view(['POST'])
+def create_late_request(request):
+    ser = LateRequestCreateSerializer(data=request.data)
+    if not ser.is_valid():
+        return JsonResponse({'success': False, 'error': ser.errors}, status=400)
+
+    data = ser.validated_data
+    emp = _auth_user(data['userid'], data['password'])
+    if not emp:
+        return JsonResponse({'success': False, 'error': 'Invalid credentials'}, status=401)
+
+    late = LateRequest.objects.create(
+        employee=emp,
+        date=data['date'],
+        delay_time=data['delay_time'],
+        reason=data['reason'],
+        status='pending'
+    )
+
+    # WhatsApp to managers
+    phones = ["9946545535", "7593820007", "7593820005", "9846754998"]
+    msg = (f"New late request from {emp.name}. "
+           f"Date: {late.date:%d-%m-%Y}, Delay: {late.delay_time}, Reason: {late.reason}")
+    for p in phones:
+        _send_whatsapp(p, msg)
+
+    return JsonResponse({'success': True, 'message': 'Late request submitted'}, status=200)
+
+@api_view(['GET'])
+def get_late_requests(request):
+    ser = LateRequestListQuerySerializer(data=request.GET)
+    if not ser.is_valid():
+        return JsonResponse({'success': False, 'error': ser.errors}, status=400)
+
+    data = ser.validated_data
+    emp = _auth_user(data['userid'], data['password'])
+    if not emp:
+        return JsonResponse({'success': False, 'error': 'Invalid credentials'}, status=401)
+
+    qs = LateRequest.objects.filter(employee=emp)
+    if data.get('status'):
+        qs = qs.filter(status=data['status'])
+    qs = qs.order_by('-created_at')
+
+    payload = [{
+        'id': lr.id,
+        'employee_name': lr.employee.name,
+        'date': lr.date.strftime('%Y-%m-%d'),
+        'delay_time': lr.delay_time,
+        'reason': lr.reason,
+        'status': lr.status,
+        'created_at': lr.created_at.strftime('%Y-%m-%d %H:%M')
+    } for lr in qs]
+
+    return JsonResponse({'success': True, 'late_requests': payload}, status=200)
+
+@csrf_exempt
+@api_view(['POST'])
+def delete_late_request(request):
+    ser = LateRequestDeleteSerializer(data=request.data)
+    if not ser.is_valid():
+        return JsonResponse({'success': False, 'error': ser.errors}, status=400)
+
+    data = ser.validated_data
+    emp = _auth_user(data['userid'], data['password'])
+    if not emp:
+        return JsonResponse({'success': False, 'error': 'Invalid credentials'}, status=401)
+
+    try:
+        LateRequest.objects.get(id=data['request_id'], employee=emp, status='pending').delete()
+    except LateRequest.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Request not found or not pending'}, status=404)
+
+    return JsonResponse({'success': True}, status=200)
+
+# ---------- EARLY ----------
+@csrf_exempt
+@api_view(['POST'])
+def create_early_request(request):
+    ser = EarlyRequestCreateSerializer(data=request.data)
+    if not ser.is_valid():
+        return JsonResponse({'success': False, 'error': ser.errors}, status=400)
+
+    data = ser.validated_data
+    emp = _auth_user(data['userid'], data['password'])
+    if not emp:
+        return JsonResponse({'success': False, 'error': 'Invalid credentials'}, status=401)
+
+    early = EarlyRequest.objects.create(
+        employee=emp,
+        date=data['date'],
+        early_time=data['early_time'],
+        reason=data['reason'],
+        status='pending'
+    )
+
+    phones = ["9946545535", "7593820007", "7593820005", "9846754998"]
+    msg = (f"New early request from {emp.name}. "
+           f"Date: {early.date:%d-%m-%Y}, Early Time: {early.early_time}, Reason: {early.reason}")
+    for p in phones:
+        _send_whatsapp(p, msg)
+
+    return JsonResponse({'success': True, 'message': 'Early request submitted'}, status=200)
+
+@api_view(['GET'])
+def get_early_requests(request):
+    ser = EarlyRequestListQuerySerializer(data=request.GET)
+    if not ser.is_valid():
+        return JsonResponse({'success': False, 'error': ser.errors}, status=400)
+
+    data = ser.validated_data
+    emp = _auth_user(data['userid'], data['password'])
+    if not emp:
+        return JsonResponse({'success': False, 'error': 'Invalid credentials'}, status=401)
+
+    qs = EarlyRequest.objects.filter(employee=emp)
+    if data.get('status'):
+        qs = qs.filter(status=data['status'])
+    qs = qs.order_by('-created_at')
+
+    payload = [{
+        'id': er.id,
+        'employee_name': er.employee.name,
+        'date': er.date.strftime('%Y-%m-%d'),
+        'early_time': er.early_time.strftime('%H:%M'),
+        'reason': er.reason,
+        'status': er.status,
+        'created_at': er.created_at.strftime('%Y-%m-%d %H:%M')
+    } for er in qs]
+
+    return JsonResponse({'success': True, 'early_requests': payload}, status=200)
+
+@csrf_exempt
+@api_view(['POST'])
+def delete_early_request(request):
+    ser = EarlyRequestDeleteSerializer(data=request.data)
+    if not ser.is_valid():
+        return JsonResponse({'success': False, 'error': ser.errors}, status=400)
+
+    data = ser.validated_data
+    emp = _auth_user(data['userid'], data['password'])
+    if not emp:
+        return JsonResponse({'success': False, 'error': 'Invalid credentials'}, status=401)
+
+    try:
+        EarlyRequest.objects.get(id=data['request_id'], employee=emp, status='pending').delete()
+    except EarlyRequest.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Request not found or not pending'}, status=404)
+
+    return JsonResponse({'success': True}, status=200)

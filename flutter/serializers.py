@@ -82,3 +82,54 @@ class LeaveRequestDeleteSerializer(serializers.Serializer):
     userid     = serializers.CharField()
     password   = serializers.CharField()
     request_id = serializers.IntegerField()
+
+
+
+
+
+
+
+from rest_framework import serializers
+from app1.models import LateRequest, EarlyRequest, Employee, User
+
+# ---- LATE ----
+class LateRequestCreateSerializer(serializers.Serializer):
+    userid     = serializers.CharField()
+    password   = serializers.CharField()
+    date       = serializers.DateField()
+    delay_time = serializers.CharField()
+    reason     = serializers.CharField()
+
+class LateRequestListQuerySerializer(serializers.Serializer):
+    userid   = serializers.CharField()
+    password = serializers.CharField()
+    status   = serializers.ChoiceField(
+        choices=[('pending', 'Pending'), ('approved', 'Approved'), ('rejected', 'Rejected')],
+        required=False
+    )
+
+class LateRequestDeleteSerializer(serializers.Serializer):
+    userid     = serializers.CharField()
+    password   = serializers.CharField()
+    request_id = serializers.IntegerField()
+
+# ---- EARLY ----
+class EarlyRequestCreateSerializer(serializers.Serializer):
+    userid     = serializers.CharField()
+    password   = serializers.CharField()
+    date       = serializers.DateField()
+    early_time = serializers.TimeField()
+    reason     = serializers.CharField()
+
+class EarlyRequestListQuerySerializer(serializers.Serializer):
+    userid   = serializers.CharField()
+    password = serializers.CharField()
+    status   = serializers.ChoiceField(
+        choices=[('pending', 'Pending'), ('approved', 'Approved'), ('rejected', 'Rejected')],
+        required=False
+    )
+
+class EarlyRequestDeleteSerializer(serializers.Serializer):
+    userid     = serializers.CharField()
+    password   = serializers.CharField()
+    request_id = serializers.IntegerField()
