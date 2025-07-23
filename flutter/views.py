@@ -746,3 +746,71 @@ def delete_early_request(request):
         return JsonResponse({'success': False, 'error': 'Request not found or not pending'}, status=404)
 
     return JsonResponse({'success': True}, status=200)
+
+
+
+
+
+
+
+# http://127.0.0.1:8000/flutter/late/create/
+# {
+#   "userid": "2",
+#   "password": "2",
+#   "date": "2025-07-25",
+#   "delay_time": "20 minutes",
+#   "reason": "TEST TEST"
+# }
+
+
+# LATE GET
+
+# http://127.0.0.1:8000/flutter/late/list/?userid=2&password=2
+
+
+
+# DELETE
+
+# http://127.0.0.1:8000/flutter/late/delete/
+
+
+
+# {
+#   "userid": "2",
+#   "password": "2",
+#   "request_id": 7
+# }
+
+
+
+
+
+
+#EARLY CREATE
+# http://127.0.0.1:8000/flutter/early/create/
+
+
+# {
+#   "userid": "2",
+#   "password": "2",
+#   "date": "2025-07-25",
+#   "early_time": "15:00",
+#   "reason": "Doctor appointment"
+# }
+
+
+
+
+#EARLY GET
+
+# http://127.0.0.1:8000/flutter/early/list/?userid=2&password=2
+
+
+#EARLT DELETE
+# http://127.0.0.1:8000/flutter/early/delete/
+
+# {
+#   "userid": "2",
+#   "password": "2",
+#   "request_id": 3
+# }
