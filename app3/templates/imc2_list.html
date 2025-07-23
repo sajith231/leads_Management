@@ -21,14 +21,14 @@
         color: white;
     }
 </style>
-<div class="">
+<div class="p-4 border rounded shadow-sm" style="background-color: #fdfdfd; border: 1px solid #dee2e6;">
     <h2 class="mb-4">IMC List</h2>
 
     {% if error_message %}
         <div class="alert alert-danger">{{ error_message }}</div>
     {% endif %}
 
-     <!-- 🔷 Tabs -->
+    <!-- 🔷 Tabs -->
     <div class="d-flex justify-content-end mb-3">
         <ul class="nav nav-tabs custom-tabs" role="tablist">
             <li class="nav-item">
@@ -44,7 +44,7 @@
         </ul>
     </div>
 
-    <!-- Search Form with Department Filter -->
+    <!-- Search Form -->
     <form method="get" class="form-inline mb-3 d-flex flex-wrap gap-2 align-items-center">
         <div class="input-group">
             <input type="text" name="q" class="form-control" placeholder="Search by Name,code,place,phone,Department..." value="{{ query }}">
@@ -94,11 +94,12 @@
     </nav>
 
     <!-- Total Summary -->
-    {% if page_obj.number == 1 %}
     <div class="p-3 mb-3 rounded" style="background-color: #eaf4fc; border-left: 5px solid #007bff;">
-        <strong>Total Balance:</strong> <span style="color:#f41616;">₹{{ total_balance|floatformat:2 }}</span>
-    </div>
-    {% endif %}
+    <strong>Total Balance:</strong> <span style="color:#f41616;">₹{{ total_balance|floatformat:2 }}</span>
+</div>
+<div class="mb-3">
+    <strong>Total Clients:</strong> {{ page_obj.paginator.count }}
+</div>
 
     <!-- Table -->
     <div class="table-responsive">
@@ -164,17 +165,24 @@
                 <h5 class="modal-title">LEDGER - <span id="ledgerClientName"></span></h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body" id="ledgerContent">Loading...</div>
+            <div class="modal-body">
+                <div class="mb-3 d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center gap-2">
+                        <label for="filterDate" class="form-label mb-0 me-2">Filter by Date:</label>
+                        <input type="date" id="filterDate" class="form-control form-control-sm" style="width: 200px;">
+                        <button class="btn btn-sm btn-outline-secondary" id="resetLedgerFilter">Reset</button>
+                    </div>
+                </div>
+                <div id="ledgerContent">Loading...</div>
+            </div>
         </div>
     </div>
 </div>
 
-<!-- Scripts -->
 <script>
 document.addEventListener("DOMContentLoaded", function () {
     const toggleBtn = document.getElementById("toggleColumnsBtn");
     const toggleCols = document.querySelectorAll(".toggle-col");
-
     toggleBtn.addEventListener("click", () => {
         toggleCols.forEach(col => col.classList.toggle("d-none"));
         toggleBtn.textContent = toggleCols[0].classList.contains("d-none")
@@ -189,28 +197,39 @@ document.addEventListener("DOMContentLoaded", function () {
             const name = this.dataset.name;
             const modal = new bootstrap.Modal(document.getElementById('ledgerModal'));
             const content = document.getElementById('ledgerContent');
-            document.getElementById('ledgerClientName').textContent = name;
-
+            const clientName = document.getElementById('ledgerClientName');
+            const dateInput = document.getElementById('filterDate');
+            const resetBtn = document.getElementById('resetLedgerFilter');
             content.innerHTML = "Loading...";
+            clientName.textContent = name;
 
             fetch(`/app3/get_imc2_ledger/?code=${code}`)
-                .then(r => {
-                    if (!r.ok) throw new Error("Network response was not ok");
-                    return r.json();
-                })
+                .then(r => r.json())
                 .then(data => {
                     if (!Array.isArray(data) || data.length === 0) {
-                        content.innerHTML = "No ledger entries available.";
-                    } else {
-                        let totalDebit = 0;
-                        let totalCredit = 0;
+                        content.innerHTML = "<div class='text-dark'>No ledger entries available.</div>";
+                        modal.show();
+                        return;
+                    }
 
-                        const rows = data.map(entry => {
+                    // ✅ Sort by voucher number (ascending)
+                    let fullData = data.sort((a, b) => {
+                        const v1 = a.voucher_no || '';
+                        const v2 = b.voucher_no || '';
+                        return v1.localeCompare(v2, undefined, { numeric: true, sensitivity: 'base' });
+                    });
+
+                    const renderTable = (entries) => {
+                        if (!entries.length) {
+                            content.innerHTML = "<div class='text-dark'>No ledger entries available.</div>";
+                            return;
+                        }
+                        let totalDebit = 0, totalCredit = 0;
+                        const rows = entries.map(entry => {
                             const debit = parseFloat(entry.debit || 0);
                             const credit = parseFloat(entry.credit || 0);
                             totalDebit += debit;
                             totalCredit += credit;
-
                             return `
                                 <tr>
                                     <td>${entry.code}</td>
@@ -246,28 +265,37 @@ document.addEventListener("DOMContentLoaded", function () {
                                     </tr>
                                 </tfoot>
                             </table>`;
-                    }
+                    };
+
+                    renderTable(fullData);
                     modal.show();
+
+                    dateInput.addEventListener('change', () => {
+                        const selected = dateInput.value;
+                        if (!selected) return renderTable(fullData);
+                        const filtered = fullData.filter(e => e.entry_date && e.entry_date.startsWith(selected));
+                        renderTable(filtered);
+                    });
+
+                    resetBtn.addEventListener('click', () => {
+                        dateInput.value = '';
+                        renderTable(fullData);
+                    });
                 })
-                .catch(err => {
-                    console.error(err);
+                .catch(() => {
                     content.innerHTML = "<div class='text-danger'>Error loading ledger.</div>";
                     modal.show();
                 });
-
-            function formatDate(dateStr) {
-                if (!dateStr) return '';
-                const date = new Date(dateStr);
-                if (isNaN(date)) return dateStr;
-                const day = String(date.getDate()).padStart(2, '0');
-                const month = String(date.getMonth() + 1).padStart(2, '0');
-                const year = date.getFullYear();
-                return `${day}/${month}/${year}`;
-            }
         });
     });
 
-    // Highlight search terms
+    function formatDate(dateStr) {
+        if (!dateStr) return '';
+        const date = new Date(dateStr);
+        if (isNaN(date)) return dateStr;
+        return `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`;
+    }
+
     const query = "{{ query }}";
     if (query) {
         const searchTerms = query.toLowerCase().split(' ');
@@ -287,6 +315,4 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 });
 </script>
-
-
 {% endblock %}

@@ -22,19 +22,19 @@
     }
 </style>
 
-<div class="">
+<div class="p-4 border rounded shadow-sm" style="background-color: #fdfdfd; border: 1px solid #dee2e6;">
     <h2 class="mb-4">DQ List</h2>
 
-      <!-- 🔷 Tabs -->
+    <!-- 🔷 Tabs -->
     <div class="d-flex justify-content-end mb-3">
         <ul class="nav nav-tabs custom-tabs" role="tablist">
             <li class="nav-item">
-                <a class="nav-link {% if request.resolver_match.url_name == 'debtors1_list' %}active{% endif %}" href="{% url 'debtors1_list' %}">
+                <a class="nav-link {% if request.resolver_match.url_name == 'dq_list' %}active{% endif %}" href="{% url 'dq_list' %}">
                     <i class="fas fa-user-friends me-1"></i> Debtors
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link {% if request.resolver_match.url_name == 'bank_cash_book' %}active{% endif %}" href="{% url 'bank_cash_book' %}">
+                <a class="nav-link {% if request.resolver_match.url_name == 'bank_cash_book' %}active{% endif %}" href="#">
                     <i class="fas fa-university me-1"></i> Bank/Cash Book
                 </a>
             </li>
@@ -62,33 +62,27 @@
         </div>
     </form>
 
-    <!-- Toggle Column Button -->
-    <button id="toggleColumnsBtn" class="btn btn-sm btn-outline-primary mb-3">
-        Show OB/Debit/Credit
-    </button>
+    <button id="toggleColumnsBtn" class="btn btn-sm btn-outline-primary mb-3">Show OB/Debit/Credit</button>
 
     <!-- Pagination -->
-    <nav>
-        <ul class="pagination">
-            {% if page_obj.has_previous %}
-                <li class="page-item"><a class="page-link" href="?page=1&q={{ query }}&min_balance={{ min_balance }}&department={{ selected_department }}">First</a></li>
-                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ query }}&min_balance={{ min_balance }}&department={{ selected_department }}">Previous</a></li>
-            {% endif %}
-            <li class="page-item"><span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
-            {% if page_obj.has_next %}
-                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ query }}&min_balance={{ min_balance }}&department={{ selected_department }}">Next</a></li>
-                <li class="page-item"><a class="page-link" href="?page={{ page_obj.paginator.num_pages }}&q={{ query }}&min_balance={{ min_balance }}&department={{ selected_department }}">Last</a></li>
-            {% endif %}
-        </ul>
-    </nav>
+    <nav><ul class="pagination">
+        {% if page_obj.has_previous %}
+            <li class="page-item"><a class="page-link" href="?page=1&q={{ query }}&min_balance={{ min_balance }}&department={{ selected_department }}">First</a></li>
+            <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ query }}&min_balance={{ min_balance }}&department={{ selected_department }}">Previous</a></li>
+        {% endif %}
+        <li class="page-item"><span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
+        {% if page_obj.has_next %}
+            <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ query }}&min_balance={{ min_balance }}&department={{ selected_department }}">Next</a></li>
+            <li class="page-item"><a class="page-link" href="?page={{ page_obj.paginator.num_pages }}&q={{ query }}&min_balance={{ min_balance }}&department={{ selected_department }}">Last</a></li>
+        {% endif %}
+    </ul></nav>
 
-    {% if page_obj.number == 1 %}
-    <div class="p-3 mb-3 rounded" style="background-color: #eaf4fc; border-left: 5px solid #007bff;">
-        <strong>Total Balance:</strong> <span style="color:#f41616;">₹{{ total_balance|floatformat:2 }}</span>
-    </div>
-    {% endif %}
-
-    <!-- Table -->
+     <div class="p-3 mb-3 rounded" style="background-color: #eaf4fc; border-left: 5px solid #007bff;">
+    <strong>Total Balance:</strong> <span style="color:#f41616;">₹{{ total_balance|floatformat:2 }}</span>
+</div>
+<div class="mb-3">
+    <strong>Total Clients:</strong> {{ page_obj.paginator.count }}
+</div>
     <div class="table-responsive">
         <table class="table table-bordered table-striped main-table">
             <thead class="thead-dark">
@@ -143,18 +137,26 @@
 
 <!-- Ledger Modal -->
 <div class="modal fade" id="ledgerModal" tabindex="-1">
-  <div class="modal-dialog modal-xl modal-dialog-scrollable">
-    <div class="modal-content">
-      <div class="modal-header bg-dark text-white">
-        <h5 class="modal-title">LEDGER - <span id="ledgerClientName"></span></h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body" id="ledgerContent">Loading...</div>
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title">LEDGER - <span id="ledgerClientName"></span></h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3 d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center gap-2">
+                        <label for="filterDate" class="form-label mb-0 me-2">Filter by Date:</label>
+                        <input type="date" id="filterDate" class="form-control form-control-sm" style="width: 200px;">
+                        <button class="btn btn-sm btn-outline-secondary" id="resetLedgerFilter">Reset</button>
+                    </div>
+                </div>
+                <div id="ledgerContent">Loading...</div>
+            </div>
+        </div>
     </div>
-  </div>
 </div>
 
-<!-- Toggle Columns Script -->
 <script>
 document.addEventListener("DOMContentLoaded", function () {
     const toggleBtn = document.getElementById("toggleColumnsBtn");
@@ -165,112 +167,128 @@ document.addEventListener("DOMContentLoaded", function () {
             ? "Show OB/Debit/Credit"
             : "Hide OB/Debit/Credit";
     });
-});
-</script>
 
-<!-- Ledger Modal Script -->
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    document.querySelectorAll('.ledger-link').forEach(link => {
-        link.addEventListener('click', function (e) {
-            e.preventDefault();
+    const ledgerButtons = document.querySelectorAll('.ledger-link');
+    let fullLedgerData = [];
+
+    ledgerButtons.forEach(btn => {
+        btn.addEventListener('click', function () {
             const code = this.dataset.code;
             const name = this.dataset.name;
             const modal = new bootstrap.Modal(document.getElementById('ledgerModal'));
             const content = document.getElementById('ledgerContent');
-            document.getElementById('ledgerClientName').textContent = name;
+            const clientName = document.getElementById('ledgerClientName');
+            const dateInput = document.getElementById('filterDate');
+            const resetBtn = document.getElementById('resetLedgerFilter');
 
+            clientName.textContent = name;
             content.innerHTML = "Loading...";
+            dateInput.value = '';
+            fullLedgerData = [];
 
-            fetch(`/app3/get_dq_ledger/?code=${code}`) 
-                .then(r => {
-                    if (!r.ok) throw new Error("Network response was not ok");
-                    return r.json();
-                })
+            fetch(`/app3/get_dq_ledger/?code=${code}`)
+                .then(res => res.json())
                 .then(data => {
-                    if (!Array.isArray(data) || data.length === 0) {
-                        content.innerHTML = "<div class='text-dark'>No ledger entries available.</div>";
-                        modal.show();
-                        return;
-                    }
-
-                    let totalDebit = 0;
-                    let totalCredit = 0;
-
-                    const rows = data.map(entry => {
-                        const debit = parseFloat(entry.debit || 0);
-                        const credit = parseFloat(entry.credit || 0);
-                        totalDebit += debit;
-                        totalCredit += credit;
-
-                        return `
-                            <tr>
-                                <td>${entry.code}</td>
-                                <td>${formatDate(entry.entry_date)}</td>
-                                <td>${entry.voucher_no || ''}</td>
-                                <td>${entry.particulars || ''}</td>
-                                <td class="text-end">${debit.toFixed(2)}</td>
-                                <td class="text-end">${credit.toFixed(2)}</td>
-                                <td>${entry.narration || ''}</td>
-                            </tr>`;
-                    }).join('');
-
-                    content.innerHTML = `
-                        <table class="table table-bordered table-sm">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Code</th>
-                                    <th>Date</th>
-                                    <th>Voucher</th>
-                                    <th>Particulars</th>
-                                    <th>Debit</th>
-                                    <th>Credit</th>
-                                    <th>Narration</th>
-                                </tr>
-                            </thead>
-                            <tbody>${rows}</tbody>
-                            <tfoot class="table-light fw-bold">
-                                <tr>
-                                    <td colspan="4" class="text-end">Total</td>
-                                    <td class="text-end text-dark">₹${totalDebit.toFixed(2)}</td>
-                                    <td class="text-end text-dark">₹${totalCredit.toFixed(2)}</td>
-                                    <td></td>
-                                </tr>
-                            </tfoot>
-                        </table>`;
+                    fullLedgerData = data || [];
+                    renderTable(fullLedgerData);
                     modal.show();
                 })
-                .catch(err => {
-                    console.error(err);
+                .catch(() => {
                     content.innerHTML = "<div class='text-danger'>Error loading ledger.</div>";
                     modal.show();
                 });
 
+            dateInput.oninput = () => {
+                const date = dateInput.value;
+                const filtered = fullLedgerData.filter(entry => entry.entry_date && entry.entry_date.startsWith(date));
+                if (filtered.length > 0) {
+                    renderTable(filtered);
+                } else {
+                    content.innerHTML = "<div class='text-dark'>No ledger entries available.</div>";
+                }
+            };
+
+            resetBtn.onclick = () => {
+                dateInput.value = '';
+                renderTable(fullLedgerData);
+            };
+
+            function renderTable(data) {
+                if (!data.length) {
+                    content.innerHTML = "<div class='text-dark'>No ledger entries available.</div>";
+                    return;
+                }
+
+                // ✅ Sort by voucher number ascending
+                data.sort((a, b) => {
+                    const aVoucher = (a.voucher_no || '').toString().toLowerCase();
+                    const bVoucher = (b.voucher_no || '').toString().toLowerCase();
+                    return aVoucher.localeCompare(bVoucher, undefined, { numeric: true });
+                });
+
+                let totalDebit = 0, totalCredit = 0;
+                const rows = data.map(entry => {
+                    const debit = parseFloat(entry.debit || 0);
+                    const credit = parseFloat(entry.credit || 0);
+                    totalDebit += debit;
+                    totalCredit += credit;
+                    return `
+                        <tr>
+                            <td>${entry.code}</td>
+                            <td>${formatDate(entry.entry_date)}</td>
+                            <td>${entry.voucher_no || ''}</td>
+                            <td>${entry.particulars || ''}</td>
+                            <td class="text-end">${debit.toFixed(2)}</td>
+                            <td class="text-end">${credit.toFixed(2)}</td>
+                            <td>${entry.narration || ''}</td>
+                        </tr>`;
+                }).join('');
+
+                content.innerHTML = `
+                    <table class="table table-bordered table-sm">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Code</th>
+                                <th>Date</th>
+                                <th>Voucher</th>
+                                <th>Particulars</th>
+                                <th>Debit</th>
+                                <th>Credit</th>
+                                <th>Narration</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rows}</tbody>
+                        <tfoot class="table-light fw-bold">
+                            <tr>
+                                <td colspan="4" class="text-end">Total</td>
+                                <td class="text-end text-dark">₹${totalDebit.toFixed(2)}</td>
+                                <td class="text-end text-dark">₹${totalCredit.toFixed(2)}</td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>`;
+            }
+
             function formatDate(dateStr) {
-                if (!dateStr) return '';
                 const date = new Date(dateStr);
                 if (isNaN(date)) return dateStr;
-                const day = String(date.getDate()).padStart(2, '0');
-                const month = String(date.getMonth() + 1).padStart(2, '0');
-                const year = date.getFullYear();
-                return `${day}/${month}/${year}`;
+                return `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`;
             }
         });
     });
 });
 </script>
 
-<!-- Highlight Search Terms -->
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const query = "{{ query }}";
     if (query) {
-        const searchTerms = query.toLowerCase().split(' ');
+        const terms = query.toLowerCase().split(' ');
         document.querySelectorAll('.main-table tbody tr').forEach(row => {
             row.querySelectorAll('td').forEach((cell, idx) => {
                 if (idx === 3) return;
                 let html = cell.innerHTML;
-                searchTerms.forEach(term => {
+                terms.forEach(term => {
                     const regex = new RegExp(`(${term})`, 'gi');
                     html = html.replace(regex, '<mark>$1</mark>');
                 });
@@ -280,5 +298,4 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 });
 </script>
-
 {% endblock %}
