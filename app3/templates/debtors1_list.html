@@ -22,7 +22,8 @@
     }
 </style>
 
-<div class="">
+<div class="p-4 border rounded shadow-sm" style="background-color: #fdfdfd; border: 1px solid #dee2e6;">
+
     <h2 class="mb-4">SYSMAC COMPUTERS-1</h2>
 
     {% if error_message %}
@@ -96,12 +97,13 @@
         </ul>
     </nav>
 
-    <!-- Totals on Page 1 -->
-    {% if page_obj.number == 1 %}
-    <div class="p-3 mb-3 rounded" style="background-color: #eaf4fc; border-left: 5px solid #007bff;">
-        <strong>Total Balance:</strong> <span style="color:#f41616;">₹{{ total_balance|floatformat:2 }}</span>
-    </div>
-    {% endif %}
+<div class="p-3 mb-3 rounded" style="background-color: #eaf4fc; border-left: 5px solid #007bff;">
+    <strong>Total Balance:</strong> <span style="color:#f41616;">₹{{ total_balance|floatformat:2 }}</span>
+</div>
+<div class="mb-3">
+    <strong>Total Clients:</strong> {{ page_obj.paginator.count }}
+</div>
+
 
     <!-- Table -->
     <div class="table-responsive">
@@ -170,12 +172,20 @@
         <h5 class="modal-title">LEDGER - <span id="ledgerClientName"></span></h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
       </div>
-      <div class="modal-body" id="ledgerContent">Loading...</div>
+      <div class="modal-body">
+        <div class="mb-3 d-flex justify-content-between align-items-center">
+          <div class="d-flex align-items-center gap-2">
+            <label for="filterDate" class="form-label mb-0 me-2">Filter by Date:</label>
+            <input type="date" id="filterDate" class="form-control form-control-sm" style="width: 200px;">
+            <button class="btn btn-sm btn-outline-secondary" id="resetLedgerBtn">Reset</button>
+          </div>
+        </div>
+        <div id="ledgerContent">Loading...</div>
+      </div>
     </div>
   </div>
 </div>
 
-<!-- Scripts -->
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const toggleBtn = document.getElementById('toggleColumnsBtn');
@@ -186,71 +196,101 @@ document.addEventListener('DOMContentLoaded', function () {
             : 'Show OB/Debit/Credit';
     });
 
+    let fullLedgerData = [];
+
     document.querySelectorAll('.ledger-link').forEach(link => {
         link.addEventListener('click', function () {
             const code = this.dataset.code;
             const name = this.dataset.name;
             const modal = new bootstrap.Modal(document.getElementById('ledgerModal'));
             const content = document.getElementById('ledgerContent');
+            const filterDateInput = document.getElementById('filterDate');
+            const resetBtn = document.getElementById('resetLedgerBtn');
             document.getElementById('ledgerClientName').textContent = name;
             content.innerHTML = "Loading...";
+            filterDateInput.value = '';
 
             fetch(`/app3/get_sysmac_ledger/?code=${code}`)
                 .then(r => r.json())
                 .then(data => {
-                    if (!Array.isArray(data) || data.length === 0) {
-                        content.innerHTML = "<div class='text-dark'>No ledger entries available.</div>";
-                        modal.show();
-                        return;
-                    }
-
-                    let totalDebit = 0, totalCredit = 0;
-                    const rows = data.map(entry => {
-                        const debit = parseFloat(entry.debit || 0);
-                        const credit = parseFloat(entry.credit || 0);
-                        totalDebit += debit;
-                        totalCredit += credit;
-                        return `
-                            <tr>
-                                <td>${entry.code}</td>
-                                <td>${formatDate(entry.entry_date)}</td>
-                                <td>${entry.voucher_no || ''}</td>
-                                <td>${entry.particulars || ''}</td>
-                                <td class="text-end">${debit.toFixed(2)}</td>
-                                <td class="text-end">${credit.toFixed(2)}</td>
-                                <td>${entry.narration || ''}</td>
-                            </tr>`;
-                    }).join('');
-
-                    content.innerHTML = `
-                        <table class="table table-bordered table-sm">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Code</th>
-                                    <th>Date</th>
-                                    <th>Voucher</th>
-                                    <th>Particulars</th>
-                                    <th>Debit</th>
-                                    <th>Credit</th>
-                                    <th>Narration</th>
-                                </tr>
-                            </thead>
-                            <tbody>${rows}</tbody>
-                            <tfoot class="table-light fw-bold">
-                                <tr>
-                                    <td colspan="4" class="text-end">Total</td>
-                                    <td class="text-end text-dark">₹${totalDebit.toFixed(2)}</td>
-                                    <td class="text-end text-dark">₹${totalCredit.toFixed(2)}</td>
-                                    <td></td>
-                                </tr>
-                            </tfoot>
-                        </table>`;
+                    fullLedgerData = (data || []).sort((a, b) => {
+                        const va = a.voucher_no || '';
+                        const vb = b.voucher_no || '';
+                        return va.localeCompare(vb, undefined, { numeric: true, sensitivity: 'base' });
+                    });
+                    renderTable(fullLedgerData);
                     modal.show();
                 })
                 .catch(() => {
                     content.innerHTML = "<div class='text-danger'>Error loading ledger.</div>";
                     modal.show();
                 });
+
+            function renderTable(data) {
+                if (!Array.isArray(data) || data.length === 0) {
+                    content.innerHTML = "<div class='text-dark'>No ledger entries available.</div>";
+                    return;
+                }
+
+                let totalDebit = 0, totalCredit = 0;
+                const rows = data.map(entry => {
+                    const debit = parseFloat(entry.debit || 0);
+                    const credit = parseFloat(entry.credit || 0);
+                    totalDebit += debit;
+                    totalCredit += credit;
+                    return `
+                        <tr>
+                            <td>${entry.code}</td>
+                            <td>${formatDate(entry.entry_date)}</td>
+                            <td>${entry.voucher_no || ''}</td>
+                            <td>${entry.particulars || ''}</td>
+                            <td class="text-end">${debit.toFixed(2)}</td>
+                            <td class="text-end">${credit.toFixed(2)}</td>
+                            <td>${entry.narration || ''}</td>
+                        </tr>`;
+                }).join('');
+
+                content.innerHTML = `
+                    <table class="table table-bordered table-sm">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Code</th>
+                                <th>Date</th>
+                                <th>Voucher</th>
+                                <th>Particulars</th>
+                                <th>Debit</th>
+                                <th>Credit</th>
+                                <th>Narration</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rows}</tbody>
+                        <tfoot class="table-light fw-bold">
+                            <tr>
+                                <td colspan="4" class="text-end">Total</td>
+                                <td class="text-end text-dark">₹${totalDebit.toFixed(2)}</td>
+                                <td class="text-end text-dark">₹${totalCredit.toFixed(2)}</td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>`;
+            }
+
+            filterDateInput.addEventListener('change', function () {
+                const date = this.value;
+                if (!date) {
+                    renderTable(fullLedgerData);
+                    return;
+                }
+                const filtered = fullLedgerData.filter(entry =>
+                    entry.entry_date && entry.entry_date.slice(0, 10) === date
+                );
+                renderTable(filtered);
+            });
+
+            resetBtn.addEventListener('click', () => {
+                filterDateInput.value = '';
+                renderTable(fullLedgerData);
+            });
         });
     });
 
@@ -258,7 +298,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!dateStr) return '';
         const date = new Date(dateStr);
         if (isNaN(date)) return dateStr;
-        return `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth()+1).padStart(2, '0')}/${date.getFullYear()}`;
+        return `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`;
     }
 
     const query = "{{ query }}";
