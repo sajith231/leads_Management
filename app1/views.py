@@ -645,6 +645,8 @@ def edit_lead(request, lead_id):
                                 for hp in LeadHardwarePrice.objects.filter(lead=lead)}
     existing_amounts = {ra.requirement_id: ra.amount
                         for ra in LeadRequirementAmount.objects.filter(lead=lead)}
+    existing_remarks = {ra.requirement_id: ra.remarks
+                        for ra in LeadRequirementAmount.objects.filter(lead=lead)}
 
     return render(request, 'edit_lead.html', {
         'form': form,
@@ -653,6 +655,7 @@ def edit_lead(request, lead_id):
         'hardwares': hardwares,
         'existing_hardware_prices': existing_hardware_prices,
         'existing_amounts': existing_amounts,
+        'existing_remarks': existing_remarks,  # Added this line
     })
 
 
