@@ -252,6 +252,7 @@
                             <th>Follow Up</th>
                             <th>Quotation</th>
                             <th>Image</th>
+                            <th>Document</th>
                             <th>Remarks</th>
                             <th>Voice Note</th>
                             <th>Lead Added Place</th>
@@ -390,6 +391,15 @@
                                         <span class="text-muted">No image</span>
                                     {% endif %}
                                 </td>
+                                <td>
+    {% if lead.document %}
+        <a href="{{ lead.document.url }}" target="_blank" title="Download / View">
+            <i class="fas fa-file-pdf fa-lg" style="color:red"></i>
+        </a>
+    {% else %}
+        <span class="text-muted">–</span>
+    {% endif %}
+</td>
                                 <td>
                                     {% if lead.remarks %}
                                         <div style="max-height: 50px; overflow-y: auto; white-space: nowrap;display: flex;justify-content: center;">

@@ -212,7 +212,7 @@ class LeadForm(forms.ModelForm):
             'firm_name', 'customer_name', 'contact_number', 'landmark', 
             'location', 'district', 'area', 'business_nature', 'requirements',
             # 'hardware',  # Added hardware field
-            'follow_up_required', 'quotation_required', 'image', 'remarks', 'voice_note','hardwares'
+            'follow_up_required', 'quotation_required', 'image','document', 'remarks', 'voice_note','hardwares'
         ]
         widgets = {
             'firm_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter Firm Name'}),
@@ -228,6 +228,7 @@ class LeadForm(forms.ModelForm):
             'business_nature': forms.Select(attrs={'class': 'form-select'}),
             'requirements': DropdownCheckboxWidget(attrs={'class': 'form-select'}),
             'image': forms.FileInput(attrs={'class': 'form-control'}),
+            'document': forms.FileInput(attrs={'class': 'form-control', 'accept': '.pdf,.doc,.docx,.txt'}),
             'remarks': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'required': False}),
             'voice_note': forms.FileInput(attrs={'class': 'form-control', 'accept': 'audio/*'}),
             'district': forms.Select(attrs={'class': 'form-select', 'id': 'id_district'}),

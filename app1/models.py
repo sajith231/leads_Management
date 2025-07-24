@@ -158,6 +158,7 @@ class Lead(models.Model):
     follow_up_required = models.BooleanField(default=False)
     quotation_required = models.BooleanField(default=False)
     image = models.ImageField(upload_to='lead_images/', null=True, blank=True)
+    document = models.FileField(upload_to='lead_documents/', null=True, blank=True) #CREATED AS NEW
     remarks = models.TextField(blank=True, null=True)
     planet_entry = models.BooleanField(default=False)
     voice_note = models.FileField(upload_to='voice_notes/', null=True, blank=True)
