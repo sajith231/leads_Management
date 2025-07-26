@@ -5619,10 +5619,15 @@ from django.shortcuts import render
 from .models import ServiceLog, User
 
 
+# ✅ Updated `views.py`
+from django.shortcuts import render
+from django.core.paginator import Paginator
+from datetime import date, datetime
+from django.db.models import Count, Q
+from .models import ServiceLog
+from django.contrib.auth.models import User
+
 def servicelog_list(request):
-    # ------------------------------------------------------------------
-    # 1. Default / filter parameters
-    # ------------------------------------------------------------------
     today = date.today().strftime('%Y-%m-%d')
 
     customer_search        = request.GET.get('customer_search', '')
@@ -5633,10 +5638,9 @@ def servicelog_list(request):
     complaint_filter       = request.GET.get('complaint_type', '')
     start_date_filter      = request.GET.get('start_date', today)
     end_date_filter        = request.GET.get('end_date', today)
+    rows_str = request.GET.get('rows', '')          # let empty string be the default
+    rows = int(rows_str) if rows_str else 10   # 🔁 rows parameter
 
-    # ------------------------------------------------------------------
-    # 2. Base queryset with annotations
-    # ------------------------------------------------------------------
     service_logs = (
         ServiceLog.objects
         .annotate(
@@ -5649,9 +5653,6 @@ def servicelog_list(request):
         .order_by('-id')
     )
 
-    # ------------------------------------------------------------------
-    # 3. Apply filters (unchanged logic)
-    # ------------------------------------------------------------------
     if customer_search:
         service_logs = service_logs.filter(customer_name__icontains=customer_search)
 
@@ -5709,17 +5710,11 @@ def servicelog_list(request):
         except ValueError:
             pass
 
-    # ------------------------------------------------------------------
-    # 4. Post-processing: strip address from customer_name
-    # ------------------------------------------------------------------
     for log in service_logs:
         if '-' in log.customer_name:
             log.customer_name = log.customer_name.split('-')[0].strip()
 
-    # ------------------------------------------------------------------
-    # 5. Pagination
-    # ------------------------------------------------------------------
-    paginator = Paginator(service_logs, 10)
+    paginator = Paginator(service_logs, rows)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
@@ -5737,7 +5732,10 @@ def servicelog_list(request):
         'start_date_filter': start_date_filter,
         'end_date_filter': end_date_filter,
         'start_index': page_obj.start_index(),
+        'rows_options': [10, 25, 50, 100],  # 🔁 add row options list
+        'selected_rows': rows              # 🔁 currently selected value
     })
+
 
 from app1.models import User, Complaint, ServiceLog, ServiceLogComplaint
 

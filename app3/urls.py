@@ -4,6 +4,9 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+
+#salary certificate
+
     path('salary-certificates/', views.make_salary_certificate, name='make_salary_certificate'),
     path('get-employee-details/', views.get_employee_details, name='get_employee_details'),
     path('add-salary-certificate/', views.add_salary_certificate, name='add_salary_certificate'),
@@ -51,17 +54,33 @@ urlpatterns = [
 
     path('debtors1/', views.debtors1_list, name='debtors1_list'),
     path('get_sysmac_ledger/', views.get_sysmac_ledger, name='get_sysmac_ledger'),
-    path('bank-cash-book/', views.bank_cash_book, name='bank_cash_book'),
+    path('get-sysmac-invmast-bills/', views.sysmac_invmast_bills, name='sysmac_invmast_bills'),
+    
     path('imc1-list/', views.imc1_list, name='imc1_list'),
     path('get_imc1_ledger/', views.get_imc1_ledger, name='get_imc1_ledger'),
+    path('get-imc1-invmast-bills/', views.imc1_invmast_bills, name='imc1_invmast_bills'),
+
+
     path('imc2-list/', views.imc2_list, name='imc2_list'),
     path('get_imc2_ledger/', views.get_imc2_ledger, name='get_imc2_ledger'),
+    path('get-imc2-invmast-bills/', views.imc2_invmast_bills, name='imc2_invmast_bills'),
+    
+
+
     path('sysmac-info-list/', views.sysmac_info_list, name='sysmac_info_list'),
     path('get_sysmac_info_ledger/', views.get_sysmac_info_ledger, name='get_sysmac_info_ledger'),
+    path('get-sysmac-info-invmast-bills/', views.sysmac_info_invmast_bills, name='sysmac_info_invmast_bills'),
+    
+
+
     path('dq-list/', views.dq_list, name='dq_list'),
     path('get_dq_ledger/', views.get_dq_ledger, name='get_dq_ledger'),
+    path('get-dq-invmast-bills/', views.dq_invmast_bills, name='dq_invmast_bills'),
+    
 
 
 
 
 ]
+
+
