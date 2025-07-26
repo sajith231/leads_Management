@@ -2,6 +2,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from .serializers import UserLoginSerializer
+from django.views.decorators.csrf import csrf_exempt
+import calendar
 
 
 class UserLoginView(APIView):
@@ -196,6 +198,334 @@ class PunchOutView(APIView):
 # }
 
 
+
+
+
+from rest_framework.decorators import api_view
+from django.http import JsonResponse
+from app1.models import Attendance, Employee, User
+from .serializers import AttendanceMonthlyQuerySerializer, AttendanceDetailSerializer
+from datetime import datetime, timedelta
+import calendar
+
+from rest_framework.decorators import api_view
+from django.http import JsonResponse
+from app1.models import Attendance, Employee, User
+from .serializers import AttendanceMonthlyQuerySerializer, AttendanceDetailSerializer
+from datetime import datetime, timedelta
+import calendar
+
+@api_view(['GET'])
+def get_monthly_attendance(request):
+    """
+    Get attendance records for a specific month and year for a user
+    URL: /flutter/attendance/monthly/
+    Query params: userid, password, month, year
+    """
+    serializer = AttendanceMonthlyQuerySerializer(data=request.GET)
+    if not serializer.is_valid():
+        return JsonResponse({'success': False, 'error': serializer.errors}, status=400)
+
+    data = serializer.validated_data
+    userid = data['userid']
+    password = data['password']
+    month = data['month']
+    year = data['year']
+
+    # Authenticate user
+    try:
+        user = User.objects.get(userid=userid, password=password, is_active=True)
+        employee = Employee.objects.get(user=user)
+    except (User.DoesNotExist, Employee.DoesNotExist):
+        return JsonResponse({'success': False, 'error': 'Invalid credentials'}, status=401)
+
+    # Get first and last day of the month
+    first_day = datetime(year, month, 1).date()
+    last_day = datetime(year, month, calendar.monthrange(year, month)[1]).date()
+    total_days_in_month = calendar.monthrange(year, month)[1]
+
+    # Get attendance records for the month
+    attendance_records = Attendance.objects.filter(
+        employee=employee,
+        date__range=[first_day, last_day]
+    ).order_by('date')
+
+    # Create a dictionary for quick lookup
+    attendance_dict = {record.date: record for record in attendance_records}
+
+    # Create complete month data with all days
+    complete_month_data = []
+    present_days = 0
+    full_days = 0
+    half_days = 0
+    leave_days = 0
+    absent_days = 0
+    total_minutes = 0
+
+    for day in range(1, total_days_in_month + 1):
+        current_date = datetime(year, month, day).date()
+        day_name = current_date.strftime('%A')
+        
+        if current_date in attendance_dict:
+            # Attendance record exists
+            record = attendance_dict[current_date]
+            
+            # Calculate working hours for this day
+            working_hours = None
+            if record.punch_in and record.punch_out:
+                duration = record.punch_out - record.punch_in
+                day_minutes = int(duration.total_seconds() / 60)
+                total_minutes += day_minutes
+                hours = day_minutes // 60
+                minutes = day_minutes % 60
+                working_hours = f"{hours:02d}:{minutes:02d}"
+            
+            day_data = {
+                'date': current_date.strftime('%Y-%m-%d'),
+                'date_formatted': current_date.strftime('%d-%m-%Y'),
+                'day': day,
+                'day_name': day_name,
+                'status': record.status,
+                'punch_in': record.punch_in.isoformat() if record.punch_in else None,
+                'punch_out': record.punch_out.isoformat() if record.punch_out else None,
+                'punch_in_time': record.punch_in.strftime('%H:%M:%S') if record.punch_in else None,
+                'punch_out_time': record.punch_out.strftime('%H:%M:%S') if record.punch_out else None,
+                'punch_in_location': record.punch_in_location,
+                'punch_out_location': record.punch_out_location,
+                'working_hours': working_hours,
+                'verified': record.verified,
+                'note': record.note,
+                'has_record': True
+            }
+            
+            # Count statistics
+            if record.status in ['full', 'half']:
+                present_days += 1
+            if record.status == 'full':
+                full_days += 1
+            elif record.status == 'half':
+                half_days += 1
+            elif record.status == 'leave':
+                leave_days += 1
+            elif record.status == 'initial':
+                absent_days += 1
+                
+        else:
+            # No attendance record for this day
+            day_data = {
+                'date': current_date.strftime('%Y-%m-%d'),
+                'date_formatted': current_date.strftime('%d-%m-%Y'),
+                'day': day,
+                'day_name': day_name,
+                'status': 'no_record',
+                'punch_in': None,
+                'punch_out': None,
+                'punch_in_time': None,
+                'punch_out_time': None,
+                'punch_in_location': None,
+                'punch_out_location': None,
+                'working_hours': None,
+                'verified': False,
+                'note': None,
+                'has_record': False
+            }
+            absent_days += 1
+        
+        complete_month_data.append(day_data)
+
+    # Calculate total working hours
+    total_working_hours = total_minutes // 60
+    remaining_minutes = total_minutes % 60
+
+    response_data = {
+        'success': True,
+        'employee_name': employee.name,
+        'month': month,
+        'year': year,
+        'month_name': calendar.month_name[month],
+        'summary': {
+            'total_days_in_month': total_days_in_month,
+            'total_attendance_records': len(attendance_records),
+            'present_days': present_days,
+            'full_days': full_days,
+            'half_days': half_days,
+            'leave_days': leave_days,
+            'absent_days': absent_days,
+            'no_record_days': total_days_in_month - len(attendance_records),
+            'total_working_hours': f"{total_working_hours:02d}:{remaining_minutes:02d}",
+            'attendance_percentage': round((present_days / total_days_in_month) * 100, 2) if total_days_in_month > 0 else 0
+        },
+        'attendance_records': complete_month_data
+    }
+
+    return JsonResponse(response_data, status=200)
+
+# Alternative POST method (if you prefer POST over GET)
+@csrf_exempt
+@api_view(['POST'])
+def get_monthly_attendance_post(request):
+    """
+    Get attendance records for a specific month and year for a user (POST method)
+    URL: /flutter/attendance/monthly-post/
+    POST body: {"userid": "", "password": "", "month": 7, "year": 2025}
+    """
+    serializer = AttendanceMonthlyQuerySerializer(data=request.data)
+    if not serializer.is_valid():
+        return JsonResponse({'success': False, 'error': serializer.errors}, status=400)
+
+    data = serializer.validated_data
+    userid = data['userid']
+    password = data['password']
+    month = data['month']
+    year = data['year']
+
+    # Authenticate user
+    try:
+        user = User.objects.get(userid=userid, password=password, is_active=True)
+        employee = Employee.objects.get(user=user)
+    except (User.DoesNotExist, Employee.DoesNotExist):
+        return JsonResponse({'success': False, 'error': 'Invalid credentials'}, status=401)
+
+    # Get first and last day of the month
+    first_day = datetime(year, month, 1).date()
+    last_day = datetime(year, month, calendar.monthrange(year, month)[1]).date()
+    total_days_in_month = calendar.monthrange(year, month)[1]
+
+    # Get attendance records for the month
+    attendance_records = Attendance.objects.filter(
+        employee=employee,
+        date__range=[first_day, last_day]
+    ).order_by('date')
+
+    # Create a dictionary for quick lookup
+    attendance_dict = {record.date: record for record in attendance_records}
+
+    # Create complete month data with all days
+    complete_month_data = []
+    present_days = 0
+    full_days = 0
+    half_days = 0
+    leave_days = 0
+    absent_days = 0
+    total_minutes = 0
+
+    for day in range(1, total_days_in_month + 1):
+        current_date = datetime(year, month, day).date()
+        day_name = current_date.strftime('%A')
+        
+        if current_date in attendance_dict:
+            # Attendance record exists
+            record = attendance_dict[current_date]
+            
+            # Calculate working hours for this day
+            working_hours = None
+            if record.punch_in and record.punch_out:
+                duration = record.punch_out - record.punch_in
+                day_minutes = int(duration.total_seconds() / 60)
+                total_minutes += day_minutes
+                hours = day_minutes // 60
+                minutes = day_minutes % 60
+                working_hours = f"{hours:02d}:{minutes:02d}"
+            
+            day_data = {
+                'date': current_date.strftime('%Y-%m-%d'),
+                'date_formatted': current_date.strftime('%d-%m-%Y'),
+                'day': day,
+                'day_name': day_name,
+                'status': record.status,
+                'punch_in': record.punch_in.isoformat() if record.punch_in else None,
+                'punch_out': record.punch_out.isoformat() if record.punch_out else None,
+                'punch_in_time': record.punch_in.strftime('%H:%M:%S') if record.punch_in else None,
+                'punch_out_time': record.punch_out.strftime('%H:%M:%S') if record.punch_out else None,
+                'punch_in_location': record.punch_in_location,
+                'punch_out_location': record.punch_out_location,
+                'working_hours': working_hours,
+                'verified': record.verified,
+                'note': record.note,
+                'has_record': True
+            }
+            
+            # Count statistics
+            if record.status in ['full', 'half']:
+                present_days += 1
+            if record.status == 'full':
+                full_days += 1
+            elif record.status == 'half':
+                half_days += 1
+            elif record.status == 'leave':
+                leave_days += 1
+            elif record.status == 'initial':
+                absent_days += 1
+                
+        else:
+            # No attendance record for this day
+            day_data = {
+                'date': current_date.strftime('%Y-%m-%d'),
+                'date_formatted': current_date.strftime('%d-%m-%Y'),
+                'day': day,
+                'day_name': day_name,
+                'status': 'no_record',
+                'punch_in': None,
+                'punch_out': None,
+                'punch_in_time': None,
+                'punch_out_time': None,
+                'punch_in_location': None,
+                'punch_out_location': None,
+                'working_hours': None,
+                'verified': False,
+                'note': None,
+                'has_record': False
+            }
+            absent_days += 1
+        
+        complete_month_data.append(day_data)
+
+    # Calculate total working hours
+    total_working_hours = total_minutes // 60
+    remaining_minutes = total_minutes % 60
+
+    response_data = {
+        'success': True,
+        'employee_name': employee.name,
+        'month': month,
+        'year': year,
+        'month_name': calendar.month_name[month],
+        'summary': {
+            'total_days_in_month': total_days_in_month,
+            'total_attendance_records': len(attendance_records),
+            'present_days': present_days,
+            'full_days': full_days,
+            'half_days': half_days,
+            'leave_days': leave_days,
+            'absent_days': absent_days,
+            'no_record_days': total_days_in_month - len(attendance_records),
+            'total_working_hours': f"{total_working_hours:02d}:{remaining_minutes:02d}",
+            'attendance_percentage': round((present_days / total_days_in_month) * 100, 2) if total_days_in_month > 0 else 0
+        },
+        'attendance_records': complete_month_data
+    }
+
+    return JsonResponse(response_data, status=200)
+
+
+
+
+
+
+# URL: http://127.0.0.1:8000/flutter/attendance/monthly/?userid=2&password=2&month=7&year=2025
+# Method: GET
+
+
+
+# URL: http://127.0.0.1:8000/flutter/attendance/monthly-post/
+# Method: POST
+# Body: 
+# {
+#     "userid": "2",
+#     "password": "2",
+#     "month": 7,
+#     "year": 2025
+# }
 
 
 # flutter/views.py - Add these views to your existing file

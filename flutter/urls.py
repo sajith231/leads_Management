@@ -1,6 +1,8 @@
 # flutter/urls.py
 from django.urls import path
 from .views import UserLoginView, UserListView, PunchInView, PunchOutView,BreakPunchInView,BreakPunchOutView,BreakStatusView
+from .views import get_monthly_attendance, get_monthly_attendance_post
+
 
 from .views import (
     create_leave_request,
@@ -77,6 +79,10 @@ urlpatterns = [
     path('early/create/', create_early_request, name='create_early_request'),
     path('early/list/',   get_early_requests,   name='get_early_requests'),
     path('early/delete/', delete_early_request, name='delete_early_request'),
+
+
+    path('attendance/monthly/', get_monthly_attendance, name='monthly-attendance'),
+    path('attendance/monthly-post/', get_monthly_attendance_post, name='monthly-attendance-post'),
 
 
 

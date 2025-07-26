@@ -61,6 +61,65 @@ class AttendanceSerializer(serializers.ModelSerializer):
 
 
 
+
+from rest_framework import serializers
+from app1.models import Attendance
+from datetime import datetime
+from rest_framework import serializers
+from app1.models import Attendance
+from datetime import datetime
+
+class AttendanceMonthlyQuerySerializer(serializers.Serializer):
+    userid = serializers.CharField()
+    password = serializers.CharField()
+    month = serializers.IntegerField(min_value=1, max_value=12)
+    year = serializers.IntegerField(min_value=2020, max_value=2030)
+
+class AttendanceDetailSerializer(serializers.ModelSerializer):
+    punch_in_time = serializers.SerializerMethodField()
+    punch_out_time = serializers.SerializerMethodField()
+    date_formatted = serializers.SerializerMethodField()
+    day_name = serializers.SerializerMethodField()
+    working_hours = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Attendance
+        fields = [
+            'id', 'date', 'date_formatted', 'day', 'day_name', 'status', 
+            'punch_in', 'punch_out', 'punch_in_time', 'punch_out_time',
+            'punch_in_location', 'punch_out_location', 'working_hours', 'verified', 'note'
+        ]
+    
+    def get_punch_in_time(self, obj):
+        if obj.punch_in:
+            return obj.punch_in.strftime('%H:%M:%S')
+        return None
+    
+    def get_punch_out_time(self, obj):
+        if obj.punch_out:
+            return obj.punch_out.strftime('%H:%M:%S')
+        return None
+    
+    def get_date_formatted(self, obj):
+        return obj.date.strftime('%d-%m-%Y')
+    
+    def get_day_name(self, obj):
+        days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+        return days[obj.day]
+    
+    def get_working_hours(self, obj):
+        if obj.punch_in and obj.punch_out:
+            duration = obj.punch_out - obj.punch_in
+            total_seconds = int(duration.total_seconds())
+            hours = total_seconds // 3600
+            minutes = (total_seconds % 3600) // 60
+            return f"{hours:02d}:{minutes:02d}"
+        return None
+
+
+
+
+
 from rest_framework import serializers
 from app1.models import BreakTime
 
