@@ -29,12 +29,12 @@
     <div class="d-flex justify-content-end mb-3">
         <ul class="nav nav-tabs custom-tabs" role="tablist">
             <li class="nav-item">
-                <a class="nav-link {% if request.resolver_match.url_name == 'debtors1_list' %}active{% endif %}" href="{% url 'imc1_list' %}">
+                <a class="nav-link {% if request.resolver_match.url_name == 'imc1_list' %}active{% endif %}" href="{% url 'imc1_list' %}">
                     <i class="fas fa-user-friends me-1"></i> Debtors
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link {% if request.resolver_match.url_name == 'bank_cash_book' %}active{% endif %}" href="#">
+                <a class="nav-link {% if request.resolver_match.url_name == 'imc1_bank_cash' %}active{% endif %}" href="#">
                     <i class="fas fa-university me-1"></i> Bank/Cash Book
                 </a>
             </li>
@@ -109,6 +109,7 @@
                     <th class="text-center">Code</th>
                     <th class="text-center">Name</th>
                     <th class="text-center">View Ledger</th>
+                    <th class="text-center">View Bills</th>
                     <th class="text-center toggle-col d-none">OB</th>
                     <th class="text-center toggle-col d-none">Debit</th>
                     <th class="text-center toggle-col d-none">Credit</th>
@@ -129,6 +130,14 @@
                             <i class="fas fa-eye"></i>
                         </button>
                     </td>
+                      <td class="text-center">
+                    <button class="btn btn-sm btn-outline-dark view-bills-btn"
+                        data-code="{{ item.code }}"
+                        data-name="{{ item.name }}">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                      </td>
+                    
                     <td class="text-end toggle-col d-none">{{ item.opening_balance|floatformat:2 }}</td>
                     <td class="text-end toggle-col d-none">{{ item.debit|floatformat:2 }}</td>
                     <td class="text-end toggle-col d-none">{{ item.credit|floatformat:2 }}</td>
@@ -174,6 +183,108 @@
     </div>
   </div>
 </div>
+
+<!-- ✅ Bills Modal -->
+<div class="modal fade" id="billsModal" tabindex="-1">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header bg-dark text-white">
+        <h5 class="modal-title">BILLS - <span id="billsClientName"></span></h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div id="billsContent">Loading...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    // View Bills Button Click
+    document.querySelectorAll('.view-bills-btn').forEach(button => {
+        button.addEventListener('click', function () {
+            const code = this.dataset.code;
+            const name = this.dataset.name;
+
+            const modal = new bootstrap.Modal(document.getElementById('billsModal'));
+            const content = document.getElementById('billsContent');
+            document.getElementById('billsClientName').textContent = name;
+            content.innerHTML = "Loading...";
+
+            // ✅ Call Django proxy view for IMC1 bills
+            fetch(`/app3/get-imc1-invmast-bills/?code=${code}`)
+                .then(res => {
+                    if (!res.ok) throw new Error("Failed to fetch");
+                    return res.json();
+                })
+                .then(data => {
+                    if (!Array.isArray(data) || data.length === 0) {
+                        content.innerHTML = "<div class='text-muted'>No bill data available.</div>";
+                        return;
+                    }
+
+                   let totalNet = 0, totalPaid = 0;
+const rows = data.map((item, i) => {
+    const net = parseFloat(item.nettotal || 0);
+    const paid = parseFloat(item.paid || 0);
+    totalNet += net;
+    totalPaid += paid;
+
+    return `
+        <tr>
+            <td class="text-center">${i + 1}</td>
+            <td>${item.bill_ref || ''}</td>
+            <td>${formatBillDate(item.invdate)}</td>
+            <td class="text-end">₹${net.toFixed(2)}</td>
+            <td class="text-end">₹${paid.toFixed(2)}</td>
+            <td class="text-center">${item.modeofpayment || ''}</td>
+        </tr>
+    `;
+}).join('');
+
+content.innerHTML = `
+    <table class="table table-sm table-bordered">
+        <thead class="table-light">
+            <tr>
+                <th class="text-center">S.NO</th>
+                <th>Bill Ref</th>
+                <th>Date</th>
+                <th class="text-end">Net Total</th>
+                <th class="text-end">Paid</th>
+                <th class="text-center">Payment Mode</th>
+            </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+        <tfoot class="table-light fw-bold">
+            <tr>
+                <td colspan="3" class="text-end">Total</td>
+                <td class="text-end text-dark">₹${totalNet.toFixed(2)}</td>
+                <td class="text-end text-dark">₹${totalPaid.toFixed(2)}</td>
+                <td></td>
+            </tr>
+        </tfoot>
+    </table>
+`;
+
+                })
+                .catch(() => {
+                    content.innerHTML = "<div class='text-danger'>Failed to load bills.</div>";
+                });
+
+            modal.show();
+        });
+    });
+
+    function formatBillDate(dateStr) {
+        if (!dateStr) return '';
+        const date = new Date(dateStr);
+        if (isNaN(date)) return dateStr;
+        return `${String(date.getDate()).padStart(2, '0')}-${String(date.getMonth() + 1).padStart(2, '0')}-${date.getFullYear()}`;
+    }
+});
+</script>
+
 
 <!-- Scripts -->
 <script>

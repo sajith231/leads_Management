@@ -1152,7 +1152,7 @@ def edit_experience_certificate(request, employee_id):
         })
 
 
-
+#--------------------------------------- SYSMAC dEPTORS------------------------------------------
 
 
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
@@ -1162,10 +1162,6 @@ import requests
 import traceback
 import json
 
-from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
-from django.shortcuts import render
-import requests
-import traceback
 
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.shortcuts import render
@@ -1323,8 +1319,32 @@ def get_sysmac_ledger(request):
         print("External API fetch failed:", e)
         return JsonResponse({'error': 'Failed to fetch ledger'}, status=500)
 
-def bank_cash_book(request):
-    return render(request, 'bank_cash_book.html')
+from django.http import JsonResponse
+import requests
+
+def sysmac_invmast_bills(request):
+    code = request.GET.get('code')
+    if not code:
+        return JsonResponse({'error': 'Missing code'}, status=400)
+
+    try:
+        # Step 1: Fetch all bills (no filter)
+        url = 'https://accmaster.imcbs.com/api/sync/sysmac-invmast/'
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()
+        all_bills = response.json()
+
+        # Step 2: Filter bills for the given customerid
+        filtered_bills = [bill for bill in all_bills if str(bill.get("customerid")) == str(code)]
+
+        return JsonResponse(filtered_bills, safe=False)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+
+
+# ------------------------------------------------- IMCB-LLP--------------------------------------
 
 
 
@@ -1475,15 +1495,26 @@ def get_imc1_ledger(request):
         print("External API fetch failed:", e)
         return JsonResponse({'error': 'Failed to fetch ledger'}, status=500)
         
-       
+def imc1_invmast_bills(request):
+    code = request.GET.get('code')
+    if not code:
+        return JsonResponse({'error': 'Missing code'}, status=400)
 
+    try:
+        # Fetch all bills from the IMC1 API
+        url = 'https://accmaster.imcbs.com/api/sync/imc1-invmast/'
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()
+        all_bills = response.json()
 
+        # Filter only bills for the matching customerid
+        filtered_bills = [bill for bill in all_bills if str(bill.get("customerid")) == str(code)]
 
+        return JsonResponse(filtered_bills, safe=False)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
     
-
-from django.shortcuts import render
-from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
-import requests
+#--------------------------------------------- IMC2----------------------------------------
 
 from django.shortcuts import render
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
@@ -1624,15 +1655,30 @@ def get_imc2_ledger(request):
     except Exception as e:
         print("External API fetch failed:", e)
         return JsonResponse({'error': 'Failed to fetch ledger'}, status=500)
-    
+
+def imc2_invmast_bills(request):
+    code = request.GET.get('code')
+    if not code:
+        return JsonResponse({'error': 'Missing code'}, status=400)
+
+    try:
+        url = 'https://accmaster.imcbs.com/api/sync/imc2-invmast/'
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()
+        all_bills = response.json()
+
+        # Filter for the matching customerid
+        filtered_bills = [bill for bill in all_bills if str(bill.get("customerid")) == str(code)]
+        return JsonResponse(filtered_bills, safe=False)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+#------------------------------------------SYSMAC INFO--------------------------------------
 
 from django.shortcuts import render
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 import requests
 
-from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
-from django.shortcuts import render
-import requests
 
 def sysmac_info_list(request):
     api_url = "https://accmaster.imcbs.com/api/sync/sysmac-info/"
@@ -1768,6 +1814,25 @@ def get_sysmac_info_ledger(request):
         print("External API fetch failed:", e)
         return JsonResponse({'error': 'Failed to fetch ledger'}, status=500)
 
+def sysmac_info_invmast_bills(request):
+    code = request.GET.get('code')
+    if not code:
+        return JsonResponse({'error': 'Missing code'}, status=400)
+
+    try:
+        url = 'https://accmaster.imcbs.com/api/sync/sysmac-info-invmast/'
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()
+        all_bills = response.json()
+
+        # Filter for the matching customerid
+        filtered_bills = [bill for bill in all_bills if str(bill.get("customerid")) == str(code)]
+
+        return JsonResponse(filtered_bills, safe=False)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+#-----------------------------------------------DQ--------------------------------------------------
 
 from django.shortcuts import render
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
@@ -1904,3 +1969,21 @@ def get_dq_ledger(request):
     except Exception as e:
         print("External API fetch failed:", e)
         return JsonResponse({'error': 'Failed to fetch ledger'}, status=500)
+
+
+def dq_invmast_bills(request):
+    code = request.GET.get('code')
+    if not code:
+        return JsonResponse({'error': 'Missing code'}, status=400)
+
+    try:
+        url = 'https://accmaster.imcbs.com/api/sync/dq-invmast/'
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()
+        all_bills = response.json()
+
+        # Filter by customerid
+        filtered_bills = [bill for bill in all_bills if str(bill.get("customerid")) == str(code)]
+        return JsonResponse(filtered_bills, safe=False)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
