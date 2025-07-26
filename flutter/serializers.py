@@ -31,9 +31,19 @@ from rest_framework import serializers
 from app1.models import User  # Adjust the import based on your actual app name
 
 class UserSerializer(serializers.ModelSerializer):
+    image_url = serializers.SerializerMethodField()
+    
     class Meta:
         model = User
-        fields = ['userid', 'name', 'user_level', 'status']
+        fields = ['userid', 'name', 'user_level', 'status', 'image', 'image_url']
+    
+    def get_image_url(self, obj):
+        if obj.image:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.image.url)
+            return obj.image.url
+        return None
 
 
 

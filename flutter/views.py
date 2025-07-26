@@ -9,11 +9,19 @@ class UserLoginView(APIView):
         serializer = UserLoginSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.validated_data['user']
+            
+            # Build image URL if image exists
+            image_url = None
+            if user.image:
+                image_url = request.build_absolute_uri(user.image.url)
+            
             return Response({
                 'userid': user.userid,
                 'name': user.name,
                 'user_level': user.get_user_level_display(),
                 'status': user.status,
+                'image': user.image.url if user.image else None,
+                'image_url': image_url,
             }, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
@@ -30,7 +38,7 @@ from app1.models import User  # Adjust the import based on your actual app name
 class UserListView(APIView):
     def get(self, request):
         users = User.objects.all()
-        serializer = UserSerializer(users, many=True)
+        serializer = UserSerializer(users, many=True, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
     
 
