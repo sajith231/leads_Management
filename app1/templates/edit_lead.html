@@ -64,6 +64,41 @@
             {% endif %}
         </div>
 
+        <!-- Document Preview and Upload -->
+        <div class="mb-3">
+            {{ form.document.label_tag }}
+            {{ form.document }}
+            {% if lead.document %}
+            <div class="mt-2">
+                <a href="{{ lead.document.url }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-file-pdf"></i> View Document
+                </a>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Remarks Field -->
+        <div class="mb-3">
+            {{ form.remarks.label_tag }}
+            {{ form.remarks }}
+        </div>
+
+        <!-- Follow Up and Quotation Required -->
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <div class="form-check">
+                    {{ form.follow_up_required }}
+                    {{ form.follow_up_required.label_tag }}
+                </div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <div class="form-check">
+                    {{ form.quotation_required }}
+                    {{ form.quotation_required.label_tag }}
+                </div>
+            </div>
+        </div>
+
         <!-- Requirements -->
         <div class="mb-3">
             <label class="form-label">Requirements</label>
@@ -92,7 +127,7 @@
                             <div class="col-4">
                                 <label class="form-label mb-0">Remarks:</label>
                                 <textarea class="form-control requirement-remarks" rows="1"
-                                          data-requirement-id="{{ requirement.id }}">{{ existing_amounts|get_item:requirement.id|default:'' }}</textarea>
+                                          data-requirement-id="{{ requirement.id }}">{{ existing_remarks|get_item:requirement.id|default:'' }}</textarea>
                             </div>
                         </div>
                     </li>
@@ -101,139 +136,137 @@
             </div>
         </div>
 
-        <!-- Hardware as Dropdown -->
         <!-- Hardware Section -->
-<div class="mb-3">
-    <label class="form-label">Hardware</label>
-    <div class="dropdown">
-        <button 
-            class="btn btn-secondary dropdown-toggle w-100" 
-            type="button" 
-            id="hardwareDropdown" 
-            data-bs-toggle="dropdown" 
-            aria-expanded="false">
-            Select Hardware
-        </button>
-        <div class="dropdown-menu w-100" id="hardwareMenu">
-            {% for hardware in hardwares %}
-            <div class="dropdown-item d-flex align-items-center justify-content-between">
-                <div class="form-check">
-                    <input type="checkbox" 
-                           class="form-check-input hardware-checkbox" 
-                           id="hw_{{ hardware.id }}" 
-                           value="{{ hardware.id }}" 
-                           name="hardwares"
-                           {% if hardware in lead.hardwares.all %}checked{% endif %}>
-                    <label class="form-check-label" for="hw_{{ hardware.id }}">
-                        {{ hardware.name }} <!-- ({{ hardware.specification }}) -->
-                    </label>
-                </div>
-                <div class="d-flex align-items-center">
-                    <span class="me-2 hardware-price-container" style="display: {% if hardware in lead.hardwares.all %}block{% else %}none{% endif %};">
-                        Default: ₹<span id="default_price_{{ hardware.id }}">{{ hardware.price }}</span>
-                    </span>
-                    <input type="number" 
-                        step="0.01" 
-                        class="form-control hardware-price" 
-                        placeholder="Custom Price" 
-                        data-hardware-id="{{ hardware.id }}" 
-                        value="{{ existing_hardware_prices|get_item:hardware.id|default:'' }}"
-                        style="display: {% if hardware in lead.hardwares.all %}block{% else %}none{% endif %}; width: 120px;">
+        <div class="mb-3">
+            <label class="form-label">Hardware</label>
+            <div class="dropdown">
+                <button 
+                    class="btn btn-secondary dropdown-toggle w-100" 
+                    type="button" 
+                    id="hardwareDropdown" 
+                    data-bs-toggle="dropdown" 
+                    aria-expanded="false">
+                    Select Hardware
+                </button>
+                <div class="dropdown-menu w-100" id="hardwareMenu">
+                    {% for hardware in hardwares %}
+                    <div class="dropdown-item d-flex align-items-center justify-content-between">
+                        <div class="form-check">
+                            <input type="checkbox" 
+                                   class="form-check-input hardware-checkbox" 
+                                   id="hw_{{ hardware.id }}" 
+                                   value="{{ hardware.id }}" 
+                                   name="hardwares"
+                                   {% if hardware in lead.hardwares.all %}checked{% endif %}>
+                            <label class="form-check-label" for="hw_{{ hardware.id }}">
+                                {{ hardware.name }}
+                            </label>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <span class="me-2 hardware-price-container" style="display: {% if hardware in lead.hardwares.all %}block{% else %}none{% endif %};">
+                                Default: ₹<span id="default_price_{{ hardware.id }}">{{ hardware.price }}</span>
+                            </span>
+                            <input type="number" 
+                                   step="0.01" 
+                                   class="form-control hardware-price" 
+                                   placeholder="Custom Price" 
+                                   data-hardware-id="{{ hardware.id }}" 
+                                   value="{{ existing_hardware_prices|get_item:hardware.id|default:'' }}"
+                                   style="display: {% if hardware in lead.hardwares.all %}block{% else %}none{% endif %}; width: 120px;">
 
+                        </div>
+                    </div>
+                    {% endfor %}
                 </div>
             </div>
-            {% endfor %}
         </div>
-    </div>
-</div>
-<input type="hidden" name="hardware_prices_data" id="hardware_prices_data">
+        <input type="hidden" name="hardware_prices_data" id="hardware_prices_data">
 
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    const hardwareCheckboxes = document.querySelectorAll('.hardware-checkbox');
-    const hardwarePrices = {};
-    const hardwarePricesData = document.getElementById('hardware_prices_data');
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const hardwareCheckboxes = document.querySelectorAll('.hardware-checkbox');
+                const hardwarePrices = {};
+                const hardwarePricesData = document.getElementById('hardware_prices_data');
 
-    // Initialize prices for pre-checked hardware
-    hardwareCheckboxes.forEach(checkbox => {
-        const hardwareId = checkbox.value;
-        const priceInput = document.querySelector(`.hardware-price[data-hardware-id="${hardwareId}"]`);
-        const priceContainer = priceInput.closest('.dropdown-item').querySelector('.hardware-price-container');
+                // Initialize prices for pre-checked hardware
+                hardwareCheckboxes.forEach(checkbox => {
+                    const hardwareId = checkbox.value;
+                    const priceInput = document.querySelector(`.hardware-price[data-hardware-id="${hardwareId}"]`);
+                    const priceContainer = priceInput.closest('.dropdown-item').querySelector('.hardware-price-container');
 
-        if (checkbox.checked) {
-            priceInput.style.display = 'block';
-            priceContainer.style.display = 'block';
-            if (priceInput.value) {
-                hardwarePrices[hardwareId] = priceInput.value;
-            }
-        }
-    });
+                    if (checkbox.checked) {
+                        priceInput.style.display = 'block';
+                        priceContainer.style.display = 'block';
+                        if (priceInput.value) {
+                            hardwarePrices[hardwareId] = priceInput.value;
+                        }
+                    }
+                });
 
-    // Handle checkbox changes
-    hardwareCheckboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', function() {
-            const hardwareId = this.value;
-            const priceInput = document.querySelector(`.hardware-price[data-hardware-id="${hardwareId}"]`);
-            const priceContainer = priceInput.closest('.dropdown-item').querySelector('.hardware-price-container');
+                // Handle checkbox changes
+                hardwareCheckboxes.forEach(checkbox => {
+                    checkbox.addEventListener('change', function() {
+                        const hardwareId = this.value;
+                        const priceInput = document.querySelector(`.hardware-price[data-hardware-id="${hardwareId}"]`);
+                        const priceContainer = priceInput.closest('.dropdown-item').querySelector('.hardware-price-container');
 
-            if (this.checked) {
-                // Show price input and container when checked
-                priceInput.style.display = 'block';
-                priceContainer.style.display = 'block';
-                
-                // Get the default price from the container
-                const defaultPrice = document.querySelector(`#default_price_${hardwareId}`).textContent;
-                
-                // Set the price input value to default if empty
-                if (!priceInput.value) {
-                    priceInput.value = defaultPrice;
+                        if (this.checked) {
+                            // Show price input and container when checked
+                            priceInput.style.display = 'block';
+                            priceContainer.style.display = 'block';
+                            
+                            // Get the default price from the container
+                            const defaultPrice = document.querySelector(`#default_price_${hardwareId}`).textContent;
+                            
+                            // Set the price input value to default if empty
+                            if (!priceInput.value) {
+                                priceInput.value = defaultPrice;
+                            }
+                            
+                            // Update prices object
+                            hardwarePrices[hardwareId] = priceInput.value;
+                        } else {
+                            // Hide price input and container when unchecked
+                            priceInput.style.display = 'none';
+                            priceContainer.style.display = 'none';
+                            
+                            // Remove from prices object
+                            delete hardwarePrices[hardwareId];
+                            
+                            // Clear the price input
+                            priceInput.value = '';
+                        }
+                        
+                        updateHardwarePricesData();
+                    });
+                });
+
+                // Handle price input changes
+                document.querySelectorAll('.hardware-price').forEach(input => {
+                    input.addEventListener('input', function() {
+                        const hardwareId = this.dataset.hardwareId;
+                        if (document.querySelector(`#hw_${hardwareId}`).checked) {
+                            hardwarePrices[hardwareId] = this.value || '';
+                            updateHardwarePricesData();
+                        }
+                    });
+                });
+
+                function updateHardwarePricesData() {
+                    // Only include prices for checked hardware
+                    const checkedPrices = {};
+                    Object.keys(hardwarePrices).forEach(id => {
+                        if (document.querySelector(`#hw_${id}`).checked) {
+                            checkedPrices[id] = hardwarePrices[id];
+                        }
+                    });
+                    hardwarePricesData.value = JSON.stringify(checkedPrices);
                 }
-                
-                // Update prices object
-                hardwarePrices[hardwareId] = priceInput.value;
-            } else {
-                // Hide price input and container when unchecked
-                priceInput.style.display = 'none';
-                priceContainer.style.display = 'none';
-                
-                // Remove from prices object
-                delete hardwarePrices[hardwareId];
-                
-                // Clear the price input
-                priceInput.value = '';
-            }
-            
-            updateHardwarePricesData();
-        });
-    });
 
-    // Handle price input changes
-    document.querySelectorAll('.hardware-price').forEach(input => {
-        input.addEventListener('input', function() {
-            const hardwareId = this.dataset.hardwareId;
-            if (document.querySelector(`#hw_${hardwareId}`).checked) {
-                hardwarePrices[hardwareId] = this.value || '';
+                // Initial update
                 updateHardwarePricesData();
-            }
-        });
-    });
-
-    function updateHardwarePricesData() {
-        // Only include prices for checked hardware
-        const checkedPrices = {};
-        Object.keys(hardwarePrices).forEach(id => {
-            if (document.querySelector(`#hw_${id}`).checked) {
-                checkedPrices[id] = hardwarePrices[id];
-            }
-        });
-        hardwarePricesData.value = JSON.stringify(checkedPrices);
-    }
-
-    // Initial update
-    updateHardwarePricesData();
-});
-</script>
-
+            });
+        </script>
 
         <!-- Buttons -->
         <div class="d-flex gap-2">
@@ -245,43 +278,40 @@ document.addEventListener('DOMContentLoaded', function () {
         <input type="hidden" id="hardware_amounts_data" name="hardware_amounts_data">
         <input type="hidden" id="requirement_amounts_data" name="requirement_amounts_data">
         <input type="hidden" id="requirement_remarks_data" name="requirement_remarks_data">
-
     </form>
 </div>
 
 <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Update hidden fields with requirement data
+        function updateRequirementData() {
+            const amounts = {};
+            const remarks = {};
 
+            document.querySelectorAll('.dropdown-menu li').forEach(item => {
+                const checkbox = item.querySelector('input[type="checkbox"]');
+                const amountInput = item.querySelector('.requirement-amount');
+                const remarksInput = item.querySelector('.requirement-remarks');
 
-document.addEventListener('DOMContentLoaded', function () {
-    // Update hidden fields with requirement data
-    function updateRequirementData() {
-        const amounts = {};
-        const remarks = {};
+                if (checkbox.checked) {
+                    amounts[checkbox.value] = amountInput.value || '0';
+                    remarks[checkbox.value] = remarksInput.value || '';
+                }
+            });
 
-        document.querySelectorAll('.dropdown-menu li').forEach(item => {
-            const checkbox = item.querySelector('input[type="checkbox"]');
-            const amountInput = item.querySelector('.requirement-amount');
-            const remarksInput = item.querySelector('.requirement-remarks');
+            document.getElementById('requirement_amounts_data').value = JSON.stringify(amounts);
+            document.getElementById('requirement_remarks_data').value = JSON.stringify(remarks);
+        }
 
-            if (checkbox.checked) {
-                amounts[checkbox.value] = amountInput.value || '0';
-                remarks[checkbox.value] = remarksInput.value || '';
-            }
-        });
+        // Event listeners for requirement inputs
+        document.querySelectorAll('.requirement-amount, .requirement-remarks, input[type="checkbox"]')
+            .forEach(element => {
+                element.addEventListener('input', updateRequirementData);
+                element.addEventListener('change', updateRequirementData);
+            });
 
-        document.getElementById('requirement_amounts_data').value = JSON.stringify(amounts);
-        document.getElementById('requirement_remarks_data').value = JSON.stringify(remarks);
-    }
-
-    // Event listeners for requirement inputs
-    document.querySelectorAll('.requirement-amount, .requirement-remarks, input[type="checkbox"]')
-        .forEach(element => {
-            element.addEventListener('input', updateRequirementData);
-            element.addEventListener('change', updateRequirementData);
-        });
-
-    updateRequirementData();
-});
+        updateRequirementData();
+    });
 </script>
 
 {% endblock %}

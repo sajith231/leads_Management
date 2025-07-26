@@ -217,24 +217,25 @@
         <!-- individual complaint timing -->
         {% for complaint_log in log.servicelogcomplaint_set.all %}
             <div class="complaint-timing mt-2">
-                <small>
-                    <strong>{{ complaint_log.complaint.description }}</strong><br>
+    <small>
+        <strong>{{ complaint_log.complaint.description }}</strong><br>
 
-                    {% if complaint_log.started_time %}
-                        Started: {{ complaint_log.started_time|date:"d-m-Y " }}<br>
-                    {% endif %}
+        {% if complaint_log.started_time %}
+            Started: {{ complaint_log.started_time|date:"d-m-Y h:i A" }}<br>
+        {% endif %}
 
-                    {% if complaint_log.completed_time and complaint_log.started_time %}
-                        {% load humanize %}
-                        Completed: {{ complaint_log.completed_time|date:"d-m-Y" }}<br>
-                        {% with duration=complaint_log.completed_time|timeuntil:complaint_log.started_time %}
-                            Duration: {{ duration }}
-                        {% endwith %}
-                    {% elif complaint_log.completed_time %}
-                        Completed: {{ complaint_log.completed_time|date:"d-m-Y " }}
-                    {% endif %}
-                </small>
-            </div>
+        {% if complaint_log.completed_time and complaint_log.started_time %}
+            {% load humanize %}
+            Completed: {{ complaint_log.completed_time|date:"d-m-Y h:i A" }}<br>
+            {% with duration=complaint_log.completed_time|timeuntil:complaint_log.started_time %}
+                Duration: {{ duration }}
+            {% endwith %}
+        {% elif complaint_log.completed_time %}
+            Completed: {{ complaint_log.completed_time|date:"d-m-Y h:i A" }}
+        {% endif %}
+    </small>
+</div>
+
         {% empty %}
             <small class="text-muted">No complaints assigned</small>
         {% endfor %}

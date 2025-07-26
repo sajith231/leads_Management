@@ -178,14 +178,7 @@
 .filter-minimal select:hover {
   border-bottom-color: #6c757d;
 }
-</style>
-<div class="header">
-  <h2 style="display: flex;justify-content: center;"> Project Assignments</h2>
-  <a href="{% url 'add_assign_socialmedia_project' %}" class="btn btn-add">Add New</a>
-</div>
-<!-- Filter dropdown -->
 
-<style>
   .btn-add {
     background-color: #007bff;
     color: white;
@@ -292,6 +285,13 @@
     color: #666;
   }
 </style>
+
+<div class="header">
+  <h2 style="display: flex;justify-content: center;"> Project Assignments</h2>
+  <a href="{% url 'add_assign_socialmedia_project' %}" class="btn btn-add">Add New</a>
+</div>
+
+<!-- Filter dropdown -->
 <form method="get" class="filter-minimal">
   <label for="status_filter">Status:</label>
   <select name="status" id="status_filter" onchange="this.form.submit()">
@@ -304,12 +304,12 @@
     <option value="completed" {% if request.GET.status == 'completed' %}selected{% endif %}>Completed</option>
   </select>
 </form>
+
 {% if assignments %}
 <!-- Pagination Information -->
 <div class="pagination-info">
     Showing {{ assignments.start_index }} to {{ assignments.end_index }} of {{ assignments.paginator.count }} assignments
 </div>
-
 
 <!-- Pagination Controls -->
 <div class="pagination">
@@ -332,6 +332,7 @@
     {% endif %}
 </div>
 {% endif %}
+
 <table>
   <thead>
     <tr>
@@ -372,44 +373,48 @@
       <td>
         {{ item.assignment.deadline|date:"d-m-Y" }}
       </td>
-     <td>
-  {% if item.assignment.remark %}
-      <i class="fa fa-comment" style="cursor:pointer;color:#007bff;" 
-         data-bs-toggle="modal" data-bs-target="#remarkModal{{ item.id }}"></i>
+      <td>
+        {% if item.assignment.remark %}
+            <i class="fa fa-comment" style="cursor:pointer;color:#007bff;" 
+               data-bs-toggle="modal" data-bs-target="#remarkModal{{ item.assignment.id }}"></i>
 
-      
-
-      <!-- Modal -->
-      <div class="modal fade" id="remarkModal{{ item.id }}" tabindex="-1" aria-labelledby="remarkModalLabel{{ item.id }}" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h5 class="modal-title" id="remarkModalLabel{{ item.id }}">Remark</h5>
-              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <!-- Modal with unique ID based on assignment ID -->
+            <div class="modal fade" id="remarkModal{{ item.assignment.id }}" tabindex="-1" 
+                 aria-labelledby="remarkModalLabel{{ item.assignment.id }}" aria-hidden="true">
+              <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <h5 class="modal-title" id="remarkModalLabel{{ item.assignment.id }}">
+                      Remark
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                  </div>
+                  <div class="modal-body">
+                    {{ item.assignment.remark }}
+                  </div>
+                  <div class="modal-footer">
+                    <!-- <small class="text-muted">Assignment ID: {{ item.assignment.id }}</small> -->
+                  </div>
+                </div>
+              </div>
             </div>
-            <div class="modal-body">
-              {{ item.assignment.remark }}
-            </div>
-          </div>
-        </div>
-      </div>
-  {% else %}
-      --
-  {% endif %}
-</td>
+        {% else %}
+            --
+        {% endif %}
+      </td>
 
       <td>
         <span class="status-badge {{ item.assignment.get_status_display_class }}">
           {{ item.assignment.get_status_display }}
         </span>
       </td>
-       <td>
+      <td>
         {% if item.duration_started_completed %}
             {{ item.duration_started_completed }}
         {% else %}
             --
         {% endif %}
-    </td>
+      </td>
 
       <td>
         <a href="{% url 'edit_assign_socialmedia_project' item.assignment.id %}" title="Edit" style="color: orange; margin-right: 10px;">
@@ -423,7 +428,7 @@
     </tr>
     {% empty %}
     <tr>
-      <td colspan="9" style="padding: 10px; border: 1px solid #ccc; text-align: center;">No assignments found</td>
+      <td colspan="10" style="padding: 10px; border: 1px solid #ccc; text-align: center;">No assignments found</td>
     </tr>
     {% endfor %}
   </tbody>
