@@ -1,277 +1,375 @@
+{% extends "base.html" %}
 {% load app2_extras %}
-<!DOCTYPE html>
+{% block content %}
+<style>
+  /* === Enhanced CSS for Feeder Form Layout === */
+  .container {
+    background: #fff;
+    padding: 30px;
+    border-radius: 10px;
+    max-width: 1200px;
+    margin: auto;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
 
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Edit Feeder</title>
-  <style>
-    *{box-sizing:border-box}
-    body{font-family:Arial,sans-serif;background:#f8f9fa;padding:20px;margin:0}
-    .container{background:#fff;padding:30px;border-radius:10px;max-width:1100px;margin:auto;box-shadow:0 0 10px rgba(0,0,0,.1)}
-    h2{margin-bottom:20px;font-size:24px}
-    .form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px}
-    .form-group{display:flex;flex-direction:column}
-    .form-group label{margin-bottom:5px;font-weight:bold}
-    .form-group input,.form-group select,.form-group textarea{padding:8px;border:1px solid #ccc;border-radius:6px;font-size:14px}
-    .module-section{margin-top:40px;background:#f8f9fa;padding:25px;border-radius:12px;border:1px solid #e9ecef}
-    .module-category{margin-bottom:30px;background:#ffffff;border-radius:10px;padding:20px;border:1px solid #dee2e6}
-    .module-category h4{margin-bottom:15px;font-weight:600}
-    .module-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:15px}
-    .module-item{display:flex;align-items:center;gap:10px}
-    .module-item input[type=checkbox]{width:18px;height:18px}
-    .price-input{width:120px;margin-left:8px}
-    .buttons{margin-top:30px;text-align:right}
-    .buttons button{padding:10px 20px;border:none;border-radius:6px;cursor:pointer}
-    .save{background:#4d6bf9;color:#fff}
-    .cancel{background:#eee;margin-right:10px}
-  </style>
-</head>
-<body>
+  h2 {
+    margin-bottom: 20px;
+    font-size: 24px;
+    text-align: center;
+  }
+
+  fieldset {
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 30px;
+    background: #f9f9f9;
+  }
+
+  legend {
+    font-weight: 600;
+    font-size: 18px;
+    padding: 0 10px;
+  }
+
+  .form-columns {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+
+  .form-grid {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .form-group label {
+    margin-bottom: 5px;
+    font-weight: bold;
+    font-size: 14px;
+  }
+
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 14px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  input[name="name"] {
+    text-transform: uppercase;
+  }
+
+  .module-section {
+    margin-top: 20px;
+    background: #f8f9fa;
+    padding: 25px;
+    border-radius: 12px;
+    border: 1px solid #e9ecef;
+  }
+
+  .module-categories-horizontal {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: space-between;
+  }
+
+  .module-category {
+    flex: 1;
+    min-width: 300px;
+    background: #fff;
+    border-radius: 10px;
+    padding: 20px;
+    border: 1px solid #dee2e6;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .module-category h4 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    text-align: center;
+  }
+
+  .module-list-vertical {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .module-item-vertical {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .module-item-vertical label {
+    flex: 1;
+    font-size: 14px;
+  }
+
+  .price-input {
+    width: 100px;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    text-align: right;
+    font-size: 14px;
+  }
+
+  .buttons {
+    margin-top: 30px;
+    text-align: right;
+  }
+
+  .buttons button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+
+  .buttons .save {
+    background: #4d6bf9;
+    color: #fff;
+  }
+
+  .buttons .cancel {
+    background: #eee;
+    color: #333;
+    margin-right: 10px;
+  }
+
+  /* Responsive Fixes */
+  @media (max-width: 768px) {
+    .module-categories-horizontal {
+      flex-direction: column;
+    }
+
+    .buttons {
+      text-align: center;
+    }
+  }
+</style>
 <div class="container">
   <div style="text-align:right;font-size:14px;color:#888;margin-bottom:10px">Home / Feeder / Edit</div>
   <h2>Edit Feeder</h2>
-  
+
   <form method="POST">
     {% csrf_token %}
-    <div class="form-grid">
-      <!-- Basic form fields -->
-      <div class="form-group">
-        <label>Name</label>
-        <input type="text" name="name" value="{{ feeder.name }}">
-      </div>
-      
-      <div class="form-group">
-        <label>Software</label>
-        <select name="software">
-          <option value="">Select</option>
-          <option value="TASK BGR" {% if feeder.software == 'TASK BGR' %}selected{% endif %}>BGR</option>
-          <option value="BGR 4" {% if feeder.software == 'BGR 4' %}selected{% endif %}>BGR 4</option>
-          <option value="B-CARE BGR" {% if feeder.software == 'B-CARE BGR' %}selected{% endif %}>B-CARE BGR</option>
-          <option value="B-CARE BGR 4" {% if feeder.software == 'B-CARE BGR 4' %}selected{% endif %}>B-CARE BGR 4</option>
-          <option value="AURIC" {% if feeder.software == 'AURIC' %}selected{% endif %}>AURIC</option>
-          <option value="DINE" {% if feeder.software == 'DINE' %}selected{% endif %}>DINE</option>
-          <option value="TASK-ER" {% if feeder.software == 'TASK-ER' %}selected{% endif %}>TASK-ER</option>
-          <option value="FLAIMES" {% if feeder.software == 'FLAIMES' %}selected{% endif %}>FLAIMES</option>
-          <option value="I-CARE BGR" {% if feeder.software == 'I-CARE BGR' %}selected{% endif %}>I-CARE BGR</option>
-          <option value="I-CARE BGR 4" {% if feeder.software == 'I-CARE BGR 4' %}selected{% endif %}>I-CARE BGR 4</option>
-          <option value="EASY LAB" {% if feeder.software == 'EASY LAB' %}selected{% endif %}>EASY LAB</option>
-          <option value="MARUTI" {% if feeder.software == 'MARUTI' %}selected{% endif %}>MARUTI</option>
-          <option value="MAGNET" {% if feeder.software == 'MAGNET' %}selected{% endif %}>MAGNET</option>
-          <option value="SHADE" {% if feeder.software == 'SHADE' %}selected{% endif %}>SHADE</option>
-          <option value="STAR STAY" {% if feeder.software == 'STAR STAY' %}selected{% endif %}>STAR STAY</option>
-          <option value="VITAMINE" {% if feeder.software == 'VITAMINE' %}selected{% endif %}>VITAMINE</option>
-          <option value="V-TASK" {% if feeder.software == 'V-TASK' %}selected{% endif %}>V-TASK</option>
-        </select>
-      </div>
-      
-      <div class="form-group">
-        <label>Nature</label>
-        <select name="nature" required>
-            <option value="" disabled>Select Business Type</option>
-            {% for bt in business_types %}
-                <option value="{{ bt.id }}"
-                        {% if feeder.nature_id == bt.id %}selected{% endif %}>
-                    {{ bt.name }}
-                </option>
+
+    <!-- Primary & Client Details (same two-column layout) -->
+    <div class="form-columns">
+      <fieldset style="flex:1">
+        <legend>Primary Details</legend>
+        <div class="form-grid">
+          <div class="form-group"><label>Name</label><input type="text" name="name" value="{{ feeder.name }}"></div>
+          <div class="form-group"><label>Address/Landmark</label><input type="text" name="address" value="{{ feeder.address }}"></div>
+          <div class="form-group"><label>Location</label><input type="text" name="location" value="{{ feeder.location }}"></div>
+          <div class="form-group"><label>Area</label><input type="text" name="area" value="{{ feeder.area }}"></div>
+
+          <div class="form-group">
+            <label>District</label>
+            <select name="district" class="form-control">
+              {% for d in "Thiruvananthapuram,Kollam,Pathanamthitta,Alappuzha,Kottayam,Idukki,Ernakulam,Thrissur,Palakkad,Malappuram,Kozhikode,Wayanad,Kannur,Kasaragod,Other"|split:"," %}
+                <option {% if feeder.district == d %}selected{% endif %}>{{ d }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>State</label>
+            <select name="state" class="form-control">
+              {% for s in "Kerala,Tamil Nadu,Karnataka,Other"|split:"," %}
+                <option {% if feeder.state == s %}selected{% endif %}>{{ s }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="form-group"><label>Contact Person</label><input type="text" name="contact_person" value="{{ feeder.contact_person }}"></div>
+          <div class="form-group"><label>Contact Number</label><input type="text" name="contact_number" value="{{ feeder.contact_number }}"></div>
+          <div class="form-group"><label>Email</label><input type="email" name="email" value="{{ feeder.email }}"></div>
+          <div class="form-group"><label>Reputed Person Name</label><input type="text" name="reputed_person_name" value="{{ feeder.reputed_person_name }}"></div>
+          <div class="form-group"><label>Reputed Person Number</label><input type="text" name="reputed_person_number" value="{{ feeder.reputed_person_number }}"></div>
+        </div>
+      </fieldset>
+
+      <fieldset style="flex:1">
+        <legend>Client Details</legend>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Software</label>
+            <select name="software">
+              <option value="">Select</option>
+              {% for sw in "BGR,BGR 4,B-CARE BGR,B-CARE BGR 4,AURIC,DINE,TASK-ER,FLAIMES,I-CARE BGR,I-CARE BGR 4,EASY LAB,MARUTI,MAGNET,SHADE,STAR STAY,VITAMINE,V-TASK"|split:"," %}
+                <option value="{{ sw }}" {% if feeder.software == sw %}selected{% endif %}>{{ sw }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Nature</label>
+            <select name="nature" required>
+              <option value="" disabled>Select Business Type</option>
+              {% for bt in business_types %}
+                <option value="{{ bt.id }}" {% if feeder.nature_id == bt.id %}selected{% endif %}>{{ bt.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Branch</label>
+            <select name="branch" class="form-control">
+              <option value="">-- Select Branch --</option>
+              {% for branch in branches %}
+                <option value="{{ branch.id }}" {% if feeder.branch_id == branch.id %}selected{% endif %}>{{ branch.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="form-group"><label>No. of System</label><input type="number" name="no_of_system" value="{{ feeder.no_of_system }}"></div>
+          <div class="form-group"><label>Pincode</label><input type="number" name="pincode" value="{{ feeder.pincode }}"></div>
+          <div class="form-group"><label>Country</label><input type="text" name="country" value="{{ feeder.country|default:'India' }}"></div>
+          <div class="form-group"><label>Installation Date</label><input type="date" name="installation_date" value="{{ feeder.installation_date|date:'Y-m-d' }}"></div>
+          <div class="form-group"><label>Remarks</label><input type="text" name="remarks" value="{{ feeder.remarks }}"></div>
+          <div class="form-group"><label>Software Amount</label><input type="text" name="software_amount" value="{{ feeder.software_amount }}"></div>
+          <div class="form-group"><label>Total Cost</label><input type="text" name="total_cost" value="{{ feeder.total_cost }}"></div>
+        </div>
+      </fieldset>
+    </div>
+<h3 style="margin-bottom: 15px; font-size: 20px; font-weight: 600; text-align: center;">More Modules</h3>
+<div class="module-section">
+    <div class="module-categories-horizontal">
+        <!-- rest of your module code -->
+
+        <div class="module-categories-horizontal">
+    <details class="module-category">
+        <summary>
+            <h4>Mobile Apps <span class="plus-icon">+</span></h4>
+        </summary>
+
+        <div class="module-list-vertical">
+            {% for item in "Dine KOT,MagicPDA Full(MST),MagicPDA Super,Scanner,EWAY Task,MagNet Pay,DINE Reporter,TASK Pro"|split:"," %}
+            <div class="module-item-vertical">
+                <input type="checkbox" name="more_modules" value="{{ item|trim }}">
+                <label>{{ item|trim }}</label>
+                <input type="number" step="0.01" class="price-input" name="price_{{ item|trim }}" placeholder="₹">
+            </div>
             {% endfor %}
-        </select>
-      </div>
-      
-      <div class="form-group">
-        <label>Address/Landmark</label>
-        <textarea name="address">{{ feeder.address }}</textarea>
-      </div>
-      
-      <div class="form-group">
-        <label>Branch</label>
-        <input type="text" name="branch" value="{{ feeder.branch }}" placeholder="Enter branch name">
-      </div>
-      
-      <div class="form-group">
-        <label>No. of System</label>
-        <input type="number" name="no_of_system" value="{{ feeder.no_of_system }}">
-      </div>
-      
-      <div class="form-group">
-        <label>Location</label>
-        <input type="text" name="location" value="{{ feeder.location }}">
-      </div>
-      
-      <div class="form-group">
-        <label>Pincode</label>
-        <input type="text" name="pincode" value="{{ feeder.pincode }}">
-      </div>
-      
-      <div class="form-group">
-        <label>Area</label>
-        <input type="text" name="area" value="{{ feeder.area }}">
-      </div>
-      
-      <div class="form-group">
-        <label>Country</label>
-        <input type="text" name="country" value="{{ feeder.country|default:'India' }}">
-      </div>
-      
-      <div class="form-group">
-        <label>District</label>
-        <select name="district" class="form-control">
-            <option value="">-- Select District --</option>
-            <option value="Thiruvananthapuram" {% if feeder.district == 'Thiruvananthapuram' %}selected{% endif %}>Thiruvananthapuram</option>
-            <option value="Kollam" {% if feeder.district == 'Kollam' %}selected{% endif %}>Kollam</option>
-            <option value="Pathanamthitta" {% if feeder.district == 'Pathanamthitta' %}selected{% endif %}>Pathanamthitta</option>
-            <option value="Alappuzha" {% if feeder.district == 'Alappuzha' %}selected{% endif %}>Alappuzha</option>
-            <option value="Kottayam" {% if feeder.district == 'Kottayam' %}selected{% endif %}>Kottayam</option>
-            <option value="Idukki" {% if feeder.district == 'Idukki' %}selected{% endif %}>Idukki</option>
-            <option value="Ernakulam" {% if feeder.district == 'Ernakulam' %}selected{% endif %}>Ernakulam</option>
-            <option value="Thrissur" {% if feeder.district == 'Thrissur' %}selected{% endif %}>Thrissur</option>
-            <option value="Palakkad" {% if feeder.district == 'Palakkad' %}selected{% endif %}>Palakkad</option>
-            <option value="Malappuram" {% if feeder.district == 'Malappuram' %}selected{% endif %}>Malappuram</option>
-            <option value="Kozhikode" {% if feeder.district == 'Kozhikode' %}selected{% endif %}>Kozhikode</option>
-            <option value="Wayanad" {% if feeder.district == 'Wayanad' %}selected{% endif %}>Wayanad</option>
-            <option value="Kannur" {% if feeder.district == 'Kannur' %}selected{% endif %}>Kannur</option>
-            <option value="Kasaragod" {% if feeder.district == 'Kasaragod' %}selected{% endif %}>Kasaragod</option>
-            <option value="Other" {% if feeder.district == 'Other' %}selected{% endif %}>Other</option>
-        </select>
-      </div>
-      
-      <div class="form-group">
-        <label>Installation Date</label>
-        <input type="date" name="installation_date" value="{{ feeder.installation_date|date:'Y-m-d' }}">
-      </div>
-      
-      <div class="form-group">
-        <label>State</label>
-        <select name="state" class="form-control">
-            <option value="">-- Select State --</option>
-            <option value="Andhra Pradesh" {% if feeder.state == 'Andhra Pradesh' %}selected{% endif %}>Andhra Pradesh</option>
-            <option value="Arunachal Pradesh" {% if feeder.state == 'Arunachal Pradesh' %}selected{% endif %}>Arunachal Pradesh</option>
-            <option value="Assam" {% if feeder.state == 'Assam' %}selected{% endif %}>Assam</option>
-            <option value="Bihar" {% if feeder.state == 'Bihar' %}selected{% endif %}>Bihar</option>
-            <option value="Chhattisgarh" {% if feeder.state == 'Chhattisgarh' %}selected{% endif %}>Chhattisgarh</option>
-            <option value="Goa" {% if feeder.state == 'Goa' %}selected{% endif %}>Goa</option>
-            <option value="Gujarat" {% if feeder.state == 'Gujarat' %}selected{% endif %}>Gujarat</option>
-            <option value="Haryana" {% if feeder.state == 'Haryana' %}selected{% endif %}>Haryana</option>
-            <option value="Himachal Pradesh" {% if feeder.state == 'Himachal Pradesh' %}selected{% endif %}>Himachal Pradesh</option>
-            <option value="Jharkhand" {% if feeder.state == 'Jharkhand' %}selected{% endif %}>Jharkhand</option>
-            <option value="Karnataka" {% if feeder.state == 'Karnataka' %}selected{% endif %}>Karnataka</option>
-            <option value="Kerala" {% if feeder.state == 'Kerala' %}selected{% endif %}>Kerala</option>
-            <option value="Madhya Pradesh" {% if feeder.state == 'Madhya Pradesh' %}selected{% endif %}>Madhya Pradesh</option>
-            <option value="Maharashtra" {% if feeder.state == 'Maharashtra' %}selected{% endif %}>Maharashtra</option>
-            <option value="Manipur" {% if feeder.state == 'Manipur' %}selected{% endif %}>Manipur</option>
-            <option value="Meghalaya" {% if feeder.state == 'Meghalaya' %}selected{% endif %}>Meghalaya</option>
-            <option value="Mizoram" {% if feeder.state == 'Mizoram' %}selected{% endif %}>Mizoram</option>
-            <option value="Nagaland" {% if feeder.state == 'Nagaland' %}selected{% endif %}>Nagaland</option>
-            <option value="Odisha" {% if feeder.state == 'Odisha' %}selected{% endif %}>Odisha</option>
-            <option value="Punjab" {% if feeder.state == 'Punjab' %}selected{% endif %}>Punjab</option>
-            <option value="Rajasthan" {% if feeder.state == 'Rajasthan' %}selected{% endif %}>Rajasthan</option>
-            <option value="Sikkim" {% if feeder.state == 'Sikkim' %}selected{% endif %}>Sikkim</option>
-            <option value="Tamil Nadu" {% if feeder.state == 'Tamil Nadu' %}selected{% endif %}>Tamil Nadu</option>
-            <option value="Telangana" {% if feeder.state == 'Telangana' %}selected{% endif %}>Telangana</option>
-            <option value="Tripura" {% if feeder.state == 'Tripura' %}selected{% endif %}>Tripura</option>
-            <option value="Uttar Pradesh" {% if feeder.state == 'Uttar Pradesh' %}selected{% endif %}>Uttar Pradesh</option>
-            <option value="Uttarakhand" {% if feeder.state == 'Uttarakhand' %}selected{% endif %}>Uttarakhand</option>
-            <option value="West Bengal" {% if feeder.state == 'West Bengal' %}selected{% endif %}>West Bengal</option>
-            <option value="Other" {% if feeder.state == 'Other' %}selected{% endif %}>Other</option>
-        </select>
-      </div>
-      
-      <div class="form-group">
-        <label>Remarks</label>
-        <input type="text" name="remarks" value="{{ feeder.remarks }}">
-      </div>
-      
-      <div class="form-group">
-        <label>Contact Person</label>
-        <input type="text" name="contact_person" value="{{ feeder.contact_person }}">
-      </div>
-      
-      <div class="form-group">
-        <label>Software Amount</label>
-        <input type="text" name="software_amount" value="{{ feeder.software_amount }}">
-      </div>
-      
-      <div class="form-group">
-        <label>Contact Number</label>
-        <input type="text" name="contact_number" value="{{ feeder.contact_number }}">
-      </div>
-      
-      <div class="form-group">
-        <label>Module Charges</label>
-        <input type="text" name="module_charges" value="{{ feeder.module_charges }}">
-      </div>
-      
-      <div class="form-group">
-        <label>Email</label>
-        <input type="email" name="email" value="{{ feeder.email }}">
-      </div>
-      
-      <div class="form-group">
-        <label>Reputed Person Name</label>
-        <input type="text" name="reputed_person_name" value="{{ feeder.reputed_person_name }}">
-      </div>
-      
-      <div class="form-group">
-        <label>Reputed Person Number</label>
-        <input type="text" name="reputed_person_number" value="{{ feeder.reputed_person_number }}">
-      </div>
-    </div>
-
-    <!-- modules with price -->
-    <div class="module-section">
-      <h3>Modules Selection</h3>
-
-      <!-- MOBILE APPS -->
-      <div class="module-category">
-        <h4>Mobile Apps</h4>
-        <div class="module-grid">
-          {% for item in "Dine KOT,MagicPDA Full(MST),MagicPDA Super Scanner,EWAY Task,MagNet Pay,DINE Reporter,TASK Pro"|split:"," %}
-          <div class="module-item">
-            <input type="checkbox" name="more_modules" value="{{ item|trim }}" {% if item|trim in selected_modules %}checked{% endif %}>
-            <label>{{ item|trim }}</label>
-            <input type="number" step="0.01" class="price-input" name="price_{{ item|trim }}" placeholder="₹"
-                   value="{{ price_dict|get_item:item|trim|default:'0' }}">
-          </div>
-          {% endfor %}
         </div>
-      </div>
+    </details>
 
-      <!-- ADVANCED TASK -->
-      <div class="module-category">
-        <h4>Advanced Task</h4>
-        <div class="module-grid">
-          {% for item in "E Invoice,TPOS,Mpos,Hosted,Hosted +"|split:"," %}
-          <div class="module-item">
-            <input type="checkbox" name="more_modules" value="{{ item|trim }}" {% if item|trim in selected_modules %}checked{% endif %}>
-            <label>{{ item|trim }}</label>
-            <input type="number" step="0.01" class="price-input" name="price_{{ item|trim }}" placeholder="₹"
-                   value="{{ price_dict|get_item:item|trim|default:'0' }}">
-          </div>
-          {% endfor %}
+    <details class="module-category">
+        <summary>
+            <h4>Advanced Task <span class="plus-icon">+</span></h4>
+        </summary>
+
+        <div class="module-list-vertical">
+            {% for item in "E Invoice,TPOS,Mpos,Hosted,Hosted +"|split:"," %}
+            <div class="module-item-vertical">
+                <input type="checkbox" name="more_modules" value="{{ item|trim }}">
+                <label>{{ item|trim }}</label>
+                <input type="number" step="0.01" class="price-input" name="price_{{ item|trim }}" placeholder="₹">
+            </div>
+            {% endfor %}
         </div>
-      </div>
+    </details>
 
-      <!-- VERSION -->
-      <div class="module-category">
-        <h4>Version</h4>
-        <div class="module-grid">
-          {% for item in "B-care,I-care,Ultimate"|split:"," %}
-          <div class="module-item">
-            <input type="checkbox" name="more_modules" value="{{ item|trim }}" {% if item|trim in selected_modules %}checked{% endif %}>
-            <label>{{ item|trim }}</label>
-            <input type="number" step="0.01" class="price-input" name="price_{{ item|trim }}" placeholder="₹"
-                   value="{{ price_dict|get_item:item|trim|default:'0' }}">
-          </div>
-          {% endfor %}
+
+                </div>
+
+                <div class="module-category">
+                    <h4>Version</h4>
+                    <div class="module-list-vertical">
+                        {% for item in "B-care,I-care,Ultimate"|split:"," %}
+                        <div class="module-item-vertical">
+                            <input type="checkbox" name="more_modules" value="{{ item|trim }}">
+                            <label>{{ item|trim }}</label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
         </div>
-      </div>
-    </div>
-
-    <div class="buttons">
-      <button type="button" class="cancel" onclick="window.location.href='{% url 'feeder_list' %}'">Cancel</button>
-      <button type="submit" class="save">Update</button>
-    </div>
+        <div class="buttons">
+            <button type="button" class="cancel">Cancel</button>
+            <button type="submit" class="save">Save</button>
+        </div>
   </form>
 </div>
-</body>
-</html>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const softwareSelect   = document.querySelector('select[name="software"]');
+    const softwareAmountIn = document.querySelector('input[name="software_amount"]');
+    const totalCostIn      = document.querySelector('input[name="total_cost"]');
+    const priceInputs      = document.querySelectorAll('.price-input');
+    const checkboxes       = document.querySelectorAll('input[type="checkbox"][name="more_modules"]');
+
+    const versionMap = {
+        'Ultimate': ['BGR', 'BGR 4'],
+        'I-care'  : ['I-CARE BGR', 'I-CARE BGR 4'],
+        'B-care'  : ['B-CARE BGR', 'B-CARE BGR 4']
+    };
+
+    const versionCheckboxes = {
+        'Ultimate': document.querySelector('input[type="checkbox"][value="Ultimate"]'),
+        'I-care'  : document.querySelector('input[type="checkbox"][value="I-care"]'),
+        'B-care'  : document.querySelector('input[type="checkbox"][value="B-care"]')
+    };
+
+    /* --- auto-select version based on software --- */
+    softwareSelect?.addEventListener('change', () => {
+        Object.values(versionCheckboxes).forEach(cb => cb && (cb.checked = false));
+        const sw = softwareSelect.value;
+        for (const [v, list] of Object.entries(versionMap)) {
+            if (list.includes(sw)) {
+                if (versionCheckboxes[v]) versionCheckboxes[v].checked = true;
+                break;
+            }
+        }
+        updateTotalCost();
+    });
+
+    /* --- recalc when anything changes --- */
+    function updateTotalCost() {
+        let software = parseFloat(softwareAmountIn.value) || 0;
+        let moduleSum = 0;
+
+        checkboxes.forEach(cb => {
+            if (cb.checked) {
+                const priceField = document.querySelector(input[name="price_${cb.value}"]);
+                const val = parseFloat(priceField?.value || 0);
+                if (!isNaN(val)) moduleSum += val;
+            }
+        });
+
+        totalCostIn.value = (software + moduleSum).toFixed(2);
+    }
+
+    /* --- attach listeners --- */
+    softwareAmountIn?.addEventListener('input', updateTotalCost);
+    priceInputs.forEach(inp => inp.addEventListener('input', updateTotalCost));
+    checkboxes.forEach(cb => cb.addEventListener('change', updateTotalCost));
+
+    /* --- initial calc on page load --- */
+    updateTotalCost();
+});
+</script>
+{% endblock %}

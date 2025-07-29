@@ -2,195 +2,263 @@
 {% load app2_extras %}
 {% block content %}
 <style>
-    .container{background:#fff;padding:30px;border-radius:10px;max-width:1100px;margin:auto;box-shadow:0 0 10px rgba(0,0,0,.1)}
-    h2{margin-bottom:20px;font-size:24px}
-    .form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px}
-    .form-group{display:flex;flex-direction:column}
-    .form-group label{margin-bottom:5px;font-weight:bold}
-    .form-group input,.form-group select,.form-group textarea{padding:8px;border:1px solid #ccc;border-radius:6px;font-size:14px}
-    .module-section{margin-top:40px;background:#f8f9fa;padding:25px;border-radius:12px;border:1px solid #e9ecef}
-    .module-category{margin-bottom:30px;background:#ffffff;border-radius:10px;padding:20px;border:1px solid #dee2e6}
-    .module-category h4{margin-bottom:15px;font-weight:600}
-    .module-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:15px}
-    .module-item{display:flex;align-items:center;gap:10px}
-    .module-item input[type=checkbox]{width:18px;height:18px}
-    .price-input{width:120px;margin-left:8px}
-    .buttons{margin-top:30px;text-align:right}
-    .buttons button{padding:10px 20px;border:none;border-radius:6px;cursor:pointer}
-    .save{background:#4d6bf9;color:#fff}
-    .cancel{background:#eee;margin-right:10px}
+    .container {
+        background: #fff;
+        padding: 30px;
+        border-radius: 10px;
+        max-width: 1200px;
+        margin: auto;
+        box-shadow: 0 0 10px rgba(0, 0, 0, .1);
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    h2 {
+        margin-bottom: 20px;
+        font-size: 24px;
+        text-align: center;
+    }
+    fieldset {
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 30px;
+        background-color: #f9f9f9;
+    }
+    legend {
+        font-weight: 600;
+        font-size: 18px;
+        padding: 0 10px;
+    }
+    .form-columns {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+    .form-grid {
+        flex: 1;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+    }
+    .form-group {
+        display: flex;
+        flex-direction: column;
+    }
+    .form-group label {
+        margin-bottom: 5px;
+        font-weight: bold;
+        font-size: 14px;
+    }
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        padding: 8px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        font-size: 14px;
+    }
+    input[name="name"] {
+        text-transform: uppercase;
+    }
+    .module-section {
+        margin-top: 20px;
+        background: #f8f9fa;
+        padding: 25px;
+        border-radius: 12px;
+        border: 1px solid #e9ecef;
+    }
+    .module-categories-horizontal {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        justify-content: space-between;
+    }
+    .module-category {
+        flex: 1;
+        min-width: 300px;
+        background: #fff;
+        border-radius: 10px;
+        padding: 20px;
+        border: 1px solid #dee2e6;
+    }
+    .module-category h4 {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 10px;
+        text-align: center;
+    }
+    .module-list-vertical {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    .module-item-vertical {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+    }
+    .module-item-vertical label {
+        flex: 1;
+    }
+    .price-input {
+        width: 90px;
+        text-align: right;
+    }
+    .buttons {
+        margin-top: 30px;
+        text-align: right;
+    }
+    .buttons button {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+    }
+    .save {
+        background: #4d6bf9;
+        color: #fff;
+    }
+    .cancel {
+        background: #eee;
+        margin-right: 10px;
+    }
 </style>
 
-<div class="">
+<div class="container">
     <div style="text-align:right;font-size:14px;color:#888;margin-bottom:10px">Home / Feeder</div>
     <h2>Add Feeder</h2>
 
     <form method="POST">
         {% csrf_token %}
-        <div class="form-grid">
-            <!-- all existing simple fields exactly as before -->
-            <div class="form-group"><label>Name</label><input type="text" name="name"></div>
-            <div class="form-group">
-          <label>Software</label>
-          <select name="software">
-            <option value="">Select</option>
-            <option value="TASK BGR">BGR</option>
-            <option value="BGR 4">BGR 4</option>
-            <option value="B-CARE BGR">B-CARE BGR</option>
-            <option value="B-CARE BGR 4">B-CARE BGR 4</option>
-            <option value="AURIC">AURIC</option>
-            <option value="DINE">DINE</option>
-            <option value="TASK-ER">TASK-ER</option>
-            <option value="FLAIMES">FLAIMES</option>
-            <option value="I-CARE BGR">I-CARE BGR</option>
-            <option value="I-CARE BGR 4">I-CARE BGR 4</option>
-            <option value="EASY LAB">EASY LAB</option>
-            <option value="MARUTI">MARUTI</option>
-            <option value="MAGNET">MAGNET</option>
-            <option value="SHADE">SHADE</option>
-            <option value="STAR STAY">STAR STAY</option>
-            <option value="VITAMINE">VITAMINE</option>
-            <option value="V-TASK">V-TASK</option>
-            
-          </select>
-        </div>
-            <div class="form-group">
-              <label>Nature</label>
-              <select name="nature" required>
-                  <option value="" disabled selected>Select Business Type</option>
-                  {% for bt in business_types %}
-                      <option value="{{ bt.id }}">{{ bt.name }}</option>
-                  {% endfor %}
-              </select>
-          </div>
-            <div class="form-group"><label>Address/Landmark</label><textarea name="address"></textarea></div>
-            <div class="form-group">
-              <label>Branch</label>
-              <select name="branch" class="form-control">
-                  <option value="">-- Select Branch --</option>
-                  {% for branch in branches %}
-                      <option value="{{ branch.id }}">{{ branch.name }}</option>
-                  {% endfor %}
-              </select>
-          </div>
 
-            <div class="form-group"><label>No. of System</label><input type="number" name="no_of_system"></div>
-            <div class="form-group"><label>Location</label><input type="text" name="location"></div>
-            <div class="form-group"><label>Pincode</label><input type="text" name="pincode"></div>
-            <div class="form-group"><label>Area</label><input type="text" name="area"></div>
-            <div class="form-group"><label>Country</label><input type="text" name="country" value="India"></div>
-            <div class="form-group">
-    <label>District</label>
-    <select name="district" class="form-control">
-        <option value="">-- Select District --</option>
-        <option value="Thiruvananthapuram">Thiruvananthapuram</option>
-        <option value="Kollam">Kollam</option>
-        <option value="Pathanamthitta">Pathanamthitta</option>
-        <option value="Alappuzha">Alappuzha</option>
-        <option value="Kottayam">Kottayam</option>
-        <option value="Idukki">Idukki</option>
-        <option value="Ernakulam">Ernakulam</option>
-        <option value="Thrissur">Thrissur</option>
-        <option value="Palakkad">Palakkad</option>
-        <option value="Malappuram">Malappuram</option>
-        <option value="Kozhikode">Kozhikode</option>
-        <option value="Wayanad">Wayanad</option>
-        <option value="Kannur">Kannur</option>
-        <option value="Kasaragod">Kasaragod</option>
-        <option value="Other">Other</option>
-    </select>
-</div>
-
-            <div class="form-group"><label>Installation Date</label><input type="date" name="installation_date"></div>
-            <div class="form-group">
-              <label>State</label>
-              <select name="state" class="form-control">
-                  <option value="">-- Select State --</option>
-                  <option value="Andhra Pradesh">Andhra Pradesh</option>
-                  <option value="Arunachal Pradesh">Arunachal Pradesh</option>
-                  <option value="Assam">Assam</option>
-                  <option value="Bihar">Bihar</option>
-                  <option value="Chhattisgarh">Chhattisgarh</option>
-                  <option value="Goa">Goa</option>
-                  <option value="Gujarat">Gujarat</option>
-                  <option value="Haryana">Haryana</option>
-                  <option value="Himachal Pradesh">Himachal Pradesh</option>
-                  <option value="Jharkhand">Jharkhand</option>
-                  <option value="Karnataka">Karnataka</option>
-                  <option value="Kerala">Kerala</option>
-                  <option value="Madhya Pradesh">Madhya Pradesh</option>
-                  <option value="Maharashtra">Maharashtra</option>
-                  <option value="Manipur">Manipur</option>
-                  <option value="Meghalaya">Meghalaya</option>
-                  <option value="Mizoram">Mizoram</option>
-                  <option value="Nagaland">Nagaland</option>
-                  <option value="Odisha">Odisha</option>
-                  <option value="Punjab">Punjab</option>
-                  <option value="Rajasthan">Rajasthan</option>
-                  <option value="Sikkim">Sikkim</option>
-                  <option value="Tamil Nadu">Tamil Nadu</option>
-                  <option value="Telangana">Telangana</option>
-                  <option value="Tripura">Tripura</option>
-                  <option value="Uttar Pradesh">Uttar Pradesh</option>
-                  <option value="Uttarakhand">Uttarakhand</option>
-                  <option value="West Bengal">West Bengal</option>
-                  <option value="Other">Other</option>
-              </select>
-          </div>
-
-            <div class="form-group"><label>Remarks</label><input type="text" name="remarks"></div>
-            <div class="form-group"><label>Contact Person</label><input type="text" name="contact_person"></div>
-            <div class="form-group"><label>Software Amount</label><input type="text" name="software_amount"></div>
-            <div class="form-group"><label>Contact Number</label><input type="text" name="contact_number"></div>
-            <div class="form-group"><label>Module Charges</label><input type="text" name="module_charges"></div>
-            <div class="form-group"><label>Email</label><input type="email" name="email"></div>
-            <div class="form-group"><label>Reputed Person Name</label><input type="text" name="reputed_person_name"></div>
-            <div class="form-group"><label>Reputed Person Number</label><input type="text" name="reputed_person_number"></div>
-        </div>
-
-        <!-- modules with price -->
-        <div class="module-section">
-            <h3>Modules Selection</h3>
-
-            <!-- MOBILE APPS -->
-            <div class="module-category">
-                <h4>Mobile Apps</h4>
-                <div class="module-grid">
-                    {% for item in "Dine KOT,MagicPDA Full(MST),MagicPDA Super Scanner,EWAY Task,MagNet Pay,DINE Reporter,TASK Pro"|split:"," %}
-                    <div class="module-item">
-                        <input type="checkbox" name="more_modules" value="{{ item|trim }}">
-                        <label>{{ item|trim }}</label>
-                        <input type="number" step="0.01" class="price-input" name="price_{{ item|trim }}" placeholder="₹">
+        <div class="form-columns">
+            <fieldset style="flex: 1;">
+                <legend>Primary Details</legend>
+                <div class="form-grid">
+                    <div class="form-group"><label>Name</label><input type="text" name="name"></div>
+                    <div class="form-group"><label>Address/Landmark</label><input type="text" name="address"></div>
+                    <div class="form-group"><label>Location</label><input type="text" name="location"></div>
+                    <div class="form-group"><label>Area</label><input type="text" name="area"></div>
+                    <div class="form-group"><label>District</label>
+                        <select name="district" class="form-control">
+                            <option value="">-- Select District --</option>
+                            <option>Thiruvananthapuram</option><option>Kollam</option>
+                            <option>Pathanamthitta</option><option>Alappuzha</option>
+                            <option>Kottayam</option><option>Idukki</option>
+                            <option>Ernakulam</option><option>Thrissur</option>
+                            <option>Palakkad</option><option>Malappuram</option>
+                            <option>Kozhikode</option><option>Wayanad</option>
+                            <option>Kannur</option><option>Kasaragod</option>
+                            <option>Other</option>
+                        </select>
                     </div>
-                    {% endfor %}
+                    <div class="form-group"><label>State</label>
+                        <select name="state" class="form-control">
+                            <option value="">-- Select State --</option>
+                            <option>Kerala</option><option>Tamil Nadu</option>
+                            <option>Karnataka</option><option>Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>Contact Person</label><input type="text" name="contact_person"></div>
+                    <div class="form-group"><label>Contact Number</label><input type="text" name="contact_number"></div>
+
+                    <div class="form-group"><label>Email</label><input type="email" name="email"></div>
+                    <div class="form-group"><label>Reputed Person Name</label><input type="text" name="reputed_person_name"></div>
+                    <div class="form-group"><label>Reputed Person Number</label><input type="text" name="reputed_person_number"></div>
                 </div>
-            </div>
+            </fieldset>
 
-            <!-- ADVANCED TASK -->
-            <div class="module-category">
-                <h4>Advanced Task</h4>
-                <div class="module-grid">
-                    {% for item in "E Invoice,TPOS,Mpos,Hosted,Hosted +"|split:"," %}
-                    <div class="module-item">
-                        <input type="checkbox" name="more_modules" value="{{ item|trim }}">
-                        <label>{{ item|trim }}</label>
-                        <input type="number" step="0.01" class="price-input" name="price_{{ item|trim }}" placeholder="₹">
+            <fieldset style="flex: 1;">
+                <legend>Client Details</legend>
+                <div class="form-grid">
+                    <div class="form-group"><label>Software</label>
+                        <select name="software">
+                            <option value="">Select</option>
+                            <option>BGR</option><option>BGR 4</option><option>B-CARE BGR</option><option>B-CARE BGR 4</option>
+                            <option>AURIC</option><option>DINE</option><option>TASK-ER</option><option>FLAIMES</option>
+                            <option>I-CARE BGR</option><option>I-CARE BGR 4</option><option>EASY LAB</option><option>MARUTI</option>
+                            <option>MAGNET</option><option>SHADE</option><option>STAR STAY</option><option>VITAMINE</option>
+                            <option>V-TASK</option>
+                        </select>
                     </div>
-                    {% endfor %}
+                    <div class="form-group"><label>Nature</label>
+                        <select name="nature" required>
+                            <option value="" disabled selected>Select Business Type</option>
+                            {% for bt in business_types %}
+                                <option value="{{ bt.id }}">{{ bt.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group"><label>Branch</label>
+                        <select name="branch" class="form-control">
+                            <option value="">-- Select Branch --</option>
+                            {% for branch in branches %}
+                                <option value="{{ branch.id }}">{{ branch.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group"><label>No. of System</label><input type="number" name="no_of_system"></div>
+                    <div class="form-group"><label>Pincode</label><input type="number" name="pincode"></div>
+                    
+                    <div class="form-group"><label>Country</label><input type="text" name="country" value="India"></div>
+                    <div class="form-group"><label>Installation Date</label><input type="date" name="installation_date"></div>
+                    <div class="form-group"><label>Remarks</label><input type="text" name="remarks"></div>
+                    <div class="form-group"><label>Software Amount</label><input type="text" name="software_amount"></div>
+                    <div class="form-group"><label>Total Cost</label><input type="text" name="total_cost"></div>
                 </div>
-            </div>
+            </fieldset>
+        </div>
+<h3 style="margin-bottom: 15px; font-size: 20px; font-weight: 600; text-align: center;">More Modules</h3>
+<div class="module-section">
+    <div class="module-categories-horizontal">
+        <!-- rest of your module code -->
 
-            <!-- VERSION -->
-            <div class="module-category">
-                <h4>Version</h4>
-                <div class="module-grid">
-                    {% for item in "B-care,I-care,Ultimate"|split:"," %}
-                    <div class="module-item">
-                        <input type="checkbox" name="more_modules" value="{{ item|trim }}">
-                        <label>{{ item|trim }}</label>
-                        <input type="number" step="0.01" class="price-input" name="price_{{ item|trim }}" placeholder="₹">
+        <div class="module-categories-horizontal">
+    <details class="module-category">
+        <summary>
+            <h4>Mobile Apps <span class="plus-icon">+</span></h4>
+        </summary>
+
+        <div class="module-list-vertical">
+            {% for item in "Dine KOT,MagicPDA Full(MST),MagicPDA Super,Scanner,EWAY Task,MagNet Pay,DINE Reporter,TASK Pro"|split:"," %}
+            <div class="module-item-vertical">
+                <input type="checkbox" name="more_modules" value="{{ item|trim }}">
+                <label>{{ item|trim }}</label>
+                <input type="number" step="0.01" class="price-input" name="price_{{ item|trim }}" placeholder="₹">
+            </div>
+            {% endfor %}
+        </div>
+    </details>
+
+    <details class="module-category">
+        <summary>
+            <h4>Advanced Task <span class="plus-icon">+</span></h4>
+        </summary>
+
+        <div class="module-list-vertical">
+            {% for item in "E Invoice,TPOS,Mpos,Hosted,Hosted +"|split:"," %}
+            <div class="module-item-vertical">
+                <input type="checkbox" name="more_modules" value="{{ item|trim }}">
+                <label>{{ item|trim }}</label>
+                <input type="number" step="0.01" class="price-input" name="price_{{ item|trim }}" placeholder="₹">
+            </div>
+            {% endfor %}
+        </div>
+    </details>
+
+
+                </div>
+
+                <div class="module-category">
+                    <h4>Version</h4>
+                    <div class="module-list-vertical">
+                        {% for item in "B-care,I-care,Ultimate"|split:"," %}
+                        <div class="module-item-vertical">
+                            <input type="checkbox" name="more_modules" value="{{ item|trim }}">
+                            <label>{{ item|trim }}</label>
+                        </div>
+                        {% endfor %}
                     </div>
-                    {% endfor %}
                 </div>
             </div>
         </div>
@@ -201,4 +269,72 @@
         </div>
     </form>
 </div>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const softwareSelect = document.querySelector('select[name="software"]');
+    const softwareAmountInput = document.querySelector('input[name="software_amount"]');
+    const totalCostInput = document.querySelector('input[name="total_cost"]');
+    const priceInputs = document.querySelectorAll('.price-input');
+    const checkboxes = document.querySelectorAll('input[type="checkbox"][name="more_modules"]');
+
+    const versionMap = {
+        'Ultimate': ['BGR', 'BGR 4'],
+        'I-care': ['I-CARE BGR', 'I-CARE BGR 4'],
+        'B-care': ['B-CARE BGR', 'B-CARE BGR 4']
+    };
+
+    const versionCheckboxes = {
+        'Ultimate': document.querySelector('input[type="checkbox"][value="Ultimate"]'),
+        'I-care': document.querySelector('input[type="checkbox"][value="I-care"]'),
+        'B-care': document.querySelector('input[type="checkbox"][value="B-care"]')
+    };
+
+    // Auto-select version checkbox based on software
+    softwareSelect.addEventListener('change', function () {
+        const selectedSoftware = this.value;
+        Object.values(versionCheckboxes).forEach(cb => {
+            if (cb) cb.checked = false;
+        });
+
+        for (const [version, softwareList] of Object.entries(versionMap)) {
+            if (softwareList.includes(selectedSoftware) && versionCheckboxes[version]) {
+                versionCheckboxes[version].checked = true;
+            }
+        }
+
+        updateTotalCost();
+    });
+
+    // Function to calculate total cost (software + modules)
+    function updateTotalCost() {
+        let softwareAmount = parseFloat(softwareAmountInput.value) || 0;
+        let moduleTotal = 0;
+
+        checkboxes.forEach(cb => {
+            if (cb.checked) {
+                // Fixed the querySelector syntax - was missing quotes around the attribute selector
+                const priceField = document.querySelector(`input[name="price_${cb.value}"]`);
+                const val = parseFloat(priceField?.value || 0);
+                if (!isNaN(val)) {
+                    moduleTotal += val;
+                }
+            }
+        });
+
+        const total = softwareAmount + moduleTotal;
+        totalCostInput.value = total > 0 ? total.toFixed(2) : '';
+    }
+
+    // Watch for changes
+    softwareAmountInput.addEventListener('input', updateTotalCost);
+    checkboxes.forEach(cb => cb.addEventListener('change', updateTotalCost));
+    priceInputs.forEach(inp => inp.addEventListener('input', updateTotalCost));
+    
+    // Initial calculation on page load
+    updateTotalCost();
+});
+</script>
+
+
+
 {% endblock %}

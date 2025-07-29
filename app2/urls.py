@@ -5,6 +5,7 @@ from .views import InformationCenterListView, add_information_center,edit_inform
 from .views import get_next_position
 from .views import socialmedia_all_projects, socialmedia_add_project, socialmedia_edit_project, socialmedia_delete_project
 from .views import socialmedia_all_tasks, socialmedia_add_task, socialmedia_edit_task, socialmedia_delete_task
+from app2 import views as app2_views 
 
 urlpatterns = [
     path('credential-management/', views.credential_management, name='credential_management'),
@@ -119,7 +120,8 @@ urlpatterns = [
     path('feeder/list/', views.feeder_list, name='feeder_list'),
     path('feeder_edit/<int:feeder_id>/', views.feeder_edit, name='feeder_edit'),
     path('feeder_delete/<int:feeder_id>/', views.feeder_delete, name='feeder_delete'),
-    path('<int:feeder_id>/status-update/', views.feeder_status_update, name='feeder_status_update'),
+    path('feeder/<int:feeder_id>/status-update/', views.feeder_status_update, name='feeder_status_update'),
+    path('feeder/<int:feeder_id>/status-update/', app2_views.feeder_status_update, name='feeder_status_update'),
 
 
 

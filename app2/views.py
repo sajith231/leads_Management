@@ -1735,7 +1735,9 @@ def user_socialmedia_project_assignments(request):
         'total_assignments': len(processed_assignments),
     }
     return render(request, 'user_socialmedia_project_assignments.html', context)
-# app2/views.py
+
+
+
 import json
 from django.shortcuts import render, redirect, get_object_or_404
 from django.core.paginator import Paginator
@@ -1745,58 +1747,87 @@ from .models import Feeder
 from app1.models import BusinessType, Branch   # <-- Import Branch from app1
 
 # ----------  ADD / CREATE  ----------
+from django.shortcuts import render, redirect
+from .models import Feeder
+from app1.models import BusinessType, Branch
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.dateparse import parse_date
+
+@csrf_exempt
 def feeder(request):
-    """
-    Create a new Feeder.
-    Nature is now a ForeignKey to app1.BusinessType.
-    Branch is now a ForeignKey to app1.Branch.
-    """
+    business_types = BusinessType.objects.all()
+    branches = Branch.objects.all()
+
     if request.method == 'POST':
-        # 1. Build the basic Feeder instance
+        name = request.POST.get('name')
+        address = request.POST.get('address')
+        location = request.POST.get('location')
+        area = request.POST.get('area')
+        district = request.POST.get('district')
+        state = request.POST.get('state')
+        contact_person = request.POST.get('contact_person')
+        contact_number = request.POST.get('contact_number')
+        email = request.POST.get('email')
+        reputed_person_name = request.POST.get('reputed_person_name', '')
+        reputed_person_number = request.POST.get('reputed_person_number', '')
+        software = request.POST.get('software')
+        nature_id = request.POST.get('nature')
+        branch_id = request.POST.get('branch')
+        no_of_system = request.POST.get('no_of_system')
+        pincode = request.POST.get('pincode')
+        country = request.POST.get('country')
+        installation_date = request.POST.get('installation_date')
+        remarks = request.POST.get('remarks', '')
+        software_amount = request.POST.get('software_amount') or 0
+        module_charges = request.POST.get('total_cost') or 0
+
+        modules = request.POST.getlist('modules')
+        more_modules = request.POST.getlist('more_modules')
+
+        module_prices = {}
+        for module in more_modules:
+            price_key = f"price_{module}"
+            price_value = request.POST.get(price_key)
+            if price_value:
+                try:
+                    module_prices[module] = float(price_value)
+                except ValueError:
+                    pass
+
         feeder_obj = Feeder(
-            name=request.POST.get('name'),
-            address=request.POST.get('address'),
-            location=request.POST.get('location'),
-            area=request.POST.get('area'),
-            district=request.POST.get('district'),
-            state=request.POST.get('state'),
-            contact_person=request.POST.get('contact_person'),
-            contact_number=request.POST.get('contact_number'),
-            email=request.POST.get('email'),
-            reputed_person_name=request.POST.get('reputed_person_name', ''),
-            reputed_person_number=request.POST.get('reputed_person_number', ''),
-            software=request.POST.get('software'),
-            nature_id=request.POST.get('nature'),          # <-- FK to BusinessType
-            branch_id=request.POST.get('branch'),          # <-- FK to Branch
-            no_of_system=request.POST.get('no_of_system'),
-            pincode=request.POST.get('pincode'),
-            country=request.POST.get('country', 'India'),
-            installation_date=request.POST.get('installation_date'),
-            remarks=request.POST.get('remarks', ''),
-            software_amount=request.POST.get('software_amount'),
-            module_charges=request.POST.get('module_charges'),
-            modules=', '.join(request.POST.getlist('modules')),
-            more_modules=', '.join(request.POST.getlist('more_modules')),
-            # status will default to 'pending' from model
+            name=name,
+            address=address,
+            location=location,
+            area=area,
+            district=district,
+            state=state,
+            contact_person=contact_person,
+            contact_number=contact_number,
+            email=email,
+            reputed_person_name=reputed_person_name,
+            reputed_person_number=reputed_person_number,
+            software=software,
+            nature_id=nature_id,
+            branch_id=branch_id,
+            no_of_system=no_of_system,
+            pincode=pincode,
+            country=country,
+            installation_date=parse_date(installation_date),
+            remarks=remarks,
+            software_amount=software_amount,
+            module_charges=module_charges,
+            modules=', '.join(modules),
+            more_modules=', '.join(more_modules),
+            module_prices=module_prices
         )
         feeder_obj.save()
-
-        # 2. Handle module prices (JSON)
-        module_prices = {
-            m: request.POST.get(f'price_{m}', '0')
-            for m in request.POST.getlist('more_modules')
-        }
-        feeder_obj.module_prices = module_prices
-        feeder_obj.save()
-
         return redirect('feeder_list')
 
-    business_types = BusinessType.objects.all()
-    branches = Branch.objects.all()  # <-- Get all branches
     return render(request, 'add_feeder.html', {
         'business_types': business_types,
         'branches': branches
     })
+
 
 
 # ----------  LIST  ----------
@@ -1808,7 +1839,7 @@ def feeder_list(request):
         feeders_list = feeders_list.filter(
             Q(name__icontains=query) |
             Q(software__icontains=query) |
-            Q(branch__name__icontains=query)  # <-- Update to use branch.name
+            Q(branch__name__icontains=query)  # <-- FIXED: Use branch__name instead of branch_name
         )
 
     for feeder in feeders_list:
@@ -1857,15 +1888,62 @@ def feeder_edit(request, feeder_id):
         feeder.reputed_person_name = request.POST.get('reputed_person_name', '')
         feeder.reputed_person_number = request.POST.get('reputed_person_number', '')
         feeder.software = request.POST.get('software')
-        feeder.nature_id = request.POST.get('nature')  # <-- FK to BusinessType
-        feeder.branch_id = request.POST.get('branch')  # <-- FK to Branch
-        feeder.no_of_system = request.POST.get('no_of_system')
-        feeder.pincode = request.POST.get('pincode')
+        
+        # Handle foreign key fields properly - convert to int and handle empty values
+        nature_id = request.POST.get('nature')
+        if nature_id and nature_id.strip():
+            try:
+                feeder.nature_id = int(nature_id)
+            except (ValueError, TypeError):
+                feeder.nature_id = None
+        else:
+            feeder.nature_id = None
+            
+        branch_id = request.POST.get('branch')
+        if branch_id and branch_id.strip():
+            try:
+                feeder.branch_id = int(branch_id)
+            except (ValueError, TypeError):
+                feeder.branch_id = None
+        else:
+            feeder.branch_id = None
+        
+        # Handle numeric fields
+        no_of_system = request.POST.get('no_of_system')
+        if no_of_system and no_of_system.strip():
+            try:
+                feeder.no_of_system = int(no_of_system)
+            except (ValueError, TypeError):
+                feeder.no_of_system = None
+        else:
+            feeder.no_of_system = None
+            
+        pincode = request.POST.get('pincode')
+        if pincode and pincode.strip():
+            try:
+                feeder.pincode = int(pincode)
+            except (ValueError, TypeError):
+                feeder.pincode = None
+        else:
+            feeder.pincode = None
+        
         feeder.country = request.POST.get('country', 'India')
-        feeder.installation_date = request.POST.get('installation_date')
+        
+        # Handle date field
+        installation_date = request.POST.get('installation_date')
+        if installation_date and installation_date.strip():
+            feeder.installation_date = installation_date
+        else:
+            feeder.installation_date = None
+            
         feeder.remarks = request.POST.get('remarks', '')
-        feeder.software_amount = request.POST.get('software_amount')
-        feeder.module_charges = request.POST.get('module_charges')
+        feeder.software_amount = request.POST.get('software_amount', '') or 0
+        
+        # Handle total_cost field - FIXED: Use module_charges field
+        total_cost = request.POST.get('total_cost')
+        feeder.module_charges = total_cost or 0
+        
+        # Handle modules
         feeder.modules = ', '.join(request.POST.getlist('modules'))
         feeder.more_modules = ', '.join(request.POST.getlist('more_modules'))
 
@@ -1874,12 +1952,20 @@ def feeder_edit(request, feeder_id):
             m: request.POST.get(f'price_{m}', '0')
             for m in request.POST.getlist('more_modules')
         }
-        feeder.module_prices = new_prices
-        feeder.save()
-        return redirect('feeder_list')
+        feeder.module_prices = json.dumps(new_prices)
+        
+        try:
+            feeder.save()
+            return redirect('feeder_list')
+        except Exception as e:
+            # Add error handling - you might want to show this error to the user
+            print(f"Error saving feeder: {e}")
+            # You could add a message framework message here
+            # messages.error(request, f"Error updating feeder: {e}")
 
     business_types = BusinessType.objects.all()
-    branches = Branch.objects.all()  # <-- Get all branches
+    branches = Branch.objects.all()
+
     return render(request, 'feeder_edit.html', {
         'feeder': feeder,
         'selected_modules': selected_modules,
@@ -1897,35 +1983,54 @@ def feeder_delete(request, feeder_id):
     return redirect('feeder_list')
 
 
-# ----------  STATUS UPDATE (NEW)  ----------
+# ----------  STATUS UPDATE (FIXED)  ----------
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+from django.shortcuts import get_object_or_404
+from .models import Feeder
+import json
+import traceback
+
+@csrf_exempt
+@require_POST
 def feeder_status_update(request, feeder_id):
-    """
-    Update feeder status via AJAX request
-    """
-    if request.method != 'POST':
-        return JsonResponse({'success': False, 'error': 'Invalid request method'})
-    
     try:
-        feeder = get_object_or_404(Feeder, id=feeder_id)
-        new_status = request.POST.get('status')
-        
+        # Parse JSON data from request body
+        data = json.loads(request.body)
+        new_status = data.get('status')
+
         if not new_status:
-            return JsonResponse({'success': False, 'error': 'Status not provided'})
-        
+            return JsonResponse({'success': False, 'error': 'Status not provided'}, status=400)
+
+        # Get the feeder object
+        feeder = get_object_or_404(Feeder, id=feeder_id)
+
         # Validate status
         valid_statuses = [choice[0] for choice in Feeder.STATUS_CHOICES]
         if new_status not in valid_statuses:
-            return JsonResponse({'success': False, 'error': f'Invalid status. Valid options: {valid_statuses}'})
-        
-        # Update the status
+            return JsonResponse({
+                'success': False, 
+                'error': f'Invalid status. Valid options: {valid_statuses}'
+            }, status=400)
+
+        # Update status
         feeder.status = new_status
         feeder.save()
-        
+
+        # Return success response
         return JsonResponse({
             'success': True,
             'new_status': feeder.get_status_display(),
             'status_class': feeder.get_status_display_class()
         })
-        
+
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Invalid JSON data'}, status=400)
+    except Feeder.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Feeder not found'}, status=404)
     except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)})
+        # Log the full error for debugging
+        print(f"Error in feeder_status_update: {str(e)}")
+        traceback.print_exc()
+        return JsonResponse({'success': False, 'error': f'Server error: {str(e)}'}, status=500)

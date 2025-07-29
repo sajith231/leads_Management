@@ -308,13 +308,14 @@ class Feeder(models.Model):
     module_charges = models.DecimalField(max_digits=10, decimal_places=2)
     more_modules = models.TextField(blank=True, null=True)
 
+
     modules = models.TextField(blank=True)  # store module list as comma separated values
     module_prices = models.JSONField(default=dict, blank=True)
     
     # New status field with default as 'pending'
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
 
-    def __str__(self):
+    def _str_(self):
         return self.name
 
     def get_status_display_class(self):
