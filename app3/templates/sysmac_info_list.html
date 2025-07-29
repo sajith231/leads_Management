@@ -199,7 +199,6 @@
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
-    // Attach event to all bill view buttons
     document.querySelectorAll('.view-bills-btn').forEach(button => {
         button.addEventListener('click', function () {
             const code = this.dataset.code;
@@ -209,7 +208,6 @@ document.addEventListener("DOMContentLoaded", function () {
             const content = document.getElementById('billsContent');
             const titleSpan = document.getElementById('billsClientName');
 
-            // Set modal title and show loader
             titleSpan.textContent = name;
             content.innerHTML = `
                 <div class="text-center py-3">
@@ -218,7 +216,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 </div>
             `;
 
-            // ✅ Fetch from Django proxy for SYSMAC-INFO
             fetch(`/app3/get-sysmac-info-invmast-bills/?code=${code}`)
                 .then(res => {
                     if (!res.ok) throw new Error("Failed to fetch");
@@ -230,21 +227,27 @@ document.addEventListener("DOMContentLoaded", function () {
                         return;
                     }
 
-                    let totalNet = 0, totalPaid = 0;
+                    data.sort((a, b) => new Date(a.invdate) - new Date(b.invdate));
+
+                    let totalNet = 0, totalPaid = 0, totalBalance = 0;
                     const rows = data.map((item, i) => {
                         const net = parseFloat(item.nettotal || 0);
                         const paid = parseFloat(item.paid || 0);
+                        const balance = net - paid;
+
                         totalNet += net;
                         totalPaid += paid;
+                        totalBalance += balance;
 
                         return `
                             <tr>
                                 <td class="text-center">${i + 1}</td>
-                                <td>${item.bill_ref || ''}</td>
-                                <td>${formatDate(item.invdate)}</td>
+                                <td class="text-center">${item.bill_ref || ''}</td>
+                                <td class="text-center">${formatDate(item.invdate)}</td>
+                                <td class="text-center">${calculateBillAge(item.invdate)}</td>
                                 <td class="text-end">₹${net.toFixed(2)}</td>
                                 <td class="text-end">₹${paid.toFixed(2)}</td>
-                                <td class="text-center">${item.modeofpayment || ''}</td>
+                                <td class="text-end text-danger">₹${balance.toFixed(2)}</td>
                             </tr>
                         `;
                     }).join('');
@@ -254,20 +257,21 @@ document.addEventListener("DOMContentLoaded", function () {
                             <thead class="table-light">
                                 <tr>
                                     <th class="text-center">S.NO</th>
-                                    <th>Bill Ref</th>
-                                    <th>Date</th>
+                                    <th class="text-center">Bill Ref</th>
+                                    <th class="text-center">Date</th>
+                                    <th class="text-center">Bill Age</th>
                                     <th class="text-end">Net Total</th>
                                     <th class="text-end">Paid</th>
-                                    <th class="text-center">Payment Mode</th>
+                                    <th class="text-end">Balance</th>
                                 </tr>
                             </thead>
                             <tbody>${rows}</tbody>
                             <tfoot class="table-light fw-bold">
                                 <tr>
-                                    <td colspan="3" class="text-end">Total</td>
+                                    <td colspan="4" class="text-end">Total</td>
                                     <td class="text-end text-dark">₹${totalNet.toFixed(2)}</td>
                                     <td class="text-end text-dark">₹${totalPaid.toFixed(2)}</td>
-                                    <td></td>
+                                    <td class="text-end text-dark">₹${totalBalance.toFixed(2)}</td>
                                 </tr>
                             </tfoot>
                         </table>
@@ -281,12 +285,41 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 
-    // Format date as dd-mm-yyyy
     function formatDate(dateStr) {
         if (!dateStr) return '';
         const date = new Date(dateStr);
         if (isNaN(date)) return dateStr;
         return `${String(date.getDate()).padStart(2, '0')}-${String(date.getMonth() + 1).padStart(2, '0')}-${date.getFullYear()}`;
+    }
+
+    function calculateBillAge(dateStr) {
+        if (!dateStr) return 'N/A';
+        const fromDate = new Date(dateStr);
+        const today = new Date();
+
+        if (isNaN(fromDate)) return 'Invalid Date';
+
+        let years = today.getFullYear() - fromDate.getFullYear();
+        let months = today.getMonth() - fromDate.getMonth();
+        let days = today.getDate() - fromDate.getDate();
+
+        if (days < 0) {
+            months--;
+            const lastMonth = new Date(today.getFullYear(), today.getMonth(), 0);
+            days += lastMonth.getDate();
+        }
+
+        if (months < 0) {
+            years--;
+            months += 12;
+        }
+
+        let ageParts = [];
+        if (years > 0) ageParts.push(`${years} yr${years > 1 ? 's' : ''}`);
+        if (months > 0) ageParts.push(`${months} month${months > 1 ? 's' : ''}`);
+        if (days > 0 || ageParts.length === 0) ageParts.push(`${days} day${days > 1 ? 's' : ''}`);
+
+        return ageParts.join(' ');
     }
 });
 </script>

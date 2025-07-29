@@ -56,6 +56,7 @@ urlpatterns = [
     path('get_sysmac_ledger/', views.get_sysmac_ledger, name='get_sysmac_ledger'),
     path('get-sysmac-invmast-bills/', views.sysmac_invmast_bills, name='sysmac_invmast_bills'),
     
+    
     path('imc1-list/', views.imc1_list, name='imc1_list'),
     path('get_imc1_ledger/', views.get_imc1_ledger, name='get_imc1_ledger'),
     path('get-imc1-invmast-bills/', views.imc1_invmast_bills, name='imc1_invmast_bills'),
