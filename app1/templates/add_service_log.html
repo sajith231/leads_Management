@@ -563,6 +563,28 @@ document.addEventListener("DOMContentLoaded", function () {
     function showCustomerDetails(customerData) {
         const modal = new bootstrap.Modal(document.getElementById('customerDetailsModal'));
         const content = document.getElementById('customerDetailsContent');
+
+            // Calculate AG (Age from installation date to now)
+    let agText = 'N/A';
+    if (customerData.installationdate) {
+        const installDate = new Date(customerData.installationdate);
+        const today = new Date();
+
+        let years = today.getFullYear() - installDate.getFullYear();
+        let months = today.getMonth() - installDate.getMonth();
+
+        if (months < 0) {
+            years--;
+            months += 12;
+        }
+
+        agText = `${years} yr${years !== 1 ? 's' : ''} ${months} month${months !== 1 ? 's' : ''}`;
+    }
+
+    // Format date to dd-mm-yyyy
+    const formattedInstallDate = customerData.installationdate
+        ? new Date(customerData.installationdate).toLocaleDateString('en-GB')
+        : 'N/A';
         
         content.innerHTML = `
             <div class="card">
@@ -593,7 +615,10 @@ document.addEventListener("DOMContentLoaded", function () {
                         </div>
                         <div class="col-md-6">
                             <p><strong>Software:</strong> ${customerData.software || 'N/A'}</p>
-                            <p><strong>Installation Date:</strong> ${customerData.installationdate || 'N/A'}</p>
+                            <p><strong>Installation Date:</strong> 
+                            ${customerData.installationdate ? new Date(customerData.installationdate).toLocaleDateString('en-GB') : 'N/A'}
+                            </p>
+                            <p><strong>Age:</strong> ${agText}</p>
                             <p><strong>License Type:</strong> ${customerData.lictype || 'N/A'}</p>
                             <p><strong>Clients:</strong> ${customerData.clients || 'N/A'}</p>
                             <p><strong>SP:</strong> ${customerData.sp || 'N/A'}</p>
