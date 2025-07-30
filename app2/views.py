@@ -773,176 +773,117 @@ from datetime import datetime
 import requests
 from django.shortcuts import render
 
+from django.shortcuts import render
+import requests
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
+from django.utils.dateparse import parse_date
+from app1.models import User, Branch  # Import User and Branch from app1
+
+from datetime import datetime, timedelta
+from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
+from django.shortcuts import render
+import requests
+from app1.models import User   # used to read the branch
+
+@login_required
 def show_clients(request):
     api_url = "https://accmaster.imcbs.com/api/sync/rrc-clients/"
     clients = []
     error_message = None
 
+    # ------------------------------------------------------------------
+    # 1.  Determine the logged-in user’s branch (fallback to None)
+    # ------------------------------------------------------------------
+    try:
+        custom_user = User.objects.get(userid=request.user.username)
+        user_branch = custom_user.branch.name if custom_user.branch else None
+    except User.DoesNotExist:
+        user_branch = None
+
+    # ------------------------------------------------------------------
+    # 2.  Fetch external data (same as before)
+    # ------------------------------------------------------------------
     try:
         response = requests.get(api_url, timeout=30)
         response.raise_for_status()
         data = response.json()
+        clients = data if isinstance(data, list) else \
+                  data.get('data', data.get('clients', data.get('results', [])))
+    except requests.exceptions.RequestException as e:
+        error_message = str(e)
+    except Exception:
+        error_message = "Could not load client data."
 
-        if isinstance(data, list):
-            clients = data
-        elif isinstance(data, dict):
-            clients = data.get('data', data.get('clients', data.get('results', [])))
+    # ------------------------------------------------------------------
+    # 3.  Format / enrich data
+    # ------------------------------------------------------------------
+    def fmt_date(d):
+        if not d or str(d).strip() in {"", "-"}:
+            return "-"
+        for f in ('%Y-%m-%d', '%d-%m-%Y', '%m/%d/%Y', '%d/%m/%Y'):
+            try:
+                return datetime.strptime(str(d).strip(), f).strftime('%d-%m-%Y')
+            except ValueError:
+                continue
+        return str(d).strip()
 
-    except requests.exceptions.Timeout:
-        error_message = "API request timed out"
-    except requests.exceptions.ConnectionError:
-        error_message = "Could not connect to API"
-    except requests.exceptions.HTTPError as e:
-        error_message = f"HTTP Error: {e}"
-    except Exception as e:
-        error_message = f"Error fetching data: {str(e)}"
+    for c in clients:
+        c['formatted_installationdate'] = fmt_date(c.get('installationdate'))
 
-    def format_installation_date(date_str):
-        if not date_str or date_str.strip() == '' or date_str.strip() == '-':
-            return '-'
-        try:
-            date_formats = ['%Y-%m-%d', '%d-%m-%Y', '%m/%d/%Y', '%d/%m/%Y', '%Y-%m-%d %H:%M:%S', '%d-%m-%Y %H:%M:%S']
-            for fmt in date_formats:
-                try:
-                    parsed_date = datetime.strptime(str(date_str).strip(), fmt)
-                    return parsed_date.strftime('%d-%m-%Y')
-                except ValueError:
-                    continue
-            date_part = str(date_str).strip().split()[0]
-            for fmt in ['%Y-%m-%d', '%d-%m-%Y', '%m/%d/%Y', '%d/%m/%Y']:
-                try:
-                    parsed_date = datetime.strptime(date_part, fmt)
-                    return parsed_date.strftime('%d-%m-%Y')
-                except ValueError:
-                    continue
-            return str(date_str).strip()
-        except Exception:
-            return str(date_str).strip()
+    # ------------------------------------------------------------------
+    # 4.  Build filter choices
+    # ------------------------------------------------------------------
+    unique_branches   = sorted({c.get('branch', '')   for c in clients if c.get('branch')})
+    unique_software   = sorted({c.get('software', '') for c in clients if c.get('software')})
+    unique_natures    = sorted({c.get('nature', '')   for c in clients if c.get('nature')})
+    unique_amc_labels = sorted({c.get('amc_label', '') for c in clients if c.get('amc_label')})
+    unique_sp         = sorted({c.get('sp', '')       for c in clients if c.get('sp')})
+    unique_lic_types  = sorted({c.get('lictype_label', '') for c in clients if c.get('lictype_label')})
 
-    for client in clients:
-        if 'installationdate' in client:
-            client['formatted_installationdate'] = format_installation_date(client['installationdate'])
+    # ------------------------------------------------------------------
+    # 5.  Read filter parameters
+    # ------------------------------------------------------------------
+    search_query        = request.GET.get('search', '').strip()
+    selected_branch     = request.GET.get('branch', '')
+    selected_software   = request.GET.get('software', '')
+    selected_nature     = request.GET.get('nature', '')
+    selected_amc        = request.GET.get('amc', '')
+    selected_sp         = request.GET.get('sp', '')
+    selected_lictype    = request.GET.get('lictype', '')
+    selected_direct     = request.GET.get('direct_dealing', 'Yes')   # default
+    selected_rows       = int(request.GET.get('rows', 15))
 
-    unique_branches = sorted(set(client.get('branch', '') for client in clients if client.get('branch')))
-    unique_software = sorted(set(client.get('software', '') for client in clients if client.get('software')))
-    unique_natures = sorted(set(client.get('nature', '') for client in clients if client.get('nature')))
-    unique_amc_labels = sorted(set(client.get('amc_label', '') for client in clients if client.get('amc_label')))
-    unique_sp = sorted(set(client.get('sp', '') for client in clients if client.get('sp')))
-    unique_lic_types = sorted(set(client.get('lictype_label', '') for client in clients if client.get('lictype_label')))
-
-    filtered_clients = clients.copy()
-    original_count = len(filtered_clients)
-
-    # Filters
-    if request.GET.get('branch'):
-        filtered_clients = [c for c in filtered_clients if c.get('branch') == request.GET['branch']]
-
-    if request.GET.get('software'):
-        filtered_clients = [c for c in filtered_clients if c.get('software') == request.GET['software']]
-
-    # ✅ Always default to "Yes" if not provided
-    direct_dealing = request.GET.get('direct_dealing')
-    if not direct_dealing:
-        direct_dealing = "Yes"
-
-    if direct_dealing != "All":
-        filtered_clients = [
-            c for c in filtered_clients
-            if str(c.get('directdealing_label', '')).lower() == direct_dealing.lower()
-        ]
-
-    if request.GET.get('amc'):
-        filtered_clients = [
-            c for c in filtered_clients
-            if str(c.get('amc_label', '')).strip().lower() == request.GET['amc'].strip().lower()
-        ]
-
-    if request.GET.get('nature'):
-        filtered_clients = [
-            c for c in filtered_clients
-            if str(c.get('nature', '')).lower() == request.GET['nature'].lower()
-        ]
-
-    if request.GET.get('sp'):
-        filtered_clients = [
-            c for c in filtered_clients
-            if str(c.get('sp', '')).lower() == request.GET['sp'].lower()
-        ]
-
-    if request.GET.get('lictype'):
-        filtered_clients = [
-            c for c in filtered_clients
-            if str(c.get('lictype_label', '')).lower() == request.GET['lictype'].lower()
-        ]
-
-    # Search
-    search_query = request.GET.get('search', '').strip()
+    # ------------------------------------------------------------------
+    # 6.  Apply filters
+    # ------------------------------------------------------------------
+    filtered = clients
     if search_query:
-        search_terms = search_query.lower().split()
-        temp_filtered = []
-        for client in filtered_clients:
-            searchable_fields = [
-                str(client.get('name', '')),
-                str(client.get('code', '')),
-                str(client.get('mobile', '')),
-                str(client.get('address', '')),
-                str(client.get('branch', '')),
-                str(client.get('district', '')),
-                str(client.get('state', '')),
-                str(client.get('software', '')),
-                str(client.get('formatted_installationdate', '')),
-                str(client.get('priorty', '')),
-                str(client.get('directdealing_label', '')),
-                str(client.get('rout', '')),
-                str(client.get('amc_label', '')),
-                str(client.get('amcamt', '')),
-                str(client.get('accountcode', '')),
-                str(client.get('address3', '')),
-                str(client.get('lictype_label', '')),
-                str(client.get('clients', '')),
-                str(client.get('sp', '')),
-                str(client.get('nature', '')),
-            ]
-            combined_text = ' '.join(searchable_fields).lower()
-            if all(term in combined_text for term in search_terms):
-                temp_filtered.append(client)
-        filtered_clients = temp_filtered
+        terms = search_query.lower().split()
+        filtered = [c for c in filtered
+                    if all(t in ' '.join([str(v) for v in c.values()]).lower()
+                           for t in terms)]
 
-    # Sort by installation date
-    def parse_date(date_str):
-        if not date_str or date_str.strip() == '' or date_str.strip() == '-':
-            return datetime(1900, 1, 1)
-        try:
-            date_formats = ['%Y-%m-%d', '%d-%m-%Y', '%m/%d/%Y', '%d/%m/%Y', '%Y-%m-%d %H:%M:%S', '%d-%m-%Y %H:%M:%S']
-            for fmt in date_formats:
-                try:
-                    return datetime.strptime(str(date_str).strip(), fmt)
-                except ValueError:
-                    continue
-            date_part = str(date_str).strip().split()[0]
-            for fmt in ['%Y-%m-%d', '%d-%m-%Y', '%m/%d/%Y', '%d/%m/%Y']:
-                try:
-                    return datetime.strptime(date_part, fmt)
-                except ValueError:
-                    continue
-            return datetime(1900, 1, 1)
-        except Exception:
-            return datetime(1900, 1, 1)
+    for key, val, field in (
+        ('branch',   selected_branch,   'branch'),
+        ('software', selected_software, 'software'),
+        ('nature',   selected_nature,   'nature'),
+        ('amc',      selected_amc,      'amc_label'),
+        ('sp',       selected_sp,       'sp'),
+        ('lictype',  selected_lictype,  'lictype_label'),
+    ):
+        if val:
+            filtered = [c for c in filtered if str(c.get(field, '')) == val]
 
-    filtered_clients.sort(key=lambda x: parse_date(x.get('installationdate', '')))
+    if selected_direct != 'All':
+        filtered = [c for c in filtered
+                    if str(c.get('directdealing_label', '')).lower() == selected_direct.lower()]
 
-    # Rows dropdown
-    selected_rows = request.GET.get('rows')
-    try:
-        selected_rows_int = int(selected_rows)
-        if selected_rows_int not in [10, 20, 50, 100]:
-            selected_rows_int = None
-    except (ValueError, TypeError):
-        selected_rows_int = None
-
-    paginator = Paginator(filtered_clients, selected_rows_int if selected_rows_int else 15)
-    page = request.GET.get('page')
-
+    # ------------------------------------------------------------------
+    # 7.  Pagination
+    # ------------------------------------------------------------------
+    paginator = Paginator(filtered, selected_rows)
+    page = request.GET.get('page', 1)
     try:
         clients_page = paginator.page(page)
     except PageNotAnInteger:
@@ -950,13 +891,14 @@ def show_clients(request):
     except EmptyPage:
         clients_page = paginator.page(paginator.num_pages)
 
-    rows_options = [10, 20, 50, 100]
-
+    # ------------------------------------------------------------------
+    # 8.  Template context
+    # ------------------------------------------------------------------
     return render(request, 'clients_table.html', {
         'clients': clients_page,
         'error_message': error_message,
-        'total_clients': original_count,
-        'filtered_count': len(filtered_clients),
+        'total_clients': len(clients),
+        'filtered_count': len(filtered),
         'search_query': search_query,
         'search_terms': search_query.lower().split() if search_query else [],
         'unique_branches': unique_branches,
@@ -965,11 +907,12 @@ def show_clients(request):
         'unique_amc_labels': unique_amc_labels,
         'unique_sp': unique_sp,
         'unique_lic_types': unique_lic_types,
-        'selected_rows': selected_rows_int,
-        'rows_options': rows_options,
-        'selected_direct_dealing': direct_dealing,
+        'rows_options': [10, 20, 50, 100],
+        'selected_rows': selected_rows,
+        'selected_direct_dealing': selected_direct,
+        'user_branch': user_branch,          # << injected for template
+        'selected_branch': selected_branch,  # << injected for template
     })
-
 
 
 

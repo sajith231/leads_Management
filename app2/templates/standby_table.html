@@ -309,12 +309,13 @@
 <tr>
   <th>Sl.No.</th>
   <th>Created Date</th>
+  <th>Created By</th>
   <th>Item Name</th>
   <th>Serial Number</th>
   <th>Notes</th>
   <th>Images</th>
   <th>Stock</th>
-  <th>Created By</th>
+  
   <th>Actions</th>
 </tr>
 </thead>
@@ -323,6 +324,7 @@
 <tr>
   <td>{{ forloop.counter }}</td>
   <td>{{ item.created_at|date:"d M Y" }}</td>
+  <td>{{ item.created_by.username|default:"System" }}</td>
   <td><strong>{{ item.name }}</strong></td>
   <td><code>{{ item.serial_number }}</code></td>
   <td>
@@ -347,7 +349,7 @@
     {% endif %}
   </td>
   <td><strong>{{ item.stock }}</strong></td>
-  <td>{{ item.created_by.username|default:"System" }}</td>
+  
   <td>
     <a href="{% url 'item_edit' item.id %}" class="action-btn edit-btn" title="Edit Item">
       <i class="fas fa-edit"></i>
