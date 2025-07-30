@@ -327,3 +327,40 @@ class Feeder(models.Model):
             'under_process': 'status-under-process',
         }
         return status_classes.get(self.status, 'status-pending')
+
+
+
+
+
+
+
+
+from django.db import models
+from django.contrib.auth.models import User
+
+class StandbyItem(models.Model):
+    serial_number = models.CharField(max_length=50, unique=True)
+    name = models.CharField(max_length=100)
+    notes = models.TextField(blank=True, null=True)
+    stock = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, default=1)  # Add default user ID
+    
+    def save(self, *args, **kwargs):
+        self.serial_number = self.serial_number.upper()
+        self.name = self.name.upper()  # Also uppercase the name
+        super().save(*args, **kwargs)
+
+    def __str__(self):  # Fixed: double underscore
+        return self.name
+    
+    class Meta:
+        ordering = ['-created_at']  # Default ordering by creation date
+
+
+class StandbyItemImage(models.Model):
+    item = models.ForeignKey(StandbyItem, on_delete=models.CASCADE, related_name="images")
+    image = models.ImageField(upload_to="item_images/")
+
+    def __str__(self):  # Fixed: double underscore
+        return f"Image for {self.item.name}"

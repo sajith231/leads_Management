@@ -2034,3 +2034,129 @@ def feeder_status_update(request, feeder_id):
         print(f"Error in feeder_status_update: {str(e)}")
         traceback.print_exc()
         return JsonResponse({'success': False, 'error': f'Server error: {str(e)}'}, status=500)
+
+
+
+
+
+
+
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.http import JsonResponse
+from django.db import IntegrityError
+from django.contrib import messages
+from django.db.models import Q
+from .models import StandbyItem, StandbyItemImage
+
+# ✅ List all items with search functionality
+def Standby_item_list(request):
+    search_query = request.GET.get('search', '').strip()
+    items = StandbyItem.objects.prefetch_related('images').all().order_by('-created_at')
+
+    if search_query:
+        items = items.filter(
+            Q(name__icontains=search_query) | 
+            Q(serial_number__icontains=search_query)
+        )
+
+    return render(request, 'standby_table.html', {'items': items, 'search_query': search_query})
+
+# ✅ Add new item
+def Standby_add_item(request):
+    if request.method == "POST":
+        name = request.POST.get("itemname", "").upper()
+        serial_number = request.POST.get("serialnumber", "").upper()
+        notes = request.POST.get("notes", "")
+        stock = request.POST.get("stock", 0)
+        images = request.FILES.getlist("images")
+
+        try:
+            # Get current user, fallback to user ID 1 if not authenticated
+            current_user = request.user if request.user.is_authenticated else None
+            if not current_user:
+                # You might want to handle this differently based on your auth setup
+                from django.contrib.auth.models import User
+                current_user = User.objects.get(id=1)
+            
+            item = StandbyItem.objects.create(
+                name=name,
+                serial_number=serial_number,
+                notes=notes,
+                stock=stock,
+                created_by=current_user
+            )
+
+            for img in images:
+                StandbyItemImage.objects.create(item=item, image=img)
+
+            messages.success(request, "Item added successfully!")
+            return redirect("item_list")
+
+        except IntegrityError:
+            messages.error(request, f"Serial Number '{serial_number}' already exists!")
+            return redirect("add")
+        except Exception as e:
+            messages.error(request, f"Error creating item: {str(e)}")
+            return redirect("add")
+
+    return render(request, "add_standby.html")
+
+# ✅ Edit item
+def Standby_item_edit(request, item_id):
+    item = get_object_or_404(StandbyItem, id=item_id)
+
+    if request.method == "POST":
+        item.name = request.POST.get('itemname', '').upper()
+        item.serial_number = request.POST.get('serialnumber', '').upper()
+        item.notes = request.POST.get('notes', '')
+        item.stock = request.POST.get('stock', 0)
+        
+        try:
+            item.save()
+            
+            # Handle image deletions
+            delete_ids = request.POST.get('delete_images', '')
+            if delete_ids:
+                ids = [id.strip() for id in delete_ids.split(',') if id.strip()]
+                StandbyItemImage.objects.filter(id__in=ids, item=item).delete()
+
+            # Handle new image uploads
+            for image in request.FILES.getlist('images'):
+                StandbyItemImage.objects.create(item=item, image=image)
+
+            messages.success(request, "Item updated successfully!")
+            return redirect('item_list')
+            
+        except IntegrityError:
+            messages.error(request, "Serial number already exists!")
+            return redirect("item_edit", item_id=item.id)
+        except Exception as e:
+            messages.error(request, f"Error updating item: {str(e)}")
+            return redirect("item_edit", item_id=item.id)
+
+    return render(request, 'edit_standby.html', {'item': item})
+
+# ✅ Delete item
+def Standby_item_delete(request, item_id):
+    if request.method == "POST":
+        try:
+            item = get_object_or_404(StandbyItem, id=item_id)
+            item.delete()
+            messages.success(request, "Item deleted successfully!")
+        except Exception as e:
+            messages.error(request, f"Error deleting item: {str(e)}")
+    return redirect('item_list')
+
+# ✅ AJAX check for unique serial number
+def Standby_check_serial(request):
+    serial = request.GET.get('serial', '').upper().strip()
+    item_id = request.GET.get('item_id', None)  # For edit mode
+    
+    if item_id:
+        # Exclude current item when editing
+        exists = StandbyItem.objects.filter(serial_number=serial).exclude(id=item_id).exists()
+    else:
+        exists = StandbyItem.objects.filter(serial_number=serial).exists()
+    
+    return JsonResponse({'exists': exists})

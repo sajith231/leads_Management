@@ -510,6 +510,9 @@
 
 
             <!-- Planet Menu -->
+
+
+{% if 'feeder_list' in allowed_menus or 'show_clients' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
 <div class="mainmenu" onclick="togglePlanetMenu()">
     <span>
         <i class="fas fa-globe"></i>
@@ -519,11 +522,32 @@
 
 <div id="planet-menu" class="submenu">
     {% if 'show_clients' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
-        <a href="{% url 'show_clients' %}"><i class="fas fa-users"></i> Clients</a>
-        <a href="{% url 'feeder_list' %}"><i class="fas fa-tools" style="margin-left: 5px;"></i> Feeder</a>
+    <a href="{% url 'show_clients' %}"><i class="fas fa-users"></i> Clients</a>
+    {% endif %}
 
+    {% if 'feeder_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+    <a href="{% url 'feeder_list' %}"><i class="fas fa-tools" style="margin-left: 5px;"></i> Feeder</a>
     {% endif %}
 </div>
+{% endif %}
+
+
+
+
+<div class="mainmenu" onclick="toggleSysmacMenu()">
+                    <span>
+                        <i class="fas fa-microchip"></i>
+                        <span>SYSMAC</span>
+                    </span>
+
+                </div>
+
+                <div id="sysmac-menu" class="submenu">
+                    <a href="{% url 'item_list' %}"><i class="fas fa-users"></i> Stand By</a>
+                </div>
+
+
+
 
 {% if 'all_customers' in allowed_menus or 'socialmedia_all_projects' in allowed_menus or 'socialmedia_project_assignments' in allowed_menus or 'socialmedia_all_tasks' in allowed_menus or 'user_socialmedia_project_assignments' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
 <div class="mainmenu" onclick="toggleSocialMediaMenu()">
@@ -779,21 +803,31 @@
             </div>
             {% endif %}
 
-            {% if 'show_clients' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
-                <!-- Planet Menu -->
-                <div class="mainmenu" onclick="togglePlanetMenu()">
-                    <span>
-                        <i class="fas fa-globe"></i>
-                        <span>PLANET</span>
-                    </span>
-                </div>
+            {% if 'feeder_list' in allowed_menus or 'show_clients' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+<div class="mainmenu" onclick="togglePlanetMenu()">
+    <span>
+        <i class="fas fa-globe"></i>
+        <span>PLANET</span>
+    </span>
+</div>
 
-                <div id="planet-menu" class="submenu">
-                    <a href="{% url 'show_clients' %}"><i class="fas fa-users"></i> Clients</a>
-                    <a href="{% url 'feeder_list' %}"><i class="fas fa-tools" style="margin-left: 5px;"></i> Feeder</a>
-                </div>
-            {% endif %}
+<div id="planet-menu" class="submenu">
+    {% if 'show_clients' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+    <a href="{% url 'show_clients' %}"><i class="fas fa-users"></i> Clients</a>
+    {% endif %}
 
+    {% if 'feeder_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+    <a href="{% url 'feeder_list' %}"><i class="fas fa-tools" style="margin-left: 5px;"></i> Feeder</a>
+    {% endif %}
+</div>
+{% endif %}
+
+
+
+
+
+
+            
 
 
 
@@ -1068,7 +1102,11 @@ function toggleSocialMediaMenu() {
     toggleMenu('social-media-menu');
 }
 
+
+function toggleSysmacMenu() {
+    toggleMenu('sysmac-menu');
+}
+
     </script>
-    
 </body>
 </html>

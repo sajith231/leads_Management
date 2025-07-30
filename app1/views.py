@@ -4982,7 +4982,8 @@ def configure_user_menu(request, user_id):
     'name': 'PLANET',
     'icon': 'fas fa-globe',
     'submenus': [
-        {'id': 'show_clients', 'name': 'Clients', 'icon': 'fas fa-users'}
+        {'id': 'show_clients', 'name': 'Clients', 'icon': 'fas fa-users'},
+        {'id': 'feeder_list', 'name': 'Feeder', 'icon': 'fas fa-tools'}
     ]
 },
 {

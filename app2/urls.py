@@ -125,6 +125,18 @@ urlpatterns = [
 
 
 
+
+
+    path('stand-by/', views.Standby_item_list, name='item_list'),
+    path('add/', views.Standby_add_item, name='add'),
+    path('edit/<int:item_id>/', views.Standby_item_edit, name='item_edit'),
+    path('delete/<int:item_id>/', views.Standby_item_delete, name='item_delete'),
+    path('check-serial/', views.Standby_check_serial, name='check_serial'),
+
+
+
+
+
     
 
     
