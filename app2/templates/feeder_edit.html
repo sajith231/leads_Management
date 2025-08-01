@@ -285,6 +285,103 @@
   </select>
 </div>
 
+                <div class="form-group">
+                    <label>Branch</label>
+                    <select name="branch">
+                        <option value="">Select</option>
+                        <option value="Main" {% if feeder.branch == 'Main' %}selected{% endif %}>Main</option>
+                        <option value="Sub" {% if feeder.branch == 'Sub' %}selected{% endif %}>Sub</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>No. of System</label>
+                    <input type="number" name="no_of_system" value="{{ feeder.no_of_system }}">
+                </div>
+
+                <div class="form-group">
+                    <label>Location</label>
+                    <input type="text" name="location" value="{{ feeder.location }}">
+                </div>
+
+                <div class="form-group">
+                    <label>Pincode</label>
+                    <input type="text" name="pincode" value="{{ feeder.pincode }}">
+                </div>
+
+                <div class="form-group">
+                    <label>Area</label>
+                    <input type="text" name="area" value="{{ feeder.area }}">
+                </div>
+
+                <div class="form-group">
+                    <label>Country</label>
+                    <input type="text" name="country" value="{{ feeder.country }}">
+                </div>
+
+                <div class="form-group">
+                    <label>District</label>
+                    <select name="district">
+                        <option value="">Select</option>
+                        <option value="Wayanad">Wayanad</option>
+                        <option value="Thiruvanathapuram">Thiruvanathapuram</option>
+            <option value="Kollam ">Kollam </option>
+            <option value="Pathanamthitta">Pathanamthitta</option>
+            <option value="Alappuzha ">Alappuzha </option>
+            <option value="Kottayam">Kottayam</option>
+            <option value="Idukki">Idukki</option>
+            <option value="Ernakulam">Ernakulam</option>
+            <option value="Thrissur ">Thrissur </option>
+            <option value="Palakkad ">Palakkad </option>
+            <option value="Malappuram">MAlappuram</option>
+            <option value="Kozhikode ">Kozhikode</option>
+            <option value="Kannur ">Kannur </option>
+            <option value="Kasaragod">Kasaragod</option>
+                        {% for district in districts %}
+                        <option value="{{ district }}" {% if feeder.district == district %}selected{% endif %}>{{ district }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+ 
+                <div class="form-group">
+                    <label>Installation Date</label>
+                    <input type="date" name="installation_date" value="{{ feeder.installation_date|date:'Y-m-d' }}">
+                </div>
+
+                <div class="form-group">
+                    <label>State</label>
+                    <select name="state">
+                        <option value="">Select</option>
+                        <option value="Tamil Nadu" {% if feeder.state == 'Tamil Nadu' %}selected{% endif %}>Tamil Nadu</option>
+                        <option value="Kerala" {% if feeder.state == 'Kerala' %}selected{% endif %}>Kerala</option>
+                        <option value="Karnataka" {% if feeder.state == 'Karnataka' %}selected{% endif %}>Karnataka</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Remarks</label>
+                    <input type="text" name="remarks" value="{{ feeder.remarks }}">
+                </div>
+
+                <div class="form-group">
+                    <label>Contact Person</label>
+                    <input type="text" name="contact_person" value="{{ feeder.contact_person }}">
+                </div>
+
+                <div class="form-group">
+                    <label>Software Amount</label>
+                    <input type="text" name="software_amount" value="{{ feeder.software_amount }}">
+                </div>
+
+                <div class="form-group">
+                    <label>Contact Number</label>
+                    <input type="text" name="contact_number" value="{{ feeder.contact_number }}">
+                </div>
+
+                <div class="form-group">
+                    <label>Module Charges</label>
+                    <input type="text" name="module_charges" value="{{ feeder.module_charges }}">
+                </div>
 <div class="form-group">
   <label>Branch</label>
   <select name="branch">
