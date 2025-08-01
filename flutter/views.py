@@ -2,6 +2,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from .serializers import UserLoginSerializer
+from django.views.decorators.csrf import csrf_exempt
+import calendar
 
 
 class UserLoginView(APIView):
@@ -9,11 +11,19 @@ class UserLoginView(APIView):
         serializer = UserLoginSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.validated_data['user']
+            
+            # Build image URL if image exists
+            image_url = None
+            if user.image:
+                image_url = request.build_absolute_uri(user.image.url)
+            
             return Response({
                 'userid': user.userid,
                 'name': user.name,
                 'user_level': user.get_user_level_display(),
                 'status': user.status,
+                'image': user.image.url if user.image else None,
+                'image_url': image_url,
             }, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
@@ -30,7 +40,7 @@ from app1.models import User  # Adjust the import based on your actual app name
 class UserListView(APIView):
     def get(self, request):
         users = User.objects.all()
-        serializer = UserSerializer(users, many=True)
+        serializer = UserSerializer(users, many=True, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
     
 
@@ -188,6 +198,334 @@ class PunchOutView(APIView):
 # }
 
 
+
+
+
+from rest_framework.decorators import api_view
+from django.http import JsonResponse
+from app1.models import Attendance, Employee, User
+from .serializers import AttendanceMonthlyQuerySerializer, AttendanceDetailSerializer
+from datetime import datetime, timedelta
+import calendar
+
+from rest_framework.decorators import api_view
+from django.http import JsonResponse
+from app1.models import Attendance, Employee, User
+from .serializers import AttendanceMonthlyQuerySerializer, AttendanceDetailSerializer
+from datetime import datetime, timedelta
+import calendar
+
+@api_view(['GET'])
+def get_monthly_attendance(request):
+    """
+    Get attendance records for a specific month and year for a user
+    URL: /flutter/attendance/monthly/
+    Query params: userid, password, month, year
+    """
+    serializer = AttendanceMonthlyQuerySerializer(data=request.GET)
+    if not serializer.is_valid():
+        return JsonResponse({'success': False, 'error': serializer.errors}, status=400)
+
+    data = serializer.validated_data
+    userid = data['userid']
+    password = data['password']
+    month = data['month']
+    year = data['year']
+
+    # Authenticate user
+    try:
+        user = User.objects.get(userid=userid, password=password, is_active=True)
+        employee = Employee.objects.get(user=user)
+    except (User.DoesNotExist, Employee.DoesNotExist):
+        return JsonResponse({'success': False, 'error': 'Invalid credentials'}, status=401)
+
+    # Get first and last day of the month
+    first_day = datetime(year, month, 1).date()
+    last_day = datetime(year, month, calendar.monthrange(year, month)[1]).date()
+    total_days_in_month = calendar.monthrange(year, month)[1]
+
+    # Get attendance records for the month
+    attendance_records = Attendance.objects.filter(
+        employee=employee,
+        date__range=[first_day, last_day]
+    ).order_by('date')
+
+    # Create a dictionary for quick lookup
+    attendance_dict = {record.date: record for record in attendance_records}
+
+    # Create complete month data with all days
+    complete_month_data = []
+    present_days = 0
+    full_days = 0
+    half_days = 0
+    leave_days = 0
+    absent_days = 0
+    total_minutes = 0
+
+    for day in range(1, total_days_in_month + 1):
+        current_date = datetime(year, month, day).date()
+        day_name = current_date.strftime('%A')
+        
+        if current_date in attendance_dict:
+            # Attendance record exists
+            record = attendance_dict[current_date]
+            
+            # Calculate working hours for this day
+            working_hours = None
+            if record.punch_in and record.punch_out:
+                duration = record.punch_out - record.punch_in
+                day_minutes = int(duration.total_seconds() / 60)
+                total_minutes += day_minutes
+                hours = day_minutes // 60
+                minutes = day_minutes % 60
+                working_hours = f"{hours:02d}:{minutes:02d}"
+            
+            day_data = {
+                'date': current_date.strftime('%Y-%m-%d'),
+                'date_formatted': current_date.strftime('%d-%m-%Y'),
+                'day': day,
+                'day_name': day_name,
+                'status': record.status,
+                'punch_in': record.punch_in.isoformat() if record.punch_in else None,
+                'punch_out': record.punch_out.isoformat() if record.punch_out else None,
+                'punch_in_time': record.punch_in.strftime('%H:%M:%S') if record.punch_in else None,
+                'punch_out_time': record.punch_out.strftime('%H:%M:%S') if record.punch_out else None,
+                'punch_in_location': record.punch_in_location,
+                'punch_out_location': record.punch_out_location,
+                'working_hours': working_hours,
+                'verified': record.verified,
+                'note': record.note,
+                'has_record': True
+            }
+            
+            # Count statistics
+            if record.status in ['full', 'half']:
+                present_days += 1
+            if record.status == 'full':
+                full_days += 1
+            elif record.status == 'half':
+                half_days += 1
+            elif record.status == 'leave':
+                leave_days += 1
+            elif record.status == 'initial':
+                absent_days += 1
+                
+        else:
+            # No attendance record for this day
+            day_data = {
+                'date': current_date.strftime('%Y-%m-%d'),
+                'date_formatted': current_date.strftime('%d-%m-%Y'),
+                'day': day,
+                'day_name': day_name,
+                'status': 'no_record',
+                'punch_in': None,
+                'punch_out': None,
+                'punch_in_time': None,
+                'punch_out_time': None,
+                'punch_in_location': None,
+                'punch_out_location': None,
+                'working_hours': None,
+                'verified': False,
+                'note': None,
+                'has_record': False
+            }
+            absent_days += 1
+        
+        complete_month_data.append(day_data)
+
+    # Calculate total working hours
+    total_working_hours = total_minutes // 60
+    remaining_minutes = total_minutes % 60
+
+    response_data = {
+        'success': True,
+        'employee_name': employee.name,
+        'month': month,
+        'year': year,
+        'month_name': calendar.month_name[month],
+        'summary': {
+            'total_days_in_month': total_days_in_month,
+            'total_attendance_records': len(attendance_records),
+            'present_days': present_days,
+            'full_days': full_days,
+            'half_days': half_days,
+            'leave_days': leave_days,
+            'absent_days': absent_days,
+            'no_record_days': total_days_in_month - len(attendance_records),
+            'total_working_hours': f"{total_working_hours:02d}:{remaining_minutes:02d}",
+            'attendance_percentage': round((present_days / total_days_in_month) * 100, 2) if total_days_in_month > 0 else 0
+        },
+        'attendance_records': complete_month_data
+    }
+
+    return JsonResponse(response_data, status=200)
+
+# Alternative POST method (if you prefer POST over GET)
+@csrf_exempt
+@api_view(['POST'])
+def get_monthly_attendance_post(request):
+    """
+    Get attendance records for a specific month and year for a user (POST method)
+    URL: /flutter/attendance/monthly-post/
+    POST body: {"userid": "", "password": "", "month": 7, "year": 2025}
+    """
+    serializer = AttendanceMonthlyQuerySerializer(data=request.data)
+    if not serializer.is_valid():
+        return JsonResponse({'success': False, 'error': serializer.errors}, status=400)
+
+    data = serializer.validated_data
+    userid = data['userid']
+    password = data['password']
+    month = data['month']
+    year = data['year']
+
+    # Authenticate user
+    try:
+        user = User.objects.get(userid=userid, password=password, is_active=True)
+        employee = Employee.objects.get(user=user)
+    except (User.DoesNotExist, Employee.DoesNotExist):
+        return JsonResponse({'success': False, 'error': 'Invalid credentials'}, status=401)
+
+    # Get first and last day of the month
+    first_day = datetime(year, month, 1).date()
+    last_day = datetime(year, month, calendar.monthrange(year, month)[1]).date()
+    total_days_in_month = calendar.monthrange(year, month)[1]
+
+    # Get attendance records for the month
+    attendance_records = Attendance.objects.filter(
+        employee=employee,
+        date__range=[first_day, last_day]
+    ).order_by('date')
+
+    # Create a dictionary for quick lookup
+    attendance_dict = {record.date: record for record in attendance_records}
+
+    # Create complete month data with all days
+    complete_month_data = []
+    present_days = 0
+    full_days = 0
+    half_days = 0
+    leave_days = 0
+    absent_days = 0
+    total_minutes = 0
+
+    for day in range(1, total_days_in_month + 1):
+        current_date = datetime(year, month, day).date()
+        day_name = current_date.strftime('%A')
+        
+        if current_date in attendance_dict:
+            # Attendance record exists
+            record = attendance_dict[current_date]
+            
+            # Calculate working hours for this day
+            working_hours = None
+            if record.punch_in and record.punch_out:
+                duration = record.punch_out - record.punch_in
+                day_minutes = int(duration.total_seconds() / 60)
+                total_minutes += day_minutes
+                hours = day_minutes // 60
+                minutes = day_minutes % 60
+                working_hours = f"{hours:02d}:{minutes:02d}"
+            
+            day_data = {
+                'date': current_date.strftime('%Y-%m-%d'),
+                'date_formatted': current_date.strftime('%d-%m-%Y'),
+                'day': day,
+                'day_name': day_name,
+                'status': record.status,
+                'punch_in': record.punch_in.isoformat() if record.punch_in else None,
+                'punch_out': record.punch_out.isoformat() if record.punch_out else None,
+                'punch_in_time': record.punch_in.strftime('%H:%M:%S') if record.punch_in else None,
+                'punch_out_time': record.punch_out.strftime('%H:%M:%S') if record.punch_out else None,
+                'punch_in_location': record.punch_in_location,
+                'punch_out_location': record.punch_out_location,
+                'working_hours': working_hours,
+                'verified': record.verified,
+                'note': record.note,
+                'has_record': True
+            }
+            
+            # Count statistics
+            if record.status in ['full', 'half']:
+                present_days += 1
+            if record.status == 'full':
+                full_days += 1
+            elif record.status == 'half':
+                half_days += 1
+            elif record.status == 'leave':
+                leave_days += 1
+            elif record.status == 'initial':
+                absent_days += 1
+                
+        else:
+            # No attendance record for this day
+            day_data = {
+                'date': current_date.strftime('%Y-%m-%d'),
+                'date_formatted': current_date.strftime('%d-%m-%Y'),
+                'day': day,
+                'day_name': day_name,
+                'status': 'no_record',
+                'punch_in': None,
+                'punch_out': None,
+                'punch_in_time': None,
+                'punch_out_time': None,
+                'punch_in_location': None,
+                'punch_out_location': None,
+                'working_hours': None,
+                'verified': False,
+                'note': None,
+                'has_record': False
+            }
+            absent_days += 1
+        
+        complete_month_data.append(day_data)
+
+    # Calculate total working hours
+    total_working_hours = total_minutes // 60
+    remaining_minutes = total_minutes % 60
+
+    response_data = {
+        'success': True,
+        'employee_name': employee.name,
+        'month': month,
+        'year': year,
+        'month_name': calendar.month_name[month],
+        'summary': {
+            'total_days_in_month': total_days_in_month,
+            'total_attendance_records': len(attendance_records),
+            'present_days': present_days,
+            'full_days': full_days,
+            'half_days': half_days,
+            'leave_days': leave_days,
+            'absent_days': absent_days,
+            'no_record_days': total_days_in_month - len(attendance_records),
+            'total_working_hours': f"{total_working_hours:02d}:{remaining_minutes:02d}",
+            'attendance_percentage': round((present_days / total_days_in_month) * 100, 2) if total_days_in_month > 0 else 0
+        },
+        'attendance_records': complete_month_data
+    }
+
+    return JsonResponse(response_data, status=200)
+
+
+
+
+
+
+# URL: http://127.0.0.1:8000/flutter/attendance/monthly/?userid=2&password=2&month=7&year=2025
+# Method: GET
+
+
+
+# URL: http://127.0.0.1:8000/flutter/attendance/monthly-post/
+# Method: POST
+# Body: 
+# {
+#     "userid": "2",
+#     "password": "2",
+#     "month": 7,
+#     "year": 2025
+# }
 
 
 # flutter/views.py - Add these views to your existing file
@@ -561,3 +899,256 @@ def _send_whatsapp(phone, message):
 #   "request_id": 12
 # }
 
+
+
+
+
+
+import json
+import requests
+from datetime import datetime
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+from rest_framework import status
+from rest_framework.decorators import api_view
+from app1.models import Employee, User, LateRequest, EarlyRequest
+from .serializers import (
+    LateRequestCreateSerializer, LateRequestListQuerySerializer, LateRequestDeleteSerializer,
+    EarlyRequestCreateSerializer, EarlyRequestListQuerySerializer, EarlyRequestDeleteSerializer,
+)
+
+# ---------- HELPERS ----------
+def _auth_user(userid, password):
+    try:
+        user = User.objects.get(userid=userid, password=password)
+        return Employee.objects.get(user=user)
+    except (User.DoesNotExist, Employee.DoesNotExist):
+        return None
+
+def _send_whatsapp(phone, message):
+    secret  = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
+    account = "1748250982812b4ba287f5ee0bc9d43bbf5bbe87fb683431662a427"
+    url = f"https://app.dxing.in/api/send/whatsapp?secret={secret}&account={account}&recipient={phone}&type=text&message={message}&priority=1"
+    requests.get(url)
+
+# ---------- LATE ----------
+@csrf_exempt
+@api_view(['POST'])
+def create_late_request(request):
+    ser = LateRequestCreateSerializer(data=request.data)
+    if not ser.is_valid():
+        return JsonResponse({'success': False, 'error': ser.errors}, status=400)
+
+    data = ser.validated_data
+    emp = _auth_user(data['userid'], data['password'])
+    if not emp:
+        return JsonResponse({'success': False, 'error': 'Invalid credentials'}, status=401)
+
+    late = LateRequest.objects.create(
+        employee=emp,
+        date=data['date'],
+        delay_time=data['delay_time'],
+        reason=data['reason'],
+        status='pending'
+    )
+
+    # WhatsApp to managers
+    phones = ["9946545535", "7593820007", "7593820005", "9846754998"]
+    msg = (f"New late request from {emp.name}. "
+           f"Date: {late.date:%d-%m-%Y}, Delay: {late.delay_time}, Reason: {late.reason}")
+    for p in phones:
+        _send_whatsapp(p, msg)
+
+    return JsonResponse({'success': True, 'message': 'Late request submitted'}, status=200)
+
+@api_view(['GET'])
+def get_late_requests(request):
+    ser = LateRequestListQuerySerializer(data=request.GET)
+    if not ser.is_valid():
+        return JsonResponse({'success': False, 'error': ser.errors}, status=400)
+
+    data = ser.validated_data
+    emp = _auth_user(data['userid'], data['password'])
+    if not emp:
+        return JsonResponse({'success': False, 'error': 'Invalid credentials'}, status=401)
+
+    qs = LateRequest.objects.filter(employee=emp)
+    if data.get('status'):
+        qs = qs.filter(status=data['status'])
+    qs = qs.order_by('-created_at')
+
+    payload = [{
+        'id': lr.id,
+        'employee_name': lr.employee.name,
+        'date': lr.date.strftime('%Y-%m-%d'),
+        'delay_time': lr.delay_time,
+        'reason': lr.reason,
+        'status': lr.status,
+        'created_at': lr.created_at.strftime('%Y-%m-%d %H:%M')
+    } for lr in qs]
+
+    return JsonResponse({'success': True, 'late_requests': payload}, status=200)
+
+@csrf_exempt
+@api_view(['POST'])
+def delete_late_request(request):
+    ser = LateRequestDeleteSerializer(data=request.data)
+    if not ser.is_valid():
+        return JsonResponse({'success': False, 'error': ser.errors}, status=400)
+
+    data = ser.validated_data
+    emp = _auth_user(data['userid'], data['password'])
+    if not emp:
+        return JsonResponse({'success': False, 'error': 'Invalid credentials'}, status=401)
+
+    try:
+        LateRequest.objects.get(id=data['request_id'], employee=emp, status='pending').delete()
+    except LateRequest.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Request not found or not pending'}, status=404)
+
+    return JsonResponse({'success': True}, status=200)
+
+# ---------- EARLY ----------
+@csrf_exempt
+@api_view(['POST'])
+def create_early_request(request):
+    ser = EarlyRequestCreateSerializer(data=request.data)
+    if not ser.is_valid():
+        return JsonResponse({'success': False, 'error': ser.errors}, status=400)
+
+    data = ser.validated_data
+    emp = _auth_user(data['userid'], data['password'])
+    if not emp:
+        return JsonResponse({'success': False, 'error': 'Invalid credentials'}, status=401)
+
+    early = EarlyRequest.objects.create(
+        employee=emp,
+        date=data['date'],
+        early_time=data['early_time'],
+        reason=data['reason'],
+        status='pending'
+    )
+
+    phones = ["9946545535", "7593820007", "7593820005", "9846754998"]
+    msg = (f"New early request from {emp.name}. "
+           f"Date: {early.date:%d-%m-%Y}, Early Time: {early.early_time}, Reason: {early.reason}")
+    for p in phones:
+        _send_whatsapp(p, msg)
+
+    return JsonResponse({'success': True, 'message': 'Early request submitted'}, status=200)
+
+@api_view(['GET'])
+def get_early_requests(request):
+    ser = EarlyRequestListQuerySerializer(data=request.GET)
+    if not ser.is_valid():
+        return JsonResponse({'success': False, 'error': ser.errors}, status=400)
+
+    data = ser.validated_data
+    emp = _auth_user(data['userid'], data['password'])
+    if not emp:
+        return JsonResponse({'success': False, 'error': 'Invalid credentials'}, status=401)
+
+    qs = EarlyRequest.objects.filter(employee=emp)
+    if data.get('status'):
+        qs = qs.filter(status=data['status'])
+    qs = qs.order_by('-created_at')
+
+    payload = [{
+        'id': er.id,
+        'employee_name': er.employee.name,
+        'date': er.date.strftime('%Y-%m-%d'),
+        'early_time': er.early_time.strftime('%H:%M'),
+        'reason': er.reason,
+        'status': er.status,
+        'created_at': er.created_at.strftime('%Y-%m-%d %H:%M')
+    } for er in qs]
+
+    return JsonResponse({'success': True, 'early_requests': payload}, status=200)
+
+@csrf_exempt
+@api_view(['POST'])
+def delete_early_request(request):
+    ser = EarlyRequestDeleteSerializer(data=request.data)
+    if not ser.is_valid():
+        return JsonResponse({'success': False, 'error': ser.errors}, status=400)
+
+    data = ser.validated_data
+    emp = _auth_user(data['userid'], data['password'])
+    if not emp:
+        return JsonResponse({'success': False, 'error': 'Invalid credentials'}, status=401)
+
+    try:
+        EarlyRequest.objects.get(id=data['request_id'], employee=emp, status='pending').delete()
+    except EarlyRequest.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Request not found or not pending'}, status=404)
+
+    return JsonResponse({'success': True}, status=200)
+
+
+
+
+
+
+
+# http://127.0.0.1:8000/flutter/late/create/
+# {
+#   "userid": "2",
+#   "password": "2",
+#   "date": "2025-07-25",
+#   "delay_time": "20 minutes",
+#   "reason": "TEST TEST"
+# }
+
+
+# LATE GET
+
+# http://127.0.0.1:8000/flutter/late/list/?userid=2&password=2
+
+
+
+# DELETE
+
+# http://127.0.0.1:8000/flutter/late/delete/
+
+
+
+# {
+#   "userid": "2",
+#   "password": "2",
+#   "request_id": 7
+# }
+
+
+
+
+
+
+#EARLY CREATE
+# http://127.0.0.1:8000/flutter/early/create/
+
+
+# {
+#   "userid": "2",
+#   "password": "2",
+#   "date": "2025-07-25",
+#   "early_time": "15:00",
+#   "reason": "Doctor appointment"
+# }
+
+
+
+
+#EARLY GET
+
+# http://127.0.0.1:8000/flutter/early/list/?userid=2&password=2
+
+
+#EARLT DELETE
+# http://127.0.0.1:8000/flutter/early/delete/
+
+# {
+#   "userid": "2",
+#   "password": "2",
+#   "request_id": 3
+# }

@@ -33,13 +33,14 @@
                             <label for="user_id" class="form-label">Select User</label>
                             <select name="user_id" id="user_id" class="form-select" required>
                                 <option value="">-- Select User --</option>
-                                {% for user in users %}
+                                {% for user in users|dictsort:"name" %}
                                     {% if user.user_level != 'admin_level' and not user.is_superuser %}
                                         <option value="{{ user.id }}">{{ user.name }} ({{ user.userid }})</option>
                                     {% endif %}
                                 {% endfor %}
                             </select>
                         </div>
+
                         <div class="d-grid">
                             <button type="submit" class="btn btn-primary">Configure Menu Access</button>
                         </div>

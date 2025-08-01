@@ -760,211 +760,130 @@ def category_detail(request, category_id):
 
 
 
+
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
+from datetime import datetime
 import requests
 from django.shortcuts import render
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from datetime import datetime
 
+
+
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
+from datetime import datetime
+import requests
+from django.shortcuts import render
+
+from django.shortcuts import render
+import requests
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
+from django.utils.dateparse import parse_date
+from app1.models import User, Branch  # Import User and Branch from app1
+
+from datetime import datetime, timedelta
+from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
+from django.shortcuts import render
+import requests
+from app1.models import User   # used to read the branch
+
+@login_required
 def show_clients(request):
     api_url = "https://accmaster.imcbs.com/api/sync/rrc-clients/"
     clients = []
     error_message = None
-    
+
+    # ------------------------------------------------------------------
+    # 1.  Determine the logged-in user’s branch (fallback to None)
+    # ------------------------------------------------------------------
+    try:
+        custom_user = User.objects.get(userid=request.user.username)
+        user_branch = custom_user.branch.name if custom_user.branch else None
+    except User.DoesNotExist:
+        user_branch = None
+
+    # ------------------------------------------------------------------
+    # 2.  Fetch external data (same as before)
+    # ------------------------------------------------------------------
     try:
         response = requests.get(api_url, timeout=30)
         response.raise_for_status()
         data = response.json()
-        
-        # Handle different response formats
-        if isinstance(data, list):
-            clients = data
-        elif isinstance(data, dict):
-            clients = data.get('data', data.get('clients', data.get('results', [])))
-        
-        print(f"Successfully fetched {len(clients)} clients")
-    
-    except requests.exceptions.Timeout:
-        error_message = "API request timed out"
-    except requests.exceptions.ConnectionError:
-        error_message = "Could not connect to API"
-    except requests.exceptions.HTTPError as e:
-        error_message = f"HTTP Error: {e}"
-    except Exception as e:
-        error_message = f"Error fetching data: {str(e)}"
-    
-    # Function to format installation date
-    def format_installation_date(date_str):
-        """Format installation date to DD-MM-YYYY format"""
-        if not date_str or date_str.strip() == '' or date_str.strip() == '-':
-            return '-'
-        
-        try:
-            # Try different date formats that might be in your data
-            date_formats = [
-                '%Y-%m-%d',        # 2023-12-01
-                '%d-%m-%Y',        # 01-12-2023
-                '%m/%d/%Y',        # 12/01/2023
-                '%d/%m/%Y',        # 01/12/2023
-                '%Y-%m-%d %H:%M:%S',  # 2023-12-01 10:30:00
-                '%d-%m-%Y %H:%M:%S',  # 01-12-2023 10:30:00
-            ]
-            
-            for fmt in date_formats:
-                try:
-                    parsed_date = datetime.strptime(str(date_str).strip(), fmt)
-                    return parsed_date.strftime('%d-%m-%Y')  # Format as DD-MM-YYYY
-                except ValueError:
-                    continue
-            
-            # If no format matches, try to extract just the date part
-            date_part = str(date_str).strip().split()[0]  # Get first part before space
-            for fmt in ['%Y-%m-%d', '%d-%m-%Y', '%m/%d/%Y', '%d/%m/%Y']:
-                try:
-                    parsed_date = datetime.strptime(date_part, fmt)
-                    return parsed_date.strftime('%d-%m-%Y')  # Format as DD-MM-YYYY
-                except ValueError:
-                    continue
-            
-            # If still no match, return original string
-            return str(date_str).strip()
-            
-        except Exception:
-            return str(date_str).strip()
-    
-    # Format installation dates for all clients
-    for client in clients:
-        if 'installationdate' in client:
-            client['formatted_installationdate'] = format_installation_date(client['installationdate'])
-    
-    # Get unique values for filters
-    unique_branches = sorted(set(client.get('branch', '') for client in clients if client.get('branch')))
-    unique_software = sorted(set(client.get('software', '') for client in clients if client.get('software')))
-    unique_natures = sorted(set(client.get('nature', '') for client in clients if client.get('nature')))
-    unique_amc_labels = sorted(set(client.get('amc_label', '') for client in clients if client.get('amc_label')))
-    unique_sp = sorted(set(client.get('sp', '') for client in clients if client.get('sp')))
-    unique_lic_types = sorted(set(client.get('lictype_label', '') for client in clients if client.get('lictype_label')))
+        clients = data if isinstance(data, list) else \
+                  data.get('data', data.get('clients', data.get('results', [])))
+    except requests.exceptions.RequestException as e:
+        error_message = str(e)
+    except Exception:
+        error_message = "Could not load client data."
 
-    # Apply filters
-    filtered_clients = clients.copy()
-    original_count = len(filtered_clients)
-    
-    if request.GET.get('branch'):
-        filtered_clients = [c for c in filtered_clients if c.get('branch') == request.GET['branch']]
+    # ------------------------------------------------------------------
+    # 3.  Format / enrich data
+    # ------------------------------------------------------------------
+    def fmt_date(d):
+        if not d or str(d).strip() in {"", "-"}:
+            return "-"
+        for f in ('%Y-%m-%d', '%d-%m-%Y', '%m/%d/%Y', '%d/%m/%Y'):
+            try:
+                return datetime.strptime(str(d).strip(), f).strftime('%d-%m-%Y')
+            except ValueError:
+                continue
+        return str(d).strip()
 
-    if request.GET.get('software'):
-        filtered_clients = [c for c in filtered_clients if c.get('software') == request.GET['software']]
+    for c in clients:
+        c['formatted_installationdate'] = fmt_date(c.get('installationdate'))
 
-    if request.GET.get('direct_dealing'):
-        filtered_clients = [
-            c for c in filtered_clients
-            if str(c.get('directdealing_label', '')).lower() == request.GET['direct_dealing'].lower()
-        ]
+    # ------------------------------------------------------------------
+    # 4.  Build filter choices
+    # ------------------------------------------------------------------
+    unique_branches   = sorted({c.get('branch', '')   for c in clients if c.get('branch')})
+    unique_software   = sorted({c.get('software', '') for c in clients if c.get('software')})
+    unique_natures    = sorted({c.get('nature', '')   for c in clients if c.get('nature')})
+    unique_amc_labels = sorted({c.get('amc_label', '') for c in clients if c.get('amc_label')})
+    unique_sp         = sorted({c.get('sp', '')       for c in clients if c.get('sp')})
+    unique_lic_types  = sorted({c.get('lictype_label', '') for c in clients if c.get('lictype_label')})
 
-    if request.GET.get('amc'):
-        filtered_clients = [
-            c for c in filtered_clients
-            if str(c.get('amc_label', '')).strip().lower() == request.GET['amc'].strip().lower()
-        ]
+    # ------------------------------------------------------------------
+    # 5.  Read filter parameters
+    # ------------------------------------------------------------------
+    search_query        = request.GET.get('search', '').strip()
+    selected_branch     = request.GET.get('branch', '')
+    selected_software   = request.GET.get('software', '')
+    selected_nature     = request.GET.get('nature', '')
+    selected_amc        = request.GET.get('amc', '')
+    selected_sp         = request.GET.get('sp', '')
+    selected_lictype    = request.GET.get('lictype', '')
+    selected_direct     = request.GET.get('direct_dealing', 'Yes')   # default
+    selected_rows       = int(request.GET.get('rows', 15))
 
-    if request.GET.get('nature'):
-        filtered_clients = [
-            c for c in filtered_clients
-            if str(c.get('nature', '')).lower() == request.GET['nature'].lower()
-        ]
-        
-    if request.GET.get('sp'):
-        filtered_clients = [
-            c for c in filtered_clients
-            if str(c.get('sp', '')).lower() == request.GET['sp'].lower()
-        ]
-        
-    if request.GET.get('lictype'):
-        filtered_clients = [
-            c for c in filtered_clients
-            if str(c.get('lictype_label', '')).lower() == request.GET['lictype'].lower()
-        ]
-
-    # Search filter
-    search_query = request.GET.get('search', '').strip()
+    # ------------------------------------------------------------------
+    # 6.  Apply filters
+    # ------------------------------------------------------------------
+    filtered = clients
     if search_query:
-        search_terms = search_query.lower().split()
-        temp_filtered = []
+        terms = search_query.lower().split()
+        filtered = [c for c in filtered
+                    if all(t in ' '.join([str(v) for v in c.values()]).lower()
+                           for t in terms)]
 
-        for client in filtered_clients:
-            searchable_fields = [
-                str(client.get('name', '')),
-                str(client.get('code', '')),
-                str(client.get('mobile', '')),
-                str(client.get('address', '')),
-                str(client.get('branch', '')),
-                str(client.get('district', '')),
-                str(client.get('state', '')),
-                str(client.get('software', '')),
-                str(client.get('formatted_installationdate', '')),  # Use formatted date for search
-                str(client.get('priorty', '')),
-                str(client.get('directdealing_label', '')),
-                str(client.get('rout', '')),
-                str(client.get('amc_label', '')),
-                str(client.get('amcamt', '')),
-                str(client.get('accountcode', '')),
-                str(client.get('address3', '')),
-                str(client.get('lictype_label', '')),
-                str(client.get('clients', '')),
-                str(client.get('sp', '')),
-                str(client.get('nature', '')),
-            ]
+    for key, val, field in (
+        ('branch',   selected_branch,   'branch'),
+        ('software', selected_software, 'software'),
+        ('nature',   selected_nature,   'nature'),
+        ('amc',      selected_amc,      'amc_label'),
+        ('sp',       selected_sp,       'sp'),
+        ('lictype',  selected_lictype,  'lictype_label'),
+    ):
+        if val:
+            filtered = [c for c in filtered if str(c.get(field, '')) == val]
 
-            combined_text = ' '.join(searchable_fields).lower()
-            if all(term in combined_text for term in search_terms):
-                temp_filtered.append(client)
-        
-        filtered_clients = temp_filtered
+    if selected_direct != 'All':
+        filtered = [c for c in filtered
+                    if str(c.get('directdealing_label', '')).lower() == selected_direct.lower()]
 
-    # Sort by installation date (oldest first)
-    def parse_date(date_str):
-        """Parse date string and return datetime object for sorting"""
-        if not date_str or date_str.strip() == '' or date_str.strip() == '-':
-            # Return a very old date for empty/null dates to put them at the end
-            return datetime(1900, 1, 1)
-        
-        try:
-            # Try different date formats that might be in your data
-            date_formats = [
-                '%Y-%m-%d',        # 2023-12-01
-                '%d-%m-%Y',        # 01-12-2023
-                '%m/%d/%Y',        # 12/01/2023
-                '%d/%m/%Y',        # 01/12/2023
-                '%Y-%m-%d %H:%M:%S',  # 2023-12-01 10:30:00
-                '%d-%m-%Y %H:%M:%S',  # 01-12-2023 10:30:00
-            ]
-            
-            for fmt in date_formats:
-                try:
-                    return datetime.strptime(str(date_str).strip(), fmt)
-                except ValueError:
-                    continue
-            
-            # If no format matches, try to extract just the date part
-            date_part = str(date_str).strip().split()[0]  # Get first part before space
-            for fmt in ['%Y-%m-%d', '%d-%m-%Y', '%m/%d/%Y', '%d/%m/%Y']:
-                try:
-                    return datetime.strptime(date_part, fmt)
-                except ValueError:
-                    continue
-            
-            # If still no match, return very old date
-            return datetime(1900, 1, 1)
-            
-        except Exception:
-            return datetime(1900, 1, 1)
-
-    # Sort filtered clients by installation date (oldest first)
-    filtered_clients.sort(key=lambda x: parse_date(x.get('installationdate', '')))
-
-    # Pagination
-    paginator = Paginator(filtered_clients, 15)
-    page = request.GET.get('page')
-
+    # ------------------------------------------------------------------
+    # 7.  Pagination
+    # ------------------------------------------------------------------
+    paginator = Paginator(filtered, selected_rows)
+    page = request.GET.get('page', 1)
     try:
         clients_page = paginator.page(page)
     except PageNotAnInteger:
@@ -972,11 +891,14 @@ def show_clients(request):
     except EmptyPage:
         clients_page = paginator.page(paginator.num_pages)
 
+    # ------------------------------------------------------------------
+    # 8.  Template context
+    # ------------------------------------------------------------------
     return render(request, 'clients_table.html', {
         'clients': clients_page,
         'error_message': error_message,
-        'total_clients': original_count,
-        'filtered_count': len(filtered_clients),
+        'total_clients': len(clients),
+        'filtered_count': len(filtered),
         'search_query': search_query,
         'search_terms': search_query.lower().split() if search_query else [],
         'unique_branches': unique_branches,
@@ -985,9 +907,12 @@ def show_clients(request):
         'unique_amc_labels': unique_amc_labels,
         'unique_sp': unique_sp,
         'unique_lic_types': unique_lic_types,
+        'rows_options': [10, 20, 50, 100],
+        'selected_rows': selected_rows,
+        'selected_direct_dealing': selected_direct,
+        'user_branch': user_branch,          # << injected for template
+        'selected_branch': selected_branch,  # << injected for template
     })
-
-
 
 
 
@@ -1756,90 +1681,182 @@ def user_socialmedia_project_assignments(request):
 
 
 
-
-
-
-
+import json
 from django.shortcuts import render, redirect, get_object_or_404
 from django.core.paginator import Paginator
 from django.db.models import Q
+from django.http import JsonResponse
 from .models import Feeder
-
-from django.shortcuts import render, redirect, get_object_or_404
-from django.core.paginator import Paginator
-from django.db.models import Q
-from .models import Feeder
-from app1.models import BusinessType          # NEW
+from app1.models import BusinessType, Branch   # <-- Import Branch from app1
 
 # ----------  ADD / CREATE  ----------
+from django.shortcuts import render, redirect
+from .models import Feeder
+from app1.models import BusinessType, Branch
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.dateparse import parse_date
+from datetime import date 
+
+@csrf_exempt
 def feeder(request):
+    business_types = BusinessType.objects.all()
+    branches = Branch.objects.all()
+
     if request.method == 'POST':
-        Feeder.objects.create(
-            name=request.POST.get('name'),
-            address=request.POST.get('address'),
-            location=request.POST.get('location'),
-            area=request.POST.get('area'),
-            district=request.POST.get('district'),
-            state=request.POST.get('state'),
-            contact_person=request.POST.get('contact_person'),
-            contact_number=request.POST.get('contact_number'),
-            email=request.POST.get('email'),
-            reputed_person_name=request.POST.get('reputed_person_name', ''),
-            reputed_person_number=request.POST.get('reputed_person_number', ''),
-            software=request.POST.get('software'),
-            nature=request.POST.get('nature'),          # <── now comes from dropdown
-            branch=request.POST.get('branch'),
-            no_of_system=request.POST.get('no_of_system'),
-            pincode=request.POST.get('pincode'),
-            country=request.POST.get('country', 'India'),
-            installation_date=request.POST.get('installation_date'),
-            remarks=request.POST.get('remarks', ''),
-            software_amount=request.POST.get('software_amount'),
-            module_charges=request.POST.get('module_charges'),
-            modules=', '.join(request.POST.getlist('modules')),
-            more_modules=', '.join(request.POST.getlist('more_modules'))
+        name = request.POST.get('name')
+        address = request.POST.get('address')
+        location = request.POST.get('location')
+        area = request.POST.get('area')
+        district = request.POST.get('district')
+        state = request.POST.get('state')
+        contact_person = request.POST.get('contact_person')
+        contact_number = request.POST.get('contact_number')
+        email = request.POST.get('email')
+        reputed_person_name = request.POST.get('reputed_person_name', '')
+        reputed_person_number = request.POST.get('reputed_person_number', '')
+        software = request.POST.get('software')
+        nature = request.POST.get('nature')
+        branch_id = request.POST.get('branch')
+        no_of_system = request.POST.get('no_of_system')
+        pincode = request.POST.get('pincode')
+        country = request.POST.get('country')
+        installation_date = request.POST.get('installation_date')
+        remarks = request.POST.get('remarks', '')
+        software_amount = request.POST.get('software_amount') or 0
+        module_charges = request.POST.get('total_cost') or 0
+
+        modules = request.POST.getlist('modules')
+        more_modules = request.POST.getlist('more_modules')
+
+        module_prices = {}
+        for module in more_modules:
+            price_key = f"price_{module}"
+            price_value = request.POST.get(price_key)
+            if price_value:
+                try:
+                    module_prices[module] = float(price_value)
+                except ValueError:
+                    pass
+
+        feeder_obj = Feeder(
+            name=name,
+            address=address,
+            location=location,
+            area=area,
+            district=district,
+            state=state,
+            contact_person=contact_person,
+            contact_number=contact_number,
+            email=email,
+            reputed_person_name=reputed_person_name,
+            reputed_person_number=reputed_person_number,
+            software=software,
+            nature=nature,
+            branch_id=branch_id,
+            no_of_system=no_of_system,
+            pincode=pincode,
+            country=country,
+            installation_date=parse_date(installation_date),
+            remarks=remarks,
+            software_amount=software_amount,
+            module_charges=module_charges,
+            modules=', '.join(modules),
+            more_modules=', '.join(more_modules),
+            module_prices=module_prices
         )
+        feeder_obj.save()
         return redirect('feeder_list')
 
-    business_types = BusinessType.objects.all()          # NEW
-    return render(request, 'add_feeder.html',
-                  {'business_types': business_types})    # NEW
+    return render(request, 'add_feeder.html', {
+        'business_types': business_types,
+        'branches': branches,
+        'today': date.today().isoformat(),
+    })
 
 
 
-
-# ----------  LIST  ----------
+# Updated feeder_list view with proper search functionality
 def feeder_list(request):
-    query = request.GET.get('q', '')
-    feeders_list = Feeder.objects.all().order_by('-id')
+    query = request.GET.get('q', '').strip()
+    selected_branch = request.GET.get('branch', '').strip()
+    selected_status = request.GET.get('status', '').strip()
 
+    # Start with all feeders
+    feeders_list = Feeder.objects.select_related('branch').all().order_by('-id')
+
+    # Apply search filter - FIXED: Search across multiple fields properly
     if query:
         feeders_list = feeders_list.filter(
             Q(name__icontains=query) |
             Q(software__icontains=query) |
-            Q(branch__icontains=query)
+            Q(branch__name__icontains=query) |  # FIXED: Use double underscore for related field
+            Q(contact_person__icontains=query) |
+            Q(contact_number__icontains=query) |
+            Q(area__icontains=query) |
+            Q(location__icontains=query) |
+            Q(district__icontains=query)
         )
 
-    # prepare clean list for each feeder
+    # Apply branch filter
+    if selected_branch:
+        feeders_list = feeders_list.filter(branch__name=selected_branch)
+
+    # Apply status filter
+    if selected_status:
+        feeders_list = feeders_list.filter(status=selected_status)
+
+    # Process each feeder for modules and prices
     for feeder in feeders_list:
-        feeder.more_modules_list = [m.strip() for m in (feeder.more_modules or '').split(',') if m.strip()]
+        # Handle more_modules list
+        feeder.more_modules_list = [
+            m.strip() for m in (feeder.more_modules or '').split(',') if m.strip()
+        ]
+        
+        # Handle price dictionary
+        try:
+            if isinstance(feeder.module_prices, str):
+                feeder.price_dict = json.loads(feeder.module_prices)
+            elif isinstance(feeder.module_prices, dict):
+                feeder.price_dict = feeder.module_prices
+            else:
+                feeder.price_dict = {}
+        except (ValueError, TypeError, json.JSONDecodeError):
+            feeder.price_dict = {}
 
+    # Pagination
     paginator = Paginator(feeders_list, 10)
-    page_obj = paginator.get_page(request.GET.get('page'))
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
 
-    return render(request, 'feeder_list.html', {
+    # Get list of branches for dropdown
+    branches = Branch.objects.all().order_by('name')
+
+    context = {
         'page_obj': page_obj,
-        'query': query
-    })
+        'query': query,  # Keep query for search input value
+        'branches': branches,
+        'selected_branch': selected_branch,
+        'selected_status': selected_status,
+        'total_count': paginator.count,  # Add total count for display
+    }
 
+    return render(request, 'feeder_list.html', context)
 # ----------  EDIT  ----------
 def feeder_edit(request, feeder_id):
     feeder = get_object_or_404(Feeder, id=feeder_id)
 
-    selected_modules = [m.strip() for m in (feeder.modules or '').split(',') if m.strip()]
-    selected_more_modules = [m.strip() for m in (feeder.more_modules or '').split(',') if m.strip()]
+    selected_modules = [m.strip() for m in (feeder.more_modules or '').split(',') if m.strip()]
+    try:
+        price_dict = (
+            json.loads(feeder.module_prices)
+            if isinstance(feeder.module_prices, str)
+            else feeder.module_prices
+        )
+    except (ValueError, TypeError):
+        price_dict = {}
 
     if request.method == 'POST':
+        # Update all simple fields
         feeder.name = request.POST.get('name')
         feeder.address = request.POST.get('address')
         feeder.location = request.POST.get('location')
@@ -1852,26 +1869,92 @@ def feeder_edit(request, feeder_id):
         feeder.reputed_person_name = request.POST.get('reputed_person_name', '')
         feeder.reputed_person_number = request.POST.get('reputed_person_number', '')
         feeder.software = request.POST.get('software')
-        feeder.nature = request.POST.get('nature')         # <── dropdown value
-        feeder.branch = request.POST.get('branch')
-        feeder.no_of_system = request.POST.get('no_of_system')
-        feeder.pincode = request.POST.get('pincode')
+        
+        # Handle foreign key fields properly - convert to int and handle empty values
+        nature_id = request.POST.get('nature')
+        if nature_id and nature_id.strip():
+            try:
+                feeder.nature_id = int(nature_id)
+            except (ValueError, TypeError):
+                feeder.nature_id = None
+        else:
+            feeder.nature_id = None
+            
+        branch_id = request.POST.get('branch')
+        if branch_id and branch_id.strip():
+            try:
+                feeder.branch_id = int(branch_id)
+            except (ValueError, TypeError):
+                feeder.branch_id = None
+        else:
+            feeder.branch_id = None
+        
+        # Handle numeric fields
+        no_of_system = request.POST.get('no_of_system')
+        if no_of_system and no_of_system.strip():
+            try:
+                feeder.no_of_system = int(no_of_system)
+            except (ValueError, TypeError):
+                feeder.no_of_system = None
+        else:
+            feeder.no_of_system = None
+            
+        pincode = request.POST.get('pincode')
+        if pincode and pincode.strip():
+            try:
+                feeder.pincode = int(pincode)
+            except (ValueError, TypeError):
+                feeder.pincode = None
+        else:
+            feeder.pincode = None
+        
         feeder.country = request.POST.get('country', 'India')
-        feeder.installation_date = request.POST.get('installation_date')
+        
+        # Handle date field
+        installation_date = request.POST.get('installation_date')
+        if installation_date and installation_date.strip():
+            feeder.installation_date = installation_date
+        else:
+            feeder.installation_date = None
+            
         feeder.remarks = request.POST.get('remarks', '')
-        feeder.software_amount = request.POST.get('software_amount')
-        feeder.module_charges = request.POST.get('module_charges')
+        feeder.software_amount = request.POST.get('software_amount', '') or 0
+        
+        # Handle total_cost field - FIXED: Use module_charges field
+        total_cost = request.POST.get('total_cost')
+        feeder.module_charges = total_cost or 0
+        
+        # Handle modules
         feeder.modules = ', '.join(request.POST.getlist('modules'))
         feeder.more_modules = ', '.join(request.POST.getlist('more_modules'))
-        feeder.save()
-        return redirect('feeder_list')
 
-    business_types = BusinessType.objects.all()          # NEW
-    return render(request, 'feeder_edit.html',
-                  {'feeder': feeder,
-                   'selected_modules': selected_modules,
-                   'selected_more_modules': selected_more_modules,
-                   'business_types': business_types})    # NEW
+        # Re-save module prices
+        new_prices = {
+            m: request.POST.get(f'price_{m}', '0')
+            for m in request.POST.getlist('more_modules')
+        }
+        feeder.module_prices = json.dumps(new_prices)
+        
+        try:
+            feeder.save()
+            return redirect('feeder_list')
+        except Exception as e:
+            # Add error handling - you might want to show this error to the user
+            print(f"Error saving feeder: {e}")
+            # You could add a message framework message here
+            # messages.error(request, f"Error updating feeder: {e}")
+
+    business_types = BusinessType.objects.all()
+    branches = Branch.objects.all()
+
+    return render(request, 'feeder_edit.html', {
+        'feeder': feeder,
+        'selected_modules': selected_modules,
+        'price_dict': price_dict,
+        'business_types': business_types,
+        'branches': branches,
+    })
+
 
 # ----------  DELETE  ----------
 def feeder_delete(request, feeder_id):
@@ -1879,3 +1962,181 @@ def feeder_delete(request, feeder_id):
     if request.method == 'POST':
         feeder.delete()
     return redirect('feeder_list')
+
+
+# ----------  STATUS UPDATE (FIXED)  ----------
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+from django.shortcuts import get_object_or_404
+from .models import Feeder
+import json
+import traceback
+
+@csrf_exempt
+@require_POST
+def feeder_status_update(request, feeder_id):
+    try:
+        # Parse JSON data from request body
+        data = json.loads(request.body)
+        new_status = data.get('status')
+
+        if not new_status:
+            return JsonResponse({'success': False, 'error': 'Status not provided'}, status=400)
+
+        # Get the feeder object
+        feeder = get_object_or_404(Feeder, id=feeder_id)
+
+        # Validate status
+        valid_statuses = [choice[0] for choice in Feeder.STATUS_CHOICES]
+        if new_status not in valid_statuses:
+            return JsonResponse({
+                'success': False, 
+                'error': f'Invalid status. Valid options: {valid_statuses}'
+            }, status=400)
+
+        # Update status
+        feeder.status = new_status
+        feeder.save()
+
+        # Return success response
+        return JsonResponse({
+            'success': True,
+            'new_status': feeder.get_status_display(),
+            'status_class': feeder.get_status_display_class()
+        })
+
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Invalid JSON data'}, status=400)
+    except Feeder.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Feeder not found'}, status=404)
+    except Exception as e:
+        # Log the full error for debugging
+        print(f"Error in feeder_status_update: {str(e)}")
+        traceback.print_exc()
+        return JsonResponse({'success': False, 'error': f'Server error: {str(e)}'}, status=500)
+
+
+
+
+
+
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.http import JsonResponse
+from django.db import IntegrityError
+from django.contrib import messages
+from django.db.models import Q
+from .models import StandbyItem, StandbyItemImage
+
+# ✅ List all items with search functionality
+def Standby_item_list(request):
+    search_query = request.GET.get('search', '').strip()
+    items = StandbyItem.objects.prefetch_related('images').all().order_by('-created_at')
+
+    if search_query:
+        items = items.filter(
+            Q(name__icontains=search_query) | 
+            Q(serial_number__icontains=search_query)
+        )
+
+    return render(request, 'standby_table.html', {'items': items, 'search_query': search_query})
+
+# ✅ Add new item
+def Standby_add_item(request):
+    if request.method == "POST":
+        name = request.POST.get("itemname", "").upper()
+        serial_number = request.POST.get("serialnumber", "").upper()
+        notes = request.POST.get("notes", "")
+        stock = request.POST.get("stock", 0)
+        images = request.FILES.getlist("images")
+
+        try:
+            # Get current user, fallback to user ID 1 if not authenticated
+            current_user = request.user if request.user.is_authenticated else None
+            if not current_user:
+                # You might want to handle this differently based on your auth setup
+                from django.contrib.auth.models import User
+                current_user = User.objects.get(id=1)
+            
+            item = StandbyItem.objects.create(
+                name=name,
+                serial_number=serial_number,
+                notes=notes,
+                stock=stock,
+                created_by=current_user
+            )
+
+            for img in images:
+                StandbyItemImage.objects.create(item=item, image=img)
+
+            messages.success(request, "Item added successfully!")
+            return redirect("item_list")
+
+        except IntegrityError:
+            messages.error(request, f"Serial Number '{serial_number}' already exists!")
+            return redirect("add")
+        except Exception as e:
+            messages.error(request, f"Error creating item: {str(e)}")
+            return redirect("add")
+
+    return render(request, "add_standby.html")
+
+# ✅ Edit item
+def Standby_item_edit(request, item_id):
+    item = get_object_or_404(StandbyItem, id=item_id)
+
+    if request.method == "POST":
+        item.name = request.POST.get('itemname', '').upper()
+        item.serial_number = request.POST.get('serialnumber', '').upper()
+        item.notes = request.POST.get('notes', '')
+        item.stock = request.POST.get('stock', 0)
+        
+        try:
+            item.save()
+            
+            # Handle image deletions
+            delete_ids = request.POST.get('delete_images', '')
+            if delete_ids:
+                ids = [id.strip() for id in delete_ids.split(',') if id.strip()]
+                StandbyItemImage.objects.filter(id__in=ids, item=item).delete()
+
+            # Handle new image uploads
+            for image in request.FILES.getlist('images'):
+                StandbyItemImage.objects.create(item=item, image=image)
+
+            messages.success(request, "Item updated successfully!")
+            return redirect('item_list')
+            
+        except IntegrityError:
+            messages.error(request, "Serial number already exists!")
+            return redirect("item_edit", item_id=item.id)
+        except Exception as e:
+            messages.error(request, f"Error updating item: {str(e)}")
+            return redirect("item_edit", item_id=item.id)
+
+    return render(request, 'edit_standby.html', {'item': item})
+
+# ✅ Delete item
+def Standby_item_delete(request, item_id):
+    if request.method == "POST":
+        try:
+            item = get_object_or_404(StandbyItem, id=item_id)
+            item.delete()
+            messages.success(request, "Item deleted successfully!")
+        except Exception as e:
+            messages.error(request, f"Error deleting item: {str(e)}")
+    return redirect('item_list')
+
+# ✅ AJAX check for unique serial number
+def Standby_check_serial(request):
+    serial = request.GET.get('serial', '').upper().strip()
+    item_id = request.GET.get('item_id', None)  # For edit mode
+    
+    if item_id:
+        # Exclude current item when editing
+        exists = StandbyItem.objects.filter(serial_number=serial).exclude(id=item_id).exists()
+    else:
+        exists = StandbyItem.objects.filter(serial_number=serial).exists()
+    
+    return JsonResponse({'exists': exists})

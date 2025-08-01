@@ -499,7 +499,7 @@ def add_lead(request):
                 messages.info(request, "Created an admin user for lead management.")
         except Exception as e:
             messages.error(request, f"Error creating admin user: {str(e)}")
-            return redirect('all_leads')  # Redirect super admin to a different page
+            return redirect('all_leads')
     else:
         try:
             current_user = User.objects.get(id=request.session['custom_user_id'])
@@ -507,7 +507,7 @@ def add_lead(request):
             messages.error(request, "User session is invalid.")
             return redirect('logout')
 
-    # Handle POST requests
+    # Handle POST
     if request.method == 'POST':
         form = LeadForm(request.POST, request.FILES)
         if form.is_valid():
@@ -515,7 +515,7 @@ def add_lead(request):
                 lead = form.save(commit=False)
                 lead.user = current_user
 
-                # Get location data from the request
+                # Location data
                 location_data = request.POST.get('location_data', '')
                 if location_data:
                     try:
@@ -526,15 +526,14 @@ def add_lead(request):
                         messages.warning(request, 'Invalid location data format.')
 
                 lead.save()
-                form.save_m2m()  # Save Many-to-Many relationships
+                form.save_m2m()
 
-                # Save requirement amounts and remarks
+                # Requirement amounts & remarks
                 amounts_data = request.POST.get('requirement_amounts_data', '{}')
                 remarks_data = request.POST.get('requirement_remarks_data', '{}')
                 try:
                     amounts = json.loads(amounts_data)
                     remarks = json.loads(remarks_data)
-
                     for req_id, amount in amounts.items():
                         LeadRequirementAmount.objects.create(
                             lead=lead,
@@ -545,7 +544,7 @@ def add_lead(request):
                 except json.JSONDecodeError:
                     messages.warning(request, 'Invalid data format for requirements.')
 
-                # Save custom hardware prices
+                # Hardware prices
                 hardware_prices_data = request.POST.get('hardware_prices_data', '{}')
                 try:
                     hardware_prices = json.loads(hardware_prices_data)
@@ -565,13 +564,9 @@ def add_lead(request):
 
                 messages.success(request, 'Lead added successfully!')
 
-                # Redirect based on user type
-                if request.user.is_superuser:  # Redirect super admin
+                if request.user.is_superuser or current_user.user_level == 'normal':
                     return redirect('all_leads')
-                elif current_user.user_level == 'normal':  # Redirect admin (normal user)
-                    return redirect('all_leads')
-                else:  # Redirect all other users
-                    return redirect('user_dashboard')
+                return redirect('user_dashboard')
 
             except Exception as e:
                 messages.error(request, f"Error saving lead: {str(e)}")
@@ -581,7 +576,6 @@ def add_lead(request):
         form = LeadForm()
         form.fields['location'].queryset = Location.objects.all()
 
-    # Fetch all requirements and hardware for the form
     requirements = Requirement.objects.all()
     hardwares = Hardware.objects.all()
 
@@ -594,55 +588,37 @@ def add_lead(request):
 
 
 
-
-
-
 @login_required
 def edit_lead(request, lead_id):
     """
     View to edit a lead.
     """
-    # Fetch the lead or return 404 if it does not exist
     lead = get_object_or_404(Lead, id=lead_id)
 
     if request.method == 'POST':
         form = LeadForm(request.POST, request.FILES, instance=lead)
         if form.is_valid():
-            lead = form.save()  # Save the form instance
+            lead = form.save()
 
             try:
-                # Handle hardware prices
+                # Hardware prices
                 hardware_prices_data = request.POST.get('hardware_prices_data', '{}')
                 hardware_prices = json.loads(hardware_prices_data)
-
-                # First, delete all existing hardware prices for this lead
                 LeadHardwarePrice.objects.filter(lead=lead).delete()
-
-                # Then create new entries only for the selected hardware
                 for hardware_id, custom_price in hardware_prices.items():
-                    try:
-                        hardware = Hardware.objects.get(id=int(hardware_id))
-                        LeadHardwarePrice.objects.create(
-                            lead=lead,
-                            hardware=hardware,
-                            custom_price=float(custom_price)
-                        )
-                    except Hardware.DoesNotExist:
-                        messages.warning(request, f"Hardware with ID {hardware_id} not found.")
-                    except ValueError:
-                        messages.warning(request, f"Invalid price value for hardware ID {hardware_id}.")
+                    hardware = Hardware.objects.get(id=int(hardware_id))
+                    LeadHardwarePrice.objects.create(
+                        lead=lead,
+                        hardware=hardware,
+                        custom_price=float(custom_price)
+                    )
 
-                # Handle requirements
+                # Requirement amounts & remarks
                 amounts_data = request.POST.get('requirement_amounts_data', '{}')
                 remarks_data = request.POST.get('requirement_remarks_data', '{}')
-
                 amounts = json.loads(amounts_data)
                 remarks = json.loads(remarks_data)
-
-                # Clear existing requirement amounts
                 LeadRequirementAmount.objects.filter(lead=lead).delete()
-
-                # Create new requirement amounts
                 for req_id, amount in amounts.items():
                     LeadRequirementAmount.objects.create(
                         lead=lead,
@@ -665,18 +641,12 @@ def edit_lead(request, lead_id):
 
     requirements = Requirement.objects.all()
     hardwares = Hardware.objects.all()
-
-    # Get existing hardware prices
-    existing_hardware_prices = {
-        hp.hardware.id: hp.custom_price
-        for hp in LeadHardwarePrice.objects.filter(lead=lead)
-    }
-
-    # Get existing requirement amounts
-    existing_amounts = {
-        ra.requirement_id: ra.amount
-        for ra in LeadRequirementAmount.objects.filter(lead=lead)
-    }
+    existing_hardware_prices = {hp.hardware.id: hp.custom_price
+                                for hp in LeadHardwarePrice.objects.filter(lead=lead)}
+    existing_amounts = {ra.requirement_id: ra.amount
+                        for ra in LeadRequirementAmount.objects.filter(lead=lead)}
+    existing_remarks = {ra.requirement_id: ra.remarks
+                        for ra in LeadRequirementAmount.objects.filter(lead=lead)}
 
     return render(request, 'edit_lead.html', {
         'form': form,
@@ -685,8 +655,8 @@ def edit_lead(request, lead_id):
         'hardwares': hardwares,
         'existing_hardware_prices': existing_hardware_prices,
         'existing_amounts': existing_amounts,
+        'existing_remarks': existing_remarks,  # Added this line
     })
-
 
 
 
@@ -5012,7 +4982,8 @@ def configure_user_menu(request, user_id):
     'name': 'PLANET',
     'icon': 'fas fa-globe',
     'submenus': [
-        {'id': 'show_clients', 'name': 'Clients', 'icon': 'fas fa-users'}
+        {'id': 'show_clients', 'name': 'Clients', 'icon': 'fas fa-users'},
+        {'id': 'feeder_list', 'name': 'Feeder', 'icon': 'fas fa-tools'}
     ]
 },
 {
@@ -5026,6 +4997,17 @@ def configure_user_menu(request, user_id):
         {'id': 'user_socialmedia_project_assignments', 'name': 'Your Assignments', 'icon': 'fas fa-user-check'}
     ]
 },
+        {
+            'name': 'ACCOUNTS',
+            'icon': 'fas fa-money-bill-wave',
+            'submenus': [
+                {'id': 'debtors1_list',       'name': 'SYSMAC COMPUTERS-1', 'icon': 'fas fa-file-invoice-dollar'},
+                {'id': 'imc1_list',           'name': 'IMCB LLP',           'icon': 'fas fa-coins'},
+                {'id': 'imc2_list',           'name': 'IMC',                'icon': 'fas fa-hand-holding-usd'},
+                {'id': 'sysmac_info_list',    'name': 'SYSMAC-INFO',        'icon': 'fas fa-money-check'},
+                {'id': 'dq_list',             'name': 'DQ',                 'icon': 'fas fa-credit-card'},
+            ]
+        },
 
     ]
     
@@ -5215,6 +5197,17 @@ def default_menus(request):
         {'id': 'user_socialmedia_project_assignments', 'name': 'Your Assignments', 'icon': 'fas fa-user-check'}
     ]
 },
+        {
+            'name': 'ACCOUNTS',
+            'icon': 'fas fa-money-bill-wave',
+            'submenus': [
+                {'id': 'debtors1_list',       'name': 'SYSMAC COMPUTERS-1', 'icon': 'fas fa-file-invoice-dollar'},
+                {'id': 'imc1_list',           'name': 'IMCB LLP',           'icon': 'fas fa-coins'},
+                {'id': 'imc2_list',           'name': 'IMC',                'icon': 'fas fa-hand-holding-usd'},
+                {'id': 'sysmac_info_list',    'name': 'SYSMAC-INFO',        'icon': 'fas fa-money-check'},
+                {'id': 'dq_list',             'name': 'DQ',                 'icon': 'fas fa-credit-card'},
+            ]
+        },
     ]
     
     # Fetch current default menus from settings or database
@@ -5590,29 +5583,47 @@ from datetime import datetime, date
 from django.contrib.auth.decorators import login_required
 from .forms import ComplaintForm
 
-from django.shortcuts import render
-from django.core.paginator import Paginator
 from datetime import datetime, date
+from django.core.paginator import Paginator
+from django.db.models import Count, Q
+from django.shortcuts import render
 from .models import ServiceLog, User
 
+
+# ✅ Updated `views.py`
+from django.shortcuts import render
+from django.core.paginator import Paginator
+from datetime import date, datetime
+from django.db.models import Count, Q
+from .models import ServiceLog
+from django.contrib.auth.models import User
+
 def servicelog_list(request):
-    # Get current date for default values
     today = date.today().strftime('%Y-%m-%d')
-    
-    # Get search parameters from request with default values
-    customer_search = request.GET.get('customer_search', '')
-    added_by_filter = request.GET.get('added_by', '')
+
+    customer_search        = request.GET.get('customer_search', '')
+    added_by_filter        = request.GET.get('added_by', '')
     assigned_person_filter = request.GET.get('assigned_person', '')
-    status_filter = request.GET.get('status', '')
+    status_filter          = request.GET.get('status', '')
     complaint_status_filter = request.GET.get('complaint_status', 'Pending')
-    complaint_filter = request.GET.get('complaint_type', '')  # New complaint filter
-    start_date_filter = request.GET.get('start_date', today)  # Default to today
-    end_date_filter = request.GET.get('end_date', today)      # Default to today
+    complaint_filter       = request.GET.get('complaint_type', '')
+    start_date_filter      = request.GET.get('start_date', today)
+    end_date_filter        = request.GET.get('end_date', today)
+    rows_str = request.GET.get('rows', '')          # let empty string be the default
+    rows = int(rows_str) if rows_str else 10   # 🔁 rows parameter
 
-    # Get all service logs
-    service_logs = ServiceLog.objects.all().order_by('-id')
+    service_logs = (
+        ServiceLog.objects
+        .annotate(
+            total_complaints=Count('servicelogcomplaint'),
+            completed_complaints=Count(
+                'servicelogcomplaint',
+                filter=Q(servicelogcomplaint__status='Completed')
+            )
+        )
+        .order_by('-id')
+    )
 
-    # Apply filters
     if customer_search:
         service_logs = service_logs.filter(customer_name__icontains=customer_search)
 
@@ -5630,43 +5641,32 @@ def servicelog_list(request):
         except (ValueError, TypeError):
             pass
 
-    # Only apply status filter if a specific status is selected
     if status_filter:
         service_logs = service_logs.filter(status=status_filter)
 
     if complaint_status_filter:
-        # Filter logs where ALL complaints have the selected status
         logs_with_matching_status = set(
             service_logs.filter(servicelogcomplaint__status=complaint_status_filter)
             .values_list('id', flat=True)
         )
-        
         logs_with_different_status = set(
             service_logs.exclude(servicelogcomplaint__status=complaint_status_filter)
             .filter(servicelogcomplaint__isnull=False)
             .values_list('id', flat=True)
         )
-        
         logs_with_all_matching = logs_with_matching_status - logs_with_different_status
         service_logs = service_logs.filter(id__in=logs_with_all_matching)
 
-    # New complaint type filter
     if complaint_filter:
-        if complaint_filter == 'all':
-            # Show all complaints - no additional filtering needed
-            pass
-        elif complaint_filter == 'hardware':
-            # Filter logs that have hardware complaints
+        if complaint_filter == 'hardware':
             service_logs = service_logs.filter(
                 servicelogcomplaint__complaint__complaint_type='hardware'
             ).distinct()
         elif complaint_filter == 'software':
-            # Filter logs that have software complaints
             service_logs = service_logs.filter(
                 servicelogcomplaint__complaint__complaint_type='software'
             ).distinct()
 
-    # Apply date range filter
     if start_date_filter:
         try:
             start_date = datetime.strptime(start_date_filter, '%Y-%m-%d').date()
@@ -5681,18 +5681,15 @@ def servicelog_list(request):
         except ValueError:
             pass
 
-    # Preprocess customer_name to extract only the name part
     for log in service_logs:
         if '-' in log.customer_name:
             log.customer_name = log.customer_name.split('-')[0].strip()
 
-    # Set up pagination
-    paginator = Paginator(service_logs, 10)
+    paginator = Paginator(service_logs, rows)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
     users = User.objects.all()
-    start_index = page_obj.start_index()
 
     return render(request, 'servic_log_admin.html', {
         'page_obj': page_obj,
@@ -5702,11 +5699,14 @@ def servicelog_list(request):
         'assigned_person_filter': assigned_person_filter,
         'status_filter': status_filter,
         'complaint_status_filter': complaint_status_filter,
-        'complaint_filter': complaint_filter,  # Pass complaint filter to template
-        'start_date_filter': start_date_filter,    # Pass to template
-        'end_date_filter': end_date_filter,        # Pass to template
-        'start_index': start_index,
+        'complaint_filter': complaint_filter,
+        'start_date_filter': start_date_filter,
+        'end_date_filter': end_date_filter,
+        'start_index': page_obj.start_index(),
+        'rows_options': [10, 25, 50, 100],  # 🔁 add row options list
+        'selected_rows': rows              # 🔁 currently selected value
     })
+
 
 from app1.models import User, Complaint, ServiceLog, ServiceLogComplaint
 
@@ -6161,27 +6161,60 @@ def my_assigned_service_logs(request):
     })
 
 
+from django.utils import timezone
+# views.py
+import json
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+from django.utils import timezone
+from .models import ServiceLogComplaint
+
 @csrf_exempt
 @require_POST
 def update_complaint_status(request):
-    """Update individual complaint status"""
-    data = json.loads(request.body)
-    complaint_log_id = data.get('complaint_log_id')
-    new_status = data.get('status')
-
+    """
+    Update the status of a ServiceLogComplaint.
+    Automatically sets started_time when status becomes 'In Progress'
+    and completed_time when status becomes 'Completed'.
+    """
     try:
-        complaint_log = ServiceLogComplaint.objects.get(id=complaint_log_id)
+        data = json.loads(request.body)
+        cid = data.get('complaint_log_id')
+        new_status = data.get('status')
+
+        if not cid or not new_status:
+            return JsonResponse({'success': False, 'error': 'Missing complaint_log_id or status'}, status=400)
+
+        try:
+            cid = int(cid)
+        except ValueError:
+            return JsonResponse({'success': False, 'error': 'complaint_log_id must be an integer'}, status=400)
+
+        try:
+            complaint_log = ServiceLogComplaint.objects.get(id=cid)
+        except ServiceLogComplaint.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'Complaint log not found'}, status=404)
+
+        # Update timestamps
+        if new_status == 'In Progress' and not complaint_log.started_time:
+            complaint_log.started_time = timezone.now()
+        elif new_status == 'Completed' and not complaint_log.completed_time:
+            complaint_log.completed_time = timezone.now()
+
         complaint_log.status = new_status
-        if new_status == 'Completed':
-            complaint_log.completed_date = timezone.now()
         complaint_log.save()
-        
+
         return JsonResponse({
             'success': True,
-            'main_status': complaint_log.service_log.status
+            'started_time': complaint_log.started_time.isoformat() if complaint_log.started_time else None,
+            'completed_time': complaint_log.completed_time.isoformat() if complaint_log.completed_time else None,
         })
-    except ServiceLogComplaint.DoesNotExist:
-        return JsonResponse({'success': False, 'error': 'Complaint log not found'})
+
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Invalid JSON'}, status=400)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
     
 @login_required
 def reassign_work(request, log_id):

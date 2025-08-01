@@ -19,6 +19,8 @@ from django.urls import path,include
 from django.conf.urls.static import static
 from django.conf import settings
 from app2 import views 
+from app2 import views as app2_views 
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('app1.urls')),
@@ -26,6 +28,9 @@ urlpatterns = [
     path('app3/', include('app3.urls')),
     path('flutter/', include('flutter.urls')),
     path('edit-field/<int:field_id>/', views.edit_field, name='edit_field'),
+    path('feeder/', include('app2.urls')), 
+    path('feeder/<int:feeder_id>/status-update/', app2_views.feeder_status_update,name='feeder_status_update'),
+    
 
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 if settings.DEBUG:

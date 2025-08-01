@@ -49,6 +49,14 @@
             <div class="col-md-3" style="margin-top: 1%;">
                 <input type="date" name="end_date" class="form-control auto-filter" placeholder="End Date" value="{{ end_date_filter }}">
             </div>
+            <div class="col-md-3" style="margin-top: 1%;">
+                <select name="rows" class="form-select auto-filter">
+                    <option value="">Rows Count</option>
+                    {% for count in rows_options %}
+                        <option value="{{ count }}" {% if selected_rows == count %}selected{% endif %}>{{ count }}</option>
+                    {% endfor %}
+                </select>
+            </div>
         </div>
     </form>
 
@@ -57,8 +65,8 @@
         <nav aria-label="Page navigation example" style="display: flex;justify-content: center;">
             <ul class="pagination">
                 {% if page_obj.has_previous %}
-                    <li class="page-item"><a class="page-link" href="?page=1{% if customer_search %}&customer_search={{ customer_search }}{% endif %}{% if added_by_filter %}&added_by={{ added_by_filter }}{% endif %}{% if assigned_person_filter %}&assigned_person={{ assigned_person_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if complaint_status_filter %}&complaint_status={{ complaint_status_filter }}{% endif %}{% if complaint_filter %}&complaint_type={{ complaint_filter }}{% endif %}{% if start_date_filter %}&start_date={{ start_date_filter }}{% endif %}{% if end_date_filter %}&end_date={{ end_date_filter }}{% endif %}">First</a></li>
-                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if customer_search %}&customer_search={{ customer_search }}{% endif %}{% if added_by_filter %}&added_by={{ added_by_filter }}{% endif %}{% if assigned_person_filter %}&assigned_person={{ assigned_person_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if complaint_status_filter %}&complaint_status={{ complaint_status_filter }}{% endif %}{% if complaint_filter %}&complaint_type={{ complaint_filter }}{% endif %}{% if start_date_filter %}&start_date={{ start_date_filter }}{% endif %}{% if end_date_filter %}&end_date={{ end_date_filter }}{% endif %}">Previous</a></li>
+                    <li class="page-item"><a class="page-link" href="?page=1{% if customer_search %}&customer_search={{ customer_search }}{% endif %}{% if added_by_filter %}&added_by={{ added_by_filter }}{% endif %}{% if assigned_person_filter %}&assigned_person={{ assigned_person_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if complaint_status_filter %}&complaint_status={{ complaint_status_filter }}{% endif %}{% if complaint_filter %}&complaint_type={{ complaint_filter }}{% endif %}{% if start_date_filter %}&start_date={{ start_date_filter }}{% endif %}{% if end_date_filter %}&end_date={{ end_date_filter }}{% endif %}{% if selected_rows %}&rows={{ selected_rows }}{% endif %}">First</a></li>
+                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if customer_search %}&customer_search={{ customer_search }}{% endif %}{% if added_by_filter %}&added_by={{ added_by_filter }}{% endif %}{% if assigned_person_filter %}&assigned_person={{ assigned_person_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if complaint_status_filter %}&complaint_status={{ complaint_status_filter }}{% endif %}{% if complaint_filter %}&complaint_type={{ complaint_filter }}{% endif %}{% if start_date_filter %}&start_date={{ start_date_filter }}{% endif %}{% if end_date_filter %}&end_date={{ end_date_filter }}{% endif %}{% if selected_rows %}&rows={{ selected_rows }}{% endif %}">Previous</a></li>
                 {% else %}
                     <li class="page-item disabled"><a class="page-link" href="#">First</a></li>
                     <li class="page-item disabled"><a class="page-link" href="#">Previous</a></li>
@@ -68,13 +76,13 @@
                     {% if page_obj.number == num %}
                         <li class="page-item active"><a class="page-link" href="#">{{ num }}</a></li>
                     {% else %}
-                        <li class="page-item"><a class="page-link" href="?page={{ num }}{% if customer_search %}&customer_search={{ customer_search }}{% endif %}{% if added_by_filter %}&added_by={{ added_by_filter }}{% endif %}{% if assigned_person_filter %}&assigned_person={{ assigned_person_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if complaint_status_filter %}&complaint_status={{ complaint_status_filter }}{% endif %}{% if complaint_filter %}&complaint_type={{ complaint_filter }}{% endif %}{% if start_date_filter %}&start_date={{ start_date_filter }}{% endif %}{% if end_date_filter %}&end_date={{ end_date_filter }}{% endif %}">{{ num }}</a></li>
+                        <li class="page-item"><a class="page-link" href="?page={{ num }}{% if customer_search %}&customer_search={{ customer_search }}{% endif %}{% if added_by_filter %}&added_by={{ added_by_filter }}{% endif %}{% if assigned_person_filter %}&assigned_person={{ assigned_person_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if complaint_status_filter %}&complaint_status={{ complaint_status_filter }}{% endif %}{% if complaint_filter %}&complaint_type={{ complaint_filter }}{% endif %}{% if start_date_filter %}&start_date={{ start_date_filter }}{% endif %}{% if end_date_filter %}&end_date={{ end_date_filter }}{% endif %}{% if selected_rows %}&rows={{ selected_rows }}{% endif %}">{{ num }}</a></li>
                     {% endif %}
                 {% endfor %}
 
                 {% if page_obj.has_next %}
-                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}{% if customer_search %}&customer_search={{ customer_search }}{% endif %}{% if added_by_filter %}&added_by={{ added_by_filter }}{% endif %}{% if assigned_person_filter %}&assigned_person={{ assigned_person_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if complaint_status_filter %}&complaint_status={{ complaint_status_filter }}{% endif %}{% if complaint_filter %}&complaint_type={{ complaint_filter }}{% endif %}{% if start_date_filter %}&start_date={{ start_date_filter }}{% endif %}{% if end_date_filter %}&end_date={{ end_date_filter }}{% endif %}">Next</a></li>
-                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if customer_search %}&customer_search={{ customer_search }}{% endif %}{% if added_by_filter %}&added_by={{ added_by_filter }}{% endif %}{% if assigned_person_filter %}&assigned_person={{ assigned_person_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if complaint_status_filter %}&complaint_status={{ complaint_status_filter }}{% endif %}{% if complaint_filter %}&complaint_type={{ complaint_filter }}{% endif %}{% if start_date_filter %}&start_date={{ start_date_filter }}{% endif %}{% if end_date_filter %}&end_date={{ end_date_filter }}{% endif %}">Last</a></li>
+                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}{% if customer_search %}&customer_search={{ customer_search }}{% endif %}{% if added_by_filter %}&added_by={{ added_by_filter }}{% endif %}{% if assigned_person_filter %}&assigned_person={{ assigned_person_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if complaint_status_filter %}&complaint_status={{ complaint_status_filter }}{% endif %}{% if complaint_filter %}&complaint_type={{ complaint_filter }}{% endif %}{% if start_date_filter %}&start_date={{ start_date_filter }}{% endif %}{% if end_date_filter %}&end_date={{ end_date_filter }}{% endif %}{% if selected_rows %}&rows={{ selected_rows }}{% endif %}">Next</a></li>
+                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if customer_search %}&customer_search={{ customer_search }}{% endif %}{% if added_by_filter %}&added_by={{ added_by_filter }}{% endif %}{% if assigned_person_filter %}&assigned_person={{ assigned_person_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if complaint_status_filter %}&complaint_status={{ complaint_status_filter }}{% endif %}{% if complaint_filter %}&complaint_type={{ complaint_filter }}{% endif %}{% if start_date_filter %}&start_date={{ start_date_filter }}{% endif %}{% if end_date_filter %}&end_date={{ end_date_filter }}{% endif %}{% if selected_rows %}&rows={{ selected_rows }}{% endif %}">Last</a></li>
                 {% else %}
                     <li class="page-item disabled"><a class="page-link" href="#">Next</a></li>
                     <li class="page-item disabled"><a class="page-link" href="#">Last</a></li>
@@ -176,52 +184,63 @@
                         {% endfor %}
                     </td>
                     <td>
-                        <div class="status-section">
-                            <span class="badge 
-                                {% if log.status == 'Completed' %}bg-success
-                                {% elif log.status == 'In Progress' %}bg-warning
-                                {% elif log.status == 'Pending' %}bg-secondary
-                                {% else %}bg-info
-                                {% endif %} mb-2">
-                                {{ log.status }}
-                            </span>
-                            
-                            <!-- Progress Summary -->
-                            {% with total_complaints=log.servicelogcomplaint_set.count completed_complaints=log.servicelogcomplaint_set.all|length %}
-                                {% if total_complaints > 0 %}
-                                    <div class="progress-summary">
-                                        <small class="text-muted d-block">
-                                            {% with completed_count=0 %}
-                                                {% for complaint_log in log.servicelogcomplaint_set.all %}
-                                                    {% if complaint_log.status == 'Completed' %}
-                                                        {% with completed_count=completed_count|add:1 %}{% endwith %}
-                                                    {% endif %}
-                                                {% endfor %}
-                                                Progress: {{ completed_count }}/{{ total_complaints }}
-                                            {% endwith %}
-                                        </small>
-                                        <div class="progress" style="height: 4px;">
-                                            {% with completed_count=0 %}
-                                                {% for complaint_log in log.servicelogcomplaint_set.all %}
-                                                    {% if complaint_log.status == 'Completed' %}
-                                                        {% with completed_count=completed_count|add:1 %}{% endwith %}
-                                                    {% endif %}
-                                                {% endfor %}
-                                                {% widthratio completed_count total_complaints 100 as progress_percent %}
-                                                <div class="progress-bar 
-                                                    {% if progress_percent == 100 %}bg-success
-                                                    {% elif progress_percent > 0 %}bg-warning
-                                                    {% else %}bg-secondary
-                                                    {% endif %}" 
-                                                    style="width: {{ progress_percent }}%">
-                                                </div>
-                                            {% endwith %}
-                                        </div>
-                                    </div>
-                                {% endif %}
-                            {% endwith %}
-                        </div>
-                    </td>
+    <div class="status-section">
+        <!-- main log status badge -->
+        <span class="badge 
+            {% if log.status == 'Completed' %}bg-success
+            {% elif log.status == 'In Progress' %}bg-warning
+            {% elif log.status == 'Pending' %}bg-secondary
+            {% else %}bg-info
+            {% endif %} mb-2">
+            {{ log.status }}
+        </span>
+
+        <!-- overall progress bar -->
+        {% if log.total_complaints %}
+            <div class="progress-summary">
+                <small class="text-muted d-block">
+                    Progress: {{ log.completed_complaints }}/{{ log.total_complaints }}
+                </small>
+                <div class="progress" style="height: 4px;">
+                    {% widthratio log.completed_complaints log.total_complaints 100 as progress_percent %}
+                    <div class="progress-bar 
+                        {% if progress_percent == 100 %}bg-success
+                        {% elif progress_percent > 0 %}bg-warning
+                        {% else %}bg-secondary
+                        {% endif %}" 
+                        style="width: {{ progress_percent }}%">
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        <!-- individual complaint timing -->
+        {% for complaint_log in log.servicelogcomplaint_set.all %}
+            <div class="complaint-timing mt-2">
+    <small>
+        <strong>{{ complaint_log.complaint.description }}</strong><br>
+
+        {% if complaint_log.started_time %}
+            Started: {{ complaint_log.started_time|date:"d-m-Y h:i A" }}<br>
+        {% endif %}
+
+        {% if complaint_log.completed_time and complaint_log.started_time %}
+            {% load humanize %}
+            Completed: {{ complaint_log.completed_time|date:"d-m-Y h:i A" }}<br>
+            {% with duration=complaint_log.completed_time|timeuntil:complaint_log.started_time %}
+                Duration: {{ duration }}
+            {% endwith %}
+        {% elif complaint_log.completed_time %}
+            Completed: {{ complaint_log.completed_time|date:"d-m-Y h:i A" }}
+        {% endif %}
+    </small>
+</div>
+
+        {% empty %}
+            <small class="text-muted">No complaints assigned</small>
+        {% endfor %}
+    </div>
+</td>
                     <td>
                         {% if log.voice_note %}
                             <audio controls style="width: 200px;">
