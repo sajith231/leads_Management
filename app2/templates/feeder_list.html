@@ -319,28 +319,46 @@
     <a href="{% url 'feeder' %}" class="add-btn">+ Add New Feeder</a>
   </div>
 
-  <form method="get" id="filter-form" style="display: flex; flex-wrap: wrap; gap: 10px;">
-  <input type="text" name="q" placeholder="Search..." value="{{ query }}">
+<div class="search-filter-section" style="margin-bottom: 20px;">
+  <form method="get" id="filter-form" style="display: flex; flex-wrap: wrap; gap: 15px; align-items: center;">
+    
+    <!-- Search Input with Auto-filter -->
+    <div class="search-box" style="margin-bottom: 0;">
+      <input type="text" 
+             name="q" 
+             id="search-input"
+             placeholder="Search by name, software, or branch..." 
+             value="{{ query }}"
+             style="padding: 10px 12px; border: 1px solid #ddd; border-radius: 6px; width: 300px; font-size: 14px;">
+    </div>
 
-  <select name="branch" id="branch-select">
-    <option value="">All Branches</option>
-    {% for b in branches %}
-      <option value="{{ b.name }}" {% if request.GET.branch == b.name %}selected{% endif %}>{{ b.name }}</option>
-    {% endfor %}
-  </select>
+    <!-- Branch Filter Dropdown -->
+    <select name="branch" id="branch-select" style="padding: 10px 12px; border: 1px solid #ddd; border-radius: 6px; background: white; font-size: 14px; min-width: 150px;">
+      <option value="">All Branches</option>
+      {% for b in branches %}
+        <option value="{{ b.name }}" {% if request.GET.branch == b.name %}selected{% endif %}>{{ b.name }}</option>
+      {% endfor %}
+    </select>
 
-  <select name="status" id="status-select">
-    <option value="">All Status</option>
-    <option value="pending" {% if request.GET.status == 'pending' %}selected{% endif %}>Pending</option>
-    <option value="accepted" {% if request.GET.status == 'accepted' %}selected{% endif %}>Accepted</option>
-    <option value="key_uploaded" {% if request.GET.status == 'key_uploaded' %}selected{% endif %}>Key Uploaded</option>
-    <option value="rejected" {% if request.GET.status == 'rejected' %}selected{% endif %}>Rejected</option>
-    <option value="under_process" {% if request.GET.status == 'under_process' %}selected{% endif %}>Under Process</option>
-  </select>
-</form>
+    <!-- Status Filter Dropdown -->
+    <select name="status" id="status-select" style="padding: 10px 12px; border: 1px solid #ddd; border-radius: 6px; background: white; font-size: 14px; min-width: 150px;">
+      <option value="">All Status</option>
+      <option value="pending" {% if request.GET.status == 'pending' %}selected{% endif %}>Pending</option>
+      <option value="accepted" {% if request.GET.status == 'accepted' %}selected{% endif %}>Accepted</option>
+      <option value="key_uploaded" {% if request.GET.status == 'key_uploaded' %}selected{% endif %}>Key Uploaded</option>
+      <option value="rejected" {% if request.GET.status == 'rejected' %}selected{% endif %}>Rejected</option>
+      <option value="under_process" {% if request.GET.status == 'under_process' %}selected{% endif %}>Under Process</option>
+    </select>
 
-  <button type="submit" class="add-btn" style="padding: 10px 16px;">Filter</button>
-</form>
+    <!-- Clear Filters Button -->
+    <button type="button" 
+            id="clear-filters" 
+            style="padding: 10px 16px; background: #6c757d; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">
+      Clear All
+    </button>
+
+  </form>
+</div>
 
   <div class="total-count">
     Total Records: {{ page_obj.paginator.count }}
@@ -575,5 +593,65 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('search-input');
+    const branchSelect = document.getElementById('branch-select');
+    const statusSelect = document.getElementById('status-select');
+    const clearButton = document.getElementById('clear-filters');
+    const filterForm = document.getElementById('filter-form');
+    
+    let searchTimeout;
 
+    // Auto-submit form with debounce for search input
+    function debounceSearch() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            filterForm.submit();
+        }, 500); // Wait 500ms after user stops typing
+    }
+
+    // Auto-submit for dropdown changes (immediate)
+    function immediateFilter() {
+        filterForm.submit();
+    }
+
+    // Event listeners
+    if (searchInput) {
+        searchInput.addEventListener('input', debounceSearch);
+        searchInput.addEventListener('keyup', function(e) {
+            if (e.key === 'Enter') {
+                clearTimeout(searchTimeout);
+                filterForm.submit();
+            }
+        });
+    }
+
+    if (branchSelect) {
+        branchSelect.addEventListener('change', immediateFilter);
+    }
+
+    if (statusSelect) {
+        statusSelect.addEventListener('change', immediateFilter);
+    }
+
+    // Clear all filters
+    if (clearButton) {
+        clearButton.addEventListener('click', function() {
+            searchInput.value = '';
+            branchSelect.value = '';
+            statusSelect.value = '';
+            filterForm.submit();
+        });
+    }
+
+    // Show loading indicator during search (optional)
+    filterForm.addEventListener('submit', function() {
+        document.body.style.cursor = 'wait';
+        setTimeout(() => {
+            document.body.style.cursor = 'default';
+        }, 2000);
+    });
+});
+</script>
 {% endblock %}

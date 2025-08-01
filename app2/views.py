@@ -1775,57 +1775,72 @@ def feeder(request):
 
 
 
-# ----------  LIST  ----------
+# Updated feeder_list view with proper search functionality
 def feeder_list(request):
-    query = request.GET.get('q', '')
-    selected_branch = request.GET.get('branch', '')
-    selected_status = request.GET.get('status', '')
+    query = request.GET.get('q', '').strip()
+    selected_branch = request.GET.get('branch', '').strip()
+    selected_status = request.GET.get('status', '').strip()
 
+    # Start with all feeders
     feeders_list = Feeder.objects.select_related('branch').all().order_by('-id')
 
-    # --- Apply search filter ---
+    # Apply search filter - FIXED: Search across multiple fields properly
     if query:
         feeders_list = feeders_list.filter(
             Q(name__icontains=query) |
             Q(software__icontains=query) |
-            Q(branch_name_icontains=query)
+            Q(branch__name__icontains=query) |  # FIXED: Use double underscore for related field
+            Q(contact_person__icontains=query) |
+            Q(contact_number__icontains=query) |
+            Q(area__icontains=query) |
+            Q(location__icontains=query) |
+            Q(district__icontains=query)
         )
 
-    # --- Apply branch filter ---
+    # Apply branch filter
     if selected_branch:
         feeders_list = feeders_list.filter(branch__name=selected_branch)
 
-    # --- Apply status filter ---
+    # Apply status filter
     if selected_status:
         feeders_list = feeders_list.filter(status=selected_status)
 
-    # --- Process each feeder for modules and prices ---
+    # Process each feeder for modules and prices
     for feeder in feeders_list:
+        # Handle more_modules list
         feeder.more_modules_list = [
             m.strip() for m in (feeder.more_modules or '').split(',') if m.strip()
         ]
+        
+        # Handle price dictionary
         try:
-            feeder.price_dict = (
-                json.loads(feeder.module_prices)
-                if isinstance(feeder.module_prices, str)
-                else feeder.module_prices
-            )
-        except (ValueError, TypeError):
+            if isinstance(feeder.module_prices, str):
+                feeder.price_dict = json.loads(feeder.module_prices)
+            elif isinstance(feeder.module_prices, dict):
+                feeder.price_dict = feeder.module_prices
+            else:
+                feeder.price_dict = {}
+        except (ValueError, TypeError, json.JSONDecodeError):
             feeder.price_dict = {}
 
+    # Pagination
     paginator = Paginator(feeders_list, 10)
-    page_obj = paginator.get_page(request.GET.get('page'))
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
 
     # Get list of branches for dropdown
-    branches = Branch.objects.all()
+    branches = Branch.objects.all().order_by('name')
 
-    return render(request, 'feeder_list.html', {
+    context = {
         'page_obj': page_obj,
-        'query': query,
+        'query': query,  # Keep query for search input value
         'branches': branches,
         'selected_branch': selected_branch,
-        'selected_status': selected_status
-    })
+        'selected_status': selected_status,
+        'total_count': paginator.count,  # Add total count for display
+    }
+
+    return render(request, 'feeder_list.html', context)
 # ----------  EDIT  ----------
 def feeder_edit(request, feeder_id):
     feeder = get_object_or_404(Feeder, id=feeder_id)
