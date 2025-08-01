@@ -160,24 +160,31 @@
   }
 
   .status-pending {
-    background-color: #fff3cd;
-    color: #856404;
-  }
+  background-color: #fff3cd;  /* Light yellow */
+  color: #856404;             /* Dark amber text */
+}
 
-  .status-accepted {
-    background-color: #d4edda;
-    color: #155724;
-  }
+.status-accepted {
+  background-color: #e0f2f1;
+  color: #00695c;
+}
 
-  .status-rejected {
-    background-color: #f8d7da;
-    color: #721c24;
-  }
+.status-rejected {
+  background-color: #ffebee;
+  color: #c62828;
+}
 
-  .status-under-process {
-    background-color: #d1ecf1;
-    color: #0c5460;
-  }
+.status-under-process {
+  background-color: #e3f2fd;
+  color: #1565c0;
+}
+
+.status-key-uploaded {
+  background-color: #d1c4e9;  /* Soft purple */
+  color: #4a148c;             /* Deep purple text */
+}
+
+
 
   .status-dropdown-content {
     display: none;
@@ -312,9 +319,28 @@
     <a href="{% url 'feeder' %}" class="add-btn">+ Add New Feeder</a>
   </div>
 
-  <form method="get" class="search-box">
-    <input type="text" name="q" placeholder="Search feeders..." value="{{ query }}">
-  </form>
+  <form method="get" id="filter-form" style="display: flex; flex-wrap: wrap; gap: 10px;">
+  <input type="text" name="q" placeholder="Search..." value="{{ query }}">
+
+  <select name="branch" id="branch-select">
+    <option value="">All Branches</option>
+    {% for b in branches %}
+      <option value="{{ b.name }}" {% if request.GET.branch == b.name %}selected{% endif %}>{{ b.name }}</option>
+    {% endfor %}
+  </select>
+
+  <select name="status" id="status-select">
+    <option value="">All Status</option>
+    <option value="pending" {% if request.GET.status == 'pending' %}selected{% endif %}>Pending</option>
+    <option value="accepted" {% if request.GET.status == 'accepted' %}selected{% endif %}>Accepted</option>
+    <option value="key_uploaded" {% if request.GET.status == 'key_uploaded' %}selected{% endif %}>Key Uploaded</option>
+    <option value="rejected" {% if request.GET.status == 'rejected' %}selected{% endif %}>Rejected</option>
+    <option value="under_process" {% if request.GET.status == 'under_process' %}selected{% endif %}>Under Process</option>
+  </select>
+</form>
+
+  <button type="submit" class="add-btn" style="padding: 10px 16px;">Filter</button>
+</form>
 
   <div class="total-count">
     Total Records: {{ page_obj.paginator.count }}
@@ -374,6 +400,8 @@
                         data-status="pending">Pending</button>
                 <button type="button" onclick="updateStatus({{ feeder.id }}, 'accepted')" 
                         data-status="accepted">Accepted</button>
+<button type="button" onclick="updateStatus({{ feeder.id }}, 'key_uploaded')" 
+                        data-status="accepted">Key Uploaded</button>
                 <button type="button" onclick="updateStatus({{ feeder.id }}, 'rejected')" 
                         data-status="rejected">Rejected</button>
                 <button type="button" onclick="updateStatus({{ feeder.id }}, 'under_process')" 
@@ -431,6 +459,15 @@
     </div>
   </div>
 </div>
+<script>
+  document.getElementById('branch-select').addEventListener('change', function() {
+    document.getElementById('filter-form').submit();
+  });
+
+  document.getElementById('status-select').addEventListener('change', function() {
+    document.getElementById('filter-form').submit();
+  });
+</script>
 
 <script>
 // Get CSRF token
@@ -465,8 +502,8 @@ function updateStatus(feederId, newStatus) {
     statusBtn.textContent = 'Updating...';
     statusBtn.disabled = true;
 
-    // Make the AJAX request
-    fetch(`/feeder/${feederId}/status-update/`, { // FIXED: Added backticks
+    // Make the AJAX request - FIXED: Added backticks and corrected URL
+    fetch(`/feeder/${feederId}/status-update/`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -521,7 +558,8 @@ function getStatusClass(status) {
         'pending': 'status-pending',
         'accepted': 'status-accepted',
         'rejected': 'status-rejected',
-        'under_process': 'status-under-process'
+        'under_process': 'status-under-process',
+        'key_uploaded': 'status-key-uploaded',
     };
     return statusClasses[status] || 'status-pending';
 }

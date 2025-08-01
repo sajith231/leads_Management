@@ -1695,6 +1695,7 @@ from .models import Feeder
 from app1.models import BusinessType, Branch
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.dateparse import parse_date
+from datetime import date 
 
 @csrf_exempt
 def feeder(request):
@@ -1714,7 +1715,7 @@ def feeder(request):
         reputed_person_name = request.POST.get('reputed_person_name', '')
         reputed_person_number = request.POST.get('reputed_person_number', '')
         software = request.POST.get('software')
-        nature_id = request.POST.get('nature')
+        nature = request.POST.get('nature')
         branch_id = request.POST.get('branch')
         no_of_system = request.POST.get('no_of_system')
         pincode = request.POST.get('pincode')
@@ -1750,7 +1751,7 @@ def feeder(request):
             reputed_person_name=reputed_person_name,
             reputed_person_number=reputed_person_number,
             software=software,
-            nature_id=nature_id,
+            nature=nature,
             branch_id=branch_id,
             no_of_system=no_of_system,
             pincode=pincode,
@@ -1768,7 +1769,8 @@ def feeder(request):
 
     return render(request, 'add_feeder.html', {
         'business_types': business_types,
-        'branches': branches
+        'branches': branches,
+        'today': date.today().isoformat(),
     })
 
 
@@ -1776,15 +1778,28 @@ def feeder(request):
 # ----------  LIST  ----------
 def feeder_list(request):
     query = request.GET.get('q', '')
-    feeders_list = Feeder.objects.select_related('nature', 'branch').all().order_by('-id')  # <-- Include branch in select_related
+    selected_branch = request.GET.get('branch', '')
+    selected_status = request.GET.get('status', '')
 
+    feeders_list = Feeder.objects.select_related('branch').all().order_by('-id')
+
+    # --- Apply search filter ---
     if query:
         feeders_list = feeders_list.filter(
             Q(name__icontains=query) |
             Q(software__icontains=query) |
-            Q(branch__name__icontains=query)  # <-- FIXED: Use branch__name instead of branch_name
+            Q(branch_name_icontains=query)
         )
 
+    # --- Apply branch filter ---
+    if selected_branch:
+        feeders_list = feeders_list.filter(branch__name=selected_branch)
+
+    # --- Apply status filter ---
+    if selected_status:
+        feeders_list = feeders_list.filter(status=selected_status)
+
+    # --- Process each feeder for modules and prices ---
     for feeder in feeders_list:
         feeder.more_modules_list = [
             m.strip() for m in (feeder.more_modules or '').split(',') if m.strip()
@@ -1800,9 +1815,17 @@ def feeder_list(request):
 
     paginator = Paginator(feeders_list, 10)
     page_obj = paginator.get_page(request.GET.get('page'))
-    return render(request, 'feeder_list.html', {'page_obj': page_obj, 'query': query})
 
+    # Get list of branches for dropdown
+    branches = Branch.objects.all()
 
+    return render(request, 'feeder_list.html', {
+        'page_obj': page_obj,
+        'query': query,
+        'branches': branches,
+        'selected_branch': selected_branch,
+        'selected_status': selected_status
+    })
 # ----------  EDIT  ----------
 def feeder_edit(request, feeder_id):
     feeder = get_object_or_404(Feeder, id=feeder_id)
@@ -1977,7 +2000,6 @@ def feeder_status_update(request, feeder_id):
         print(f"Error in feeder_status_update: {str(e)}")
         traceback.print_exc()
         return JsonResponse({'success': False, 'error': f'Server error: {str(e)}'}, status=500)
-
 
 
 

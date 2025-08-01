@@ -121,7 +121,7 @@ urlpatterns = [
     path('feeder_edit/<int:feeder_id>/', views.feeder_edit, name='feeder_edit'),
     path('feeder_delete/<int:feeder_id>/', views.feeder_delete, name='feeder_delete'),
     path('feeder/<int:feeder_id>/status-update/', views.feeder_status_update, name='feeder_status_update'),
-    path('feeder/<int:feeder_id>/status-update/', app2_views.feeder_status_update, name='feeder_status_update'),
+    path('feeder/<int:feeder_id>/status-update/', views.feeder_status_update, name='feeder_status_update'),
 
 
 

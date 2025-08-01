@@ -264,16 +264,34 @@ class AssignmentStatusHistory(models.Model):
 
 
 
+
+
+
 from django.db import models
 
 class Feeder(models.Model):
     STATUS_CHOICES = [
         ('pending', 'Pending'),
         ('accepted', 'Accepted'),
+        ('key_uploaded', 'Key Uploaded'),
         ('rejected', 'Rejected'),
         ('under_process', 'Under Process'),
     ]
-    
+
+    BUSINESS_NATURE_CHOICES = [
+        ('', 'Select'),
+        ('supermarket', 'Supermarket'),
+        ('textile', 'Textile'),
+        ('restaurant', 'Restaurant'),
+        ('Agency/Distribution', 'Agency/Distribution'),
+        ('retail', 'Retail'),
+        ('Auto Mobiles', 'Auto Mobiles'),
+        ('Bakery', 'Bakery'),
+        ('Boutique', 'Boutique'),
+        ('Hyper Market', 'Hyper Market'),
+        ('Lab', 'Lab'),
+    ]
+
     name = models.CharField(max_length=200)
     address = models.TextField()
     location = models.CharField(max_length=200)
@@ -285,20 +303,23 @@ class Feeder(models.Model):
     email = models.EmailField()
     reputed_person_name = models.CharField(max_length=100, blank=True)
     reputed_person_number = models.CharField(max_length=15, blank=True)
-    
+
     software = models.CharField(max_length=100)
-    nature = models.ForeignKey(
-        'app1.BusinessType',     # points to app1.BusinessType
-        on_delete=models.SET_NULL,
-        null=True,
+
+    # ✅ Changed from ForeignKey to CharField with your custom dropdown
+    nature = models.CharField(
+        max_length=50,
+        choices=BUSINESS_NATURE_CHOICES,
         blank=True
     )
+
     branch = models.ForeignKey(
         'app1.Branch',
         on_delete=models.SET_NULL,
         null=True,
         blank=True
     )
+
     no_of_system = models.IntegerField()
     pincode = models.CharField(max_length=10)
     country = models.CharField(max_length=100, default='India')
@@ -307,27 +328,23 @@ class Feeder(models.Model):
     software_amount = models.DecimalField(max_digits=10, decimal_places=2)
     module_charges = models.DecimalField(max_digits=10, decimal_places=2)
     more_modules = models.TextField(blank=True, null=True)
-
-
-    modules = models.TextField(blank=True)  # store module list as comma separated values
+    modules = models.TextField(blank=True)
     module_prices = models.JSONField(default=dict, blank=True)
-    
-    # New status field with default as 'pending'
+
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
 
     def _str_(self):
         return self.name
 
     def get_status_display_class(self):
-        """Return CSS class for status display"""
         status_classes = {
             'pending': 'status-pending',
             'accepted': 'status-accepted',
+            'key_uploaded': 'status-key-uploaded',
             'rejected': 'status-rejected',
             'under_process': 'status-under-process',
         }
         return status_classes.get(self.status, 'status-pending')
-
 
 
 
