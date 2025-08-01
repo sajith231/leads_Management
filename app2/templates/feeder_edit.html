@@ -356,72 +356,12 @@
       </div>
     </div>
 
-    <div class="buttons">
-      <button type="button" class="cancel">Cancel</button>
-      <button type="submit" class="save">Save</button>
+            <div class="buttons">
+                <button type="button" class="cancel">Cancel</button>
+                <button type="submit" class="save">Update</button>
+            </div>
+        </form>
     </div>
-  </form>
-</div>
+</body>
+</html>
 
-  </form>
-</div>
-<script>
-document.addEventListener("DOMContentLoaded", function () {
-    const softwareSelect   = document.querySelector('select[name="software"]');
-    const softwareAmountIn = document.querySelector('input[name="software_amount"]');
-    const totalCostIn      = document.querySelector('input[name="total_cost"]');
-    const priceInputs      = document.querySelectorAll('.price-input');
-    const checkboxes       = document.querySelectorAll('input[type="checkbox"][name="more_modules"]');
-
-    const versionMap = {
-        'Ultimate': ['BGR', 'BGR 4'],
-        'I-care'  : ['I-CARE BGR', 'I-CARE BGR 4'],
-        'B-care'  : ['B-CARE BGR', 'B-CARE BGR 4']
-    };
-
-    const versionCheckboxes = {
-        'Ultimate': document.querySelector('input[type="checkbox"][value="Ultimate"]'),
-        'I-care'  : document.querySelector('input[type="checkbox"][value="I-care"]'),
-        'B-care'  : document.querySelector('input[type="checkbox"][value="B-care"]')
-    };
-
-    // --- auto-select version based on software ---
-    softwareSelect?.addEventListener('change', () => {
-        Object.values(versionCheckboxes).forEach(cb => cb && (cb.checked = false));
-        const sw = softwareSelect.value;
-        for (const [v, list] of Object.entries(versionMap)) {
-            if (list.includes(sw)) {
-                if (versionCheckboxes[v]) versionCheckboxes[v].checked = true;
-                break;
-            }
-        }
-        updateTotalCost();
-    });
-
-    // --- recalc when anything changes ---
-    function updateTotalCost() {
-        let software = parseFloat(softwareAmountIn.value) || 0;
-        let moduleSum = 0;
-
-        checkboxes.forEach(cb => {
-            if (cb.checked) {
-                const priceField = document.querySelector(input[name="price_${cb.value}"]);
-                const val = parseFloat(priceField?.value || 0);
-                if (!isNaN(val)) moduleSum += val;
-            }
-        });
-
-        totalCostIn.value = (software + moduleSum).toFixed(2);
-    }
-
-    // --- attach listeners ---
-    softwareAmountIn?.addEventListener('input', updateTotalCost);
-    priceInputs.forEach(inp => inp.addEventListener('input', updateTotalCost));
-    checkboxes.forEach(cb => cb.addEventListener('change', updateTotalCost));
-
-    // --- initial calc on page load ---
-    updateTotalCost();
-});
-</script>
-
-{% endblock %}
