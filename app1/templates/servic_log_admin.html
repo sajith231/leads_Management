@@ -13,11 +13,12 @@
             <div class="col-md-3">
                 <select name="added_by" class="form-select auto-filter">
                     <option value="">Added By</option>
-                    {% for user in users %}
+                    {% for user in users|dictsort:"name" %}
                         <option value="{{ user.id }}" {% if user.id == added_by_filter|default:0 %}selected{% endif %}>{{ user.name }}</option>
                     {% endfor %}
                 </select>
             </div>
+
             
             <div class="col-md-3">
                 <select name="status" class="form-select auto-filter">
