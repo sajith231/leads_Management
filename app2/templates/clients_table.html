@@ -322,22 +322,24 @@
 <div class="col-md-2">
   <label for="branch" class="form-label">Branch</label>
   <select name="branch" id="branch" class="form-select"
-          {% if user_branch not in 'IMC,SYSMAC' %}disabled{% endif %}
+          {% if is_branch_restricted %}disabled{% endif %}
           onchange="this.form.submit()">
-    <option value="">All Branches</option>
-    {% for branch in unique_branches %}
-      {# IMC / SYSMAC users can choose anything #}
-      {% if user_branch in 'IMC,SYSMAC' %}
+    
+    <!-- For unrestricted users (IMC/SYSMAC) -->
+    {% if not is_branch_restricted %}
+      <option value="">All Branches</option>
+      {% for branch in unique_branches %}
         <option value="{{ branch }}" {% if branch == selected_branch %}selected{% endif %}>{{ branch }}</option>
-      {# Other users are locked to their own branch #}
-      {% else %}
-        <option value="{{ branch }}" {% if branch == user_branch %}selected{% endif %} {% if branch != user_branch %}hidden{% endif %}>{{ branch }}</option>
-      {% endif %}
-    {% endfor %}
+      {% endfor %}
+    
+    <!-- For restricted users -->
+    {% else %}
+      <option value="{{ user_branch }}" selected>{{ user_branch }}</option>
+    {% endif %}
   </select>
 
-  {# Hidden field for non-IMC/SYSMAC users to keep the branch filter #}
-  {% if user_branch not in 'IMC,SYSMAC' %}
+  <!-- Hidden field for restricted users to maintain branch filter -->
+  {% if is_branch_restricted %}
     <input type="hidden" name="branch" value="{{ user_branch }}">
   {% endif %}
 </div>

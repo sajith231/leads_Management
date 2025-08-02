@@ -765,14 +765,6 @@ from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from datetime import datetime
 import requests
 from django.shortcuts import render
-
-
-
-from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
-from datetime import datetime
-import requests
-from django.shortcuts import render
-
 from django.shortcuts import render
 import requests
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
@@ -793,7 +785,7 @@ def show_clients(request):
     error_message = None
 
     # ------------------------------------------------------------------
-    # 1.  Determine the logged-in user’s branch (fallback to None)
+    # 1.  Determine the logged-in user's branch (fallback to None)
     # ------------------------------------------------------------------
     try:
         custom_user = User.objects.get(userid=request.user.username)
@@ -842,10 +834,18 @@ def show_clients(request):
     unique_lic_types  = sorted({c.get('lictype_label', '') for c in clients if c.get('lictype_label')})
 
     # ------------------------------------------------------------------
-    # 5.  Read filter parameters
+    # 5.  Read filter parameters with automatic branch restriction
     # ------------------------------------------------------------------
     search_query        = request.GET.get('search', '').strip()
-    selected_branch     = request.GET.get('branch', '')
+    
+    # FIXED: Auto-apply branch filter for non-IMC/SYSMAC users
+    if user_branch and user_branch not in ['IMC', 'SYSMAC']:
+        # For restricted users, always use their branch (ignore URL parameter)
+        selected_branch = user_branch
+    else:
+        # For IMC/SYSMAC users, use the URL parameter or empty
+        selected_branch = request.GET.get('branch', '')
+    
     selected_software   = request.GET.get('software', '')
     selected_nature     = request.GET.get('nature', '')
     selected_amc        = request.GET.get('amc', '')
@@ -912,6 +912,7 @@ def show_clients(request):
         'selected_direct_dealing': selected_direct,
         'user_branch': user_branch,          # << injected for template
         'selected_branch': selected_branch,  # << injected for template
+        'is_branch_restricted': user_branch and user_branch not in ['IMC', 'SYSMAC'],  # << NEW: helper flag
     })
 
 
@@ -1690,17 +1691,34 @@ from .models import Feeder
 from app1.models import BusinessType, Branch   # <-- Import Branch from app1
 
 # ----------  ADD / CREATE  ----------
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from .models import Feeder
-from app1.models import BusinessType, Branch
+from app1.models import BusinessType, Branch, User
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.dateparse import parse_date
-from datetime import date 
+from datetime import date
+from django.db.models import Q
+from django.core.paginator import Paginator
+import json
 
 @csrf_exempt
 def feeder(request):
     business_types = BusinessType.objects.all()
     branches = Branch.objects.all()
+
+    # ------------------------------------------------------------------
+    # Get the logged-in user's branch - ALL users now see only their branch
+    # ------------------------------------------------------------------
+    try:
+        custom_user = User.objects.get(userid=request.user.username)
+        user_branch = custom_user.branch if custom_user.branch else None
+        user_branch_id = custom_user.branch.id if custom_user.branch else None
+    except User.DoesNotExist:
+        user_branch = None
+        user_branch_id = None
+
+    # All users are now branch restricted (removed IMC/SYSMAC exception)
+    is_branch_restricted = user_branch is not None
 
     if request.method == 'POST':
         name = request.POST.get('name')
@@ -1716,7 +1734,12 @@ def feeder(request):
         reputed_person_number = request.POST.get('reputed_person_number', '')
         software = request.POST.get('software')
         nature = request.POST.get('nature')
-        branch_id = request.POST.get('branch')
+        
+        # ------------------------------------------------------------------
+        # All users now use their own branch only
+        # ------------------------------------------------------------------
+        branch_id = user_branch_id  # Always use the user's branch
+            
         no_of_system = request.POST.get('no_of_system')
         pincode = request.POST.get('pincode')
         country = request.POST.get('country')
@@ -1752,7 +1775,7 @@ def feeder(request):
             reputed_person_number=reputed_person_number,
             software=software,
             nature=nature,
-            branch_id=branch_id,
+            branch_id=branch_id,  # Use the user's branch
             no_of_system=no_of_system,
             pincode=pincode,
             country=country,
@@ -1771,8 +1794,10 @@ def feeder(request):
         'business_types': business_types,
         'branches': branches,
         'today': date.today().isoformat(),
+        'user_branch': user_branch,
+        'user_branch_id': user_branch_id,
+        'is_branch_restricted': is_branch_restricted,
     })
-
 
 
 # Updated feeder_list view with proper search functionality
@@ -1784,12 +1809,12 @@ def feeder_list(request):
     # Start with all feeders
     feeders_list = Feeder.objects.select_related('branch').all().order_by('-id')
 
-    # Apply search filter - FIXED: Search across multiple fields properly
+    # Apply search filter
     if query:
         feeders_list = feeders_list.filter(
             Q(name__icontains=query) |
             Q(software__icontains=query) |
-            Q(branch__name__icontains=query) |  # FIXED: Use double underscore for related field
+            Q(branch__name__icontains=query) |
             Q(contact_person__icontains=query) |
             Q(contact_number__icontains=query) |
             Q(area__icontains=query) |
@@ -1833,17 +1858,155 @@ def feeder_list(request):
 
     context = {
         'page_obj': page_obj,
-        'query': query,  # Keep query for search input value
+        'query': query,
         'branches': branches,
         'selected_branch': selected_branch,
         'selected_status': selected_status,
-        'total_count': paginator.count,  # Add total count for display
+        'total_count': paginator.count,
     }
 
     return render(request, 'feeder_list.html', context)
+
+
+def feeder_edit(request, feeder_id):
+    feeder = get_object_or_404(Feeder, id=feeder_id)
+
+    # ------------------------------------------------------------------
+    # Get the logged-in user's branch - ALL users now see only their branch
+    # ------------------------------------------------------------------
+    try:
+        custom_user = User.objects.get(userid=request.user.username)
+        user_branch = custom_user.branch if custom_user.branch else None
+        user_branch_id = custom_user.branch.id if custom_user.branch else None
+    except User.DoesNotExist:
+        user_branch = None
+        user_branch_id = None
+
+    # All users are now branch restricted (removed IMC/SYSMAC exception)
+    is_branch_restricted = user_branch is not None
+
+    selected_modules = [m.strip() for m in (feeder.more_modules or '').split(',') if m.strip()]
+    try:
+        price_dict = (
+            json.loads(feeder.module_prices)
+            if isinstance(feeder.module_prices, str)
+            else feeder.module_prices
+        )
+    except (ValueError, TypeError):
+        price_dict = {}
+
+    if request.method == 'POST':
+        # Update all simple fields
+        feeder.name = request.POST.get('name')
+        feeder.address = request.POST.get('address')
+        feeder.location = request.POST.get('location')
+        feeder.area = request.POST.get('area')
+        feeder.district = request.POST.get('district')
+        feeder.state = request.POST.get('state')
+        feeder.contact_person = request.POST.get('contact_person')
+        feeder.contact_number = request.POST.get('contact_number')
+        feeder.email = request.POST.get('email')
+        feeder.reputed_person_name = request.POST.get('reputed_person_name', '')
+        feeder.reputed_person_number = request.POST.get('reputed_person_number', '')
+        feeder.software = request.POST.get('software')
+        
+        # Handle foreign key fields properly
+        nature_id = request.POST.get('nature')
+        if nature_id and nature_id.strip():
+            try:
+                feeder.nature_id = int(nature_id)
+            except (ValueError, TypeError):
+                feeder.nature_id = None
+        else:
+            feeder.nature_id = None
+        
+        # ------------------------------------------------------------------
+        # All users now use their own branch only
+        # ------------------------------------------------------------------
+        feeder.branch_id = user_branch_id  # Always use the user's branch
+        
+        # Handle numeric fields
+        no_of_system = request.POST.get('no_of_system')
+        if no_of_system and no_of_system.strip():
+            try:
+                feeder.no_of_system = int(no_of_system)
+            except (ValueError, TypeError):
+                feeder.no_of_system = None
+        else:
+            feeder.no_of_system = None
+            
+        pincode = request.POST.get('pincode')
+        if pincode and pincode.strip():
+            try:
+                feeder.pincode = int(pincode)
+            except (ValueError, TypeError):
+                feeder.pincode = None
+        else:
+            feeder.pincode = None
+        
+        feeder.country = request.POST.get('country', 'India')
+        
+        # Handle date field
+        installation_date = request.POST.get('installation_date')
+        if installation_date and installation_date.strip():
+            feeder.installation_date = installation_date
+        else:
+            feeder.installation_date = None
+            
+        feeder.remarks = request.POST.get('remarks', '')
+        feeder.software_amount = request.POST.get('software_amount', '') or 0
+        
+        # Handle total_cost field
+        total_cost = request.POST.get('total_cost')
+        feeder.module_charges = total_cost or 0
+        
+        # Handle modules
+        feeder.modules = ', '.join(request.POST.getlist('modules'))
+        feeder.more_modules = ', '.join(request.POST.getlist('more_modules'))
+
+        # Re-save module prices
+        new_prices = {
+            m: request.POST.get(f'price_{m}', '0')
+            for m in request.POST.getlist('more_modules')
+        }
+        feeder.module_prices = json.dumps(new_prices)
+        
+        try:
+            feeder.save()
+            return redirect('feeder_list')
+        except Exception as e:
+            print(f"Error saving feeder: {e}")
+
+    business_types = BusinessType.objects.all()
+    branches = Branch.objects.all()
+
+    return render(request, 'feeder_edit.html', {
+        'feeder': feeder,
+        'selected_modules': selected_modules,
+        'price_dict': price_dict,
+        'business_types': business_types,
+        'branches': branches,
+        'user_branch': user_branch,
+        'user_branch_id': user_branch_id,
+        'is_branch_restricted': is_branch_restricted,
+    })
 # ----------  EDIT  ----------
 def feeder_edit(request, feeder_id):
     feeder = get_object_or_404(Feeder, id=feeder_id)
+
+    # ------------------------------------------------------------------
+    # Get the logged-in user's branch (similar to clients view)
+    # ------------------------------------------------------------------
+    try:
+        custom_user = User.objects.get(userid=request.user.username)
+        user_branch = custom_user.branch if custom_user.branch else None
+        user_branch_id = custom_user.branch.id if custom_user.branch else None
+    except User.DoesNotExist:
+        user_branch = None
+        user_branch_id = None
+
+    # Check if user is branch restricted (not IMC/SYSMAC)
+    is_branch_restricted = user_branch and user_branch.name not in ['IMC', 'SYSMAC']
 
     selected_modules = [m.strip() for m in (feeder.more_modules or '').split(',') if m.strip()]
     try:
@@ -1879,15 +2042,23 @@ def feeder_edit(request, feeder_id):
                 feeder.nature_id = None
         else:
             feeder.nature_id = None
-            
-        branch_id = request.POST.get('branch')
-        if branch_id and branch_id.strip():
-            try:
-                feeder.branch_id = int(branch_id)
-            except (ValueError, TypeError):
-                feeder.branch_id = None
+        
+        # ------------------------------------------------------------------
+        # Handle branch selection with restriction
+        # ------------------------------------------------------------------
+        if is_branch_restricted:
+            # For restricted users, keep their original branch or use their user branch
+            feeder.branch_id = user_branch_id
         else:
-            feeder.branch_id = None
+            # For IMC/SYSMAC users, use the selected branch
+            branch_id = request.POST.get('branch')
+            if branch_id and branch_id.strip():
+                try:
+                    feeder.branch_id = int(branch_id)
+                except (ValueError, TypeError):
+                    feeder.branch_id = None
+            else:
+                feeder.branch_id = None
         
         # Handle numeric fields
         no_of_system = request.POST.get('no_of_system')
@@ -1953,6 +2124,9 @@ def feeder_edit(request, feeder_id):
         'price_dict': price_dict,
         'business_types': business_types,
         'branches': branches,
+        'user_branch': user_branch,
+        'user_branch_id': user_branch_id,
+        'is_branch_restricted': is_branch_restricted,
     })
 
 

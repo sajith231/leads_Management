@@ -185,12 +185,24 @@ input[name="name"]{text-transform:uppercase}
           </div>
 
           <div class="form-group"><label>Branch</label>
-            <select name="branch">
-              <option value="">-- Select Branch --</option>
-              {% for branch in branches %}
-                <option value="{{ branch.id }}">{{ branch.name }}</option>
-              {% endfor %}
+            <select name="branch" {% if is_branch_restricted %}disabled{% endif %}>
+              <!-- For unrestricted users (IMC/SYSMAC) -->
+              {% if not is_branch_restricted %}
+                <option value="">-- Select Branch --</option>
+                {% for branch in branches %}
+                  <option value="{{ branch.id }}">{{ branch.name }}</option>
+                {% endfor %}
+              
+              <!-- For restricted users -->
+              {% else %}
+                <option value="{{ user_branch_id }}" selected>{{ user_branch.name }}</option>
+              {% endif %}
             </select>
+
+            <!-- Hidden field for restricted users to maintain branch selection -->
+            {% if is_branch_restricted %}
+              <input type="hidden" name="branch" value="{{ user_branch_id }}">
+            {% endif %}
           </div>
 
          
