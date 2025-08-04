@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     'app1',
     'app2',  # 👈 Add this line
     'app3',
+    'app4',
     'flutter',
     'django.contrib.humanize',
     
@@ -135,9 +136,9 @@ CKEDITOR_CONFIGS = {
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'leading_management',
+        'NAME': 'sajith',
         'USER': 'postgres',
-        'PASSWORD': 'info@imc',
+        'PASSWORD': 'sajith@2003',
         'HOST': 'localhost',
         'PORT': '5432',
     }

@@ -26,6 +26,7 @@ urlpatterns = [
     path('', include('app1.urls')),
     path('app2/', include('app2.urls')),
     path('app3/', include('app3.urls')),
+    path('app4/', include('app4.urls')),
     path('flutter/', include('flutter.urls')),
     path('edit-field/<int:field_id>/', views.edit_field, name='edit_field'),
     path('feeder/', include('app2.urls')), 
