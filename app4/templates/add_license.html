@@ -1,0 +1,233 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+  body {
+    background: #f5f5f5;
+    min-height: 100vh;
+    color: #222;
+  }
+
+  .main-container {
+    background: #ffffff;
+    border-radius: 15px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+    padding: 2rem;
+    margin: 2rem auto;
+  }
+
+  .page-header {
+    background: #eaeaea;
+    color: #111;
+    padding: 2rem;
+    border-radius: 10px;
+    margin-bottom: 2rem;
+  }
+
+  .page-header h4 {
+    margin: 0;
+    font-weight: 600;
+    font-size: 1.8rem;
+  }
+
+  .add-btn {
+    background: #444;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 30px;
+    color: white;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.3s ease;
+  }
+
+  .add-btn:hover {
+    background: #111;
+    color: white;
+  }
+
+  .search-container {
+    margin-bottom: 1.5rem;
+  }
+
+  .search-input {
+    border: 1px solid #bbb;
+    border-radius: 30px;
+    padding: 10px 16px;
+    background: #fff;
+  }
+
+  .search-input:focus {
+    border-color: #444;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(68, 68, 68, 0.2);
+  }
+
+  .modern-table {
+    background: #fff;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+  }
+
+  .modern-table thead {
+    background: #444;
+    color: white;
+  }
+
+  .modern-table thead th {
+    padding: 1rem;
+    font-size: 0.95rem;
+    text-transform: uppercase;
+    font-weight: 600;
+    border-bottom: none;
+  }
+
+  .modern-table tbody tr:hover {
+    background: #f0f0f0;
+  }
+
+  .modern-table tbody td {
+    padding: 1rem;
+    border-top: 1px solid #eee;
+  }
+
+  .action-btn {
+    background: #555;
+    color: white;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: 0.3s;
+  }
+
+  .action-btn:hover {
+    background: #111;
+    transform: scale(1.1);
+  }
+
+  .badge-counter {
+    background: #333;
+    color: white;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+  }
+
+  .pagination .page-link {
+    color: #222;
+    border: none;
+    padding: 8px 14px;
+    margin: 0 2px;
+    border-radius: 30px;
+    background: #e2e2e2;
+  }
+
+  .pagination .page-item.active .page-link {
+    background: #444;
+    color: white;
+  }
+
+  .pagination .page-link:hover {
+    background: #111;
+    color: white;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 2rem;
+    color: #888;
+  }
+
+  .modal-content {
+    border-radius: 12px;
+    border: none;
+  }
+
+  .modal-header {
+    background: #444;
+    color: white;
+    border-radius: 12px 12px 0 0;
+  }
+
+  .modal-title {
+    font-weight: 600;
+  }
+
+  .license-content {
+    background: #f9f9f9;
+    padding: 1rem;
+    font-family: monospace;
+    white-space: pre-wrap;
+    border-radius: 10px;
+    border: 1px solid #ddd;
+  }
+
+  .detail-label {
+    font-weight: 600;
+    color: #333;
+  }
+
+  .detail-value {
+    background: #f1f1f1;
+    padding: 0.5rem 1rem;
+    border-left: 4px solid #444;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+  }
+
+  .modal-footer .btn {
+    border-radius: 30px;
+    padding: 10px 20px;
+    font-weight: 600;
+    border: none;
+  }
+
+  .btn-secondary {
+    background: #999;
+    color: white;
+  }
+
+  .btn-success {
+    background: #333;
+    color: white;
+  }
+
+  .btn-warning {
+    background: #666;
+    color: white;
+  }
+</style>
+
+<div class="container">
+  <h2 class="mb-4">Add License</h2>
+  <form method="post" enctype="multipart/form-data" class="bg-white p-4 rounded shadow-sm">
+    {% csrf_token %}
+    
+    <div class="mb-3">
+      <label for="name" class="form-label fw-bold fs-5">Name:</label>
+      <input type="text" name="name" id="name" class="form-control" required>
+    </div>
+    
+    <div class="mb-3">
+      <label for="branch" class="form-label fw-bold fs-5">Branch:</label>
+      <input type="text" name="branch" id="branch" class="form-control" required>
+    </div>
+    
+    <div class="mb-3">
+      <label for="license_file" class="form-label fw-bold fs-5">License File (.txt only):</label>
+      <input type="file" name="license_file" id="license_file" class="form-control" accept=".txt" required>
+    </div>
+    
+    <button type="submit" class="btn btn-success">Upload License</button>
+  </form>
+
+  <div class="mt-3 d-flex justify-content-between">
+    <a href="{% url 'license_type' %}" class="btn" style="background-color: #444; color: white;">View All Licenses</a>
+    <button class="btn btn-secondary" onclick="history.back()">Back</button>
+  </div>
+</div>
+
+{% endblock %}

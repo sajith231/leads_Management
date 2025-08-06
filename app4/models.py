@@ -1,9 +1,12 @@
 from django.db import models
 
-# Create your models here.
-from django.urls import path
-from . import views
+class License(models.Model):
+    name = models.CharField(max_length=100)
+    branch = models.CharField(max_length=100)
+    license_key = models.TextField()
 
-urlpatterns = [
-    path('lecence-type/', views.lecence, name='lecence_type')
-]
+    def __str__(self):
+        return f"{self.name} - {self.branch}"
+
+class Printer(models.Model):
+    name = models.CharField(max_length=100)
