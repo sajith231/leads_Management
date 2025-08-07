@@ -378,7 +378,9 @@
           <th>Installation Date</th>
           <th>Software Amount</th>
           <th>More Modules</th>
+          {% if 'feeder_status' in allowed_menus %}
           <th>Status</th>
+          {% endif %}
           <th>Actions</th>
         </tr>
       </thead>
@@ -407,6 +409,7 @@
               <span class="text-muted">None</span>
             {% endif %}
           </td>
+          {% if 'feeder_status' in allowed_menus %}
           <td>
             <div class="status-dropdown">
               <button class="status-btn {{ feeder.get_status_display_class }}" 
@@ -420,8 +423,8 @@
                         data-status="pending">Pending</button>
                 <button type="button" onclick="updateStatus({{ feeder.id }}, 'accepted')" 
                         data-status="accepted">Accepted</button>
-<button type="button" onclick="updateStatus({{ feeder.id }}, 'key_uploaded')" 
-                        data-status="accepted">Key Uploaded</button>
+                <button type="button" onclick="updateStatus({{ feeder.id }}, 'key_uploaded')" 
+                        data-status="key_uploaded">Key Uploaded</button>
                 <button type="button" onclick="updateStatus({{ feeder.id }}, 'rejected')" 
                         data-status="rejected">Rejected</button>
                 <button type="button" onclick="updateStatus({{ feeder.id }}, 'under_process')" 
@@ -429,6 +432,13 @@
               </div>
             </div>
           </td>
+          {% else %}
+          <td>
+            <span class="status-btn {{ feeder.get_status_display_class }}">
+              {{ feeder.get_status_display }}
+            </span>
+          </td>
+          {% endif %}
           <td class="actions">
             <a href="{% url 'feeder_edit' feeder.id %}" class="btn btn-edit">Edit</a>
             <form method="post" action="{% url 'feeder_delete' feeder.id %}" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this feeder?')">
