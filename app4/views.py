@@ -80,3 +80,10 @@ def license_delete(request, license_id):
     if request.method == 'POST':
         license_obj.delete()
     return redirect('license_type')
+
+
+
+
+
+
+# AMAL SHAJI
