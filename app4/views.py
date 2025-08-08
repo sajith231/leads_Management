@@ -85,5 +85,3 @@ def license_delete(request, license_id):
 
 
 
-
-# AMAL SHAJI
