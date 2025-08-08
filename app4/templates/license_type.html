@@ -71,6 +71,35 @@
     box-shadow: 0 0 0 2px rgba(68, 68, 68, 0.2);
   }
 
+  /* Branch Filter Styling */
+  .branch-filter {
+    border: 1px solid #bbb;
+    border-radius: 30px;
+    padding: 10px 16px;
+    background: #fff;
+    width: 100%;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 18px;
+    padding-right: 40px;
+    cursor: pointer;
+  }
+
+  .branch-filter:focus {
+    border-color: #444;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(68, 68, 68, 0.2);
+  }
+
+  .branch-filter:hover {
+    border-color: #999;
+    background-color: #f9f9f9;
+  }
+
   .modern-table {
     background: #fff;
     border-radius: 10px;
@@ -281,7 +310,7 @@
     flex-direction: column-reverse;
   }
 
-  .search-container .col-md-6 {
+  .search-container .col-md-4, .search-container .col-md-6 {
     margin-bottom: 1rem;
   }
 
@@ -500,13 +529,23 @@
 
     <div class="search-container">
       <div class="row">
-        <div class="col-md-6">
+        <div class="col-md-4">
           <div class="d-flex align-items-center">
             <span class="badge-counter me-3" id="totalCounter">Total: {{ licenses|length }}</span>
             <span class="badge-counter" id="showingCounter">Showing: {{ licenses|length }}</span>
           </div>
         </div>
-        <div class="col-md-6">
+        <div class="col-md-4">
+          <div class="position-relative">
+            <select class="branch-filter" id="branchFilter">
+  <option value="">All Branches</option>
+  {% for branch in branches %}
+    <option value="{{ branch.name|lower }}">{{ branch.name }}</option>
+  {% endfor %}
+</select>
+          </div>
+        </div>
+        <div class="col-md-4">
           <div class="position-relative">
             <input type="text" class="form-control search-input" id="searchInput" placeholder="Search licenses...">
             <i class="bi bi-search position-absolute top-50 end-0 translate-middle-y me-3"></i>
@@ -533,10 +572,13 @@
         <tr class="license-row" data-branch="{{ license.branch|lower }}" data-filename="{{ license.name|lower }}">
           <td><span class="badge-counter">{{ forloop.counter }}</span></td>
           <td>
-            <div class="d-flex align-items-center">
-              <i class="bi bi-file-earmark-text text-success me-2"></i>
-              <span class="file-name-block">{{ license.name }}</span>
-            </div>
+             <div class="d-flex align-items-start flex-column">
+    <div class="d-flex align-items-center">
+      <i class="bi bi-file-earmark-text text-success me-2"></i>
+      <span class="file-name-block">{{ license.name }}</span>
+    </div>
+    <small class="text-muted ms-4">📅 Created: {{ license.created_at|date:"d-m-y" }}</small>
+  </div>
           </td>
           <td>
             <div class="d-flex align-items-center">
@@ -545,13 +587,19 @@
             </div>
           </td>
 
-          <!-- View Button -->
-          <td class="text-center">
-            <button class="action-btn view-btn" title="View License" data-bs-toggle="modal" data-bs-target="#licenseModal" 
-                    onclick="showLicenseDetails('{{ license.name|escapejs }}', '{{ license.branch|escapejs }}', '{{ license.license_key|escapejs }}', {{ license.id }})">
-              <i class="bi bi-eye-fill"></i>
-            </button>
-          </td>
+         <!-- View Button -->
+<td class="text-center">
+  <button class="action-btn view-btn" title="View License" data-bs-toggle="modal" data-bs-target="#licenseModal" 
+    onclick="showLicenseDetails(
+      '{{ license.name|escapejs }}',
+      '{{ license.branch|escapejs }}',
+      '{{ license.license_key|escapejs }}',
+      {{ license.id }},
+      '{{ license.created_at|date:"d-m-y" }}'
+    )">
+    <i class="bi bi-eye-fill"></i>
+  </button>
+</td>
 
           <!-- Download Button -->
           <td class="text-center">
@@ -597,10 +645,15 @@
       <div class="license-card license-row" data-branch="{{ license.branch|lower }}" data-filename="{{ license.name|lower }}">
         <div class="card-header">
           <div class="card-title">
+            
             <div class="card-filename">
-              <i class="bi bi-file-earmark-text"></i>
-              <span class="file-name-block">{{ license.name }}</span>
-            </div>
+  <i class="bi bi-file-earmark-text"></i>
+  <span class="file-name-block">{{ license.name }}</span>
+</div>
+<div class="ms-4 text-muted" style="font-size: 0.8rem;">
+  📅 Created: {{ license.created_at|date:"d-m-y " }}
+</div>
+
             <div class="card-branch">
               <i class="bi bi-building"></i>
               <strong>{{ license.branch }}</strong>
@@ -612,9 +665,15 @@
         <div class="card-actions">
           <!-- View Button -->
           <button class="action-btn view-btn" title="View License" data-bs-toggle="modal" data-bs-target="#licenseModal" 
-                  onclick="showLicenseDetails('{{ license.name|escapejs }}', '{{ license.branch|escapejs }}', '{{ license.license_key|escapejs }}', {{ license.id }})">
-            <i class="bi bi-eye-fill"></i>
-          </button>
+  onclick="showLicenseDetails(
+    '{{ license.name|escapejs }}',
+    '{{ license.branch|escapejs }}',
+    '{{ license.license_key|escapejs }}',
+    {{ license.id }},
+    '{{ license.created_at|date:"d-m-y" }}'
+  )">
+  <i class="bi bi-eye-fill"></i>
+</button>
 
           <!-- Download Button -->
           <a href="{% url 'license_download' license.id %}" class="action-btn download-btn" title="Download License">
@@ -685,11 +744,16 @@
             <div class="detail-label">🏢 Branch</div>
             <div class="detail-value" id="modalLicenseBranch"></div>
           </div>
+          <div class="mb-3">
+  <div class="detail-label">📅 Created Date</div>
+  <div class="detail-value" id="modalLicenseCreated"></div>
+</div>
         </div>
         <div class="mb-3">
           <div class="detail-label">📄 License Content</div>
           <pre class="license-content" id="modalLicenseContent"></pre>
         </div>
+        
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
@@ -707,143 +771,173 @@
 </div>
 
 <script>
-// Global variables for pagination and search
+// Global variables
 let currentPage = 1;
-let itemsPerPage = 10; // Changed to 10 items per page
-let allRows = [];
-let filteredRows = [];
+let itemsPerPage = 10;
+let allDesktopRows = [];
+let allMobileCards = [];
+let filteredDesktopRows = [];
+let filteredMobileCards = [];
 
-// Initialize when page loads
-document.addEventListener('DOMContentLoaded', function() {
-  console.log('Page loaded, initializing...');
+document.addEventListener('DOMContentLoaded', function () {
+  // Get desktop table rows and mobile cards separately
+  allDesktopRows = Array.from(document.querySelectorAll('.modern-table tbody .license-row'));
+  allMobileCards = Array.from(document.querySelectorAll('.mobile-card-container .license-card'));
   
-  // Get all license rows (both desktop table and mobile cards)
-  allRows = Array.from(document.querySelectorAll('.license-row'));
-  filteredRows = [...allRows]; // Copy array
-  
-  console.log(`Found ${allRows.length} total rows`);
-  
-  // Initialize pagination and display
-  if (allRows.length > 0) {
+  // Initialize filtered arrays
+  filteredDesktopRows = [...allDesktopRows];
+  filteredMobileCards = [...allMobileCards];
+
+  // Initial setup
+  if (allDesktopRows.length > 0 || allMobileCards.length > 0) {
     updatePagination();
     showPage(1);
   }
-  
-  // Setup search functionality
+
   setupSearch();
+  setupBranchFilter();
+  
+  // Handle window resize
+  window.addEventListener('resize', handleViewChange);
+  
+  // Initial view setup
+  handleViewChange();
 });
 
-// Setup search functionality
-function setupSearch() {
-  const searchInput = document.getElementById('searchInput');
-  if (!searchInput) {
-    console.error('Search input not found');
-    return;
+function handleViewChange() {
+  const isMobile = window.innerWidth <= 768;
+  const desktopTable = document.querySelector('.modern-table');
+  const mobileContainer = document.querySelector('.mobile-card-container');
+  
+  if (isMobile) {
+    if (desktopTable) desktopTable.style.display = 'none';
+    if (mobileContainer) mobileContainer.style.display = 'block';
+  } else {
+    if (desktopTable) desktopTable.style.display = 'table';
+    if (mobileContainer) mobileContainer.style.display = 'none';
   }
   
-  // Add search event listener with debouncing
+  // Refresh current page
+  showPage(currentPage);
+}
+
+function setupSearch() {
+  const searchInput = document.getElementById('searchInput');
+  if (!searchInput) return;
+
   let searchTimeout;
-  searchInput.addEventListener('input', function() {
+  searchInput.addEventListener('input', function () {
     clearTimeout(searchTimeout);
-    searchTimeout = setTimeout(() => {
-      performSearch(this.value);
-    }, 300); // 300ms debounce
+    searchTimeout = setTimeout(() => performFilter(), 300);
   });
 }
 
-// Perform search
-function performSearch(searchTerm) {
-  const term = searchTerm.toLowerCase().trim();
-  console.log(`Searching for: "${term}"`);
+function setupBranchFilter() {
+  const branchFilter = document.getElementById('branchFilter');
+  if (!branchFilter) return;
+
+  branchFilter.addEventListener('change', function () {
+    performFilter();
+  });
+}
+
+function performFilter() {
+  const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
+  const selectedBranch = document.getElementById('branchFilter').value;
+
+  // Filter desktop rows
+  filteredDesktopRows = allDesktopRows.filter(row => {
+    const branch = row.getAttribute('data-branch') || '';
+    const filename = row.getAttribute('data-filename') || '';
+    const searchMatch = searchTerm === '' || branch.includes(searchTerm) || filename.includes(searchTerm);
+    const branchMatch = selectedBranch === '' || branch === selectedBranch.toLowerCase();
+    return searchMatch && branchMatch;
+  });
+
+  // Filter mobile cards
+  filteredMobileCards = allMobileCards.filter(card => {
+    const branch = card.getAttribute('data-branch') || '';
+    const filename = card.getAttribute('data-filename') || '';
+    const searchMatch = searchTerm === '' || branch.includes(searchTerm) || filename.includes(searchTerm);
+    const branchMatch = selectedBranch === '' || branch === selectedBranch.toLowerCase();
+    return searchMatch && branchMatch;
+  });
+
+  // Handle no results display
+  const noResultsDiv = document.getElementById('noResults');
+  const hasResults = filteredDesktopRows.length > 0 || filteredMobileCards.length > 0;
   
-  if (term === '') {
-    // Show all rows
-    filteredRows = [...allRows];
-    document.getElementById('noResults').style.display = 'none';
-    document.querySelector('.modern-table').style.display = 'table';
-    document.querySelector('.mobile-card-container').style.display = 'block';
+  if (!hasResults) {
+    noResultsDiv.style.display = 'block';
+    document.querySelector('.modern-table').style.display = 'none';
+    document.querySelector('.mobile-card-container').style.display = 'none';
   } else {
-    // Filter rows based on search term
-    filteredRows = allRows.filter(row => {
-      const branch = row.getAttribute('data-branch') || '';
-      const filename = row.getAttribute('data-filename') || '';
-      const match = branch.includes(term) || filename.includes(term);
-      console.log(`Row: ${filename} - Match: ${match}`);
-      return match;
-    });
-    
-    // Show/hide no results message
-    const noResultsDiv = document.getElementById('noResults');
-    if (filteredRows.length === 0) {
-      noResultsDiv.style.display = 'block';
-      document.querySelector('.modern-table').style.display = 'none';
-      document.querySelector('.mobile-card-container').style.display = 'none';
-    } else {
-      noResultsDiv.style.display = 'none';
-      document.querySelector('.modern-table').style.display = 'table';
-      document.querySelector('.mobile-card-container').style.display = 'block';
-    }
+    noResultsDiv.style.display = 'none';
+    handleViewChange();
   }
-  
-  // Update counters
+
+  // Update counter
+  const isMobile = window.innerWidth <= 768;
+  const currentFilteredCount = isMobile ? filteredMobileCards.length : filteredDesktopRows.length;
   const showingCounter = document.getElementById('showingCounter');
   if (showingCounter) {
-    const visibleCount = Math.min(filteredRows.length, itemsPerPage);
-    showingCounter.textContent = `Showing: ${visibleCount}`;
+    showingCounter.textContent = `Showing: ${Math.min(currentFilteredCount, itemsPerPage)}`;
   }
-  
-  // Reset to page 1 and update pagination
+
   currentPage = 1;
   updatePagination();
   showPage(1);
-  
-  console.log(`Search complete. Found ${filteredRows.length} results`);
 }
 
-// Pagination functionality
 function showPage(page) {
-  console.log(`Showing page ${page}`);
   currentPage = page;
-  
-  // Hide all rows first (both desktop and mobile)
-  allRows.forEach(row => {
+  const isMobile = window.innerWidth <= 768;
+
+  // Hide all desktop rows
+  allDesktopRows.forEach(row => {
     row.style.display = 'none';
-    row.classList.add('hidden-row');
   });
+
+  // Hide all mobile cards
+  allMobileCards.forEach(card => {
+    card.style.display = 'none';
+  });
+
+  // Determine which set to use
+  const currentFiltered = isMobile ? filteredMobileCards : filteredDesktopRows;
   
-  // If no filtered results, show empty state
-  if (filteredRows.length === 0) {
-    const emptyState = document.getElementById('noResults');
-    if (emptyState) {
-      emptyState.style.display = 'block';
-    }
+  if (currentFiltered.length === 0) {
     updatePaginationInfo(0, 0, 0);
     return;
   }
-  
-  // Calculate start and end indices
+
+  // Calculate pagination
   const startIndex = (page - 1) * itemsPerPage;
-  const endIndex = Math.min(startIndex + itemsPerPage, filteredRows.length);
-  
-  // Show rows for current page
-  const rowsToShow = filteredRows.slice(startIndex, endIndex);
-  console.log(`Showing ${rowsToShow.length} rows (${startIndex + 1} to ${endIndex})`);
-  
-  rowsToShow.forEach((row, index) => {
-    row.style.display = '';
-    row.classList.remove('hidden-row');
+  const endIndex = Math.min(startIndex + itemsPerPage, currentFiltered.length);
+  const itemsToShow = currentFiltered.slice(startIndex, endIndex);
+
+  // Show items for current page and update serial numbers
+  itemsToShow.forEach((item, index) => {
+    item.style.display = '';
     
-    // Update serial numbers for current page - show actual position in filtered results
-    const serialCell = row.querySelector('.badge-counter, .card-serial');
-    if (serialCell) {
-      serialCell.textContent = startIndex + index + 1;
+    const serialNumber = startIndex + index + 1;
+    
+    if (isMobile) {
+      // Update mobile card serial number
+      const mobileSerial = item.querySelector('.card-serial');
+      if (mobileSerial) {
+        mobileSerial.textContent = serialNumber;
+      }
+    } else {
+      // Update desktop table serial number
+      const desktopSerial = item.querySelector('td .badge-counter');
+      if (desktopSerial) {
+        desktopSerial.textContent = serialNumber;
+      }
     }
   });
-  
-  // Update pagination info
-  updatePaginationInfo(startIndex + 1, endIndex, filteredRows.length);
-  
-  // Update active page styling
+
+  updatePaginationInfo(startIndex + 1, endIndex, currentFiltered.length);
   updateActivePage(page);
 }
 
@@ -856,21 +950,19 @@ function updatePaginationInfo(start, end, total) {
       paginationInfo.textContent = `Showing ${start}-${end} of ${total} license${total !== 1 ? 's' : ''}`;
     }
   }
-  
-  // Update showing counter
+
   const showingCounter = document.getElementById('showingCounter');
   if (showingCounter) {
-    showingCounter.textContent = `Showing: ${end - start + 1}`;
+    const showing = total === 0 ? 0 : (end - start + 1);
+    showingCounter.textContent = `Showing: ${showing}`;
   }
 }
 
 function updateActivePage(page) {
-  // Remove active class from all page items
   document.querySelectorAll('.pagination .page-item').forEach(item => {
     item.classList.remove('active');
   });
-  
-  // Add active class to current page
+
   const pageButton = document.querySelector(`[data-page="${page}"]`);
   if (pageButton && pageButton.parentElement) {
     pageButton.parentElement.classList.add('active');
@@ -878,52 +970,47 @@ function updateActivePage(page) {
 }
 
 function updatePagination() {
-  const totalPages = Math.ceil(filteredRows.length / itemsPerPage);
+  const isMobile = window.innerWidth <= 768;
+  const currentFiltered = isMobile ? filteredMobileCards : filteredDesktopRows;
+  const totalPages = Math.ceil(currentFiltered.length / itemsPerPage);
   const pagination = document.getElementById('paginationControls');
   
-  console.log(`Updating pagination: ${totalPages} total pages for ${filteredRows.length} items`);
-  
-  if (!pagination) {
-    console.error('Pagination controls not found');
-    return;
-  }
-  
-  // Clear existing pagination
+  if (!pagination) return;
+
   pagination.innerHTML = '';
   
+  // Hide pagination if no items or only one page
   if (totalPages <= 1) {
     pagination.style.display = 'none';
     return;
   }
   
   pagination.style.display = 'flex';
-  
+
   // Previous button
   const prevItem = document.createElement('li');
   prevItem.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
-  prevItem.innerHTML = '<a class="page-link" href="#" onclick="return false;">Previous</a>';
+  prevItem.innerHTML = '<a class="page-link" href="#" tabindex="-1">Previous</a>';
   if (currentPage > 1) {
-    prevItem.addEventListener('click', (e) => {
+    prevItem.addEventListener('click', e => {
       e.preventDefault();
       showPage(currentPage - 1);
-      return false;
     });
   }
   pagination.appendChild(prevItem);
-  
-  // Determine page range to show
-  const maxVisiblePages = window.innerWidth <= 768 ? 3 : 5; // Fewer pages on mobile
+
+  // Page number buttons
+  const maxVisiblePages = 5;
   let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
   let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
   
-  // Adjust start page if we don't have enough pages at the end
   if (endPage - startPage + 1 < maxVisiblePages) {
     startPage = Math.max(1, endPage - maxVisiblePages + 1);
   }
-  
-   // Add first page and ellipsis if needed
+
+  // First page and ellipsis if needed
   if (startPage > 1) {
-    addPageButton(pagination, 1);
+    addPageButton(pagination, 1, totalPages);
     if (startPage > 2) {
       const ellipsis = document.createElement('li');
       ellipsis.className = 'page-item disabled';
@@ -931,13 +1018,13 @@ function updatePagination() {
       pagination.appendChild(ellipsis);
     }
   }
-  
-  // Page number buttons
+
+  // Visible page numbers
   for (let i = startPage; i <= endPage; i++) {
-    addPageButton(pagination, i);
+    addPageButton(pagination, i, totalPages);
   }
-  
-  // Add ellipsis and last page if needed
+
+  // Last page and ellipsis if needed
   if (endPage < totalPages) {
     if (endPage < totalPages - 1) {
       const ellipsis = document.createElement('li');
@@ -945,55 +1032,41 @@ function updatePagination() {
       ellipsis.innerHTML = '<span class="page-link">...</span>';
       pagination.appendChild(ellipsis);
     }
-    addPageButton(pagination, totalPages);
+    addPageButton(pagination, totalPages, totalPages);
   }
-  
+
   // Next button
   const nextItem = document.createElement('li');
   nextItem.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
-  nextItem.innerHTML = '<a class="page-link" href="#" onclick="return false;">Next</a>';
+  nextItem.innerHTML = '<a class="page-link" href="#">Next</a>';
   if (currentPage < totalPages) {
-    nextItem.addEventListener('click', (e) => {
+    nextItem.addEventListener('click', e => {
       e.preventDefault();
       showPage(currentPage + 1);
-      return false;
     });
   }
   pagination.appendChild(nextItem);
 }
 
-function addPageButton(pagination, pageNum) {
+function addPageButton(pagination, pageNum, totalPages) {
   const pageItem = document.createElement('li');
   pageItem.className = `page-item ${pageNum === currentPage ? 'active' : ''}`;
-  pageItem.innerHTML = `<a class="page-link" href="#" data-page="${pageNum}" onclick="return false;">${pageNum}</a>`;
-  pageItem.addEventListener('click', (e) => {
+  pageItem.innerHTML = `<a class="page-link" href="#" data-page="${pageNum}">${pageNum}</a>`;
+  pageItem.addEventListener('click', e => {
     e.preventDefault();
     showPage(pageNum);
-    return false;
   });
   pagination.appendChild(pageItem);
 }
 
-function showLicenseDetails(name, branch, content, licenseId) {
-  // Populate modal with license details
+function showLicenseDetails(name, branch, content, licenseId,createdAt) {
   document.getElementById('modalLicenseName').textContent = name;
   document.getElementById('modalLicenseBranch').textContent = branch;
   document.getElementById('modalLicenseContent').textContent = content;
-  
-  // Update action buttons with correct URLs
+   document.getElementById('modalLicenseCreated').textContent = createdAt;
+   
   document.getElementById('modalDownloadBtn').href = `/app4/license-download/${licenseId}/`;
   document.getElementById('modalEditBtn').href = `/app4/license-edit/${licenseId}/`;
-}
-
-// Debug function to test pagination
-function debugPagination() {
-  console.log('=== PAGINATION DEBUG INFO ===');
-  console.log(`Total licenses: ${allRows.length}`);
-  console.log(`Filtered licenses: ${filteredRows.length}`);
-  console.log(`Items per page: ${itemsPerPage}`);
-  console.log(`Current page: ${currentPage}`);
-  console.log(`Total pages: ${Math.ceil(filteredRows.length / itemsPerPage)}`);
-  console.log('================================');
 }
 </script>
 

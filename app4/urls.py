@@ -7,4 +7,5 @@ urlpatterns = [
     path('license-download/<int:license_id>/', views.license_download, name='license_download'),
     path('license-edit/<int:license_id>/', views.license_edit, name='license_edit'),
     path('license-delete/<int:license_id>/', views.license_delete, name='license_delete'),
+    
 ]
