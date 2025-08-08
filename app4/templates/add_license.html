@@ -211,10 +211,16 @@
       <input type="text" name="name" id="name" class="form-control" required>
     </div>
     
-    <div class="mb-3">
-      <label for="branch" class="form-label fw-bold fs-5">Branch:</label>
-      <input type="text" name="branch" id="branch" class="form-control" required>
-    </div>
+   <div class="mb-3">
+  <label for="branch" class="form-label fw-bold fs-5">Branch:</label>
+  <select name="branch" id="branch" class="form-control" required>
+  <option value="">-- Select Branch --</option>
+  {% for branch in branches %}
+    <option value="{{ branch.id }}">{{ branch.name }}</option>  <!-- ✅ CORRECT -->
+  {% endfor %}
+</select>
+</div>
+
     
     <div class="mb-3">
       <label for="license_file" class="form-label fw-bold fs-5">License File (.txt only):</label>
