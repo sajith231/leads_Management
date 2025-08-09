@@ -1,0 +1,11 @@
+
+use library_db
+create table library(book_id int,titile varchar(100),author varchar(100),genre varchar(50),publication_year int,available_copies int)
+create database library_db
+insert INTO library values(1,'Harry Potter','J.K Rowling','Fantacy',2000,4)
+insert INTO library values(2,'War and Peace','Leo Tolstoy','drama',1868,16)
+insert INTO library values(3,'Gone Girl','Gillian FLynn','mystery',1868,16)
+update library_db.library set available_copies=20 where titile="War and Peace";
+alter table library add ISBN varchar(20);
+SELECT * FROM library_db.library where publication_year BETWEEN 2010 and 2010;
+SELECT * FROM library_db.library where genre='mystery';

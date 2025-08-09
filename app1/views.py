@@ -4985,6 +4985,10 @@ def configure_user_menu(request, user_id):
         {'id': 'show_clients', 'name': 'Clients', 'icon': 'fas fa-users'},
         {'id': 'feeder_list', 'name': 'Feeder', 'icon': 'fas fa-tools'},
         {'id': 'feeder_status', 'name': 'Feeder Status', 'icon': 'fas fa-tools'},
+        {'id': 'license_type', 'name': 'License Key', 'icon': 'fas fa-clipboard-check'},
+        {'id': 'add_license', 'name': 'Add License', 'icon': 'fas fa-plus-circle'},
+        {'id': 'license_edit', 'name': 'Edit License', 'icon': 'fas fa-edit'},
+        {'id': 'license_delete', 'name': 'Delete License', 'icon': 'fas fa-trash'},
     ]
 },
 {

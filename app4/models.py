@@ -9,10 +9,17 @@ from app1.models import Branch
 class License(models.Model):
     name = models.CharField(max_length=255)
     branch = models.ForeignKey(Branch, on_delete=models.CASCADE)
+    # store base64-encoded file bytes here
     license_key = models.TextField()
+    # store original uploaded filename (optional, useful for download)
+    file_name = models.CharField(max_length=255, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
     def __str__(self):
-        return f"{self.name} ({self.branch.name})"
+        # show file_name if present, else name
+        display = self.file_name if self.file_name else self.name
+        return f"{display} ({self.branch.name})"
+
 
 
 class Printer(models.Model):

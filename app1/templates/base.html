@@ -527,11 +527,13 @@
 
     {% if 'feeder_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
     <a href="{% url 'feeder_list' %}"><i class="fas fa-tools" style="margin-left: 5px;"></i> Feeder</a>
-     <a href="{% url 'license_type' %}">
-        <i class="fas fa-clipboard-check" style="margin-right: 5px;"></i>
-        license Key
-        </a>
+    {% endif %}
 
+    {% if 'license_type' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+    <a href="{% url 'license_type' %}">
+        <i class="fas fa-clipboard-check" style="margin-right: 5px;"></i>
+        License Key
+    </a>
     {% endif %}
 </div>
 {% endif %}
@@ -808,7 +810,7 @@
             </div>
             {% endif %}
 
-            {% if 'feeder_list' in allowed_menus or 'show_clients' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+            {% if 'feeder_list' in allowed_menus or 'show_clients' in allowed_menus or 'license_type' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
 <div class="mainmenu" onclick="togglePlanetMenu()">
     <span>
         <i class="fas fa-globe"></i>
@@ -823,11 +825,13 @@
 
     {% if 'feeder_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
     <a href="{% url 'feeder_list' %}"><i class="fas fa-tools" style="margin-left: 5px;"></i> Feeder</a>
+    {% endif %}
+
+    {% if 'license_type' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
     <a href="{% url 'license_type' %}">
         <i class="fas fa-clipboard-check" style="margin-right: 5px;"></i>
-        Licence Key
-        </a>
-
+        License Key
+    </a>
     {% endif %}
 </div>
 {% endif %}
