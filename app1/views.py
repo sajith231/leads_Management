@@ -4992,6 +4992,13 @@ def configure_user_menu(request, user_id):
     ]
 },
 {
+    'name': 'SYSMAC',
+    'icon': 'fas fa-microchip',
+    'submenus': [
+        {'id': 'item_list', 'name': 'Stand By', 'icon': 'fas fa-users'},
+    ]
+},
+{
     'name': 'Social Media',
     'icon': 'fas fa-share-alt',
     'submenus': [
