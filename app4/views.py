@@ -20,6 +20,10 @@ def add_license_view(request):
     if request.method == 'POST':
         name = request.POST.get('name', '').strip()
         branch_id = request.POST.get('branch')
+        service_pack = request.POST.get('service_pack', '').strip()
+        place = request.POST.get('place', '').strip()
+        number_of_system = request.POST.get('number_of_system', '').strip()
+        type_field = request.POST.get('type', '').strip()
         uploaded_file = request.FILES.get('license_file')
 
         if not (name and branch_id and uploaded_file):
@@ -44,6 +48,10 @@ def add_license_view(request):
         License.objects.create(
             name=name,
             branch_id=branch_id,
+            service_pack=service_pack,
+            place=place,
+            type=type_field,
+            number_of_system=number_of_system, 
             license_key=b64,
             file_name=uploaded_file.name
         )
@@ -95,6 +103,9 @@ def license_preview(request, license_id):
         'id': license_obj.id,
         'name': license_obj.name,
         'branch': license_obj.branch.name,
+        'service_pack': license_obj.service_pack or 'N/A',
+        'place': license_obj.place or 'N/A',
+        'type': license_obj.type or 'N/A',
         'created_at': license_obj.created_at.strftime('%d-%m-%Y'),
         'file_name': license_obj.file_name,
         'content': decoded_text
@@ -109,13 +120,22 @@ def license_edit(request, license_id):
     if request.method == 'POST':
         name = request.POST.get('name', '').strip()
         branch_id = request.POST.get('branch')
+        service_pack = request.POST.get('service_pack', '').strip()
+        place = request.POST.get('place', '').strip()
+        type_field = request.POST.get('type', '').strip()
+        number_of_system = request.POST.get('number_of_system', '').strip()   # NEW
         uploaded_file = request.FILES.get('license_file')
 
         if name:
             license_obj.name = name
-
         if branch_id:
             license_obj.branch_id = branch_id
+
+        # Update all custom fields
+        license_obj.service_pack = service_pack
+        license_obj.place = place
+        license_obj.type = type_field
+        license_obj.number_of_system = number_of_system   # NEW
 
         if uploaded_file:
             if not uploaded_file.name.lower().endswith('.txt'):
@@ -137,33 +157,8 @@ def license_edit(request, license_id):
         'branches': branches
     })
 
-
 @require_http_methods(["POST"])
 def license_delete(request, license_id):
     license_obj = get_object_or_404(License, id=license_id)
     license_obj.delete()
     return redirect('license_type')
-
-
-
-import base64
-from django.http import JsonResponse
-from django.shortcuts import get_object_or_404
-from .models import License
-
-def license_preview(request, license_id):
-    license_obj = get_object_or_404(License, id=license_id)
-    try:
-        # Decode Base64 back to bytes
-        file_bytes = base64.b64decode(license_obj.license_key)
-        # Try converting to UTF-8 text, replacing bad chars
-        text_content = file_bytes.decode('utf-8', errors='replace')
-    except Exception:
-        text_content = "[Unable to preview this file]"
-    
-    return JsonResponse({
-        'name': license_obj.name,
-        'branch': license_obj.branch.name,
-        'created_at': license_obj.created_at.strftime('%d-%m-%Y'),
-        'content': text_content
-    })
