@@ -9,6 +9,13 @@
 
   <form method="post" enctype="multipart/form-data" class="bg-white p-4 rounded shadow-sm">
     {% csrf_token %}
+    
+    <!-- File Upload Field -->
+    <div class="mb-3">
+      <label for="license_file" class="form-label fw-bold fs-5">License File (.txt only):</label>
+      <input type="file" name="license_file" id="license_file" class="form-control" accept=".txt" required>
+    </div>
+
     <div class="mb-3">
       <label for="name" class="form-label fw-bold fs-5">Name:</label>
       <input type="text" name="name" id="name" class="form-control" required>
@@ -25,8 +32,24 @@
     </div>
 
     <div class="mb-3">
-      <label for="license_file" class="form-label fw-bold fs-5">License File (.txt only):</label>
-      <input type="file" name="license_file" id="license_file" class="form-control" accept=".txt" required>
+      <label for="service_pack" class="form-label fw-bold fs-5">Service Pack:</label>
+      <input type="text" name="service_pack" id="service_pack" class="form-control" placeholder="Enter service pack">
+    </div>
+
+    <div class="mb-3">
+      <label for="type" class="form-label fw-bold fs-5">Type:</label>
+      <input type="text" name="type" id="type" class="form-control" placeholder="Enter type">
+    </div>
+
+    <div class="mb-3">
+      <label for="place" class="form-label fw-bold fs-5">Place:</label>
+      <input type="text" name="place" id="place" class="form-control" placeholder="Enter place">
+    </div>
+
+    <!-- NEW FIELD -->
+    <div class="mb-3">
+      <label for="number_of_system" class="form-label fw-bold fs-5">Number of System:</label>
+      <input type="text" name="number_of_system" id="number_of_system" class="form-control" placeholder="Enter number of system">
     </div>
 
     <button type="submit" class="btn btn-success">Upload License</button>
@@ -37,4 +60,39 @@
     <button class="btn btn-secondary" onclick="history.back()">Back</button>
   </div>
 </div>
+
+<!-- Auto-fill Script -->
+<script>
+document.getElementById('license_file').addEventListener('change', function () {
+    const file = this.files[0];
+    if (file) {
+        let filename = file.name.replace('.txt', '').trim();
+        let parts = filename.split(' - ').map(p => p.trim());
+
+        if (parts.length >= 6) {
+            let branchName      = parts[0];
+            let servicePack     = parts[1];
+            let type            = parts[2];
+            let name            = parts[3];
+            let place           = parts[4];
+            let numberOfSystem  = parts[5];
+
+            document.getElementById('name').value             = name;
+            document.getElementById('service_pack').value     = servicePack;
+            document.getElementById('type').value             = type;
+            document.getElementById('place').value            = place;
+            document.getElementById('number_of_system').value = numberOfSystem;
+
+            // Match branch dropdown by text
+            let branchSelect = document.getElementById('branch');
+            for (let option of branchSelect.options) {
+                if (option.text.trim().toLowerCase() === branchName.toLowerCase()) {
+                    branchSelect.value = option.value;
+                    break;
+                }
+            }
+        }
+    }
+});
+</script>
 {% endblock %}

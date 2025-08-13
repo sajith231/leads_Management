@@ -546,16 +546,19 @@
 
 
 <div class="mainmenu" onclick="toggleSysmacMenu()">
-                    <span>
-                        <i class="fas fa-microchip"></i>
-                        <span>SYSMAC</span>
-                    </span>
+    <span>
+        <i class="fas fa-microchip"></i>
+        <span>SYSMAC</span>
+    </span>
+</div>
 
-                </div>
-
-                <div id="sysmac-menu" class="submenu">
-                    <a href="{% url 'item_list' %}"><i class="fas fa-users"></i> Stand By</a>
-                </div>
+<div id="sysmac-menu" class="submenu">
+    {% if 'item_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+        <a href="{% url 'item_list' %}">
+            <i class="fas fa-users"></i> Stand By
+        </a>
+    {% endif %}
+</div>
 
 
 
@@ -847,7 +850,20 @@
 
 
 
+{% if 'item_list' in allowed_menus %}
+    <div class="mainmenu" onclick="toggleSysmacMenu()">
+        <span>
+            <i class="fas fa-microchip"></i>
+            <span>SYSMAC</span>
+        </span>
+    </div>
 
+    <div id="sysmac-menu" class="submenu">
+        <a href="{% url 'item_list' %}">
+            <i class="fas fa-users"></i> Stand By
+        </a>
+    </div>
+{% endif %}
 
             
 

@@ -9,6 +9,16 @@
 
   <form method="post" enctype="multipart/form-data" class="bg-white p-4 rounded shadow-sm">
     {% csrf_token %}
+    
+    <!-- File Upload Field - Placed at Top -->
+    <div class="mb-3">
+      <label for="license_file" class="form-label fw-bold fs-5">Replace License File (optional, .txt only):</label>
+      <input type="file" name="license_file" id="license_file" class="form-control" accept=".txt">
+      {% if license.file_name %}
+        <small class="text-muted">Current file: {{ license.file_name }}</small>
+      {% endif %}
+    </div>
+
     <div class="mb-3">
       <label for="name" class="form-label fw-bold fs-5">Name:</label>
       <input type="text" name="name" id="name" class="form-control" value="{{ license.name }}" required>
@@ -24,12 +34,32 @@
       </select>
     </div>
 
+    <!-- Service Pack -->
     <div class="mb-3">
-      <label for="license_file" class="form-label fw-bold fs-5">Replace License File (optional, .txt only):</label>
-      <input type="file" name="license_file" id="license_file" class="form-control" accept=".txt">
-      {% if license.file_name %}
-        <small class="text-muted">Current file: {{ license.file_name }}</small>
-      {% endif %}
+      <label for="service_pack" class="form-label fw-bold fs-5">Service Pack:</label>
+      <input type="text" name="service_pack" id="service_pack" class="form-control"
+             value="{{ license.service_pack|default:'' }}" placeholder="Enter service pack">
+    </div>
+
+    <!-- Type -->
+    <div class="mb-3">
+      <label for="type" class="form-label fw-bold fs-5">Type:</label>
+      <input type="text" name="type" id="type" class="form-control"
+             value="{{ license.type|default:'' }}" placeholder="Enter type">
+    </div>
+
+    <!-- Place -->
+    <div class="mb-3">
+      <label for="place" class="form-label fw-bold fs-5">Place:</label>
+      <input type="text" name="place" id="place" class="form-control"
+             value="{{ license.place|default:'' }}" placeholder="Enter place">
+    </div>
+
+    <!-- Number of System (NEW) -->
+    <div class="mb-3">
+      <label for="number_of_system" class="form-label fw-bold fs-5">Number of System:</label>
+      <input type="text" name="number_of_system" id="number_of_system" class="form-control"
+             value="{{ license.number_of_system|default:'' }}" placeholder="Enter number of system">
     </div>
 
     <button type="submit" class="btn btn-success">Save Changes</button>
