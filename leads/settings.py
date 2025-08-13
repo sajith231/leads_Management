@@ -87,6 +87,7 @@ MIDDLEWARE = [
     'app1.middleware.NoCacheMiddleware',  # Add this line for logout issue
     'app1.middleware.UserMenuMiddleware', 
     
+    
 ]
 MEDIA_ROOT= os.path.join(BASE_DIR,'media')
 MEDIA_URL = '/media/'
@@ -138,7 +139,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'leading_management',
         'USER': 'postgres',
-        'PASSWORD': '12345',
+        'PASSWORD': 'info@imc',
         'HOST': 'localhost',
         'PORT': '5432',
     }
