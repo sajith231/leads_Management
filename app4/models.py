@@ -24,3 +24,19 @@ class License(models.Model):
 
 class Printer(models.Model):
     name = models.CharField(max_length=100)
+
+
+
+from django.db import models
+
+class KeyRequest(models.Model):
+    client_id = models.IntegerField()
+    client_name = models.CharField(max_length=255)
+    request_title = models.CharField(max_length=255)
+    image_file = models.ImageField(upload_to='key_requests/', blank=True, null=True)
+    additional_requests = models.TextField(blank=True)  # store comma-separated values
+    comments = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.client_name} - {self.request_title}"

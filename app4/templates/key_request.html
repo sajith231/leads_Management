@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Key Request</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .form-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-bottom: 30px;
+        }
+
+        .form-section {
+            background: #fff;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e8ecf4;
+        }
+
+        .section-title {
+            color: #2c3e50;
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+            display: flex;
+            align-items: center;
+        }
+
+        .section-title i {
+            margin-right: 10px;
+            color: #667eea;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e1e8ed;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: #fafbfc;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #667eea;
+            background: #fff;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .client-browser {
+            position: relative;
+        }
+
+        .client-search {
+            position: relative;
+        }
+
+        .client-search input {
+            padding-right: 40px;
+        }
+
+        .search-icon {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #667eea;
+            pointer-events: none;
+        }
+
+        .client-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 2px solid #667eea;
+            border-top: none;
+            border-radius: 0 0 10px 10px;
+            max-height: 400px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .client-dropdown.show {
+            display: block;
+        }
+
+        .client-item {
+            padding: 12px 16px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            border-bottom: 1px solid #f1f3f4;
+            font-size: 0.95rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .client-item:hover {
+            background-color: #f8f9ff;
+            color: #667eea;
+        }
+
+        .client-item:last-child {
+            border-bottom: none;
+        }
+
+        .client-code {
+            font-size: 0.8rem;
+            color: #666;
+            background: #f0f0f0;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+
+        .loading-message {
+            padding: 20px 16px;
+            text-align: center;
+            color: #667eea;
+            font-style: italic;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .loading-spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            padding: 12px 16px;
+            text-align: center;
+            color: #e74c3c;
+            background-color: #fdf2f2;
+            border-radius: 5px;
+            margin-top: 10px;
+            border: 1px solid #f5c6cb;
+        }
+
+        .success-message {
+            padding: 8px 12px;
+            background-color: #d4edda;
+            color: #155724;
+            border-radius: 5px;
+            margin-top: 10px;
+            border: 1px solid #c3e6cb;
+            font-size: 0.9rem;
+        }
+
+        .retry-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: background-color 0.3s ease;
+        }
+
+        .retry-btn:hover {
+            background: #5a6fd8;
+        }
+
+        .client-count {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .file-upload-area {
+            border: 2px dashed #667eea;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            background: linear-gradient(45deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
+        }
+
+        .file-upload-area:hover {
+            border-color: #764ba2;
+            background: linear-gradient(45deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+        }
+
+        .file-upload-area.dragover {
+            border-color: #28a745;
+            background: rgba(40, 167, 69, 0.1);
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .upload-text {
+            color: #666;
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+        }
+
+        .upload-subtext {
+            color: #999;
+            font-size: 0.9rem;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .file-info {
+            margin-top: 15px;
+            padding: 10px;
+            background: #e8f5e8;
+            border-radius: 8px;
+            color: #2d5a2d;
+            display: none;
+        }
+
+        .additional-requests {
+            grid-column: 1 / -1;
+        }
+
+        .request-dropdown {
+            position: relative;
+        }
+
+        .dropdown-toggle {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1rem;
+            width: 100%;
+            text-align: left;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .dropdown-toggle:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 2px solid #667eea;
+            border-top: none;
+            border-radius: 0 0 10px 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            display: none;
+        }
+
+        .dropdown-menu.show {
+            display: block;
+        }
+
+        .dropdown-item {
+            padding: 12px 20px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            border-bottom: 1px solid #f1f3f4;
+            color: #333;
+        }
+
+        .dropdown-item:hover {
+            background-color: #f8f9ff;
+            color: #667eea;
+        }
+
+        .dropdown-item:last-child {
+            border-bottom: none;
+        }
+
+        .selected-requests {
+            margin-top: 20px;
+        }
+
+        .request-tag {
+            display: inline-block;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 8px 15px;
+            margin: 5px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            position: relative;
+        }
+
+        .request-tag .remove {
+            margin-left: 10px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .btn-submit {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: block;
+            margin: 30px auto 0;
+            min-width: 200px;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-submit:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        @media (max-width: 768px) {
+            .form-container {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .container {
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔑 Key Request</h1>
+            <p>Submit your key request with client details and requirements</p>
+        </div>
+
+        <form id="keyRequestForm" method="POST" action="{% url 'key_request' %}" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            <div class="form-container">
+                <!-- Client Browser Section -->
+                <div class="form-section">
+                    <h3 class="section-title">
+                        👥 Client Selection
+                    </h3>
+                    
+                    <div class="form-group">
+                        <label for="clientSearch">Browse Clients</label>
+                        <div class="client-browser">
+                            <div class="client-search">
+                                <input 
+                                    type="text" 
+                                    id="clientSearch" 
+                                    name="client_search"
+                                    class="form-control" 
+                                    placeholder="Search for clients..."
+                                    autocomplete="off"
+                                >
+                                <span class="search-icon">🔍</span>
+                            </div>
+                            <div id="clientDropdown" class="client-dropdown">
+                                <div class="loading-message">
+                                    <div class="loading-spinner"></div>
+                                    Loading clients...
+                                </div>
+                            </div>
+                        </div>
+                        <input type="hidden" id="selectedClientId" name="client_id">
+                        <input type="hidden" id="selectedClientName" name="client_name">
+                        <div id="clientError" class="error-message" style="display: none;"></div>
+                        <div id="clientSuccess" class="success-message" style="display: none;"></div>
+                        <div id="clientCount" class="client-count" style="display: none;"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="requestTitle">Request Title</label>
+                        <input 
+                            type="text" 
+                            id="requestTitle" 
+                            name="request_title"
+                            class="form-control" 
+                            placeholder="Enter request title..."
+                            required
+                        >
+                    </div>
+                </div>
+
+                <!-- Image Upload Section -->
+                <div class="form-section">
+                    <h3 class="section-title">
+                        📷 Image Upload
+                    </h3>
+                    
+                    <div class="form-group">
+                        <label for="imageUpload">Upload Image</label>
+                        <div class="file-upload-area" onclick="document.getElementById('imageUpload').click()">
+                            <div class="upload-icon">📁</div>
+                            <div class="upload-text">Click to browse or drag & drop</div>
+                            <div class="upload-subtext">Supported: JPG, PNG, GIF (Max 10MB)</div>
+                        </div>
+                        <input 
+                            type="file" 
+                            id="imageUpload" 
+                            name="image_file"
+                            class="file-input"
+                            accept="image/*"
+                        >
+                        <div id="fileInfo" class="file-info"></div>
+                    </div>
+                </div>
+
+                <!-- Additional Requests Section -->
+                <div class="form-section additional-requests">
+                    <h3 class="section-title">
+                        ⚙️ Additional Requests
+                    </h3>
+                    
+                    <div class="form-group">
+                        <label>Select Additional Requirements</label>
+                        <div class="request-dropdown">
+                            <button type="button" class="dropdown-toggle" id="requestDropdownBtn">
+                                Choose additional requests
+                                <span>▼</span>
+                            </button>
+                            <div id="requestDropdownMenu" class="dropdown-menu">
+                                <div class="dropdown-item" data-value="Seat Upgradation">Seat Upgradation</div>
+                                <div class="dropdown-item" data-value="Service.Pack change Request">Service.Pack change Request</div>
+                                <div class="dropdown-item" data-value="More module Request">More module Request</div>
+                                <div class="dropdown-item" data-value="Trade Name and Address change Request">Trade Name and Address change Request</div>
+                                <div class="dropdown-item" data-value="Key Type change Request">Key Type change Request</div>
+                                <div class="dropdown-item" data-value="Key Extension Request">Key Extension Request</div>
+                                <div class="dropdown-item" data-value="Hosted Key Request">Hosted Key Request</div>
+                                <div class="dropdown-item" data-value="Demo Key Request">Demo Key Request</div>
+                                <div class="dropdown-item" data-value="Feeder Cancellation Request">Feeder Cancellation Request</div>
+                                <div class="dropdown-item" data-value="Software Amount Change Request">Software Amount Change Request</div>
+                            </div>
+                        </div>
+                        
+                        <div class="selected-requests" id="selectedRequests">
+                            <!-- Selected requests will appear here as tags -->
+                        </div>
+                        
+                        <input type="hidden" id="additionalRequestsInput" name="additional_requests">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="comments">In detail</label>
+                        <textarea 
+                            id="comments" 
+                            name="comments"
+                            class="form-control" 
+                            rows="4"
+                            placeholder="Any additional details or special requirements..."
+                        ></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-submit" id="submitBtn">
+                Submit Key Request 
+            </button>
+        </form>
+    </div>
+
+       <script>
+    // Client fetching and dropdown logic
+    let clients = [];
+    let allClients = [];
+    let clientsLoaded = false;
+
+    async function fetchClients() {
+        const clientDropdown = document.getElementById('clientDropdown');
+        try {
+            clientDropdown.innerHTML = '<div class="loading-message"><div class="loading-spinner"></div>Loading clients...</div>';
+            const response = await fetch('/app4/api/clients/');
+            const data = await response.json();
+            clients = (Array.isArray(data) ? data : data.data || data.clients || [])
+                .map(client => ({
+                    id: client.code || client.id || '',
+                    name: client.name || '',
+                    branch: client.branch || '',
+                    district: client.district || '',
+                    state: client.state || ''
+                }));
+            clients.sort((a, b) => a.name.localeCompare(b.name));
+            allClients = [...clients];
+            clientsLoaded = true;
+            displayClients(allClients);
+            clientDropdown.classList.add('show');
+        } catch (error) {
+            clientDropdown.innerHTML = '<div class="error-message">Failed to load clients</div>';
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', fetchClients);
+
+    const clientSearch = document.getElementById('clientSearch');
+    const clientDropdown = document.getElementById('clientDropdown');
+
+    clientSearch.addEventListener('input', function() {
+        if (!clientsLoaded) return;
+        const query = this.value.toLowerCase();
+        const filtered = query
+            ? allClients.filter(c => c.name.toLowerCase().includes(query) || c.id.toLowerCase().includes(query))
+            : allClients;
+        displayClients(filtered);
+        clientDropdown.classList.add('show');
+    });
+
+    clientSearch.addEventListener('focus', function() {
+        if (clientsLoaded) {
+            displayClients(allClients);
+            clientDropdown.classList.add('show');
+        }
+    });
+
+    function displayClients(list) {
+        clientDropdown.innerHTML = '';
+        if (list.length === 0) {
+            clientDropdown.innerHTML = '<div class="client-item" style="color:#999;">No clients found</div>';
+            return;
+        }
+        list.forEach(client => {
+            const div = document.createElement('div');
+            div.className = 'client-item';
+            div.innerHTML = `<div><strong>${client.name}</strong><br><small>${client.branch} | ${client.district}, ${client.state}</small></div><span class="client-code">${client.id}</span>`;
+            div.addEventListener('click', () => {
+                selectClient(client);
+            });
+            clientDropdown.appendChild(div);
+        });
+    }
+
+    // ✅ Always update hidden fields when selecting a client
+    function selectClient(client) {
+        document.getElementById('selectedClientId').value = client.id;
+        document.getElementById('selectedClientName').value = client.name;
+        clientSearch.value = `${client.name} (${client.id})`;
+        clientDropdown.classList.remove('show');
+    }
+
+    // ✅ Also set hidden fields if pressing Enter after typing
+    clientSearch.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && clientsLoaded) {
+            e.preventDefault();
+            const match = allClients.find(c =>
+                c.name.toLowerCase() === this.value.toLowerCase() ||
+                `${c.name} (${c.id})`.toLowerCase() === this.value.toLowerCase()
+            );
+            if (match) {
+                selectClient(match);
+            }
+        }
+    });
+
+    document.addEventListener('click', e => {
+        if (!e.target.closest('.client-browser')) {
+            clientDropdown.classList.remove('show');
+        }
+    });
+
+    // File upload preview logic
+    const fileUploadArea = document.querySelector('.file-upload-area');
+    const fileInput = document.getElementById('imageUpload');
+    const fileInfo = document.getElementById('fileInfo');
+
+    fileUploadArea.addEventListener('click', () => fileInput.click());
+
+    fileInput.addEventListener('change', function() {
+        if (this.files.length > 0) {
+            const file = this.files[0];
+            fileInfo.innerHTML = `<strong>Selected:</strong> ${file.name}<br><strong>Size:</strong> ${(file.size / 1024 / 1024).toFixed(2)} MB<br><strong>Type:</strong> ${file.type}`;
+            fileInfo.style.display = 'block';
+        }
+    });
+
+    // Additional requests dropdown logic
+    const dropdownBtn = document.getElementById('requestDropdownBtn');
+    const dropdownMenu = document.getElementById('requestDropdownMenu');
+    const selectedRequestsDiv = document.getElementById('selectedRequests');
+    const additionalRequestsInput = document.getElementById('additionalRequestsInput');
+    let selectedRequests = [];
+
+    dropdownBtn.addEventListener('click', () => dropdownMenu.classList.toggle('show'));
+
+    document.querySelectorAll('.dropdown-item').forEach(item => {
+        item.addEventListener('click', function() {
+            const value = this.dataset.value;
+            if (!selectedRequests.includes(value)) {
+                selectedRequests.push(value);
+                const tag = document.createElement('span');
+                tag.className = 'request-tag';
+                tag.innerHTML = `${this.textContent} <span class="remove" onclick="removeRequest('${value}')">&times;</span>`;
+                selectedRequestsDiv.appendChild(tag);
+                updateHiddenInput();
+            }
+            dropdownMenu.classList.remove('show');
+        });
+    });
+
+    function removeRequest(value) {
+        selectedRequests = selectedRequests.filter(req => req !== value);
+        updateHiddenInput();
+        selectedRequestsDiv.innerHTML = '';
+        selectedRequests.forEach(val => {
+            const text = document.querySelector(`[data-value="${val}"]`).textContent;
+            const tag = document.createElement('span');
+            tag.className = 'request-tag';
+            tag.innerHTML = `${text} <span class="remove" onclick="removeRequest('${val}')">&times;</span>`;
+            selectedRequestsDiv.appendChild(tag);
+        });
+    }
+
+    function updateHiddenInput() {
+        additionalRequestsInput.value = selectedRequests.join(',');
+    }
+
+    document.addEventListener('click', e => {
+        if (!e.target.closest('.request-dropdown')) {
+            dropdownMenu.classList.remove('show');
+        }
+    });
+
+    // 🚫 No form-blocking validation — form will always submit
+</script>
+
+</body>
+</html>

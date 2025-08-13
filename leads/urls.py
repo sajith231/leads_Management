@@ -14,8 +14,9 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+
 from django.contrib import admin
-from django.urls import path,include
+from django.urls import path, include
 from django.conf.urls.static import static
 from django.conf import settings
 from app2 import views 
@@ -26,13 +27,12 @@ urlpatterns = [
     path('', include('app1.urls')),
     path('app2/', include('app2.urls')),
     path('app3/', include('app3.urls')),
-    path('app4/', include('app4.urls')),
+    path('app4/', include('app4.urls')),  # This includes api/clients/
     path('flutter/', include('flutter.urls')),
     path('edit-field/<int:field_id>/', views.edit_field, name='edit_field'),
     path('feeder/', include('app2.urls')), 
-    path('feeder/<int:feeder_id>/status-update/', app2_views.feeder_status_update,name='feeder_status_update'),
-    
+    path('feeder/<int:feeder_id>/status-update/', app2_views.feeder_status_update, name='feeder_status_update'),
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
-]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
