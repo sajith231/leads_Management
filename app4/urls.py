@@ -1,5 +1,5 @@
 from django.urls import path
-from . import views
+from . import views 
 
 urlpatterns = [
     # Existing key request URLs
@@ -11,7 +11,7 @@ urlpatterns = [
     path('license-delete/<int:license_id>/', views.license_delete, name='license_delete'),
     
     # Key request URLs
-    path('api/clients/', views.get_clients, name='get_clients'),
-    path('key-request/', views.key_request_view, name='key_request'),
-    path('key-request-list/', views.key_request_list_view, name='key_request_list'),
+    # path('api/clients/', views.get_clients, name='get_clients'),
+    # path('key-request/', views.key_request_view, name='key_request'),
+    # path('key-request-list/', views.key_request_list_view, name='key_request_list'),
 ]

@@ -19,22 +19,20 @@ logger = logging.getLogger(__name__)
 def license_type_view(request):
     licenses = License.objects.select_related('branch').all().order_by('-id')
     branches = Branch.objects.all()
-    return render(request, 'license_type.html', {
-        'licenses': licenses,
-        'branches': branches
-    })
-
+    return render(request, 'license_type.html', {'licenses': licenses, 'branches': branches})
 
 @require_http_methods(["GET", "POST"])
 def add_license_view(request):
     if request.method == 'POST':
-        name = request.POST.get('name', '').strip()
-        branch_id = request.POST.get('branch')
-        service_pack = request.POST.get('service_pack', '').strip()
-        place = request.POST.get('place', '').strip()
+        name             = request.POST.get('name', '').strip()
+        branch_id        = request.POST.get('branch')
+        service_pack     = request.POST.get('service_pack', '').strip()
+        place            = request.POST.get('place', '').strip()
+        type_field       = request.POST.get('type', '').strip()
         number_of_system = request.POST.get('number_of_system', '').strip()
-        type_field = request.POST.get('type', '').strip()
-        uploaded_file = request.FILES.get('license_file')
+        module           = request.POST.get('module', '').strip()
+        notes            = request.POST.get('notes', '').strip()
+        uploaded_file    = request.FILES.get('license_file')
 
         if not (name and branch_id and uploaded_file):
             return render(request, 'add_license.html', {
@@ -52,103 +50,75 @@ def add_license_view(request):
         b64 = base64.b64encode(file_bytes).decode('ascii')
 
         License.objects.create(
-            name=name,
-            branch_id=branch_id,
-            service_pack=service_pack,
-            place=place,
-            type=type_field,
-            number_of_system=number_of_system, 
-            license_key=b64,
-            file_name=uploaded_file.name
+            name=name, branch_id=branch_id,
+            service_pack=service_pack, place=place,
+            type=type_field, number_of_system=number_of_system,
+            module=module, notes=notes,
+            license_key=b64, file_name=uploaded_file.name
         )
         return redirect('license_type')
 
     return render(request, 'add_license.html', {'branches': Branch.objects.all()})
 
-
-def _get_bytes_from_stored(license_obj):
-    stored = license_obj.license_key or ''
-    try:
-        return base64.b64decode(stored)
-    except Exception:
-        return stored.encode('utf-8', errors='replace')
-
-
 def license_download(request, license_id):
-    license_obj = get_object_or_404(License, id=license_id)
-    file_bytes = _get_bytes_from_stored(license_obj)
-
-    response = HttpResponse(file_bytes, content_type='application/octet-stream')
-    filename = license_obj.file_name or f"{license_obj.name}.txt"
-    response['Content-Disposition'] = f'attachment; filename="{filename}"'
-    response['Content-Length'] = str(len(file_bytes))
-    return response
-
+    lic = get_object_or_404(License, id=license_id)
+    data = base64.b64decode(lic.license_key)
+    filename = lic.file_name or f"{lic.name}.txt"
+    resp = HttpResponse(data, content_type='application/octet-stream')
+    resp['Content-Disposition'] = f'attachment; filename="{filename}"'
+    return resp
 
 def license_preview(request, license_id):
-    license_obj = get_object_or_404(License, id=license_id)
-    file_bytes = _get_bytes_from_stored(license_obj)
-    decoded_text = file_bytes.decode('utf-8', errors='replace')
-
-    payload = {
-        'id': license_obj.id,
-        'name': license_obj.name,
-        'branch': license_obj.branch.name,
-        'service_pack': license_obj.service_pack or 'N/A',
-        'place': license_obj.place or 'N/A',
-        'type': license_obj.type or 'N/A',
-        'created_at': license_obj.created_at.strftime('%d-%m-%Y'),
-        'file_name': license_obj.file_name,
-        'content': decoded_text
-    }
-    return JsonResponse(payload)
-
+    lic = get_object_or_404(License, id=license_id)
+    content = base64.b64decode(lic.license_key).decode('utf-8', errors='replace')
+    return JsonResponse({
+        'id': lic.id,
+        'name': lic.name,
+        'branch': lic.branch.name,
+        'service_pack': lic.service_pack or '',
+        'place': lic.place or '',
+        'type': lic.type or '',
+        'number_of_system': lic.number_of_system or '',
+        'module': lic.module or '',
+        'notes': lic.notes or '',
+        'created_at': lic.created_at.strftime('%d-%m-%Y'),
+        'file_name': lic.file_name,
+        'license_content': content  # Changed from 'content' to 'license_content'
+    })
 
 @require_http_methods(["GET", "POST"])
 def license_edit(request, license_id):
-    license_obj = get_object_or_404(License, id=license_id)
-
+    lic = get_object_or_404(License, id=license_id)
     if request.method == 'POST':
-        name = request.POST.get('name', '').strip()
-        branch_id = request.POST.get('branch')
-        service_pack = request.POST.get('service_pack', '').strip()
-        place = request.POST.get('place', '').strip()
-        type_field = request.POST.get('type', '').strip()
-        number_of_system = request.POST.get('number_of_system', '').strip()   # NEW
+        lic.name             = request.POST.get('name', lic.name).strip()
+        lic.branch_id        = request.POST.get('branch', lic.branch_id)
+        lic.service_pack     = request.POST.get('service_pack', '').strip()
+        lic.place            = request.POST.get('place', '').strip()
+        lic.type             = request.POST.get('type', '').strip()
+        lic.number_of_system = request.POST.get('number_of_system', '').strip()
+        lic.module           = request.POST.get('module', '').strip()
+        lic.notes            = request.POST.get('notes', '').strip()
+
         uploaded_file = request.FILES.get('license_file')
-
-        if name:
-            license_obj.name = name
-        if branch_id:
-            license_obj.branch_id = branch_id
-
-        # Update all custom fields
-        license_obj.service_pack = service_pack
-        license_obj.place = place
-        license_obj.type = type_field
-        license_obj.number_of_system = number_of_system   # NEW
-
         if uploaded_file:
             if not uploaded_file.name.lower().endswith('.txt'):
                 return render(request, 'license_edit.html', {
-                    'license': license_obj,
+                    'license': lic,
                     'branches': Branch.objects.all(),
-                    'error': 'Only .txt files allowed for replacement.'
+                    'error': 'Only .txt files allowed.'
                 })
-            file_bytes = uploaded_file.read()
-            license_obj.license_key = base64.b64encode(file_bytes).decode('ascii')
-            license_obj.file_name = uploaded_file.name
+            lic.license_key = base64.b64encode(uploaded_file.read()).decode('ascii')
+            lic.file_name   = uploaded_file.name
 
-        license_obj.save()
+        lic.save()
         return redirect('license_type')
 
     return render(request, 'license_edit.html', {
-        'license': license_obj,
+        'license': lic,
         'branches': Branch.objects.all()
     })
 
 @require_http_methods(["POST"])
 def license_delete(request, license_id):
-    license_obj = get_object_or_404(License, id=license_id)
-    license_obj.delete()
+    get_object_or_404(License, id=license_id).delete()
     return redirect('license_type')

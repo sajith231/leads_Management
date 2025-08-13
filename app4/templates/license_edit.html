@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% block content %}
 <div class="container">
-  <h2 class="mb-4">Edit License</h2>
+  <h2 class="mb-4">{% if license %}Edit{% else %}Add{% endif %} License</h2>
 
   {% if error %}
     <div class="alert alert-danger">{{ error }}</div>
@@ -10,60 +10,147 @@
   <form method="post" enctype="multipart/form-data" class="bg-white p-4 rounded shadow-sm">
     {% csrf_token %}
     
-    <!-- File Upload Field - Placed at Top -->
-    <div class="mb-3">
-      <label for="license_file" class="form-label fw-bold fs-5">Replace License File (optional, .txt only):</label>
-      <input type="file" name="license_file" id="license_file" class="form-control" accept=".txt">
-      {% if license.file_name %}
+    <!-- File Upload Field -->
+    <div class="mb-4">
+      <label for="license_file" class="form-label fw-bold">
+        {% if license %}Replace License File (optional){% else %}License File (.txt only){% endif %}:
+      </label>
+      <input type="file" name="license_file" id="license_file" class="form-control" accept=".txt" {% if not license %}required{% endif %}>
+      {% if license and license.file_name %}
         <small class="text-muted">Current file: {{ license.file_name }}</small>
       {% endif %}
     </div>
 
-    <div class="mb-3">
-      <label for="name" class="form-label fw-bold fs-5">Name:</label>
-      <input type="text" name="name" id="name" class="form-control" value="{{ license.name }}" required>
+    <!-- First Horizontal Row: Name, Branch, Place -->
+    <div class="row mb-4">
+      <div class="col-md-4">
+        <label for="name" class="form-label fw-bold">Name:</label>
+        <input type="text" name="name" id="name" class="form-control" 
+               value="{{ license.name|default:'' }}" required>
+      </div>
+      <div class="col-md-4">
+        <label for="branch" class="form-label fw-bold">Branch:</label>
+        <select name="branch" id="branch" class="form-control" required>
+          <option value="">-- Select Branch --</option>
+          {% for branch in branches %}
+            <option value="{{ branch.id }}" 
+                    {% if license and license.branch.id == branch.id %}selected{% endif %}>
+              {{ branch.name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label for="place" class="form-label fw-bold">Place:</label>
+        <input type="text" name="place" id="place" class="form-control" 
+               value="{{ license.place|default:'' }}" placeholder="Enter place">
+      </div>
     </div>
 
-    <div class="mb-3">
-      <label for="branch" class="form-label fw-bold fs-5">Branch:</label>
-      <select name="branch" id="branch" class="form-control" required>
-        <option value="">-- Select Branch --</option>
-        {% for branch in branches %}
-          <option value="{{ branch.id }}" {% if license.branch.id == branch.id %}selected{% endif %}>{{ branch.name }}</option>
-        {% endfor %}
-      </select>
+    <!-- Second Horizontal Row: Service Pack, Type, Number of System, Module -->
+    <div class="row mb-4">
+      <div class="col-md-3">
+        <label for="service_pack" class="form-label fw-bold">Service Pack:</label>
+        <input type="text" name="service_pack" id="service_pack" class="form-control" 
+               value="{{ license.service_pack|default:'' }}" placeholder="Enter service pack">
+      </div>
+      <div class="col-md-3">
+        <label for="type" class="form-label fw-bold">Type:</label>
+        <input type="text" name="type" id="type" class="form-control" 
+               value="{{ license.type|default:'' }}" placeholder="Enter type">
+      </div>
+      <div class="col-md-3">
+        <label for="number_of_system" class="form-label fw-bold">Number of System:</label>
+        <input type="text" name="number_of_system" id="number_of_system" class="form-control" 
+               value="{{ license.number_of_system|default:'' }}" placeholder="Enter number of system">
+      </div>
+      <div class="col-md-3">
+        <label for="module" class="form-label fw-bold">Module:</label>
+        <input type="text" name="module" id="module" class="form-control" 
+               value="{{ license.module|default:'' }}" placeholder="Enter module name">
+      </div>
     </div>
 
-    <!-- Service Pack -->
-    <div class="mb-3">
-      <label for="service_pack" class="form-label fw-bold fs-5">Service Pack:</label>
-      <input type="text" name="service_pack" id="service_pack" class="form-control"
-             value="{{ license.service_pack|default:'' }}" placeholder="Enter service pack">
+    <!-- Notes Field - Full width -->
+    <div class="mb-4">
+      <label for="notes" class="form-label fw-bold">Notes:</label>
+      <input type="text" name="notes" id="notes" class="form-control" 
+             value="{{ license.notes|default:'' }}" placeholder="Enter notes (manual entry only)">
     </div>
 
-    <!-- Type -->
-    <div class="mb-3">
-      <label for="type" class="form-label fw-bold fs-5">Type:</label>
-      <input type="text" name="type" id="type" class="form-control"
-             value="{{ license.type|default:'' }}" placeholder="Enter type">
+    <div class="d-flex justify-content-between mt-4">
+      <button type="submit" class="btn btn-success px-4">
+        {% if license %}Save Changes{% else %}Upload License{% endif %}
+      </button>
+      
+      {% if license %}
+        <a href="{% url 'license_type' %}" class="btn btn-secondary">Cancel</a>
+      {% else %}
+        <div>
+          <a href="{% url 'license_type' %}" class="btn me-2" style="background-color: #444; color: white;">View All Licenses</a>
+          <button class="btn btn-secondary" onclick="history.back()">Back</button>
+        </div>
+      {% endif %}
     </div>
-
-    <!-- Place -->
-    <div class="mb-3">
-      <label for="place" class="form-label fw-bold fs-5">Place:</label>
-      <input type="text" name="place" id="place" class="form-control"
-             value="{{ license.place|default:'' }}" placeholder="Enter place">
-    </div>
-
-    <!-- Number of System (NEW) -->
-    <div class="mb-3">
-      <label for="number_of_system" class="form-label fw-bold fs-5">Number of System:</label>
-      <input type="text" name="number_of_system" id="number_of_system" class="form-control"
-             value="{{ license.number_of_system|default:'' }}" placeholder="Enter number of system">
-    </div>
-
-    <button type="submit" class="btn btn-success">Save Changes</button>
-    <a href="{% url 'license_type' %}" class="btn btn-secondary ms-2">Cancel</a>
   </form>
 </div>
+
+<!-- Auto-fill Script - Notes field excluded -->
+<!-- Auto-fill Script – identical to add_license.html -->
+<script>
+document.getElementById('license_file').addEventListener('change', function () {
+    const file = this.files[0];
+    if (!file) return;          // ignore empty selection
+
+    let filename = file.name.replace(/\.txt$/i, '').trim();
+    let parts    = filename.split(' - ').map(p => p.trim());
+
+    if (parts.length >= 6) {
+        let branchName  = parts[0];
+        let servicePack = parts[1];
+        let type        = parts[2];
+        let name        = parts[3];
+        let place       = parts[4];
+
+        let lastPart    = parts[5] || '';
+        let tokens      = lastPart.split(/\s+/);
+
+        // Check last token
+        let lastToken   = tokens[tokens.length - 1] || '';
+        let isBC        = lastToken.toUpperCase() === 'BC';
+
+        let numberOfSystem = isBC
+            ? tokens.slice(0, -1).join(' ') || 'N/A'
+            : lastPart;
+        let module = isBC ? 'BC' : 'N/A';
+
+        // Fill form fields
+        document.getElementById('name').value             = name;
+        document.getElementById('service_pack').value     = servicePack;
+        document.getElementById('type').value             = type;
+        document.getElementById('place').value            = place;
+        document.getElementById('number_of_system').value = numberOfSystem;
+        document.getElementById('module').value           = module;
+        document.getElementById('notes').value            = '';   // keep empty
+
+        // Match branch dropdown
+        const branchSelect = document.getElementById('branch');
+        [...branchSelect.options].some(opt => {
+            if (opt.text.trim().toLowerCase() === branchName.toLowerCase()) {
+                branchSelect.value = opt.value;
+                return true;
+            }
+        });
+    }
+});
+</script>
+<style>
+  /* Add some spacing between form elements */
+  .form-label {
+    margin-bottom: 0.5rem;
+  }
+  .form-control {
+    margin-bottom: 0.5rem;
+  }
+</style>
 {% endblock %}
