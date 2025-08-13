@@ -86,6 +86,7 @@ MIDDLEWARE = [
 
     'app1.middleware.NoCacheMiddleware',  # Add this line for logout issue
     'app1.middleware.UserMenuMiddleware', 
+    'app1.middleware.LoginRequiredMiddleware',
     
 ]
 MEDIA_ROOT= os.path.join(BASE_DIR,'media')

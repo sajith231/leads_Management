@@ -523,9 +523,11 @@
         <div>
           <h4 class="mb-2">🔐 LICENSE</h4> 
         </div>
+        {% if 'add_license' in allowed_menus or request.session.user_level == 'admin' %}
         <a href="{% url 'add_license' %}" class="add-btn">
           <i class="bi bi-plus-circle me-2"></i>Add New License
         </a>
+        {% endif %}
       </div>
     </div>
 
