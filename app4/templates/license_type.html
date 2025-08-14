@@ -6,276 +6,281 @@
 <head/>
 <style>
 /******************************************************************
- *  DESKTOP STYLES  (your original rules, untouched)
+ *  DESKTOP STYLES
  ******************************************************************/
-  body {
-    background: #f5f5f5;
-    min-height: 100vh;
-    color: #222;
-  }
+body {
+  background: #f5f5f5;
+  min-height: 100vh;
+  color: #222;
+}
 
-  .main-container {
-    background: #ffffff;
-    border-radius: 15px;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
-    padding: 2rem;
-    margin: 2rem auto;
-  }
+.main-container {
+  background: #ffffff;
+  border-radius: 15px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+  margin: 2rem auto;
+}
 
-  .page-header {
-    background: #eaeaea;
-    color: #111;
-    padding: 2rem;
-    border-radius: 10px;
-    margin-bottom: 2rem;
-  }
+.page-header {
+  background: #eaeaea;
+  color: #111;
+  padding: 2rem;
+  border-radius: 10px;
+  margin-bottom: 2rem;
+}
 
-  .page-header h4 {
-    margin: 0;
-    font-weight: 600;
-    font-size: 1.8rem;
-  }
+.page-header h4 {
+  margin: 0;
+  font-weight: 600;
+  font-size: 1.8rem;
+}
 
-  .add-btn {
-    background: #444;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 30px;
-    color: white;
-    font-weight: 600;
-    text-decoration: none;
-    transition: all 0.3s ease;
-    white-space: nowrap;
-  }
+.add-btn {
+  background: #444;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 30px;
+  color: white;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
 
-  .add-btn:hover {
-    background: #111;
-    color: white;
-  }
+.add-btn:hover {
+  background: #111;
+  color: white;
+}
 
-  .search-container {
-    margin-bottom: 1.5rem;
-  }
+.search-container {
+  margin-bottom: 1.5rem;
+}
 
-  .search-input {
-    border: 1px solid #bbb;
-    border-radius: 30px;
-    padding: 10px 16px;
-    background: #fff;
-    width: 100%;
-  }
+.search-input {
+  border: 1px solid #bbb;
+  border-radius: 30px;
+  padding: 10px 16px;
+  background: #fff;
+  width: 100%;
+}
 
-  .search-input:focus {
-    border-color: #444;
-    outline: none;
-    box-shadow: 0 0 0 2px rgba(68, 68, 68, 0.2);
-  }
+.search-input:focus {
+  border-color: #444;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(68, 68, 68, 0.2);
+}
 
-  /* Branch Filter Styling */
-  .branch-filter {
-    border: 1px solid #bbb;
-    border-radius: 30px;
-    padding: 10px 16px;
-    background: #fff;
-    width: 100%;
-    appearance: none;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
-    background-repeat: no-repeat;
-    background-position: right 12px center;
-    background-size: 18px;
-    padding-right: 40px;
-    cursor: pointer;
-  }
+/* Branch Filter Styling */
+.branch-filter {
+  border: 1px solid #bbb;
+  border-radius: 30px;
+  padding: 10px 16px;
+  background: #fff;
+  width: 100%;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 18px;
+  padding-right: 40px;
+  cursor: pointer;
+}
 
-  .branch-filter:focus {
-    border-color: #444;
-    outline: none;
-    box-shadow: 0 0 0 2px rgba(68, 68, 68, 0.2);
-  }
+.branch-filter:focus {
+  border-color: #444;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(68, 68, 68, 0.2);
+}
 
-  .branch-filter:hover {
-    border-color: #999;
-    background-color: #f9f9f9;
-  }
+.branch-filter:hover {
+  border-color: #999;
+  background-color: #f9f9f9;
+}
 
-  .modern-table {
-    background: #fff;
-    border-radius: 10px;
-    overflow: hidden;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
-  }
+.modern-table {
+  background: #fff;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+  width: 100%;              /* default view fix */
+  table-layout: auto;       /* allow columns to size naturally */
+  transform: none !important;
+  zoom: 1 !important;
+}
 
-  .modern-table thead {
-    background: #444;
-    color: white;
-  }
+.modern-table thead {
+  background: #444;
+  color: white;
+}
 
-  .modern-table thead th {
-    padding: 1rem;
-    font-size: 0.95rem;
-    text-transform: uppercase;
-    font-weight: 600;
-    border-bottom: none;
-  }
+.modern-table thead th {
+  padding: 1rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border-bottom: none;
+  text-transform: none; /* allow manual capitalization in HTML */
+}
 
-  .modern-table tbody tr:hover {
-    background: #f0f0f0;
-  }
+.modern-table tbody tr:hover {
+  background: #f0f0f0;
+}
 
-  .modern-table tbody td {
-    padding: 1rem;
-    border-top: 1px solid #eee;
-  }
+.modern-table tbody td {
+  padding: 1rem;
+  border-top: 1px solid #eee;
+}
 
-  .file-name-block {
-    text-transform: uppercase;
-    font-weight: bold;
-  }
+.file-name-block {
+  text-transform: uppercase;
+  font-weight: bold;
+}
 
-  .action-btn {
-    background: #555;
-    color: white;
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    transition: 0.3s;
-    border: none;
-    margin: 2px;
-  }
+.action-btn {
+  background: #555;
+  color: white;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: 0.3s;
+  border: none;
+  margin: 2px;
+}
 
-  .action-btn:hover {
-    background: #111;
-    transform: scale(1.1);
-    color: white;
-  }
+.action-btn:hover {
+  background: #111;
+  transform: scale(1.1);
+  color: white;
+}
 
-  .badge-counter {
-    background: #333;
-    color: white;
-    padding: 4px 10px;
-    border-radius: 20px;
-    font-size: 0.85rem;
-  }
+.badge-counter {
+  background: #333;
+  color: white;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+}
 
-  .pagination .page-link {
-    color: #222;
-    border: none;
-    padding: 8px 14px;
-    margin: 0 2px;
-    border-radius: 30px;
-    background: #e2e2e2;
-    cursor: pointer;
-  }
+.pagination .page-link {
+  color: #222;
+  border: none;
+  padding: 8px 14px;
+  margin: 0 2px;
+  border-radius: 30px;
+  background: #e2e2e2;
+  cursor: pointer;
+}
 
-  .pagination .page-item.active .page-link {
-    background: #444;
-    color: white;
-  }
+.pagination .page-item.active .page-link {
+  background: #444;
+  color: white;
+}
 
-  .pagination .page-link:hover {
-    background: #111;
-    color: white;
-  }
+.pagination .page-link:hover {
+  background: #111;
+  color: white;
+}
 
-  .pagination .page-item.disabled .page-link {
-    background: #ccc;
-    color: #666;
-    cursor: not-allowed;
-  }
+.pagination .page-item.disabled .page-link {
+  background: #ccc;
+  color: #666;
+  cursor: not-allowed;
+}
 
-  .empty-state {
-    text-align: center;
-    padding: 2rem;
-    color: #888;
-  }
+.empty-state {
+  text-align: center;
+  padding: 2rem;
+  color: #888;
+}
 
-  .modal-content {
-    border-radius: 12px;
-    border: none;
-  }
+.modal-content {
+  border-radius: 12px;
+  border: none;
+}
 
-  .modal-header {
-    background: #444;
-    color: white;
-    border-radius: 12px 12px 0 0;
-  }
+.modal-header {
+  background: #444;
+  color: white;
+  border-radius: 12px 12px 0 0;
+}
 
-  .modal-title {
-    font-weight: 600;
-  }
+.modal-title {
+  font-weight: 600;
+}
 
-  .license-content {
-    background: #f9f9f9;
-    padding: 1rem;
-    font-family: monospace;
-    white-space: pre-wrap;
-    border-radius: 10px;
-    border: 1px solid #ddd;
-    max-height: 400px;
-    overflow-y: auto;
-  }
+.license-content {
+  background: #f9f9f9;
+  padding: 1rem;
+  font-family: monospace;
+  white-space: pre-wrap;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+  max-height: 400px;
+  overflow-y: auto;
+}
 
-  .detail-label {
-    font-weight: 600;
-    color: #333;
-  }
+.detail-label {
+  font-weight: 600;
+  color: #333;
+}
 
-  .detail-value {
-    background: #f1f1f1;
-    padding: 0.5rem 1rem;
-    border-left: 4px solid #444;
-    border-radius: 8px;
-    margin-bottom: 1rem;
-  }
+.detail-value {
+  background: #f1f1f1;
+  padding: 0.5rem 1rem;
+  border-left: 4px solid #444;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
 
-  .modal-file-name-block {
-    text-transform: uppercase;
-    font-weight: bold;
-  }
+.modal-file-name-block {
+  text-transform: uppercase;
+  font-weight: bold;
+}
 
-  .modal-footer .btn {
-    border-radius: 30px;
-    padding: 10px 20px;
-    font-weight: 600;
-    border: none;
-  }
+.modal-footer .btn {
+  border-radius: 30px;
+  padding: 10px 20px;
+  font-weight: 600;
+  border: none;
+}
 
-  .btn-secondary {
-    background: #999;
-    color: white;
-  }
+.btn-secondary {
+  background: #999;
+  color: white;
+}
 
-  .btn-success {
-    background: #333;
-    color: white;
-  }
+.btn-success {
+  background: #333;
+  color: white;
+}
 
-  .btn-warning {
-    background: #666;
-    color: white;
-  }
+.btn-warning {
+  background: #666;
+  color: white;
+}
 
-  .hidden-row {
-    display: none !important;
-  }
+.hidden-row {
+  display: none !important;
+}
 
-  .pagination-info {
-    font-size: 0.9rem;
-  }
+.pagination-info {
+  font-size: 0.9rem;
+}
 
-  .btn-close {
-    filter: invert(1);
-  }
+.btn-close {
+  filter: invert(1);
+}
 
-  /* Desktop card container (hidden by default) */
-  .mobile-card-container {
-    display: none;
-  }
+/* Desktop card container (hidden by default) */
+.mobile-card-container {
+  display: none;
+}
+
 
 /******************************************************************
  *  MOBILE FIRST  (≤ 768px)
@@ -664,18 +669,21 @@
           <tr class="license-row" data-branch="{{ license.branch.name|lower }}" data-filename="{{ license.name|lower }}" data-id="{{ license.id }}" data-date="{{ license.created_at|date:'d-m-y' }}">
   <td><span class="badge-counter">{{ forloop.counter }}</span></td>
   <td>
+  <div class="d-flex align-items-start flex-column">
     <div class="d-flex align-items-center">
       <i class="bi bi-building text-primary me-2"></i>
       <strong>{{ license.branch.name }}</strong>
     </div>
-  </td>
+    <small class="text-muted ms-4">📅 Created: {{ license.created_at|date:"d-m-y" }}</small>
+  </div>
+</td>
+
   <td>
     <div class="d-flex align-items-start flex-column">
       <div class="d-flex align-items-center">
         <i class="bi bi-file-earmark-text text-success me-2"></i>
         <span class="file-name-block">{{ license.name }}</span>
       </div>
-      <small class="text-muted ms-4">📅 Created: {{ license.created_at|date:"d-m-y" }}</small>
       <small class="text-muted ms-4">📝 Notes: {{ license.notes|default:"No notes added" }}</small>
     </div>
   </td>
@@ -761,20 +769,23 @@
         <div class="card-header">
           <div class="card-title">
             <div class="card-filename">
-              <i class="bi bi-file-earmark-text"></i>
-              <span class="file-name-block">{{ license.name }}</span>
-            </div>
-            <div class="ms-4 text-muted" style="font-size: 0.8rem;">
-              📅 Created: {{ license.created_at|date:"d-m-y " }}
-            </div>
-            <!-- Debug: Always show notes field for testing -->
-            <div class="ms-4 text-muted" style="font-size: 0.8rem;">
-              📝 Notes: {{ license.notes|default:"No notes added" }}
-            </div>
-            <div class="card-branch">
-              <i class="bi bi-building"></i>
-              <strong>{{ license.branch.name }}</strong>
-            </div>
+  <i class="bi bi-file-earmark-text"></i>
+  <span class="file-name-block">{{ license.name }}</span>
+</div>
+<!-- Notes remain here -->
+<div class="ms-4 text-muted" style="font-size: 0.8rem;">
+  📝 Notes: {{ license.notes|default:"No notes added" }}
+</div>
+<div class="card-branch d-flex flex-column">
+  <div>
+    <i class="bi bi-building"></i>
+    <strong>{{ license.branch.name }}</strong>
+  </div>
+  <small class="text-muted ms-4" style="font-size: 0.8rem;">
+    📅 Created: {{ license.created_at|date:"d-m-y" }}
+  </small>
+</div>
+
             
             <!-- All fields in mobile view -->
             <div class="d-flex flex-column gap-2 mt-2">

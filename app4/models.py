@@ -5,7 +5,7 @@ from django.db import models
 
 from django.db import models
 from app1.models import Branch
-
+  
 class License(models.Model):
     name             = models.CharField(max_length=255)
     branch           = models.ForeignKey(Branch, on_delete=models.CASCADE)
