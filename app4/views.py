@@ -122,3 +122,9 @@ def license_edit(request, license_id):
 def license_delete(request, license_id):
     get_object_or_404(License, id=license_id).delete()
     return redirect('license_type')
+
+
+
+
+
+
