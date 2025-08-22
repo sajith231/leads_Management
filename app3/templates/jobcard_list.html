@@ -1,1285 +1,1367 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Job Card List</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #f4f8fb;
-            margin: 0;
-            padding: 20px;
-        }
-        h2 {
-            text-align: center;
-            color: #333;
-            margin-bottom: 25px;
-            font-size: 28px;
-        }
+{% extends "base.html" %}
+
+{% block title %}Job Card List{% endblock %}
+
+{% block content %}
+<!-- Font Awesome for icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<style>
+    
+    h2 {
+        text-align: center;
+        color: #333;
+        margin-bottom: 25px;
+        font-size: 28px;
+    }
+    .top-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        max-width: 1800px;
+        margin-left: auto;
+        margin-right: auto;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+    .search-box {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+    .search-box input {
+        padding: 10px;
+        font-size: 15px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        width: 200px;
+    }
+    .date-inputs {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        background: white;
+        padding: 8px;
+        border-radius: 8px;
+        border: 1px solid #ddd;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .date-inputs label {
+        font-size: 12px;
+        font-weight: bold;
+        color: #666;
+        white-space: nowrap;
+    }
+    .date-inputs input[type="date"] {
+        padding: 6px 8px;
+        font-size: 14px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        width: 140px;
+    }
+    .status-filter {
+        padding: 10px;
+        font-size: 15px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        background: white;
+        cursor: pointer;
+        min-width: 150px;
+    }
+    .btn-add {
+        display: inline-block;
+        padding: 12px 18px;
+        background: black;
+        color: #fff;
+        text-decoration: none;
+        font-size: 16px;
+        font-weight: bold;
+        border-radius: 6px;
+        transition: .3s;
+        border: none;
+        cursor: pointer;
+    }
+    .btn-add:hover { background: #7e807f; }
+    .btn-print {
+        background: #6c757d !important;
+    }
+    .btn-clear {
+        background: #17a2b8 !important;
+    }
+    .btn-today {
+        background: #28a745 !important;
+        padding: 10px 14px;
+        font-size: 14px;
+    }
+    .btn-week {
+        background: #ffc107 !important;
+        color: #000 !important;
+        padding: 10px 14px;
+        font-size: 14px;
+    }
+    .btn-month {
+        background: #6f42c1 !important;
+        padding: 10px 14px;
+        font-size: 14px;
+    }
+    .table-container {
+        font-size: 20px;
+        max-width: 1800px;
+        margin: auto;
+        background: #fff;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 6px 16px rgba(0,0,0,.1);
+        overflow-x: auto;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+        min-width: 1600px;
+    }
+    thead {
+        background: black;
+        color: #fff;
+    }
+    th, td {
+        font-size: 18px;
+        padding: 10px 12px;
+        text-align: left;
+        border-right: 1px solid #020202;
+        border-bottom: 1px solid #020202;
+        vertical-align: top;
+    }
+    .item-section {
+        margin-bottom: 12px;
+        padding: 8px;
+        border-radius: 4px;
+        background: #f9f9f9;
+    }
+    .item-header {
+        font-weight: bold;
+        color: #007bff;
+        margin-bottom: 8px;
+        font-size: 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .item-details {
+        font-size: 12px;
+        color: #0e0e0e;
+        margin-bottom: 6px;
+    }
+    .complaints-list {
+        margin-left: 10px;
+    }
+    .complaint-item {
+        margin-bottom: 4px;
+        color: #333;
+        font-size: 14px;
+    }
+    .complaint-notes {
+        color: #0e0d0d;
+        font-size: 12px;
+        margin-left: 15px;
+        font-style: italic;
+    }
+    .status-badge {
+        display: inline-block;
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-size: 10px;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        user-select: none;
+    }
+    .status-badge:hover {
+        transform: scale(1.1);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    .status-logged { background: #ffc107; color: #000; }
+    .status-sent_technician { background: #17a2b8; color: #fff; }
+    .status-pending { background: #6c757d; color: #fff; }
+    .status-completed { background: #28a745; color: #fff; }
+    .status-returned { background: #6f42c1; color: #fff; }
+    .status-rejected { background: #dc3545; color: #fff; }
+    
+    .btn-edit, .btn-delete {
+        background: orange;
+        color: #fff;
+        padding: 6px 10px;
+        border-radius: 4px;
+        margin-right: 4px;
+        margin-bottom: 4px;
+        font-size: 12px;
+        text-decoration: none;
+        display: inline-block;
+        cursor: pointer;
+        border: none;
+        transition: all 0.3s ease;
+        font-weight: bold;
+    }
+    .btn-edit:hover { 
+        background: #ff8c00; 
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    .btn-delete { 
+        background: #dc3545;
+    }
+    .btn-delete:hover { 
+        background: #c82333;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    
+    .icon-btn {
+        font-size: 16px;
+        cursor: pointer;
+        transition: .3s;
+        margin: 2px;
+        padding: 4px 6px;
+        border-radius: 4px;
+        background: transparent;
+        border: 1px solid transparent;
+        color: #007bff;
+    }
+    .icon-btn:hover {
+        background: #f0f0f0;
+        border-color: #007bff;
+    }
+    .icon-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        color: #ccc;
+    }
+    
+    .icon-with-count {
+        position: relative;
+        display: inline-block;
+    }
+    .icon-count {
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        background: #dc3545;
+        color: white;
+        border-radius: 50%;
+        padding: 2px 6px;
+        font-size: 10px;
+        font-weight: bold;
+        min-width: 16px;
+        height: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .customer-row {
+        background: #f8f9fa;
+    }
+    .customer-row:hover {
+        background: #e3f2fd;
+    }
+    
+    .address-cell {
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        max-width: 150px;
+    }
+    
+    .alert {
+        padding: 15px 20px;
+        margin: 20px auto;
+        max-width: 1800px;
+        border-radius: 8px;
+        position: relative;
+        border: 1px solid transparent;
+        font-weight: 500;
+        animation: slideIn 0.5s ease;
+    }
+    @keyframes slideIn {
+        from { transform: translateY(-20px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
+    .alert-success {
+        background-color: #d4edda;
+        border-color: #c3e6cb;
+        color: #155724;
+    }
+    .alert-error {
+        background-color: #f8d7da;
+        border-color: #f5c6cb;
+        color: #721c24;
+    }
+    
+    /* Search results counter */
+    .search-results-info {
+        padding: 15px;
+        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+        border-radius: 8px;
+        margin-bottom: 15px;
+        color: #1565c0;
+        font-weight: bold;
+        text-align: center;
+        display: none;
+        border-left: 4px solid #2196f3;
+        box-shadow: 0 2px 8px rgba(33, 150, 243, 0.15);
+    }
+    
+    /* Modal Styles */
+    .modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,.7);
+        z-index: 1000;
+        display: none;
+    }
+    .modal-content {
+        background: #fff;
+        margin: 5% auto;
+        padding: 30px;
+        width: 90%;
+        max-width: 600px;
+        border-radius: 10px;
+        position: relative;
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #eee;
+    }
+    .modal-title {
+        font-size: 24px;
+        font-weight: bold;
+        color: #333;
+    }
+    .close-btn {
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+        color: #999;
+        background: none;
+        border: none;
+        padding: 0;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .close-btn:hover {
+        color: #333;
+    }
+    .modal-body {
+        font-size: 16px;
+        line-height: 1.6;
+        color: #555;
+    }
+    .notes-content {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        border-left: 4px solid #007bff;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+    }
+    .images-gallery {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin-top: 15px;
+    }
+    .image-item img {
+        width: 100%;
+        height: 200px;
+        object-fit: cover;
+        border-radius: 8px;
+        border: 2px solid #ddd;
+        cursor: pointer;
+        transition: transform 0.3s ease;
+    }
+    .image-item img:hover {
+        transform: scale(1.05);
+        border-color: #007bff;
+    }
+    .no-content-message {
+        text-align: center;
+        color: #999;
+        font-style: italic;
+        padding: 40px;
+        background: #f8f9fa;
+        border-radius: 8px;
+    }
+    .delete-modal-content {
+        background: #fff;
+        margin: 8% auto;
+        padding: 40px;
+        width: 90%;
+        max-width: 500px;
+        border-radius: 12px;
+        text-align: center;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+    .delete-modal-title {
+        color: #dc3545;
+        font-size: 28px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+    }
+    .delete-modal-message {
+        margin-bottom: 30px;
+        font-size: 16px;
+        line-height: 1.6;
+    }
+    .btn-confirm {
+        padding: 12px 24px;
+        background: #dc3545;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: bold;
+        font-size: 16px;
+        transition: all 0.3s ease;
+        margin-right: 10px;
+    }
+    .btn-confirm:hover {
+        background: #c82333;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    .btn-cancel {
+        padding: 12px 24px;
+        background: #6c757d;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 16px;
+        transition: all 0.3s ease;
+    }
+    .btn-cancel:hover {
+        background: #5a6268;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+
+    /* Loading state */
+    .status-updating {
+        opacity: 0.7;
+        pointer-events: none;
+        position: relative;
+    }
+    .status-updating::after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 16px;
+        height: 16px;
+        border: 2px solid #fff;
+        border-top: 2px solid transparent;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+        0% { transform: translate(-50%, -50%) rotate(0deg); }
+        100% { transform: translate(-50%, -50%) rotate(360deg); }
+    }
+
+    /* Responsive design */
+    @media (max-width: 768px) {
         .top-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            max-width: 1800px;
-            margin-left: auto;
-            margin-right: auto;
-            flex-wrap: wrap;
-            gap: 15px;
+            flex-direction: column;
+            align-items: stretch;
         }
         .search-box {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            flex-wrap: wrap;
+            justify-content: center;
         }
         .search-box input {
-            padding: 10px;
-            font-size: 15px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            width: 200px;
+            width: 180px;
         }
         .date-inputs {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-            background: white;
-            padding: 8px;
-            border-radius: 8px;
-            border: 1px solid #ddd;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        }
-        .date-inputs label {
-            font-size: 12px;
-            font-weight: bold;
-            color: #666;
-            white-space: nowrap;
+            flex-direction: column;
+            gap: 5px;
         }
         .date-inputs input[type="date"] {
-            padding: 6px 8px;
-            font-size: 14px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            width: 140px;
-        }
-        .status-filter {
-            padding: 10px;
-            font-size: 15px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            background: white;
-            cursor: pointer;
-            min-width: 150px;
-        }
-        .btn-add {
-            display: inline-block;
-            padding: 12px 18px;
-            background: black;
-            color: #fff;
-            text-decoration: none;
-            font-size: 16px;
-            font-weight: bold;
-            border-radius: 6px;
-            transition: .3s;
-            border: none;
-            cursor: pointer;
-        }
-        .btn-add:hover { background: #7e807f; }
-        .btn-print {
-            background: #6c757d !important;
-        }
-        .btn-clear {
-            background: #17a2b8 !important;
-        }
-        .btn-today {
-            background: #28a745 !important;
-            padding: 10px 14px;
-            font-size: 14px;
-        }
-        .btn-week {
-            background: #ffc107 !important;
-            color: #000 !important;
-            padding: 10px 14px;
-            font-size: 14px;
-        }
-        .btn-month {
-            background: #6f42c1 !important;
-            padding: 10px 14px;
-            font-size: 14px;
-        }
-        .table-container {
-            font-size: 20px;
-            max-width: 1800px;
-            margin: auto;
-            background: #fff;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 6px 16px rgba(0,0,0,.1);
-            overflow-x: auto;
-        }
-        table {
             width: 100%;
-            border-collapse: collapse;
-            font-size: 14px;
-            min-width: 1600px;
         }
-        thead {
-            background: black;
-            color: #fff;
-        }
-        th, td {
-            font-size: 18px;
-            padding: 10px 12px;
-            text-align: left;
-            border-right: 1px solid #020202;
-            border-bottom: 1px solid #020202;
-            vertical-align: top;
-        }
-        .item-section {
-            margin-bottom: 12px;
-            padding: 8px;
-            border-radius: 4px;
-            background: #f9f9f9;
-        }
-        .item-header {
-            font-weight: bold;
-            color: #007bff;
-            margin-bottom: 8px;
-            font-size: 16px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .item-details {
-            font-size: 12px;
-            color: #0e0e0e;
-            margin-bottom: 6px;
-        }
-        .complaints-list {
-            margin-left: 10px;
-        }
-        .complaint-item {
-            margin-bottom: 4px;
-            color: #333;
-            font-size: 14px;
-        }
-        .complaint-notes {
-            color: #0e0d0d;
-            font-size: 12px;
-            margin-left: 15px;
-            font-style: italic;
-        }
-        .status-badge {
-            display: inline-block;
-            padding: 3px 8px;
-            border-radius: 12px;
-            font-size: 10px;
-            font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        .status-logged { background: #ffc107; color: #000; }
-        .status-sent_technician { background: #17a2b8; color: #fff; }
-        .status-pending { background: #6c757d; color: #fff; }
-        .status-completed { background: #28a745; color: #fff; }
-        .status-returned { background: #6f42c1; color: #fff; }
-        .status-rejected { background: #dc3545; color: #fff; }
-        
-        .btn-edit, .btn-delete {
-            background: orange;
-            color: #fff;
-            padding: 6px 10px;
-            border-radius: 4px;
-            margin-right: 4px;
-            margin-bottom: 4px;
-            font-size: 12px;
-            text-decoration: none;
-            display: inline-block;
-            cursor: pointer;
-            border: none;
-            transition: all 0.3s ease;
-            font-weight: bold;
-        }
-        .btn-edit:hover { 
-            background: #ff8c00; 
-            transform: translateY(-1px);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
-        .btn-delete { 
-            background: #dc3545;
-        }
-        .btn-delete:hover { 
-            background: #c82333;
-            transform: translateY(-1px);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
-        
-        .icon-btn {
-            font-size: 16px;
-            cursor: pointer;
-            transition: .3s;
-            margin: 2px;
-            padding: 4px 6px;
-            border-radius: 4px;
-            background: transparent;
-            border: 1px solid transparent;
-            color: #007bff;
-        }
-        .icon-btn:hover {
-            background: #f0f0f0;
-            border-color: #007bff;
-        }
-        .icon-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            color: #ccc;
-        }
-        
-        .icon-with-count {
-            position: relative;
-            display: inline-block;
-        }
-        .icon-count {
-            position: absolute;
-            top: -8px;
-            right: -8px;
-            background: #dc3545;
-            color: white;
-            border-radius: 50%;
-            padding: 2px 6px;
-            font-size: 10px;
-            font-weight: bold;
-            min-width: 16px;
-            height: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .customer-row {
-            background: #f8f9fa;
-        }
-        .customer-row:hover {
-            background: #e3f2fd;
-        }
-        
-        .address-cell {
-            white-space: pre-wrap;
-            word-wrap: break-word;
-            max-width: 150px;
-        }
-        
-        .alert {
-            padding: 15px 20px;
-            margin: 20px auto;
-            max-width: 1800px;
-            border-radius: 8px;
-            position: relative;
-            border: 1px solid transparent;
-            font-weight: 500;
-            animation: slideIn 0.5s ease;
-        }
-        @keyframes slideIn {
-            from { transform: translateY(-20px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-        .alert-success {
-            background-color: #d4edda;
-            border-color: #c3e6cb;
-            color: #155724;
-        }
-        .alert-error {
-            background-color: #f8d7da;
-            border-color: #f5c6cb;
-            color: #721c24;
-        }
-        
-        /* Search results counter */
-        .search-results-info {
-            padding: 15px;
-            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-            border-radius: 8px;
-            margin-bottom: 15px;
-            color: #1565c0;
-            font-weight: bold;
-            text-align: center;
-            display: none;
-            border-left: 4px solid #2196f3;
-            box-shadow: 0 2px 8px rgba(33, 150, 243, 0.15);
-        }
-        
-        /* Modal Styles */
-        .modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,.7);
-            z-index: 1000;
-            display: none;
-        }
-        .modal-content {
-            background: #fff;
-            margin: 5% auto;
-            padding: 30px;
-            width: 90%;
-            max-width: 600px;
-            border-radius: 10px;
-            position: relative;
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid #eee;
-        }
-        .modal-title {
-            font-size: 24px;
-            font-weight: bold;
-            color: #333;
-        }
-        .close-btn {
-            font-size: 28px;
-            font-weight: bold;
-            cursor: pointer;
-            color: #999;
-            background: none;
-            border: none;
-            padding: 0;
-            width: 30px;
-            height: 30px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .close-btn:hover {
-            color: #333;
-        }
-        .modal-body {
-            font-size: 16px;
-            line-height: 1.6;
-            color: #555;
-        }
-        .notes-content {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
-            border-left: 4px solid #007bff;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-        }
-        .images-gallery {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-top: 15px;
-        }
-        .image-item img {
-            width: 100%;
-            height: 200px;
-            object-fit: cover;
-            border-radius: 8px;
-            border: 2px solid #ddd;
-            cursor: pointer;
-            transition: transform 0.3s ease;
-        }
-        .image-item img:hover {
-            transform: scale(1.05);
-            border-color: #007bff;
-        }
-        .no-content-message {
-            text-align: center;
-            color: #999;
-            font-style: italic;
-            padding: 40px;
-            background: #f8f9fa;
-            border-radius: 8px;
-        }
-        .delete-modal-content {
-            background: #fff;
-            margin: 8% auto;
-            padding: 40px;
-            width: 90%;
-            max-width: 500px;
-            border-radius: 12px;
-            text-align: center;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-        }
-        .delete-modal-title {
-            color: #dc3545;
-            font-size: 28px;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-        .delete-modal-message {
-            margin-bottom: 30px;
-            font-size: 16px;
-            line-height: 1.6;
-        }
-        .btn-confirm {
-            padding: 12px 24px;
-            background: #dc3545;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 16px;
-            transition: all 0.3s ease;
-            margin-right: 10px;
-        }
-        .btn-confirm:hover {
-            background: #c82333;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-        }
-        .btn-cancel {
-            padding: 12px 24px;
-            background: #6c757d;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 16px;
-            transition: all 0.3s ease;
-        }
-        .btn-cancel:hover {
-            background: #5a6268;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-        }
+    }
+</style>
 
-        /* Responsive design */
-        @media (max-width: 768px) {
-            .top-bar {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            .search-box {
-                justify-content: center;
-            }
-            .search-box input {
-                width: 180px;
-            }
-            .date-inputs {
-                flex-direction: column;
-                gap: 5px;
-            }
-            .date-inputs input[type="date"] {
-                width: 100%;
-            }
-        }
-    </style>
-</head>
-<body>
-    <h2>Job Card List</h2>
-    <div id="alertContainer">
-        {% if messages %}
-            {% for message in messages %}
-                <div class="alert alert-{% if message.tags == 'error' %}error{% else %}{{ message.tags }}{% endif %}">
-                    {{ message }}
-                </div>
-            {% endfor %}
-        {% endif %}
-    </div>
-    <div class="top-bar">
-        <div class="search-box">
-            <input type="text" id="searchInput" placeholder="Search by Customer Name, Phone, or Item">
-            
-            <div class="date-inputs">
-                <label>From:</label>
-                <input type="date" id="dateFrom" title="Filter from date">
-                <label>To:</label>
-                <input type="date" id="dateTo" title="Filter to date">
+<h2>Job Card List</h2>
+<div id="alertContainer">
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{% if message.tags == 'error' %}error{% else %}{{ message.tags }}{% endif %}">
+                {{ message }}
             </div>
-            
-            <select id="statusFilter" class="status-filter">
-                <option value="">All Status</option>
-                <option value="logged">Logged</option>
-                <option value="sent_technician">Sent To Technician</option>
-                <option value="pending">Pending</option>
-                <option value="completed">Completed</option>
-                <option value="returned">Returned</option>
-                <option value="rejected">Rejected</option>
-            </select>
-            
-           
-            
-            <button onclick="clearAllFilters()" class="btn-add btn-clear" title="Clear all filters">
-                <i class="fas fa-times-circle"></i> Clear
-            </button>
-           
+        {% endfor %}
+    {% endif %}
+</div>
+
+<div class="top-bar">
+    <div class="search-box">
+        <input type="text" id="searchInput" placeholder="Search by Customer Name, Phone, or Item">
+        
+        <div class="date-inputs">
+            <label>From:</label>
+            <input type="date" id="dateFrom" title="Filter from date">
+            <label>To:</label>
+            <input type="date" id="dateTo" title="Filter to date">
         </div>
-        <a href="{% url 'jobcard_create' %}" class="btn-add"><i class="fas fa-plus"></i> Add New</a>
+        
+        <select id="statusFilter" class="status-filter">
+            <option value="">All Status</option>
+            <option value="logged">Logged</option>
+            <option value="sent_technician">Sent To Technician</option>
+            <option value="pending">Pending</option>
+            <option value="completed">Completed</option>
+            <option value="returned">Returned</option>
+            <option value="rejected">Rejected</option>
+        </select>
+
+        <button onclick="clearAllFilters()" class="btn-add btn-clear" title="Clear all filters">
+            <i class="fas fa-times-circle"></i> Clear
+        </button>
     </div>
-    
-    <div class="search-results-info" id="searchResultsInfo"></div>
-    
-    <div class="table-container">
-        <table id="jobTable">
-            <thead>
-                <tr>
-                    <th>Sl No</th>
-                    <th>Created Date</th>
-                    <th>Ticket No</th>
-                    <th>Customer Name</th>
-                    <th>Address</th>
-                    <th>Phone No</th>
-                    <th>Items & Details</th>
-                    <th>Complaints</th>
-                    <th>Status</th>
-                    <th>Notes</th>
-                    <th>Images</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for jobcard in jobcards %}
-                    <tr class="customer-row" data-ticket="{{ jobcard.ticket_no }}" data-date="{{ jobcard.created_at|date:'Y-m-d' }}">
-                        <td>{{ forloop.counter }}</td>
-                        <td>{{ jobcard.created_at|date:"d/m/Y" }}</td>
-                        <td>{{ jobcard.ticket_no }}</td>
-                        <td>{{ jobcard.customer }}</td>
-                        <td class="address-cell">{{ jobcard.address }}</td>
-                        <td>{{ jobcard.phone }}</td>
-                        <td>
-                            {% for item_data in jobcard.items_data %}
-                                <div class="item-section">
-                                    <div class="item-header">
-                                        <span>{{ item_data.item }}</span>
-                                        
+
+    <a href="{% url 'jobcard_create' %}" class="btn-add"><i class="fas fa-plus"></i> Add New</a>
+</div>
+
+<div class="search-results-info" id="searchResultsInfo"></div>
+
+<div class="table-container">
+    <table id="jobTable">
+        <thead>
+            <tr>
+                <th>Sl No</th>
+                <th>Created Date</th>
+                <th>Ticket No</th>
+                <th>Customer Name</th>
+                <th>Address</th>
+                <th>Phone No</th>
+                <th>Items & Details</th>
+                <th>Complaints</th>
+                <th>Status</th>
+                <th>Notes</th>
+                <th>Images</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for jobcard in jobcards %}
+                <tr class="customer-row" data-ticket="{{ jobcard.ticket_no }}" data-date="{{ jobcard.created_at|date:'Y-m-d' }}">
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ jobcard.created_at|date:"d/m/Y" }}</td>
+                    <td>{{ jobcard.ticket_no }}</td>
+                    <td>{{ jobcard.customer }}</td>
+                    <td class="address-cell">{{ jobcard.address }}</td>
+                    <td>{{ jobcard.phone }}</td>
+                    <td>
+                        {% for item_data in jobcard.items_data %}
+                            <div class="item-section">
+                                <div class="item-header">
+                                    <span>{{ item_data.item }}</span>
+                                </div>
+                                {% if item_data.serial or item_data.config %}
+                                    <div class="item-details">
+                                        {% if item_data.serial %}<strong><b>Serial:</b></strong> {{ item_data.serial }} {% endif %}<br>
+                                        {% if item_data.config %}<strong><b>Configuration:</b></strong> {{ item_data.config }}{% endif %}
                                     </div>
-                                    {% if item_data.serial or item_data.config %}
-                                        <div class="item-details">
-                                            {% if item_data.serial %}<strong><b>Serial:</b></strong> {{ item_data.serial }} {% endif %}<br>
-                                            {% if item_data.config %}<strong><b>Configuration:</b></strong> {{ item_data.config }}{% endif %}
+                                {% endif %}
+                            </div>
+                        {% empty %}
+                            <span style="color: #999; font-style: italic;">No items</span>
+                        {% endfor %}
+                    </td>
+                    <td>
+                        {% for item_data in jobcard.items_data %}
+                            <div class="item-section">
+                                <div class="item-header">{{ item_data.item }} Complaints</div>
+                                <div class="complaints-list">
+                                    {% for complaint in item_data.complaints %}
+                                        <div class="complaint-item">
+                                            • {{ complaint.description }}
+                                            {% if complaint.notes %}
+                                                <div class="complaint-notes"><b>Note:</b> {{ complaint.notes }}</div>
+                                            {% endif %}
                                         </div>
-                                    {% endif %}
+                                    {% empty %}
+                                        <div class="complaint-item" style="color: #999;">No complaints</div>
+                                    {% endfor %}
                                 </div>
-                            {% empty %}
-                                <span style="color: #999; font-style: italic;">No items</span>
+                            </div>
+                        {% endfor %}
+                    </td>
+                    <td data-status-column>
+                        {% for item_data in jobcard.items_data %}
+                            <div style="margin-bottom: 8px;">
+                                <div style="font-size: 12px; color: #0f0f0f;">{{ item_data.item }}:</div>
+                                <span class="status-badge status-{{ item_data.status }}" 
+                                      data-jobcard-id="{{ jobcard.pk }}"
+                                      data-item-index="{{ forloop.counter0 }}"
+                                      data-status="{{ item_data.status }}"
+                                      onclick="updateStatus('{{ jobcard.pk }}', '{{ item_data.status }}', {{ forloop.counter0 }}, '{{ item_data.item|escapejs }}')"
+                                      title="Click to change status for {{ item_data.item }}">
+                                    {{ item_data.status|capfirst|default:"Logged" }}
+                                </span>
+                            </div>
+                        {% endfor %}
+                    </td>
+                    <td style="text-align: center;">
+                        {% for item_data in jobcard.items_data %}
+                            {% for complaint in item_data.complaints %}
+                                {% if complaint.notes %}
+                                    <button class="icon-btn" 
+                                            onclick="showNotesModal('{{ item_data.item|escapejs }} - Complaint {{ forloop.counter }}', '{{ complaint.notes|escapejs }}')"
+                                            title="View notes">
+                                        <i class="fas fa-sticky-note"></i>
+                                    </button>
+                                    <br>
+                                {% endif %}
                             {% endfor %}
-                        </td>
-                        <td>
-                            {% for item_data in jobcard.items_data %}
-                                <div class="item-section">
-                                    <div class="item-header">{{ item_data.item }} Complaints</div>
-                                    <div class="complaints-list">
-                                        {% for complaint in item_data.complaints %}
-                                            <div class="complaint-item">
-                                                • {{ complaint.description }}
-                                                {% if complaint.notes %}
-                                                    <div class="complaint-notes"><b>Note:</b> {{ complaint.notes }}</div>
-                                                {% endif %}
-                                            </div>
-                                        {% empty %}
-                                            <div class="complaint-item" style="color: #999;">No complaints</div>
-                                        {% endfor %}
-                                    </div>
-                                </div>
-                            {% endfor %}
-                        </td>
-                        <td data-status-column>
-                            {% for item_data in jobcard.items_data %}
-                                <div style="margin-bottom: 8px;">
-                                    <div style="font-size: 12px; color: #0f0f0f;">{{ item_data.item }}:</div>
-                                    <span class="status-badge status-{{ item_data.status }}" 
-                                          onclick="updateStatus('{{ jobcard.pk }}', '{{ item_data.status }}', {{ forloop.counter0 }})"
-                                          title="Click to change status for {{ item_data.item }}"
-                                          data-status="{{ item_data.status }}">
-                                        {{ item_data.status|capfirst }}
-                                    </span>
-                                </div>
-                            {% endfor %}
-                        </td>
-                        <td style="text-align: center;">
-                            {% for item_data in jobcard.items_data %}
-                                {% for complaint in item_data.complaints %}
-                                    {% if complaint.notes %}
-                                        <button class="icon-btn" 
-                                                onclick="showNotesModal('{{ item_data.item|escapejs }} - Complaint {{ forloop.counter }}', '{{ complaint.notes|escapejs }}')"
-                                                title="View notes">
-                                            <i class="fas fa-sticky-note"></i>
-                                        </button>
-                                        <br>
-                                    {% endif %}
-                                {% endfor %}
-                            {% empty %}
-                                <button class="icon-btn" disabled title="No notes available">
-                                    <i class="fas fa-sticky-note"></i>
-                                </button>
-                            {% endfor %}
-                        </td>
-                        <td style="text-align: center;">
-                            {% with total_images=jobcard.images.all|length %}
-                                {% if total_images > 0 %}
-                                    <div class="icon-with-count">
-                                        <button class="icon-btn" 
-                                                onclick="showImagesModal('{{ jobcard.customer|escapejs }} - {{ jobcard.ticket_no }}', '{{ jobcard.pk }}')"
-                                                title="View {{ total_images }} image(s)">
-                                            <i class="fas fa-images"></i>
-                                        </button>
-                                        <span class="icon-count">{{ total_images }}</span>
-                                    </div>
-                                    <div id="jobcard_{{ jobcard.pk }}_images" style="display: none;">
-                                        {% for img in jobcard.images.all %}
-                                            <div class="image-data" 
-                                                 data-url="{{ img.image.url }}" 
-                                                 data-alt="Image for {{ jobcard.customer }} - Item {{ img.item_index }} - Complaint {{ img.complaint_index }}"></div>
-                                        {% endfor %}
-                                    </div>
-                                {% else %}
-                                    <button class="icon-btn" disabled title="No images available">
+                        {% empty %}
+                            <button class="icon-btn" disabled title="No notes available">
+                                <i class="fas fa-sticky-note"></i>
+                            </button>
+                        {% endfor %}
+                    </td>
+                    <td style="text-align: center;">
+                        {% with total_images=jobcard.images.all|length %}
+                            {% if total_images > 0 %}
+                                <div class="icon-with-count">
+                                    <button class="icon-btn" 
+                                            onclick="showImagesModal('{{ jobcard.customer|escapejs }} - {{ jobcard.ticket_no }}', '{{ jobcard.pk }}')"
+                                            title="View {{ total_images }} image(s)">
                                         <i class="fas fa-images"></i>
                                     </button>
-                                {% endif %}
-                            {% endwith %}
-                        </td>
-                        <td>
-                            <a href="{% url 'jobcard_edit' jobcard.pk %}" class="btn-edit" title="Edit Job Card">
-                                <i class="fas fa-edit"></i>
-                            </a>
-                            <button class="btn-delete" 
-                                    onclick="confirmDelete('{{ jobcard.ticket_no }}', '{{ jobcard.customer|escapejs }}', '{{ jobcard.phone }}')" 
-                                    title="Delete Job Card">
-                                <i class="fas fa-trash"></i> 
-                            </button>
-                        </td>
-                    </tr>
-                {% empty %}
-                    <tr>
-                        <td colspan="12" style="text-align:center; padding: 40px; color: #6c757d; font-style: italic;">
-                            <i class="fas fa-inbox" style="font-size: 48px; margin-bottom: 10px; display: block;"></i>
-                            No Job Cards Found
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+                                    <span class="icon-count">{{ total_images }}</span>
+                                </div>
+                                <div id="jobcard_{{ jobcard.pk }}_images" style="display: none;">
+                                    {% for img in jobcard.images.all %}
+                                        <div class="image-data" 
+                                             data-url="{{ img.image.url }}" 
+                                             data-alt="Image for {{ jobcard.customer }} - Item {{ img.item_index }} - Complaint {{ img.complaint_index }}"></div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <button class="icon-btn" disabled title="No images available">
+                                    <i class="fas fa-images"></i>
+                                </button>
+                            {% endif %}
+                        {% endwith %}
+                    </td>
+                    <td>
+                        <a href="{% url 'jobcard_edit' jobcard.pk %}" class="btn-edit" title="Edit Job Card">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <button class="btn-delete" 
+                                onclick="confirmDelete('{{ jobcard.ticket_no }}', '{{ jobcard.customer|escapejs }}', '{{ jobcard.phone }}')" 
+                                title="Delete Job Card">
+                            <i class="fas fa-trash"></i> 
+                        </button>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="12" style="text-align:center; padding: 40px; color: #6c757d; font-style: italic;">
+                        <i class="fas fa-inbox" style="font-size: 48px; margin-bottom: 10px; display: block;"></i>
+                        No Job Cards Found
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
 
-    <!-- Notes Modal -->
-    <div id="notesModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title">
-                    <i class="fas fa-sticky-note"></i>
-                    Notes for <span id="notesItemName"></span>
-                </h3>
-                <button class="close-btn" onclick="closeNotesModal()">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div id="notesContent" class="notes-content"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Images Modal -->
-    <div id="imagesModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title">
-                    <i class="fas fa-images"></i>
-                    Images for <span id="imagesItemName"></span>
-                </h3>
-                <button class="close-btn" onclick="closeImagesModal()">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div id="imagesContent" class="images-gallery"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Status Update Modal -->
-    <div id="statusModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title">
-                    <i class="fas fa-edit"></i>
-                    Update Status for <span id="statusItemName"></span>
-                </h3>
-                <button class="close-btn" onclick="closeStatusModal()">&times;</button>
-            </div>
-            <div class="modal-body">
-                <p>Select new status:</p>
-                <div style="margin: 20px 0;">
-                    <select id="statusSelect" class="form-select" style="width: 100%; padding: 10px; font-size: 16px;">
-                        <option value="logged">Logged</option>
-                        <option value="sent_technician">Sent To Technician</option>
-                        <option value="pending">Pending</option>
-                        <option value="completed">Completed</option>
-                        <option value="returned">Returned</option>
-                        <option value="rejected">Rejected</option>
-                    </select>
-                </div>
-                <div style="text-align: center; margin-top: 20px;">
-                    <button class="btn-confirm" onclick="confirmStatusUpdate()">Update Status</button>
-                    <button class="btn-cancel" onclick="closeStatusModal()">Cancel</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Delete Confirmation Modal -->
-    <div id="deleteModal" class="modal">
-        <div class="delete-modal-content">
-            <h3 class="delete-modal-title">
-                <i class="fas fa-exclamation-triangle"></i>
-                Confirm Deletion
+<!-- Notes Modal -->
+<div id="notesModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">
+                <i class="fas fa-sticky-note"></i>
+                Notes for <span id="notesItemName"></span>
             </h3>
-            <div id="deleteMessage" class="delete-modal-message"></div>
-            <div style="margin-top: 30px;">
-                <button id="confirmDeleteBtn" class="btn-confirm" onclick="deleteJobCard()">
-                    <i class="fas fa-trash"></i> Yes, Delete
-                </button>
-                <button class="btn-cancel" onclick="closeDeleteModal()">
-                    <i class="fas fa-times"></i> Cancel
-                </button>
+            <button class="close-btn" onclick="closeNotesModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div id="notesContent" class="notes-content"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Images Modal -->
+<div id="imagesModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">
+                <i class="fas fa-images"></i>
+                Images for <span id="imagesItemName"></span>
+            </h3>
+            <button class="close-btn" onclick="closeImagesModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div id="imagesContent" class="images-gallery"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Status Update Modal -->
+<div id="statusModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">
+                <i class="fas fa-edit"></i>
+                Update Status for <span id="statusItemName"></span>
+            </h3>
+            <button class="close-btn" onclick="closeStatusModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p>Select new status:</p>
+            <div style="margin: 20px 0;">
+                <select id="statusSelect" class="form-select" style="width: 100%; padding: 10px; font-size: 16px;">
+                    <option value="logged">Logged</option>
+                    <option value="sent_technician">Sent To Technician</option>
+                    <option value="pending">Pending</option>
+                    <option value="completed">Completed</option>
+                    <option value="returned">Returned</option>
+                    <option value="rejected">Rejected</option>
+                </select>
+            </div>
+            <div style="text-align: center; margin-top: 20px;">
+                <button class="btn-confirm" onclick="confirmStatusUpdate()">Update Status</button>
+                <button class="btn-cancel" onclick="closeStatusModal()">Cancel</button>
             </div>
         </div>
     </div>
+</div>
 
-    <script>
-        // Date utility functions
-        function formatDate(date) {
-            return date.toISOString().split('T')[0];
-        }
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" class="modal">
+    <div class="delete-modal-content">
+        <h3 class="delete-modal-title">
+            <i class="fas fa-exclamation-triangle"></i>
+            Confirm Deletion
+        </h3>
+        <div id="deleteMessage" class="delete-modal-message"></div>
+        <div style="margin-top: 30px;">
+            <button id="confirmDeleteBtn" class="btn-confirm" onclick="deleteJobCard()">
+                <i class="fas fa-trash"></i> Yes, Delete
+            </button>
+            <button class="btn-cancel" onclick="closeDeleteModal()">
+                <i class="fas fa-times"></i> Cancel
+            </button>
+        </div>
+    </div>
+</div>
 
-        function parseDate(dateString) {
-            return new Date(dateString + 'T00:00:00');
-        }
-
-        function isDateInRange(dateString, fromDate, toDate) {
-            if (!dateString) return false;
-            
-            const date = parseDate(dateString);
-            const from = fromDate ? parseDate(fromDate) : null;
-            const to = toDate ? parseDate(toDate) : null;
-            
-            if (from && to) {
-                return date >= from && date <= to;
-            } else if (from) {
-                return date >= from;
-            } else if (to) {
-                return date <= to;
-            }
-            
-            return true;
-        }
-
-        // Set predefined date filters
-        function setDateFilter(period) {
-            const today = new Date();
-            const dateFrom = document.getElementById('dateFrom');
-            const dateTo = document.getElementById('dateTo');
-            
-            let fromDate, toDate;
-            
-            switch (period) {
-                case 'today':
-                    fromDate = toDate = today;
+<script>
+    // Utility functions
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let cookie of cookies) {
+                cookie = cookie.trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
                     break;
-                case 'week':
-                    const startOfWeek = new Date(today);
-                    startOfWeek.setDate(today.getDate() - today.getDay());
-                    const endOfWeek = new Date(startOfWeek);
-                    endOfWeek.setDate(startOfWeek.getDate() + 6);
-                    fromDate = startOfWeek;
-                    toDate = endOfWeek;
-                    break;
-                case 'month':
-                    fromDate = new Date(today.getFullYear(), today.getMonth(), 1);
-                    toDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-                    break;
-            }
-            
-            dateFrom.value = formatDate(fromDate);
-            dateTo.value = formatDate(toDate);
-            
-            performSearch();
-            
-            const periodNames = {
-                'today': 'Today',
-                'week': 'This Week',
-                'month': 'This Month'
-            };
-            
-            showAlert(`📅 Filter set to ${periodNames[period]} (${formatDate(fromDate)} to ${formatDate(toDate)})`, 'success');
-        }
-
-        // Enhanced search functionality with date filtering
-        function performSearch() {
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            const statusFilter = document.getElementById('statusFilter').value.toLowerCase();
-            const dateFrom = document.getElementById('dateFrom').value;
-            const dateTo = document.getElementById('dateTo').value;
-            const rows = document.querySelectorAll('#jobTable tbody tr.customer-row');
-            const searchResultsInfo = document.getElementById('searchResultsInfo');
-            
-            let visibleCount = 0;
-            let totalCount = rows.length;
-            let filterCriteria = [];
-            
-            rows.forEach(row => {
-                const customerName = row.querySelector('td:nth-child(4)').textContent.toLowerCase();
-                const ticketNo = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
-                const phone = row.querySelector('td:nth-child(6)').textContent.toLowerCase();
-                const itemsColumn = row.querySelector('td:nth-child(7)').textContent.toLowerCase();
-                const complaintsColumn = row.querySelector('td:nth-child(8)').textContent.toLowerCase();
-                const dateString = row.getAttribute('data-date');
-                
-                // Get all status badges for this row
-                const statusBadges = row.querySelectorAll('[data-status]');
-                let hasMatchingStatus = false;
-                
-                if (statusFilter === '') {
-                    hasMatchingStatus = true; // Show all if no status filter
-                } else {
-                    statusBadges.forEach(badge => {
-                        if (badge.getAttribute('data-status') === statusFilter) {
-                            hasMatchingStatus = true;
-                        }
-                    });
                 }
-                
-                // Check text search
-                const hasMatchingText = searchTerm === '' || 
-                    customerName.includes(searchTerm) || 
-                    ticketNo.includes(searchTerm) || 
-                    phone.includes(searchTerm) || 
-                    itemsColumn.includes(searchTerm) ||
-                    complaintsColumn.includes(searchTerm);
-                
-                // Check date range
-                const hasMatchingDate = isDateInRange(dateString, dateFrom, dateTo);
-                
-                if (hasMatchingText && hasMatchingStatus && hasMatchingDate) {
-                    row.style.display = '';
-                    visibleCount++;
-                } else {
-                    row.style.display = 'none';
-                }
-            });
+            }
+        }
+        return cookieValue;
+    }
+
+    // Date utility functions
+    function formatDate(date) {
+        return date.toISOString().split('T')[0];
+    }
+
+    function parseDate(dateString) {
+        return new Date(dateString + 'T00:00:00');
+    }
+
+    function isDateInRange(dateString, fromDate, toDate) {
+        if (!dateString) return false;
+        
+        const date = parseDate(dateString);
+        const from = fromDate ? parseDate(fromDate) : null;
+        const to = toDate ? parseDate(toDate) : null;
+        
+        if (from && to) {
+            return date >= from && date <= to;
+        } else if (from) {
+            return date >= from;
+        } else if (to) {
+            return date <= to;
+        }
+        
+        return true;
+    }
+
+    // Enhanced search functionality with date filtering
+    function performSearch() {
+        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+        const statusFilter = document.getElementById('statusFilter').value.toLowerCase();
+        const dateFrom = document.getElementById('dateFrom').value;
+        const dateTo = document.getElementById('dateTo').value;
+        const rows = document.querySelectorAll('#jobTable tbody tr.customer-row');
+        const searchResultsInfo = document.getElementById('searchResultsInfo');
+        
+        let visibleCount = 0;
+        let totalCount = rows.length;
+        let filterCriteria = [];
+        
+        rows.forEach(row => {
+            const customerName = row.querySelector('td:nth-child(4)').textContent.toLowerCase();
+            const ticketNo = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
+            const phone = row.querySelector('td:nth-child(6)').textContent.toLowerCase();
+            const itemsColumn = row.querySelector('td:nth-child(7)').textContent.toLowerCase();
+            const complaintsColumn = row.querySelector('td:nth-child(8)').textContent.toLowerCase();
+            const dateString = row.getAttribute('data-date');
             
-            // Build filter criteria description
-            if (searchTerm) filterCriteria.push(`text "${searchTerm}"`);
-            if (statusFilter) filterCriteria.push(`status "${statusFilter.replace('_', ' ')}"`);
-            if (dateFrom && dateTo) {
-                filterCriteria.push(`date range ${dateFrom} to ${dateTo}`);
-            } else if (dateFrom) {
-                filterCriteria.push(`date from ${dateFrom}`);
-            } else if (dateTo) {
-                filterCriteria.push(`date until ${dateTo}`);
+            // Get all status badges for this row
+            const statusBadges = row.querySelectorAll('[data-status]');
+            let hasMatchingStatus = false;
+            
+            if (statusFilter === '') {
+                hasMatchingStatus = true;
+            } else {
+                statusBadges.forEach(badge => {
+                    if (badge.getAttribute('data-status') === statusFilter) {
+                        hasMatchingStatus = true;
+                    }
+                });
             }
             
-            // Update search results info
+            // Check text search
+            const hasMatchingText = searchTerm === '' || 
+                customerName.includes(searchTerm) || 
+                ticketNo.includes(searchTerm) || 
+                phone.includes(searchTerm) || 
+                itemsColumn.includes(searchTerm) ||
+                complaintsColumn.includes(searchTerm);
+            
+            // Check date range
+            const hasMatchingDate = isDateInRange(dateString, dateFrom, dateTo);
+            
+            if (hasMatchingText && hasMatchingStatus && hasMatchingDate) {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+        
+        // Build filter criteria description
+        if (searchTerm) filterCriteria.push(`text "${searchTerm}"`);
+        if (statusFilter) filterCriteria.push(`status "${statusFilter.replace('_', ' ')}"`);
+        if (dateFrom && dateTo) {
+            filterCriteria.push(`date range ${dateFrom} to ${dateTo}`);
+        } else if (dateFrom) {
+            filterCriteria.push(`date from ${dateFrom}`);
+        } else if (dateTo) {
+            filterCriteria.push(`date until ${dateTo}`);
+        }
+        
+        // Update search results info
+        if (filterCriteria.length > 0) {
+            const filterText = filterCriteria.join(' and ');
+            let resultMessage = `📊 Showing ${visibleCount} of ${totalCount} job cards`;
+            
             if (filterCriteria.length > 0) {
-                const filterText = filterCriteria.join(' and ');
-                let resultMessage = `📊 Showing ${visibleCount} of ${totalCount} job cards`;
-                
-                if (filterCriteria.length > 0) {
-                    resultMessage += ` matching ${filterText}`;
-                }
-                
-                if (visibleCount === 0) {
-                    resultMessage += '<br><span style="color: #dc3545; font-size: 14px;"><i class="fas fa-search"></i> No matching records found. Try adjusting your filters.</span>';
-                }
-                
-                searchResultsInfo.innerHTML = resultMessage;
-                searchResultsInfo.style.display = 'block';
-            } else {
-                searchResultsInfo.style.display = 'none';
+                resultMessage += ` matching ${filterText}`;
             }
+            
+            if (visibleCount === 0) {
+                resultMessage += '<br><span style="color: #dc3545; font-size: 14px;"><i class="fas fa-search"></i> No matching records found. Try adjusting your filters.</span>';
+            }
+            
+            searchResultsInfo.innerHTML = resultMessage;
+            searchResultsInfo.style.display = 'block';
+        } else {
+            searchResultsInfo.style.display = 'none';
         }
+    }
 
-        // Event listeners for search and filter
-        document.getElementById('searchInput').addEventListener('input', performSearch);
-        document.getElementById('statusFilter').addEventListener('change', performSearch);
-        document.getElementById('dateFrom').addEventListener('change', performSearch);
-        document.getElementById('dateTo').addEventListener('change', performSearch);
+    // Event listeners for search and filter
+    document.getElementById('searchInput').addEventListener('input', performSearch);
+    document.getElementById('statusFilter').addEventListener('change', performSearch);
+    document.getElementById('dateFrom').addEventListener('change', performSearch);
+    document.getElementById('dateTo').addEventListener('change', performSearch);
 
-        // Clear all filters function
-        function clearAllFilters() {
-            document.getElementById('searchInput').value = '';
-            document.getElementById('statusFilter').value = '';
-            document.getElementById('dateFrom').value = '';
-            document.getElementById('dateTo').value = '';
+    // Clear all filters function
+    function clearAllFilters() {
+        document.getElementById('searchInput').value = '';
+        document.getElementById('statusFilter').value = '';
+        document.getElementById('dateFrom').value = '';
+        document.getElementById('dateTo').value = '';
+        performSearch();
+        showAlert('✅ All filters cleared successfully!', 'success');
+    }
+
+    // Fixed Status update functionality
+    let currentJobId = null;
+    let currentStatus = null;
+    let currentItemIndex = null;
+    let currentItemName = null;
+
+    function updateStatus(jobId, status, itemIndex, itemName) {
+        currentJobId = jobId;
+        currentStatus = status;
+        currentItemIndex = itemIndex;
+        currentItemName = itemName;
+        
+        document.getElementById('statusSelect').value = status;
+        document.getElementById('statusItemName').textContent = itemName;
+        document.getElementById('statusModal').style.display = 'block';
+    }
+
+    function closeStatusModal() {
+        document.getElementById('statusModal').style.display = 'none';
+        currentJobId = null;
+        currentStatus = null;
+        currentItemIndex = null;
+        currentItemName = null;
+    }
+
+    function confirmStatusUpdate() {
+    const newStatus = document.getElementById('statusSelect').value;
+    const csrftoken = getCookie('csrftoken');
+
+    if (!csrftoken) {
+        showAlert('⛔ CSRF token not found. Please refresh the page.', 'error');
+        return;
+    }
+
+    fetch(`/update-status/${currentJobId}/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken,
+            'Accept': 'application/json',
+        },
+        credentials: 'same-origin',
+        body: JSON.stringify({ 
+            status: newStatus,
+            item_index: parseInt(currentItemIndex)
+        })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            // Update the status badge
+            const statusBadge = document.querySelector(`[data-jobcard-id="${currentJobId}"][data-item-index="${currentItemIndex}"]`);
+            if (statusBadge) {
+                statusBadge.className = statusBadge.className.replace(/\bstatus-\w+\b/g, '');
+                statusBadge.classList.add('status-badge', `status-${newStatus}`);
+                statusBadge.textContent = data.status || newStatus.charAt(0).toUpperCase() + newStatus.slice(1).replace('_', ' ');
+                statusBadge.setAttribute('data-status', newStatus);
+                
+                statusBadge.setAttribute('onclick', 
+                    `updateStatus('${currentJobId}', '${newStatus}', ${currentItemIndex}, '${currentItemName.replace(/'/g, "\\'")}')`);
+                
+                statusBadge.classList.remove('status-updating');
+                statusBadge.style.pointerEvents = '';
+            }
+            
+            closeStatusModal();
+            showAlert(`✅ Status updated to "${data.status}" successfully!`, 'success');
+            
             performSearch();
-            showAlert('✅ All filters cleared successfully!', 'success');
+        } else {
+            throw new Error(data.error || 'Unknown error occurred');
         }
-
-        // Status update functionality
-        function getCookie(name) {
-            let cookieValue = null;
-            if (document.cookie && document.cookie !== '') {
-                const cookies = document.cookie.split(';');
-                for (let cookie of cookies) {
-                    cookie = cookie.trim();
-                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                        break;
-                    }
-                }
-            }
-            return cookieValue;
+    })
+    .catch(error => {
+        console.error('Status update error:', error);
+        showAlert(`⛔ Error updating status: ${error.message}`, 'error');
+        
+        if (statusBadge) {
+            statusBadge.classList.remove('status-updating');
+            statusBadge.style.pointerEvents = '';
         }
+    });
+}
+    // Notes modal functionality
+    function showNotesModal(itemName, notes) {
+        document.getElementById('notesItemName').textContent = itemName;
+        document.getElementById('notesContent').textContent = notes;
+        document.getElementById('notesModal').style.display = 'block';
+    }
 
-        let currentJobId = null;
-        let currentStatus = null;
-        let currentItemIndex = null;
+    function closeNotesModal() {
+        document.getElementById('notesModal').style.display = 'none';
+    }
 
-        function updateStatus(jobId, status, itemIndex) {
-            currentJobId = jobId;
-            currentStatus = status;
-            currentItemIndex = itemIndex;
-            document.getElementById('statusSelect').value = status;
-            document.getElementById('statusItemName').textContent = `Item ${itemIndex + 1}`;
-            document.getElementById('statusModal').style.display = 'block';
-        }
-
-        function closeStatusModal() {
-            document.getElementById('statusModal').style.display = 'none';
-        }
-
-        function confirmStatusUpdate() {
-            const newStatus = document.getElementById('statusSelect').value;
-            const csrftoken = getCookie('csrftoken');
-
-            fetch(`/update-status/${currentJobId}/`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': csrftoken
-                },
-                body: JSON.stringify({ 
-                    status: newStatus,
-                    item_index: currentItemIndex
-                })
-            })
-            .then(response => {
-                if (!response.ok) throw new Error('Network error: ' + response.status);
-                return response.json();
-            })
-            .then(data => {
-                if (data.success) {
-                    // Update all status badges for this item
-                    const badges = document.querySelectorAll(`[onclick*="${currentJobId}"][onclick*="${currentItemIndex}"]`);
-                    badges.forEach(badge => {
-                        badge.className = badge.className.replace(/\bstatus-\w+\b/g, '');
-                        badge.classList.add(`status-badge`, `status-${newStatus}`);
-                        badge.textContent = newStatus.charAt(0).toUpperCase() + newStatus.slice(1).replace('_', ' ');
-                        badge.setAttribute('data-status', newStatus);
-                    });
-                    closeStatusModal();
-                    showAlert('✅ Status updated successfully!', 'success');
-                    
-                    // Refresh search results if status filter is active
-                    performSearch();
-                } else {
-                    showAlert('⛔ Error: ' + data.error, 'error');
-                }
-            })
-            .catch(err => {
-                showAlert('⛔ Error: ' + err.message, 'error');
-            });
-        }
-
-        // Notes modal functionality
-        function showNotesModal(itemName, notes) {
-            document.getElementById('notesItemName').textContent = itemName;
-            document.getElementById('notesContent').textContent = notes;
-            document.getElementById('notesModal').style.display = 'block';
-        }
-
-        function closeNotesModal() {
-            document.getElementById('notesModal').style.display = 'none';
-        }
-
-        // Images modal functionality
-        function showImagesModal(itemName, jobId) {
-            document.getElementById('imagesItemName').textContent = itemName;
-            const imagesContainer = document.getElementById('imagesContent');
-            imagesContainer.innerHTML = '';
-            
-            const imageElements = document.querySelectorAll(`#jobcard_${jobId}_images .image-data`);
-            
-            if (imageElements.length === 0) {
-                imagesContainer.innerHTML = '<div class="no-content-message">No images available</div>';
-            } else {
-                imageElements.forEach(img => {
-                    const url = img.getAttribute('data-url');
-                    const alt = img.getAttribute('data-alt');
-                    
-                    const imageItem = document.createElement('div');
-                    imageItem.className = 'image-item';
-                    imageItem.innerHTML = `<img src="${url}" alt="${alt}">`;
-                    imagesContainer.appendChild(imageItem);
-                });
-            }
-            
-            document.getElementById('imagesModal').style.display = 'block';
-        }
-
-        function closeImagesModal() {
-            document.getElementById('imagesModal').style.display = 'none';
-        }
-
-        // Delete functionality
-        let ticketToDelete = null;
-        let customerToDelete = null;
-        let phoneToDelete = null;
-
-        function confirmDelete(ticketNo, customerName, phone) {
-            ticketToDelete = ticketNo;
-            customerToDelete = customerName;
-            phoneToDelete = phone;
-            
-            document.getElementById('deleteMessage').innerHTML = 
-                `<div style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                    <h4 style="color: #856404; margin: 0 0 10px 0;">⚠️ JOB CARD DELETION</h4>
-                    <p style="margin: 0; color: #856404; font-weight: bold;">This will permanently delete:</p>
-                </div>
+    // Images modal functionality
+    function showImagesModal(itemName, jobId) {
+        document.getElementById('imagesItemName').textContent = itemName;
+        const imagesContainer = document.getElementById('imagesContent');
+        imagesContainer.innerHTML = '';
+        
+        const imageElements = document.querySelectorAll(`#jobcard_${jobId}_images .image-data`);
+        
+        if (imageElements.length === 0) {
+            imagesContainer.innerHTML = '<div class="no-content-message">No images available</div>';
+        } else {
+            imageElements.forEach(img => {
+                const url = img.getAttribute('data-url');
+                const alt = img.getAttribute('data-alt');
                 
-                <div style="text-align: left; background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                    <p><strong>🎫 Ticket No:</strong> ${ticketNo}</p>
-                    <p><strong>👤 Customer:</strong> ${customerName}</p>
-                    <p><strong>📞 Phone:</strong> ${phone}</p>
-                </div>`;
-            
-            document.getElementById('deleteModal').style.display = 'block';
-        }
-
-        function closeDeleteModal() {
-            document.getElementById('deleteModal').style.display = 'none';
-            ticketToDelete = null;
-            customerToDelete = null;
-            phoneToDelete = null;
-        }
-
-        function deleteJobCard() {
-            if (!ticketToDelete) {
-                showAlert('⛔ No ticket selected for deletion', 'error');
-                return;
-            }
-            
-            const deleteBtn = document.getElementById('confirmDeleteBtn');
-            const originalHTML = deleteBtn.innerHTML;
-            
-            deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
-            deleteBtn.disabled = true;
-            
-            const csrfToken = getCookie('csrftoken');
-            
-            fetch(`/delete-ticket/${ticketToDelete}/`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': csrfToken
-                }
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.success) {
-                    showAlert(data.message, 'success');
-                    
-                    const row = document.querySelector(`tr[data-ticket="${ticketToDelete}"]`);
-                    if (row) {
-                        row.style.transition = 'all 0.5s ease';
-                        row.style.opacity = '0';
-                        row.style.transform = 'translateX(-100%)';
-                        setTimeout(() => {
-                            if (row.parentNode) {
-                                row.remove();
-                                
-                                // Update search results after deletion
-                                performSearch();
-                                
-                                const remainingRows = document.querySelectorAll('#jobTable tbody tr.customer-row');
-                                if (remainingRows.length === 0) {
-                                    const tbody = document.querySelector('#jobTable tbody');
-                                    tbody.innerHTML = `
-                                        <tr>
-                                            <td colspan="12" style="text-align:center; padding: 40px; color: #6c757d; font-style: italic;">
-                                                <i class="fas fa-inbox" style="font-size: 48px; margin-bottom: 10px; display: block;"></i>
-                                                No Job Cards Found
-                                            </td>
-                                        </tr>`;
-                                    document.getElementById('searchResultsInfo').style.display = 'none';
-                                }
-                            }
-                        }, 500);
-                    }
-                    
-                    closeDeleteModal();
-                } else {
-                    showAlert(`⛔ Deletion failed: ${data.error}`, 'error');
-                }
-            })
-            .catch(error => {
-                console.error('Delete error:', error);
-                showAlert(`⛔ Network error: ${error.message}`, 'error');
-            })
-            .finally(() => {
-                deleteBtn.innerHTML = originalHTML;
-                deleteBtn.disabled = false;
+                const imageItem = document.createElement('div');
+                imageItem.className = 'image-item';
+                imageItem.innerHTML = `<img src="${url}" alt="${alt}">`;
+                imagesContainer.appendChild(imageItem);
             });
         }
+        
+        document.getElementById('imagesModal').style.display = 'block';
+    }
 
-        // Alert function
-        function showAlert(message, type) {
-            const alertContainer = document.getElementById('alertContainer');
-            const alert = document.createElement('div');
-            alert.className = `alert alert-${type}`;
-            alert.innerHTML = message;
+    function closeImagesModal() {
+        document.getElementById('imagesModal').style.display = 'none';
+    }
+
+    // Fixed Delete functionality
+    let ticketToDelete = null;
+    let customerToDelete = null;
+    let phoneToDelete = null;
+
+    function confirmDelete(ticketNo, customerName, phone) {
+        ticketToDelete = ticketNo;
+        customerToDelete = customerName;
+        phoneToDelete = phone;
+        
+        document.getElementById('deleteMessage').innerHTML = 
+            `<div style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                <h4 style="color: #856404; margin: 0 0 10px 0;">⚠️ JOB CARD DELETION</h4>
+                <p style="margin: 0; color: #856404; font-weight: bold;">This will permanently delete:</p>
+            </div>
             
-            const closeBtn = document.createElement('button');
-            closeBtn.innerHTML = '&times;';
-            closeBtn.style.cssText = `
-                position: absolute;
-                top: 10px;
-                right: 15px;
-                background: none;
-                border: none;
-                font-size: 20px;
-                cursor: pointer;
-                color: inherit;
-                opacity: 0.7;
-            `;
-            closeBtn.onclick = () => alert.remove();
-            alert.appendChild(closeBtn);
-            
-            alertContainer.appendChild(alert);
-            
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-            
-            setTimeout(() => {
-                if (alert.parentNode) {
-                    alert.style.opacity = '0';
-                    setTimeout(() => alert.remove(), 300);
+            <div style="text-align: left; background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                <p><strong>🎫 Ticket No:</strong> ${ticketNo}</p>
+                <p><strong>👤 Customer:</strong> ${customerName}</p>
+                <p><strong>📞 Phone:</strong> ${phone}</p>
+            </div>`;
+        
+        document.getElementById('deleteModal').style.display = 'block';
+    }
+
+    function closeDeleteModal() {
+        document.getElementById('deleteModal').style.display = 'none';
+        ticketToDelete = null;
+        customerToDelete = null;
+        phoneToDelete = null;
+    }
+
+    function deleteJobCard() {
+        if (!ticketToDelete) {
+            showAlert('⛔ No ticket selected for deletion', 'error');
+            return;
+        }
+        
+        const deleteBtn = document.getElementById('confirmDeleteBtn');
+        const originalHTML = deleteBtn.innerHTML;
+        
+        deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+        deleteBtn.disabled = true;
+        
+        const csrfToken = getCookie('csrftoken');
+        
+        if (!csrfToken) {
+            showAlert('⛔ CSRF token not found. Please refresh the page.', 'error');
+            deleteBtn.innerHTML = originalHTML;
+            deleteBtn.disabled = false;
+            return;
+        }
+        
+        fetch(`/delete-ticket/${ticketToDelete}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken,
+                'Accept': 'application/json',
+            },
+            credentials: 'same-origin',
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                showAlert(data.message, 'success');
+                
+                const row = document.querySelector(`tr[data-ticket="${ticketToDelete}"]`);
+                if (row) {
+                    row.style.transition = 'all 0.5s ease';
+                    row.style.opacity = '0';
+                    row.style.transform = 'translateX(-100%)';
+                    setTimeout(() => {
+                        if (row.parentNode) {
+                            row.remove();
+                            
+                            // Update search results after deletion
+                            performSearch();
+                            
+                            const remainingRows = document.querySelectorAll('#jobTable tbody tr.customer-row');
+                            if (remainingRows.length === 0) {
+                                const tbody = document.querySelector('#jobTable tbody');
+                                tbody.innerHTML = `
+                                    <tr>
+                                        <td colspan="12" style="text-align:center; padding: 40px; color: #6c757d; font-style: italic;">
+                                            <i class="fas fa-inbox" style="font-size: 48px; margin-bottom: 10px; display: block;"></i>
+                                            No Job Cards Found
+                                        </td>
+                                    </tr>`;
+                                document.getElementById('searchResultsInfo').style.display = 'none';
+                            }
+                        }
+                    }, 500);
                 }
-            }, 10000);
+                
+                closeDeleteModal();
+            } else {
+                throw new Error(data.error || 'Unknown error occurred');
+            }
+        })
+        .catch(error => {
+            console.error('Delete error:', error);
+            showAlert(`⛔ Failed to delete: ${error.message}`, 'error');
+        })
+        .finally(() => {
+            deleteBtn.innerHTML = originalHTML;
+            deleteBtn.disabled = false;
+        });
+    }
+
+    // Alert function
+    function showAlert(message, type) {
+        const alertContainer = document.getElementById('alertContainer');
+        const alert = document.createElement('div');
+        alert.className = `alert alert-${type}`;
+        alert.innerHTML = message;
+        
+        const closeBtn = document.createElement('button');
+        closeBtn.innerHTML = '&times;';
+        closeBtn.style.cssText = `
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: inherit;
+            opacity: 0.7;
+        `;
+        closeBtn.onclick = () => alert.remove();
+        alert.appendChild(closeBtn);
+        
+        alertContainer.appendChild(alert);
+        
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        
+        setTimeout(() => {
+            if (alert.parentNode) {
+                alert.style.opacity = '0';
+                setTimeout(() => alert.remove(), 300);
+            }
+        }, 10000);
+    }
+
+    // Set predefined date filters
+    function setDateFilter(period) {
+        const today = new Date();
+        const dateFrom = document.getElementById('dateFrom');
+        const dateTo = document.getElementById('dateTo');
+        
+        let fromDate, toDate;
+        
+        switch (period) {
+            case 'today':
+                fromDate = toDate = today;
+                break;
+            case 'week':
+                const startOfWeek = new Date(today);
+                startOfWeek.setDate(today.getDate() - today.getDay());
+                const endOfWeek = new Date(startOfWeek);
+                endOfWeek.setDate(startOfWeek.getDate() + 6);
+                fromDate = startOfWeek;
+                toDate = endOfWeek;
+                break;
+            case 'month':
+                fromDate = new Date(today.getFullYear(), today.getMonth(), 1);
+                toDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+                break;
+        }
+        
+        dateFrom.value = formatDate(fromDate);
+        dateTo.value = formatDate(toDate);
+        
+        performSearch();
+        
+        const periodNames = {
+            'today': 'Today',
+            'week': 'This Week',
+            'month': 'This Month'
+        };
+        
+        showAlert(`📅 Filter set to ${periodNames[period]} (${formatDate(fromDate)} to ${formatDate(toDate)})`, 'success');
+    }
+
+    // Close modals when clicking outside
+    window.addEventListener('click', function(event) {
+        if (event.target.classList.contains('modal')) {
+            event.target.style.display = 'none';
+        }
+    });
+
+    // Enhanced keyboard shortcuts
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            document.querySelectorAll('.modal').forEach(modal => {
+                modal.style.display = 'none';
+            });
+        }
+        
+        if (event.ctrlKey && event.key === 'f') {
+            event.preventDefault();
+            document.getElementById('searchInput').focus();
+            document.getElementById('searchInput').select();
+        }
+        
+        if (event.ctrlKey && event.key === 'p') {
+            event.preventDefault();
+            window.print();
+        }
+        
+        // Ctrl + R to clear filters
+        if (event.ctrlKey && event.key === 'r') {
+            event.preventDefault();
+            clearAllFilters();
+        }
+        
+        // Ctrl + S to focus status filter
+        if (event.ctrlKey && event.key === 's') {
+            event.preventDefault();
+            document.getElementById('statusFilter').focus();
+        }
+        
+        // Ctrl + D to focus date from
+        if (event.ctrlKey && event.key === 'd') {
+            event.preventDefault();
+            document.getElementById('dateFrom').focus();
+        }
+        
+        // Ctrl + T for today's filter
+        if (event.ctrlKey && event.key === 't') {
+            event.preventDefault();
+            setDateFilter('today');
+        }
+        
+        // Ctrl + W for this week's filter
+        if (event.ctrlKey && event.key === 'w') {
+            event.preventDefault();
+            setDateFilter('week');
+        }
+        
+        // Ctrl + M for this month's filter
+        if (event.ctrlKey && event.key === 'm') {
+            event.preventDefault();
+            setDateFilter('month');
+        }
+    });
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        // Set initial search results if URL has parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const status = urlParams.get('status');
+        const search = urlParams.get('search');
+        const dateFrom = urlParams.get('date_from');
+        const dateTo = urlParams.get('date_to');
+        
+        if (status) {
+            document.getElementById('statusFilter').value = status;
+        }
+        if (search) {
+            document.getElementById('searchInput').value = search;
+        }
+        if (dateFrom) {
+            document.getElementById('dateFrom').value = dateFrom;
+        }
+        if (dateTo) {
+            document.getElementById('dateTo').value = dateTo;
+        }
+        
+        // Perform initial search to show results
+        if (status || search || dateFrom || dateTo) {
+            performSearch();
         }
 
-        // Close modals when clicking outside
-        window.addEventListener('click', function(event) {
-            if (event.target.classList.contains('modal')) {
-                event.target.style.display = 'none';
-            }
-        });
+        // Check if CSRF token is available
+        const csrfToken = getCookie('csrftoken');
+        if (!csrfToken) {
+            console.warn('⚠️ CSRF token not found. Some features may not work properly.');
+            showAlert('⚠️ Security token missing. Please refresh the page if you encounter issues.', 'error');
+        }
+        
+        console.log('✅ Enhanced Job Card List with Date Search initialized successfully');
+        console.log('📅 Available shortcuts:');
+        console.log('   Ctrl+F: Focus search box');
+        console.log('   Ctrl+S: Focus status filter');
+        console.log('   Ctrl+D: Focus date from');
+        console.log('   Ctrl+T: Filter today');
+        console.log('   Ctrl+W: Filter this week');
+        console.log('   Ctrl+M: Filter this month');
+        console.log('   Ctrl+R: Clear all filters');
+        console.log('   Ctrl+P: Print');
+        console.log('   Escape: Close modals');
+    });
 
-        // Enhanced keyboard shortcuts
-        document.addEventListener('keydown', function(event) {
-            if (event.key === 'Escape') {
-                document.querySelectorAll('.modal').forEach(modal => {
-                    modal.style.display = 'none';
-                });
-            }
-            
-            if (event.ctrlKey && event.key === 'f') {
-                event.preventDefault();
-                document.getElementById('searchInput').focus();
-                document.getElementById('searchInput').select();
-            }
-            
-            if (event.ctrlKey && event.key === 'p') {
-                event.preventDefault();
-                window.print();
-            }
-            
-            // Ctrl + R to clear filters
-            if (event.ctrlKey && event.key === 'r') {
-                event.preventDefault();
-                clearAllFilters();
-            }
-            
-            // Ctrl + S to focus status filter
-            if (event.ctrlKey && event.key === 's') {
-                event.preventDefault();
-                document.getElementById('statusFilter').focus();
-            }
-            
-            // Ctrl + D to focus date from
-            if (event.ctrlKey && event.key === 'd') {
-                event.preventDefault();
-                document.getElementById('dateFrom').focus();
-            }
-            
-            // Ctrl + T for today's filter
-            if (event.ctrlKey && event.key === 't') {
-                event.preventDefault();
-                setDateFilter('today');
-            }
-            
-            // Ctrl + W for this week's filter
-            if (event.ctrlKey && event.key === 'w') {
-                event.preventDefault();
-                setDateFilter('week');
-            }
-            
-            // Ctrl + M for this month's filter
-            if (event.ctrlKey && event.key === 'm') {
-                event.preventDefault();
-                setDateFilter('month');
-            }
-        });
+    // Handle form submission errors
+    window.addEventListener('unhandledrejection', function(event) {
+        console.error('Unhandled promise rejection:', event.reason);
+        showAlert('⛔ An unexpected error occurred. Please try again.', 'error');
+    });
 
-        // Initialize on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            // Set initial search results if URL has parameters
-            const urlParams = new URLSearchParams(window.location.search);
-            const status = urlParams.get('status');
-            const search = urlParams.get('search');
-            const dateFrom = urlParams.get('date_from');
-            const dateTo = urlParams.get('date_to');
-            
-            if (status) {
-                document.getElementById('statusFilter').value = status;
-            }
-            if (search) {
-                document.getElementById('searchInput').value = search;
-            }
-            if (dateFrom) {
-                document.getElementById('dateFrom').value = dateFrom;
-            }
-            if (dateTo) {
-                document.getElementById('dateTo').value = dateTo;
-            }
-            
-            // Perform initial search to show results
-            if (status || search || dateFrom || dateTo) {
-                performSearch();
-            }
-            
-            console.log('✅ Enhanced Job Card List with Date Search initialized successfully');
-            console.log('📅 Available shortcuts:');
-            console.log('   Ctrl+F: Focus search box');
-            console.log('   Ctrl+S: Focus status filter');
-            console.log('   Ctrl+D: Focus date from');
-            console.log('   Ctrl+T: Filter today');
-            console.log('   Ctrl+W: Filter this week');
-            console.log('   Ctrl+M: Filter this month');
-            console.log('   Ctrl+R: Clear all filters');
-            console.log('   Ctrl+P: Print');
-            console.log('   Escape: Close modals');
-        });
-    </script>
-</body>
-</html>
+    // Add error handling for network issues
+    window.addEventListener('offline', function() {
+        showAlert('⚠️ You are offline. Some features may not work properly.', 'error');
+    });
+
+    window.addEventListener('online', function() {
+        showAlert('✅ You are back online.', 'success');
+    });
+</script>
+{% endblock %}
