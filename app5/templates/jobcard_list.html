@@ -622,9 +622,16 @@
                                       data-jobcard-id="{{ jobcard.pk }}"
                                       data-item-index="{{ forloop.counter0 }}"
                                       data-status="{{ item_data.status }}"
-                                      onclick="updateStatus('{{ jobcard.pk }}', '{{ item_data.status }}', {{ forloop.counter0 }}, '{{ item_data.item|escapejs }}')"
+                                      onclick="updateStatus({{ jobcard.pk }}, '{{ item_data.status }}', {{ forloop.counter0 }}, '{{ item_data.item|escapejs }}')"
                                       title="Click to change status for {{ item_data.item }}">
-                                    {{ item_data.status|capfirst|default:"Logged" }}
+                                    {% if item_data.status == 'logged' %}Logged
+                                    {% elif item_data.status == 'sent_technician' %}Sent To Technician
+                                    {% elif item_data.status == 'pending' %}Pending
+                                    {% elif item_data.status == 'completed' %}Completed
+                                    {% elif item_data.status == 'returned' %}Returned
+                                    {% elif item_data.status == 'rejected' %}Rejected
+                                    {% else %}{{ item_data.status|capfirst }}
+                                    {% endif %}
                                 </span>
                             </div>
                         {% endfor %}
@@ -777,6 +784,14 @@
 </div>
 
 <script>
+    // CSRF token configuration
+    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || 
+                     document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ||
+                     getCookie('csrftoken');
+
+    // Debug log
+    console.log('CSRF Token:', csrftoken);
+
     // Utility functions
     function getCookie(name) {
         let cookieValue = null;
@@ -947,68 +962,100 @@
     }
 
     function confirmStatusUpdate() {
-    const newStatus = document.getElementById('statusSelect').value;
-    const csrftoken = getCookie('csrftoken');
-
-    if (!csrftoken) {
-        showAlert('⛔ CSRF token not found. Please refresh the page.', 'error');
-        return;
-    }
-
-    fetch(`/update-status/${currentJobId}/`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': csrftoken,
-            'Accept': 'application/json',
-        },
-        credentials: 'same-origin',
-        body: JSON.stringify({ 
-            status: newStatus,
-            item_index: parseInt(currentItemIndex)
-        })
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        const newStatus = document.getElementById('statusSelect').value;
+        
+        if (!csrftoken) {
+            showAlert('⛔ CSRF token not found. Please refresh the page.', 'error');
+            return;
         }
-        return response.json();
-    })
-    .then(data => {
-        if (data.success) {
-            // Update the status badge
-            const statusBadge = document.querySelector(`[data-jobcard-id="${currentJobId}"][data-item-index="${currentItemIndex}"]`);
+
+        if (!currentJobId) {
+            showAlert('⛔ No job card selected for status update.', 'error');
+            return;
+        }
+
+        // Show loading state
+        const statusBadge = document.querySelector(`[data-jobcard-id="${currentJobId}"][data-item-index="${currentItemIndex}"]`);
+        if (statusBadge) {
+            statusBadge.classList.add('status-updating');
+            statusBadge.style.pointerEvents = 'none';
+        }
+
+        console.log('Updating status:', {
+            jobId: currentJobId,
+            itemIndex: currentItemIndex,
+            newStatus: newStatus
+        });
+
+        fetch(`/update-status/${currentJobId}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken,
+                'Accept': 'application/json',
+            },
+            credentials: 'same-origin',
+            body: JSON.stringify({ 
+                status: newStatus,
+                item_index: parseInt(currentItemIndex)
+            })
+        })
+        .then(response => {
+            console.log('Status update response:', response.status, response.statusText);
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Status update result:', data);
+            if (data.success) {
+                // Update the status badge
+                if (statusBadge) {
+                    statusBadge.className = statusBadge.className.replace(/\bstatus-\w+\b/g, '');
+                    statusBadge.classList.add('status-badge', `status-${newStatus}`);
+                    
+                    // Update display text
+                    let displayText;
+                    switch(newStatus) {
+                        case 'logged': displayText = 'Logged'; break;
+                        case 'sent_technician': displayText = 'Sent To Technician'; break;
+                        case 'pending': displayText = 'Pending'; break;
+                        case 'completed': displayText = 'Completed'; break;
+                        case 'returned': displayText = 'Returned'; break;
+                        case 'rejected': displayText = 'Rejected'; break;
+                        default: displayText = newStatus.charAt(0).toUpperCase() + newStatus.slice(1);
+                    }
+                    
+                    statusBadge.textContent = displayText;
+                    statusBadge.setAttribute('data-status', newStatus);
+                    
+                    statusBadge.setAttribute('onclick', 
+                        `updateStatus(${currentJobId}, '${newStatus}', ${currentItemIndex}, '${currentItemName.replace(/'/g, "\\'")}')`);
+                    
+                    statusBadge.classList.remove('status-updating');
+                    statusBadge.style.pointerEvents = '';
+                }
+                
+                closeStatusModal();
+                showAlert(`✅ Status updated to "${displayText}" successfully!`, 'success');
+                
+                performSearch();
+            } else {
+                throw new Error(data.error || 'Unknown error occurred');
+            }
+        })
+        .catch(error => {
+            console.error('Status update error:', error);
+            showAlert(`⛔ Error updating status: ${error.message}`, 'error');
+            
             if (statusBadge) {
-                statusBadge.className = statusBadge.className.replace(/\bstatus-\w+\b/g, '');
-                statusBadge.classList.add('status-badge', `status-${newStatus}`);
-                statusBadge.textContent = data.status || newStatus.charAt(0).toUpperCase() + newStatus.slice(1).replace('_', ' ');
-                statusBadge.setAttribute('data-status', newStatus);
-                
-                statusBadge.setAttribute('onclick', 
-                    `updateStatus('${currentJobId}', '${newStatus}', ${currentItemIndex}, '${currentItemName.replace(/'/g, "\\'")}')`);
-                
                 statusBadge.classList.remove('status-updating');
                 statusBadge.style.pointerEvents = '';
             }
-            
-            closeStatusModal();
-            showAlert(`✅ Status updated to "${data.status}" successfully!`, 'success');
-            
-            performSearch();
-        } else {
-            throw new Error(data.error || 'Unknown error occurred');
-        }
-    })
-    .catch(error => {
-        console.error('Status update error:', error);
-        showAlert(`⛔ Error updating status: ${error.message}`, 'error');
-        
-        if (statusBadge) {
-            statusBadge.classList.remove('status-updating');
-            statusBadge.style.pointerEvents = '';
-        }
-    });
-}
+        });
+    }
+
     // Notes modal functionality
     function showNotesModal(itemName, notes) {
         document.getElementById('notesItemName').textContent = itemName;
@@ -1087,37 +1134,37 @@
             return;
         }
         
+        if (!csrftoken) {
+            showAlert('⛔ CSRF token not found. Please refresh the page.', 'error');
+            return;
+        }
+        
         const deleteBtn = document.getElementById('confirmDeleteBtn');
         const originalHTML = deleteBtn.innerHTML;
         
         deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
         deleteBtn.disabled = true;
         
-        const csrfToken = getCookie('csrftoken');
-        
-        if (!csrfToken) {
-            showAlert('⛔ CSRF token not found. Please refresh the page.', 'error');
-            deleteBtn.innerHTML = originalHTML;
-            deleteBtn.disabled = false;
-            return;
-        }
+        console.log('Deleting ticket:', ticketToDelete);
         
         fetch(`/delete-ticket/${ticketToDelete}/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRFToken': csrfToken,
+                'X-CSRFToken': csrftoken,
                 'Accept': 'application/json',
             },
             credentials: 'same-origin',
         })
         .then(response => {
+            console.log('Delete response:', response.status, response.statusText);
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
             return response.json();
         })
         .then(data => {
+            console.log('Delete result:', data);
             if (data.success) {
                 showAlert(data.message, 'success');
                 
@@ -1304,6 +1351,14 @@
 
     // Initialize on page load
     document.addEventListener('DOMContentLoaded', function() {
+        // Check CSRF token
+        if (!csrftoken) {
+            console.error('❌ CSRF token not found');
+            showAlert('⚠️ Security token missing. Please refresh the page.', 'error');
+        } else {
+            console.log('✅ CSRF token found:', csrftoken.substring(0, 10) + '...');
+        }
+
         // Set initial search results if URL has parameters
         const urlParams = new URLSearchParams(window.location.search);
         const status = urlParams.get('status');
@@ -1328,15 +1383,8 @@
         if (status || search || dateFrom || dateTo) {
             performSearch();
         }
-
-        // Check if CSRF token is available
-        const csrfToken = getCookie('csrftoken');
-        if (!csrfToken) {
-            console.warn('⚠️ CSRF token not found. Some features may not work properly.');
-            showAlert('⚠️ Security token missing. Please refresh the page if you encounter issues.', 'error');
-        }
         
-        console.log('✅ Enhanced Job Card List with Date Search initialized successfully');
+        console.log('✅ Enhanced Job Card List initialized successfully');
         console.log('📅 Available shortcuts:');
         console.log('   Ctrl+F: Focus search box');
         console.log('   Ctrl+S: Focus status filter');

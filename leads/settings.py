@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     'app3',
     'app4',
     'flutter',
+    'app5',
     'django.contrib.humanize',
     
 ]
