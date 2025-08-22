@@ -7,7 +7,6 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
 <style>
-    
     h2 {
         text-align: center;
         color: #333;
@@ -509,6 +508,10 @@
     }
 </style>
 
+<!-- CSRF Token -->
+{% csrf_token %}
+<meta name="csrf-token" content="{{ csrf_token }}">
+
 <h2>Job Card List</h2>
 <div id="alertContainer">
     {% if messages %}
@@ -546,7 +549,7 @@
         </button>
     </div>
 
-    <a href="{% url 'jobcard_create' %}" class="btn-add"><i class="fas fa-plus"></i> Add New</a>
+    <a href="{% url 'app5:jobcard_create' %}" class="btn-add"><i class="fas fa-plus"></i> Add New</a>
 </div>
 
 <div class="search-results-info" id="searchResultsInfo"></div>
@@ -680,7 +683,7 @@
                         {% endwith %}
                     </td>
                     <td>
-                        <a href="{% url 'jobcard_edit' jobcard.pk %}" class="btn-edit" title="Edit Job Card">
+                        <a href="{% url 'app5:jobcard_edit' jobcard.pk %}" class="btn-edit" title="Edit Job Card">
                             <i class="fas fa-edit"></i>
                         </a>
                         <button class="btn-delete" 
@@ -785,20 +788,12 @@
 
 <script>
     // CSRF token configuration
-    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || 
-                     document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ||
-                     getCookie('csrftoken');
-
-    // Debug log
-    console.log('CSRF Token:', csrftoken);
-
-    // Utility functions
     function getCookie(name) {
         let cookieValue = null;
         if (document.cookie && document.cookie !== '') {
             const cookies = document.cookie.split(';');
-            for (let cookie of cookies) {
-                cookie = cookie.trim();
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
                 if (cookie.substring(0, name.length + 1) === (name + '=')) {
                     cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
                     break;
@@ -807,6 +802,13 @@
         }
         return cookieValue;
     }
+
+    // Get CSRF token from multiple possible sources
+    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || 
+                     document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ||
+                     getCookie('csrftoken');
+
+    console.log('CSRF Token loaded:', csrftoken ? 'Yes' : 'No');
 
     // Date utility functions
     function formatDate(date) {
@@ -936,7 +938,7 @@
         showAlert('✅ All filters cleared successfully!', 'success');
     }
 
-    // Fixed Status update functionality
+    // Status update functionality - FIXED
     let currentJobId = null;
     let currentStatus = null;
     let currentItemIndex = null;
@@ -987,7 +989,8 @@
             newStatus: newStatus
         });
 
-        fetch(`/update-status/${currentJobId}/`, {
+        // FIXED fetch URL with proper namespacing
+        fetch(`{% url 'app5:update_jobcard_status' 0 %}`.replace('0', currentJobId), {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -1003,7 +1006,9 @@
         .then(response => {
             console.log('Status update response:', response.status, response.statusText);
             if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                return response.text().then(text => {
+                    throw new Error(`HTTP ${response.status}: ${text}`);
+                });
             }
             return response.json();
         })
@@ -1012,6 +1017,7 @@
             if (data.success) {
                 // Update the status badge
                 if (statusBadge) {
+                    // Remove old status class
                     statusBadge.className = statusBadge.className.replace(/\bstatus-\w+\b/g, '');
                     statusBadge.classList.add('status-badge', `status-${newStatus}`);
                     
@@ -1030,6 +1036,7 @@
                     statusBadge.textContent = displayText;
                     statusBadge.setAttribute('data-status', newStatus);
                     
+                    // Update onclick handler
                     statusBadge.setAttribute('onclick', 
                         `updateStatus(${currentJobId}, '${newStatus}', ${currentItemIndex}, '${currentItemName.replace(/'/g, "\\'")}')`);
                     
@@ -1040,6 +1047,7 @@
                 closeStatusModal();
                 showAlert(`✅ Status updated to "${displayText}" successfully!`, 'success');
                 
+                // Refresh search to show updated results
                 performSearch();
             } else {
                 throw new Error(data.error || 'Unknown error occurred');
@@ -1084,7 +1092,7 @@
                 
                 const imageItem = document.createElement('div');
                 imageItem.className = 'image-item';
-                imageItem.innerHTML = `<img src="${url}" alt="${alt}">`;
+                imageItem.innerHTML = `<img src="${url}" alt="${alt}" onclick="window.open('${url}', '_blank')">`;
                 imagesContainer.appendChild(imageItem);
             });
         }
@@ -1096,7 +1104,7 @@
         document.getElementById('imagesModal').style.display = 'none';
     }
 
-    // Fixed Delete functionality
+    // Delete functionality - FIXED
     let ticketToDelete = null;
     let customerToDelete = null;
     let phoneToDelete = null;
@@ -1147,7 +1155,8 @@
         
         console.log('Deleting ticket:', ticketToDelete);
         
-        fetch(`/delete-ticket/${ticketToDelete}/`, {
+        // FIXED fetch URL with proper namespacing
+        fetch(`{% url 'app5:delete_ticket_by_number' 'PLACEHOLDER' %}`.replace('PLACEHOLDER', ticketToDelete), {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -1159,7 +1168,9 @@
         .then(response => {
             console.log('Delete response:', response.status, response.statusText);
             if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                return response.text().then(text => {
+                    throw new Error(`HTTP ${response.status}: ${text}`);
+                });
             }
             return response.json();
         })
@@ -1168,6 +1179,7 @@
             if (data.success) {
                 showAlert(data.message, 'success');
                 
+                // Remove the row with animation
                 const row = document.querySelector(`tr[data-ticket="${ticketToDelete}"]`);
                 if (row) {
                     row.style.transition = 'all 0.5s ease';
@@ -1180,6 +1192,7 @@
                             // Update search results after deletion
                             performSearch();
                             
+                            // Check if no rows remain
                             const remainingRows = document.querySelectorAll('#jobTable tbody tr.customer-row');
                             if (remainingRows.length === 0) {
                                 const tbody = document.querySelector('#jobTable tbody');
@@ -1246,106 +1259,10 @@
         }, 10000);
     }
 
-    // Set predefined date filters
-    function setDateFilter(period) {
-        const today = new Date();
-        const dateFrom = document.getElementById('dateFrom');
-        const dateTo = document.getElementById('dateTo');
-        
-        let fromDate, toDate;
-        
-        switch (period) {
-            case 'today':
-                fromDate = toDate = today;
-                break;
-            case 'week':
-                const startOfWeek = new Date(today);
-                startOfWeek.setDate(today.getDate() - today.getDay());
-                const endOfWeek = new Date(startOfWeek);
-                endOfWeek.setDate(startOfWeek.getDate() + 6);
-                fromDate = startOfWeek;
-                toDate = endOfWeek;
-                break;
-            case 'month':
-                fromDate = new Date(today.getFullYear(), today.getMonth(), 1);
-                toDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-                break;
-        }
-        
-        dateFrom.value = formatDate(fromDate);
-        dateTo.value = formatDate(toDate);
-        
-        performSearch();
-        
-        const periodNames = {
-            'today': 'Today',
-            'week': 'This Week',
-            'month': 'This Month'
-        };
-        
-        showAlert(`📅 Filter set to ${periodNames[period]} (${formatDate(fromDate)} to ${formatDate(toDate)})`, 'success');
-    }
-
     // Close modals when clicking outside
     window.addEventListener('click', function(event) {
         if (event.target.classList.contains('modal')) {
             event.target.style.display = 'none';
-        }
-    });
-
-    // Enhanced keyboard shortcuts
-    document.addEventListener('keydown', function(event) {
-        if (event.key === 'Escape') {
-            document.querySelectorAll('.modal').forEach(modal => {
-                modal.style.display = 'none';
-            });
-        }
-        
-        if (event.ctrlKey && event.key === 'f') {
-            event.preventDefault();
-            document.getElementById('searchInput').focus();
-            document.getElementById('searchInput').select();
-        }
-        
-        if (event.ctrlKey && event.key === 'p') {
-            event.preventDefault();
-            window.print();
-        }
-        
-        // Ctrl + R to clear filters
-        if (event.ctrlKey && event.key === 'r') {
-            event.preventDefault();
-            clearAllFilters();
-        }
-        
-        // Ctrl + S to focus status filter
-        if (event.ctrlKey && event.key === 's') {
-            event.preventDefault();
-            document.getElementById('statusFilter').focus();
-        }
-        
-        // Ctrl + D to focus date from
-        if (event.ctrlKey && event.key === 'd') {
-            event.preventDefault();
-            document.getElementById('dateFrom').focus();
-        }
-        
-        // Ctrl + T for today's filter
-        if (event.ctrlKey && event.key === 't') {
-            event.preventDefault();
-            setDateFilter('today');
-        }
-        
-        // Ctrl + W for this week's filter
-        if (event.ctrlKey && event.key === 'w') {
-            event.preventDefault();
-            setDateFilter('week');
-        }
-        
-        // Ctrl + M for this month's filter
-        if (event.ctrlKey && event.key === 'm') {
-            event.preventDefault();
-            setDateFilter('month');
         }
     });
 
@@ -1356,7 +1273,7 @@
             console.error('❌ CSRF token not found');
             showAlert('⚠️ Security token missing. Please refresh the page.', 'error');
         } else {
-            console.log('✅ CSRF token found:', csrftoken.substring(0, 10) + '...');
+            console.log('✅ CSRF token found');
         }
 
         // Set initial search results if URL has parameters
@@ -1384,17 +1301,19 @@
             performSearch();
         }
         
-        console.log('✅ Enhanced Job Card List initialized successfully');
-        console.log('📅 Available shortcuts:');
-        console.log('   Ctrl+F: Focus search box');
-        console.log('   Ctrl+S: Focus status filter');
-        console.log('   Ctrl+D: Focus date from');
-        console.log('   Ctrl+T: Filter today');
-        console.log('   Ctrl+W: Filter this week');
-        console.log('   Ctrl+M: Filter this month');
-        console.log('   Ctrl+R: Clear all filters');
-        console.log('   Ctrl+P: Print');
-        console.log('   Escape: Close modals');
+        console.log('✅ Job Card List initialized successfully');
+        
+        // Auto-dismiss Django messages after 5 seconds
+        setTimeout(() => {
+            document.querySelectorAll('.alert').forEach(alert => {
+                if (!alert.querySelector('button')) { // Only Django messages
+                    alert.style.opacity = '0';
+                    setTimeout(() => {
+                        if (alert.parentNode) alert.remove();
+                    }, 300);
+                }
+            });
+        }, 5000);
     });
 
     // Handle form submission errors

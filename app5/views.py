@@ -36,7 +36,7 @@ def jobcard_create(request):
         # Validate required fields
         if not customer or not address or not phone:
             messages.error(request, "Customer name, address, and phone are required fields.")
-            return redirect('jobcard_create')
+            return redirect('app5:jobcard_create')
 
         # Get all items and their data
         items = request.POST.getlist('items[]')
@@ -119,7 +119,7 @@ def jobcard_create(request):
         else:
             messages.error(request, "At least one item is required.")
             
-        return redirect('jobcard_list')
+        return redirect('app5:jobcard_list')
 
     # For GET request, show the form with available items
     items = ["Mouse", "Keyboard", "CPU", "Laptop", "Desktop", "Printer", "Monitor", "Other"]
@@ -226,13 +226,13 @@ def delete_ticket_by_number(request, ticket_no):
 # Alternative delete method (for backwards compatibility)
 @csrf_exempt
 @require_http_methods(["POST", "DELETE"])
-def delete_jobcard(request, jobcard_id):
+def delete_jobcard(request, pk):
     """Delete job card by ID"""
     try:
-        logger.info(f"Delete request for JobCard ID: {jobcard_id}")
-        
-        jobcard = get_object_or_404(JobCard, pk=jobcard_id)
-        
+        logger.info(f"Delete request for JobCard ID: {pk}")
+
+        jobcard = get_object_or_404(JobCard, pk=pk)
+
         # Delete all associated images
         for image in jobcard.images.all():
             if image.image and os.path.isfile(image.image.path):
@@ -242,29 +242,30 @@ def delete_jobcard(request, jobcard_id):
                 except OSError as e:
                     logger.warning(f"Could not delete image file {image.image.path}: {e}")
             image.delete()
-        
+
         customer_name = jobcard.customer
         ticket_no = jobcard.ticket_no
         jobcard.delete()
-        logger.info(f"Successfully deleted JobCard {jobcard_id} ({ticket_no}) for {customer_name}")
-        
+        logger.info(f"Successfully deleted JobCard {pk} ({ticket_no}) for {customer_name}")
+
         return JsonResponse({
-            "success": True, 
+            "success": True,
             "message": f"Successfully deleted job card {ticket_no} for {customer_name}"
         })
-        
+
     except JobCard.DoesNotExist:
-        logger.error(f"JobCard {jobcard_id} not found")
+        logger.error(f"JobCard {pk} not found")
         return JsonResponse({
-            "success": False, 
-            "error": f"No job card found with ID: {jobcard_id}"
+            "success": False,
+            "error": f"No job card found with ID: {pk}"
         }, status=404)
     except Exception as e:
-        logger.error(f"Error deleting JobCard {jobcard_id}: {str(e)}")
+        logger.error(f"Error deleting JobCard {pk}: {str(e)}")
         return JsonResponse({
-            "success": False, 
+            "success": False,
             "error": f"An error occurred while deleting: {str(e)}"
         }, status=500)
+
 
 @csrf_exempt
 def jobcard_edit(request, pk):
@@ -378,7 +379,7 @@ def jobcard_edit(request, pk):
         except Exception as e:
             logger.error(f"Error editing JobCard {pk}: {str(e)}")
             messages.error(request, f"An error occurred: {str(e)}")
-            return redirect('jobcard_edit', pk=pk)
+            return redirect('app5:jobcard_edit', pk=pk)
     
     # For GET request, prepare data for the edit form
     items = []
@@ -442,7 +443,7 @@ def jobcard_edit(request, pk):
         'status_choices': JobCard.STATUS_CHOICES
     }
     
-    return render(request, 'jobcard_edit.html', context)
+    return render(request, 'app5:jobcard_edit.html', context)
 
 @csrf_exempt
 def api_jobcard_detail(request, pk):
