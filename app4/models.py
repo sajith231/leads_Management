@@ -31,16 +31,42 @@ class Printer(models.Model):
 
 
 
-from django.db import models
 
 class KeyRequest(models.Model):
-    client_id = models.IntegerField()
-    client_name = models.CharField(max_length=255)
-    request_title = models.CharField(max_length=255)
-    image_file = models.ImageField(upload_to='key_requests/', blank=True, null=True)
-    additional_requests = models.TextField(blank=True)  # store comma-separated values
-    comments = models.TextField(blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    KEY_TYPES = [
+        ("Seat Upgradation Request", "Seat Upgradation Request"),
+        ("More Module Request", "More Module Request"),
+        ("Trade Name And Address Change Request", "Trade Name And Address Change Request"),
+        ("Key type Change Request", "Key type Change Request"),
+        ("Key Extension Request", "Key Extension Request"),
+        ("Hosted Key Request", "Hosted Key Request"),
+        ("Feeder Cancellation Request", "Feeder Cancellation Request"),
+        ("Demo Key Request", "Demo Key Request"),
+        ("Software Amount Change Request", "Software Amount Change Request"),
+        ("Maturity Upgradation Request", "Maturity Upgradation Request"),
+        ("Enterprises Key Request", "Enterprises Key Request"),
+        ("Image Request", "Image Request"),
+    ]
+
+    STATUS_CHOICES = [
+        ("Pending", "Pending"),
+        ("On Process", "On Process"),
+        ("Accepted", "Accepted"),
+        ("Rejected", "Rejected"),
+    ]
+
+    clientName   = models.CharField(max_length=255)
+    location     = models.CharField(max_length=255)
+    description  = models.TextField(blank=True, null=True)
+    keyType      = models.CharField(max_length=255, choices=KEY_TYPES)
+    requestDate  = models.DateField()
+    status       = models.CharField(max_length=20, choices=STATUS_CHOICES, default="Pending")
+    requestImage = models.ImageField(upload_to='key_request_images/', blank=True, null=True)
+    branch       = models.ForeignKey(Branch, on_delete=models.CASCADE, null=True, blank=True)
+    amount       = models.CharField(max_length=100, blank=True, null=True)
+
+    class Meta:
+        ordering = ['-id']
 
     def __str__(self):
-        return f"{self.client_name} - {self.request_title}"
+        return f"{self.clientName} - {self.keyType} ({self.requestDate})"
