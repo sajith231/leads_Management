@@ -59,7 +59,7 @@ class KeyRequest(models.Model):
     location     = models.CharField(max_length=255)
     description  = models.TextField(blank=True, null=True)
     keyType      = models.CharField(max_length=255, choices=KEY_TYPES)
-    requestDate  = models.DateField()
+    requestDate = models.DateField(null=True, blank=True)
     status       = models.CharField(max_length=20, choices=STATUS_CHOICES, default="Pending")
     requestImage = models.ImageField(upload_to='key_request_images/', blank=True, null=True)
     branch       = models.ForeignKey(Branch, on_delete=models.CASCADE, null=True, blank=True)
