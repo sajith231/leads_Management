@@ -4989,6 +4989,9 @@ def configure_user_menu(request, user_id):
         {'id': 'add_license', 'name': 'Add License', 'icon': 'fas fa-plus-circle'},
         {'id': 'license_edit', 'name': 'Edit License', 'icon': 'fas fa-edit'},
         {'id': 'license_delete', 'name': 'Delete License', 'icon': 'fas fa-trash'},
+        {'id': 'key_request_list', 'name': 'Key Request', 'icon': 'fas fa-file-signature'},
+    
+        
     ]
 },
 {
