@@ -3648,21 +3648,20 @@ def create_leave_request(request):
                 status='pending'
             )
 
+            # List of phone numbers to notify
+            phone_numbers = ["9946545535", "7593820007", "7593820005", "9846754998","8129191379"]
             
-            # List of phone numbers to send the WhatsApp message
-            phone_numbers = ["9946545535", "7593820007", "7593820005","9846754998"]
-            
-            formatted_start = start_date.strftime('%d %m %Y')
-            formatted_end = end_date.strftime('%d %m %Y')
+            formatted_start = start_date.strftime('%d-%m-%Y')
+            formatted_end = end_date.strftime('%d-%m-%Y')
 
             message = (
-                f"New leave request from {employee.name}. "
+                f"New leave request from {employee.name}.\n"
                 f"Type: {leave_request.get_leave_type_display()}, "
                 f"Start Date: {formatted_start}, End Date: {formatted_end}, "
                 f"Reason: {data['reason']}"
             )
             
-            # Send WhatsApp message to each phone number
+            # Send WhatsApp message to each number
             for number in phone_numbers:
                 send_whatsapp_message_new_request(number, message)
             
@@ -3671,18 +3670,31 @@ def create_leave_request(request):
             return JsonResponse({'success': False, 'error': str(e)})
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
 
+
 def send_whatsapp_message_new_request(phone_number, message):
     secret = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
-    account = "1748250982812b4ba287f5ee0bc9d43bbf5bbe87fb683431662a427"
-    
-    url = f"https://app.dxing.in/api/send/whatsapp?secret={secret}&account={account}&recipient={phone_number}&type=text&message={message}&priority=1"
-    
+    account = "1756357451812b4ba287f5ee0bc9d43bbf5bbe87fb68afe34b12e0a"  # ✅ updated account
+
+    # Encode message for safe API call
+    encoded_message = requests.utils.quote(message)
+
+    url = (
+        f"https://app.dxing.in/api/send/whatsapp?"
+        f"secret={secret}&account={account}"
+        f"&recipient={phone_number}"
+        f"&type=text&message={encoded_message}&priority=1"
+    )
+
     response = requests.get(url)
-    
+
     if response.status_code == 200:
         print(f"WhatsApp message sent successfully to {phone_number}")
     else:
-        print(f"Failed to send WhatsApp message to {phone_number}. Status code: {response.status_code}, Response: {response.text}")
+        print(
+            f"Failed to send WhatsApp message to {phone_number}. "
+            f"Status code: {response.status_code}, Response: {response.text}"
+        )
+
 
 @login_required
 def get_leave_requests(request):
@@ -3878,15 +3890,15 @@ def create_late_request(request):
             late_request = LateRequest.objects.create(
                 employee=employee,
                 date=date_obj,
-                delay_time=data['delay_time'],  # New field
+                delay_time=data['delay_time'],
                 reason=data['reason'],
                 status='pending'
             )
             
             # Send WhatsApp message to managers
-            phone_numbers = ["9946545535", "7593820007", "7593820005","9846754998"]
+            phone_numbers = ["9946545535", "7593820007", "7593820005", "9846754998","8129191379"]
             message = (
-                f"New late request from {employee.name}. "
+                f"New late request from {employee.name}.\n"
                 f"Date: {date_obj.strftime('%d-%m-%Y')}, "
                 f"Delay Time: {late_request.delay_time}, "
                 f"Reason: {late_request.reason}"
@@ -3900,18 +3912,31 @@ def create_late_request(request):
             return JsonResponse({'success': False, 'error': str(e)})
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
 
+
 def send_whatsapp_message_new(phone_number, message):
     secret = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
-    account = "1748250982812b4ba287f5ee0bc9d43bbf5bbe87fb683431662a427"
-    
-    url = f"https://app.dxing.in/api/send/whatsapp?secret={secret}&account={account}&recipient={phone_number}&type=text&message={message}&priority=1"
-    
+    account = "1756357451812b4ba287f5ee0bc9d43bbf5bbe87fb68afe34b12e0a"  # ✅ updated account
+
+    # Encode message to handle spaces/special characters safely
+    encoded_message = requests.utils.quote(message)
+
+    url = (
+        f"https://app.dxing.in/api/send/whatsapp?"
+        f"secret={secret}&account={account}"
+        f"&recipient={phone_number}"
+        f"&type=text&message={encoded_message}&priority=1"
+    )
+
     response = requests.get(url)
-    
+
     if response.status_code == 200:
         print(f"WhatsApp message sent successfully to {phone_number}")
     else:
-        print(f"Failed to send WhatsApp message to {phone_number}. Status code: {response.status_code}, Response: {response.text}")
+        print(
+            f"Failed to send WhatsApp message to {phone_number}. "
+            f"Status code: {response.status_code}, Response: {response.text}"
+        )
+
 
 # views.py
 # views.py
@@ -5499,7 +5524,7 @@ def create_early_request(request):
             )
             
             # Send WhatsApp message to managers
-            phone_numbers = ["9946545535", "7593820007", "7593820005","9846754998"]
+            phone_numbers = ["9946545535", "7593820007", "7593820005","9846754998","8129191379"]
             message = (
                 f"New early request from {employee.name}. "
                 f"Date: {data['date']}, "
