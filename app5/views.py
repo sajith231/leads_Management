@@ -1,30 +1,31 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.http import JsonResponse
-from django.views.decorators.http import require_POST, require_http_methods
+from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
-from .models import JobCard, JobCardImage
+from .models import JobCard, JobCardImage, Item   # ✅ include Item
 import os
 import json
-import logging
+from collections import defaultdict
+import requests
 
-# Set up logging
-logger = logging.getLogger(__name__)
+
+from django.core.paginator import Paginator
 
 def jobcard_list(request):
     jobcards = JobCard.objects.all().order_by('-created_at')
     
-    # Prepare data for template
-    for jobcard in jobcards:
-        # Group images by item_index
-        jobcard.images_by_item = {}
-        for image in jobcard.images.all():
-            item_index = image.item_index
-            if item_index not in jobcard.images_by_item:
-                jobcard.images_by_item[item_index] = []
-            jobcard.images_by_item[item_index].append(image)
+    # Add pagination
+    paginator = Paginator(jobcards, 25)  # Show 25 job cards per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
     
-    return render(request, 'jobcard_list.html', {'jobcards': jobcards})
+    context = {
+        'page_obj': page_obj,
+        # ... other context variables
+    }
+    return render(request, 'jobcard_list.html', context)
+
 
 @csrf_exempt
 def jobcard_create(request):
@@ -32,464 +33,392 @@ def jobcard_create(request):
         customer = request.POST.get('customer', '').strip()
         address = request.POST.get('address', '').strip()
         phone = request.POST.get('phone', '').strip()
+        status = request.POST.get('status', 'logged')
 
-        # Validate required fields
         if not customer or not address or not phone:
             messages.error(request, "Customer name, address, and phone are required fields.")
             return redirect('app5:jobcard_create')
 
-        # Get all items and their data
         items = request.POST.getlist('items[]')
-        serials = request.POST.getlist('serials[]')
-        configs = request.POST.getlist('configs[]')
-        status_list = request.POST.getlist('status[]')
-        
-        # Build items_data structure
         items_data = []
-        
+
         for idx, item_name in enumerate(items):
-            if not item_name.strip():
+            if not item_name:
                 continue
-                
-            serial = serials[idx] if idx < len(serials) else ''
-            config = configs[idx] if idx < len(configs) else ''
-            status = status_list[idx] if idx < len(status_list) else 'logged'
-            
-            # Get complaints for this item
+
+            item_entry = {
+                "item": item_name,
+                "serial": request.POST.getlist('serials[]')[idx] if idx < len(request.POST.getlist('serials[]')) else '',
+                "config": request.POST.getlist('configs[]')[idx] if idx < len(request.POST.getlist('configs[]')) else '',
+                "complaints": []
+            }
+
             complaint_descriptions = request.POST.getlist(f'complaints-{idx}[]')
             complaint_notes = request.POST.getlist(f'complaint_notes-{idx}[]')
-            
-            complaints = []
+
             for complaint_idx, description in enumerate(complaint_descriptions):
-                if description.strip():
-                    notes = complaint_notes[complaint_idx] if complaint_idx < len(complaint_notes) else ''
-                    complaints.append({
-                        'description': description.strip(),
-                        'notes': notes.strip()
-                    })
-            
-            # If no complaints, add a default one
-            if not complaints:
-                complaints.append({
-                    'description': 'General complaint',
-                    'notes': ''
-                })
-            
-            items_data.append({
-                'item': item_name,
-                'serial': serial,
-                'config': config,
-                'status': status,
-                'complaints': complaints
-            })
-
-        # Create single job card with all items and complaints
-        if items_data:
-            job_card = JobCard.objects.create(
-                customer=customer,
-                address=address,
-                phone=phone,
-                items_data=items_data
-            )
-
-            # Save images with proper indexing
-            for item_idx, item_name in enumerate(items):
-                if not item_name.strip():
+                if not description.strip():
                     continue
-                    
-                # Get complaints count for this item to know how many complaint indices we have
-                complaint_descriptions = request.POST.getlist(f'complaints-{item_idx}[]')
-                valid_complaints = [desc for desc in complaint_descriptions if desc.strip()]
-                
-                if not valid_complaints:
-                    valid_complaints = ['General complaint']  # Default
-                
-                # For each complaint, save images
-                for complaint_idx in range(len(valid_complaints)):
-                    images = request.FILES.getlist(f'images-{item_idx}-{complaint_idx}[]')
-                    for image in images:
-                        JobCardImage.objects.create(
-                            jobcard=job_card, 
-                            image=image,
-                            item_index=item_idx,
-                            complaint_index=complaint_idx
-                        )
+                item_entry["complaints"].append({
+                    "description": description,
+                    "notes": complaint_notes[complaint_idx] if complaint_idx < len(complaint_notes) else '',
+                    "images": []
+                })
 
-            messages.success(request, f"Job card created successfully with {len(items_data)} items.")
-        else:
-            messages.error(request, "At least one item is required.")
-            
+            items_data.append(item_entry)
+
+        job_card = JobCard.objects.create(
+            customer=customer,
+            address=address,
+            phone=phone,
+            status=status,
+            items_data=items_data
+        )
+
+        # Save uploaded images
+        for idx, item_name in enumerate(items):
+            complaint_descriptions = request.POST.getlist(f'complaints-{idx}[]')
+            for complaint_idx, description in enumerate(complaint_descriptions):
+                if not description.strip():
+                    continue
+                images = request.FILES.getlist(f'images-{idx}-{complaint_idx}[]')
+                for image in images:
+                    JobCardImage.objects.create(
+                        jobcard=job_card,
+                        image=image,
+                        item_index=idx,
+                        complaint_index=complaint_idx
+                    )
+                    items_data[idx]["complaints"][complaint_idx]["images"].append(image.name)
+
+        job_card.items_data = items_data
+        job_card.save()
+
+        messages.success(request, "Job card(s) created successfully.")
         return redirect('app5:jobcard_list')
 
-    # For GET request, show the form with available items
-    items = ["Mouse", "Keyboard", "CPU", "Laptop", "Desktop", "Printer", "Monitor", "Other"]
-    return render(request, 'jobcard_form.html', {'items': items})
+    # ✅ For GET request → fetch items from Item Master
+    items = Item.objects.all().order_by("name")
 
-@require_http_methods(["POST"])
-def update_jobcard_status(request, pk):
-    """Update status for a specific item in a job card"""
+    customer_data = []
     try:
-        # Parse JSON data
-        data = json.loads(request.body)
-        new_status = data.get('status')
-        item_index = data.get('item_index', 0)
-        
-        logger.info(f"Status update request - JobCard: {pk}, Item Index: {item_index}, New Status: {new_status}")
-        
-        # Validate status
-        valid_statuses = dict(JobCard.STATUS_CHOICES).keys()
-        if new_status not in valid_statuses:
-            return JsonResponse({
-                "success": False, 
-                "error": f"Invalid status: {new_status}"
-            }, status=400)
-        
-        # Get job card
-        jobcard = get_object_or_404(JobCard, pk=pk)
-        
-        # Update status for specific item
-        if jobcard.items_data and item_index < len(jobcard.items_data):
-            jobcard.items_data[item_index]['status'] = new_status
-            jobcard.save()
-            
-            # Get display name for status
-            status_display = dict(JobCard.STATUS_CHOICES).get(new_status, new_status)
-            
-            logger.info(f"Status updated successfully - JobCard: {pk}, Item: {item_index}, Status: {new_status}")
-            
-            return JsonResponse({
-                "success": True, 
-                "status": status_display,
-                "message": f"Status updated to {status_display}"
-            })
-        else:
-            return JsonResponse({
-                "success": False, 
-                "error": f"Item index {item_index} not found"
-            }, status=404)
-            
-    except JobCard.DoesNotExist:
-        logger.error(f"JobCard {pk} not found")
-        return JsonResponse({"success": False, "error": "Job card not found"}, status=404)
-    except json.JSONDecodeError:
-        logger.error(f"Invalid JSON data in request")
-        return JsonResponse({"success": False, "error": "Invalid JSON data"}, status=400)
+        api_url = "https://accmaster.imcbs.com/api/sync/rrc-clients/"
+        response = requests.get(api_url)
+        if response.status_code == 200:
+            customer_data = response.json()
     except Exception as e:
-        logger.error(f"Error updating status for JobCard {pk}: {str(e)}")
-        return JsonResponse({"success": False, "error": str(e)}, status=500)
+        print(f"Error fetching customer data: {e}")
+        customer_data = []
+
+    return render(request, 'jobcard_form.html', {
+        'items': items,
+        'customer_data': customer_data
+    })
+
+
+@require_POST
+def delete_jobcard(request, pk):
+    try:
+        jobcard = get_object_or_404(JobCard, pk=pk)
+        for image in jobcard.images.all():
+            if image.image and os.path.isfile(image.image.path):
+                os.remove(image.image.path)
+            image.delete()
+        jobcard.delete()
+        return JsonResponse({"success": True, "message": "Deleted successfully."})
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)})
+
 
 @require_POST
 def delete_ticket_by_number(request, ticket_no):
-    """Delete job card by ticket number"""
     try:
-        logger.info(f"Delete request for ticket: {ticket_no}")
-        
-        jobcard = get_object_or_404(JobCard, ticket_no=ticket_no)
-        
-        # Delete all associated images
-        for image in jobcard.images.all():
-            if image.image and os.path.isfile(image.image.path):
-                try:
-                    os.remove(image.image.path)
-                    logger.info(f"Deleted image file: {image.image.path}")
-                except OSError as e:
-                    logger.warning(f"Could not delete image file {image.image.path}: {e}")
-            image.delete()
-        
-        customer_name = jobcard.customer
-        customer_phone = jobcard.phone
-        total_items = jobcard.get_total_items()
-        total_complaints = jobcard.get_total_complaints()
-        items_list = ', '.join(jobcard.get_items_list())
-        
-        jobcard.delete()
-        logger.info(f"Successfully deleted JobCard {ticket_no} for {customer_name}")
-        
-        return JsonResponse({
-            "success": True, 
-            "message": f"✅ Successfully deleted complete ticket <strong>{ticket_no}</strong> for customer <strong>{customer_name}</strong> (Phone: {customer_phone}). <br>📋 Deleted {total_items} item(s) with {total_complaints} complaint(s): <strong>{items_list}</strong>"
-        })
-        
-    except JobCard.DoesNotExist:
-        logger.error(f"JobCard with ticket {ticket_no} not found")
-        return JsonResponse({
-            "success": False, 
-            "error": f"No job card found with ticket number: {ticket_no}"
-        }, status=404)
-    except Exception as e:
-        logger.error(f"Error deleting ticket {ticket_no}: {str(e)}")
-        return JsonResponse({
-            "success": False, 
-            "error": f"⚠️ An error occurred while deleting ticket {ticket_no}: {str(e)}"
-        }, status=500)
+        jobcards = JobCard.objects.filter(ticket_no=ticket_no)
+        if not jobcards.exists():
+            return JsonResponse({"success": False, "error": f"No job cards found with ticket number: {ticket_no}"})
 
-# Alternative delete method (for backwards compatibility)
-@csrf_exempt
-@require_http_methods(["POST", "DELETE"])
-def delete_jobcard(request, pk):
-    """Delete job card by ID"""
-    try:
-        logger.info(f"Delete request for JobCard ID: {pk}")
+        first_jobcard = jobcards.first()
+        customer_name = first_jobcard.customer
+        customer_phone = first_jobcard.phone
+        deleted_count = 0
+        deleted_items = []
 
-        jobcard = get_object_or_404(JobCard, pk=pk)
+        for jobcard in jobcards:
+            if isinstance(jobcard.items_data, list):
+                for item in jobcard.items_data:
+                    deleted_items.append(item.get("item", "Unknown"))
 
-        # Delete all associated images
-        for image in jobcard.images.all():
-            if image.image and os.path.isfile(image.image.path):
-                try:
-                    os.remove(image.image.path)
-                    logger.info(f"Deleted image file: {image.image.path}")
-                except OSError as e:
-                    logger.warning(f"Could not delete image file {image.image.path}: {e}")
-            image.delete()
-
-        customer_name = jobcard.customer
-        ticket_no = jobcard.ticket_no
-        jobcard.delete()
-        logger.info(f"Successfully deleted JobCard {pk} ({ticket_no}) for {customer_name}")
+            for image in jobcard.images.all():
+                if image.image and os.path.isfile(image.image.path):
+                    try:
+                        os.remove(image.image.path)
+                    except OSError:
+                        pass
+                image.delete()
+            jobcard.delete()
+            deleted_count += 1
 
         return JsonResponse({
             "success": True,
-            "message": f"Successfully deleted job card {ticket_no} for {customer_name}"
+            "message": (
+                f"✅ Deleted complete ticket <strong>{ticket_no}</strong> "
+                f"for customer <strong>{customer_name}</strong> (Phone: {customer_phone}).<br>"
+                f"📋 Deleted {deleted_count} job card(s) for items: <strong>{', '.join(set(deleted_items))}</strong>"
+            )
         })
 
-    except JobCard.DoesNotExist:
-        logger.error(f"JobCard {pk} not found")
-        return JsonResponse({
-            "success": False,
-            "error": f"No job card found with ID: {pk}"
-        }, status=404)
     except Exception as e:
-        logger.error(f"Error deleting JobCard {pk}: {str(e)}")
-        return JsonResponse({
-            "success": False,
-            "error": f"An error occurred while deleting: {str(e)}"
-        }, status=500)
+        return JsonResponse({"success": False, "error": str(e)})
 
 
 @csrf_exempt
 def jobcard_edit(request, pk):
     jobcard = get_object_or_404(JobCard, pk=pk)
-    
+
+    if request.method == "POST":
+        # --- Update customer info ---
+        jobcard.customer = request.POST.get("customer", "").strip()
+        jobcard.address = request.POST.get("address", "").strip()
+        jobcard.phone = request.POST.get("phone", "").strip()
+        jobcard.status = request.POST.get("status", "logged")
+
+        items = request.POST.getlist("items[]")
+        serials = request.POST.getlist("serials[]")
+        configs = request.POST.getlist("configs[]")
+
+        items_data = []
+
+        for idx, item_name in enumerate(items):
+            if not item_name.strip():
+                continue
+
+            item_entry = {
+                "item": item_name,
+                "serial": serials[idx] if idx < len(serials) else "",
+                "config": configs[idx] if idx < len(configs) else "",
+                "complaints": []
+            }
+
+            complaint_descriptions = request.POST.getlist(f"complaints-{idx}[]")
+            complaint_notes = request.POST.getlist(f"complaint_notes-{idx}[]")
+
+            for c_idx, description in enumerate(complaint_descriptions):
+                if not description.strip():
+                    continue
+                complaint_entry = {
+                    "description": description,
+                    "notes": complaint_notes[c_idx] if c_idx < len(complaint_notes) else "",
+                    "images": []
+                }
+
+                # handle newly uploaded images
+                new_images = request.FILES.getlist(f"new_images-{idx}[]")
+                for image in new_images:
+                    img_obj = JobCardImage.objects.create(
+                        jobcard=jobcard,
+                        image=image,
+                        item_index=idx,
+                        complaint_index=c_idx
+                    )
+                    complaint_entry["images"].append(img_obj.image.url)
+
+                item_entry["complaints"].append(complaint_entry)
+
+            items_data.append(item_entry)
+
+        jobcard.items_data = items_data
+        jobcard.save()
+
+        messages.success(request, "Job card updated successfully.")
+        return redirect("app5:jobcard_edit", pk=jobcard.pk)
+
+    # --- GET: Show form ---
+    # prepare structured items for template
+    structured_items = []
+    for idx, item in enumerate(jobcard.items_data or []):
+        structured_items.append({
+            "name": item.get("item", ""),
+            "serial": item.get("serial", ""),
+            "config": item.get("config", ""),
+            "complaints": [
+                {
+                    "id": f"{idx}-{c_idx}",
+                    "description": complaint.get("description", ""),
+                    "notes": complaint.get("notes", ""),
+                    "images": jobcard.images.filter(
+                        item_index=idx,
+                        complaint_index=c_idx
+                    )
+                }
+                for c_idx, complaint in enumerate(item.get("complaints", []))
+            ]
+        })
+
+    context = {
+        "jobcard": jobcard,
+        "items": structured_items,
+    }
+    return render(request, "jobcard_edit.html", context)
+
+
+
+
+@csrf_exempt
+def update_status(request, pk):
     if request.method == 'POST':
         try:
-            # Get customer info from form
-            customer = request.POST.get('customer', '').strip()
-            address = request.POST.get('address', '').strip()
-            phone = request.POST.get('phone', '').strip()
-
-            # Validate required fields
-            if not customer or not address or not phone:
-                messages.error(request, "Customer name, address, and phone are required fields.")
-                return redirect('jobcard_edit', pk=pk)
-
-            # Keep track of images to preserve
-            keep_images = set(request.POST.getlist('keep_images[]'))
-            
-            # Delete existing images that are not being kept
-            for image in jobcard.images.all():
-                if str(image.id) not in keep_images:
-                    if image.image and os.path.isfile(image.image.path):
-                        try:
-                            os.remove(image.image.path)
-                        except OSError:
-                            pass
-                    image.delete()
-
-            # Get all items and their data from the form
-            items = request.POST.getlist('items[]')
-            serials = request.POST.getlist('serials[]')
-            configs = request.POST.getlist('configs[]')
-            
-            # Get status for each item
-            status_list = []
-            for idx in range(len(items)):
-                status_key = f'status-{idx}'
-                status = request.POST.get(status_key, 'logged')
-                status_list.append(status)
-            
-            # Build new items_data structure
-            items_data = []
-            
-            for idx, item_name in enumerate(items):
-                if not item_name.strip():
-                    continue
-                    
-                serial = serials[idx] if idx < len(serials) else ''
-                config = configs[idx] if idx < len(configs) else ''
-                status = status_list[idx] if idx < len(status_list) else 'logged'
-                
-                # Get complaints for this item
-                complaint_descriptions = request.POST.getlist(f'complaints-{idx}[]')
-                complaint_notes = request.POST.getlist(f'complaint_notes-{idx}[]')
-                complaint_ids = request.POST.getlist(f'complaint_ids-{idx}[]')
-                
-                complaints = []
-                for complaint_idx, description in enumerate(complaint_descriptions):
-                    if description.strip():
-                        notes = complaint_notes[complaint_idx] if complaint_idx < len(complaint_notes) else ''
-                        complaint_id = complaint_ids[complaint_idx] if complaint_idx < len(complaint_ids) else 0
-                        complaints.append({
-                            'description': description.strip(),
-                            'notes': notes.strip(),
-                            'id': int(complaint_id) if complaint_id and complaint_id != '0' else None
-                        })
-                
-                # If no complaints, add a default one
-                if not complaints:
-                    complaints.append({
-                        'description': 'General complaint',
-                        'notes': '',
-                        'id': None
-                    })
-                
-                items_data.append({
-                    'item': item_name,
-                    'serial': serial,
-                    'config': config,
-                    'status': status,
-                    'complaints': complaints
-                })
-
-            # Update the job card
-            jobcard.customer = customer
-            jobcard.address = address
-            jobcard.phone = phone
-            jobcard.items_data = items_data
-            jobcard.save()
-
-            # Handle new images for each item
-            for item_idx, item_name in enumerate(items):
-                if not item_name.strip():
-                    continue
-                    
-                # Handle new images for this item
-                new_images = request.FILES.getlist(f'new_images-{item_idx}[]')
-                for image in new_images:
-                    JobCardImage.objects.create(
-                        jobcard=jobcard, 
-                        image=image,
-                        item_index=item_idx,
-                        complaint_index=0  # All images for the item
-                    )
-
-            messages.success(request, f"Job card {jobcard.ticket_no} updated successfully with {len(items_data)} items.")
-            return redirect('jobcard_list')
-        
+            data = json.loads(request.body)
+            status = data.get('status')
+            job = JobCard.objects.get(pk=pk)
+            job.status = status
+            job.save()
+            return JsonResponse({"success": True, "status": job.get_status_display()})
+        except JobCard.DoesNotExist:
+            return JsonResponse({"success": False, "error": "Job not found"}, status=404)
         except Exception as e:
-            logger.error(f"Error editing JobCard {pk}: {str(e)}")
-            messages.error(request, f"An error occurred: {str(e)}")
-            return redirect('app5:jobcard_edit', pk=pk)
-    
-    # For GET request, prepare data for the edit form
-    items = []
-    
-    if jobcard.items_data:
-        for item_idx, item_data in enumerate(jobcard.items_data):
-            # Get ALL images for this item (regardless of complaint_index)
-            item_images = list(jobcard.images.filter(item_index=item_idx).values('id', 'image'))
-            
-            # Convert image paths to URLs
-            for img in item_images:
-                if img['image']:
-                    img['url'] = f"/media/{img['image']}"
-                else:
-                    img['url'] = ''
-            
-            # Build complaints list
-            complaints = []
-            for complaint in item_data.get('complaints', []):
-                complaint_info = {
-                    'id': complaint.get('id', 0),
-                    'description': complaint.get('description', ''),
-                    'notes': complaint.get('notes', '')
-                }
-                complaints.append(complaint_info)
-            
-            if not complaints:
-                complaints = [{
-                    'id': 0,
-                    'description': '',
-                    'notes': ''
-                }]
-            
-            items.append({
-                'name': item_data.get('item', ''),
-                'serial': item_data.get('serial', ''),
-                'config': item_data.get('config', ''),
-                'status': item_data.get('status', 'logged'),
-                'complaints': complaints,
-                'images': item_images  # All images for this item
-            })
-    
-    # Ensure we have at least one item for the form
-    if not items:
-        items = [{
-            'name': '',
-            'serial': '',
-            'config': '',
-            'status': 'logged',
-            'complaints': [{
-                'id': 0,
-                'description': '',
-                'notes': ''
-            }],
-            'images': []
-        }]
-    
-    context = {
-        'jobcard': jobcard,
-        'items': items,
-        'status_choices': JobCard.STATUS_CHOICES
-    }
-    
-    return render(request, 'app5:jobcard_edit.html', context)
+            return JsonResponse({"success": False, "error": str(e)}, status=400)
+    return JsonResponse({"success": False, "error": "Invalid request"}, status=400)
+
+
+# ------------------------------
+# Item Master Views
+# ------------------------------
+
+def item_master(request):
+    items = Item.objects.all().order_by('id')
+    return render(request, 'item_master.html', {'items': items})
+
+
+def add_item(request):
+    if request.method == "POST":
+        name = request.POST.get("name")
+        if name:
+            Item.objects.create(name=name)
+            messages.success(request, f'Item "{name}" added successfully!')
+            return redirect("app5:item_master")
+        else:
+            messages.error(request, "Item name cannot be empty.")
+    return render(request, "add_item.html")
+
+
+def edit_item(request, item_id):
+    item = get_object_or_404(Item, id=item_id)
+    if request.method == "POST":
+        name = request.POST.get("name")
+        if name:
+            item.name = name
+            item.save()
+            messages.success(request, f'Item "{name}" updated successfully!')
+            return redirect("app5:item_master")
+        else:
+            messages.error(request, "Item name cannot be empty.")
+    return render(request, "add_item.html", {"item": item})
+
+
+def delete_item(request, item_id):
+    item = get_object_or_404(Item, id=item_id)
+    item.delete()
+    messages.success(request, f'Item "{item.name}" deleted successfully!')
+    return redirect("app5:item_master")
+@csrf_exempt
+def update_jobcard_status(request, pk):
+    """Alias for update_status to match URLs"""
+    return update_status(request, pk)
+
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
 
 @csrf_exempt
 def api_jobcard_detail(request, pk):
-    if request.method == 'GET':
+    """API endpoint to get jobcard details"""
+    try:
+        jobcard = get_object_or_404(JobCard, pk=pk)
+        return JsonResponse({
+            "id": jobcard.pk,
+            "customer": jobcard.customer,
+            "address": jobcard.address,
+            "phone": jobcard.phone,
+            "status": jobcard.status,
+            "ticket_no": jobcard.ticket_no,
+            "items_data": jobcard.items_data,
+        })
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=400)
+
+
+
+from django.shortcuts import render
+from .models import JobCard
+
+def jobcard_assign_table(request):
+    # Show all jobcards, not just "logged" status
+    jobcards = JobCard.objects.all().order_by("-created_at")
+    stats = {
+        "total": jobcards.count(),
+        "pending": jobcards.filter(status="pending").count(),
+        "in_progress": jobcards.filter(status="sent_technician").count(),
+        "completed": jobcards.filter(status="completed").count(),
+        "returned": jobcards.filter(status="returned").count(),
+        "cancelled": jobcards.filter(status="rejected").count(),
+    }
+    context = {
+        "jobcards": jobcards,
+        "stats": stats  # Make sure stats is passed to context
+    }
+    return render(request, "jobcard_assign_table.html", context)
+ 
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+
+def assign_new_job(request):
+    if request.method == 'POST':
+        # Process form submission
+        ticket_number = request.POST.get('ticketNumber')
+        customer_name = request.POST.get('customerName')
+        status = request.POST.get('status')
+        technician = request.POST.get('technician')
+        
+        # Update the existing job card instead of creating a new one
         try:
-            jobcard = get_object_or_404(JobCard, pk=pk)
+            jobcard = JobCard.objects.get(ticket_no=ticket_number)
+            jobcard.status = status
+            jobcard.technician = technician
+            jobcard.save()
             
-            data = {
-                'ticket_no': jobcard.ticket_no,
-                'customer': jobcard.customer,
-                'address': jobcard.address,
-                'phone': jobcard.phone,
-                'items': []
-            }
-            
-            if jobcard.items_data:
-                for item_idx, item_data in enumerate(jobcard.items_data):
-                    # Get images for this item
-                    item_images = {}
-                    for img in jobcard.images.filter(item_index=item_idx):
-                        complaint_idx = img.complaint_index
-                        if complaint_idx not in item_images:
-                            item_images[complaint_idx] = []
-                        item_images[complaint_idx].append({
-                            'id': img.id,
-                            'url': img.image.url
-                        })
-                    
-                    # Build complaints with images
-                    complaints = []
-                    for complaint_idx, complaint in enumerate(item_data.get('complaints', [])):
-                        complaints.append({
-                            'description': complaint.get('description', ''),
-                            'notes': complaint.get('notes', ''),
-                            'images': item_images.get(complaint_idx, [])
-                        })
-                    
-                    data['items'].append({
-                        'name': item_data.get('item', ''),
-                        'serial': item_data.get('serial', ''),
-                        'config': item_data.get('config', ''),
-                        'status': item_data.get('status', 'logged'),
-                        'complaints': complaints
-                    })
-            
-            return JsonResponse(data)
-        except Exception as e:
-            logger.error(f"Error fetching JobCard {pk} details: {str(e)}")
-            return JsonResponse({'error': str(e)}, status=500)
+            messages.success(request, f'Job {ticket_number} has been assigned successfully to {technician}!')
+            return redirect('app5:jobcard_assign_table')
+        except JobCard.DoesNotExist:
+            messages.error(request, f'Job card with ticket number {ticket_number} not found!')
+            return redirect('app5:assign_new_job')
+    
+    # For GET request, show the form with available job cards
+    # Only show job cards that haven't been assigned yet (status = 'logged' or 'Pending')
+    jobcards = JobCard.objects.filter(
+        status__in=['logged', 'Pending']
+    ).order_by("-created_at")
+    
+    context = {
+        "jobcards": jobcards
+    }
+    return render(request, "jobcard_assign_form.html", context)
+
+def get_customer_by_ticket(request, ticket_no):
+    """API endpoint to get customer details by ticket number"""
+    try:
+        jobcard = get_object_or_404(JobCard, ticket_no=ticket_no)
+        return JsonResponse({
+            "success": True,
+            "customer": jobcard.customer,
+            "phone": jobcard.phone,
+            "address": jobcard.address
+        })
+    except JobCard.DoesNotExist:
+        return JsonResponse({
+            "success": False,
+            "error": f"Job card with ticket number {ticket_no} not found"
+        })
+    except Exception as e:
+        return JsonResponse({
+            "success": False,
+            "error": str(e)
+        })

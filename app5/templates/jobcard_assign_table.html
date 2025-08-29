@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Job Management Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .logo {
+            font-size: 28px;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #3498db;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        
+        .add-new-btn {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .add-new-btn:hover {
+            background-color: #2980b9;
+        }
+        
+        .stats-container {
+            display: flex;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            gap: 15px;
+            margin-bottom: 30px;
+            padding: 10px 5px;
+        }
+        
+        .stat-card {
+            flex: 1;
+            min-width: 180px;
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .stat-number {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            color: #7f8c8d;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .total-jobs { border-top: 4px solid #3498db; }
+        .pending { border-top: 4px solid #f39c12; }
+        .in-progress { border-top: 4px solid #2ecc71; }
+        .completed { border-top: 4px solid #9b59b6; }
+        .returned { border-top: 4px solid #e74c3c; }
+        .cancelled { border-top: 4px solid #95a5a6; }
+        
+        .filters {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            align-items: center;
+        }
+        
+        .filter-group {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .filter-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .filter-group select, .filter-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        .search-box {
+            position: relative;
+        }
+        
+        .search-box i {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #7f8c8d;
+        }
+        
+        .search-box input {
+            padding-left: 35px;
+        }
+        
+        .jobs-table {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            padding: 15px 20px;
+            text-align: left;
+            border-bottom: 1px solid #d2cfcf;
+            border-right: 1px solid #d2cfcf;
+        }
+        
+        th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        tr:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .status-logged { background-color: #ffeaa7; color: #d35400; }
+        .status-sent_technician { background-color: #81ecec; color: #00b894; }
+        .status-in_progress { background-color: #74b9ff; color: #2d3436; }
+        .status-completed { background-color: #a29bfe; color: #fff; }
+        .status-returned { background-color: #fab1a0; color: #d63031; }
+        .status-cancelled { background-color: #dfe6e9; color: #636e72; }
+        
+        .technician-avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background-color: #3498db;
+            color: white;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+        
+        .actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
+        
+        .btn-edit {
+            background-color: #3498db;
+            color: white;
+        }
+        
+        .btn-delete {
+            background-color: #e74c3c;
+            color: white;
+        }
+        
+        .btn:hover {
+            opacity: 0.9;
+        }
+        
+        .summary {
+            text-align: right;
+            padding: 10px 20px;
+            background-color: #f8f9fa;
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+        
+        @media (max-width: 1200px) {
+            .stats-container {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            
+            .stat-card {
+                min-width: 200px;
+                flex: 0 0 calc(33.333% - 15px);
+            }
+        }
+        
+        @media (max-width: 900px) {
+            .stat-card {
+                flex: 0 0 calc(50% - 15px);
+            }
+        }
+        
+        @media (max-width: 768px) {
+            header {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .user-info {
+                position: static;
+            }
+            
+            .filters {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .filter-group {
+                min-width: 100%;
+            }
+            
+            th, td {
+                padding: 10px;
+            }
+            
+            .actions {
+                flex-direction: column;
+                gap: 5px;
+            }
+            
+            .stat-card {
+                flex: 0 0 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">Job Management System</div>
+            <div class="user-info">
+                <a href="{% url 'app5:assign_new_job' %}" class="add-new-btn">+ Assign Technician</a>
+            </div>
+        </header>
+        
+        <div class="stats-container">
+            <div class="stat-card total-jobs">
+                <div class="stat-number">{{ stats.total }}</div>
+                <div class="stat-label">TOTAL JOBS</div>
+            </div>
+            <div class="stat-card pending">
+                <div class="stat-number">{{ stats.pending }}</div>
+                <div class="stat-label">PENDING</div>
+            </div>
+            <div class="stat-card in-progress">
+                <div class="stat-number">{{ stats.in_progress }}</div>
+                <div class="stat-label">IN PROGRESS</div>
+            </div>
+            <div class="stat-card completed">
+                <div class="stat-number">{{ stats.completed }}</div>
+                <div class="stat-label">COMPLETED</div>
+            </div>
+            <div class="stat-card returned">
+                <div class="stat-number">{{ stats.returned }}</div>
+                <div class="stat-label">RETURNED</div>
+            </div>
+            <div class="stat-card cancelled">
+                <div class="stat-number">{{ stats.cancelled }}</div>
+                <div class="stat-label">CANCELLED</div>
+            </div>
+        </div>
+        
+        <div class="filters">
+            <div class="filter-group">
+                <label for="status">Status:</label>
+                <select id="status">
+                    <option>All Status</option>
+                    <option>Logged</option>
+                    <option>Sent To Technician</option>
+                    <option>In Progress</option>
+                    <option>Completed</option>
+                    <option>Returned</option>
+                    <option>Cancelled</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label for="technician">Technician:</label>
+                <select id="technician">
+                    <option>All Technicians</option>
+                    <option>Sinan</option>
+                    <option>Ahmed</option>
+                    <option>Maria</option>
+                    <option>John</option>
+                    <option>Lisa</option>
+                </select>
+            </div>
+            
+            <div class="filter-group search-box">
+                <label for="search">Search:</label>
+                <i class="fas fa-search"></i>
+                <input type="text" id="search" placeholder="Search jobs...">
+            </div>
+        </div>
+        
+        <div class="jobs-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>TICKET NUMBER</th>
+                        <th>CUSTOMER NAME</th>
+                       
+                        <th>TECHNICIAN NAME</th>
+                        <th>ACTIONS</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for job in jobcards %}
+                    <tr>
+                        <td>{{ job.ticket_no }}</td>
+                        <td>{{ job.customer }}</td>
+                        
+                        <td>
+                            {% if job.technician %}
+                                <div class="technician-avatar">
+                                    {{ job.technician|first|upper }}
+                                </div>
+                                {{ job.technician }}
+                            {% else %}
+                                <span style="color: gray;">Not Assigned</span>
+                            {% endif %}
+                        </td>
+                        <td class="actions">
+                            <a href="{% url 'app5:assign_new_job' %}?ticket={{ job.ticket_no }}" class="btn btn-edit">Edit</a>
+                            <button class="btn btn-delete" onclick="deleteJob('{{ job.ticket_no }}')">Delete</button>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" style="text-align:center;">No job cards found</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <div class="summary">{{ jobcards|length }} jobs</div>
+        </div>
+    </div>
+
+    <script>
+        // Simple search functionality
+        document.getElementById('search').addEventListener('input', function(e) {
+            const searchText = e.target.value.toLowerCase();
+            const rows = document.querySelectorAll('tbody tr');
+            
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                if (text.includes(searchText)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+        
+        // Filter functionality
+        document.getElementById('status').addEventListener('change', filterTable);
+        document.getElementById('technician').addEventListener('change', filterTable);
+        
+        function filterTable() {
+            const statusValue = document.getElementById('status').value;
+            const technicianValue = document.getElementById('technician').value;
+            const rows = document.querySelectorAll('tbody tr');
+            
+            rows.forEach(row => {
+                const status = row.cells[2].textContent.trim();
+                const technician = row.cells[3].textContent.trim();
+                
+                const statusMatch = statusValue === 'All Status' || status.includes(statusValue);
+                const technicianMatch = technicianValue === 'All Technicians' || technician.includes(technicianValue);
+                
+                if (statusMatch && technicianMatch) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+        
+        function deleteJob(ticketNumber) {
+            if (confirm(`Are you sure you want to delete job: ${ticketNumber}?`)) {
+                fetch(`/app5/delete-ticket/${ticketNumber}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken'),
+                        'Content-Type': 'application/json',
+                    },
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert(data.message);
+                        location.reload();
+                    } else {
+                        alert('Error: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while deleting the job');
+                });
+            }
+        }
+        
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        
+        // Pre-select ticket if coming from assign button with ticket parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const ticketParam = urlParams.get('ticket');
+        if (ticketParam) {
+            const ticketSelect = document.getElementById('ticketNumber');
+            if (ticketSelect) {
+                ticketSelect.value = ticketParam;
+                ticketSelect.dispatchEvent(new Event('change'));
+            }
+        }
+    </script>
+</body>
+</html>
