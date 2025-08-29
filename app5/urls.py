@@ -10,9 +10,27 @@ urlpatterns = [
     path('edit/<int:pk>/', views.jobcard_edit, name='jobcard_edit'),
 
     # THESE TWO LINES WERE MISSING
-    path('update-status/<int:pk>/', views.update_jobcard_status, name='update_jobcard_status'),
+    path("update_status/<int:pk>/", views.update_jobcard_status, name="update_jobcard_status"),
     path('delete-ticket/<str:ticket_no>/', views.delete_ticket_by_number, name='delete_ticket_by_number'),
 
     path('delete-jobcard/<int:pk>/', views.delete_jobcard, name='delete_jobcard'),
     path('api/jobcard/<int:pk>/', views.api_jobcard_detail, name='api_jobcard_detail'),
+
+    path('item-master/', views.item_master, name='item_master'),
+    path("item/add/", views.add_item, name="add_item"),
+    path("item/edit/<int:item_id>/", views.edit_item, name="edit_item"),
+    path("item/delete/<int:item_id>/", views.delete_item, name="delete_item"), 
+    path('create/', views.jobcard_create, name='jobcard_create'),
+
+
+    path("jobcard/assign-table/", views.jobcard_assign_table, name="jobcard_assign_table"),
+    path("assign-new/", views.assign_new_job, name="assign_new_job"),
+    # Add this to your urlpatterns
+path('get-customer-by-ticket/<str:ticket_no>/', views.get_customer_by_ticket, name='get_customer_by_ticket'),
+
+    
+
+
 ]
+
+

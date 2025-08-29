@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assign New Job</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-weight: 600;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: #7f8c8d;
+            margin-bottom: 25px;
+            font-size: 16px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        label.required:after {
+            content: " *";
+            color: #e74c3c;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            transition: border 0.3s;
+        }
+        
+        input:focus, select:focus {
+            border-color: #3498db;
+            outline: none;
+            box-shadow: 0 0 5px rgba(52, 152, 219, 0.3);
+        }
+        
+        .divider {
+            height: 1px;
+            background-color: #eee;
+            margin: 30px 0;
+        }
+        
+        .btn-assign {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 14px 20px;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            position: relative;
+            font-weight: 600;
+            transition: background-color 0.3s;
+            width: 100%;
+        }
+        
+        .btn-assign:hover {
+            background-color: #2980b9;
+        }
+        
+        .btn-back {
+            background-color: #95a5a6;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+        
+        .btn-back:hover {
+            background-color: #7f8c8d;
+        }
+        
+        .auto-field {
+            background-color: #f9f9f9;
+            color: #777;
+        }
+        
+        .messages {
+            margin-bottom: 20px;
+        }
+        
+        .alert {
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+        
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .alert-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+            
+            input, select {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <a href="{% url 'app5:jobcard_assign_table' %}" class="btn-back">← Back to Job List</a>
+    
+    <div class="container">
+        <h1>Assign New Job</h1>
+        <p class="subtitle">Select a ticket and assign it to a technician</p>
+        
+        {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
+        <form id="jobAssignmentForm" method="POST" action="{% url 'app5:assign_new_job' %}">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="ticketNumber" class="required">Select Ticket Number</label>
+                <select id="ticketNumber" name="ticketNumber" required>
+                    <option value="">-- Select a Ticket --</option>
+                    {% for job in jobcards %}
+                    <option value="{{ job.ticket_no }}">{{ job.ticket_no }} - {{ job.customer }}</option>
+                    {% empty %}
+                    <option value="">No unassigned job cards available</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="customerName" class="required">Customer Name</label>
+                <input type="text" id="customerName" name="customerName" required readonly class="auto-field">
+                <span id="loadingIndicator" class="loading" style="display: none;"></span>
+            </div>
+            
+            <div class="form-group">
+                <label for="status" class="required">Status</label>
+                <select id="status" name="status" required>
+                    <option value="Sent To Technician" selected>Sent To Technician</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Completed">Completed</option>
+                    <option value="Cancelled">Cancelled</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="technician" class="required">Assigned Technician</label>
+                <select id="technician" name="technician" required>
+                    <option value="">-- Select Technician --</option>
+                    <option value="Sinan">Sinan</option>
+                    <option value="Ahmed">Ahmed</option>
+                    <option value="Maria">Maria</option>
+                    <option value="John">John</option>
+                    <option value="Lisa">Lisa</option>
+                </select>
+            </div>
+            
+            <div class="divider"></div>
+            
+            <button type="submit" class="btn-assign">ASSIGN JOB</button>
+        </form>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const ticketSelect = document.getElementById('ticketNumber');
+            const customerInput = document.getElementById('customerName');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const statusSelect = document.getElementById('status');
+            const technicianSelect = document.getElementById('technician');
+            
+            ticketSelect.addEventListener('change', function() {
+                const selectedTicket = this.value;
+                
+                if (!selectedTicket) {
+                    customerInput.value = '';
+                    return;
+                }
+                
+                // Extract just the ticket number (in case display format includes customer name)
+                const ticketNo = selectedTicket.split(' - ')[0];
+                
+                // Show loading indicator
+                loadingIndicator.style.display = 'inline-block';
+                customerInput.value = 'Loading...';
+                
+                // Fetch customer data for selected ticket
+                fetch(`/app5/get-customer-by-ticket/${ticketNo}/`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            customerInput.value = data.customer;
+                            // Auto-select "Sent To Technician" status
+                            statusSelect.value = "Sent To Technician";
+                        } else {
+                            alert('Error: ' + data.error);
+                            customerInput.value = '';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('An error occurred while fetching customer data');
+                        customerInput.value = '';
+                    })
+                    .finally(() => {
+                        // Hide loading indicator
+                        loadingIndicator.style.display = 'none';
+                    });
+            });
+            
+            // Form submission handler
+            document.getElementById('jobAssignmentForm').addEventListener('submit', function(e) {
+                if (!ticketSelect.value) {
+                    e.preventDefault();
+                    alert('Please select a ticket number');
+                    return;
+                }
+                
+                if (!customerInput.value) {
+                    e.preventDefault();
+                    alert('Customer name is required');
+                    return;
+                }
+                
+                if (!technicianSelect.value) {
+                    e.preventDefault();
+                    alert('Please select a technician');
+                    return;
+                }
+            });
+        });
+    </script>
+</body>
+</html>

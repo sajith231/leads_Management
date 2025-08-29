@@ -22,19 +22,27 @@ class JobCard(models.Model):
     customer = models.CharField(max_length=100)
     address = models.TextField()
     phone = models.CharField(max_length=15)
-    
+    technician = models.CharField(max_length=100, blank=True, null=True)
+
     # Store all items and complaints as JSON data
     items_data = models.JSONField(default=list, help_text="Stores array of items with their complaints")
-    
-    
+
+    # ✅ Add this field
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='logged'
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ['-created_at']
 
-    def _str_(self):
+    def __str__(self):  # also fixed __str__
         return f"{self.customer} - {self.ticket_no}"
+
     
     def save(self, *args, **kwargs):
         if not self.ticket_no:
@@ -103,3 +111,17 @@ class JobCardImage(models.Model):
 
     class Meta:
         ordering = ['item_index', 'complaint_index', 'uploaded_at']
+
+
+
+
+#model item master
+        
+class Item(models.Model):
+    name = models.CharField(max_length=255, unique=True)
+
+    def __str__(self):
+        return self.name
+    
+
+    
