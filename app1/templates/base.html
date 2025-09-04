@@ -862,25 +862,34 @@
 
 
 
-{% if 'item_list' in allowed_menus %}
-    <div class="mainmenu" onclick="toggleSysmacMenu()">
-        <span>
-            <i class="fas fa-microchip"></i>
-            <span>SYSMAC</span>
-        </span>
-    </div>
+<!-- Fixed SYSMAC Menu Section for base.html -->
+{% if 'item_list' in allowed_menus or 'app5:jobcard_list' in allowed_menus or 'app5:jobcard_assign_table' in allowed_menus %}
+<div class="mainmenu" onclick="toggleSysmacMenu()">
+    <span>
+        <i class="fas fa-microchip"></i>
+        <span>SYSMAC</span>
+    </span>
+</div>
 
-    <div id="sysmac-menu" class="submenu">
-        <a href="{% url 'item_list' %}">
-            <i class="fas fa-users"></i> Stand By
-        </a>
-        <a href="{% url 'app5:jobcard_list' %}">
-    <i class="fas fa-id-card"></i> Job Card
+<div id="sysmac-menu" class="submenu">
+    {% if 'item_list' in allowed_menus %}
+    <a href="{% url 'item_list' %}">
+        <i class="fas fa-users"></i> Stand By
+    </a>
+    {% endif %}
+    
+    {% if 'app5:jobcard_list' in allowed_menus %}
+    <a href="{% url 'app5:jobcard_list' %}">
+        <i class="fas fa-id-card"></i> Job Card
+    </a>
+    {% endif %}
+    
+    {% if 'app5:jobcard_assign_table' in allowed_menus %}
     <a href="{% url 'app5:jobcard_assign_table' %}">
-    <i class="fas fa-id-card"></i> Assigned Job
-</a>
-
-    </div>
+        <i class="fas fa-id-card-alt"></i> Assigned Job
+    </a>
+    {% endif %}
+</div>
 {% endif %}
 
             

@@ -5072,6 +5072,8 @@ def configure_user_menu(request, user_id):
     'icon': 'fas fa-microchip',
     'submenus': [
         {'id': 'item_list', 'name': 'Stand By', 'icon': 'fas fa-users'},
+        {'id': 'app5:jobcard_list', 'name': 'Job Card', 'icon': 'fas fa-id-card'},
+        {'id': 'app5:jobcard_assign_table', 'name': 'Assigned Job', 'icon': 'fas fa-id-card-alt'},
     ]
 },
 {
