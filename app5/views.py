@@ -1,15 +1,14 @@
+# views.py (updated)
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
-from .models import JobCard, JobCardImage, Item   # ✅ include Item
+from .models import JobCard, JobCardImage, Item
 import os
 import json
 from collections import defaultdict
 import requests
-
-
 from django.core.paginator import Paginator
 
 def jobcard_list(request):
@@ -20,9 +19,20 @@ def jobcard_list(request):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
+    # Get counts for each status
+    status_counts = {
+        'total': JobCard.objects.count(),
+        'logged': JobCard.objects.filter(status='logged').count(),
+        'sent_technician': JobCard.objects.filter(status='sent_technician').count(),
+        'pending': JobCard.objects.filter(status='pending').count(),
+        'completed': JobCard.objects.filter(status='completed').count(),
+        'returned': JobCard.objects.filter(status='returned').count(),
+        'rejected': JobCard.objects.filter(status='rejected').count(),
+    }
+    
     context = {
         'page_obj': page_obj,
-        # ... other context variables
+        'status_counts': status_counts,
     }
     return render(request, 'jobcard_list.html', context)
 
@@ -97,7 +107,7 @@ def jobcard_create(request):
         messages.success(request, "Job card(s) created successfully.")
         return redirect('app5:jobcard_list')
 
-    # ✅ For GET request → fetch items from Item Master
+    # ✅ GET request → fetch items + customers
     items = Item.objects.all().order_by("name")
 
     customer_data = []
@@ -106,6 +116,10 @@ def jobcard_create(request):
         response = requests.get(api_url)
         if response.status_code == 200:
             customer_data = response.json()
+            for customer in customer_data:
+                customer['address'] = customer.get('address', '')
+                customer['phone_number'] = customer.get('mobile', '')  # map mobile → phone
+                customer['branch'] = customer.get('branch', '')
     except Exception as e:
         print(f"Error fetching customer data: {e}")
         customer_data = []
@@ -261,15 +275,25 @@ def jobcard_edit(request, pk):
     return render(request, "jobcard_edit.html", context)
 
 
-
-
 @csrf_exempt
 def update_status(request, pk):
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
             status = data.get('status')
+            item_index = data.get('item_index', 0)
+            
             job = JobCard.objects.get(pk=pk)
+            
+            # Update status for specific item if item_index is provided
+            if item_index is not None and job.items_data:
+                if 0 <= item_index < len(job.items_data):
+                    # Update the status for the specific item
+                    job.items_data[item_index]['status'] = status
+                    job.save()
+                    return JsonResponse({"success": True, "status": status})
+            
+            # Fallback: update the main job status
             job.status = status
             job.save()
             return JsonResponse({"success": True, "status": job.get_status_display()})
@@ -285,34 +309,64 @@ def update_status(request, pk):
 # ------------------------------
 
 def item_master(request):
-    items = Item.objects.all().order_by('id')
-    return render(request, 'item_master.html', {'items': items})
+    items = Item.objects.all().order_by("name")
+    context = {
+        "items": items,
+        "page_title": "Item Master",
+        "total_items": items.count(),
+    }
+    return render(request, "item_master.html", context)
 
 
 def add_item(request):
     if request.method == "POST":
-        name = request.POST.get("name")
-        if name:
-            Item.objects.create(name=name)
-            messages.success(request, f'Item "{name}" added successfully!')
-            return redirect("app5:item_master")
-        else:
+        name = request.POST.get("name", "").strip().upper()  # force uppercase
+        if not name:
             messages.error(request, "Item name cannot be empty.")
+            return redirect("app5:add_item")
+
+        # ✅ Check only letters/numbers allowed
+        import re
+        if not re.match(r'^[A-Z0-9 ]+$', name):
+            messages.error(request, "Item name must contain only CAPITAL letters and numbers.")
+            return redirect("app5:add_item")
+
+        # ✅ Prevent duplicate
+        if Item.objects.filter(name=name).exists():
+            messages.error(request, f'Item "{name}" already exists!')
+            return redirect("app5:add_item")
+
+        Item.objects.create(name=name)
+        messages.success(request, f'Item "{name}" added successfully!')
+        return redirect("app5:item_master")
+
     return render(request, "add_item.html")
-
-
 def edit_item(request, item_id):
     item = get_object_or_404(Item, id=item_id)
     if request.method == "POST":
-        name = request.POST.get("name")
-        if name:
-            item.name = name
-            item.save()
-            messages.success(request, f'Item "{name}" updated successfully!')
-            return redirect("app5:item_master")
-        else:
+        name = request.POST.get("name", "").strip().upper()
+
+        if not name:
             messages.error(request, "Item name cannot be empty.")
+            return redirect("app5:edit_item", item_id=item.id)
+
+        import re
+        if not re.match(r'^[A-Z0-9 ]+$', name):
+            messages.error(request, "Item name must contain only CAPITAL letters and numbers.")
+            return redirect("app5:edit_item", item_id=item.id)
+
+        # ✅ Check duplicates (exclude current item)
+        if Item.objects.filter(name=name).exclude(id=item.id).exists():
+            messages.error(request, f'Item "{name}" already exists!')
+            return redirect("app5:edit_item", item_id=item.id)
+
+        item.name = name
+        item.save()
+        messages.success(request, f'Item "{name}" updated successfully!')
+        return redirect("app5:item_master")
+
     return render(request, "add_item.html", {"item": item})
+
 
 
 def delete_item(request, item_id):
@@ -320,6 +374,7 @@ def delete_item(request, item_id):
     item.delete()
     messages.success(request, f'Item "{item.name}" deleted successfully!')
     return redirect("app5:item_master")
+
 @csrf_exempt
 def update_jobcard_status(request, pk):
     """Alias for update_status to match URLs"""
@@ -346,24 +401,30 @@ def api_jobcard_detail(request, pk):
         return JsonResponse({"error": str(e)}, status=400)
 
 
-
 from django.shortcuts import render
 from .models import JobCard
 
 def jobcard_assign_table(request):
-    # Show all jobcards, not just "logged" status
-    jobcards = JobCard.objects.all().order_by("-created_at")
+    # Show all jobcards
+    jobcards_list = JobCard.objects.all().order_by('-created_at')  # adjust ordering if need
+    paginator = Paginator(jobcards_list, 10)  # Show 10 jobcards per page
+
+    page_number = request.GET.get("page")
+    jobcards = paginator.get_page(page_number)
+    # Get accurate counts for each status
     stats = {
-        "total": jobcards.count(),
-        "pending": jobcards.filter(status="pending").count(),
-        "in_progress": jobcards.filter(status="sent_technician").count(),
-        "completed": jobcards.filter(status="completed").count(),
-        "returned": jobcards.filter(status="returned").count(),
-        "cancelled": jobcards.filter(status="rejected").count(),
+        "total": JobCard.objects.count(),
+        "logged": JobCard.objects.filter(status="logged").count(),
+        "sent_technician": JobCard.objects.filter(status="sent_technician").count(),
+        "pending": JobCard.objects.filter(status="pending").count(),
+        "completed": JobCard.objects.filter(status="completed").count(),
+        "returned": JobCard.objects.filter(status="returned").count(),
+        "rejected": JobCard.objects.filter(status="rejected").count(),
     }
+    
     context = {
         "jobcards": jobcards,
-        "stats": stats  # Make sure stats is passed to context
+        "stats": stats
     }
     return render(request, "jobcard_assign_table.html", context)
  
@@ -392,10 +453,8 @@ def assign_new_job(request):
             return redirect('app5:assign_new_job')
     
     # For GET request, show the form with available job cards
-    # Only show job cards that haven't been assigned yet (status = 'logged' or 'Pending')
-    jobcards = JobCard.objects.filter(
-        status__in=['logged', 'Pending']
-    ).order_by("-created_at")
+    # Only show job cards that haven't been assigned yet (status = 'logged')
+    jobcards = JobCard.objects.filter(status='logged').order_by("-created_at")
     
     context = {
         "jobcards": jobcards
@@ -422,3 +481,25 @@ def get_customer_by_ticket(request, ticket_no):
             "success": False,
             "error": str(e)
         })
+    
+    from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+
+def jobcard_assign_edit(request, pk):
+    jobcard = get_object_or_404(JobCard, pk=pk)
+
+    if request.method == "POST":
+        technician = request.POST.get("technician")
+        status = request.POST.get("status", "sent_technician")
+        jobcard.technician = technician
+        jobcard.status = status
+        jobcard.save()
+
+        messages.success(request, f"Job {jobcard.ticket_no} updated successfully!")
+        return redirect("app5:jobcard_assign_table")
+
+    context = {
+        "assign": jobcard,
+        "jobcards": JobCard.objects.all()
+    }
+    return render(request, "jobcard_assign_edit.html", context)

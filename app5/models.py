@@ -1,12 +1,8 @@
+# models.py (updated)
 from django.db import models
-
-# Create your models here.
-
-
 import os
 import uuid
 import json
-from django.db import models
 
 class JobCard(models.Model):
     STATUS_CHOICES = [
@@ -21,7 +17,7 @@ class JobCard(models.Model):
     ticket_no = models.CharField(max_length=20, unique=True, blank=True)
     customer = models.CharField(max_length=100)
     address = models.TextField()
-    phone = models.CharField(max_length=15)
+    phone = models.CharField(max_length=50)
     technician = models.CharField(max_length=100, blank=True, null=True)
 
     # Store all items and complaints as JSON data
@@ -40,7 +36,7 @@ class JobCard(models.Model):
     class Meta:
         ordering = ['-created_at']
 
-    def __str__(self):  # also fixed __str__
+    def __str__(self):
         return f"{self.customer} - {self.ticket_no}"
 
     
@@ -101,7 +97,7 @@ class JobCardImage(models.Model):
     item_index = models.IntegerField(default=0, help_text="Index of item in items_data array")
     complaint_index = models.IntegerField(default=0, help_text="Index of complaint within item")
 
-    def _str_(self):
+    def __str__(self):
         return f"Image for {self.jobcard.customer} - {self.jobcard.ticket_no}"
 
     def delete(self, *args, **kwargs):
@@ -113,15 +109,9 @@ class JobCardImage(models.Model):
         ordering = ['item_index', 'complaint_index', 'uploaded_at']
 
 
-
-
-#model item master
-        
+# Model item master
 class Item(models.Model):
     name = models.CharField(max_length=255, unique=True)
 
     def __str__(self):
         return self.name
-    
-
-    
