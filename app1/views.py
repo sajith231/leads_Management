@@ -40,13 +40,16 @@ import requests
 
 def send_whatsapp_message_for_service_log(phone_number, message):
     secret = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
-    account = "1751352651812b4ba287f5ee0bc9d43bbf5bbe87fb6863854b166a3"
+    account = "1756959119812b4ba287f5ee0bc9d43bbf5bbe87fb68b9118fcf1af"  # ✅ new account
     url = f"https://app.dxing.in/api/send/whatsapp?secret={secret}&account={account}&recipient={phone_number}&type=text&message={message}&priority=1"
+    
     response = requests.get(url)
+    
     if response.status_code == 200:
         print(f"WhatsApp message sent successfully to {phone_number}")
     else:
         print(f"Failed to send WhatsApp message to {phone_number}. Status code: {response.status_code}, Response: {response.text}")
+
 
 def login(request):
     if request.method == "POST":
