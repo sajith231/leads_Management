@@ -21,6 +21,22 @@
         .form-row .form-group{flex:1}
         label{display:block;margin-bottom:5px;font-weight:600;color:#34495e}
         input,select,textarea{width:100%;padding:12px;border:1px solid #ddd;border-radius:5px;font-size:14px}
+        
+        /* Key Type dropdown styling */
+        #keyType {
+            font-weight: bold;
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            color: #333;
+        }
+        #keyType option {
+            font-weight: bold;
+            background: #e3f2fd;
+            color: #333;
+            padding: 10px;
+        }
+        #keyType option:hover {
+            background: #bbdefb;
+        }
         textarea{resize:vertical;min-height:100px}
         .form-actions{display:flex;justify-content:space-between;margin-top:20px}
         .btn{padding:12px 24px;border:none;border-radius:5px;cursor:pointer;font-weight:600;text-decoration:none;font-size:14px}
@@ -157,6 +173,13 @@
     </style>
 </head>
 <body>
+
+    <div class="form-container">
+            <!-- Back to List Button at top left -->
+            <div style="margin-bottom: 20px;">
+                <a href="{% url 'key_request_list' %}" class="btn btn-secondary">← Back to List</a>
+            </div>
+
     <div class="container">
         <header>
             <h1>🔑Key Request</h1>
@@ -172,8 +195,7 @@
             {% endfor %}
         </div>
         {% endif %}
-
-        <div class="form-container">
+            
             <form method="POST" action="{% url 'key_request' %}" enctype="multipart/form-data">
                 {% csrf_token %}
                 
@@ -198,22 +220,16 @@
                     <div id="clientError" class="error"></div>
                 </div>
 
-
                 <!-- Location -->
                 <div class="form-group">
                     <label for="location">Location *</label>
-                    <input type="text" id="location" name="location" required>
+                    <input type="text" id="location" name="location" required readonly style="background-color: #f8f9fa;">
                 </div>
 
                 <!-- Branch -->
                 <div class="form-group">
                     <label for="branch">Branch</label>
-                    <select id="branch" name="branch">
-                        <option value="">Select Branch</option>
-                        {% for branch in branches %}
-                        <option value="{{ branch.id }}">{{ branch.name }}</option>
-                        {% endfor %}
-                    </select>
+                    <input type="text" id="branch" name="branch" readonly style="background-color: #f8f9fa;">
                 </div>
 
                 <!-- Key Type -->
@@ -232,6 +248,7 @@
                         <option value="Software Amount Change Request">Software Amount Change Request</option>
                         <option value="Maturity Upgradation Request">Maturity Upgradation Request</option>
                         <option value="Enterprises Key Request">Enterprises Key Request</option>
+                        <option value="Special Updation Request">Special Updation Request</option>
                         <option value="Image Request">Image Request</option>
                     </select>
                 </div>
@@ -248,11 +265,23 @@
                 <!-- Dynamic fields -->
                 <!-- Image Request -->
                 <div id="imageRequestFields" class="dynamic-field">
-                    <div class="form-group">
-                        <label for="requestImage">Request Image *</label>
-                        <input type="file" id="requestImage" name="requestImage" accept="image/*" required>
-                    </div>
-                </div>
+    <div class="form-group">
+        <label for="requestImage">Request Image *</label>
+        <input type="file" id="requestImage" name="requestImage" accept="image/*" required>
+    </div>
+    <div class="form-row">
+        <div class="form-group">
+            <label for="gps_lat">GPS Latitude</label>
+            <input type="text" id="gps_lat" name="gps_lat" readonly style="background:#f8f9fa;">
+        </div>
+        <div class="form-group">
+            <label for="gps_lon">GPS Longitude</label>
+            <input type="text" id="gps_lon" name="gps_lon" readonly style="background:#f8f9fa;">
+        </div>
+    </div>
+</div>
+                
+
 
                 <!-- Enterprises Key Request -->
                 <div id="enterprisesKeyFields" class="dynamic-field">
@@ -405,7 +434,6 @@
 
                 <!-- Buttons -->
                 <div class="form-actions">
-                    <a href="{% url 'key_request_list' %}" class="btn btn-secondary">Back to List</a>
                     <button type="submit" class="btn btn-primary">Submit Request</button>
                 </div>
             </form>
@@ -480,12 +508,16 @@
                 }
                 
                 if (Array.isArray(data) && data.length > 0) {
-                    // keep full client objects (name + address + branch)
-                    this.clients = data.filter(client => client.name).map(client => ({
-                        name: client.name,
-                        address: client.address || "",
-                        branch: client.branch || ""
-                    }));
+                    // Keep full client objects and sort alphabetically by name
+                    this.clients = data
+                        .filter(client => client.name)
+                        .map(client => ({
+                            name: client.name,
+                            address: client.address || "",
+                            branch: client.branch || ""
+                        }))
+                        .sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
+                    
                     this.filteredClients = [...this.clients];
                 } else {
                     this.clients = [];
@@ -503,6 +535,13 @@
         
         handleInput(e) {
             const value = e.target.value.toLowerCase().trim();
+            
+            // Clear location and branch when client name changes
+            if (!value) {
+                document.getElementById('location').value = '';
+                document.getElementById('branch').value = '';
+            }
+            
             this.filterClients(value);
             this.selectedIndex = -1;
             if (!this.isDropdownOpen) {
@@ -514,7 +553,7 @@
             if (!searchTerm) {
                 this.filteredClients = [...this.clients];
             } else {
-                // Use more efficient filtering
+                // Use more efficient filtering and maintain alphabetical order
                 this.filteredClients = this.clients.filter(client => {
                     const nameMatch = client.name.toLowerCase().includes(searchTerm);
                     const addressMatch = client.address.toLowerCase().includes(searchTerm);
@@ -525,44 +564,28 @@
             this.renderDropdown();
         }
         
-        selectClient(client) {
-            this.input.value = client.name;
-            
-            // Auto-fill location field with client address
-            document.getElementById('location').value = client.address;
-            
-            // Auto-fill branch field if branch data is available
-            const branchSelect = document.getElementById('branch');
-            if (client.branch || client.branchId) {
-                // Try to match by branch ID first
-                if (client.branchId) {
-                    const branchOption = branchSelect.querySelector(`option[value="${client.branchId}"]`);
-                    if (branchOption) {
-                        branchSelect.value = client.branchId;
-                        console.log("Selected branch by ID:", client.branchId);
-                    }
-                }
-                
-                // If no ID match, try to match by branch name
-                if (!branchSelect.value && client.branch) {
-                    const options = branchSelect.querySelectorAll('option');
-                    for (let option of options) {
-                        if (option.textContent.trim().toLowerCase() === client.branch.toLowerCase()) {
-                            branchSelect.value = option.value;
-                            console.log("Selected branch by name:", client.branch);
-                            break;
-                        }
-                    }
-                }
-                
-                if (!branchSelect.value) {
-                    console.warn("Could not match branch:", client.branch, "Branch ID:", client.branchId);
-                }
-            }
-            
-            this.hideDropdown();
-            this.input.dispatchEvent(new Event('change', { bubbles: true }));
-        }
+      selectClient(client) {
+    console.log("=== CLIENT SELECTION DEBUG ===");
+    console.log("Selected client:", client);
+    console.log("Branch value:", client.branch);
+    console.log("Branch type:", typeof client.branch);
+    
+    this.input.value = client.name;
+    
+    // Auto-fill location field with client address
+    document.getElementById('location').value = client.address || '';
+    
+    // Auto-fill branch field with client branch
+    const branchField = document.getElementById('branch');
+    const branchValue = client.branch && client.branch.trim() ? client.branch.trim() : '';
+    branchField.value = branchValue;
+    
+    console.log("Branch field set to:", branchField.value);
+    console.log("=== END DEBUG ===");
+    
+    this.hideDropdown();
+    this.input.dispatchEvent(new Event('change', { bubbles: true }));
+}
         
         showDropdown() {
             if (this.isLoading) {
@@ -636,37 +659,44 @@
             }
         }
         
-        renderDropdown() {
-            if (this.isLoading) {
-                this.dropdown.innerHTML = '<div class="loading">Loading clients...</div>';
-                return;
+       renderDropdown() {
+    if (this.isLoading) {
+        this.dropdown.innerHTML = '<div class="loading">Loading clients...</div>';
+        return;
+    }
+    
+    if (this.filteredClients.length === 0) {
+        this.dropdown.innerHTML = '<div class="no-results">No clients found</div>';
+        return;
+    }
+    
+    this.dropdown.innerHTML = this.filteredClients
+        .map(client => {
+            // Debug: Log branch data
+            if (client.branch) {
+                console.log(`Client: ${client.name}, Branch: ${client.branch}`);
             }
-            
-            if (this.filteredClients.length === 0) {
-                this.dropdown.innerHTML = '<div class="no-results">No clients found</div>';
-                return;
-            }
-            
-            this.dropdown.innerHTML = this.filteredClients
-                .map(client => `
-                    <div class="client-option" data-name="${client.name}" data-address="${client.address}" data-branch="${client.branch || ''}" data-branch-id="${client.branchId || ''}">
-                        <div class="client-name">${client.name}</div>
-                        <div class="client-address">${client.address || 'No address available'}${client.branch ? ` • Branch: ${client.branch}` : ''}</div>
-                    </div>
-                `)
-                .join('');
-            
-            this.dropdown.querySelectorAll('.client-option').forEach(option => {
-                option.addEventListener('click', () => {
-                    this.selectClient({
-                        name: option.getAttribute('data-name'),
-                        address: option.getAttribute('data-address'),
-                        branch: option.getAttribute('data-branch'),
-                        branchId: option.getAttribute('data-branch-id')
-                    });
-                }, { passive: true });
+            return `
+                <div class="client-option" data-name="${client.name}" data-address="${client.address}" data-branch="${client.branch || ''}">
+                    <div class="client-name">${client.name}</div>
+                    <div class="client-address">${client.address || 'No address available'}${client.branch ? ` • Branch: ${client.branch}` : ''}</div>
+                </div>
+            `;
+        })
+        .join('');
+    
+    this.dropdown.querySelectorAll('.client-option').forEach(option => {
+        option.addEventListener('click', () => {
+            const branchValue = option.getAttribute('data-branch');
+            console.log(`Selected client branch: "${branchValue}"`); // Debug
+            this.selectClient({
+                name: option.getAttribute('data-name'),
+                address: option.getAttribute('data-address'),
+                branch: branchValue
             });
-        }
+        }, { passive: true });
+    });
+}
         
         showError(message) {
             this.isLoading = false;
@@ -688,6 +718,12 @@
         toggleFields();
     });
 
+     // ADD THE DEBUGGING CODE HERE:
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const branchValue = document.getElementById('branch').value;
+        console.log("Form submission - Branch value:", branchValue);
+    });
+
     // Toggle dynamic fields function
     function toggleFields() {
         const selected = document.getElementById("keyType").value;
@@ -704,6 +740,7 @@
         // Show only the relevant fieldset
         const fieldMap = {
             "Enterprises Key Request": "enterprisesKeyFields",
+            "Special Updation Request": "specialUpdateFields",
             "Seat Upgradation Request": "seatUpgradeFields",
             "Hosted Key Request": "hostedKeyFields",
             "Maturity Upgradation Request": "maturityUpgradeFields",
@@ -727,6 +764,33 @@
             }
         }
     }
+
+    document.addEventListener("DOMContentLoaded", function () {
+    const imageInput = document.getElementById("requestImage");
+    imageInput?.addEventListener("change", function () {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                function (pos) {
+                    const lat = pos.coords.latitude.toFixed(6);
+                    const lon = pos.coords.longitude.toFixed(6);
+
+                    // Fill hidden GPS fields
+                    document.getElementById("gps_lat").value = lat;
+                    document.getElementById("gps_lon").value = lon;
+
+                    // DO NOT overwrite the client location field
+                    // The location field should remain as client-entered data
+                    
+                    // Optional: Show a message that GPS was captured
+                    console.log(`GPS coordinates captured: ${lat}, ${lon}`);
+                },
+                function (err) {
+                    alert("GPS not available: " + err.message);
+                }
+            );
+        }
+    });
+});
 </script>
 
 </body>

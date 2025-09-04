@@ -51,22 +51,53 @@ class KeyRequest(models.Model):
     STATUS_CHOICES = [
         ("Pending", "Pending"),
         ("On Process", "On Process"),
-        ("Accepted", "Accepted"),
+        ("Completed", "Completed"),
         ("Rejected", "Rejected"),
     ]
 
-    clientName   = models.CharField(max_length=255)
-    location     = models.CharField(max_length=255)
-    description  = models.TextField(blank=True, null=True)
-    keyType      = models.CharField(max_length=255, choices=KEY_TYPES)
+    REQUESTED_STATUS_CHOICES = [
+        ("Requested", "Requested"),
+        ("Pending", "Pending"),
+        ("Rejected", "Rejected"),
+        ("Working on it", "Working on it"),
+        ("Work completed/Payment pending", "Work completed/Payment pending"),
+        ("Work done & Payment collected", "Work done & Payment collected"),
+    ]
+
+    clientName = models.CharField(max_length=255)
+    location = models.CharField(max_length=255)
+    description = models.TextField(blank=True, null=True)
+    keyType = models.CharField(max_length=255, choices=KEY_TYPES)
     requestDate = models.DateField(null=True, blank=True)
-    status       = models.CharField(max_length=20, choices=STATUS_CHOICES, default="Pending")
-    requestImage = models.ImageField(upload_to='key_request_images/', blank=True, null=True)
-    branch       = models.ForeignKey(Branch, on_delete=models.CASCADE, null=True, blank=True)
-    amount       = models.CharField(max_length=100, blank=True, null=True)
+    gps_location = models.CharField(max_length=100, blank=True, null=True)
+    gps_address = models.CharField(max_length=255, blank=True, null=True)
+
+    status = models.CharField(
+        max_length=20, choices=STATUS_CHOICES, default="Pending"
+    )
+    requested_status = models.CharField(
+        max_length=50,
+        choices=REQUESTED_STATUS_CHOICES,
+        default="Requested"
+    )
+
+    requestImage = models.ImageField(
+        upload_to="key_request_images/", blank=True, null=True
+    )
+    
+    # Changed from foreign key to simple text field
+    branch_name = models.CharField(max_length=200, blank=True, null=True)
+    
+    amount = models.CharField(max_length=100, blank=True, null=True)
 
     class Meta:
-        ordering = ['-id']
+        ordering = ["-id"]
 
     def __str__(self):
         return f"{self.clientName} - {self.keyType} ({self.requestDate})"
+
+
+
+
+
+        # hjs

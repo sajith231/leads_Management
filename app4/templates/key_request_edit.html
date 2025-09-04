@@ -1,4 +1,4 @@
-{%extends 'base.html'%}
+{% extends 'base.html' %}
 {% block content %}
 <!DOCTYPE html>
 <html lang="en">
@@ -21,9 +21,25 @@
         .form-row .form-group{flex:1}
         label{display:block;margin-bottom:5px;font-weight:600;color:#34495e}
         input,select,textarea{width:100%;padding:12px;border:1px solid #ddd;border-radius:5px;font-size:14px}
+
+        /* Key Type dropdown styling */
+        #keyType {
+            font-weight: bold;
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            color: #333;
+        }
+        #keyType option {
+            font-weight: bold;
+            background: #e3f2fd;
+            color: #333;
+            padding: 10px;
+        }
+        #keyType option:hover {
+            background: #bbdefb;
+        }
         textarea{resize:vertical;min-height:100px}
         .form-actions{display:flex;justify-content:space-between;margin-top:20px}
-        .btn{padding:12px 24px;border:none;border-radius:5px;cursor:pointer;font-weight:600;text-decoration:none;font-size:14px;display:inline-block;text-align:center}
+        .btn{padding:12px 24px;border:none;border-radius:5px;cursor:pointer;font-weight:600;text-decoration:none;font-size:14px}
         .btn-primary{background:#3498db;color:#fff}
         .btn-primary:hover{background:#2980b9}
         .btn-secondary{background:#6c757d;color:#fff}
@@ -31,22 +47,108 @@
         .dynamic-field{display:none}
 
         /* Enhanced client dropdown styles */
-        .client-dropdown-container{position:relative}
-        .client-search-input{width:100%;padding:15px;border:1px solid #ddd;border-radius:5px;font-size:16px;height:50px}
-        .client-dropdown{position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #ddd;border-top:none;border-radius:0 0 5px 5px;max-height:300px;overflow-y:auto;z-index:1000;display:none;box-shadow:0 2px 10px rgba(0,0,0,.1)}
-        .client-option{padding:15px;cursor:pointer;border-bottom:1px solid #f0f0f0;font-size:14px;line-height:1.4}
-        .client-option:hover{background:#f8f9fa}
-        .client-option.highlighted{background:#e3f2fd}
-        .client-name{font-weight:600;color:#2c3e50;margin-bottom:2px}
-        .client-address{font-size:12px;color:#7f8c8d;font-style:italic}
-        .no-results,.loading{padding:12px;color:#7f8c8d;font-style:italic;font-size:14px;text-align:center}
-        .dropdown-arrow{position:absolute;right:15px;top:50%;transform:translateY(-50%);pointer-events:none;color:#7f8c8d}
-        .error{color:#dc3545;font-size:14px;margin-top:5px}
+        .client-dropdown-container {
+            position: relative;
+        }
+        .client-search-input {
+            width: 100%;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-size: 16px;
+            height: 50px;
+        }
+        .client-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-top: none;
+            border-radius: 0 0 5px 5px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+            box-shadow: 0 2px 10px rgba(0,0,0,.1);
+        }
+        .client-option {
+            padding: 15px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        .client-option:hover {
+            background-color: #f8f9fa;
+        }
+        .client-option.highlighted {
+            background-color: #e3f2fd;
+        }
+        .client-option:last-child {
+            border-bottom: none;
+        }
+        .client-name {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 2px;
+        }
+        .client-address {
+            font-size: 12px;
+            color: #7f8c8d;
+            font-style: italic;
+        }
+        .no-results {
+            padding: 12px;
+            color: #7f8c8d;
+            font-style: italic;
+            font-size: 14px;
+        }
+        .loading {
+            padding: 12px;
+            color: #7f8c8d;
+            text-align: center;
+            font-size: 14px;
+        }
+        .dropdown-arrow {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+            color: #7f8c8d;
+        }
+        .error {
+            color: #dc3545;
+            font-size: 14px;
+            margin-top: 5px;
+        }
 
         /* Amount field styling */
-        .amount-input{position:relative}
-        .currency-symbol{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#7f8c8d;font-weight:600}
-        .amount-input input{padding-left:30px}
+        .amount-input {
+            position: relative;
+        }
+        .currency-symbol {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #7f8c8d;
+            font-weight: 600;
+        }
+        .amount-input input {
+            padding-left: 30px;
+        }
+
+        /* Current image styling */
+        .current-image {
+            max-width: 200px;
+            border-radius: 5px;
+            margin-top: 10px;
+            border: 1px solid #ddd;
+        }
 
         /* ======  RESPONSIVE  ====== */
         @media(max-width:768px){
@@ -57,247 +159,360 @@
             .form-row{flex-direction:column}
         }
 
-        /* Messages */
-        .messages{margin-bottom:20px}
-        .alert{padding:12px;border-radius:5px;margin-bottom:15px}
-        .alert-error{background:#f8d7da;color:#721c24;border:1px solid #f5c6cb}
-        .alert-success{background:#d4edda;color:#155724;border:1px solid #c3e6cb}
-
-        /* File input */
-        input[type=file]{padding:8px;border:2px dashed #ddd;background:#f9f9f9}
-        input[type=file]:focus{border-color:#3498db;outline:none}
-        small{color:#666;display:block;margin-top:5px;font-size:12px}
+        /* Message styles */
+        .messages {
+            margin-bottom: 20px;
+        }
+        .alert {
+            padding: 12px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+        .alert-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
     </style>
 </head>
 <body>
-<div class="container">
-    <header>
-        <h1>🔑 Edit Key Request</h1>
-    </header>
-
-    <!-- messages -->
-    {% if messages %}
-    <div class="messages">
-        {% for message in messages %}
-        <div class="alert alert-{{ message.tags|default:'info' }}">{{ message }}</div>
-        {% endfor %}
-    </div>
-    {% endif %}
 
     <div class="form-container">
-        <form method="POST" action="{% url 'key_request_edit' key_request.id %}" enctype="multipart/form-data">
-            {% csrf_token %}
+        <!-- Back to List Button at top left -->
+        <div style="margin-bottom: 20px;">
+            <a href="{% url 'key_request_list' %}" class="btn btn-secondary">← Back to List</a>
+        </div>
 
-            <!-- Client Name -->
-            <div class="form-group">
-                <label for="clientName">Client Name *</label>
-                <div class="client-dropdown-container">
-                    <input type="text" id="clientName" name="clientName" class="client-search-input"
-                           value="{{ key_request.clientName }}" placeholder="Type to search or click to see all clients..."
-                           autocomplete="off" required>
-                    <span class="dropdown-arrow">▼</span>
-                    <div id="clientDropdown" class="client-dropdown">
-                        <div class="loading">Loading clients...</div>
-                    </div>
+        <div class="container">
+            <header>
+                <h1>🔑 Edit Key Request</h1>
+            </header>
+
+            <!-- Display messages -->
+            {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                <div class="alert alert-{% if message.tags %}{{ message.tags }}{% else %}info{% endif %}">
+                    {{ message }}
                 </div>
-                <div id="clientError" class="error"></div>
-            </div>
-
-            <!-- Location -->
-            <div class="form-group">
-                <label for="location">Location *</label>
-                <input type="text" id="location" name="location" value="{{ key_request.location }}" required>
-            </div>
-
-            <!-- Branch -->
-            <div class="form-group">
-                <label for="branch">Branch</label>
-                <select id="branch" name="branch">
-                    <option value="">Select Branch</option>
-                    {% for branch in branches %}
-                    <option value="{{ branch.id }}" {% if key_request.branch.id == branch.id %}selected{% endif %}>
-                        {{ branch.name }}
-                    </option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <!-- Key Type -->
-            <div class="form-group">
-                <label for="keyType">Requested Key *</label>
-                <select id="keyType" name="keyType" required onchange="toggleFields()">
-                    <option value="">Select key type…</option>
-                    <option value="Seat Upgradation Request" {% if key_request.keyType == "Seat Upgradation Request" %}selected{% endif %}>Seat Upgradation Request</option>
-                    <option value="More Module Request" {% if key_request.keyType == "More Module Request" %}selected{% endif %}>More Module Request</option>
-                    <option value="Trade Name And Address Change Request" {% if key_request.keyType == "Trade Name And Address Change Request" %}selected{% endif %}>Trade Name And Address Change Request</option>
-                    <option value="Key type Change Request" {% if key_request.keyType == "Key type Change Request" %}selected{% endif %}>Key type Change Request</option>
-                    <option value="Key Extension Request" {% if key_request.keyType == "Key Extension Request" %}selected{% endif %}>Key Extension Request</option>
-                    <option value="Hosted Key Request" {% if key_request.keyType == "Hosted Key Request" %}selected{% endif %}>Hosted Key Request</option>
-                    <option value="Feeder Cancellation Request" {% if key_request.keyType == "Feeder Cancellation Request" %}selected{% endif %}>Feeder Cancellation Request</option>
-                    <option value="Demo Key Request" {% if key_request.keyType == "Demo Key Request" %}selected{% endif %}>Demo Key Request</option>
-                    <option value="Software Amount Change Request" {% if key_request.keyType == "Software Amount Change Request" %}selected{% endif %}>Software Amount Change Request</option>
-                    <option value="Maturity Upgradation Request" {% if key_request.keyType == "Maturity Upgradation Request" %}selected{% endif %}>Maturity Upgradation Request</option>
-                    <option value="Enterprises Key Request" {% if key_request.keyType == "Enterprises Key Request" %}selected{% endif %}>Enterprises Key Request</option>
-                    <option value="Image Request" {% if key_request.keyType == "Image Request" %}selected{% endif %}>Image Request</option>
-                </select>
-            </div>
-
-            <!-- Global Amount -->
-            <div class="form-group">
-                <label for="amount">Amount</label>
-                <div class="amount-input">
-                    <span class="currency-symbol">₹</span>
-                    <input type="text" id="amount" name="amount" value="{{ key_request.amount }}" placeholder="Enter amount if applicable">
-                </div>
-            </div>
-
-            <!-- Dynamic sections -->
-            {% if key_request.requestImage %}
-            <div class="form-group">
-                <label>Current Image</label>
-                <img src="{{ key_request.requestImage.url }}" alt="Current" style="max-width:200px;border-radius:5px">
+                {% endfor %}
             </div>
             {% endif %}
 
-            <!-- Image Request -->
-            <div id="imageRequestFields" class="dynamic-field">
+            <form method="POST" action="{% url 'key_request_edit' key_request.id %}" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <!-- Client Name -->
                 <div class="form-group">
-                    <label for="requestImage">
-                        {% if key_request.keyType == "Image Request" and key_request.requestImage %}Change Request Image{% else %}Request Image *{% endif %}
-                    </label>
-                    <input type="file" id="requestImage" name="requestImage" accept="image/*"
-                           {% if not key_request.requestImage %}required{% endif %}>
-                    {% if key_request.requestImage %}<small>Leave empty to keep current image</small>{% endif %}
+                    <label for="clientName">Client Name *</label>
+                    <div class="client-dropdown-container">
+                        <input
+                            type="text"
+                            id="clientName"
+                            name="clientName"
+                            class="client-search-input"
+                            value="{{ key_request.clientName|default:'' }}"
+                            placeholder="Type to search or click to see all clients..."
+                            autocomplete="off"
+                            required
+                        >
+                        <span class="dropdown-arrow">▼</span>
+                        <div id="clientDropdown" class="client-dropdown">
+                            <div class="loading">Loading clients...</div>
+                        </div>
+                    </div>
+                    <div id="clientError" class="error"></div>
                 </div>
-            </div>
 
-            <!-- Enterprises Key -->
-            <div id="enterprisesKeyFields" class="dynamic-field">
+                <!-- Location -->
                 <div class="form-group">
-                    <label>Enterprise Details</label>
-                    <textarea name="enterpriseDetails" placeholder="Provide enterprise-specific details">{{ key_request.enterpriseDetails }}</textarea>
+                    <label for="location">Location *</label>
+                    <input type="text" id="location" name="location"
+                           value="{{ key_request.location|default:'' }}" required readonly style="background-color: #f8f9fa;">
                 </div>
-            </div>
 
-            <!-- Seat Upgrade -->
-            <div id="seatUpgradeFields" class="dynamic-field">
-                <div class="form-row">
-                    <div class="form-group"><label>Current Seats</label><input type="number" name="currentSeats" value="{{ key_request.currentSeats }}" placeholder="Current seats"></div>
-                    <div class="form-group"><label>Required Seats</label><input type="number" name="requiredSeats" value="{{ key_request.requiredSeats }}" placeholder="Required seats"></div>
-                </div>
-            </div>
-
-            <!-- Hosted Key -->
-            <div id="hostedKeyFields" class="dynamic-field">
+                <!-- Branch -->
                 <div class="form-group">
-                    <label>Server Details</label>
-                    <textarea name="serverDetails" placeholder="Provide server configuration details">{{ key_request.serverDetails }}</textarea>
+                    <label for="branch">Branch</label>
+                    <input type="text" id="branch" name="branch"
+                           value="{{ key_request.branch|default:'' }}" readonly style="background-color: #f8f9fa;">
                 </div>
-            </div>
 
-            <!-- Maturity Upgrade -->
-            <div id="maturityUpgradeFields" class="dynamic-field">
-                <div class="form-row">
-                    <div class="form-group"><label>Current Maturity Pack</label><input type="text" name="currentMaturity" value="{{ key_request.currentMaturity }}" placeholder="Current pack"></div>
-                    <div class="form-group"><label>Required Maturity Pack</label><input type="text" name="requiredMaturity" value="{{ key_request.requiredMaturity }}" placeholder="Required pack"></div>
-                </div>
-            </div>
-
-            <!-- More Module -->
-            <div id="moduleRequestFields" class="dynamic-field">
+                <!-- Key Type -->
                 <div class="form-group">
-                    <label>Module Details</label>
-                    <textarea name="module" placeholder="Specify the module details">{{ key_request.module }}</textarea>
+                    <label for="keyType">Requested Key *</label>
+                    <select id="keyType" name="keyType" required onchange="toggleFields()">
+                        <option value="">Select key type...</option>
+                        <option value="Seat Upgradation Request" {% if key_request.keyType == "Seat Upgradation Request" %}selected{% endif %}>Seat Upgradation Request</option>
+                        <option value="More Module Request" {% if key_request.keyType == "More Module Request" %}selected{% endif %}>More Module Request</option>
+                        <option value="Trade Name And Address Change Request" {% if key_request.keyType == "Trade Name And Address Change Request" %}selected{% endif %}>Trade Name And Address Change Request</option>
+                        <option value="Key type Change Request" {% if key_request.keyType == "Key type Change Request" %}selected{% endif %}>Key type Change Request</option>
+                        <option value="Key Extension Request" {% if key_request.keyType == "Key Extension Request" %}selected{% endif %}>Key Extension Request</option>
+                        <option value="Hosted Key Request" {% if key_request.keyType == "Hosted Key Request" %}selected{% endif %}>Hosted Key Request</option>
+                        <option value="Feeder Cancellation Request" {% if key_request.keyType == "Feeder Cancellation Request" %}selected{% endif %}>Feeder Cancellation Request</option>
+                        <option value="Demo Key Request" {% if key_request.keyType == "Demo Key Request" %}selected{% endif %}>Demo Key Request</option>
+                        <option value="Software Amount Change Request" {% if key_request.keyType == "Software Amount Change Request" %}selected{% endif %}>Software Amount Change Request</option>
+                        <option value="Maturity Upgradation Request" {% if key_request.keyType == "Maturity Upgradation Request" %}selected{% endif %}>Maturity Upgradation Request</option>
+                        <option value="Enterprises Key Request" {% if key_request.keyType == "Enterprises Key Request" %}selected{% endif %}>Enterprises Key Request</option>
+                        <option value="Special Updation Request" {% if key_request.keyType == "Special Updation Request" %}selected{% endif %}>Special Updation Request</option>
+                        <option value="Image Request" {% if key_request.keyType == "Image Request" %}selected{% endif %}>Image Request</option>
+                    </select>
                 </div>
-            </div>
 
-            <!-- Demo Key -->
-            <div id="demoKeyFields" class="dynamic-field">
-                <div class="form-group"><label>Task</label><textarea name="task" placeholder="Describe the task">{{ key_request.task }}</textarea></div>
-                <div class="form-row">
-                    <div class="form-group"><label>B-Care</label><input type="text" name="bcare" value="{{ key_request.bcare }}" placeholder="B-Care details"></div>
-                    <div class="form-group"><label>I-Care</label><input type="text" name="icare" value="{{ key_request.icare }}" placeholder="I-Care details"></div>
-                </div>
-            </div>
-
-            <!-- Feeder Cancellation -->
-            <div id="feederCancelFields" class="dynamic-field">
+                <!-- Amount Field (Global) -->
                 <div class="form-group">
-                    <label>Reason for Cancellation</label>
-                    <textarea name="cancelReason" placeholder="Provide reason">{{ key_request.cancelReason }}</textarea>
+                    <label for="amount">Amount</label>
+                    <div class="amount-input">
+                        <span class="currency-symbol">₹</span>
+                        <input type="text" id="amount" name="amount"
+                               value="{{ key_request.amount|default:'' }}"
+                               placeholder="Enter amount if applicable">
+                    </div>
                 </div>
-            </div>
 
-            <!-- Software Amount Change -->
-            <div id="softwareAmountFields" class="dynamic-field">
-                <div class="form-row">
+                <!-- Dynamic fields -->
+                <!-- Image Request -->
+                <div id="imageRequestFields" class="dynamic-field">
                     <div class="form-group">
-                        <label>Current Amount</label>
-                        <div class="amount-input">
-                            <span class="currency-symbol">₹</span>
-                            <input type="text" name="currentAmount" value="{{ key_request.currentAmount }}" placeholder="Current amount">
+                        <label for="requestImage">
+                            {% if key_request.keyType == "Image Request" and key_request.requestImage %}
+                                Change Request Image
+                            {% else %}
+                                Request Image *
+                            {% endif %}
+                        </label>
+                        <input type="file" id="requestImage" name="requestImage" accept="image/*">
+                        {% if key_request.requestImage %}
+                        <div style="margin-top: 10px;">
+                            <strong>Current Image:</strong><br>
+                            <img src="{{ key_request.requestImage.url }}" alt="Current" class="current-image">
+                            <br><small>Leave empty to keep current image</small>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="gps_lat">GPS Latitude</label>
+                            <input type="text" id="gps_lat" name="gps_lat" 
+                                   value="{{ key_request.gps_lat|default:'' }}"
+                                   readonly style="background:#f8f9fa;">
+                        </div>
+                        <div class="form-group">
+                            <label for="gps_lon">GPS Longitude</label>
+                            <input type="text" id="gps_lon" name="gps_lon" 
+                                   value="{{ key_request.gps_lon|default:'' }}"
+                                   readonly style="background:#f8f9fa;">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Enterprises Key Request -->
+                <div id="enterprisesKeyFields" class="dynamic-field">
+                    <div class="form-group">
+                        <label>Enterprise Details</label>
+                        <textarea name="enterpriseDetails" placeholder="Provide enterprise-specific details">{{ key_request.enterpriseDetails|default:'' }}</textarea>
+                    </div>
+                </div>
+
+                <!-- Special Updation Request -->
+                <div id="specialUpdateFields" class="dynamic-field">
+                    <div class="form-group">
+                        <label>Special Update Details</label>
+                        <textarea name="specialUpdateDetails" placeholder="Describe the special updation requirements">{{ key_request.specialUpdateDetails|default:'' }}</textarea>
+                    </div>
+                </div>
+
+                <!-- Seat Upgradation -->
+                <div id="seatUpgradeFields" class="dynamic-field">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Current Seats</label>
+                            <input type="number" name="currentSeats"
+                                   value="{{ key_request.currentSeats|default:'' }}"
+                                   placeholder="Current number of seats">
+                        </div>
+                        <div class="form-group">
+                            <label>Required Seats</label>
+                            <input type="number" name="requiredSeats"
+                                   value="{{ key_request.requiredSeats|default:'' }}"
+                                   placeholder="Required number of seats">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hosted Key -->
+                <div id="hostedKeyFields" class="dynamic-field">
+                    <div class="form-group">
+                        <label>Server Details</label>
+                        <textarea name="serverDetails" placeholder="Provide server configuration details">{{ key_request.serverDetails|default:'' }}</textarea>
+                    </div>
+                </div>
+
+                <!-- Maturity Upgradation -->
+                <div id="maturityUpgradeFields" class="dynamic-field">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Current Maturity Pack</label>
+                            <input type="text" name="currentMaturity"
+                                   value="{{ key_request.currentMaturity|default:'' }}"
+                                   placeholder="Current maturity pack">
+                        </div>
+                        <div class="form-group">
+                            <label>Required Maturity Pack</label>
+                            <input type="text" name="requiredMaturity"
+                                   value="{{ key_request.requiredMaturity|default:'' }}"
+                                   placeholder="Required maturity pack">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- More Module -->
+                <div id="moduleRequestFields" class="dynamic-field">
+                    <div class="form-group">
+                        <label>Module Details</label>
+                        <textarea name="module" placeholder="Specify the module details">{{ key_request.module|default:'' }}</textarea>
+                    </div>
+                </div>
+
+                <!-- Demo Key -->
+                <div id="demoKeyFields" class="dynamic-field">
+                    <div class="form-group">
+                        <label>Task</label>
+                        <textarea name="task" placeholder="Describe the task for demo">{{ key_request.task|default:'' }}</textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>B-Care</label>
+                            <input type="text" name="bcare"
+                                   value="{{ key_request.bcare|default:'' }}"
+                                   placeholder="B-Care details">
+                        </div>
+                        <div class="form-group">
+                            <label>I-Care</label>
+                            <input type="text" name="icare"
+                                   value="{{ key_request.icare|default:'' }}"
+                                   placeholder="I-Care details">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Feeder Cancellation -->
+                <div id="feederCancelFields" class="dynamic-field">
+                    <div class="form-group">
+                        <label>Reason for Cancellation</label>
+                        <textarea name="cancelReason" placeholder="Provide reason for feeder cancellation">{{ key_request.cancelReason|default:'' }}</textarea>
+                    </div>
+                </div>
+
+                <!-- Software Amount Change -->
+                <div id="softwareAmountFields" class="dynamic-field">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Current Amount</label>
+                            <div class="amount-input">
+                                <span class="currency-symbol">₹</span>
+                                <input type="text" name="currentAmount"
+                                       value="{{ key_request.currentAmount|default:'' }}"
+                                       placeholder="Current software amount">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Required Amount</label>
+                            <div class="amount-input">
+                                <span class="currency-symbol">₹</span>
+                                <input type="text" name="requiredAmount"
+                                       value="{{ key_request.requiredAmount|default:'' }}"
+                                       placeholder="Required software amount">
+                            </div>
                         </div>
                     </div>
                     <div class="form-group">
-                        <label>Required Amount</label>
-                        <div class="amount-input">
-                            <span class="currency-symbol">₹</span>
-                            <input type="text" name="requiredAmount" value="{{ key_request.requiredAmount }}" placeholder="Required amount">
+                        <label>Request Image (Optional)</label>
+                        <input type="file" name="softwareAmountImage" accept="image/*">
+                        {% if key_request.softwareAmountImage %}
+                        <div style="margin-top: 10px;">
+                            <strong>Current Image:</strong><br>
+                            <img src="{{ key_request.softwareAmountImage.url }}" alt="Current Software Amount" class="current-image">
+                        </div>
+                        {% endif %}
+                        <small style="color: #666; display: block; margin-top: 5px;">
+                            Upload supporting image for software amount change request
+                            {% if key_request.softwareAmountImage %}(Leave empty to keep current image){% endif %}
+                        </small>
+                    </div>
+                </div>
+
+                <!-- Key Extension -->
+                <div id="keyExtensionFields" class="dynamic-field">
+                    <div class="form-group">
+                        <label>Extension Period</label>
+                        <input type="text" name="extensionPeriod"
+                               value="{{ key_request.extensionPeriod|default:'' }}"
+                               placeholder="Extension period (e.g., 3 months, 1 year)">
+                    </div>
+                </div>
+
+                <!-- Trade Name And Address Change -->
+                <div id="tradeNameChangeFields" class="dynamic-field">
+                    <div class="form-group">
+                        <label>New Firm Name</label>
+                        <input type="text" name="newFirmName"
+                               value="{{ key_request.newFirmName|default:'' }}"
+                               placeholder="New firm name">
+                    </div>
+                    <div class="form-group">
+                        <label>New Address</label>
+                        <textarea name="newAddress" placeholder="New address details">{{ key_request.newAddress|default:'' }}</textarea>
+                    </div>
+                </div>
+
+                <!-- Key Type Change -->
+                <div id="keyTypeChangeFields" class="dynamic-field">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Current Key Type</label>
+                            <input type="text" name="currentKeyType"
+                                   value="{{ key_request.currentKeyType|default:'' }}"
+                                   placeholder="Current key type">
+                        </div>
+                        <div class="form-group">
+                            <label>Required Key Type</label>
+                            <input type="text" name="requiredKeyType"
+                                   value="{{ key_request.requiredKeyType|default:'' }}"
+                                   placeholder="Required key type">
                         </div>
                     </div>
                 </div>
+
+                <!-- Date Requested -->
                 <div class="form-group">
-                    <label>Request Image (Optional)</label>
-                    <input type="file" name="softwareAmountImage" accept="image/*">
-                    <small>Upload supporting image{% if key_request.requestImage %} (Leave empty to keep current image){% endif %}</small>
+                    <label for="requestDate">Date Requested *</label>
+                    <input type="date" id="requestDate" name="requestDate"
+                           value="{{ key_request.requestDate|date:'Y-m-d' }}" required>
                 </div>
-            </div>
 
-            <!-- Key Extension -->
-            <div id="keyExtensionFields" class="dynamic-field">
+                <!-- Description (optional extra field) -->
                 <div class="form-group">
-                    <label>Extension Period</label>
-                    <input type="text" name="extensionPeriod" value="{{ key_request.extensionPeriod }}" placeholder="e.g. 3 months">
+                    <label for="description">Description</label>
+                    <textarea id="description" name="description" placeholder="Enter extra details...">{{ key_request.description|default:'' }}</textarea>
                 </div>
-            </div>
 
-            <!-- Trade Name & Address Change -->
-            <div id="tradeNameChangeFields" class="dynamic-field">
-                <div class="form-group"><label>New Firm Name</label><input type="text" name="newFirmName" value="{{ key_request.newFirmName }}" placeholder="New firm name"></div>
-                <div class="form-group"><label>New Address</label><textarea name="newAddress" placeholder="New address details">{{ key_request.newAddress }}</textarea></div>
-            </div>
-
-            <!-- Key Type Change -->
-            <div id="keyTypeChangeFields" class="dynamic-field">
-                <div class="form-row">
-                    <div class="form-group"><label>Current Key Type</label><input type="text" name="currentKeyType" value="{{ key_request.currentKeyType }}" placeholder="Current type"></div>
-                    <div class="form-group"><label>Required Key Type</label><input type="text" name="requiredKeyType" value="{{ key_request.requiredKeyType }}" placeholder="Required type"></div>
+                <!-- Buttons -->
+                <div class="form-actions">
+                    <a href="{% url 'key_request_list' %}" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-primary">Update Request</button>
                 </div>
-            </div>
-
-            <!-- Date Requested -->
-            <div class="form-group">
-                <label for="requestDate">Date Requested *</label>
-                <input type="date" id="requestDate" name="requestDate" value="{{ key_request.requestDate|date:'Y-m-d' }}" required>
-            </div>
-
-            <!-- Description -->
-            <div class="form-group">
-                <label for="description">Description</label>
-                <textarea id="description" name="description" placeholder="Enter extra details...">{{ key_request.description }}</textarea>
-            </div>
-
-            <!-- Buttons -->
-            <div class="form-actions">
-                <a href="{% url 'key_request_list' %}" class="btn btn-secondary">Back to List</a>
-                <button type="submit" class="btn btn-primary">Update Request</button>
-            </div>
-        </form>
+            </form>
+        </div>
     </div>
-</div>
 
-<!-- ******  IDENTICAL JS TO key_request.html  ****** -->
 <script>
+/* ---------- Client Searchable Dropdown ---------- */
 class ClientDropdown {
     constructor() {
         this.clients = [];
@@ -309,55 +524,81 @@ class ClientDropdown {
 
         this.input = document.getElementById('clientName');
         this.dropdown = document.getElementById('clientDropdown');
+
         this.init();
     }
+
     init() {
         this.loadClients();
         this.setupEventListeners();
     }
+
     setupEventListeners() {
-        this.input.addEventListener('input', e => {
+        this.input.addEventListener('input', (e) => {
             clearTimeout(this.debounceTimer);
             this.debounceTimer = setTimeout(() => this.handleInput(e), 150);
         });
         this.input.addEventListener('focus', () => this.showDropdown());
-        this.input.addEventListener('keydown', e => this.handleKeydown(e));
-        document.addEventListener('click', e => {
-            if (!e.target.closest('.client-dropdown-container')) this.hideDropdown();
+        this.input.addEventListener('keydown', (e) => this.handleKeydown(e));
+
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.client-dropdown-container')) {
+                this.hideDropdown();
+            }
         }, { passive: true });
-        this.input.parentElement.addEventListener('click', e => {
+
+        this.input.parentElement.addEventListener('click', (e) => {
             if (e.target.classList.contains('dropdown-arrow') || e.target === this.input) {
                 e.preventDefault();
                 this.isDropdownOpen ? this.hideDropdown() : this.showDropdown();
             }
         }, { passive: false });
     }
+
     async loadClients() {
         try {
-            const res = await fetch("/app4/api/clients/");
-            if (!res.ok) throw new Error(`Server returned ${res.status}`);
-            const data = await res.json();
-            if (data?.error) throw new Error(data.error);
-            this.clients = (Array.isArray(data) ? data : [])
-                .filter(c => c.name)
-                .map(c => ({ name: c.name, address: c.address || "", branch: c.branch || "" }));
-            this.filteredClients = [...this.clients];
+            const response = await fetch("/app4/api/clients/");
+            if (!response.ok) throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+            const data = await response.json();
+            if (data && data.error) return this.showError(`Error: ${data.error}`);
+
+            if (Array.isArray(data) && data.length) {
+                this.clients = data
+                    .filter(c => c.name)
+                    .map(c => ({ 
+                        name: c.name, 
+                        address: c.address || "", 
+                        branch: c.branch || "" 
+                    }))
+                    .sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
+                this.filteredClients = [...this.clients];
+            } else {
+                this.clients = [];
+                this.filteredClients = [];
+            }
             this.isLoading = false;
             this.renderDropdown();
         } catch (err) {
-            console.error(err);
-            this.showError("Failed to load clients");
+            console.error("Error fetching clients:", err);
+            this.showError(`Failed to load clients: ${err.message}`);
         }
     }
+
     handleInput(e) {
         const val = e.target.value.toLowerCase().trim();
+        if (!val) {
+            document.getElementById('location').value = '';
+            document.getElementById('branch').value = '';
+        }
         this.filterClients(val);
         this.selectedIndex = -1;
         if (!this.isDropdownOpen) this.showDropdown();
     }
+
     filterClients(term) {
-        if (!term) this.filteredClients = [...this.clients];
-        else {
+        if (!term) {
+            this.filteredClients = [...this.clients];
+        } else {
             this.filteredClients = this.clients.filter(c =>
                 c.name.toLowerCase().includes(term) ||
                 c.address.toLowerCase().includes(term) ||
@@ -366,37 +607,43 @@ class ClientDropdown {
         }
         this.renderDropdown();
     }
+
     selectClient(client) {
+        console.log("=== EDIT FORM CLIENT SELECTION ===");
+        console.log("Selected client:", client);
+        
         this.input.value = client.name;
-        document.getElementById('location').value = client.address;
-        const branchSelect = document.getElementById('branch');
-        if (client.branch) {
-            [...branchSelect.options].forEach(opt => {
-                if (opt.text.toLowerCase() === client.branch.toLowerCase()) {
-                    branchSelect.value = opt.value;
-                }
-            });
-        }
+        document.getElementById('location').value = client.address || '';
+        
+        const branchField = document.getElementById('branch');
+        const branchValue = client.branch && client.branch.trim() ? client.branch.trim() : '';
+        branchField.value = branchValue;
+        
+        console.log("Branch field set to:", branchField.value);
+        
         this.hideDropdown();
         this.input.dispatchEvent(new Event('change', { bubbles: true }));
     }
+
     showDropdown() {
         if (this.isLoading) {
-            this.dropdown.innerHTML = '<div class="loading">Loading clients…</div>';
+            this.dropdown.innerHTML = '<div class="loading">Loading clients...</div>';
             this.dropdown.style.display = 'block';
             this.isDropdownOpen = true;
             return;
         }
-        if (!this.input.value.trim()) this.filteredClients = [...this.clients];
+        if (this.input.value.trim() === '') this.filteredClients = [...this.clients];
         this.renderDropdown();
         this.dropdown.style.display = 'block';
         this.isDropdownOpen = true;
     }
+
     hideDropdown() {
         this.dropdown.style.display = 'none';
         this.selectedIndex = -1;
         this.isDropdownOpen = false;
     }
+
     handleKeydown(e) {
         if (!this.isDropdownOpen) {
             if (e.key === 'ArrowDown') { e.preventDefault(); this.showDropdown(); }
@@ -424,31 +671,41 @@ class ClientDropdown {
                 break;
         }
     }
+
     updateHighlight() {
         const opts = this.dropdown.querySelectorAll('.client-option');
         opts.forEach((opt, idx) => opt.classList.toggle('highlighted', idx === this.selectedIndex));
         const highlighted = opts[this.selectedIndex];
         if (highlighted) highlighted.scrollIntoView({ block: 'nearest', behavior: 'instant' });
     }
+
     renderDropdown() {
         if (this.isLoading) return;
-        if (!this.filteredClients.length) {
+        if (this.filteredClients.length === 0) {
             this.dropdown.innerHTML = '<div class="no-results">No clients found</div>';
             return;
         }
-        this.dropdown.innerHTML = this.filteredClients.map(c => `
-            <div class="client-option" data-name="${c.name}" data-address="${c.address}" data-branch="${c.branch}">
-                <div class="client-name">${c.name}</div>
-                <div class="client-address">${c.address || 'No address'}${c.branch ? ` • Branch: ${c.branch}` : ''}</div>
-            </div>`).join('');
+        this.dropdown.innerHTML = this.filteredClients
+            .map(c => `
+                <div class="client-option"
+                     data-name="${c.name}"
+                     data-address="${c.address}"
+                     data-branch="${c.branch}">
+                    <div class="client-name">${c.name}</div>
+                    <div class="client-address">
+                        ${c.address || 'No address available'}${c.branch ? ` • Branch: ${c.branch}` : ''}
+                    </div>
+                </div>`)
+            .join('');
         this.dropdown.querySelectorAll('.client-option').forEach(opt => {
             opt.addEventListener('click', () => this.selectClient({
-                name: opt.dataset.name,
-                address: opt.dataset.address,
-                branch: opt.dataset.branch
+                name: opt.getAttribute('data-name'),
+                address: opt.getAttribute('data-address'),
+                branch: opt.getAttribute('data-branch')
             }), { passive: true });
         });
     }
+
     showError(msg) {
         this.isLoading = false;
         this.dropdown.innerHTML = `<div class="no-results">${msg}</div>`;
@@ -457,19 +714,20 @@ class ClientDropdown {
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    new ClientDropdown();
-    toggleFields();                       // show correct dynamic section on load
-});
-
+/* ---------- Dynamic field toggling ---------- */
 function toggleFields() {
     const selected = document.getElementById('keyType').value;
+
+    // Hide all dynamic fields first
     document.querySelectorAll('.dynamic-field').forEach(div => {
         div.style.display = 'none';
-        div.querySelectorAll('[required]').forEach(el => el.removeAttribute('required'));
+        div.querySelectorAll('[required]').forEach(inp => inp.removeAttribute('required'));
     });
-    const map = {
+
+    // Show only the relevant fieldset
+    const fieldMap = {
         "Enterprises Key Request": "enterprisesKeyFields",
+        "Special Updation Request": "specialUpdateFields",
         "Seat Upgradation Request": "seatUpgradeFields",
         "Hosted Key Request": "hostedKeyFields",
         "Maturity Upgradation Request": "maturityUpgradeFields",
@@ -482,16 +740,82 @@ function toggleFields() {
         "Key type Change Request": "keyTypeChangeFields",
         "Image Request": "imageRequestFields"
     };
-    const target = map[selected];
-    if (target) {
-        const section = document.getElementById(target);
-        section.style.display = 'block';
-        if (selected === "Image Request" && !document.querySelector('.current-image')) {
-            section.querySelector('input[type="file"]')?.setAttribute('required', 'required');
+
+    if (fieldMap[selected]) {
+        const fieldDiv = document.getElementById(fieldMap[selected]);
+        fieldDiv.style.display = "block";
+        
+        // Add required attributes if needed for Image Request when no current image exists
+        if (selected === "Image Request") {
+            const hasCurrentImage = document.querySelector('.current-image');
+            if (!hasCurrentImage) {
+                fieldDiv.querySelector('input[type="file"]').setAttribute('required', 'required');
+            }
         }
     }
 }
+
+/* ---------- GPS functionality for Image Request ---------- */
+function handleImageUpload() {
+    const imageInput = document.getElementById("requestImage");
+    if (imageInput && navigator.geolocation) {
+        imageInput.addEventListener("change", function () {
+            if (this.files && this.files.length > 0) {
+                navigator.geolocation.getCurrentPosition(
+                    function (pos) {
+                        const lat = pos.coords.latitude.toFixed(6);
+                        const lon = pos.coords.longitude.toFixed(6);
+
+                        // Fill GPS fields
+                        document.getElementById("gps_lat").value = lat;
+                        document.getElementById("gps_lon").value = lon;
+
+                        console.log(`GPS coordinates captured: ${lat}, ${lon}`);
+                    },
+                    function (err) {
+                        console.log("GPS not available: " + err.message);
+                        // Don't show alert in edit form, just log
+                    }
+                );
+            }
+        });
+    }
+}
+
+/* ---------- Form submission debugging ---------- */
+function setupFormDebugging() {
+    const form = document.querySelector('form');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            const branchValue = document.getElementById('branch').value;
+            console.log("Form submission - Branch value:", branchValue);
+            
+            // Log all form data for debugging
+            const formData = new FormData(form);
+            console.log("=== FORM SUBMISSION DATA ===");
+            for (let [key, value] of formData.entries()) {
+                console.log(`${key}: ${value}`);
+            }
+        });
+    }
+}
+
+/* ---------- Initialize everything ---------- */
+document.addEventListener('DOMContentLoaded', () => {
+    // Initialize client dropdown
+    new ClientDropdown();
+    
+    // Show appropriate dynamic fields based on current selection
+    toggleFields();
+    
+    // Setup GPS functionality
+    handleImageUpload();
+    
+    // Setup form debugging
+    setupFormDebugging();
+});
 </script>
+
 </body>
 </html>
-{%endblock%}
+{% endblock %}

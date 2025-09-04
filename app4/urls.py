@@ -15,5 +15,6 @@ urlpatterns = [
     path('key-request-edit/<int:request_id>/', views.key_request_edit, name="key_request_edit"),
     path('key-request-delete/<int:request_id>/', views.key_request_delete, name="key_request_delete"),
     path('key-requests/<int:request_id>/update-status/', views.update_key_request_status, name='update_key_request_status'),
+    path('key-requests/<int:request_id>/update-requested-status/', views.update_key_request_requested_status, name='update_key_request_requested_status'),  # ADD THIS LINE
     path("api/clients/", views.clients_proxy, name="clients_proxy"),
 ]
