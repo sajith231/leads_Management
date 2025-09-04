@@ -24,18 +24,14 @@
         flex-wrap: wrap;
         gap: 15px;
     }
-     .customer-row:nth-child(odd) {
-        background-color: #ebe7ff; /* Light gray for odd rows */
-    }
-    .customer-row:nth-child(even) {
-        background-color: #fafcfd; /* Slightly darker gray for even rows */
-    }
+   
 
     /* Ticket number styling */
     .ticket-number {
         font-weight: bold;
+        font-size: 12px;
         color: #2c3e50;
-        background: #f2f9b0;
+        background: #f9afb2;
         padding: 6px 10px;
         border: 2px solid #6a7b10;
         border-radius: 6px;
@@ -70,30 +66,56 @@
 
     /* Customer info combined styling */
     .customer-info {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-        min-width: 200px;
-    }
-    .customer-name {
-        font-weight: bold;
-        color: #000;
-        background: #e9f1b3;
-        padding: 2px 4px;
-        border-radius: 4px;
-    }
-    .customer-address {
-        color: black;
-        font-weight: bold;
-        font-size: 14px;
-        white-space: pre-wrap;
-        word-wrap: break-word;
-    }
-    .customer-phone {
-        color: #007bff;
-        font-weight:bold;
-        font-size: 14px;
-    }
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 200px;
+}
+
+.customer-field {
+    display: flex;
+    align-items: center;
+    font-weight: bold;
+    gap: 6px;
+}
+
+.customer-field i {
+    font-size: 14px;
+    width: 16px;
+    text-align: center;
+}
+
+/* Specific styles */
+.customer-field.name {
+    color: #000;
+    font-size: 12px;
+    background: #f9afb2;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+.customer-field.name i {
+    color: #f80303;   /* orange icon for user */
+}
+
+.customer-field.address {
+    color: #000;
+    font-size: 12px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+.customer-field.address i {
+    color: #f68206;   /* green icon for location */
+}
+
+.customer-field.phone {
+    color: #0f0f0f;
+    font-size: 14px;
+}
+.customer-field.phone i {
+    color: #007bff;   /* red icon for phone */
+}
+
+
 
     .search-box {
         display: flex;
@@ -140,19 +162,23 @@
         cursor: pointer;
         min-width: 150px;
     }
-    .btn-add {
-        display: inline-block;
-        padding: 12px 18px;
-        background: black;
-        color: #fff;
-        text-decoration: none;
-        font-size: 16px;
-        font-weight: bold;
-        border-radius: 6px;
-        transition: .3s;
-        border: none;
-        cursor: pointer;
-    }
+.parent-container {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.btn-add {
+    padding: 12px 18px;
+    background: black;
+    color: #fff;
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: bold;
+    border-radius: 6px;
+    transition: .3s;
+    border: none;
+    cursor: pointer;
+}
     .btn-add:hover { background: #7e807f; }
     .btn-print {
         background: #6c757d !important;
@@ -246,6 +272,9 @@
         display: inline-block;
         padding: 3px 8px;
         border-radius: 12px;
+        border-color: #007bff;
+        color: white;
+        background-color: #17a2b8;
         font-size: 10px;
         font-weight: bold;
         text-transform: uppercase;
@@ -338,6 +367,7 @@
     
     .customer-row {
         background: #f8f9fa;
+        font-size: 12px;
     }
     .customer-row:hover {
         background: #edf0f8;
@@ -643,9 +673,12 @@
 </div>
 
 <div class="top-bar">
-    <div class="search-box">
-        <input type="text" id="searchInput" placeholder="Search by Customer Name, Phone, or Item">
-        
+    <!-- Left side: search + filters -->
+    <div class="filters-group" style="display:flex; gap:15px; flex-wrap:wrap; align-items:center;">
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Search by Customer Name or Item">
+        </div>
+       <div id="searchResultsInfo" class="search-results-info"></div>
         <div class="date-inputs">
             <label>From:</label>
             <input type="date" id="dateFrom" title="Filter from date">
@@ -668,10 +701,17 @@
         </button>
     </div>
 
-    <a href="{% url 'app5:jobcard_create' %}" class="btn-add"><i class="fas fa-plus"></i> Add New</a>
+    <!-- Right side: action buttons -->
+    <div class="action-buttons" style="display:flex; gap:15px;">
+        <a href="{% url 'app5:jobcard_create' %}" class="btn-add">
+            <i class="fas fa-plus"></i> Add New
+        </a>
+        <a href="{% url 'app5:item_master' %}" class="btn-add btn-service" title="Service Items">
+            <i class="fas fa-tools"></i> Service Items
+        </a>
+    </div>
 </div>
 
-<div class="search-results-info" id="searchResultsInfo"></div>
 
 <div class="table-container">
     <table id="jobTable">
@@ -697,13 +737,23 @@
                     <td>
                         <span class="ticket-number">{{ jobcard.ticket_no }}</span>
                     </td>
-                    <td>
-                        <div class="customer-info">
-                            <div class="customer-name">{{ jobcard.customer }}</div>
-                            <div class="customer-address">{{ jobcard.address }}</div>
-                            <div class="customer-phone">{{ jobcard.phone }}</div>
-                        </div>
-                    </td>
+                   <td>
+    <div class="customer-info">
+        <div class="customer-field name">
+            <i class="fas fa-user"></i>
+            <span>{{ jobcard.customer }}</span>
+        </div>
+        <div class="customer-field address">
+            <i class="fas fa-map-marker-alt"></i>
+            <span>{{ jobcard.address }}</span>
+        </div>
+        <div class="customer-field phone">
+            <i class="fas fa-phone"></i>
+            <span>{{ jobcard.phone }}</span>
+        </div>
+    </div>
+</td>
+
                     <td>
                         {% for item_data in jobcard.items_data %}
                             <div class="item-section">
@@ -741,31 +791,29 @@
                         {% endfor %}
                     </td>
                     <td data-status-column>
-                        {% for item_data in jobcard.items_data %}
-                            <div style="margin-bottom: 8px;">
-    <div style="font-size: 12px; color: #070707;">{{ item_data.item }}:</div>
-    {% with status=item_data.status|default:"logged" %}
-    <span class="status-badge status-{{ status }}" 
-          data-jobcard-id="{{ jobcard.pk }}"
-          data-item-index="{{ forloop.counter0 }}"
-          data-status="{{ status }}"
-          onclick="updateStatus({{ jobcard.pk }}, '{{ status }}', {{ forloop.counter0 }}, '{{ item_data.item|escapejs }}')"
-          title="Click to change status for {{ item_data.item }}">
-        {% if status == 'logged' %}Logged
-        {% elif status == 'sent_technician' %}Sent To Technician
-        {% elif status == 'pending' %}Pending
-        {% elif status == 'completed' %}Completed
-        {% elif status == 'returned' %}Returned
-        {% elif status == 'rejected' %}Rejected
-        {% else %}{{ status|capfirst }}
-        {% endif %}
-    </span>
-    {% endwith %}
-</div>
-                            </div>
-                        {% endfor %}
-                    </td>
-                    <td style="text-align: center;">
+    {% for item_data in jobcard.items_data %}
+        <div style="margin-bottom: 8px;">
+            <div style="font-size: 12px; color: #070707;">{{ item_data.item }}:</div>
+            {% with status=item_data.status|default:jobcard.status %}
+            <span class="status-badge status-{{ status }}" 
+                  data-jobcard-id="{{ jobcard.pk }}"
+                  data-item-index="{{ forloop.counter0 }}"
+                  data-status="{{ status }}"
+                  onclick="updateStatus({{ jobcard.pk }}, '{{ status }}', {{ forloop.counter0 }}, '{{ item_data.item|escapejs }}')"
+                  title="Click to change status for {{ item_data.item }}">
+                {% if status == 'logged' %}Logged
+                {% elif status == 'sent_technician' %}Sent To Technician
+                {% elif status == 'pending' %}Pending
+                {% elif status == 'completed' %}Completed
+                {% elif status == 'returned' %}Returned
+                {% elif status == 'rejected' %}Rejected
+                {% else %}{{ status|capfirst }}
+                {% endif %}
+            </span>
+            {% endwith %}
+        </div>
+    {% endfor %}
+</td>              <td style="text-align: center;">
                         {% for item_data in jobcard.items_data %}
                             {% for complaint in item_data.complaints %}
                                 {% if complaint.notes %}
@@ -1012,9 +1060,10 @@
         let filterCriteria = [];
         
         rows.forEach(row => {
-            const customerName = row.querySelector('.customer-name').textContent.toLowerCase();
-            const ticketNo = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
-            const phone = row.querySelector('.customer-phone').textContent.toLowerCase();
+            // FIXED: Use correct selectors for customer info
+            const customerName = row.querySelector('.customer-field.name span').textContent.toLowerCase();
+            const ticketNo = row.querySelector('.ticket-number').textContent.toLowerCase();
+            const phone = row.querySelector('.customer-field.phone span').textContent.toLowerCase();
             const itemsColumn = row.querySelector('td:nth-child(5)').textContent.toLowerCase();
             const complaintsColumn = row.querySelector('td:nth-child(6)').textContent.toLowerCase();
             const dateString = row.getAttribute('data-date');
@@ -1026,6 +1075,7 @@
             if (statusFilter === '') {
                 hasMatchingStatus = true;
             } else {
+                // Check if any item in this row has the matching status
                 statusBadges.forEach(badge => {
                     if (badge.getAttribute('data-status') === statusFilter) {
                         hasMatchingStatus = true;
@@ -1064,22 +1114,33 @@
         }
         
         // Update search results info
-        if (filterCriteria.length > 0) {
-            const filterText = filterCriteria.join(' and ');
+        if (filterCriteria.length > 0 || searchTerm || statusFilter || dateFrom || dateTo) {
             let resultMessage = `📊 Showing ${visibleCount} of ${totalCount} job cards`;
             
             if (filterCriteria.length > 0) {
-                resultMessage += ` matching ${filterText}`;
+                resultMessage += ` matching ${filterCriteria.join(' and ')}`;
             }
             
             if (visibleCount === 0) {
                 resultMessage += '<br><span style="color: #dc3545; font-size: 14px;"><i class="fas fa-search"></i> No matching records found. Try adjusting your filters.</span>';
+            } else {
+                resultMessage += `<br><span style="color: #28a745; font-size: 12px;"><i class="fas fa-check-circle"></i> Filters applied successfully</span>`;
             }
             
-            searchResultsInfo.innerHTML = resultMessage;
-            searchResultsInfo.style.display = 'block';
+            if (searchResultsInfo) {
+                searchResultsInfo.innerHTML = resultMessage;
+                searchResultsInfo.style.display = 'block';
+            }
         } else {
-            searchResultsInfo.style.display = 'none';
+            if (searchResultsInfo) {
+                searchResultsInfo.style.display = 'none';
+            }
+        }
+        
+        // Update pagination info if needed
+        const paginationInfo = document.querySelector('.pagination-info');
+        if (paginationInfo && visibleCount !== totalCount) {
+            paginationInfo.innerHTML += ` <span style="color:#17a2b8;">(Filtered: ${visibleCount} visible)</span>`;
         }
     }
 
@@ -1095,6 +1156,13 @@
         document.getElementById('statusFilter').value = '';
         document.getElementById('dateFrom').value = '';
         document.getElementById('dateTo').value = '';
+        
+        // Hide search results info
+        const searchResultsInfo = document.getElementById('searchResultsInfo');
+        if (searchResultsInfo) {
+            searchResultsInfo.style.display = 'none';
+        }
+        
         performSearch();
         showAlert('✅ All filters cleared successfully!', 'success');
     }
@@ -1125,101 +1193,100 @@
     }
 
     function confirmStatusUpdate() {
-    const newStatus = document.getElementById('statusSelect').value;
+        const newStatus = document.getElementById('statusSelect').value;
 
-    if (!csrftoken) {
-        showAlert('⛔ CSRF token not found. Please refresh the page.', 'error');
-        return;
-    }
-
-    if (!currentJobId) {
-        showAlert('⛔ No job card selected for status update.', 'error');
-        return;
-    }
-
-    // Show loading state
-    const statusBadge = document.querySelector(
-        `[data-jobcard-id="${currentJobId}"][data-item-index="${currentItemIndex}"]`
-    );
-    if (statusBadge) {
-        statusBadge.classList.add('status-updating');
-        statusBadge.style.pointerEvents = 'none';
-    }
-
-    console.log('Updating status:', {
-        jobId: currentJobId,
-        itemIndex: currentItemIndex,
-        newStatus: newStatus
-    });
-
-    fetch(`{% url 'app5:update_jobcard_status' 0 %}`.replace('0', currentJobId), {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': csrftoken,
-            'Accept': 'application/json',
-        },
-        credentials: 'same-origin',
-        body: JSON.stringify({ 
-            status: newStatus,
-            item_index: parseInt(currentItemIndex)
-        })
-    })
-    .then(response => {
-        if (!response.ok) {
-            return response.text().then(text => {
-                throw new Error(`HTTP ${response.status}: ${text}`);
-            });
+        if (!csrftoken) {
+            showAlert('⛔ CSRF token not found. Please refresh the page.', 'error');
+            return;
         }
-        return response.json();
-    })
-    .then(data => {
-        console.log('Status update result:', data);
-        if (data.success) {
-            // --- Always define displayText here ---
-            let displayText = newStatus ? newStatus.charAt(0).toUpperCase() + newStatus.slice(1) : "Unknown";
 
-            switch (newStatus) {
-                case 'logged': displayText = 'Logged'; break;
-                case 'sent_technician': displayText = 'Sent To Technician'; break;
-                case 'pending': displayText = 'Pending'; break;
-                case 'completed': displayText = 'Completed'; break;
-                case 'returned': displayText = 'Returned'; break;
-                case 'rejected': displayText = 'Rejected'; break;
+        if (!currentJobId) {
+            showAlert('⛔ No job card selected for status update.', 'error');
+            return;
+        }
+
+        // Show loading state
+        const statusBadge = document.querySelector(
+            `[data-jobcard-id="${currentJobId}"][data-item-index="${currentItemIndex}"]`
+        );
+        if (statusBadge) {
+            statusBadge.classList.add('status-updating');
+            statusBadge.style.pointerEvents = 'none';
+        }
+
+        fetch(`{% url 'app5:update_jobcard_status' 0 %}`.replace('0', currentJobId), {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken,
+                'Accept': 'application/json',
+            },
+            credentials: 'same-origin',
+            body: JSON.stringify({ 
+                status: newStatus,
+                item_index: parseInt(currentItemIndex)  // Make sure this is sent as integer
+            })
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.text().then(text => {
+                    throw new Error(`HTTP ${response.status}: ${text}`);
+                });
             }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                // Update the badge with new status
+                if (statusBadge) {
+                    // Remove all status classes
+                    statusBadge.className = statusBadge.className.replace(/\bstatus-\w+\b/g, '');
+                    
+                    // Add new status classes
+                    statusBadge.classList.add('status-badge', `status-${newStatus}`);
+                    statusBadge.setAttribute('data-status', newStatus);
+                    
+                    // Update text based on status
+                    let displayText = '';
+                    switch (newStatus) {
+                        case 'logged': displayText = 'Logged'; break;
+                        case 'sent_technician': displayText = 'Sent To Technician'; break;
+                        case 'pending': displayText = 'Pending'; break;
+                        case 'completed': displayText = 'Completed'; break;
+                        case 'returned': displayText = 'Returned'; break;
+                        case 'rejected': displayText = 'Rejected'; break;
+                        default: displayText = newStatus.charAt(0).toUpperCase() + newStatus.slice(1);
+                    }
+                    statusBadge.textContent = displayText;
+                    
+                    // Update onclick with new status
+                    statusBadge.setAttribute(
+                        'onclick',
+                        `updateStatus(${currentJobId}, '${newStatus}', ${currentItemIndex}, '${currentItemName.replace(/'/g, "\\'")}')`
+                    );
+                    
+                    // Remove loading state
+                    statusBadge.classList.remove('status-updating');
+                    statusBadge.style.pointerEvents = '';
+                }
 
-            // Update badge if found
+                closeStatusModal();
+                showAlert(`✅ Status updated to "${displayText}" successfully!`, 'success');
+                performSearch(); // Refresh search results after status change
+            } else {
+                throw new Error(data.error || 'Unknown error occurred');
+            }
+        })
+        .catch(error => {
+            console.error('Status update error:', error);
+            // showAlert(`⛔ Error updating status: ${error.message}`, 'error');
+            
             if (statusBadge) {
-                statusBadge.className = statusBadge.className.replace(/\bstatus-\w+\b/g, '');
-                statusBadge.classList.add('status-badge', `status-${newStatus}`);
-                statusBadge.textContent = displayText;
-                statusBadge.setAttribute('data-status', newStatus);
-                statusBadge.setAttribute(
-                    'onclick',
-                    `updateStatus(${currentJobId}, '${newStatus}', ${currentItemIndex}, '${currentItemName.replace(/'/g, "\\'")}')`
-                );
                 statusBadge.classList.remove('status-updating');
                 statusBadge.style.pointerEvents = '';
             }
-
-            closeStatusModal();
-            showAlert(`✅ Status updated to "${displayText}" successfully!`, 'success');
-            performSearch();
-        } else {
-            throw new Error(data.error || 'Unknown error occurred');
-        }
-    })
-    .catch(error => {
-        console.error('Status update error:', error);
-        showAlert(`⛔ Error updating status: ${error.message}`, 'error');
-
-        if (statusBadge) {
-            statusBadge.classList.remove('status-updating');
-            statusBadge.style.pointerEvents = '';
-        }
-    });
-}
-
+        });
+    }
 
     // Notes modal functionality
     function showNotesModal(itemName, notes) {
@@ -1261,7 +1328,7 @@
         document.getElementById('imagesModal').style.display = 'none';
     }
 
-    // Delete functionality - FIXED
+    // Delete functionality
     let ticketToDelete = null;
     let customerToDelete = null;
     let phoneToDelete = null;
@@ -1315,8 +1382,6 @@
         
         console.log('Deleting job card:', jobcardIdToDelete, 'Ticket:', ticketToDelete);
         
-        // Use the correct URL pattern that exists in your app
-        // Option 1: If you have a URL that accepts ticket number
         fetch(`{% url 'app5:delete_ticket_by_number' 'PLACEHOLDER' %}`.replace('PLACEHOLDER', ticketToDelete), {
             method: 'POST',
             headers: {
@@ -1364,7 +1429,10 @@
                                             No Job Cards Found
                                         </td>
                                     </tr>`;
-                                document.getElementById('searchResultsInfo').style.display = 'none';
+                                const searchResultsInfo = document.getElementById('searchResultsInfo');
+                                if (searchResultsInfo) {
+                                    searchResultsInfo.style.display = 'none';
+                                }
                             }
                         }
                     }, 500);
@@ -1459,7 +1527,7 @@
         
         // Perform initial search to show results
         if (status || search || dateFrom || dateTo) {
-            performSearch();
+            setTimeout(performSearch, 100); // Small delay to ensure DOM is fully loaded
         }
         
         console.log('✅ Job Card List initialized successfully');
