@@ -535,10 +535,11 @@
         License Key
     </a>
     {% endif %}
-    {% comment %} <a href="{% url 'key_request' %}">
+
+    <a href="{% url 'key_request_list' %}">
         <i class="fas fa-file-signature" style="margin-right: 5px;"></i>
         Key Request
-    </a> {% endcomment %}
+    </a> 
 </div>
 {% endif %}
 
@@ -553,12 +554,15 @@
 </div>
 
 <div id="sysmac-menu" class="submenu">
-    {% if 'item_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
         <a href="{% url 'item_list' %}">
             <i class="fas fa-users"></i> Stand By
         </a>
-    {% endif %}
+        <a href="{% url 'app5:jobcard_list' %}">
+    <i class="fas fa-id-card"></i> Job Card
+</a>
+
 </div>
+
 
 
 
@@ -840,10 +844,10 @@
         License Key
     </a>
     {% endif %}
-    {% comment %} <a href="{% url 'key_request' %}">
+    <a href="{% url 'key_request_list' %}">
         <i class="fas fa-file-signature" style="margin-right: 5px;"></i>
         Key Request
-    </a> {% endcomment %}
+    </a> 
 </div>
 {% endif %}
 
@@ -862,6 +866,10 @@
         <a href="{% url 'item_list' %}">
             <i class="fas fa-users"></i> Stand By
         </a>
+        <a href="{% url 'app5:jobcard_list' %}">
+    <i class="fas fa-id-card"></i> Job Card
+</a>
+
     </div>
 {% endif %}
 

@@ -1,619 +1,737 @@
+{% extends 'base.html' %}
+{% block content %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Key Requests</title>
+    <title>All Key Requests</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        /* ======  CSS RESET & BASE  ====== */
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:#f5f5f5;color:#333;line-height:1.4;}
+        .container{max-width:1800px;margin:0 auto;padding:20px}
+        header{background:#fff;padding:20px;border-radius:8px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center}
+        .btn-filter{background:#3498db;color:#fff;border:none;padding:10px 20px;border-radius:5px;font-weight:600;cursor:pointer;text-decoration:none}
+        .btn-filter:hover{background:#2980b9}
+        .filters-container{background:#fff;padding:20px;border-radius:8px;margin-bottom:20px}
+        .filters-row{display:flex;gap:15px;align-items:end;flex-wrap:wrap}
+        .filter-group{display:flex;flex-direction:column;min-width:180px}
+        .filter-group label{font-weight:600;margin-bottom:5px;color:#34495e}
+        .filter-group input,.filter-group select{padding:10px;border:1px solid #ddd;border-radius:5px}
+        .search-input{min-width:300px}
+        .filter-buttons{display:flex;gap:10px}
+        .btn-clear{background:#6c757d;color:#fff;border:none;padding:10px 20px;border-radius:5px;font-weight:600;cursor:pointer}
+        .btn-add{background:#28a745;color:#fff;border:none;padding:10px 20px;border-radius:5px;font-weight:600;cursor:pointer;text-decoration:none}
+        .table-container{background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.1);position:relative}
+        .table-wrapper{overflow-x:auto;overflow-y:visible;position:relative}
+        .table-wrapper::-webkit-scrollbar{height:12px}
+        .table-wrapper::-webkit-scrollbar-track{background:#f1f1f1;border-radius:6px}
+        .table-wrapper::-webkit-scrollbar-thumb{background:#888;border-radius:6px}
+        table{width:100%;border-collapse:collapse;min-width:1400px}
+        thead{background:#34495e;color:#fff}
+        th,td{padding:12px;font-size:14px;border-bottom:1px solid #eee;text-align:left;vertical-align:top}
+        th{font-weight:600}
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-        }
+        /* Column widths */
+        th:nth-child(1),td:nth-child(1){width:60px;text-align:center} /* ID */
+        th:nth-child(2),td:nth-child(2){width:120px} /* Date */
+        th:nth-child(3),td:nth-child(3){width:200px} /* Client Info */
+        th:nth-child(4),td:nth-child(4){width:280px;white-space:normal} /* Request Details */
+        th:nth-child(5),td:nth-child(5){width:100px;text-align:center} /* Amount */
+        th:nth-child(6),td:nth-child(6){width:140px} /* Admin Status */
+        th:nth-child(7),td:nth-child(7){width:140px} /* Requested Status */
+        th:nth-child(8),td:nth-child(8){width:80px;text-align:center} /* View */
+        th:nth-child(9),td:nth-child(9){width:80px;text-align:center} /* Edit */
+        th:nth-child(10),td:nth-child(10){width:80px;text-align:center} /* Delete */
 
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-            backdrop-filter: blur(10px);
-        }
+        /* Client info styling */
+        .client-info-container{display:flex;flex-direction:column;gap:4px}
+        .client-name{font-weight:600;color:#2c3e50;font-size:14px;margin-bottom:2px}
+        .client-branch{font-size:11px;color:#fff;background:#007bff;padding:2px 6px;border-radius:3px;display:inline-block;margin-bottom:2px;font-weight:500}
+        .client-branch.no-branch{background:#6c757d;color:#fff}
+        .client-location{font-size:12px;color:#7f8c8d;font-style:italic}
 
-        .header {
-            text-align: center;
-            margin-bottom: 40px;
-        }
+        .request-details{max-width:260px;word-wrap:break-word}
+        .key-type{background:#ecf0f1;padding:4px 8px;border-radius:4px;font-size:12px;font-weight:500;display:inline-block;margin-bottom:6px}
+        .date{color:#7f8c8d;font-size:13px;font-weight:500}
 
-        .header h1 {
-            color: #2c3e50;
-            font-size: 2.5rem;
-            font-weight: 700;
-            margin-bottom: 10px;
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
+        .action-btns{display:flex;gap:6px;flex-direction:column}
+        .btn-view,.btn-edit,.btn-delete{padding:8px 12px;border:none;border-radius:6px;font-size:12px;text-align:center;color:#fff;cursor:pointer;min-width:60px;font-weight:500;text-decoration:none;transition:all 0.3s ease;box-shadow:0 2px 4px rgba(0,0,0,0.1)}
+        .btn-view{background:#6c757d}
+        .btn-edit{background:#6c757d}
+        .btn-delete{background:#6c757d}
 
-        .header p {
-            color: #666;
-            font-size: 1.1rem;
-        }
+        /* Status styling */
+        .status-select{padding:8px 12px;border:2px solid;border-radius:20px;font-size:12px;font-weight:600;text-transform:uppercase;cursor:pointer;min-width:120px;text-align:center;transition:all 0.3s ease;outline:none}
+        .status-select.status-pending{background:linear-gradient(135deg,#fff3cd,#ffeaa7);color:#856404;border-color:#ffc107}
+        .status-select.status-onprocess{background:linear-gradient(135deg,#cce5ff,#99d6ff);color:#004085;border-color:#007bff}
+        .status-select.status-completed{background:linear-gradient(135deg,#d4edda,#a8e6a1);color:#155724;border-color:#28a745}
+        .status-select.status-rejected{background:linear-gradient(135deg,#f8d7da,#f1aeb5);color:#721c24;border-color:#dc3545}
+        .status-select.status-requested{background:linear-gradient(135deg,#e3f2fd,#bbdefb);color:#0277bd;border-color:#2196f3}
+        .status-select.status-workingonit{background:linear-gradient(135deg,#fff3e0,#ffcc80);color:#ef6c00;border-color:#ff9800}
+        .status-select.status-workcompletedpaymentpending{background:linear-gradient(135deg,#f3e5f5,#ce93d8);color:#7b1fa2;border-color:#9c27b0}
+        .status-select.status-workdonepaymentcollected{background:linear-gradient(135deg,#e8f5e8,#a5d6a7);color:#2e7d32;border-color:#4caf50}
+         .status-select.status-pending { 
+    background: linear-gradient(135deg,#fff3cd,#ffeaa7);
+    color:#856404; 
+    border-color:#ffc107; 
+}
 
-        .controls {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-            flex-wrap: wrap;
-            gap: 20px;
-        }
+.status-select.status-rejected { 
+    background: linear-gradient(135deg,#f8d7da,#f1aeb5);
+    color:#721c24; 
+    border-color:#dc3545; 
+}
 
-        .search-box {
-            position: relative;
-            flex: 1;
-            max-width: 400px;
-        }
+        .amount{font-weight:600;color:#e74c3c;font-size:14px}
+        .amount-empty{color:#7f8c8d;font-style:italic}
 
-        .search-box input {
-            width: 100%;
-            padding: 12px 45px 12px 16px;
-            border: 2px solid #e1e8ed;
-            border-radius: 50px;
-            font-size: 1rem;
-            background: #fafbfc;
-            transition: all 0.3s ease;
-        }
+        .results-info{padding:15px 20px;background:#f8f9fa;border-bottom:1px solid #eee;font-weight:600;color:#495057}
+        .pagination-container{background:#fff;padding:20px;border-radius:8px;margin-top:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:15px}
+        .pagination-info{color:#7f8c8d;font-weight:600}
+        .pagination-controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+        .page-size-selector{display:flex;align-items:center;gap:10px}
+        .page-size-selector select{padding:8px;border:1px solid #ddd;border-radius:4px}
+        .pagination-buttons{display:flex;gap:5px}
+        .pagination-btn{padding:8px 12px;border:1px solid #ddd;background:#fff;color:#333;text-decoration:none;border-radius:4px;cursor:pointer;font-weight:500}
+        .pagination-btn.active{background:#3498db;color:#fff;border-color:#3498db}
+        .pagination-btn.disabled{opacity:0.5;cursor:not-allowed;background:#f8f9fa;color:#999}
 
-        .search-box input:focus {
-            outline: none;
-            border-color: #667eea;
-            background: #fff;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
+        .modal{display:none;position:fixed;z-index:1000;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,.5)}
+        .modal-content{background:#fff;margin:5% auto;padding:20px;border-radius:8px;width:90%;max-width:600px}
+        .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px}
+        .modal-title{font-size:18px;font-weight:600}
+        .close{color:#aaa;font-size:24px;font-weight:bold;cursor:pointer}
+        .close:hover{color:#000}
+        .modal-image{max-width:100%;border-radius:8px;margin:15px 0}
+        .details-section{margin:10px 0}
+        .details-label{font-weight:600;color:#34495e}
+        .details-value{color:#7f8c8d;margin-bottom:8px}
 
-        .search-box::after {
-            content: '🔍';
-            position: absolute;
-            right: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #667eea;
-            pointer-events: none;
-        }
+        .no-results{text-align:center;padding:40px;color:#7f8c8d}
+        .no-results-icon{font-size:48px;margin-bottom:10px}
 
-        .add-btn {
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            color: white;
-            border: none;
-            padding: 12px 25px;
-            border-radius: 50px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .add-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
-        }
-
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .stat-card {
-            background: white;
-            padding: 20px;
-            border-radius: 15px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
-            border: 1px solid #e8ecf4;
-            text-align: center;
-            transition: transform 0.3s ease;
-        }
-
-        .stat-card:hover {
-            transform: translateY(-5px);
-        }
-
-        .stat-number {
-            font-size: 2rem;
-            font-weight: 700;
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 5px;
-        }
-
-        .stat-label {
-            color: #666;
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .table-container {
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
-            border: 1px solid #e8ecf4;
-            overflow: hidden;
-        }
-
-        .table-wrapper {
-            overflow-x: auto;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        th {
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            color: white;
-            padding: 20px 15px;
-            text-align: left;
-            font-weight: 600;
-            font-size: 0.95rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        td {
-            padding: 20px 15px;
-            border-bottom: 1px solid #f1f3f4;
-            vertical-align: top;
-            color: #333;
-        }
-
-        tr:hover {
-            background: #f8f9ff;
-        }
-
-        tr:last-child td {
-            border-bottom: none;
-        }
-
-        .client-name {
-            font-weight: 600;
-            color: #2c3e50;
-        }
-
-        .request-title {
-            font-weight: 500;
-            color: #667eea;
-        }
-
-        .image-cell {
-            text-align: center;
-        }
-
-        .request-image {
-            width: 80px;
-            height: 80px;
-            object-fit: cover;
-            border-radius: 10px;
-            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
-            transition: transform 0.3s ease;
-            cursor: pointer;
-        }
-
-        .request-image:hover {
-            transform: scale(1.1);
-        }
-
-        .no-image {
-            width: 80px;
-            height: 80px;
-            background: #f1f3f4;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #999;
-            font-size: 0.8rem;
-            text-align: center;
-        }
-
-        .additional-requests {
-            max-width: 200px;
-        }
-
-        .request-tag {
-            display: inline-block;
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            color: white;
-            padding: 4px 10px;
-            margin: 2px;
-            border-radius: 15px;
-            font-size: 0.75rem;
-            font-weight: 500;
-        }
-
-        .comments-cell {
-            max-width: 250px;
-            word-wrap: break-word;
-            color: #666;
-            font-style: italic;
-        }
-
-        .date-cell {
-            color: #999;
-            font-size: 0.9rem;
-            white-space: nowrap;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: #666;
-        }
-
-        .empty-state-icon {
-            font-size: 4rem;
-            margin-bottom: 20px;
-            opacity: 0.3;
-        }
-
-        .empty-state h3 {
-            margin-bottom: 10px;
-            color: #333;
-        }
-
-        .actions-cell {
-            text-align: center;
-            white-space: nowrap;
-        }
-
-        .action-btn {
-            background: transparent;
-            border: 1px solid #e1e8ed;
-            color: #667eea;
-            padding: 8px 12px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.8rem;
-            margin: 0 2px;
-            transition: all 0.3s ease;
-        }
-
-        .action-btn:hover {
-            background: #667eea;
-            color: white;
-        }
-
-        .filter-tabs {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-
-        .filter-tab {
-            padding: 8px 16px;
-            border: 2px solid #e1e8ed;
-            border-radius: 20px;
-            background: white;
-            color: #666;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-size: 0.9rem;
-        }
-
-        .filter-tab.active {
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            color: white;
-            border-color: #667eea;
-        }
-
-        /* Modal for image preview */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(5px);
-        }
-
-        .modal-content {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            max-width: 90%;
-            max-height: 90%;
-            border-radius: 15px;
-            overflow: hidden;
-        }
-
-        .modal img {
-            width: 100%;
-            height: auto;
-            display: block;
-        }
-
-        .close {
-            position: absolute;
-            top: 15px;
-            right: 25px;
-            color: white;
-            font-size: 35px;
-            font-weight: bold;
-            cursor: pointer;
-            z-index: 1001;
-        }
-
-        @media (max-width: 768px) {
-            .container {
-                padding: 15px;
-            }
+        @media(max-width:768px){
+            .filters-row{flex-direction:column;align-items:stretch}
+            .filter-group{min-width:100%}
+            .search-input{min-width:100%}
+            .action-btns{flex-direction:row}
+            .pagination-container{flex-direction:column;text-align:center}
+            table{min-width:1200px}
+            th,td{padding:8px;font-size:12px}
             
-            .header h1 {
-                font-size: 2rem;
-            }
-            
-            .controls {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            
-            .search-box {
-                max-width: none;
-            }
-            
-            .stats {
-                grid-template-columns: repeat(2, 1fr);
-            }
-            
-            th, td {
-                padding: 12px 8px;
-                font-size: 0.9rem;
-            }
-            
-            .request-image, .no-image {
-                width: 60px;
-                height: 60px;
-            }
-            
-            .additional-requests, .comments-cell {
-                max-width: 150px;
-            }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>🔑 Key Requests</h1>
-            <p>Manage and track all key requests from clients</p>
-        </div>
+<div class="container">
+    <header><h1>📋 All Key Requests</h1></header>
 
-        <div class="controls">
-            <div class="search-box">
-                <input type="text" id="searchInput" placeholder="Search requests...">
+    <!-- Filters Section -->
+    <div class="filters-container">
+        <div class="filters-row">
+            <div class="filter-group">
+                <label for="searchInput">Search</label>
+                <input type="text" id="searchInput" class="search-input" placeholder="Search by client name, location, or key type...">
             </div>
-           
-        </div>
-
-        <!-- Sample stats - replace with actual data -->
-        <div class="stats">
-            <div class="stat-card">
-                <div class="stat-number">24</div>
-                <div class="stat-label">Total Requests</div>
+            <div class="filter-group">
+                <label for="dateFilter">Date Filter</label>
+                <select id="dateFilter">
+                    <option value="">All Dates</option>
+                    <option value="today">Today</option>
+                    <option value="yesterday">Yesterday</option>
+                    <option value="last_week">Last Week</option>
+                    <option value="this_month">This Month</option>
+                    <option value="this_year">This Year</option>
+                </select>
             </div>
-            <div class="stat-card">
-                <div class="stat-number">18</div>
-                <div class="stat-label">Completed</div>
+            <div class="filter-group">
+                <label for="keyTypeFilter">Key Type</label>
+                <select id="keyTypeFilter">
+                    <option value="">All Key Types</option>
+                    <option value="Seat Upgradation Request">Seat Upgradation Request</option>
+                    <option value="More Module Request">More Module Request</option>
+                    <option value="Trade Name And Address Change Request">Trade Name And Address Change Request</option>
+                    <option value="Key type Change Request">Key type Change Request</option>
+                    <option value="Key Extension Request">Key Extension Request</option>
+                    <option value="Hosted Key Request">Hosted Key Request</option>
+                    <option value="Feeder Cancellation Request">Feeder Cancellation Request</option>
+                    <option value="Demo Key Request">Demo Key Request</option>
+                    <option value="Software Amount Change Request">Software Amount Change Request</option>
+                    <option value="Maturity Upgradation Request">Maturity Upgradation Request</option>
+                    <option value="Enterprises Key Request">Enterprises Key Request</option>
+                    <option value="Image Request">Image Request</option>
+                </select>
             </div>
-            <div class="stat-card">
-                <div class="stat-number">6</div>
-                <div class="stat-label">Pending</div>
+            <div class="filter-group">
+                <label for="statusFilter">Admin Status</label>
+                <select id="statusFilter">
+                    <option value="">All Status</option>
+                    <option value="pending">Pending</option>
+                    <option value="on process">On Process</option>
+                    <option value="completed">Completed</option>
+                    <option value="rejected">Rejected</option>
+                </select>
             </div>
-            <div class="stat-card"> 
-                <div class="stat-number">12</div>
-                <div class="stat-label">This Month</div>
+            <div class="filter-group">
+                <label for="requestedStatusFilter">Requested Status</label>
+                <select id="requestedStatusFilter">
+                    <option value="">All Requested Status</option>
+                    <option value="requested">Requested</option>
+                    <option value="working on it">Working on it</option>
+                    <option value="work completed/payment pending">Work completed/Payment pending</option>
+                    <option value="work done & payment collected">Work done & Payment collected</option>
+                </select>
             </div>
-        </div>
-
-        <div class="filter-tabs">
-            <div class="filter-tab active" data-filter="all">All Requests</div>
-            <div class="filter-tab" data-filter="today">Today</div>
-            <div class="filter-tab" data-filter="week">This Week</div>
-            <div class="filter-tab" data-filter="month">This Month</div>
-        </div>
-
-        <div class="table-container">
-            <div class="table-wrapper">
-                <table id="requestsTable">
-                    <thead>
-                        <tr>
-                            <th>Client</th>
-                            <th>Request Title</th>
-                            <th>Image</th>
-                            <th>Additional Request</th>
-                            <th>In Detail</th>
-                            <th>Date</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for req in key_requests %}
-                        <tr data-date="{{ req.created_at|date:'Y-m-d' }}">
-                            <td class="client-name">{{ req.client_name }}</td>
-                            <td class="request-title">{{ req.request_title }}</td>
-                            <td class="image-cell">
-                                {% if req.image_file %}
-                                    <img src="{{ req.image_file.url }}" alt="Request Image" class="request-image" onclick="openModal('{{ req.image_file.url }}')">
-                                {% else %}
-                                    <div class="no-image">No Image</div>
-                                {% endif %}
-                            </td>
-                            <td class="additional-requests">
-                                {% if req.additional_requests %}
-                                   {% for request_item in req.additional_requests_list %}
-    <span class="request-tag">{{ request_item|title }}</span>
-{% empty %}
-    <span style="color: #999; font-style: italic;">None</span>
-{% endfor %}
-
-                                {% else %}
-                                    <span style="color: #999; font-style: italic;">None</span>
-                                {% endif %}
-                            </td>
-                            <td class="comments-cell">
-                                {% if req.comments %}
-                                    {{ req.comments|truncatewords:15 }}
-                                {% else %}
-                                    <span style="color: #999; font-style: italic;">No comments</span>
-                                {% endif %}
-                            </td>
-                            <td class="date-cell">{{ req.created_at|date:"d M Y" }}</td>
-                            <td class="actions-cell">
-                                <button class="action-btn" onclick="viewRequest({{ req.id }})">👁️ View</button>
-                                <button class="action-btn" onclick="editRequest({{ req.id }})">✏️ Edit</button>
-                                <button class="action-btn" onclick="deleteRequest({{ req.id }})">🗑️ Delete</button>
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="7" class="empty-state">
-                                <div class="empty-state-icon">📋</div>
-                                <h3>No Key Requests Yet</h3>
-                                <p>Start by creating your first key request</p>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+            <div class="filter-group">
+                <label for="branchFilter">Branch</label>
+                <select id="branchFilter">
+                    <option value="">All Branches</option>
+                    {% for branch in branches %}
+                        <option value="{{ branch.name|lower }}">{{ branch.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="filter-buttons">
+                <button type="button" class="btn-clear" onclick="clearFilters()">Clear</button>
+                <a href="{% url 'key_request' %}" class="btn-add">+ Add New Request</a>
             </div>
         </div>
     </div>
 
-    <!-- Image Modal -->
-    <div id="imageModal" class="modal">
-        <span class="close" onclick="closeModal()">&times;</span>
+    <div class="results-info" id="resultsInfo">Showing all requests (sorted by ID: first to last)</div>
+
+    <!-- Table Section -->
+    <div class="table-container">
+        <div class="table-wrapper" id="tableWrapper">
+            <table>
+                <thead>
+                <tr>
+                    <th>🔢ID</th>
+                    <th>🗓️Date</th>
+                    <th>👤Client Info</th>
+                    <th>📋Request Details</th>
+                    <th>₹Amount</th>
+                    <th>📊Admin Status</th>
+                    <th>📄Requested Status</th>
+                    <th>👁‍🗨View</th>
+                    <th>✏️Edit</th>
+                    <th>🗑️Delete</th>
+                </tr>
+                </thead>
+                <tbody id="requestsTableBody">
+                {% for request in key_requests %}
+                <tr class="request-row"
+                    data-client="{{ request.clientName|default:'Unknown Client'|lower }}"
+                    data-location="{{ request.location|lower }}"
+                    data-keytype="{{ request.keyType|lower }}"
+                    data-status="{{ request.status|lower }}"
+                    data-requested-status="{{ request.requested_status|default:'requested'|lower }}"
+                    data-branch="{% if request.branch_name %}{{ request.branch_name|lower }}{% else %}no-branch{% endif %}"
+                    data-date="{{ request.requestDate|date:'Y-m-d' }}"
+                    data-search="{{ request.clientName|default:'Unknown Client'|lower }} {{ request.location|lower }} {{ request.keyType|lower }}">
+
+                    <td><strong>{{ forloop.counter }}</strong></td>
+
+                    <td>
+                        <div class="date">{{ request.requestDate|date:"d-m-Y" }}</div>
+                    </td>
+
+                    <td>
+   <div class="client-info-container">
+  <div class="client-name">{{ request.clientName|default:"Unknown Client" }}</div>
+
+ {% if request.branch_name %}
+    <span class="client-branch">{{ request.branch_name }}</span>
+{% else %}
+    <span class="client-branch no-branch">No Branch</span>
+{% endif %}
+
+  <!-- Show client entered location -->
+  <div class="client-location">📍 {{ request.location }}</div>
+
+  <!-- Show GPS address if available -->
+  {% if request.gps_address %}
+    <div class="client-location">🌍 {{ request.gps_address }}</div>
+  {% elif request.gps_location %}
+    <div class="client-location">
+      🌍 <a href="https://www.google.com/maps?q={{ request.gps_location }}" target="_blank">
+        {{ request.gps_location }}
+      </a>
+    </div>
+  {% endif %}
+</div>
+
+
+</td>
+
+                    <td class="request-details">
+                        <div class="key-type">{{ request.keyType }}</div>
+                        <div class="details-value">
+                            {{ request.description|truncatechars:100 }}
+                        </div>
+                    </td>
+
+                    <td>
+                        {% if request.amount %}
+                            <span class="amount">₹{{ request.amount }}</span>
+                        {% else %}
+                            <span class="amount-empty">-</span>
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        <select class="status-select status-{{ request.status|lower|cut:' '|default:'pending' }}"
+                                data-request-id="{{ request.id }}"
+                                onchange="updateAdminStatus(this)">
+                            <option value="Pending" {% if request.status == 'Pending' %}selected{% endif %}>Pending</option>
+                            <option value="On Process" {% if request.status == 'On Process' %}selected{% endif %}>On Process</option>
+                            <option value="Completed" {% if request.status == 'Completed' %}selected{% endif %}>Completed</option>
+                            <option value="Rejected" {% if request.status == 'Rejected' %}selected{% endif %}>Rejected</option>
+                        </select>
+                    </td>
+
+                    <td>
+                        <select class="status-select status-{{ request.requested_status|default:'requested'|lower|cut:' '|cut:'/'|cut:'&' }}"
+        data-request-id="{{ request.id }}"
+        onchange="updateRequestedStatus(this)">
+    <option value="Requested" {% if request.requested_status == 'Requested' or not request.requested_status %}selected{% endif %}>Requested</option>
+    <option value="Pending" {% if request.requested_status == 'Pending' %}selected{% endif %}>Pending</option> <!-- ✅ new -->
+    <option value="Working on it" {% if request.requested_status == 'Working on it' %}selected{% endif %}>Working on it</option>
+    <option value="Work completed/Payment pending" {% if request.requested_status == 'Work completed/Payment pending' %}selected{% endif %}>Work completed/Payment pending</option>
+    <option value="Work done & Payment collected" {% if request.requested_status == 'Work done & Payment collected' %}selected{% endif %}>Work done & Payment collected</option>
+    <option value="Rejected" {% if request.requested_status == 'Rejected' %}selected{% endif %}>Rejected</option> <!-- ✅ new -->
+</select>
+
+                    </td>
+
+                    <td>
+                        <button class="btn-view" onclick="viewDetails(this)"
+        data-id="{{ forloop.counter }}"
+        data-client="{{ request.clientName|default:'Unknown Client' }}"
+        data-location="{{ request.location }}"
+        data-key-type="{{ request.keyType }}"
+        data-date="{{ request.requestDate|date:'d M Y' }}"
+        data-status="{{ request.status }}"
+        data-requested-status="{{ request.requested_status|default:'Requested' }}"
+        data-amount="{{ request.amount|default:'' }}"
+        data-branch="{% if request.branch_name %}{{ request.branch_name }}{% else %}Not assigned{% endif %}"
+        data-img="{% if request.requestImage %}{{ request.requestImage.url }}{% endif %}"
+        data-desc="{{ request.description|default:'No description provided' }}"
+        data-gps="{{ request.gps_location|default:'' }}">
+    View
+</button>
+
+                    </td>
+                    <td><a href="{% url 'key_request_edit' request.id %}" class="btn-edit">Edit</a></td>
+                    <td>
+                        <form action="{% url 'key_request_delete' request.id %}" method="POST" style="display:inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn-delete" onclick="return confirm('Delete this request?');">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr class="no-data-row">
+                    <td colspan="10" class="no-results">
+                        <div class="no-results-icon">📋</div>
+                        <div style="font-size:18px;font-weight:600;">No key requests found</div>
+                        <div style="margin-top:10px;"><a href="{% url 'key_request' %}" class="btn-filter">Create your first request</a></div>
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination-container" id="paginationContainer">
+        <div class="pagination-info" id="paginationInfo"></div>
+        <div class="pagination-controls">
+            <div class="page-size-selector">
+                <label for="pageSize">Show:</label>
+                <select id="pageSize">
+                    <option value="10">10</option>
+                    <option value="25" selected>25</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+                <span>per page</span>
+            </div>
+            <div class="pagination-buttons" id="paginationButtons"></div>
+        </div>
+    </div>
+
+    <!-- Hidden CSRF Token -->
+    {% csrf_token %}
+
+    <!-- Modals -->
+    <div id="detailsModal" class="modal">
         <div class="modal-content">
-            <img id="modalImage" src="" alt="Full size image">
+            <div class="modal-header">
+                <h3 class="modal-title">Request Details</h3>
+                <span class="close" onclick="closeDetailsModal()">&times;</span>
+            </div>
+            <div id="detailsBody"></div>
         </div>
     </div>
 
+    <!-- JavaScript -->
     <script>
-        // Search functionality
-        document.getElementById('searchInput').addEventListener('input', function() {
-            const query = this.value.toLowerCase();
-            const rows = document.querySelectorAll('#requestsTable tbody tr');
-            
-            rows.forEach(row => {
-                const text = row.textContent.toLowerCase();
-                row.style.display = text.includes(query) ? '' : 'none';
-            });
+        // Global variables
+        let originalRows = [];
+        let filteredRows = [];
+        let totalCount = 0;
+        let filteredCount = 0;
+        let currentPage = 1;
+        let pageSize = 25;
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeApp();
         });
 
-        // Filter functionality
-        document.querySelectorAll('.filter-tab').forEach(tab => {
-            tab.addEventListener('click', function() {
-                // Update active tab
-                document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
-                this.classList.add('active');
-                
-                const filter = this.dataset.filter;
-                const rows = document.querySelectorAll('#requestsTable tbody tr[data-date]');
-                const today = new Date();
-                
-                rows.forEach(row => {
-                    const rowDate = new Date(row.dataset.date);
-                    let show = false;
-                    
-                    switch(filter) {
-                        case 'all':
-                            show = true;
-                            break;
-                        case 'today':
-                            show = rowDate.toDateString() === today.toDateString();
-                            break;
-                        case 'week':
-                            const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-                            show = rowDate >= weekAgo;
-                            break;
-                        case 'month':
-                            show = rowDate.getMonth() === today.getMonth() && 
-                                   rowDate.getFullYear() === today.getFullYear();
-                            break;
+        function initializeApp() {
+            originalRows = [...document.querySelectorAll('.request-row')];
+            filteredRows = [...originalRows];
+            totalCount = originalRows.length;
+            filteredCount = totalCount;
+
+            initializeEventListeners();
+            initializeStatusColors();
+            updateResultsInfo();
+            updatePagination();
+        }
+
+        function initializeEventListeners() {
+            // Filter inputs
+            const filterIds = ['searchInput', 'dateFilter', 'keyTypeFilter', 'statusFilter', 'requestedStatusFilter', 'branchFilter'];
+            filterIds.forEach(id => {
+                const element = document.getElementById(id);
+                element.addEventListener('input', applyFilters);
+                element.addEventListener('change', applyFilters);
+            });
+
+            // Page size selector
+            document.getElementById('pageSize').addEventListener('change', function(e) {
+                pageSize = parseInt(e.target.value);
+                currentPage = 1;
+                updatePagination();
+            });
+        }
+
+        function initializeStatusColors() {
+            document.querySelectorAll('.status-select').forEach(select => {
+                updateStatusClass(select, select.value);
+            });
+        }
+
+        // Filtering functions
+        function applyFilters() {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const dateFilter = document.getElementById('dateFilter').value;
+            const keyType = document.getElementById('keyTypeFilter').value.toLowerCase();
+            const status = document.getElementById('statusFilter').value.toLowerCase();
+            const requestedStatus = document.getElementById('requestedStatusFilter').value.toLowerCase();
+            const branch = document.getElementById('branchFilter').value.toLowerCase();
+            const dateRange = getDateRange(dateFilter);
+
+            filteredRows = originalRows.filter(row => {
+                if (search && !row.dataset.search.includes(search)) return false;
+                if (keyType && row.dataset.keytype !== keyType) return false;
+                if (status && row.dataset.status !== status) return false;
+                if (requestedStatus && row.dataset.requestedStatus !== requestedStatus) return false;
+
+                if (branch) {
+                    const rowBranch = row.dataset.branch || '';
+                    if (branch === 'no-branch') {
+                        if (rowBranch !== 'no-branch' && rowBranch !== '') return false;
+                    } else {
+                        if (rowBranch !== branch) return false;
                     }
-                    
-                    row.style.display = show ? '' : 'none';
-                });
+                }
+
+                if (dateRange) {
+                    const rowDate = new Date(row.dataset.date);
+                    if (rowDate < dateRange.start || rowDate > dateRange.end) return false;
+                }
+
+                return true;
             });
-        });
 
-        // Image modal functions
-        function openModal(imageSrc) {
-            document.getElementById('modalImage').src = imageSrc;
-            document.getElementById('imageModal').style.display = 'block';
+            filteredCount = filteredRows.length;
+            currentPage = 1;
+            updateResultsInfo();
+            updatePagination();
+            toggleNoResultsRow();
         }
 
-        function closeModal() {
-            document.getElementById('imageModal').style.display = 'none';
-        }
+        function getDateRange(filterType) {
+            const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-        // Close modal when clicking outside the image
-        document.getElementById('imageModal').addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeModal();
-            }
-        });
-
-        // Action functions (implement according to your backend)
-        function viewRequest(id) {
-            // Implement view functionality
-            console.log('View request:', id);
-            alert('View request ' + id);
-        }
-
-        function editRequest(id) {
-            // Implement edit functionality
-            console.log('Edit request:', id);
-            alert('Edit request ' + id);
-        }
-
-        function deleteRequest(id) {
-            if (confirm('Are you sure you want to delete this request?')) {
-                // Implement delete functionality
-                console.log('Delete request:', id);
-                alert('Delete request ' + id);
+            switch(filterType) {
+                case 'today':
+                    return {start: today, end: new Date(today.getTime() + 24*60*60*1000 - 1)};
+                case 'yesterday':
+                    const yesterday = new Date(today.getTime() - 24*60*60*1000);
+                    return {start: yesterday, end: new Date(yesterday.getTime() + 24*60*60*1000 - 1)};
+                case 'last_week':
+                    return {start: new Date(today.getTime() - 7*24*60*60*1000), end: today};
+                case 'this_month':
+                    return {start: new Date(now.getFullYear(), now.getMonth(), 1), end: now};
+                case 'this_year':
+                    return {start: new Date(now.getFullYear(), 0, 1), end: now};
+                default:
+                    return null;
             }
         }
 
-        // Add template filter for splitting comma-separated values (for Django template)
-        // This would be handled in your Django template, but showing for reference
-        if (typeof String.prototype.split === 'undefined') {
-            String.prototype.split = function(separator) {
-                return this.split(separator);
+        function clearFilters() {
+            const filterIds = ['searchInput', 'dateFilter', 'keyTypeFilter', 'statusFilter', 'requestedStatusFilter', 'branchFilter'];
+            filterIds.forEach(id => document.getElementById(id).value = '');
+            applyFilters();
+        }
+
+        function toggleNoResultsRow() {
+            const tbody = document.getElementById('requestsTableBody');
+            let noRow = tbody.querySelector('.no-data-row');
+
+            if (filteredCount === 0 && totalCount > 0) {
+                if (!noRow) {
+                    tbody.insertAdjacentHTML('beforeend', `
+                        <tr class="no-data-row">
+                            <td colspan="10" class="no-results">
+                                <div class="no-results-icon">🔍</div>
+                                <div style="font-size:18px;font-weight:600;">No requests match your filters</div>
+                                <div style="margin-top:10px;"><button class="btn-clear" onclick="clearFilters()">Clear Filters</button></div>
+                            </td>
+                        </tr>
+                    `);
+                }
+            } else if (noRow) {
+                noRow.remove();
+            }
+        }
+
+        function updateResultsInfo() {
+            const element = document.getElementById('resultsInfo');
+            const hasFilters = ['searchInput', 'dateFilter', 'keyTypeFilter', 'statusFilter', 'requestedStatusFilter', 'branchFilter']
+                .some(id => document.getElementById(id).value);
+
+            if (totalCount === 0) {
+                element.textContent = 'No requests found';
+            } else if (hasFilters) {
+                element.textContent = `Showing ${filteredCount} of ${totalCount} requests (filtered, ID: first to last)`;
+            } else {
+                element.textContent = `Showing all ${totalCount} requests (sorted by ID: first to last)`;
+            }
+        }
+
+        // Pagination functions
+        function updatePagination() {
+            // Hide all rows first
+            originalRows.forEach(row => row.style.display = 'none');
+
+            if (filteredCount === 0) {
+                document.getElementById('paginationContainer').style.display = 'none';
+                return;
+            }
+
+            document.getElementById('paginationContainer').style.display = 'flex';
+
+            const totalPages = Math.ceil(filteredCount / pageSize);
+            const start = (currentPage - 1) * pageSize;
+            const end = Math.min(start + pageSize, filteredCount);
+
+            // Show current page rows
+            for (let i = start; i < end; i++) {
+                filteredRows[i].style.display = '';
+            }
+
+            document.getElementById('paginationInfo').textContent =
+                `Showing ${start + 1}-${end} of ${filteredCount} results`;
+
+            updatePaginationButtons(totalPages);
+        }
+
+        function updatePaginationButtons(totalPages) {
+            const container = document.getElementById('paginationButtons');
+            container.innerHTML = '';
+
+            if (totalPages <= 1) return;
+
+            const addButton = (text, page, className = '') => {
+                const btn = document.createElement('button');
+                btn.textContent = text;
+                btn.className = `pagination-btn ${className}`;
+                if (className !== 'disabled') {
+                    btn.onclick = () => goToPage(page);
+                }
+                container.appendChild(btn);
             };
+
+            // Previous button
+            addButton('‹ Previous', currentPage - 1, currentPage === 1 ? 'disabled' : '');
+
+            // Page numbers
+            const maxVisiblePages = 5;
+            let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+            let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+            if (endPage - startPage + 1 < maxVisiblePages) {
+                startPage = Math.max(1, endPage - maxVisiblePages + 1);
+            }
+
+            if (startPage > 1) {
+                addButton('1', 1);
+                if (startPage > 2) addButton('...', 0, 'disabled');
+            }
+
+            for (let i = startPage; i <= endPage; i++) {
+                addButton(i.toString(), i, i === currentPage ? 'active' : '');
+            }
+
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) addButton('...', 0, 'disabled');
+                addButton(totalPages.toString(), totalPages);
+            }
+
+            // Next button
+            addButton('Next ›', currentPage + 1, currentPage === totalPages ? 'disabled' : '');
         }
+
+        function goToPage(page) {
+            const totalPages = Math.ceil(filteredCount / pageSize);
+            if (page < 1 || page > totalPages) return;
+            currentPage = page;
+            updatePagination();
+        }
+
+        // Status update functions
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let cookie of cookies) {
+                    const trimmedCookie = cookie.trim();
+                    if (trimmedCookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(trimmedCookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        async function updateAdminStatus(selectElement) {
+            const requestId = selectElement.dataset.requestId;
+            const newStatus = selectElement.value;
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || getCookie('csrftoken');
+
+            // Update UI immediately
+            updateStatusClass(selectElement, newStatus);
+            selectElement.closest('tr').dataset.status = newStatus.toLowerCase();
+
+            try {
+                const response = await fetch(`/app4/key-requests/${requestId}/update-status/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({status: newStatus})
+                });
+
+                const result = await response.json().catch(() => null);
+
+                if (!response.ok || !result?.success) {
+                    throw new Error('Failed to update status');
+                }
+            } catch (error) {
+                console.error('Error updating admin status:', error);
+                alert('Failed to update status. Please refresh and try again.');
+                location.reload();
+            }
+        }
+
+        async function updateRequestedStatus(selectElement) {
+            const requestId = selectElement.dataset.requestId;
+            const newRequestedStatus = selectElement.value;
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || getCookie('csrftoken');
+
+            // Update UI immediately
+            updateRequestedStatusClass(selectElement, newRequestedStatus);
+            selectElement.closest('tr').dataset.requestedStatus = newRequestedStatus.toLowerCase();
+
+            try {
+                const response = await fetch(`/app4/key-requests/${requestId}/update-requested-status/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({requested_status: newRequestedStatus})
+                });
+
+                const result = await response.json().catch(() => null);
+
+                if (!response.ok || !result?.success) {
+                    throw new Error('Failed to update requested status');
+                }
+            } catch (error) {
+                console.error('Error updating requested status:', error);
+                alert('Failed to update requested status. Please refresh and try again.');
+                location.reload();
+            }
+        }
+
+        function updateStatusClass(select, status) {
+            select.classList.remove('status-pending', 'status-onprocess', 'status-completed', 'status-rejected');
+            const cleanStatus = status.toLowerCase().replace(/\s+/g, '');
+            select.classList.add(`status-${cleanStatus}`);
+        }
+
+        function updateRequestedStatusClass(select, status) {
+            select.classList.remove('status-requested', 'status-workingonit', 'status-workcompletedpaymentpending', 'status-workdonepaymentcollected');
+            const cleanStatus = status.toLowerCase().replace(/\s+/g, '').replace(/[\/&]/g, '');
+            select.classList.add(`status-${cleanStatus}`);
+        }
+
+        // Modal functions
+        function viewDetails(button) {
+    const data = button.dataset;
+    const cleanDesc = data.desc ? data.desc.replace(/\\"/g, '"').replace(/\\'/g, "'").replace(/\\\\/g, "\\") : 'No description provided';
+
+    document.getElementById('detailsBody').innerHTML = `
+        <div class="details-section"><div class="details-label">Request ID:</div><div class="details-value">${data.id}</div></div>
+        <div class="details-section"><div class="details-label">Client Name:</div><div class="details-value">${data.client}</div></div>
+        <div class="details-section"><div class="details-label">Location:</div><div class="details-value">${data.location}</div></div>
+        <div class="details-section"><div class="details-label">Branch:</div><div class="details-value">${data.branch || 'Not assigned'}</div></div>
+        <div class="details-section"><div class="details-label">Key Type:</div><div class="details-value">${data.keyType}</div></div>
+        <div class="details-section"><div class="details-label">Amount:</div><div class="details-value">${data.amount || 'Not specified'}</div></div>
+        <div class="details-section"><div class="details-label">Description:</div><div class="details-value">${cleanDesc}</div></div>
+        <div class="details-section"><div class="details-label">Date Requested:</div><div class="details-value">${data.date}</div></div>
+        <div class="details-section"><div class="details-label">Admin Status:</div><div class="details-value">${data.status}</div></div>
+        <div class="details-section"><div class="details-label">Requested Status:</div><div class="details-value">${data.requestedStatus || 'Requested'}</div></div>
+        ${data.img ? `<div class="details-section"><div class="details-label">Request Image:</div><img src="${data.img}" class="modal-image"></div>` : ''}
+        ${data.gps ? `<div class="details-section"><div class="details-label">GPS:</div><div class="details-value"><a href="https://www.google.com/maps?q=${data.gps}" target="_blank">${data.gps}</a></div></div>` : ''}
+    `;
+    document.getElementById('detailsModal').style.display = 'block';
+}
+
+        function closeDetailsModal() {
+            document.getElementById('detailsModal').style.display = 'none';
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.style.display = 'none';
+            }
+        };
     </script>
 </body>
 </html>
+{% endblock %}

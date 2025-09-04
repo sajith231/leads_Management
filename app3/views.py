@@ -1987,3 +1987,8 @@ def dq_invmast_bills(request):
         return JsonResponse(filtered_bills, safe=False)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+
+
+
+
+

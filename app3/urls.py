@@ -77,6 +77,11 @@ urlpatterns = [
     path('dq-list/', views.dq_list, name='dq_list'),
     path('get_dq_ledger/', views.get_dq_ledger, name='get_dq_ledger'),
     path('get-dq-invmast-bills/', views.dq_invmast_bills, name='dq_invmast_bills'),
+
+
+
+   
+
     
 
 

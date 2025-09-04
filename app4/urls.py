@@ -10,8 +10,11 @@ urlpatterns = [
     path('license-edit/<int:license_id>/', views.license_edit, name='license_edit'),
     path('license-delete/<int:license_id>/', views.license_delete, name='license_delete'),
     
-    # Key request URLs
-    # path('api/clients/', views.get_clients, name='get_clients'),
-    # path('key-request/', views.key_request_view, name='key_request'),
-    # path('key-request-list/', views.key_request_list_view, name='key_request_list'),
+    path('key-request/', views.key_request,name="key_request"),
+    path('key-request-list/', views.key_request_list,name="key_request_list"),
+    path('key-request-edit/<int:request_id>/', views.key_request_edit, name="key_request_edit"),
+    path('key-request-delete/<int:request_id>/', views.key_request_delete, name="key_request_delete"),
+    path('key-requests/<int:request_id>/update-status/', views.update_key_request_status, name='update_key_request_status'),
+    path('key-requests/<int:request_id>/update-requested-status/', views.update_key_request_requested_status, name='update_key_request_requested_status'),  # ADD THIS LINE
+    path("api/clients/", views.clients_proxy, name="clients_proxy"),
 ]
