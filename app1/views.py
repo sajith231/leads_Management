@@ -3649,7 +3649,7 @@ def create_leave_request(request):
             )
 
             # List of phone numbers to notify
-            phone_numbers = ["9946545535", "7593820007", "7593820005", "9846754998","8129191379"]
+            phone_numbers = ["9946545535", "7593820007", "7593820005", "9846754998","8129191379","9061947005"]
             
             formatted_start = start_date.strftime('%d-%m-%Y')
             formatted_end = end_date.strftime('%d-%m-%Y')
@@ -3673,7 +3673,7 @@ def create_leave_request(request):
 
 def send_whatsapp_message_new_request(phone_number, message):
     secret = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
-    account = "1756357451812b4ba287f5ee0bc9d43bbf5bbe87fb68afe34b12e0a"  # ✅ updated account
+    account = "1756959119812b4ba287f5ee0bc9d43bbf5bbe87fb68b9118fcf1af"  # ✅ updated account
 
     # Encode message for safe API call
     encoded_message = requests.utils.quote(message)
@@ -3685,15 +3685,21 @@ def send_whatsapp_message_new_request(phone_number, message):
         f"&type=text&message={encoded_message}&priority=1"
     )
 
-    response = requests.get(url)
+    try:
+        response = requests.get(url, timeout=10)
 
-    if response.status_code == 200:
-        print(f"WhatsApp message sent successfully to {phone_number}")
-    else:
-        print(
-            f"Failed to send WhatsApp message to {phone_number}. "
-            f"Status code: {response.status_code}, Response: {response.text}"
-        )
+        if response.status_code == 200:
+            print(f"✅ WhatsApp message sent successfully to {phone_number}")
+            return True
+        else:
+            print(
+                f"❌ Failed to send WhatsApp message to {phone_number}. "
+                f"Status code: {response.status_code}, Response: {response.text}"
+            )
+            return False
+    except requests.exceptions.RequestException as e:
+        print(f"⚠️ Error sending WhatsApp message: {e}")
+        return False
 
 
 @login_required
@@ -3796,51 +3802,60 @@ def process_leave_request(request):
 def send_whatsapp_message_status_update(leave_request, action):
     """Send WhatsApp message with detailed leave request information"""
     secret = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
-    account = "1756357451812b4ba287f5ee0bc9d43bbf5bbe87fb68afe34b12e0a"
+    account = "1756959119812b4ba287f5ee0bc9d43bbf5bbe87fb68b9118fcf1af"  # ✅ updated account
 
     # Format the message with leave request details based on action
     if action == 'approve':
         message = (
-            f"Your leave request has been approved.\n"
-            f"Start Date: {leave_request.start_date.strftime('%d-%m-%Y')}, "
-            f"End Date: {leave_request.end_date.strftime('%d-%m-%Y')}, "
-            f"Reason: {leave_request.reason}"
+            f"✅ Your leave request has been approved.\n"
+            f"📅 Start Date: {leave_request.start_date.strftime('%d-%m-%Y')}\n"
+            f"📅 End Date: {leave_request.end_date.strftime('%d-%m-%Y')}\n"
+            f"📝 Reason: {leave_request.reason}"
         )
     elif action == 'reject':
         message = (
-            f"Your leave request has been rejected.\n"
-            f"Start Date: {leave_request.start_date.strftime('%d-%m-%Y')}, "
-            f"End Date: {leave_request.end_date.strftime('%d-%m-%Y')}, "
-            f"Reason: {leave_request.reason}"
+            f"❌ Your leave request has been rejected.\n"
+            f"📅 Start Date: {leave_request.start_date.strftime('%d-%m-%Y')}\n"
+            f"📅 End Date: {leave_request.end_date.strftime('%d-%m-%Y')}\n"
+            f"📝 Reason: {leave_request.reason}"
         )
     else:
         message = (
-            f"Leave request status updated.\n"
-            f"Start Date: {leave_request.start_date.strftime('%d-%m-%Y')}, "
-            f"End Date: {leave_request.end_date.strftime('%d-%m-%Y')}, "
-            f"Reason: {leave_request.reason}, "
-            f"Status: {leave_request.status}"
+            f"ℹ️ Leave request status updated.\n"
+            f"📅 Start Date: {leave_request.start_date.strftime('%d-%m-%Y')}\n"
+            f"📅 End Date: {leave_request.end_date.strftime('%d-%m-%Y')}\n"
+            f"📝 Reason: {leave_request.reason}\n"
+            f"📌 Status: {leave_request.status}"
         )
 
     phone_number = leave_request.employee.phone_personal
+
+    # Encode message for safe API call
+    encoded_message = requests.utils.quote(message)
 
     # Construct API URL (new format)
     url = (
         f"https://app.dxing.in/api/send/whatsapp?"
         f"secret={secret}&account={account}"
         f"&recipient={phone_number}"
-        f"&type=text&message={message}&priority=1"
+        f"&type=text&message={encoded_message}&priority=1"
     )
 
-    response = requests.get(url)
+    try:
+        response = requests.get(url, timeout=10)
 
-    if response.status_code == 200:
-        print(f"WhatsApp message sent successfully to {phone_number}")
-    else:
-        print(
-            f"Failed to send WhatsApp message to {phone_number}. "
-            f"Status code: {response.status_code}, Response: {response.text}"
-        )
+        if response.status_code == 200:
+            print(f"✅ WhatsApp message sent successfully to {phone_number}")
+            return True
+        else:
+            print(
+                f"❌ Failed to send WhatsApp message to {phone_number}. "
+                f"Status code: {response.status_code}, Response: {response.text}"
+            )
+            return False
+    except requests.exceptions.RequestException as e:
+        print(f"⚠️ Error sending WhatsApp message: {e}")
+        return False
 
 
 
@@ -3896,7 +3911,7 @@ def create_late_request(request):
             )
             
             # Send WhatsApp message to managers
-            phone_numbers = ["9946545535", "7593820007", "7593820005", "9846754998","8129191379"]
+            phone_numbers = ["9946545535", "7593820007", "7593820005", "9846754998","8129191379","9061947005"]
             message = (
                 f"New late request from {employee.name}.\n"
                 f"Date: {date_obj.strftime('%d-%m-%Y')}, "
@@ -3915,7 +3930,7 @@ def create_late_request(request):
 
 def send_whatsapp_message_new(phone_number, message):
     secret = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
-    account = "1756357451812b4ba287f5ee0bc9d43bbf5bbe87fb68afe34b12e0a"  # ✅ updated account
+    account = "1756959119812b4ba287f5ee0bc9d43bbf5bbe87fb68b9118fcf1af"  # ✅ new updated account
 
     # Encode message to handle spaces/special characters safely
     encoded_message = requests.utils.quote(message)
@@ -3927,15 +3942,21 @@ def send_whatsapp_message_new(phone_number, message):
         f"&type=text&message={encoded_message}&priority=1"
     )
 
-    response = requests.get(url)
+    try:
+        response = requests.get(url, timeout=10)
 
-    if response.status_code == 200:
-        print(f"WhatsApp message sent successfully to {phone_number}")
-    else:
-        print(
-            f"Failed to send WhatsApp message to {phone_number}. "
-            f"Status code: {response.status_code}, Response: {response.text}"
-        )
+        if response.status_code == 200:
+            print(f"✅ WhatsApp message sent successfully to {phone_number}")
+            return True
+        else:
+            print(
+                f"❌ Failed to send WhatsApp message to {phone_number}. "
+                f"Status code: {response.status_code}, Response: {response.text}"
+            )
+            return False
+    except requests.exceptions.RequestException as e:
+        print(f"⚠️ Error sending WhatsApp message: {e}")
+        return False
 
 
 # views.py
@@ -3982,14 +4003,16 @@ def process_late_request(request):
             if data['action'] == 'approve':
                 late_request.status = 'approved'
                 message = (
-                    f"Your late request for {late_request.date.strftime('%d-%m-%Y')} has been approved.\n"
-                    f"Delay Time: {late_request.delay_time}, Reason: {late_request.reason}"
+                    f"✅ Your late request for {late_request.date.strftime('%d-%m-%Y')} has been approved.\n"
+                    f"⏰ Delay Time: {late_request.delay_time}\n"
+                    f"📝 Reason: {late_request.reason}"
                 )
             elif data['action'] == 'reject':
                 late_request.status = 'rejected'
                 message = (
-                    f"Your late request for {late_request.date.strftime('%d-%m-%Y')} has been rejected.\n"
-                    f"Delay Time: {late_request.delay_time}, Reason: {late_request.reason}"
+                    f"❌ Your late request for {late_request.date.strftime('%d-%m-%Y')} has been rejected.\n"
+                    f"⏰ Delay Time: {late_request.delay_time}\n"
+                    f"📝 Reason: {late_request.reason}"
                 )
             else:
                 return JsonResponse({'success': False, 'error': 'Invalid action'})
@@ -3999,12 +4022,12 @@ def process_late_request(request):
             late_request.processed_at = timezone.now()
             late_request.save()
 
-            # Send WhatsApp message using new API
+            # ✅ Updated API credentials
             secret = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
-            account = "1756357451812b4ba287f5ee0bc9d43bbf5bbe87fb68afe34b12e0a"
+            account = "1756959119812b4ba287f5ee0bc9d43bbf5bbe87fb68b9118fcf1af"
             phone_number = late_request.employee.phone_personal
 
-            # Encode message to avoid issues with spaces/special chars
+            # Encode message safely
             encoded_message = requests.utils.quote(message)
 
             url = (
@@ -4014,15 +4037,18 @@ def process_late_request(request):
                 f"&type=text&message={encoded_message}&priority=1"
             )
 
-            response = requests.get(url)
+            try:
+                response = requests.get(url, timeout=10)
 
-            if response.status_code == 200:
-                logger.info(f"WhatsApp message sent successfully to {phone_number}")
-            else:
-                logger.error(
-                    f"Failed to send WhatsApp message to {phone_number}. "
-                    f"Status: {response.status_code}, Response: {response.text}"
-                )
+                if response.status_code == 200:
+                    logger.info(f"✅ WhatsApp message sent successfully to {phone_number}")
+                else:
+                    logger.error(
+                        f"❌ Failed to send WhatsApp message to {phone_number}. "
+                        f"Status: {response.status_code}, Response: {response.text}"
+                    )
+            except requests.exceptions.RequestException as e:
+                logger.error(f"⚠️ Error sending WhatsApp message: {e}")
 
             return JsonResponse({
                 'success': True,
@@ -4030,10 +4056,13 @@ def process_late_request(request):
                 'date': late_request.date.strftime('%Y-%m-%d'),
                 'action': data['action']
             })
+
         except LateRequest.DoesNotExist:
             return JsonResponse({'success': False, 'error': 'Late request not found'})
         except Exception as e:
+            logger.exception("Unexpected error in process_late_request")
             return JsonResponse({'success': False, 'error': str(e)})
+
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
 
 
@@ -5526,7 +5555,7 @@ def create_early_request(request):
             )
             
             # Send WhatsApp message to managers
-            phone_numbers = ["9946545535", "7593820007", "7593820005","9846754998","8129191379"]
+            phone_numbers = ["9946545535", "7593820007", "7593820005","9846754998","8129191379","9061947005"]
             message = (
                 f"New early request from {employee.name}. "
                 f"Date: {data['date']}, "
@@ -5600,28 +5629,29 @@ def process_early_request(request):
             if action == 'approve':
                 early_request.status = 'approved'
                 message = (
-                    f"Your early request for {early_request.date.strftime('%d-%m-%Y')} has been approved.\n"
-                    f"Early Time: {early_request.early_time.strftime('%H:%M')}, "
-                    f"Reason: {early_request.reason}"
+                    f"✅ Your early request for {early_request.date.strftime('%d-%m-%Y')} has been approved.\n"
+                    f"⏰ Early Time: {early_request.early_time.strftime('%H:%M')}\n"
+                    f"📝 Reason: {early_request.reason}"
                 )
             elif action == 'reject':
                 early_request.status = 'rejected'
                 message = (
-                    f"Your early request for {early_request.date.strftime('%d-%m-%Y')} has been rejected.\n"
-                    f"Early Time: {early_request.early_time.strftime('%H:%M')}, "
-                    f"Reason: {early_request.reason}"
+                    f"❌ Your early request for {early_request.date.strftime('%d-%m-%Y')} has been rejected.\n"
+                    f"⏰ Early Time: {early_request.early_time.strftime('%H:%M')}\n"
+                    f"📝 Reason: {early_request.reason}"
                 )
             else:
                 logger.error(f"Invalid action: {action}")
                 return JsonResponse({'success': False, 'error': 'Invalid action'})
 
+            # Save request status
             early_request.processed_by = processed_by_user
             early_request.processed_at = timezone.now()
             early_request.save()
 
-            # Send WhatsApp message using new API
+            # ✅ Updated API credentials
             secret = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
-            account = "1756357451812b4ba287f5ee0bc9d43bbf5bbe87fb68afe34b12e0a"
+            account = "1756959119812b4ba287f5ee0bc9d43bbf5bbe87fb68b9118fcf1af"
             phone_number = early_request.employee.phone_personal
 
             # URL encode the message (important for spaces, commas, etc.)
@@ -5634,15 +5664,18 @@ def process_early_request(request):
                 f"&type=text&message={encoded_message}&priority=1"
             )
 
-            response = requests.get(url)
+            try:
+                response = requests.get(url, timeout=10)
 
-            if response.status_code == 200:
-                logger.info(f"WhatsApp message sent successfully to {phone_number}")
-            else:
-                logger.error(
-                    f"Failed to send WhatsApp message to {phone_number}. "
-                    f"Status: {response.status_code}, Response: {response.text}"
-                )
+                if response.status_code == 200:
+                    logger.info(f"✅ WhatsApp message sent successfully to {phone_number}")
+                else:
+                    logger.error(
+                        f"❌ Failed to send WhatsApp message to {phone_number}. "
+                        f"Status: {response.status_code}, Response: {response.text}"
+                    )
+            except requests.exceptions.RequestException as e:
+                logger.error(f"⚠️ Error sending WhatsApp message: {e}")
 
             return JsonResponse({
                 'success': True,
@@ -5650,12 +5683,14 @@ def process_early_request(request):
                 'date': early_request.date.strftime('%Y-%m-%d'),
                 'action': action
             })
+
         except EarlyRequest.DoesNotExist:
             logger.error(f"Early request not found with ID: {data['request_id']}")
             return JsonResponse({'success': False, 'error': 'Early request not found'})
         except Exception as e:
-            logger.error(f"Error processing early request: {str(e)}")
+            logger.exception("Unexpected error in process_early_request")
             return JsonResponse({'success': False, 'error': str(e)})
+
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
 
 
