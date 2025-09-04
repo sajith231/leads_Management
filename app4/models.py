@@ -95,3 +95,9 @@ class KeyRequest(models.Model):
 
     def __str__(self):
         return f"{self.clientName} - {self.keyType} ({self.requestDate})"
+
+
+
+
+
+        # hjs
