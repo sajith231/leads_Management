@@ -428,38 +428,46 @@ def jobcard_assign_table(request):
     }
     return render(request, "jobcard_assign_table.html", context)
  
-from django.http import JsonResponse
-from django.shortcuts import get_object_or_404
+from app1.models import User
+from django.contrib import messages
+from django.shortcuts import render, redirect
 
 def assign_new_job(request):
     if request.method == 'POST':
-        # Process form submission
         ticket_number = request.POST.get('ticketNumber')
-        customer_name = request.POST.get('customerName')
         status = request.POST.get('status')
-        technician = request.POST.get('technician')
-        
-        # Update the existing job card instead of creating a new one
+        technician_id = request.POST.get('technician')
+
         try:
             jobcard = JobCard.objects.get(ticket_no=ticket_number)
             jobcard.status = status
-            jobcard.technician = technician
+
+            technician = User.objects.get(id=technician_id)
+            jobcard.technician = technician.name  # still stored as text
             jobcard.save()
-            
-            messages.success(request, f'Job {ticket_number} has been assigned successfully to {technician}!')
+
+            messages.success(request, f'Job {ticket_number} has been assigned to {technician.name}!')
             return redirect('app5:jobcard_assign_table')
         except JobCard.DoesNotExist:
             messages.error(request, f'Job card with ticket number {ticket_number} not found!')
             return redirect('app5:assign_new_job')
-    
-    # For GET request, show the form with available job cards
-    # Only show job cards that haven't been assigned yet (status = 'logged')
+
     jobcards = JobCard.objects.filter(status='logged').order_by("-created_at")
-    
+
+    # ✅ show only active technicians (adjust condition)
+    technicians = User.objects.filter(
+        status='active',
+        user_level='3level'   # or job_role__name__icontains="technician"
+    ).order_by("branch__name", "name")
+
     context = {
-        "jobcards": jobcards
+        "jobcards": jobcards,
+        "technicians": technicians,
     }
     return render(request, "jobcard_assign_form.html", context)
+
+
+
 
 def get_customer_by_ticket(request, ticket_no):
     """API endpoint to get customer details by ticket number"""

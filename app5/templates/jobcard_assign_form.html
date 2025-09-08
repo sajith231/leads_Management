@@ -59,6 +59,27 @@
             padding: 15px;
             margin-bottom: 20px;
         }
+        .technician-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .technician-name {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        .technician-branch {
+            font-size: 0.85em;
+            color: #7f8c8d;
+            background-color: #ecf0f1;
+            padding: 2px 8px;
+            border-radius: 12px;
+        }
+        .technician-level {
+            font-size: 0.8em;
+            color: #3498db;
+            font-style: italic;
+        }
     </style>
 </head>
 <body>
@@ -114,9 +135,26 @@
                             </div>
 
                             <div class="mb-3">
-                                <label for="technician" class="form-label">Technician</label>
-                                <input type="text" class="form-control" id="technician" name="technician" 
-                                       placeholder="Enter technician name" required>
+                                <label for="technician" class="form-label">Select Technician</label>
+                                <select class="form-select" id="technician" name="technician" required>
+                                    <option value="">-- Select Technician --</option>
+                                    {% for tech in technicians %}
+                                        <option value="{{ tech.id }}">
+                                            <div class="technician-info">
+                                                <span class="technician-name">{{ tech.name }}</span>
+                                                {% if tech.branch %}
+                                                    - <span class="technician-branch">{{ tech.branch.name }}</span>
+                                                {% endif %}
+                                                {% if tech.user_level %}
+                                                    - <span class="technician-level">({{ tech.get_user_level_display }})</span>
+                                                {% endif %}
+                                                {% if tech.phone_number %}
+                                                    - <span class="technician-phone">{{ tech.phone_number }}</span>
+                                                {% endif %}
+                                            </div>
+                                        </option>
+                                    {% endfor %}
+                                </select>
                             </div>
 
                             <div class="mb-3">
@@ -129,7 +167,6 @@
                                             Send to Technician
                                         </label>
                                     </div>
-                                    
                                 </div>
                             </div>
 
