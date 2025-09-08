@@ -3652,7 +3652,7 @@ def create_leave_request(request):
             )
 
             # List of phone numbers to notify
-            phone_numbers = ["9946545535", "7593820007", "7593820005", "9846754998","8129191379","9061947005"]
+            phone_numbers = ["9946545535", "7593820007", "7593820005", "9846754998","8129191379"]
             
             formatted_start = start_date.strftime('%d-%m-%Y')
             formatted_end = end_date.strftime('%d-%m-%Y')
@@ -3914,7 +3914,7 @@ def create_late_request(request):
             )
             
             # Send WhatsApp message to managers
-            phone_numbers = ["9946545535", "7593820007", "7593820005", "9846754998","8129191379","9061947005"]
+            phone_numbers = ["9946545535", "7593820007", "7593820005", "9846754998","8129191379"]
             message = (
                 f"New late request from {employee.name}.\n"
                 f"Date: {date_obj.strftime('%d-%m-%Y')}, "
@@ -5558,7 +5558,7 @@ def create_early_request(request):
             )
             
             # Send WhatsApp message to managers
-            phone_numbers = ["9946545535", "7593820007", "7593820005","9846754998","8129191379","9061947005"]
+            phone_numbers = ["9946545535", "7593820007", "7593820005","9846754998","8129191379"]
             message = (
                 f"New early request from {employee.name}. "
                 f"Date: {data['date']}, "
