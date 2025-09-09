@@ -2,522 +2,198 @@
 
 {% block content %}
 <style>
-    /* Global Styles */
-    :root {
-        --primary-gradient: linear-gradient(135deg, #1a237e 0%, #283593 35%, #1565c0 100%);
-        --secondary-gradient: linear-gradient(135deg, #1a237e 0%, #283593 35%, #0277bd 100%);
-        --card-bg: rgba(255, 255, 255, 0.12);
-        --card-border: rgba(255, 255, 255, 0.25);
-        --success-color: #4caf50;
-        --danger-color: #f44336;
-        --warning-color: #ff9800;
-        --info-color: #2196f3;
-    }
-    
-    body {
-        background-color: #f8f9fa;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
-    
     @media (max-width: 768px) {
-        .buttons {
+        .buttons{
             display: flex;
-            flex-direction: column;
-            gap: 10px;
             margin-top: 2%;
+
         }
-        
-        .buttons .btn {
-            width: 100%;
-            margin-bottom: 8px;
-        }
-        
-        .BreakIn {
+        .BreakIn{
             font-size: 5px;
         }
-        
-        .card-body .row {
-            flex-direction: column;
         }
-        
-        .card-body .col-md-6 {
-            width: 100%;
-            margin-bottom: 15px;
-        }
-    }
-    
-    /* Header Styles */
-    .page-header {
-        padding: 20px 0;
-        margin-bottom: 25px;
-        border-bottom: 1px solid #e0e0e0;
-    }
-    
-    /* Card Enhancements */
-    .attendance-card {
-        border: none;
-        border-radius: 12px;
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-        margin-bottom: 25px;
-        overflow: hidden;
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
-    
-    .attendance-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
-    }
-    
-    .card-header-gradient {
-        background: var(--primary-gradient);
-        padding: 18px 25px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.15);
-    }
-    
-    .card-header-gradient h3 {
-        margin: 0;
-        font-weight: 600;
-        font-size: 1.4rem;
-        text-align: center;
-        color: white;
-    }
-    
-    .card-body-gradient {
-        background: var(--secondary-gradient);
-        padding: 25px;
-    }
-    
-    .status-card {
-        background-color: var(--card-bg);
-        backdrop-filter: blur(12px);
-        border: 1px solid var(--card-border);
-        border-radius: 12px;
-        padding: 20px;
-        color: rgb(0, 0, 0);
-        height: 100%;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    }
-    
-    .status-header {
-        background: linear-gradient(90deg, rgba(2,0,36,0.7) 0%, rgba(9,9,121,0.7) 35%, rgba(0,212,255,0.7) 100%);
-        color: white;
-        font-size: 15px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 12px 20px;
-        border-radius: 10px;
-        margin-bottom: 18px;
-    }
-    
-    /* Button Styles */
-    .btn-action {
-        border-radius: 10px;
-        padding: 14px 28px;
-        font-weight: 600;
-        font-size: 1rem;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        border: 2px solid transparent;
-        min-width: 140px;
-        text-align: center;
-    }
-    
-    .btn-action:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-    }
-    
-    .btn-punch-in {
-        background: linear-gradient(135deg, var(--success-color), #2e7d32);
-        border-color: rgba(255, 255, 255, 0.5);
-        color: white;
-    }
-    
-    .btn-punch-out {
-        background: linear-gradient(135deg, var(--danger-color), #c62828);
-        border-color: rgba(255, 255, 255, 0.5);
-        color: white;
-    }
-    
-    .btn-break {
-        background: linear-gradient(135deg, var(--info-color), #1565c0);
-        border-color: rgba(255, 255, 255, 0.5);
-        color: white;
-        white-space: normal;
-        line-height: 1.4;
-    }
-    
-    .btn-secondary-action {
-        background: rgba(255, 255, 255, 0.15);
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        color: white;
-        padding: 10px 20px;
-    }
-    
-    .btn-secondary-action:hover {
-        background: rgba(255, 255, 255, 0.25);
-    }
-    
-    /* Status Display */
-    .status-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 15px;
-        padding-bottom: 12px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.15);
-    }
-    
-    .status-item:last-child {
-        border-bottom: none;
-        margin-bottom: 0;
-        padding-bottom: 0;
-    }
-    
-    .status-label {
-        font-weight: 500;
-        color: rgba(255, 255, 255, 0.9);
-    }
-    
-    .status-value {
-        font-weight: 600;
-        color: white;
-    }
-    
-    /* Table Styles */
-    .table-container {
-        background: white;
-        border-radius: 12px;
-        overflow: hidden;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    }
-    
-    .table thead th {
-        background: linear-gradient(135deg, #1a237e 0%, #283593 100%);
-        color: white;
-        font-weight: 600;
-        padding: 14px 15px;
-        border: none;
-    }
-    
-    .table tbody td {
-        padding: 12px 15px;
-        vertical-align: middle;
-        border-color: #f0f0f0;
-    }
-    
-    .table-hover tbody tr:hover {
-        background-color: rgba(25, 118, 210, 0.05);
-    }
-    
-    /* Legend Styles */
-    .legend-card {
-        background: white;
-        border-radius: 10px;
-        padding: 15px;
-        margin-bottom: 20px;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
-    }
-    
-    .legend-item {
-        display: flex;
-        align-items: center;
-        margin-right: 20px;
-    }
-    
-    .legend-item i {
-        margin-right: 8px;
-        font-size: 1.1rem;
-    }
-    
-    /* Modal Enhancements */
-    .modal-content {
-        border-radius: 12px;
-        overflow: hidden;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-    }
-    
-    .modal-header {
-        background: var(--primary-gradient);
-        color: white;
-        padding: 16px 20px;
-    }
-    
-    .modal-title {
-        font-weight: 600;
-    }
-    
-    .btn-close-white {
-        filter: invert(1);
-    }
-    
-    /* Filter and Pagination */
-    .filter-buttons .btn {
-        border-radius: 6px;
-        padding: 6px 12px;
-        font-size: 13px;
-        margin-right: 5px;
-    }
-    
-    .pagination-info {
-        display: flex;
-        align-items: center;
-        font-size: 14px;
-        color: #6c757d;
-    }
-    
-    /* Form Controls */
-    .form-control, .form-select {
-        border-radius: 8px;
-        padding: 10px 15px;
-        border: 1px solid #ddd;
-        transition: all 0.3s;
-    }
-    
-    .form-control:focus, .form-select:focus {
-        box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.2);
-        border-color: #1976d2;
-    }
-    
-    /* Badge Styles */
-    .badge {
-        padding: 6px 10px;
-        border-radius: 6px;
-        font-weight: 500;
-    }
-    
-    /* Utility Classes */
-    .text-small {
-        font-size: 0.875rem;
-    }
-    
-    .flex-center {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-    }
-    
-    .attendance-section {
-        padding: 15px 0;
-    }
 </style>
-
-<div class="container-fluid attendance-section">
-    <div class="page-header">
-        <h2 class="text-center">Attendance Management</h2>
-        <!-- <p class="text-center text-muted">Manage your daily attendance, breaks, and time-off requests</p> -->
-    </div>
+<div style="width: 100%; margin: auto;padding-top: 50px;">
+    <div style="margin-bottom: 20px;" class="buttons"><button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#leaveRequestModal">
+        Leave Request 
+    </button>
+    <button class="btn btn-info ms-2" onclick="loadUserLeaveRequests()">
+        <i class="fas fa-list"></i> View My Leave Requests
+    </button>
+   </div>
+   <div style="margin-bottom: 20px;" class="buttons">
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#lateRequestModal">
+        Late Request 
+    </button>
+    <button class="btn btn-info ms-2" onclick="loadLateRequests()">
+        <i class="fas fa-list"></i> View My Late Requests
+    </button>
+</div>
+<div style="margin-bottom: 20px;" class="buttons">
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#earlyRequestModal">
+        Early Request 
+    </button>
+    <button class="btn btn-info ms-2" onclick="loadEarlyRequests()">
+        <i class="fas fa-list"></i> View My Early Requests
+    </button>
     
-    <div class="row">
-        <div class="col-12">
-            <!-- Action Buttons -->
-            <div class="d-flex flex-wrap gap-3 mb-4 buttons">
-                <div class="d-flex flex-wrap gap-2">
-                    <button class="btn btn-primary btn-action" data-bs-toggle="modal" data-bs-target="#leaveRequestModal">
-                        <i class="fas fa-calendar-minus me-2"></i>Leave Request
-                    </button>
-                    <button class="btn btn-info btn-secondary-action" onclick="loadUserLeaveRequests()">
-                        <i class="fas fa-list me-2"></i> View My Leave Requests
-                    </button>
-                </div>
-                
-                <div class="d-flex flex-wrap gap-2">
-                    <button class="btn btn-primary btn-action" data-bs-toggle="modal" data-bs-target="#lateRequestModal">
-                        <i class="fas fa-clock me-2"></i>Late Request
-                    </button>
-                    <button class="btn btn-info btn-secondary-action" onclick="loadLateRequests()">
-                        <i class="fas fa-list me-2"></i> View My Late Requests
-                    </button>
-                </div>
-                
-                <div class="d-flex flex-wrap gap-2">
-                    <button class="btn btn-primary btn-action" data-bs-toggle="modal" data-bs-target="#earlyRequestModal">
-                        <i class="fas fa-earlybirds me-2"></i>Early Request
-                    </button>
-                    <button class="btn btn-info btn-secondary-action" onclick="loadEarlyRequests()">
-                        <i class="fas fa-list me-2"></i> View My Early Requests
-                    </button>
-                </div>
-            </div>
-            
-            <!-- Stop Task Button -->
-            <div class="mb-4">
-                {% if ongoing_task %}
-                <div class="d-flex justify-content-center">
-                    <button class="btn btn-danger btn-action" onclick="stopTask({{ ongoing_task.id }})">
-                        <i class="fa fa-stop-circle me-2"></i> Stop Daily Task
-                    </button>
-                </div>
-                {% endif %}
-            </div>
+</div>
+<div style="margin-bottom: 20px;">
+    {% if ongoing_task %}
+    <div class="d-flex justify-content-center mt-3">
+        <button class="btn btn-danger btn-sm" onclick="stopTask({{ ongoing_task.id }})">
+            <i class="fa fa-stop"></i> Stop Daily Task
+        </button>
+    </div>
+{% endif %}
+</div>
 
-            <!-- Daily Attendance Card -->
-            <div class="card attendance-card">
-                <div class="card-header-gradient">
-                    <h3><i class="fas fa-calendar-day me-2"></i>Daily Attendance</h3>
-                </div>
-                <div class="card-body-gradient">
-                    <div class="row">
-                        <div class="col-md-6 mb-3 mb-md-0">
-                            <div class="status-card">
-                                <div class="status-header">
-                                    <span>Today's Status</span>
-                                    <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#e3e3e3">
-                                        <path d="M441-82q-76-8-141.5-41.5t-114.5-87Q136-264 108-333T80-480q0-157 104.5-270T441-878v81q-119 15-200 104.5T160-480q0 123 81 212.5T441-163v81Zm0-198v-247L337-423l-56-57 200-200 200 200-57 56-103-103v247h-80Zm80 198v-81q44-5 83.5-22t72.5-43l57 58q-45 36-99 59T521-82Zm155-650q-33-26-72-43t-83-22v-81q60 6 114 29t99 59l-58 58Zm114 505-57-57q26-33 43-72.5t22-83.5h81q-6 60-29.5 114T790-227Zm8-293q-5-44-22-83.5T733-676l57-57q36 45 59.5 99T879-520h-81Z"/>
-                                    </svg>
-                                </div>
-                                <div id="punchStatus">
-                                    <div class="status-item">
-                                        <span class="status-label">Punch In:</span>
-                                        <span class="status-value" id="punchInTime">Not punched in yet</span>
-                                    </div>
-                                    <div class="status-item">
-                                        <span class="status-label">Punch In Location:</span>
-                                        <a id="punchInLocationLink" class="status-value text-decoration-none" href="#" target="_blank">
-                                            <span id="punchInLocation">Not punched in yet</span>
-                                        </a>
-                                    </div>
-                                    <div class="status-item">
-                                        <span class="status-label">Punch Out:</span>
-                                        <span class="status-value" id="punchOutTime">Not punched out yet</span>
-                                    </div>
-                                    <div class="status-item">
-                                        <span class="status-label">Punch Out Location:</span>
-                                        <a id="punchOutLocationLink" class="status-value text-decoration-none" href="#" target="_blank">
-                                            <span id="punchOutLocation">Not punched out yet</span>
-                                        </a>
-                                    </div>
+    <div class="">
+        <!-- Punch In/Out Card -->
+        <div class="card shadow mb-4" style="overflow: hidden;">
+            <div class="card-header text-white" style="padding-top: 20px;padding-bottom: 20px;background: linear-gradient(90deg, rgba(2,0,36,1) 0%, rgba(9,9,121,1) 35%, rgb(0, 145, 174) 100%);">
+                <h3 class="mb-0" style="text-align: center;">Daily Attendance</h3>
+            </div>
+            <div class="card-body" style="background: linear-gradient(90deg, rgba(2,0,36,1) 0%, rgba(9,9,121,1) 35%, rgb(0, 145, 174) 100%);overflow: hidden;">
+                <div class="row" style="overflow: hidden;">
+                    <div class="col-md-6" style="overflow: hidden;">
+                        <div class="card mb-3" style="overflow: hidden;">
+                            <div class="card-body" style="border-radius: 15px; overflow: hidden; background-color: #ffffff19;backdrop-filter: blur(10px);border: 1px solid rgba(255, 255, 255, 0.603);">
+                                <h5 class="" style="padding-left: 20px; padding-right: 20px; padding-top: 10px; padding-bottom: 10px;border-radius: 15px;border: #c2c2c2;background: linear-gradient(90deg, rgba(2,0,36,1) 0%, rgba(9,9,121,1) 35%, rgba(0,212,255,1) 100%);color: white;font-size: 15px; display: flex;justify-content: space-between;align-items: center;">Today's Status <span style="color: ;"><svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e3e3e3"><path d="M441-82q-76-8-141.5-41.5t-114.5-87Q136-264 108-333T80-480q0-157 104.5-270T441-878v81q-119 15-200 104.5T160-480q0 123 81 212.5T441-163v81Zm0-198v-247L337-423l-56-57 200-200 200 200-57 56-103-103v247h-80Zm80 198v-81q44-5 83.5-22t72.5-43l57 58q-45 36-99 59T521-82Zm155-650q-33-26-72-43t-83-22v-81q60 6 114 29t99 59l-58 58Zm114 505-57-57q26-33 43-72.5t22-83.5h81q-6 60-29.5 114T790-227Zm8-293q-5-44-22-83.5T733-676l57-57q36 45 59.5 99T879-520h-81Z"/></svg></span></h5>
+                                <div id="punchStatus" style="color: white;">
+                                    <p class="mb-2" style="display: flex;justify-content: space-between;align-items: center;">Punch In: <span id="punchInTime" style="color: white;">Not punched in yet</span></p>
+                                    <p class="mb-2" style="display: flex;justify-content: space-between;align-items: center;">Punch In Location: <a id="punchInLocationLink" style="color: white;" href="#" target="_blank">
+                                            <span id="punchInLocation" style="color: white;">Not punched in yet</span>
+                                        </a></p>
+                                    <p class="mb-2" style="display: flex;justify-content: space-between;align-items: center;">Punch Out: <span style="color: white;" id="punchOutTime">Not punched out yet</span></p>
+                                    <p class="mb-2" style="display: flex;justify-content: space-between;align-items: center;">Punch Out Location: <a style="color: white;" id="punchOutLocationLink" href="#" target="_blank"><span id="punchOutLocation" style="color: white;">Not punched out yet</span></a>
+                                    </p>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="d-flex justify-content-center align-items-center h-100 gap-3">
-                                <button class="btn btn-punch-in btn-action" onclick="handlePunch('in')" id="punchInBtn">
-                                    <i class="fas fa-sign-in-alt me-2"></i>Punch In
-                                </button>
-                                {% if not ongoing_task %}
-                                <button class="btn btn-punch-out btn-action" onclick="handlePunch('out')" id="punchOutBtn">
-                                    <i class="fas fa-sign-out-alt me-2"></i>Punch Out
-                                </button>
-                                {% endif %}
-                            </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex justify-content-center align-items-center h-100">
+                            <button class="btn btn-success btn-sm md:btn-lg mx-2" onclick="handlePunch('in')" id="punchInBtn" style="border: 1px solid #ffffff;">
+                                <i class="fas fa-sign-in-alt"></i><span style="white-space: nowrap;"> Punch In </span>
+                            </button>
+                            {% if not ongoing_task %}
+                            <button class="btn btn-danger btn-sm md:btn-lg mx-2" onclick="handlePunch('out')" id="punchOutBtn" style="border: 1px solid #fff;">
+                                <i class="fas fa-sign-out-alt"></i> <span style="white-space: nowrap;"> Punch Out
+                                </span>
+                            </button>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
             </div>
-
-            <!-- Break Time Management Card -->
-            <div class="card attendance-card">
-                <div class="card-header-gradient">
-                    <h3><i class="fas fa-coffee me-2"></i>Break Time Management</h3>
-                </div>
-                <div class="card-body-gradient">
-                    <div class="row">
-                        <div class="col-md-6 mb-3 mb-md-0">
-                            <div class="status-card">
-                                <div class="status-header">
-                                    <span>Today's Break Status</span>
-                                    <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#e3e3e3">
-                                        <path d="M441-82q-76-8-141.5-41.5t-114.5-87Q136-264 108-333T80-480q0-157 104.5-270T441-878v81q-119 15-200 104.5T160-480q0 123 81 212.5T441-163v81Zm0-198v-247L337-423l-56-57 200-200 200 200-57 56-103-103v247h-80Zm80 198v-81q44-5 83.5-22t72.5-43l57 58q-45 36-99 59T521-82Zm155-650q-33-26-72-43t-83-22v-81q60 6 114 29t99 59l-58 58Zm114 505-57-57q26-33 43-72.5t22-83.5h81q-6 60-29.5 114T790-227Zm8-293q-5-44-22-83.5T733-676l57-57q36 45 59.5 99T879-520h-81Z"/>
-                                    </svg>
-                                </div>
-                                <div id="breakStatus">
-                                    <div class="status-item">
-                                        <span class="status-label">Break Punch In:</span>
-                                        <span class="status-value" id="breakPunchInTime">Not punched in yet</span>
-                                    </div>
-                                    <div class="status-item">
-                                        <span class="status-label">Break Punch Out:</span>
-                                        <span class="status-value" id="breakPunchOutTime">Not punched out yet</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="d-flex justify-content-center align-items-center h-100 gap-3">
-                                <button class="btn btn-break btn-action" onclick="handleBreakPunch('in')" id="breakPunchInBtn">
-                                    <i class="fas fa-sign-in-alt me-2"></i>Break Punch In
-                                </button>
-                                <button class="btn btn-break btn-action" onclick="handleBreakPunch('out')" id="breakPunchOutBtn">
-                                    <i class="fas fa-sign-out-alt me-2"></i>Break Punch Out
-                                </button>
-                            </div>
+        </div>
+        <div class="card shadow mb-4" style="overflow: hidden;">
+    <div class="card-header text-white" style="padding-top: 20px;padding-bottom: 20px;background: linear-gradient(90deg, rgba(2,0,36,1) 0%, rgba(9,9,121,1) 35%, rgb(0, 145, 174) 100%);">
+        <h3 class="mb-0" style="text-align: center;">Break Time Management</h3>
+    </div>
+    <div class="card-body" style="background: linear-gradient(90deg, rgba(2,0,36,1) 0%, rgba(9,9,121,1) 35%, rgb(0, 145, 174) 100%);overflow: hidden;">
+        <div class="row" style="overflow: hidden;">
+            <div class="col-md-6" style="overflow: hidden;">
+                <div class="card mb-3" style="overflow: hidden;">
+                    <div class="card-body" style="border-radius: 15px; overflow: hidden; background-color: #ffffff19;backdrop-filter: blur(10px);border: 1px solid rgba(255, 255, 255, 0.603);">
+                        <h5 class="" style="padding-left: 20px; padding-right: 20px; padding-top: 10px; padding-bottom: 10px;border-radius: 15px;border: #c2c2c2;background: linear-gradient(90deg, rgba(2,0,36,1) 0%, rgba(9,9,121,1) 35%, rgba(0,212,255,1) 100%);color: white;font-size: 15px; display: flex;justify-content: space-between;align-items: center;">Today's Break Status <span style="color: ;"><svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e3e3e3"><path d="M441-82q-76-8-141.5-41.5t-114.5-87Q136-264 108-333T80-480q0-157 104.5-270T441-878v81q-119 15-200 104.5T160-480q0 123 81 212.5T441-163v81Zm0-198v-247L337-423l-56-57 200-200 200 200-57 56-103-103v247h-80Zm80 198v-81q44-5 83.5-22t72.5-43l57 58q-45 36-99 59T521-82Zm155-650q-33-26-72-43t-83-22v-81q60 6 114 29t99 59l-58 58Zm114 505-57-57q26-33 43-72.5t22-83.5h81q-6 60-29.5 114T790-227Zm8-293q-5-44-22-83.5T733-676l57-57q36 45 59.5 99T879-520h-81Z"/></svg></span></h5>
+                        <div id="breakStatus" style="color: white;">
+                            <p class="mb-2 BreakIn" style="display: flex;justify-content: center;align-items: center;gap: 5px;text-wrap: wrap;white-space: wrap;">Break Punch In: <span id="breakPunchInTime" style="color: white;">Not punched in yet</span></p>
+                            <p class="mb-2" style="display: flex;justify-content: space-between;align-items: center;">Break Punch Out: <span style="color: white;" id="breakPunchOutTime">Not punched out yet</span></p>
                         </div>
                     </div>
                 </div>
             </div>
+            <div class="col-md-6">
+                <div class="d-flex justify-content-center align-items-center h-100">
+                    <button class="btn btn-success  md:btn-lg mx-2" onclick="handleBreakPunch('in')" id="breakPunchInBtn" style="border: 1px solid #ffffff;">
+                        <i class="fas fa-sign-in-alt"></i><span style="white-space: nowrap;"> Break <br> Punch In </span>
+                    </button>
+                    <button class="btn btn-danger btn-xs md:btn-lg mx-2" onclick="handleBreakPunch('out')" id="breakPunchOutBtn" style="border: 1px solid #fff;">
+                        <i class="fas fa-sign-out-alt"></i> <span style="white-space: nowrap;"> Break <br> Punch Out
+                        </span>
+                    </button>
+                    
 
-            <!-- Monthly Attendance Records -->
-            <div class="card attendance-card">
-                <div class="card-header-gradient">
-                    <div class="d-md-flex justify-content-between align-items-center">
-                        <h3><i class="fas fa-history me-2"></i>My Attendance Records</h3>
-                        <input type="month" class="form-control mt-2 mt-md-0" id="monthFilter" style="width: 200px;" value="{{ current_month|default:'' }}">
-                    </div>
-                </div>
-                <div class="card-body">
-                    <!-- Legend Section -->
-                    <div class="legend-card">
-                        <div class="d-flex flex-wrap gap-4">
-                            <div class="legend-item">
-                                <i class="fas fa-star text-success"></i>
-                                <span>Full Day</span>
-                            </div>
-                            <div class="legend-item">
-                                <i class="fas fa-star text-primary"></i>
-                                <span>Verified Full Day</span>
-                            </div>
-                            <div class="legend-item">
-                                <i class="fas fa-star-half-alt text-success"></i>
-                                <span>Half Day</span>
-                            </div>
-                            <div class="legend-item">
-                                <i class="fas fa-star-half-alt text-primary"></i>
-                                <span>Verified Half Day</span>
-                            </div>
-                            <div class="legend-item">
-                                <i class="fas fa-star text-danger"></i>
-                                <span>Leave</span>
-                            </div>
-                            <div class="legend-item">
-                                <i class="fas fa-star text-warning"></i>
-                                <span>Holiday</span> 
-                            </div>
-                            <div class="legend-item">
-                                <i class="fas fa-star text-secondary"></i>
-                                <span>Not Marked</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Attendance Table -->
-                    <div class="table-container">
-                        <div class="table-responsive">
-                            <table class="table table-hover">
-                                <thead>
-                                    <tr>
-                                        <th>Date</th>
-                                        <th>Day</th>
-                                        <th>Status</th>
-                                        <th>Punch In</th>
-                                        <th>Punch Out</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="attendanceBody">
-                                    <!-- Will be populated by JavaScript -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Modals (unchanged from your original code) -->
-<!-- Leave Request Modal -->
+        <!-- Monthly Attendance View -->
+        <div class="card shadow" style="overflow: hidden;">
+            <div class="card-header text-white" style="padding-top: 20px;padding-bottom: 20px;background: linear-gradient(90deg, rgba(2,0,36,1) 0%, rgba(9,9,121,1) 35%, rgb(0, 145, 174) 100%);">
+                <div class="d-md-flex justify-content-between align-items-center">
+                    <h3 class="mb-0" style="white-space: nowrap;">My Attendance Records</h3>
+                    <input type="month" class="form-control" id="monthFilter" style="width: 200px;" 
+                           value="{{ current_month|default:'' }}">
+                </div>
+                
+            </div>
+            <div class="card-body" style="background: linear-gradient(90deg, rgba(2,0,36,1) 0%, rgba(9,9,121,1) 35%, rgb(0, 145, 174) 100%);overflow: hidden;">
+                <!-- Legend Section -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <div class="d-flex gap-4 flex-wrap">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-star text-success me-2"></i>
+                                <span style="color: white;">Full Day</span>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-star text-primary me-2"></i>
+                                <span style="color: white;">Verified Full Day</span>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-star-half-alt text-success me-2"></i>
+                                <span style="color: white;">Half Day</span>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-star-half-alt text-primary me-2"></i>
+                                <span style="color: white;">Verified Half Day</span>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-star text-danger me-2"></i>
+                                <span style="color: white;">Leave</span>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-star text-warning me-2"></i>
+                                <span style="color: white;">Holiday</span> 
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-star text-secondary me-2"></i>
+                                <span style="color: white;">Not Marked</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Attendance Table -->
+                <div class="table-responsive">
+                    <table class="table table-bordered" style="background-color: white;">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Day</th>
+                                <th>Status</th>
+                                <th>Punch In</th>
+                                <th>Punch Out</th>
+                            </tr>
+                        </thead>
+                        <tbody id="attendanceBody">
+                            <!-- Will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<!-- Update the leave request modal -->
 <div class="modal fade" id="leaveRequestModal" tabindex="-1" aria-labelledby="leaveRequestModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -527,32 +203,32 @@
             </div>
             <div class="modal-body">
                 <form id="leaveRequestForm">
-                    <div class="mb-3">
-                        <label for="startDate" class="form-label">Start Date</label>
-                        <input type="date" class="form-control" id="startDate" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="endDate" class="form-label">End Date</label>
-                        <input type="date" class="form-control" id="endDate" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="leaveType" class="form-label">Leave Type</label>
-                        <select class="form-select" id="leaveType" required>
-                            <option value="full_day">Full Day</option>
-                            <option value="half_day">Half Day</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label for="reason" class="form-label">Reason</label>
-                        <select class="form-select" id="reason" required>
-                            <option value="Medical Appointment">Medical Appointment</option>
-                            <option value="Bereavement Leave">Bereavement Leave</option>
-                            <option value="Personal/Family Event">Personal/Family Event</option>
-                            <option value="Health Emergency">Health Emergency</option>
-                            <option value="Dependent Care">Dependent Care</option>
-                        </select>
-                    </div>
-                </form>
+    <div class="mb-3">
+        <label for="startDate" class="form-label">Start Date</label>
+        <input type="date" class="form-control" id="startDate" required>
+    </div>
+    <div class="mb-3">
+        <label for="endDate" class="form-label">End Date</label>
+        <input type="date" class="form-control" id="endDate" required>
+    </div>
+    <div class="mb-3">
+        <label for="leaveType" class="form-label">Leave Type</label>
+        <select class="form-select" id="leaveType" required>
+            <option value="full_day">Full Day</option>
+            <option value="half_day">Half Day</option>
+        </select>
+    </div>
+    <div class="mb-3">
+        <label for="reason" class="form-label">Reason</label>
+        <select class="form-select" id="reason" required>
+            <option value="Medical Appointment">Medical Appointment</option>
+            <option value="Bereavement Leave">Bereavement Leave</option>
+            <option value="Personal/Family Event">Personal/Family Event</option>
+            <option value="Health Emergency">Health Emergency</option>
+            <option value="Dependent Care">Dependent Care</option>
+        </select>
+    </div>
+</form>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -562,7 +238,7 @@
     </div>
 </div>
 
-<!-- View Leave Requests Modal -->
+<!-- Update the view leave requests modal -->
 <div class="modal fade" id="viewLeaveRequestsModal" tabindex="-1" aria-labelledby="viewLeaveRequestsModalLabel" aria-hidden="true">
     <div class="modal-dialog" style="max-width: 1200px;width: 100%;margin: auto;">
         <div class="modal-content">
@@ -572,7 +248,7 @@
             </div>
             <div class="modal-body p-2 p-md-10" style="margin: auto;width: 100%;">
                 <div class="d-md-flex justify-content-between mb-3">
-                    <div class="btn-group filter-buttons" role="group">
+                    <div class="btn-group" role="group">
                         <button type="button" class="btn btn-sm btn-outline-primary filter-btn active" style="font-size: 12px;" data-status="all">All</button>
                         <button type="button" class="btn btn-sm btn-outline-primary filter-btn" style="font-size: 12px;" data-status="pending">Pending</button>
                         <button type="button" class="btn btn-sm btn-outline-primary filter-btn" style="font-size: 12px;" data-status="approved">Approved</button>
@@ -580,7 +256,7 @@
                     </div>
                     <div class="d-flex mt-2 mt-md-0">
                         <button id="prevLeaveRequests" class="btn btn-sm btn-outline-primary" disabled>Previous</button>
-                        <span id="leaveRequestsPaginationInfo" class="mx-2 pagination-info">Showing 1-10</span>
+                        <span id="leaveRequestsPaginationInfo" class="mx-2">Showing 1-10</span>
                         <button id="nextLeaveRequests" class="btn btn-sm btn-outline-primary">Next</button>
                     </div>
                 </div>
@@ -619,27 +295,27 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form id="lateRequestForm">
-                    <div class="mb-3">
-                        <label for="lateDate" class="form-label">Date</label>
-                        <input type="date" class="form-control" id="lateDate" required readonly>
-                    </div>
-                    <div class="mb-3">
-                        <label for="delayTime" class="form-label">Enter delay time (e.g., 10 minutes)</label>
-                        <input type="text" class="form-control" id="delayTime" required placeholder="e.g., 10 minutes">
-                    </div>
-                    <div class="mb-3">
-                        <label for="lateReason" class="form-label">Reason</label>
-                        <select class="form-select" id="lateReason" required>
-                            <option value="Health Emergency">Health Emergency</option>
-                            <option value="Dependent Care">Dependent Care</option>
-                            <option value="Medical Appointment">Medical Appointment</option>
-                            <option value="Bereavement">Bereavement</option>
-                            <option value="Transportation Issues">Transportation Issues</option>
-                            <option value="Accident">Accident</option>
-                        </select>
-                    </div>
-                </form>
+              <form id="lateRequestForm">
+    <div class="mb-3">
+        <label for="lateDate" class="form-label">Date</label>
+        <input type="date" class="form-control" id="lateDate" required readonly>
+    </div>
+    <div class="mb-3">
+        <label for="delayTime" class="form-label">Enter delay time (e.g., 10 minutes)</label>
+        <input type="text" class="form-control" id="delayTime" required placeholder="e.g., 10 minutes">
+    </div>
+    <div class="mb-3">
+        <label for="lateReason" class="form-label">Reason</label>
+        <select class="form-select" id="lateReason" required>
+            <option value="Health Emergency">Health Emergency</option>
+            <option value="Dependent Care">Dependent Care</option>
+            <option value="Medical Appointment">Medical Appointment</option>
+            <option value="Bereavement">Bereavement</option>
+            <option value="Transportation Issues">Transportation Issues</option>
+            <option value="Accident">Accident</option>
+        </select>
+    </div>
+</form>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -659,7 +335,7 @@
             </div>
             <div class="modal-body p-2 p-md-10" style="margin: auto;width: 100%;">
                 <div class="d-md-flex justify-content-between mb-3">
-                    <div class="btn-group filter-buttons" role="group">
+                    <div class="btn-group" role="group">
                         <button type="button" class="btn btn-sm btn-outline-primary filter-btn active" style="font-size: 12px;" data-status="all">All</button>
                         <button type="button" class="btn btn-sm btn-outline-primary filter-btn" style="font-size: 12px;" data-status="pending">Pending</button>
                         <button type="button" class="btn btn-sm btn-outline-primary filter-btn" style="font-size: 12px;" data-status="approved">Approved</button>
@@ -667,7 +343,7 @@
                     </div>
                     <div class="d-flex mt-2 mt-md-0">
                         <button id="prevLateRequests" class="btn btn-sm btn-outline-primary" disabled>Previous</button>
-                        <span id="lateRequestsPaginationInfo" class="mx-2 pagination-info">Showing 1-10</span>
+                        <span id="lateRequestsPaginationInfo" class="mx-2">Showing 1-10</span>
                         <button id="nextLateRequests" class="btn btn-sm btn-outline-primary">Next</button>
                     </div>
                 </div>
@@ -694,8 +370,6 @@
         </div>
     </div>
 </div>
-
-<!-- Early Request Modal -->
 <div class="modal fade" id="earlyRequestModal" tabindex="-1" aria-labelledby="earlyRequestModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -705,26 +379,26 @@
             </div>
             <div class="modal-body">
                 <form id="earlyRequestForm">
-                    <div class="mb-3">
-                        <label for="earlyDate" class="form-label">Date</label>
-                        <input type="date" class="form-control" id="earlyDate" required readonly>
-                    </div>
-                    <div class="mb-3">
-                        <label for="earlyTime" class="form-label">Early Departure Time</label>
-                        <input type="time" class="form-control" id="earlyTime" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="earlyReason" class="form-label">Reason</label>
-                        <select class="form-select" id="earlyReason" required>
-                            <option value="Health Emergency">Health Emergency</option>
-                            <option value="Dependent Care">Dependent Care</option>
-                            <option value="Medical Appointment">Medical Appointment</option>
-                            <option value="Bereavement">Bereavement</option>
-                            <option value="Transportation Issues">Transportation Issues</option>
-                            <option value="Accident">Accident</option>
-                        </select>
-                    </div>
-                </form>
+    <div class="mb-3">
+        <label for="earlyDate" class="form-label">Date</label>
+        <input type="date" class="form-control" id="earlyDate" required readonly>
+    </div>
+    <div class="mb-3">
+        <label for="earlyTime" class="form-label">Early Departure Time</label>
+        <input type="time" class="form-control" id="earlyTime" required>
+    </div>
+    <div class="mb-3">
+        <label for="earlyReason" class="form-label">Reason</label>
+        <select class="form-select" id="earlyReason" required>
+            <option value="Health Emergency">Health Emergency</option>
+            <option value="Dependent Care">Dependent Care</option>
+            <option value="Medical Appointment">Medical Appointment</option>
+            <option value="Bereavement">Bereavement</option>
+            <option value="Transportation Issues">Transportation Issues</option>
+            <option value="Accident">Accident</option>
+        </select>
+    </div>
+</form>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -744,7 +418,7 @@
             </div>
             <div class="modal-body p-2 p-md-10" style="margin: auto;width: 100%;">
                 <div class="d-md-flex justify-content-between mb-3">
-                    <div class="btn-group filter-buttons" role="group">
+                    <div class="btn-group" role="group">
                         <button type="button" class="btn btn-sm btn-outline-primary filter-btn active" style="font-size: 12px;" data-status="all">All</button>
                         <button type="button" class="btn btn-sm btn-outline-primary filter-btn" style="font-size: 12px;" data-status="pending">Pending</button>
                         <button type="button" class="btn btn-sm btn-outline-primary filter-btn" style="font-size: 12px;" data-status="approved">Approved</button>
@@ -752,7 +426,7 @@
                     </div>
                     <div class="d-flex mt-2 mt-md-0">
                         <button id="prevEarlyRequests" class="btn btn-sm btn-outline-primary" disabled>Previous</button>
-                        <span id="earlyRequestsPaginationInfo" class="mx-2 pagination-info">Showing 1-10</span>
+                        <span id="earlyRequestsPaginationInfo" class="mx-2">Showing 1-10</span>
                         <button id="nextEarlyRequests" class="btn btn-sm btn-outline-primary">Next</button>
                     </div>
                 </div>
@@ -1127,7 +801,6 @@
         border-radius: 10px;
         padding: 12px 30px;
         font-weight: 600;
-        color: black;
     }
 
     .btn i {
