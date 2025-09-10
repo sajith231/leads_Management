@@ -968,7 +968,7 @@ def create_late_request(request):
     )
 
     # WhatsApp to managers
-    phones = ["9946545535", "7593820007", "7593820005", "9846754998"]
+    phones = ["9946545535", "7593820007", "7593820005", "9846754998","9061947005"]
     msg = (f"New late request from {emp.name}. "
            f"Date: {late.date:%d-%m-%Y}, Delay: {late.delay_time}, Reason: {late.reason}")
     for p in phones:
@@ -1044,7 +1044,7 @@ def create_early_request(request):
         status='pending'
     )
 
-    phones = ["9946545535", "7593820007", "7593820005", "9846754998"]
+    phones = ["9946545535", "7593820007", "7593820005", "9846754998","9061947005"]
     msg = (f"New early request from {emp.name}. "
            f"Date: {early.date:%d-%m-%Y}, Early Time: {early.early_time}, Reason: {early.reason}")
     for p in phones:
