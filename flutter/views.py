@@ -369,7 +369,7 @@ def create_leave_request(request):
                 leave_type=data['leave_type'], reason=data['reason'], status='pending'
             )
 
-            phones = ["9946545535", "7593820007", "7593820005", "9846754998"]
+            phones = ["9946545535", "7593820007", "7593820005", "9846754998","8129191379","9061947005"]
             msg = f"New leave request from {employee.name}. {start_date:%d-%m-%Y} → {end_date:%d-%m-%Y} Type: {leave_request.get_leave_type_display()} Reason: {data['reason']}"
             for p in phones:
                 send_whatsapp(p, msg)
