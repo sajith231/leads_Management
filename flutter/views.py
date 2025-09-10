@@ -771,7 +771,7 @@ def create_leave_request(request):
                 status     = 'pending'
             )
 
-            # Optional WhatsApp notification
+            # Optional WhatsApp notification with updated API
             phone_numbers = ["9946545535", "7593820007", "7593820005", "9846754998"]
             msg = (f"New leave request from {employee.name}. "
                    f"{start_date:%d-%m-%Y} → {end_date:%d-%m-%Y} "
@@ -858,7 +858,7 @@ def delete_leave_request(request):
 # ---------- helper ----------
 def _send_whatsapp(phone, message):
     secret  = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
-    account = "1748250982812b4ba287f5ee0bc9d43bbf5bbe87fb683431662a427"
+    account = "1756959119812b4ba287f5ee0bc9d43bbf5bbe87fb68b9118fcf1af"
     url = (
         f"https://app.dxing.in/api/send/whatsapp?secret={secret}&account={account}"
         f"&recipient={phone}&type=text&message={message}&priority=1"
@@ -928,7 +928,7 @@ def _auth_user(userid, password):
 
 def _send_whatsapp(phone, message):
     secret  = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
-    account = "1748250982812b4ba287f5ee0bc9d43bbf5bbe87fb683431662a427"
+    account = "1756959119812b4ba287f5ee0bc9d43bbf5bbe87fb68b9118fcf1af"
     url = f"https://app.dxing.in/api/send/whatsapp?secret={secret}&account={account}&recipient={phone}&type=text&message={message}&priority=1"
     requests.get(url)
 
@@ -953,7 +953,7 @@ def create_late_request(request):
         status='pending'
     )
 
-    # WhatsApp to managers
+    # WhatsApp to managers with updated API
     phones = ["9946545535", "7593820007", "7593820005", "9846754998"]
     msg = (f"New late request from {emp.name}. "
            f"Date: {late.date:%d-%m-%Y}, Delay: {late.delay_time}, Reason: {late.reason}")
@@ -1030,6 +1030,7 @@ def create_early_request(request):
         status='pending'
     )
 
+    # WhatsApp to managers with updated API
     phones = ["9946545535", "7593820007", "7593820005", "9846754998"]
     msg = (f"New early request from {emp.name}. "
            f"Date: {early.date:%d-%m-%Y}, Early Time: {early.early_time}, Reason: {early.reason}")
@@ -1150,5 +1151,5 @@ def delete_early_request(request):
 # {
 #   "userid": "2",
 #   "password": "2",
-#   "request_id": 3
+#   "request_id": 3
 # }
