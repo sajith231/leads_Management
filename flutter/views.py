@@ -256,6 +256,7 @@ def get_monthly_attendance_post(request):
 
 
 # ---------- BREAK TIME ----------
+# ---------- BREAK TIME ----------
 class BreakPunchInView(APIView):
     def post(self, request):
         userid, password = request.data.get('userid'), request.data.get('password')
@@ -275,8 +276,13 @@ class BreakPunchInView(APIView):
             return Response({'error': 'You have an active break. Please punch out first.'}, status=400)
 
         break_time = BreakTime.objects.create(employee=employee, date=today, break_punch_in=now, is_active=True)
-        return Response({'message': 'Break punch in successful', 'break_punch_in': now.strftime('%H:%M:%S'),
-                         'date': str(today), 'break_id': break_time.id}, status=200)
+        return Response({
+            'message': 'Break punch in successful', 
+            'break_punch_in': now.strftime('%I:%M:%S %p'),  # 12-hour format with AM/PM
+            'break_punch_in_24h': now.strftime('%H:%M:%S'),  # 24-hour format as backup
+            'date': str(today), 
+            'break_id': break_time.id
+        }, status=200)
 
 
 class BreakPunchOutView(APIView):
@@ -304,11 +310,16 @@ class BreakPunchOutView(APIView):
         duration = active_break.break_punch_out - active_break.break_punch_in
         duration_str = str(duration).split('.')[0]
 
-        return Response({'message': 'Break punch out successful',
-                         'break_punch_out': now.strftime('%H:%M:%S'),
-                         'break_punch_in': active_break.break_punch_in.strftime('%H:%M:%S'),
-                         'duration': duration_str, 'date': str(today),
-                         'break_id': active_break.id}, status=200)
+        return Response({
+            'message': 'Break punch out successful',
+            'break_punch_out': now.strftime('%I:%M:%S %p'),  # 12-hour format with AM/PM
+            'break_punch_out_24h': now.strftime('%H:%M:%S'),  # 24-hour format as backup
+            'break_punch_in': active_break.break_punch_in.strftime('%I:%M:%S %p'),  # 12-hour format with AM/PM
+            'break_punch_in_24h': active_break.break_punch_in.strftime('%H:%M:%S'),  # 24-hour format as backup
+            'duration': duration_str, 
+            'date': str(today),
+            'break_id': active_break.id
+        }, status=200)
 
 
 class BreakStatusView(APIView):
@@ -332,19 +343,25 @@ class BreakStatusView(APIView):
         for b in all_breaks_today:
             data = {
                 'break_id': b.id,
-                'punch_in': b.break_punch_in.strftime('%H:%M:%S') if b.break_punch_in else None,
-                'punch_out': b.break_punch_out.strftime('%H:%M:%S') if b.break_punch_out else None,
+                'punch_in': b.break_punch_in.strftime('%I:%M:%S %p') if b.break_punch_in else None,  # 12-hour format with AM/PM
+                'punch_in_24h': b.break_punch_in.strftime('%H:%M:%S') if b.break_punch_in else None,  # 24-hour format as backup
+                'punch_out': b.break_punch_out.strftime('%I:%M:%S %p') if b.break_punch_out else None,  # 12-hour format with AM/PM
+                'punch_out_24h': b.break_punch_out.strftime('%H:%M:%S') if b.break_punch_out else None,  # 24-hour format as backup
                 'is_active': b.is_active,
                 'duration': str((b.break_punch_out - b.break_punch_in)).split('.')[0] if b.break_punch_in and b.break_punch_out else None
             }
             break_list.append(data)
 
-        return Response({'has_active_break': active_break is not None,
-                         'can_punch_in': active_break is None,
-                         'can_punch_out': active_break is not None,
-                         'breaks_today': break_list, 'total_breaks_today': len(break_list),
-                         'current_break_in': active_break.break_punch_in.strftime('%H:%M:%S') if active_break else None,
-                         'date': str(today)}, status=200)
+        return Response({
+            'has_active_break': active_break is not None,
+            'can_punch_in': active_break is None,
+            'can_punch_out': active_break is not None,
+            'breaks_today': break_list, 
+            'total_breaks_today': len(break_list),
+            'current_break_in': active_break.break_punch_in.strftime('%I:%M:%S %p') if active_break else None,  # 12-hour format with AM/PM
+            'current_break_in_24h': active_break.break_punch_in.strftime('%H:%M:%S') if active_break else None,  # 24-hour format as backup
+            'date': str(today)
+        }, status=200)
 
 
 # ---------- LEAVE REQUEST ----------
