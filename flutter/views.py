@@ -256,57 +256,39 @@ def get_monthly_attendance_post(request):
 
 
 # ---------- BREAK TIME ----------
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from django.contrib.auth.hashers import check_password
-from django.utils.timezone import now
+from django.utils.timezone import localtime
 import pytz
 from datetime import datetime
-
-
 
 class BreakPunchInView(APIView):
     def post(self, request):
         userid, password = request.data.get('userid'), request.data.get('password')
-
-        # Validate user
         try:
-            user = User.objects.get(userid=userid)
-            if not check_password(password, user.password):
-                return Response({'error': 'Invalid userid or password'}, status=401)
+            user = User.objects.get(userid=userid, password=password)
             employee = Employee.objects.get(user=user)
         except (User.DoesNotExist, Employee.DoesNotExist):
             return Response({'error': 'Invalid userid or password'}, status=401)
 
-        # Current time in IST
-        indian_tz = pytz.timezone('Asia/Kolkata')
-        current_time = datetime.now(indian_tz)
-        today = current_time.date()
+        # current IST time
+        now = localtime(datetime.now(), pytz.timezone('Asia/Kolkata'))
+        today = now.date()
 
-        # Check if already in an active break
         active_break = BreakTime.objects.filter(
-            employee=employee,
-            date=today,
-            is_active=True,
-            break_punch_in__isnull=False,
-            break_punch_out__isnull=True
+            employee=employee, date=today, is_active=True,
+            break_punch_in__isnull=False, break_punch_out__isnull=True
         ).first()
 
         if active_break:
             return Response({'error': 'You have an active break. Please punch out first.'}, status=400)
 
-        # Create new break record
         break_time = BreakTime.objects.create(
-            employee=employee,
-            date=today,
-            break_punch_in=current_time,
-            is_active=True
+            employee=employee, date=today, break_punch_in=now, is_active=True
         )
 
         return Response({
             'message': 'Break punch in successful',
+            'break_punch_in': now.strftime('%H:%M:%S'),
             'date': str(today),
-            'break_punch_in': current_time.strftime('%H:%M:%S'),
             'break_id': break_time.id
         }, status=200)
 
@@ -314,49 +296,38 @@ class BreakPunchInView(APIView):
 class BreakPunchOutView(APIView):
     def post(self, request):
         userid, password = request.data.get('userid'), request.data.get('password')
-
-        # Validate user
         try:
-            user = User.objects.get(userid=userid)
-            if not check_password(password, user.password):
-                return Response({'error': 'Invalid userid or password'}, status=401)
+            user = User.objects.get(userid=userid, password=password)
             employee = Employee.objects.get(user=user)
         except (User.DoesNotExist, Employee.DoesNotExist):
             return Response({'error': 'Invalid userid or password'}, status=401)
 
-        # Current time in IST
-        indian_tz = pytz.timezone('Asia/Kolkata')
-        current_time = datetime.now(indian_tz)
-        today = current_time.date()
+        now = localtime(datetime.now(), pytz.timezone('Asia/Kolkata'))
+        today = now.date()
 
-        # Find latest active break
         active_break = BreakTime.objects.filter(
-            employee=employee,
-            date=today,
-            is_active=True,
-            break_punch_in__isnull=False,
-            break_punch_out__isnull=True
+            employee=employee, date=today, is_active=True,
+            break_punch_in__isnull=False, break_punch_out__isnull=True
         ).order_by('-break_punch_in').first()
 
         if not active_break:
             return Response({'error': 'No active break found to punch out'}, status=400)
 
-        # Update punch out
-        active_break.break_punch_out = current_time
+        active_break.break_punch_out = now
         active_break.is_active = False
         active_break.save()
 
-        # Calculate duration
+        # duration calculation
         duration = active_break.break_punch_out - active_break.break_punch_in
-        duration_str = str(duration).split('.')[0]  # remove microseconds
+        duration_str = str(duration).split('.')[0]
 
         return Response({
             'message': 'Break punch out successful',
+            'break_punch_in': localtime(active_break.break_punch_in, pytz.timezone('Asia/Kolkata')).strftime('%H:%M:%S'),
+            'break_punch_out': now.strftime('%H:%M:%S'),
+            'duration': duration_str,
             'date': str(today),
-            'break_id': active_break.id,
-            'break_punch_in': active_break.break_punch_in.strftime('%H:%M:%S'),
-            'break_punch_out': current_time.strftime('%H:%M:%S'),
-            'duration': duration_str
+            'break_id': active_break.id
         }, status=200)
 
 
