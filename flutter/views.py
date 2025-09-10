@@ -861,13 +861,13 @@ import requests, urllib.parse
 def _send_whatsapp(phone, message):
     secret  = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
     account = "1756959119812b4ba287f5ee0bc9d43bbf5bbe87fb68b9118fcf1af"
-    encoded_msg = urllib.parse.quote(message)  # encode spaces & special chars
+    encoded_msg = urllib.parse.quote(message)   # ✅ Encode properly
     url = (
         f"https://app.dxing.in/api/send/whatsapp?secret={secret}&account={account}"
         f"&recipient={phone}&type=text&message={encoded_msg}&priority=1"
     )
     response = requests.get(url)
-    print(response.text)  # Debugging: see API response
+    print("API Response:", response.text)  # Debugging
 
 
 
@@ -931,11 +931,19 @@ def _auth_user(userid, password):
     except (User.DoesNotExist, Employee.DoesNotExist):
         return None
 
+import requests, urllib.parse
+
 def _send_whatsapp(phone, message):
     secret  = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
     account = "1756959119812b4ba287f5ee0bc9d43bbf5bbe87fb68b9118fcf1af"
-    url = f"https://app.dxing.in/api/send/whatsapp?secret={secret}&account={account}&recipient={phone}&type=text&message={message}&priority=1"
-    requests.get(url)
+    encoded_msg = urllib.parse.quote(str(message))  # ✅ encode spaces & special chars
+    url = (
+        f"https://app.dxing.in/api/send/whatsapp?secret={secret}&account={account}"
+        f"&recipient={phone}&type=text&message={encoded_msg}&priority=1"
+    )
+    response = requests.get(url)
+    print("WhatsApp API Response:", response.text)  # ✅ see if API returned error
+
 
 
 # ---------- LATE ----------
