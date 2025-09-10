@@ -257,6 +257,7 @@ def get_monthly_attendance_post(request):
 
 # ---------- BREAK TIME ----------
 # ---------- BREAK TIME ----------
+# ---------- BREAK TIME ----------
 class BreakPunchInView(APIView):
     def post(self, request):
         userid, password = request.data.get('userid'), request.data.get('password')
@@ -341,16 +342,23 @@ class BreakStatusView(APIView):
 
         break_list = []
         for b in all_breaks_today:
+            # Convert to Indian timezone if the stored time is timezone-aware
+            punch_in_indian = b.break_punch_in.astimezone(indian_tz) if b.break_punch_in else None
+            punch_out_indian = b.break_punch_out.astimezone(indian_tz) if b.break_punch_out else None
+            
             data = {
                 'break_id': b.id,
-                'punch_in': b.break_punch_in.strftime('%I:%M:%S %p') if b.break_punch_in else None,  # 12-hour format with AM/PM
-                'punch_in_24h': b.break_punch_in.strftime('%H:%M:%S') if b.break_punch_in else None,  # 24-hour format as backup
-                'punch_out': b.break_punch_out.strftime('%I:%M:%S %p') if b.break_punch_out else None,  # 12-hour format with AM/PM
-                'punch_out_24h': b.break_punch_out.strftime('%H:%M:%S') if b.break_punch_out else None,  # 24-hour format as backup
+                'punch_in': punch_in_indian.strftime('%I:%M:%S %p') if punch_in_indian else None,  # 12-hour format with AM/PM
+                'punch_in_24h': punch_in_indian.strftime('%H:%M:%S') if punch_in_indian else None,  # 24-hour format as backup
+                'punch_out': punch_out_indian.strftime('%I:%M:%S %p') if punch_out_indian else None,  # 12-hour format with AM/PM
+                'punch_out_24h': punch_out_indian.strftime('%H:%M:%S') if punch_out_indian else None,  # 24-hour format as backup
                 'is_active': b.is_active,
                 'duration': str((b.break_punch_out - b.break_punch_in)).split('.')[0] if b.break_punch_in and b.break_punch_out else None
             }
             break_list.append(data)
+
+        # Convert active break time to Indian timezone as well
+        current_break_in_indian = active_break.break_punch_in.astimezone(indian_tz) if active_break and active_break.break_punch_in else None
 
         return Response({
             'has_active_break': active_break is not None,
@@ -358,8 +366,8 @@ class BreakStatusView(APIView):
             'can_punch_out': active_break is not None,
             'breaks_today': break_list, 
             'total_breaks_today': len(break_list),
-            'current_break_in': active_break.break_punch_in.strftime('%I:%M:%S %p') if active_break else None,  # 12-hour format with AM/PM
-            'current_break_in_24h': active_break.break_punch_in.strftime('%H:%M:%S') if active_break else None,  # 24-hour format as backup
+            'current_break_in': current_break_in_indian.strftime('%I:%M:%S %p') if current_break_in_indian else None,  # 12-hour format with AM/PM
+            'current_break_in_24h': current_break_in_indian.strftime('%H:%M:%S') if current_break_in_indian else None,  # 24-hour format as backup
             'date': str(today)
         }, status=200)
 
