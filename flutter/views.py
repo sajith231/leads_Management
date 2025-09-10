@@ -771,7 +771,7 @@ def create_leave_request(request):
                 status     = 'pending'
             )
 
-            # Optional WhatsApp notification with updated API
+            # Optional WhatsApp notification
             phone_numbers = ["9946545535", "7593820007", "7593820005", "9846754998"]
             msg = (f"New leave request from {employee.name}. "
                    f"{start_date:%d-%m-%Y} → {end_date:%d-%m-%Y} "
@@ -871,6 +871,7 @@ def _send_whatsapp(phone, message):
 
 
 
+
 # http://127.0.0.1:8000/flutter/leave/create/       POST CREATE LEAVE REQUEST
 
 
@@ -932,6 +933,7 @@ def _send_whatsapp(phone, message):
     url = f"https://app.dxing.in/api/send/whatsapp?secret={secret}&account={account}&recipient={phone}&type=text&message={message}&priority=1"
     requests.get(url)
 
+
 # ---------- LATE ----------
 @csrf_exempt
 @api_view(['POST'])
@@ -953,7 +955,7 @@ def create_late_request(request):
         status='pending'
     )
 
-    # WhatsApp to managers with updated API
+    # WhatsApp to managers
     phones = ["9946545535", "7593820007", "7593820005", "9846754998"]
     msg = (f"New late request from {emp.name}. "
            f"Date: {late.date:%d-%m-%Y}, Delay: {late.delay_time}, Reason: {late.reason}")
@@ -1030,7 +1032,6 @@ def create_early_request(request):
         status='pending'
     )
 
-    # WhatsApp to managers with updated API
     phones = ["9946545535", "7593820007", "7593820005", "9846754998"]
     msg = (f"New early request from {emp.name}. "
            f"Date: {early.date:%d-%m-%Y}, Early Time: {early.early_time}, Reason: {early.reason}")
@@ -1151,5 +1152,5 @@ def delete_early_request(request):
 # {
 #   "userid": "2",
 #   "password": "2",
-#   "request_id": 3
+#   "request_id": 3
 # }
