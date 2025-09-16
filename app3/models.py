@@ -62,7 +62,8 @@ class Rating(models.Model):
     communication = models.IntegerField(null=True, blank=True, default=0)
     languages = models.CharField(max_length=255, blank=True, default='')
     expected_salary = models.CharField(max_length=50, blank=True, default='')
-    experience = models.CharField(max_length=50, blank=True, default='')
+    # experience = models.CharField(max_length=50, blank=True, default='')
+    experience = models.TextField(blank=True, default='')
     remark = models.TextField(blank=True, default='')
     voice_note = models.FileField(upload_to='voice_notes/', blank=True, null=True)
     STATUS_CHOICES = [

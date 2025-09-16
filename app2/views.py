@@ -1431,17 +1431,23 @@ def add_assign_socialmedia_project(request):
     """
     Create a new SocialMediaProjectAssignment.
     Uses existing tasks from dropdown selection only.
+    Only shows users with 'Social Media and Digital Marketing' job role.
     """
     projects = SocialMediaProject.objects.all()
     tasks = Task.objects.all()
     User = apps.get_model('app1', 'User')
-    users = User.objects.all()
+    
+    # Filter users by job role - only Social Media and Digital Marketing
+    users = User.objects.filter(
+        job_role__title='Social Media and Digital Marketing',
+        status='active'  # Also filter for active users only
+    ).select_related('job_role')
 
     if request.method == 'POST':
         project_id = request.POST.get('project')
         task_id = request.POST.get('task')
         assigned_to_ids = request.POST.getlist('assigned_to')
-        deadline = request.POST.get('deadline') or None  # ✅ FIXED
+        deadline = request.POST.get('deadline') or None
         remark = request.POST.get('remark', '').strip()
 
         # --- basic validation ---
@@ -1480,18 +1486,24 @@ def edit_assign_socialmedia_project(request, id):
     """
     Edit an existing SocialMediaProjectAssignment.
     Uses existing tasks from dropdown selection only.
+    Only shows users with 'Social Media and Digital Marketing' job role.
     """
     assignment = get_object_or_404(SocialMediaProjectAssignment, id=id)
     projects = SocialMediaProject.objects.all()
     tasks = Task.objects.all()
     User = apps.get_model('app1', 'User')
-    users = User.objects.all()
+    
+    # Filter users by job role - only Social Media and Digital Marketing
+    users = User.objects.filter(
+        job_role__title='Social Media and Digital Marketing',
+        status='active'  # Also filter for active users only
+    ).select_related('job_role')
 
     if request.method == 'POST':
         project_id = request.POST.get('project')
         task_id = request.POST.get('task')
         assigned_to_ids = request.POST.getlist('assigned_to')
-        deadline = request.POST.get('deadline') or None  # ✅ FIXED
+        deadline = request.POST.get('deadline') or None
         remark = request.POST.get('remark', '').strip()
 
         # --- basic validation ---
