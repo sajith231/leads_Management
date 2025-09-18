@@ -1,0 +1,771 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Add CSRF token for JavaScript -->
+    {% csrf_token %}
+    <!-- Add URL pattern for delete -->
+    <meta name="delete-url-pattern" content="{% url 'collections_delete' 0 %}">
+    
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">
+            <i class="fas fa-money-check-alt me-2"></i>Collections
+        </h2>
+        <a href="{% url 'collections_add' %}" class="btn btn-primary">
+            <i class="fas fa-plus me-1"></i>Add New Collection
+        </a>
+    </div>
+    
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">Total Collections</h6>
+                            <h4 class="mb-0" id="total-count">{{ collections.count|default:0 }}</h4>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-clipboard-list fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">Total Amount</h6>
+                            <h4 class="mb-0" id="total-amount">₹{{ total_amount|default:0 }}</h4>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-rupee-sign fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">This Month</h6>
+                            <h4 class="mb-0" id="month-count">{{ this_month_count|default:0 }}</h4>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-calendar-month fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">Recent</h6>
+                            <h4 class="mb-0" id="recent-count">{{ recent_count|default:0 }}</h4>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-clock fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enhanced Search and Filter -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header">
+            <h6 class="mb-0"><i class="fas fa-filter me-2"></i>Search & Filter Collections</h6>
+        </div>
+        <div class="card-body">
+            <form id="filterForm" class="row g-3">
+                <div class="col-md-4">
+                    <label for="searchInput" class="form-label">Search Client</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                        <input type="text" id="searchInput" name="search" class="form-control" 
+                               placeholder="Search by client name..." value="{{ request.GET.search }}">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <label for="branchFilter" class="form-label">Branch</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-building"></i></span>
+                        <input type="text" id="branchFilter" name="branch" class="form-control" 
+                               placeholder="Filter by branch..." value="{{ request.GET.branch }}">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <label for="dateFilter" class="form-label">Date Range</label>
+                    <select id="dateFilter" name="date_filter" class="form-select">
+                        <option value="">All Time</option>
+                        <option value="today" {% if request.GET.date_filter == 'today' %}selected{% endif %}>Today</option>
+                        <option value="this_week" {% if request.GET.date_filter == 'this_week' %}selected{% endif %}>This Week</option>
+                        <option value="this_month" {% if request.GET.date_filter == 'this_month' %}selected{% endif %}>This Month</option>
+                        <option value="last_month" {% if request.GET.date_filter == 'last_month' %}selected{% endif %}>Last Month</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">&nbsp;</label>
+                    <div class="d-grid gap-2">
+                        <button type="button" id="applyFilters" class="btn btn-primary">
+                            <i class="fas fa-search me-1"></i>Search
+                        </button>
+                        <button type="button" id="clearFilters" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-1"></i>Clear
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Collections Table -->
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div id="collectionsContainer">
+                {% if collections %}
+                    <div class="table-responsive">
+                        <table class="table table-hover table-bordered" id="collectionsTable">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th width="5%">#</th>
+                                    <th width="15%">Client Name</th>
+                                    <th width="12%">Branch</th>
+                                    <th width="10%">Amount</th>
+                                    <th width="15%">Paid For</th>
+                                    <th width="12%">Date Created</th>
+                                    <th width="10%">Screenshot</th>
+                                    <th width="21%">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="collectionsTableBody">
+                                {% for collection in collections %}
+                                    <tr id="collection-row-{{ collection.id }}">
+                                        <td class="fw-bold">{{ forloop.counter }}</td>
+                                        <td>
+                                            <div class="fw-semibold">{{ collection.client_name }}</div>
+                                            {% if collection.notes %}
+                                                <small class="text-muted">{{ collection.notes|truncatechars:30 }}</small>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-secondary">{{ collection.branch }}</span>
+                                        </td>
+                                        <td>
+                                            <span class="fw-bold text-success">₹{{ collection.amount|floatformat:2 }}</span>
+                                        </td>
+                                        <td>
+                                            <span class="text-primary">{{ collection.paid_for|truncatechars:20 }}</span>
+                                        </td>
+                                        <td>
+                                            <small>{{ collection.created_at|date:"d M Y" }}<br>
+                                            <span class="text-muted">{{ collection.created_at|time:"H:i" }}</span></small>
+                                        </td>
+                                        <td class="text-center">
+                                            {% if collection.payment_screenshot %}
+                                                <button class="btn btn-sm btn-outline-info screenshot-btn" 
+                                                        onclick="viewScreenshot('{{ collection.payment_screenshot.url }}', '{{ collection.client_name }}')">
+                                                    <i class="fas fa-image me-1"></i>View
+                                                </button>
+                                            {% else %}
+                                                <span class="text-muted">No image</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="action-buttons">
+                                                <a href="{% url 'collections_edit' collection.id %}" 
+                                                   class="action-btn edit-btn" title="Edit Collection">
+                                                    <i class="fas fa-edit"></i>
+                                                    <span>Edit</span>
+                                                </a>
+                                                <button class="action-btn delete-btn" 
+                                                        onclick="deleteCollection(this, {{ collection.id }}, '{{ collection.client_name|escapejs }}')" 
+                                                        title="Delete Collection">
+                                                    <i class="fas fa-trash"></i>
+                                                    <span>Delete</span>
+                                                </button>
+                                                <a href="{% url 'collection_receipt' collection.id %}" 
+                                                   class="action-btn receipt-btn" title="Download Receipt">
+                                                    <i class="fas fa-receipt"></i>
+                                                    <span>Receipt</span>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    {% if is_paginated %}
+                        <nav aria-label="Page navigation" class="mt-3">
+                            <ul class="pagination justify-content-center">
+                                {% if page_obj.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.branch %}&branch={{ request.GET.branch }}{% endif %}{% if request.GET.date_filter %}&date_filter={{ request.GET.date_filter }}{% endif %}">First</a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.branch %}&branch={{ request.GET.branch }}{% endif %}{% if request.GET.date_filter %}&date_filter={{ request.GET.date_filter }}{% endif %}">Previous</a>
+                                    </li>
+                                {% endif %}
+
+                                <li class="page-item active">
+                                    <span class="page-link">{{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+                                </li>
+
+                                {% if page_obj.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.branch %}&branch={{ request.GET.branch }}{% endif %}{% if request.GET.date_filter %}&date_filter={{ request.GET.date_filter }}{% endif %}">Next</a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.branch %}&branch={{ request.GET.branch }}{% endif %}{% if request.GET.date_filter %}&date_filter={{ request.GET.date_filter }}{% endif %}">Last</a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    {% endif %}
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-money-check-alt fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No collections found</h5>
+                        <p class="text-muted">Start by adding your first collection record.</p>
+                        <a href="{% url 'collections_add' %}" class="btn btn-primary">
+                            <i class="fas fa-plus me-1"></i>Add First Collection
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Full Screen Screenshot Modal -->
+<div class="modal fade" id="screenshotModal" tabindex="-1">
+    <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content bg-dark">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title text-white">
+                    <i class="fas fa-image me-2"></i>Payment Screenshot
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body d-flex align-items-center justify-content-center p-0">
+                <div class="screenshot-container">
+                    <img id="screenshotImage" src="" alt="Payment Screenshot" class="screenshot-image">
+                    <div class="screenshot-controls">
+                        <button class="btn btn-light me-2" onclick="zoomIn()">
+                            <i class="fas fa-search-plus"></i> Zoom In
+                        </button>
+                        <button class="btn btn-light me-2" onclick="zoomOut()">
+                            <i class="fas fa-search-minus"></i> Zoom Out
+                        </button>
+                        <button class="btn btn-light" onclick="resetZoom()">
+                            <i class="fas fa-expand-arrows-alt"></i> Reset
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Modal -->
+<div class="modal fade" id="loadingModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-body text-center py-4">
+                <div class="spinner-border text-danger" role="status">
+                    <span class="visually-hidden">Processing...</span>
+                </div>
+                <p class="mt-3 mb-0">Processing request...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Global variables for zoom functionality
+let currentZoom = 1;
+const maxZoom = 3;
+const minZoom = 0.5;
+const zoomStep = 0.25;
+
+// Get CSRF token
+function getCSRFToken() {
+    return document.querySelector('[name=csrfmiddlewaretoken]').value;
+}
+
+// Get the URL pattern and replace the ID
+function getDeleteUrl(collectionId) {
+    const urlPattern = document.querySelector('meta[name="delete-url-pattern"]').content;
+    return urlPattern.replace('0', collectionId);
+}
+
+// Enhanced Filter Functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('searchInput');
+    const branchFilter = document.getElementById('branchFilter');
+    const dateFilter = document.getElementById('dateFilter');
+    const applyFilters = document.getElementById('applyFilters');
+    const clearFilters = document.getElementById('clearFilters');
+
+    // Real-time search functionality
+    let searchTimeout;
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(applyFiltersFunction, 500);
+    });
+
+    // Filter change handlers
+    branchFilter.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(applyFiltersFunction, 500);
+    });
+
+    dateFilter.addEventListener('change', applyFiltersFunction);
+
+    // Apply filters button
+    applyFilters.addEventListener('click', applyFiltersFunction);
+
+    // Clear filters button
+    clearFilters.addEventListener('click', function() {
+        searchInput.value = '';
+        branchFilter.value = '';
+        dateFilter.value = '';
+        applyFiltersFunction();
+    });
+
+    // Enter key support
+    document.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter' && (e.target === searchInput || e.target === branchFilter)) {
+            e.preventDefault();
+            applyFiltersFunction();
+        }
+    });
+});
+
+// Apply filters function
+function applyFiltersFunction() {
+    const searchValue = document.getElementById('searchInput').value.trim();
+    const branchValue = document.getElementById('branchFilter').value.trim();
+    const dateValue = document.getElementById('dateFilter').value;
+
+    // Build URL parameters
+    const params = new URLSearchParams();
+    if (searchValue) params.append('search', searchValue);
+    if (branchValue) params.append('branch', branchValue);
+    if (dateValue) params.append('date_filter', dateValue);
+
+    // Navigate to filtered results
+    const newUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
+    window.location.href = newUrl;
+}
+
+// Enhanced View Screenshot with full screen and zoom
+function viewScreenshot(imageUrl, clientName) {
+    const img = document.getElementById('screenshotImage');
+    const modal = document.getElementById('screenshotModal');
+    const modalTitle = modal.querySelector('.modal-title');
+    
+    // Reset zoom
+    currentZoom = 1;
+    
+    // Set image and title
+    img.src = imageUrl;
+    img.style.transform = `scale(${currentZoom})`;
+    modalTitle.innerHTML = `<i class="fas fa-image me-2"></i>Payment Screenshot - ${clientName}`;
+    
+    // Show modal
+    new bootstrap.Modal(modal).show();
+    
+    // Add image load handler
+    img.onload = function() {
+        resetZoom();
+    };
+}
+
+// Zoom functions
+function zoomIn() {
+    if (currentZoom < maxZoom) {
+        currentZoom += zoomStep;
+        updateImageZoom();
+    }
+}
+
+function zoomOut() {
+    if (currentZoom > minZoom) {
+        currentZoom -= zoomStep;
+        updateImageZoom();
+    }
+}
+
+function resetZoom() {
+    currentZoom = 1;
+    updateImageZoom();
+}
+
+function updateImageZoom() {
+    const img = document.getElementById('screenshotImage');
+    img.style.transform = `scale(${currentZoom})`;
+}
+
+// Mouse wheel zoom support
+document.getElementById('screenshotImage').addEventListener('wheel', function(e) {
+    e.preventDefault();
+    if (e.deltaY < 0) {
+        zoomIn();
+    } else {
+        zoomOut();
+    }
+});
+
+// Delete Collection with improved error handling
+function deleteCollection(btn, collectionId, clientName) {
+    if (!confirm(`Are you sure you want to delete the collection for "${clientName}"?\n\nThis action cannot be undone.`)) {
+        return;
+    }
+
+    const row = btn.closest('tr');
+    const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
+    loadingModal.show();
+
+    btn.disabled = true;
+
+    fetch(getDeleteUrl(collectionId), {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCSRFToken(),
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok: ' + response.status);
+        }
+        return response.json();
+    })
+    .then(data => {
+        loadingModal.hide();
+        if (data.success) {
+            row.style.transition = 'opacity 0.5s';
+            row.style.opacity = '0';
+            setTimeout(() => row.remove(), 500);
+            showAlert('success', data.message);
+            
+            // Update statistics
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
+        } else {
+            showAlert('danger', data.message || 'Deletion failed');
+            btn.disabled = false;
+        }
+    })
+    .catch(err => {
+        loadingModal.hide();
+        console.error('Delete error:', err);
+        showAlert('danger', 'Network error – please try again. ' + err.message);
+        btn.disabled = false;
+    });
+}
+
+// Show alert message
+function showAlert(type, message) {
+    const existingAlerts = document.querySelectorAll('.alert-dismissible');
+    existingAlerts.forEach(alert => alert.remove());
+    
+    const alertHtml = `
+        <div class="alert alert-${type} alert-dismissible fade show position-fixed" 
+             style="top: 20px; right: 20px; z-index: 9999; min-width: 300px;" role="alert">
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('afterbegin', alertHtml);
+    
+    setTimeout(() => {
+        const alert = document.querySelector('.alert-dismissible');
+        if (alert) {
+            const bsAlert = new bootstrap.Alert(alert);
+            bsAlert.close();
+        }
+    }, 5000);
+}
+</script>
+
+<style>
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    transition: box-shadow 0.3s ease;
+}
+
+.card:hover {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.table th {
+    font-weight: 600;
+    vertical-align: middle;
+    background: linear-gradient(135deg, #343a40 0%, #495057 100%);
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+/* Enhanced Action Buttons */
+.action-buttons {
+    display: flex;
+    gap: 5px;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 0.8rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    min-width: 70px;
+    height: 36px;
+    white-space: nowrap;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.action-btn i {
+    margin-right: 4px;
+    font-size: 0.9em;
+}
+
+.action-btn span {
+    font-size: 0.8em;
+    font-weight: 500;
+}
+
+/* Edit Button - Enhanced Yellow */
+.edit-btn {
+    color: #856404;
+    border-color: #ffc107;
+    background: linear-gradient(135deg, #fff3cd 0%, #ffecb5 100%);
+}
+
+.edit-btn:hover {
+    color: #533f03;
+    background: linear-gradient(135deg, #ffecb5 0%, #ffe082 100%);
+    border-color: #ffcd39;
+}
+
+/* Delete Button - Enhanced Red */
+.delete-btn {
+    color: #721c24;
+    border-color: #dc3545;
+    background: linear-gradient(135deg, #f8d7da 0%, #f1b0b7 100%);
+}
+
+.delete-btn:hover {
+    color: #491217;
+    background: linear-gradient(135deg, #f1b0b7 0%, #ea868f 100%);
+    border-color: #c82333;
+}
+
+/* Receipt Button - Enhanced Blue */
+.receipt-btn {
+    color: #004085;
+    border-color: #007bff;
+    background: linear-gradient(135deg, #cce7ff 0%, #99d1ff 100%);
+}
+
+.receipt-btn:hover {
+    color: #002752;
+    background: linear-gradient(135deg, #99d1ff 0%, #66c0ff 100%);
+    border-color: #0056b3;
+}
+/* Screenshot Button */
+.screenshot-btn {
+    transition: all 0.3s ease;
+}
+
+.screenshot-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(23, 162, 184, 0.2);
+}
+
+/* Full Screen Screenshot Modal */
+.modal-fullscreen .modal-content {
+    height: 100vh;
+}
+
+.screenshot-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: auto;
+}
+
+.screenshot-image {
+    max-width: 90%;
+    max-height: 90%;
+    object-fit: contain;
+    transition: transform 0.3s ease;
+    cursor: grab;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+.screenshot-image:active {
+    cursor: grabbing;
+}
+
+.screenshot-controls {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    padding: 10px 20px;
+    border-radius: 25px;
+    backdrop-filter: blur(10px);
+}
+
+.screenshot-controls .btn {
+    border-radius: 20px;
+    padding: 8px 16px;
+}
+
+/* Filter Enhancement */
+.card-header {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-bottom: 1px solid #dee2e6;
+    border-radius: 12px 12px 0 0;
+}
+
+.input-group-text {
+    background-color: #f8f9fa;
+    border-color: #ced4da;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* Badge Enhancement */
+.badge {
+    font-size: 0.75rem;
+    padding: 0.5em 0.75em;
+    border-radius: 0.5rem;
+}
+
+/* Table Enhancement */
+.table-hover tbody tr:hover {
+    background-color: rgba(13, 110, 253, 0.05);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
+}
+
+/* Loading animation */
+.spinner-border {
+    width: 3rem;
+    height: 3rem;
+}
+
+/* Smooth animations */
+.table tbody tr {
+    transition: all 0.3s ease;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    .action-buttons {
+        gap: 2px;
+    }
+    
+    .action-btn {
+        min-width: 60px;
+        padding: 5px 8px;
+    }
+    
+    .screenshot-controls {
+        bottom: 10px;
+        padding: 8px 16px;
+    }
+    
+    .screenshot-controls .btn {
+        padding: 6px 12px;
+        font-size: 0.8rem;
+    }
+    
+    .alert-dismissible {
+        position: relative !important;
+        top: auto !important;
+        right: auto !important;
+        margin-bottom: 1rem;
+        min-width: auto !important;
+    }
+}
+
+@media (max-width: 576px) {
+    .action-btn {
+        min-width: 50px;
+        padding: 4px 6px;
+    }
+    
+    .action-btn span {
+        font-size: 0.7em;
+    }
+    
+    .action-btn i {
+        font-size: 0.75em;
+    }
+}
+
+/* Custom scrollbar for modal */
+.screenshot-container::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.screenshot-container::-webkit-scrollbar-track {
+    background: #2c2c2c;
+}
+
+.screenshot-container::-webkit-scrollbar-thumb {
+    background: #666;
+    border-radius: 4px;
+}
+
+.screenshot-container::-webkit-scrollbar-thumb:hover {
+    background: #888;
+}
+</style>
+{% endblock %}
