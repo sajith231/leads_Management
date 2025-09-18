@@ -100,4 +100,33 @@ class KeyRequest(models.Model):
 
 
 
-        # hjs
+class Collection(models.Model):
+    client_name = models.CharField(max_length=255, help_text="Name of the client")
+    branch = models.CharField(max_length=255, help_text="Branch name")
+    amount = models.DecimalField(max_digits=10, decimal_places=2, help_text="Amount collected")
+    paid_for = models.CharField(max_length=255, help_text="What the payment was for")
+    payment_screenshot = models.ImageField(
+        upload_to='payment_screenshots/', 
+        help_text="Screenshot of the payment"
+    )
+    notes = models.TextField(blank=True, null=True, help_text="Additional notes")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.client_name} - ₹{self.amount}"
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "Collection"
+        verbose_name_plural = "Collections"
+
+    def get_amount_display(self):
+        """Return formatted amount with currency symbol"""
+        return f"₹{self.amount:,.2f}"
+
+    def get_short_notes(self):
+        """Return truncated notes for list display"""
+        if self.notes:
+            return self.notes[:50] + "..." if len(self.notes) > 50 else self.notes
+        return ""

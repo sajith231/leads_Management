@@ -3,6 +3,8 @@ import requests  # ADD THIS IMPORT
 import logging
 import json
 import requests
+import os
+import os, json, logging, requests
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.http import require_http_methods
@@ -11,8 +13,18 @@ from django.core.exceptions import ValidationError
 from app1.models import Branch
 from datetime import datetime, date
 from datetime import datetime, date
-from .models import License, KeyRequest 
+from .models import License, KeyRequest ,Collection
 from django.views.decorators.csrf import csrf_exempt
+from django.core.paginator import Paginator
+from django.db.models import Q, Sum
+from datetime import datetime, timedelta
+from django.utils import timezone
+from django.http import HttpResponse
+from django.template.loader import render_to_string
+from django.conf import settings
+from django.shortcuts import get_object_or_404
+from django.core.cache import cache
+
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -592,3 +604,473 @@ def reverse_geocode(lat, lon):
     except Exception as e:
         logger.error(f"Reverse geocode failed: {e}")
     return f"{lat}, {lon}"
+
+
+logger = logging.getLogger(__name__)
+
+# -------------  NEW:  always-fresh client helper  --------------
+EXTERNAL_CLIENTS_URL = "https://accmaster.imcbs.com/api/sync/rrc-clients/"
+
+def _load_clients() -> list:
+    """Return list[dict] with live client data (cached 5 min)."""
+    key = "external_clients"
+    cached = cache.get(key)
+    if cached is not None:
+        return cached
+    try:
+        r = requests.get(
+            EXTERNAL_CLIENTS_URL,
+            headers={"Accept": "application/json"},
+            timeout=10,
+        )
+        r.raise_for_status()
+        data = r.json()
+        cache.set(key, data, 300)          # 5-minute cache
+        return data
+    except Exception as exc:
+        logger.error("Could not load external clients: %s", exc)
+        return []                            # empty on failure
+# ----------------------------------------------------------------
+
+# --------------  collections_add  (re-written)  -----------------
+def collections_add(request):
+    """Add new collection – client auto-complete + branch auto-fill."""
+    clients = _load_clients()                # fresh every request
+    if request.method == "POST":
+        client_name = request.POST.get("client_name", "").strip()
+        branch      = request.POST.get("branch", "").strip()
+        amount      = request.POST.get("amount", "").strip()
+        paid_for    = request.POST.get("paid_for", "").strip()
+        screenshot  = request.FILES.get("payment_screenshot")
+        notes       = request.POST.get("notes", "").strip()
+
+        if not all([client_name, branch, amount, paid_for, screenshot]):
+            return render(request, "collections_add.html", {
+                "error": "Please fill all required fields and upload payment screenshot.",
+                "clients_json": clients,
+            })
+
+        try:
+            amount = float(amount)
+            if amount <= 0:
+                raise ValueError("Amount must be greater than 0")
+
+            allowed = {"image/jpeg", "image/jpg", "image/png", "image/gif"}
+            if screenshot.content_type not in allowed:
+                raise ValueError("Only JPG / PNG / GIF images are allowed.")
+            if screenshot.size > 5 * 1024 * 1024:
+                raise ValueError("File size must be less than 5 MB.")
+
+            Collection.objects.create(
+                client_name=client_name,
+                branch=branch,
+                amount=amount,
+                paid_for=paid_for,
+                payment_screenshot=screenshot,
+                notes=notes or None,
+            )
+            messages.success(request, f"Collection for {client_name} added successfully!")
+            return redirect("collections_list")
+
+        except ValueError as e:
+            return render(request, "collections_add.html", {
+                "error": str(e),
+                "clients_json": clients,
+            })
+        except Exception as e:
+            logger.error("Error saving collection: %s", e)
+            return render(request, "collections_add.html", {
+                "error": f"Error saving collection: {e}",
+                "clients_json": clients,
+            })
+
+    return render(request, "collections_add.html", {"clients_json": clients})
+
+def collections_list(request):
+    """List all collections with search and filter functionality"""
+    # Get filter parameters
+    search_query = request.GET.get('search', '').strip()
+    branch_filter = request.GET.get('branch', '').strip()
+    date_filter = request.GET.get('date_filter', '').strip()
+
+    # Start with all collections
+    collections = Collection.objects.all().order_by('-created_at')
+
+    # Apply search filter
+    if search_query:
+        collections = collections.filter(
+            Q(client_name__icontains=search_query) |
+            Q(paid_for__icontains=search_query) |
+            Q(notes__icontains=search_query)
+        )
+    
+    # Apply branch filter
+    if branch_filter:
+        collections = collections.filter(branch__icontains=branch_filter)
+
+    # Apply date filter
+    if date_filter:
+        today = timezone.now().date()
+        if date_filter == 'today':
+            collections = collections.filter(created_at__date=today)
+        elif date_filter == 'this_week':
+            week_start = today - timedelta(days=today.weekday())
+            collections = collections.filter(created_at__date__gte=week_start)
+        elif date_filter == 'this_month':
+            collections = collections.filter(
+                created_at__year=today.year,
+                created_at__month=today.month
+            )
+        elif date_filter == 'last_month':
+            if today.month == 1:
+                last_month_year = today.year - 1
+                last_month_month = 12
+            else:
+                last_month_year = today.year
+                last_month_month = today.month - 1
+            collections = collections.filter(
+                created_at__year=last_month_year,
+                created_at__month=last_month_month
+            )
+
+    # Calculate statistics
+    all_collections = Collection.objects.all()
+    total_amount = all_collections.aggregate(Sum('amount'))['amount__sum'] or 0
+    
+    today = timezone.now().date()
+    this_month_count = all_collections.filter(
+        created_at__year=today.year,
+        created_at__month=today.month
+    ).count()
+    
+    recent_count = all_collections.filter(
+        created_at__gte=timezone.now() - timedelta(days=7)
+    ).count()
+
+    # Pagination
+    paginator = Paginator(collections, 10)  # 10 items per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'collections_list.html', {
+        'collections': page_obj,
+        'total_amount': total_amount,
+        'this_month_count': this_month_count,
+        'recent_count': recent_count,
+        'is_paginated': page_obj.has_other_pages(),
+        'page_obj': page_obj,
+    })
+
+def collection_details(request, collection_id):
+    """Get collection details via AJAX"""
+    try:
+        collection = get_object_or_404(Collection, id=collection_id)
+        
+        return JsonResponse({
+            'success': True,
+            'id': collection.id,
+            'client_name': collection.client_name,
+            'branch': collection.branch,
+            'amount': str(collection.amount),
+            'paid_for': collection.paid_for,
+            'notes': collection.notes or '',
+            'created_at': collection.created_at.strftime('%d %B %Y'),
+            'created_time': collection.created_at.strftime('%H:%M'),
+            'has_screenshot': bool(collection.payment_screenshot),
+            'screenshot_url': collection.payment_screenshot.url if collection.payment_screenshot else None
+        })
+        
+    except Exception as e:
+        logger.error(f"Error getting collection details: {str(e)}")
+        return JsonResponse({
+            'success': False,
+            'message': f'Error loading details: {str(e)}'
+        }, status=500)
+
+@require_http_methods(["GET", "POST"])
+def collections_edit(request, collection_id):
+    """Edit collection record with client autocomplete functionality"""
+    collection = get_object_or_404(Collection, id=collection_id)
+    clients = _load_clients()  # Load fresh clients data for autocomplete
+    
+    if request.method == 'POST':
+        client_name = request.POST.get('client_name', '').strip()
+        branch = request.POST.get('branch', '').strip()
+        amount = request.POST.get('amount', '').strip()
+        paid_for = request.POST.get('paid_for', '').strip()
+        payment_screenshot = request.FILES.get('payment_screenshot')
+        notes = request.POST.get('notes', '').strip()
+
+        # Validation
+        if not all([client_name, branch, amount, paid_for]):
+            return render(request, 'collections_edit.html', {
+                'collection': collection,
+                'clients_json': clients,
+                'error': 'Please fill all required fields.'
+            })
+
+        try:
+            # Validate amount
+            amount = float(amount)
+            if amount <= 0:
+                raise ValueError("Amount must be greater than 0")
+
+            # Update fields
+            collection.client_name = client_name
+            collection.branch = branch
+            collection.amount = amount
+            collection.paid_for = paid_for
+            collection.notes = notes if notes else None
+
+            # Handle file upload
+            if payment_screenshot:
+                # Validate file type
+                allowed_types = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif']
+                if payment_screenshot.content_type not in allowed_types:
+                    raise ValueError("Only image files (JPG, PNG, GIF) are allowed")
+                
+                # Check file size (5MB limit)
+                if payment_screenshot.size > 5 * 1024 * 1024:
+                    raise ValueError("File size must be less than 5MB")
+                
+                # Delete old file if exists
+                if collection.payment_screenshot:
+                    if os.path.isfile(collection.payment_screenshot.path):
+                        os.remove(collection.payment_screenshot.path)
+                
+                collection.payment_screenshot = payment_screenshot
+
+            collection.save()
+            messages.success(request, f'Collection for {client_name} updated successfully!')
+            return redirect('collections_list')
+            
+        except ValueError as e:
+            return render(request, 'collections_edit.html', {
+                'collection': collection,
+                'clients_json': clients,
+                'error': str(e)
+            })
+        except Exception as e:
+            logger.error(f"Error updating collection: {str(e)}")
+            return render(request, 'collections_edit.html', {
+                'collection': collection,
+                'clients_json': clients,
+                'error': f'Error updating collection: {str(e)}'
+            })
+
+    return render(request, 'collections_edit.html', {
+        'collection': collection,
+        'clients_json': clients
+    })
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def collections_delete(request, collection_id):
+    """Delete collection record via AJAX"""
+    try:
+        print(f"Attempting to delete collection ID: {collection_id}")  # Debug line
+        logger.info(f"Delete request for collection ID: {collection_id}")
+        
+        collection = get_object_or_404(Collection, id=collection_id)
+        client_name = collection.client_name
+        
+        # Delete associated file
+        if collection.payment_screenshot:
+            try:
+                if os.path.isfile(collection.payment_screenshot.path):
+                    os.remove(collection.payment_screenshot.path)
+                    print(f"Deleted screenshot file for collection {collection_id}")
+            except Exception as e:
+                print(f"Error deleting screenshot file: {str(e)}")
+                logger.error(f"Error deleting screenshot file: {str(e)}")
+        
+        collection.delete()
+        print(f"Successfully deleted collection for {client_name}")  # Debug line
+        logger.info(f"Successfully deleted collection for {client_name}")
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'Collection for {client_name} deleted successfully'
+        })
+        
+    except Exception as e:
+        print(f"Error deleting collection: {str(e)}")  # Debug line
+        logger.error(f"Error deleting collection: {str(e)}")
+        return JsonResponse({
+            'success': False,
+            'message': f'Error deleting collection: {str(e)}'
+        }, status=500)
+    
+def collection_receipt(request, collection_id):
+    """Generate and download receipt for collection"""
+    try:
+        collection = get_object_or_404(Collection, id=collection_id)
+        
+        # Create simple receipt content
+        receipt_content = f"""
+        =======================================
+                    PAYMENT RECEIPT
+        =======================================
+        
+        Receipt No: COL-{collection.id:06d}
+        Date: {collection.created_at.strftime('%d %B %Y, %H:%M')}
+        
+        ---------------------------------------
+        CLIENT DETAILS
+        ---------------------------------------
+        Name: {collection.client_name}
+        Branch: {collection.branch}
+        
+        ---------------------------------------
+        PAYMENT DETAILS
+        ---------------------------------------
+        Amount Paid: ₹{collection.amount}
+        Paid For: {collection.paid_for}
+        
+        {f'Notes: {collection.notes}' if collection.notes else ''}
+        
+        ---------------------------------------
+        
+        This is a computer-generated receipt.
+        
+        Thank you for your payment!
+        
+        =======================================
+        """
+        
+        response = HttpResponse(receipt_content, content_type='text/plain')
+        response['Content-Disposition'] = f'attachment; filename="Receipt-{collection.client_name}-{collection.id}.txt"'
+        
+        return response
+        
+    except Exception as e:
+        logger.error(f"Error generating receipt: {str(e)}")
+        messages.error(request, f'Error generating receipt: {str(e)}')
+        return redirect('collections_list')
+    
+
+
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
+from django.http import JsonResponse
+import json
+
+# ---------- API: Add new collection (POST) ----------
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
+from django.http import JsonResponse
+from django.conf import settings
+import os
+import logging
+
+logger = logging.getLogger(__name__)
+
+# ---------- API: Add new collection (POST with image) ----------
+@csrf_exempt
+@require_http_methods(["POST"])
+def api_collections_add(request):
+    try:
+        client_name = request.POST.get("client_name", "").strip()
+        branch = request.POST.get("branch", "").strip()
+        amount = request.POST.get("amount", "").strip()
+        paid_for = request.POST.get("paid_for", "").strip()
+        notes = request.POST.get("notes", "").strip()
+        screenshot = request.FILES.get("payment_screenshot")
+
+        # Validate required fields
+        if not all([client_name, branch, amount, paid_for, screenshot]):
+            return JsonResponse(
+                {"success": False, "error": "All fields including screenshot are required"},
+                status=400
+            )
+
+        # Validate amount
+        try:
+            amount = float(amount)
+            if amount <= 0:
+                raise ValueError("Amount must be positive")
+        except ValueError as e:
+            return JsonResponse({"success": False, "error": str(e)}, status=400)
+
+        # Validate image
+        allowed = {"image/jpeg", "image/jpg", "image/png", "image/gif"}
+        if screenshot.content_type not in allowed:
+            return JsonResponse(
+                {"success": False, "error": "Only JPG, PNG, GIF images allowed"},
+                status=400
+            )
+        if screenshot.size > 5 * 1024 * 1024:
+            return JsonResponse(
+                {"success": False, "error": "File size must be < 5 MB"},
+                status=400
+            )
+
+        # Save record
+        collection = Collection.objects.create(
+            client_name=client_name,
+            branch=branch,
+            amount=amount,
+            paid_for=paid_for,
+            payment_screenshot=screenshot,
+            notes=notes or None,
+        )
+
+        return JsonResponse({
+            "success": True,
+            "message": "Collection added successfully",
+            "data": {
+                "id": collection.id,
+                "client_name": collection.client_name,
+                "branch": collection.branch,
+                "amount": str(collection.amount),
+                "paid_for": collection.paid_for,
+                "notes": collection.notes,
+                "created_at": collection.created_at.strftime("%Y-%m-%d %H:%M"),
+                "screenshot_url": collection.payment_screenshot.url if collection.payment_screenshot else None,
+            }
+        }, status=201)
+
+    except Exception as e:
+        logger.error(f"API error adding collection: {e}")
+        return JsonResponse({"success": False, "error": str(e)}, status=500)
+
+
+# ---------- API: Get all collections (GET) ----------
+@require_http_methods(["GET"])
+def api_collections_list(request):
+    try:
+        collections = Collection.objects.all().order_by("-created_at")
+        data = [
+            {
+                "id": c.id,
+                "client_name": c.client_name,
+                "branch": c.branch,
+                "amount": str(c.amount),
+                "paid_for": c.paid_for,
+                "notes": c.notes,
+                "created_at": c.created_at.strftime("%Y-%m-%d %H:%M"),
+                "screenshot_url": c.payment_screenshot.url if c.payment_screenshot else None,
+            }
+            for c in collections
+        ]
+        return JsonResponse({"success": True, "count": len(data), "data": data})
+    except Exception as e:
+        logger.error(f"API error fetching collections: {e}")
+        return JsonResponse({"success": False, "error": str(e)}, status=500)
+
+
+
+
+
+# http://127.0.0.1:8000/app4/api/collections/
+
+#http://127.0.0.1:8000/app4/api/collections/add/
+
+
+# {
+#   "client_name": "John Doe",
+#   "branch": "Kochi",
+#   "amount": "1200.50",
+#   "paid_for": "Annual Subscription",
+#   "notes": "First collection entry"
+# }
