@@ -281,6 +281,12 @@ body {
   display: none;
 }
 
+/* Notes styling - light red, italic, and bold */
+.notes-text {
+  color: #dc6868 !important;
+  font-style: italic !important;
+  font-weight: bold !important;
+}
 
 /******************************************************************
  *  MOBILE FIRST  (≤ 768px)
@@ -684,7 +690,7 @@ body {
         <i class="bi bi-file-earmark-text text-success me-2"></i>
         <span class="file-name-block">{{ license.name }}</span>
       </div>
-      <small class="text-muted ms-4">📝 Notes: {{ license.notes|default:"No notes added" }}</small>
+      <small class="notes-text ms-4">📝 Notes: {{ license.notes|default:"No notes added" }}</small>
     </div>
   </td>
   <td>
@@ -772,8 +778,8 @@ body {
   <i class="bi bi-file-earmark-text"></i>
   <span class="file-name-block">{{ license.name }}</span>
 </div>
-<!-- Notes remain here -->
-<div class="ms-4 text-muted" style="font-size: 0.8rem;">
+<!-- Notes remain here with styling applied -->
+<div class="notes-text ms-4" style="font-size: 0.8rem;">
   📝 Notes: {{ license.notes|default:"No notes added" }}
 </div>
 <div class="card-branch d-flex flex-column">

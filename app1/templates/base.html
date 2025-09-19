@@ -512,7 +512,7 @@
             <!-- Planet Menu -->
 
 
-{% if 'feeder_list' in allowed_menus or 'show_clients' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+{% if 'feeder_list' in allowed_menus or 'show_clients' in allowed_menus or 'key_request_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
 <div class="mainmenu" onclick="togglePlanetMenu()">
     <span>
         <i class="fas fa-globe"></i>
@@ -535,10 +535,13 @@
         License Key
     </a>
     {% endif %}
-    {% comment %} <a href="{% url 'key_request' %}">
+
+    {% if 'key_request_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+    <a href="{% url 'key_request_list' %}">
         <i class="fas fa-file-signature" style="margin-right: 5px;"></i>
         Key Request
-    </a> {% endcomment %}
+    </a>
+    {% endif %}
 </div>
 {% endif %}
 
@@ -562,6 +565,10 @@
 <a href="{% url 'app5:jobcard_assign_table' %}">
     <i class="fas fa-id-card"></i> Assigned Job
 </a>
+<a href="{% url 'app5:job_technician_accept' %}">
+    <i class="fas fa-id-card-alt"></i> My Job
+</a>
+
 
 </div>
 
@@ -656,7 +663,7 @@
                 <a href="{% url 'all_branches' %}"><i class="fas fa-code-branch"></i> Branch</a>
                 <a href="{% url 'users_table' %}"><i class="fas fa-users"></i> Users</a>
                 <a href="{% url 'reminder_type' %}"><i class="fas fa-bell"></i> Reminder Types</a>
-                <a href="{% url 'app5:item_master' %}"><i class="fas fa-bell"></i> Item Master</a>
+                
 
 
             </div>
@@ -826,7 +833,7 @@
             </div>
             {% endif %}
 
-            {% if 'feeder_list' in allowed_menus or 'show_clients' in allowed_menus or 'license_type' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+{% if 'feeder_list' in allowed_menus or 'show_clients' in allowed_menus or 'key_request_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
 <div class="mainmenu" onclick="togglePlanetMenu()">
     <span>
         <i class="fas fa-globe"></i>
@@ -849,35 +856,48 @@
         License Key
     </a>
     {% endif %}
-    {% comment %} <a href="{% url 'key_request' %}">
+    <a href="{% url 'key_request_list' %}">
         <i class="fas fa-file-signature" style="margin-right: 5px;"></i>
         Key Request
-    </a> {% endcomment %}
+    </a> 
 </div>
 {% endif %}
 
 
 
 
-{% if 'item_list' in allowed_menus %}
-    <div class="mainmenu" onclick="toggleSysmacMenu()">
-        <span>
-            <i class="fas fa-microchip"></i>
-            <span>SYSMAC</span>
-        </span>
-    </div>
+<!-- Fixed SYSMAC Menu Section for base.html -->
+{% if 'item_list' in allowed_menus or 'app5:jobcard_list' in allowed_menus or 'app5:jobcard_assign_table' in allowed_menus %}
+<div class="mainmenu" onclick="toggleSysmacMenu()">
+    <span>
+        <i class="fas fa-microchip"></i>
+        <span>SYSMAC</span>
+    </span>
+</div>
 
-    <div id="sysmac-menu" class="submenu">
-        <a href="{% url 'item_list' %}">
-            <i class="fas fa-users"></i> Stand By
-        </a>
-        <a href="{% url 'app5:jobcard_list' %}">
-    <i class="fas fa-id-card"></i> Job Card
+<div id="sysmac-menu" class="submenu">
+    {% if 'item_list' in allowed_menus %}
+    <a href="{% url 'item_list' %}">
+        <i class="fas fa-users"></i> Stand By
+    </a>
+    {% endif %}
+    
+    {% if 'app5:jobcard_list' in allowed_menus %}
+    <a href="{% url 'app5:jobcard_list' %}">
+        <i class="fas fa-id-card"></i> Job Card
+    </a>
+    {% endif %}
+    
+    {% if 'app5:jobcard_assign_table' in allowed_menus %}
     <a href="{% url 'app5:jobcard_assign_table' %}">
-    <i class="fas fa-id-card"></i> Assigned Job
+        <i class="fas fa-id-card-alt"></i> Assigned Job
+    </a>
+    {% endif %}
+    <a href="{% url 'app5:job_technician_accept' %}">
+    <i class="fas fa-id-card-alt"></i> My Job
 </a>
 
-    </div>
+</div>
 {% endif %}
 
             
@@ -911,7 +931,7 @@
         <i class="fas fa-user-check"></i> Your Assignments
     </a>
     {% endif %}
-    <a href="{% url 'app5:item_master' %}"><i class="fas fa-bell"></i> Item Master</a>
+    
 
 </div>
 {% endif %}

@@ -32,7 +32,14 @@ urlpatterns = [
     # Add this to your urlpatterns
     path('get-customer-by-ticket/<str:ticket_no>/', views.get_customer_by_ticket, name='get_customer_by_ticket'),
 
-    
+   path('suppliermaster/', views.supplier_master, name='supplier_master'),
+   path('suppliermaster/add/', views.supplier_master_add, name='supplier_master_add'),
+   path("suppliermaster/delete/<int:pk>/", views.supplier_master_delete, name="supplier_master_delete"),
+   path("suppliermaster/edit/<int:pk>/", views.supplier_master_edit, name="supplier_master_edit"),
+   
+
+   path("jobcard/technician-accept/", views.job_technician_accept, name="job_technician_accept"),
+   path("jobcard/<int:pk>/update-status/", views.update_jobcard_status, name="update_jobcard_status"),
 
 
 ]

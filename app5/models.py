@@ -19,7 +19,7 @@ class JobCard(models.Model):
     address = models.TextField()
     phone = models.CharField(max_length=50)
     technician = models.CharField(max_length=100, blank=True, null=True)
-
+    completion_details = models.JSONField(default=dict, blank=True)
     # Store all items and complaints as JSON data
     items_data = models.JSONField(default=list, help_text="Stores array of items with their complaints")
 
@@ -112,6 +112,21 @@ class JobCardImage(models.Model):
 # Model item master
 class Item(models.Model):
     name = models.CharField(max_length=255, unique=True)
+
+    def __str__(self):
+        return self.name
+    
+
+
+# supplier
+
+class Supplier(models.Model):
+    serial_no = models.CharField(max_length=50)  # <-- new field
+    name = models.CharField(max_length=200)
+    place = models.CharField(max_length=200)
+    phone = models.CharField(max_length=20)
+    address = models.TextField()
+
 
     def __str__(self):
         return self.name

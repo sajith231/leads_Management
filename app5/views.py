@@ -10,6 +10,8 @@ import json
 from collections import defaultdict
 import requests
 from django.core.paginator import Paginator
+from django.utils import timezone
+
 
 def jobcard_list(request):
     jobcards = JobCard.objects.all().order_by('-created_at')
@@ -415,6 +417,7 @@ def jobcard_assign_table(request):
     stats = {
         "total": JobCard.objects.count(),
         "logged": JobCard.objects.filter(status="logged").count(),
+        "accepted": JobCard.objects.filter(status="accepted").count(),  # Added this line
         "sent_technician": JobCard.objects.filter(status="sent_technician").count(),
         "pending": JobCard.objects.filter(status="pending").count(),
         "completed": JobCard.objects.filter(status="completed").count(),
@@ -428,46 +431,40 @@ def jobcard_assign_table(request):
     }
     return render(request, "jobcard_assign_table.html", context)
  
-from app1.models import User
-from django.contrib import messages
-from django.shortcuts import render, redirect
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
 
+from app1.models import User   # the model that holds your users
+
+# In views.py, update the assign_new_job function
 def assign_new_job(request):
     if request.method == 'POST':
         ticket_number = request.POST.get('ticketNumber')
-        status = request.POST.get('status')
-        technician_id = request.POST.get('technician')
-
+        technician = request.POST.get('technician')
+        status = request.POST.get('status', 'sent_technician')
+        
         try:
             jobcard = JobCard.objects.get(ticket_no=ticket_number)
+            jobcard.technician = technician
             jobcard.status = status
-
-            technician = User.objects.get(id=technician_id)
-            jobcard.technician = technician.name  # still stored as text
             jobcard.save()
-
-            messages.success(request, f'Job {ticket_number} has been assigned to {technician.name}!')
+            
+            messages.success(request, f"Job {ticket_number} assigned to {technician} successfully!")
             return redirect('app5:jobcard_assign_table')
         except JobCard.DoesNotExist:
-            messages.error(request, f'Job card with ticket number {ticket_number} not found!')
-            return redirect('app5:assign_new_job')
-
+            messages.error(request, f"Job card with ticket number {ticket_number} not found")
+        except Exception as e:
+            messages.error(request, f"Error assigning job: {str(e)}")
+    
+    # GET request - show the form
     jobcards = JobCard.objects.filter(status='logged').order_by("-created_at")
-
-    # ✅ show only active technicians (adjust condition)
-    technicians = User.objects.filter(
-        status='active',
-        user_level='3level'   # or job_role__name__icontains="technician"
-    ).order_by("branch__name", "name")
-
+    technicians = User.objects.filter(status='active').order_by('name')
+    
     context = {
         "jobcards": jobcards,
         "technicians": technicians,
     }
     return render(request, "jobcard_assign_form.html", context)
-
-
-
 
 def get_customer_by_ticket(request, ticket_no):
     """API endpoint to get customer details by ticket number"""
@@ -495,6 +492,7 @@ from django.contrib import messages
 
 def jobcard_assign_edit(request, pk):
     jobcard = get_object_or_404(JobCard, pk=pk)
+    technicians = User.objects.filter(status='active').order_by('name')  # Add this line
 
     if request.method == "POST":
         technician = request.POST.get("technician")
@@ -508,6 +506,134 @@ def jobcard_assign_edit(request, pk):
 
     context = {
         "assign": jobcard,
+        "technicians": technicians,  # Add this line
         "jobcards": JobCard.objects.all()
     }
     return render(request, "jobcard_assign_edit.html", context)
+
+# supplier
+
+
+from django.shortcuts import render, redirect, get_object_or_404
+from .models import Supplier
+
+def supplier_master(request):
+    suppliers = Supplier.objects.all().order_by('id')  # Add ordering by ID
+    return render(request, "supplier_master_table.html", {"suppliers": suppliers})
+
+def supplier_master_add(request):
+    if request.method == "POST":
+        name = request.POST.get("name")
+        place = request.POST.get("place")
+        phone = request.POST.get("phone")
+        address = request.POST.get("address")
+
+        Supplier.objects.create(
+            name=name,
+            place=place,
+            phone=phone,
+            address=address
+        )
+        return redirect("app5:supplier_master")
+
+    return render(request, "supplier_master_add.html")
+
+def supplier_master_delete(request, pk):
+    supplier = get_object_or_404(Supplier, pk=pk)
+    supplier.delete()
+    return redirect("app5:supplier_master")
+
+def supplier_master_edit(request, pk):
+    supplier = get_object_or_404(Supplier, pk=pk)
+
+    if request.method == "POST":
+        supplier.name = request.POST.get("name")
+        supplier.place = request.POST.get("place")
+        supplier.phone = request.POST.get("phone")
+        supplier.address = request.POST.get("address")
+        supplier.save()
+        return redirect("app5:supplier_master")  # back to table
+
+    return render(request, "supplier_master_edit.html", {"supplier": supplier}) 
+
+
+
+
+
+# views.py
+from django.shortcuts import render
+from .models import JobCard
+
+def job_technician_accept(request):
+    # Include all relevant jobcards for the logged-in technician
+    processed_jobcards = JobCard.objects.filter(
+        technician=request.user.get_full_name() or request.user.username,
+        status__in=["sent_technician", "accepted", "rejected", "completed"]
+    )
+
+    # Count by statuses
+    accepted_count = processed_jobcards.filter(status="accepted").count()
+    pending_count = processed_jobcards.filter(status="sent_technician").count()
+    rejected_count = processed_jobcards.filter(status="rejected").count()
+    completed_count = processed_jobcards.filter(status="completed").count()
+
+    total_count = (
+        accepted_count + pending_count + rejected_count + completed_count
+    )
+
+    context = {
+        "processed_jobcards": processed_jobcards,
+        "accepted_count": accepted_count,
+        "pending_count": pending_count,
+        "rejected_count": rejected_count,
+        "completed_count": completed_count,
+        "total_count": total_count,
+    }
+    return render(request, "job_technician_accept.html", context)
+
+
+
+@csrf_exempt
+def update_jobcard_status(request, pk):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            action = data.get("action")
+            completion_details = data.get("completion_details", {})
+
+            jobcard = JobCard.objects.get(pk=pk)
+
+            if action == "accepted":
+                jobcard.status = "accepted"
+            elif action == "rejected":
+                jobcard.status = "rejected"
+            elif action == "completed":
+                jobcard.status = "completed"
+                # Save completion details if provided
+                if completion_details:
+                    # Store completion details in the jobcard
+                    # You might want to add a completion_details field to your JobCard model
+                    # or store it in the existing items_data field
+                    if not hasattr(jobcard, 'completion_details') or jobcard.completion_details is None:
+                        jobcard.completion_details = {}
+                    
+                    jobcard.completion_details.update({
+                        'work_done': completion_details.get('work_done', ''),
+                        'parts_used': completion_details.get('parts_used', ''),
+                        'time_spent': completion_details.get('time_spent', '0'),
+                        'notes': completion_details.get('notes', ''),
+                        'completed_at': timezone.now().isoformat()
+                    })
+            else:
+                return JsonResponse({"success": False, "error": "Invalid action"})
+
+            jobcard.save()
+            return JsonResponse({"success": True})
+        except JobCard.DoesNotExist:
+            return JsonResponse({"success": False, "error": "JobCard not found"})
+        except Exception as e:
+            return JsonResponse({"success": False, "error": str(e)})
+    return JsonResponse({"success": False, "error": "Invalid request"})
+
+
+
