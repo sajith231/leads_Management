@@ -1,6 +1,8 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
+{% extends "base.html" %}
+
+{% block title %}Job Card List{% endblock %}
+
+{% block content %}
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Assign Job to Technician</title>
@@ -113,11 +115,16 @@
                                 <input type="hidden" name="customerName" id="hiddenCustomerName">
                             </div>
 
-                            <div class="mb-3">
-                                <label for="technician" class="form-label">Technician</label>
-                                <input type="text" class="form-control" id="technician" name="technician" 
-                                       placeholder="Enter technician name" required>
-                            </div>
+                            <!-- NEW dynamic select -->
+<div class="mb-3">
+    <label for="technician" class="form-label">Technician</label>
+    <select class="form-select" id="technician" name="technician" required>
+        <option value="">-- Choose technician --</option>
+        {% for tech in technicians %}
+        <option value="{{ tech.name }}">{{ tech.name }}</option>
+        {% endfor %}
+    </select>
+</div>
 
                             <div class="mb-3">
                                 <label class="form-label">Status</label>
@@ -185,5 +192,4 @@
             }
         });
     </script>
-</body>
-</html>
+{% endblock %}

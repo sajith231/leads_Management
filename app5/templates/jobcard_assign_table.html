@@ -16,7 +16,7 @@
             font-size: 0.85rem;
         } */
         .container-fluid {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
             padding: 0 10px;
         }
@@ -28,6 +28,9 @@
             margin-bottom: 15px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
+
+        
+
         .stats-container {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
@@ -68,7 +71,7 @@
         }
         .table {
             margin-bottom: 0;
-            min-width: 600px;
+            min-width: 800px;
         }
         .table th {
             background-color: #f1f7ff;
@@ -91,16 +94,17 @@
             border-radius: 10px;
             font-size: 0.7rem;
             font-weight: 600;
-            background-color: #fff8e1;
-            color: #ff8f00;
+            background-color: #dff2e8;
+            color: #08b21d;
             white-space: nowrap;
         }
-        .status-logged { background-color: #e3f2fd; color: #1976d2; }
-        .status-sent_technician { background-color: #fff8e1; color: #ff8f00; }
-        .status-pending { background-color: #fff3e0; color: #f57c00; }
-        .status-completed { background-color: #e8f5e9; color: #388e3c; }
+        .status-logged { background: #ed5b2e; color: #fff; }
+        .status-sent_technician {  background: #ef06cc; color: #fff; }
+        /* .status-pending { background-color: #fff3e0; color: #f57c00; } */
+        .status-completed { background: #10a41d; color: #fff; }
         .status-returned { background-color: #fbe9e7; color: #d84315; }
-        .status-rejected { background-color: #ffebee; color: #d32f2f; }
+        .status-rejected { background: #bd0214; color: #fff; }
+        .status-accepted { background: #060bf4; color: #fff; }
         
         .action-btn {
             padding: 2px 5px;
@@ -151,6 +155,32 @@
             font-size: 0.75rem;
             color: #6c757d;
         }
+
+        .back-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    background: white;
+    border-radius: 8px;
+    color: #0062cc;
+    text-decoration: none;
+    font-weight: 500;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    transition: all 0.3s;
+    margin-bottom: 12px;
+    border: none;
+    cursor: pointer;
+}
+.back-button:hover {
+    background: #0062cc;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+        .stat-card.accepted { border-left: 3px solid #20c997; }
+
         .page-link {
             padding: 0.25rem 0.5rem;
         }
@@ -169,7 +199,7 @@
             flex-wrap: nowrap;
         }
         .empty-state {
-            min-width: 600px;
+            min-width: 800px;
         }
         .filter-section {
             background-color: #f8f9fa;
@@ -187,17 +217,91 @@
             display: inline-block;
             margin-right: 10px;
         }
+        
+        /* Notes column styling */
+        .notes-cell {
+            max-width: 200px;
+            word-wrap: break-word;
+            font-size: 0.75rem;
+        }
+        
+        .completion-summary {
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            padding: 4px 6px;
+            margin: 2px 0;
+            border-left: 3px solid #28a745;
+        }
+        
+        .completion-item {
+            margin-bottom: 2px;
+            font-size: 0.7rem;
+        }
+        
+        .completion-label {
+            font-weight: 600;
+            color: #495057;
+        }
+        
+        .completion-value {
+            color: #6c757d;
+        }
+        
+        .btn-notes {
+            background-color: #17a2b8;
+            color: white;
+            border: none;
+            padding: 1px 4px;
+            font-size: 0.65rem;
+        }
+        
+        .btn-notes:hover {
+            background-color: #138496;
+            color: white;
+        }
+
+        /* Modal for detailed notes */
+        .modal-header {
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .modal-body .detail-item {
+            margin-bottom: 10px;
+            padding: 8px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+        }
+        
+        .modal-body .detail-label {
+            font-weight: 600;
+            color: #495057;
+            display: block;
+            margin-bottom: 4px;
+        }
+        
+        .modal-body .detail-value {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
     </style>
-
-
-
+    
     <div class="container-fluid">
-        <div class="dashboard-header">
-            <div class="d-flex justify-content-between align-items-center">
-                <h2 class="h5 mb-0"><i class="fas fa-tasks me-1"></i> Job Card Assignment</h2>
-            </div>
-            <p class="mb-0 mt-1 small">Manage and track all job card assignments to technicians</p>
+    <div class="mb-2">
+       <div>
+    <button class="back-button" onclick="goBack()">
+        <i class="fas fa-arrow-left"></i> Back
+    </button>
+</div>
+    </div>
+
+    <div class="dashboard-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2 class="h5 mb-0"><i class="fas fa-tasks me-1"></i> Job Card Assignment</h2>
         </div>
+        <p class="mb-0 mt-1 small">Manage and track all job card assignments to technicians</p>
+    </div>
+
 
         <!-- Statistics Cards -->
         <div class="stats-container">
@@ -206,11 +310,15 @@
                 <div class="stat-number">{{ stats.total }}</div>
             </div>
             <div class="stat-card pending">
-                <div class="stat-label">Pending</div>
+                <div class="stat-label">Logged</div>
                 <div class="stat-number">{{ stats.logged }}</div>
             </div>
+            <div class="stat-card accepted">
+                <div class="stat-label">Accepted</div>
+                <div class="stat-number">{{ stats.accepted }}</div>
+            </div>
             <div class="stat-card in-progress">
-                <div class="stat-label">In Progress</div>
+                <div class="stat-label">Sent To Technician</div>
                 <div class="stat-number">{{ stats.sent_technician }}</div>
             </div>
             <div class="stat-card completed">
@@ -227,30 +335,27 @@
             </div>
         </div>
 
-        <!-- Status Filter Dropdown -->
         <!-- Filter + Search in same line -->
-<div class="filter-section">
-    <div class="row g-2 align-items-center">
-        <div class="col-md-4">
-            <label for="statusFilterDropdown" class="filter-label mb-0">Filter by Status:</label>
-            <select class="form-select form-select-sm d-inline-block w-auto ms-2" id="statusFilterDropdown">
-                <option value="all">All Jobs</option>
-                <option value="logged" selected>Logged</option>
-                <option value="sent_technician">In Progress</option>
-                <option value="completed">Completed</option>
-                <option value="returned">Returned</option>
-                <option value="rejected">Rejected</option>
-            </select>
-        </div>
-        <div class="col-md-8">
-            <div class="input-group input-group-sm">
-                <input type="text" class="form-control" placeholder="Search tickets..." id="searchInput">
-                
-                </button>
+        <div class="filter-section">
+            <div class="row g-2 align-items-center">
+                <div class="col-md-4">
+                    <label for="statusFilterDropdown" class="filter-label mb-0">Filter by Status:</label>
+                    <select class="form-select form-select-sm d-inline-block w-auto ms-2" id="statusFilterDropdown">
+                        <option value="all">All Jobs</option>
+                        <option value="logged" selected>Logged</option>
+                        <option value="sent_technician">In Progress</option>
+                        <option value="completed">Completed</option>
+                        <option value="returned">Returned</option>
+                        <option value="rejected">Rejected</option>
+                    </select>
+                </div>
+                <div class="col-md-8">
+                    <div class="input-group input-group-sm">
+                        <input type="text" class="form-control" placeholder="Search tickets..." id="searchInput">
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
-</div>
 
         <!-- Job Cards Table -->
         <div class="table-container">
@@ -262,6 +367,7 @@
                             <th>Customer</th>
                             <th>Technician</th>
                             <th>Status</th>
+                            <th>Notes</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -278,10 +384,32 @@
                                     <span class="text-muted">Not assigned</span>
                                 {% endif %}
                             </td>
+                            
                             <td>
                                 <span class="status-badge status-{{ jobcard.status }}">
                                     {{ jobcard.get_status_display }}
                                 </span>
+                            </td>
+                            
+                            <!-- Notes Column -->
+                            <td class="notes-cell">
+                                {% if jobcard.status == 'completed' and jobcard.completion_details %}
+                                   
+                                        
+                                        <button class="btn btn-notes btn-sm mt-1" 
+                                                onclick="showNotesModal('{{ jobcard.id }}', '{{ jobcard.ticket_no }}', 
+                                                '{{ jobcard.completion_details.work_done|default:""|escapejs }}',
+                                                '{{ jobcard.completion_details.parts_used|default:""|escapejs }}',
+                                                '{{ jobcard.completion_details.time_spent|default:""|escapejs }}',
+                                                '{{ jobcard.completion_details.notes|default:""|escapejs }}',
+                                                '{{ jobcard.completion_details.completed_at|default:""|escapejs }}')"
+                                                title="View full details">
+                                            <i class="fas fa-eye"></i> 
+                                        </button>
+                                    </div>
+                                {% else %}
+                                    <span class="text-muted small">-</span>
+                                {% endif %}
                             </td>
                             
                             <td>
@@ -292,11 +420,10 @@
                                         <i class="fas fa-user-plus"></i>
                                     </a>
                                     {% endif %}
-                                  <a href="{% url 'app5:jobcard_assign_edit' jobcard.pk %}" 
-                                  class="btn btn-sm btn-edit action-btn" title="Edit">
-                                  <i class="fas fa-edit"></i>
-                                  </a>
-
+                                    <a href="{% url 'app5:jobcard_assign_edit' jobcard.pk %}" 
+                                      class="btn btn-sm btn-edit action-btn" title="Edit">
+                                      <i class="fas fa-edit"></i>
+                                    </a>
                                     
                                     <button class="btn btn-sm btn-delete action-btn" 
                                             title="Delete" 
@@ -308,7 +435,7 @@
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="7" class="text-center py-3 empty-state">
+                            <td colspan="6" class="text-center py-3 empty-state">
                                 <i class="fas fa-inbox fa-lg text-muted mb-1"></i>
                                 <p class="text-muted small mb-0">No job cards found</p>
                             </td>
@@ -345,12 +472,65 @@
         </div>
     </div>
 
+    <!-- Notes Detail Modal -->
+    <div class="modal fade" id="notesModal" tabindex="-1" aria-labelledby="notesModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="notesModalLabel">
+                        <i class="fas fa-clipboard-check me-2"></i>Job Completion Details
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="detail-item">
+                        <span class="detail-label">Ticket Number:</span>
+                        <span class="detail-value" id="modalTicketNo"></span>
+                    </div>
+                    
+                    <div class="detail-item">
+                        <span class="detail-label">Work Done:</span>
+                        <span class="detail-value" id="modalWorkDone"></span>
+                    </div>
+                    
+                    <div class="detail-item">
+                        <span class="detail-label">Parts Used:</span>
+                        <span class="detail-value" id="modalPartsUsed"></span>
+                    </div>
+                    
+                    <div class="detail-item">
+                        <span class="detail-label">Time Spent:</span>
+                        <span class="detail-value" id="modalTimeSpent"></span>
+                    </div>
+                    
+                    <div class="detail-item">
+                        <span class="detail-label">Additional Notes:</span>
+                        <span class="detail-value" id="modalNotes"></span>
+                    </div>
+                    
+                    <div class="detail-item">
+                        <span class="detail-label">Completed At:</span>
+                        <span class="detail-value" id="modalCompletedAt"></span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         // Set default filter to show only "Logged" status
         document.addEventListener('DOMContentLoaded', function() {
             filterByStatus('logged');
         });
+
+        function goBack() {
+    window.history.back();
+}
+
 
         // Status dropdown functionality
         document.getElementById('statusFilterDropdown').addEventListener('change', function() {
@@ -381,7 +561,7 @@
                     const emptyRow = document.createElement('tr');
                     emptyRow.className = 'no-results-message';
                     emptyRow.innerHTML = `
-                        <td colspan="7" class="text-center py-3">
+                        <td colspan="6" class="text-center py-3">
                             <i class="fas fa-search fa-lg text-muted mb-1"></i>
                             <p class="text-muted small mb-0">No job cards found with the selected status</p>
                         </td>
@@ -399,41 +579,60 @@
 
         // Search functionality
         document.getElementById('searchInput').addEventListener('input', function() {
-    const searchTerm = this.value.toLowerCase();
-    const rows = document.querySelectorAll('.jobcard-row');
-    let visibleCount = 0;
+            const searchTerm = this.value.toLowerCase();
+            const rows = document.querySelectorAll('.jobcard-row');
+            let visibleCount = 0;
 
-    rows.forEach(row => {
-        const text = row.textContent.toLowerCase();
-        if (text.includes(searchTerm)) {
-            row.style.display = '';
-            visibleCount++;
-        } else {
-            row.style.display = 'none';
-        }
-    });
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                if (text.includes(searchTerm)) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
 
-    // Show message if no rows are visible after search
-    if (visibleCount === 0) {
-        if (!document.querySelector('.no-search-results')) {
-            const emptyRow = document.createElement('tr');
-            emptyRow.className = 'no-search-results';
-            emptyRow.innerHTML = `
-                <td colspan="7" class="text-center py-3">
-                    <i class="fas fa-search fa-lg text-muted mb-1"></i>
-                    <p class="text-muted small mb-0">No job cards match your search</p>
-                </td>
-            `;
-            document.getElementById('jobcardsTableBody').appendChild(emptyRow);
-        }
-    } else {
-        const emptyMessage = document.querySelector('.no-search-results');
-        if (emptyMessage) {
-            emptyMessage.remove();
-        }
-    }
-});
+            // Show message if no rows are visible after search
+            if (visibleCount === 0) {
+                if (!document.querySelector('.no-search-results')) {
+                    const emptyRow = document.createElement('tr');
+                    emptyRow.className = 'no-search-results';
+                    emptyRow.innerHTML = `
+                        <td colspan="6" class="text-center py-3">
+                            <i class="fas fa-search fa-lg text-muted mb-1"></i>
+                            <p class="text-muted small mb-0">No job cards match your search</p>
+                        </td>
+                    `;
+                    document.getElementById('jobcardsTableBody').appendChild(emptyRow);
+                }
+            } else {
+                const emptyMessage = document.querySelector('.no-search-results');
+                if (emptyMessage) {
+                    emptyMessage.remove();
+                }
+            }
+        });
 
+        // Show notes modal
+        function showNotesModal(jobId, ticketNo, workDone, partsUsed, timeSpent, notes, completedAt) {
+            document.getElementById('modalTicketNo').textContent = ticketNo;
+            document.getElementById('modalWorkDone').textContent = workDone || 'Not specified';
+            document.getElementById('modalPartsUsed').textContent = partsUsed || 'None';
+            document.getElementById('modalTimeSpent').textContent = timeSpent ? timeSpent + ' hours' : '0 hours';
+            document.getElementById('modalNotes').textContent = notes || 'No additional notes';
+            
+            // Format the completed date if available
+            if (completedAt) {
+                const date = new Date(completedAt);
+                document.getElementById('modalCompletedAt').textContent = date.toLocaleString();
+            } else {
+                document.getElementById('modalCompletedAt').textContent = 'Not available';
+            }
+            
+            const modal = new bootstrap.Modal(document.getElementById('notesModal'));
+            modal.show();
+        }
 
         // Delete confirmation
         function confirmDelete(ticketNo) {

@@ -25,8 +25,14 @@
         gap: 15px;
     }
    
+    /* Ticket number and creator styling */
+    .ticket-info {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        align-items: center;
+    }
 
-    /* Ticket number styling */
     .ticket-number {
         font-weight: bold;
         font-size: 12px;
@@ -48,6 +54,26 @@
         box-shadow: 0 4px 8px rgba(33, 150, 243, 0.3);
     }
 
+    /* Creator info styling */
+     .creator-info {
+        font-size: 12px;
+        color: #ef0707;
+        background: #fff;
+        padding: 2px 6px;
+        border-radius: 3px;
+        border: 2px solid #6a7b10;
+        display: flex;
+        align-items: center;
+        gap: 3px;
+        min-width: 100px;
+        justify-content: center;
+    }
+
+    .creator-info i {
+        font-size: 12px;
+        color: #080808;
+    }
+
     /* Highlight Important Fields */
     .highlight-text {
         font-weight: bold;
@@ -66,56 +92,54 @@
 
     /* Customer info combined styling */
     .customer-info {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    min-width: 200px;
-}
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        min-width: 200px;
+    }
 
-.customer-field {
-    display: flex;
-    align-items: center;
-    font-weight: bold;
-    gap: 6px;
-}
+    .customer-field {
+        display: flex;
+        align-items: center;
+        font-weight: bold;
+        gap: 6px;
+    }
 
-.customer-field i {
-    font-size: 14px;
-    width: 16px;
-    text-align: center;
-}
+    .customer-field i {
+        font-size: 14px;
+        width: 16px;
+        text-align: center;
+    }
 
-/* Specific styles */
-.customer-field.name {
-    color: #000;
-    font-size: 12px;
-    background: #f9afb2;
-    padding: 2px 6px;
-    border-radius: 4px;
-}
-.customer-field.name i {
-    color: #f80303;   /* orange icon for user */
-}
+    /* Specific styles */
+    .customer-field.name {
+        color: #000;
+        font-size: 12px;
+        background: #f9afb2;
+        padding: 2px 6px;
+        border-radius: 4px;
+    }
+    .customer-field.name i {
+        color: #f80303;   /* orange icon for user */
+    }
 
-.customer-field.address {
-    color: #000;
-    font-size: 12px;
-    white-space: pre-wrap;
-    word-wrap: break-word;
-}
-.customer-field.address i {
-    color: #f68206;   /* green icon for location */
-}
+    .customer-field.address {
+        color: #000;
+        font-size: 12px;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+    }
+    .customer-field.address i {
+        color: #f68206;   /* green icon for location */
+    }
 
-.customer-field.phone {
-    color: #0f0f0f;
-    font-size: 14px;
-}
-.customer-field.phone i {
-    color: #007bff;   /* red icon for phone */
-}
-
-
+    .customer-field.phone {
+        color: #0f0f0f;
+        font-size: 14px;
+    }
+    .customer-field.phone i {
+        color: #007bff;   /* red icon for phone */
+    }
 
     .search-box {
         display: flex;
@@ -162,29 +186,30 @@
         cursor: pointer;
         min-width: 150px;
     }
-.parent-container {
-    display: flex;
-    justify-content: flex-end;
-}
+    
+    .parent-container {
+        display: flex;
+        justify-content: flex-end;
+    }
 
-.btn-add {
-    padding: 12px 18px;
-    background: black;
-    color: #fff;
-    text-decoration: none;
-    font-size: 16px;
-    font-weight: bold;
-    border-radius: 6px;
-    transition: .3s;
-    border: none;
-    cursor: pointer;
-}
+    .btn-add {
+        padding: 12px 18px;
+        background: black;
+        color: #fff;
+        text-decoration: none;
+        font-size: 16px;
+        font-weight: bold;
+        border-radius: 6px;
+        transition: .3s;
+        border: none;
+        cursor: pointer;
+    }
     .btn-add:hover { background: #7e807f; }
     .btn-print {
         background: #6c757d !important;
     }
     .btn-clear {
-        background: #17a2b8 !important;
+        background: #0a0a0a !important;
     }
     .btn-today {
         background: #28a745 !important;
@@ -230,7 +255,7 @@
         border-bottom: 1px solid #bca3a3;
         vertical-align: top;
     }
-   .item-section {
+    .item-section {
         margin-bottom: 12px;
         padding: 8px;
         border-radius: 4px;
@@ -267,14 +292,13 @@
         font-style: italic;
     }
     
-    
     .status-badge {
         display: inline-block;
         padding: 3px 8px;
         border-radius: 12px;
         border-color: #007bff;
         color: white;
-        background-color: #17a2b8;
+        background-color: #08b21d;
         font-size: 10px;
         font-weight: bold;
         text-transform: uppercase;
@@ -287,12 +311,12 @@
         transform: scale(1.1);
         box-shadow: 0 2px 4px rgba(0,0,0,0.2);
     }
-    .status-logged { background: #ffc107; color: #000; }
-    .status-sent_technician { background: #17a2b8; color: #fff; }
-    .status-pending { background: #6c757d; color: #fff; }
-    .status-completed { background: #28a745; color: #fff; }
-    .status-returned { background: #6f42c1; color: #fff; }
-    .status-rejected { background: #dc3545; color: #fff; }
+    .status-logged { background: #ed5b2e; color: #fff; }
+    .status-sent_technician { background: #ef06cc; color: #fff; }
+    .status-completed { background: #10a41d; color: #fff; }
+    .status-accepted { background: #060bf4; color: #fff; }
+    .status-returned { background: #915af6; color: #fff; }
+    .status-rejected {  background: #bd0214; color: #fff; }
     
     .btn-edit, .btn-delete {
         background: orange;
@@ -558,7 +582,7 @@
     .btn-cancel:hover {
         background: #5a6268;
         transform: translateY(-2px);
-        box-shadow: 0 4px极狐 8px rgba(0,0,0,0.2);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
     }
 
     /* Loading state */
@@ -580,7 +604,6 @@
         border-radius: 50%;
         animation: spin 1s linear infinite;
     }
-
 
     /* Pagination Styles */
     .pagination {
@@ -654,7 +677,6 @@
         .date-inputs input[type="date"] {
             width: 100%;
         }
-        
     }
 </style>
 
@@ -678,7 +700,7 @@
         <div class="search-box">
             <input type="text" id="searchInput" placeholder="Search by Customer Name or Item">
         </div>
-       <div id="searchResultsInfo" class="search-results-info"></div>
+     
         <div class="date-inputs">
             <label>From:</label>
             <input type="date" id="dateFrom" title="Filter from date">
@@ -709,9 +731,11 @@
         <a href="{% url 'app5:item_master' %}" class="btn-add btn-service" title="Service Items">
             <i class="fas fa-tools"></i> Service Items
         </a>
+        <a href="{% url 'app5:supplier_master' %}" class="btn-add btn-supplier" title="Supplier Master">
+        <i class="fas fa-industry"></i> Supplier Master
+    </a>
     </div>
 </div>
-
 
 <div class="table-container">
     <table id="jobTable">
@@ -719,7 +743,7 @@
             <tr>
                 <th>Sl No</th>
                 <th>Created Date</th>
-                <th>Ticket No</th>
+                <th>Ticket No & Creator</th> <!-- Updated header -->
                 <th>Customer Details</th>
                 <th>Items & Details</th>
                 <th>Complaints</th>
@@ -735,24 +759,58 @@
                     <td>{{ forloop.counter0|add:page_obj.start_index }}</td>
                     <td>{{ jobcard.created_at|date:"d/m/Y" }}</td>
                     <td>
-                        <span class="ticket-number">{{ jobcard.ticket_no }}</span>
+                        <div class="ticket-info">
+                            <span class="ticket-number">{{ jobcard.ticket_no }}</span>
+                            <div class="creator-info">
+                                <i class="fas fa-user-edit"></i>
+                                <span>
+                                    {% if jobcard.created_by %}
+                                        {% if jobcard.created_by.name %}
+                                            {{ jobcard.created_by.name }}
+                                        {% elif jobcard.created_by.username %}
+                                            {{ jobcard.created_by.username }}
+                                        {% else %}
+                                            User ID: {{ jobcard.created_by.id }}
+                                        {% endif %}
+                                    {% elif jobcard.user %}
+                                        {% if jobcard.user.name %}
+                                            {{ jobcard.user.name }}
+                                        {% elif jobcard.user.username %}
+                                            {{ jobcard.user.username }}
+                                        {% else %}
+                                            User ID: {{ jobcard.user.id }}
+                                        {% endif %}
+                                    {% elif jobcard.added_by %}
+                                        {% if jobcard.added_by.name %}
+                                            {{ jobcard.added_by.name }}
+                                        {% elif jobcard.added_by.username %}
+                                            {{ jobcard.added_by.username }}
+                                        {% else %}
+                                            User ID: {{ jobcard.added_by.id }}
+                                        {% endif %}
+                                    {% else %}
+                                        Unknown User
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
                     </td>
-                   <td>
-    <div class="customer-info">
-        <div class="customer-field name">
-            <i class="fas fa-user"></i>
-            <span>{{ jobcard.customer }}</span>
-        </div>
-        <div class="customer-field address">
-            <i class="fas fa-map-marker-alt"></i>
-            <span>{{ jobcard.address }}</span>
-        </div>
-        <div class="customer-field phone">
-            <i class="fas fa-phone"></i>
-            <span>{{ jobcard.phone }}</span>
-        </div>
-    </div>
-</td>
+                    <td>
+                        <div class="customer-info">
+                            <div class="customer-field name">
+                                <i class="fas fa-user"></i>
+                                <span>{{ jobcard.customer }}</span>
+                            </div>
+                            <div class="customer-field address">
+                                <i class="fas fa-map-marker-alt"></i>
+                                <span>{{ jobcard.address }}</span>
+                            </div>
+                            <div class="customer-field phone">
+                                <i class="fas fa-phone"></i>
+                                <span>{{ jobcard.phone }}</span>
+                            </div>
+                        </div>
+                    </td>
 
                     <td>
                         {% for item_data in jobcard.items_data %}
@@ -791,29 +849,30 @@
                         {% endfor %}
                     </td>
                     <td data-status-column>
-    {% for item_data in jobcard.items_data %}
-        <div style="margin-bottom: 8px;">
-            <div style="font-size: 12px; color: #070707;">{{ item_data.item }}:</div>
-            {% with status=item_data.status|default:jobcard.status %}
-            <span class="status-badge status-{{ status }}" 
-                  data-jobcard-id="{{ jobcard.pk }}"
-                  data-item-index="{{ forloop.counter0 }}"
-                  data-status="{{ status }}"
-                  onclick="updateStatus({{ jobcard.pk }}, '{{ status }}', {{ forloop.counter0 }}, '{{ item_data.item|escapejs }}')"
-                  title="Click to change status for {{ item_data.item }}">
-                {% if status == 'logged' %}Logged
-                {% elif status == 'sent_technician' %}Sent To Technician
-                {% elif status == 'pending' %}Pending
-                {% elif status == 'completed' %}Completed
-                {% elif status == 'returned' %}Returned
-                {% elif status == 'rejected' %}Rejected
-                {% else %}{{ status|capfirst }}
-                {% endif %}
-            </span>
-            {% endwith %}
-        </div>
-    {% endfor %}
-</td>              <td style="text-align: center;">
+                        {% for item_data in jobcard.items_data %}
+                            <div style="margin-bottom: 8px;">
+                                <div style="font-size: 12px; color: #070707;">{{ item_data.item }}:</div>
+                                {% with status=item_data.status|default:jobcard.status %}
+                                <span class="status-badge status-{{ status }}" 
+                                      data-jobcard-id="{{ jobcard.pk }}"
+                                      data-item-index="{{ forloop.counter0 }}"
+                                      data-status="{{ status }}"
+                                      onclick="updateStatus({{ jobcard.pk }}, '{{ status }}', {{ forloop.counter0 }}, '{{ item_data.item|escapejs }}')"
+                                      title="Click to change status for {{ item_data.item }}">
+                                    {% if status == 'logged' %}Logged
+                                    {% elif status == 'sent_technician' %}Sent To Technician
+                                    {% elif status == 'pending' %}Pending
+                                    {% elif status == 'completed' %}Completed
+                                    {% elif status == 'returned' %}Returned
+                                    {% elif status == 'rejected' %}Rejected
+                                    {% else %}{{ status|capfirst }}
+                                    {% endif %}
+                                </span>
+                                {% endwith %}
+                            </div>
+                        {% endfor %}
+                    </td>              
+                    <td style="text-align: center;">
                         {% for item_data in jobcard.items_data %}
                             {% for complaint in item_data.complaints %}
                                 {% if complaint.notes %}
@@ -1153,7 +1212,7 @@
     // Clear all filters function
     function clearAllFilters() {
         document.getElementById('searchInput').value = '';
-        document.getElementById('statusFilter').value = '';
+        document.getElementById('statusFilter').value = 'logged';
         document.getElementById('dateFrom').value = '';
         document.getElementById('dateTo').value = '';
         
@@ -1279,7 +1338,6 @@
         })
         .catch(error => {
             console.error('Status update error:', error);
-            // showAlert(`⛔ Error updating status: ${error.message}`, 'error');
             
             if (statusBadge) {
                 statusBadge.classList.remove('status-updating');
@@ -1483,9 +1541,9 @@
         setTimeout(() => {
             if (alert.parentNode) {
                 alert.style.opacity = '0';
-                setTimeout(() => alert.remove(), 300);
+                setTimeout(() => alert.remove(), 100);
             }
-        }, 10000);
+        }, 300);
     }
 
     // Close modals when clicking outside
@@ -1514,24 +1572,20 @@
         
         if (status) {
             document.getElementById('statusFilter').value = status;
+        } else {
+            // ✅ Default to "logged"
+            document.getElementById('statusFilter').value = 'logged';
         }
-        if (search) {
-            document.getElementById('searchInput').value = search;
-        }
-        if (dateFrom) {
-            document.getElementById('dateFrom').value = dateFrom;
-        }
-        if (dateTo) {
-            document.getElementById('dateTo').value = dateTo;
-        }
+
+        if (search) document.getElementById('searchInput').value = search;
+        if (dateFrom) document.getElementById('dateFrom').value = dateFrom;
+        if (dateTo) document.getElementById('dateTo').value = dateTo;
         
-        // Perform initial search to show results
-        if (status || search || dateFrom || dateTo) {
-            setTimeout(performSearch, 100); // Small delay to ensure DOM is fully loaded
-        }
-        
+        // ✅ Always perform initial search (so "logged" is applied by default)
+        setTimeout(performSearch, 100);
+
         console.log('✅ Job Card List initialized successfully');
-        
+
         // Auto-dismiss Django messages after 5 seconds
         setTimeout(() => {
             document.querySelectorAll('.alert').forEach(alert => {
