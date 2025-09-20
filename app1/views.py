@@ -3639,8 +3639,8 @@ def create_leave_request(request):
             data = json.loads(request.body)
             employee = Employee.objects.get(user_id=request.session.get('custom_user_id'))
             
-            start_date = datetime.strptime(data['start_date'], '%Y-%m-%d').date()
-            end_date = datetime.strptime(data['end_date'], '%Y-%m-%d').date()
+            start_date = datetime.strptime(data['start_date'], '%d-%m-%Y').date()
+            end_date = datetime.strptime(data['end_date'], '%d-%m-%Y').date()
 
             leave_request = LeaveRequest.objects.create(
                 employee=employee,
@@ -3903,7 +3903,7 @@ def create_late_request(request):
             
             # Convert date string to datetime object
             date_str = data['date']
-            date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
+            date_obj = datetime.strptime(date_str, '%d-%m-%Y').date()
             
             late_request = LateRequest.objects.create(
                 employee=employee,
