@@ -3,6 +3,7 @@ from django.db import models
 import os
 import uuid
 import json
+from app1.models import User 
 
 class JobCard(models.Model):
     STATUS_CHOICES = [
@@ -29,7 +30,13 @@ class JobCard(models.Model):
         choices=STATUS_CHOICES,
         default='logged'
     )
-
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="jobcards"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

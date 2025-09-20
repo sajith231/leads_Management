@@ -11,7 +11,7 @@ from collections import defaultdict
 import requests
 from django.core.paginator import Paginator
 from django.utils import timezone
-
+from app1.models import User 
 
 def jobcard_list(request):
     jobcards = JobCard.objects.all().order_by('-created_at')
@@ -38,6 +38,8 @@ def jobcard_list(request):
     }
     return render(request, 'jobcard_list.html', context)
 
+
+from app1.models import User   # ✅ import your custom user model
 
 @csrf_exempt
 def jobcard_create(request):
@@ -79,12 +81,22 @@ def jobcard_create(request):
 
             items_data.append(item_entry)
 
+        # ✅ find creator (logged-in user from session)
+        creator = None
+        if request.session.get('custom_user_id'):
+            try:
+                creator = User.objects.get(id=request.session['custom_user_id'])
+            except User.DoesNotExist:
+                creator = None
+
+        # ✅ Create job card with creator
         job_card = JobCard.objects.create(
             customer=customer,
             address=address,
             phone=phone,
             status=status,
-            items_data=items_data
+            items_data=items_data,
+            created_by=creator
         )
 
         # Save uploaded images
@@ -130,6 +142,7 @@ def jobcard_create(request):
         'items': items,
         'customer_data': customer_data
     })
+
 
 
 @require_POST
