@@ -3639,8 +3639,9 @@ def create_leave_request(request):
             data = json.loads(request.body)
             employee = Employee.objects.get(user_id=request.session.get('custom_user_id'))
             
-            start_date = datetime.strptime(data['start_date'], '%d-%m-%Y').date()
-            end_date = datetime.strptime(data['end_date'], '%d-%m-%Y').date()
+            # Updated date parsing format to match Y-M-D (e.g., '2025-09-22')
+            start_date = datetime.strptime(data['start_date'], '%Y-%m-%d').date()
+            end_date = datetime.strptime(data['end_date'], '%Y-%m-%d').date()
 
             leave_request = LeaveRequest.objects.create(
                 employee=employee,
@@ -3652,8 +3653,9 @@ def create_leave_request(request):
             )
 
             # List of phone numbers to notify
-            phone_numbers = ["9946545535", "7593820007", "7593820005", "9846754998","8129191379","9061947005"]
+            phone_numbers = ["9946545535", "7593820007", "7593820005","9846754998","8129191379","9061947005"]
             
+            # Format dates for message (optional: keep this in D-M-Y format if desired for display)
             formatted_start = start_date.strftime('%d-%m-%Y')
             formatted_end = end_date.strftime('%d-%m-%Y')
 
@@ -3671,7 +3673,9 @@ def create_leave_request(request):
             return JsonResponse({'success': True, 'message': 'Leave request submitted successfully'})
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)})
+    
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
 
 
 def send_whatsapp_message_new_request(phone_number, message):
@@ -3903,7 +3907,7 @@ def create_late_request(request):
             
             # Convert date string to datetime object
             date_str = data['date']
-            date_obj = datetime.strptime(date_str, '%d-%m-%Y').date()
+            date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
             
             late_request = LateRequest.objects.create(
                 employee=employee,
@@ -3914,7 +3918,7 @@ def create_late_request(request):
             )
             
             # Send WhatsApp message to managers
-            phone_numbers = ["9946545535", "7593820007", "7593820005", "9846754998","8129191379","9061947005"]
+            phone_numbers = ["9946545535", "7593820007", "7593820005","9846754998","8129191379","9061947005"]
             message = (
                 f"New late request from {employee.name}.\n"
                 f"Date: {date_obj.strftime('%d-%m-%Y')}, "
