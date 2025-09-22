@@ -1172,31 +1172,104 @@ function submitLateRequest() {
         return;
     }
 
+    // Show loading state
+    const submitBtn = document.querySelector('#lateRequestModal .btn-primary');
+    const originalText = submitBtn.textContent;
+    submitBtn.textContent = 'Submitting...';
+    submitBtn.disabled = true;
+
     const data = {
         date: document.getElementById('lateDate').value,
         delay_time: document.getElementById('delayTime').value,
         reason: document.getElementById('lateReason').value
     };
 
+    // Get CSRF token function (same as leave request)
+    function getCSRFToken() {
+        // Method 1: From meta tag
+        const csrfToken = document.querySelector('meta[name="csrf-token"]');
+        if (csrfToken) {
+            return csrfToken.getAttribute('content');
+        }
+        
+        // Method 2: From cookie
+        const cookies = document.cookie.split(';');
+        for (let cookie of cookies) {
+            const [name, value] = cookie.trim().split('=');
+            if (name === 'csrftoken') {
+                return value;
+            }
+        }
+        
+        // Method 3: From Django form (if available)
+        const csrfInput = document.querySelector('input[name="csrfmiddlewaretoken"]');
+        if (csrfInput) {
+            return csrfInput.value;
+        }
+        
+        return null;
+    }
+
+    const csrfToken = getCSRFToken();
+
     fetch('/late_request/create/', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRFToken': '{{ csrf_token }}'
+            'X-CSRFToken': csrfToken
         },
         body: JSON.stringify(data)
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
     .then(data => {
         if (data.success) {
             alert('Late request submitted successfully!');
-            $('#lateRequestModal').modal('hide');
+            
+            // Close modal - try multiple methods (same as leave request)
+            try {
+                // Bootstrap 5 method
+                const modal = bootstrap.Modal.getInstance(document.getElementById('lateRequestModal'));
+                if (modal) {
+                    modal.hide();
+                } else {
+                    // Bootstrap 4/jQuery method
+                    $('#lateRequestModal').modal('hide');
+                }
+            } catch (e) {
+                console.log('Modal close method failed, trying alternative');
+                // Alternative method
+                const modalElement = document.getElementById('lateRequestModal');
+                modalElement.style.display = 'none';
+                modalElement.classList.remove('show');
+                const backdrop = document.querySelector('.modal-backdrop');
+                if (backdrop) backdrop.remove();
+                document.body.classList.remove('modal-open');
+            }
+            
             form.reset();
+            
+            // Refresh late requests if function exists
+            if (typeof loadLateRequests === 'function') {
+                loadLateRequests();
+            }
         } else {
-            alert('Error: ' + data.error);
+            alert('Error: ' + (data.error || 'Unknown error occurred'));
         }
     })
-    
+    .catch(error => {
+        console.error('Fetch error:', error);
+        alert('An error occurred while submitting the request: ' + error.message);
+    })
+    .finally(() => {
+        // Reset button state
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
+    });
 }
 
 // Load user's late requests
@@ -1463,53 +1536,104 @@ function submitEarlyRequest() {
         return;
     }
 
+    // Show loading state
+    const submitBtn = document.querySelector('#earlyRequestModal .btn-primary');
+    const originalText = submitBtn.textContent;
+    submitBtn.textContent = 'Submitting...';
+    submitBtn.disabled = true;
+
     const data = {
         date: document.getElementById('earlyDate').value,
         early_time: document.getElementById('earlyTime').value,
         reason: document.getElementById('earlyReason').value
     };
 
+    // Get CSRF token function (same as leave request)
+    function getCSRFToken() {
+        // Method 1: From meta tag
+        const csrfToken = document.querySelector('meta[name="csrf-token"]');
+        if (csrfToken) {
+            return csrfToken.getAttribute('content');
+        }
+        
+        // Method 2: From cookie
+        const cookies = document.cookie.split(';');
+        for (let cookie of cookies) {
+            const [name, value] = cookie.trim().split('=');
+            if (name === 'csrftoken') {
+                return value;
+            }
+        }
+        
+        // Method 3: From Django form (if available)
+        const csrfInput = document.querySelector('input[name="csrfmiddlewaretoken"]');
+        if (csrfInput) {
+            return csrfInput.value;
+        }
+        
+        return null;
+    }
+
+    const csrfToken = getCSRFToken();
+
     fetch('/early_request/create/', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRFToken': '{{ csrf_token }}'
+            'X-CSRFToken': csrfToken
         },
         body: JSON.stringify(data)
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
     .then(data => {
         if (data.success) {
             alert('Early request submitted successfully!');
-            $('#earlyRequestModal').modal('hide');
+            
+            // Close modal - try multiple methods (same as leave request)
+            try {
+                // Bootstrap 5 method
+                const modal = bootstrap.Modal.getInstance(document.getElementById('earlyRequestModal'));
+                if (modal) {
+                    modal.hide();
+                } else {
+                    // Bootstrap 4/jQuery method
+                    $('#earlyRequestModal').modal('hide');
+                }
+            } catch (e) {
+                console.log('Modal close method failed, trying alternative');
+                // Alternative method
+                const modalElement = document.getElementById('earlyRequestModal');
+                modalElement.style.display = 'none';
+                modalElement.classList.remove('show');
+                const backdrop = document.querySelector('.modal-backdrop');
+                if (backdrop) backdrop.remove();
+                document.body.classList.remove('modal-open');
+            }
+            
             form.reset();
-            loadEarlyRequests(); // Refresh the early requests list
+            
+            // Refresh early requests if function exists
+            if (typeof loadEarlyRequests === 'function') {
+                loadEarlyRequests();
+            }
         } else {
-            alert('Error: ' + data.error);
+            alert('Error: ' + (data.error || 'Unknown error occurred'));
         }
     })
-    
-}
-
-// Load user's early requests
-function loadEarlyRequests() {
-    fetch('/early_request/list/')
-        .then(response => response.json())
-        .then(data => {
-            if (data.early_requests) {
-                allEarlyRequests = data.early_requests.sort((a, b) => {
-                    return new Date(b.created_at) - new Date(a.created_at);
-                });
-                updateEarlyRequestsTable(1, 'all');
-                new bootstrap.Modal(document.getElementById('viewEarlyRequestsModal')).show();
-            } else {
-                alert('Error loading early requests');
-            }
-        })
-        .catch(error => {
-            console.error('Error loading early requests:', error);
-            alert('Error loading early requests');
-        });
+    .catch(error => {
+        console.error('Fetch error:', error);
+        alert('An error occurred while submitting the request: ' + error.message);
+    })
+    .finally(() => {
+        // Reset button state
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
+    });
 }
 
 // Update early requests table
