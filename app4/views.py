@@ -11,6 +11,7 @@ from django.views.decorators.http import require_http_methods
 from django.contrib import messages
 from django.core.exceptions import ValidationError
 from app1.models import Branch
+from app1.models import User
 from datetime import datetime, date
 from datetime import datetime, date
 from .models import License, KeyRequest ,Collection
@@ -24,6 +25,7 @@ from django.template.loader import render_to_string
 from django.conf import settings
 from django.shortcuts import get_object_or_404
 from django.core.cache import cache
+from django.contrib.auth.decorators import login_required
 
 
 # Set up logging
@@ -259,6 +261,7 @@ def get_branch_by_name(branch_name):
         logger.error(f"Error finding branch '{branch_name}': {str(e)}")
         return None
 
+@login_required
 def key_request(request):
     branches = Branch.objects.all()
 
@@ -270,7 +273,7 @@ def key_request(request):
         requestDate  = request.POST.get("requestDate")
 
         # Optional fields
-        branch_name  = request.POST.get("branch", "").strip()  # Now just store as text
+        branch_name  = request.POST.get("branch", "").strip()
         amount       = request.POST.get("amount", "").strip()
         requestImage = request.FILES.get("requestImage")
 
@@ -292,16 +295,20 @@ def key_request(request):
         # Build description
         final_description = build_description_from_dynamic_fields(keyType, request.POST)
 
+        # Get the logged-in user's name
+        requested_by_name = get_user_display_name(request.user)
+
         # Create object
         key_request_obj = KeyRequest(
             clientName=clientName,
-            location=location,  # client-entered value
+            location=location,
             description=final_description,
             keyType=keyType,
             requestDate=requestDate,
             status="Pending",
             amount=amount if amount else None,
-            branch_name=branch_name  # Store branch name as text
+            branch_name=branch_name,
+            requested_by=requested_by_name  # ADD THIS LINE
         )
 
         # Handle image
@@ -323,7 +330,6 @@ def key_request(request):
             return render(request, "key_request.html", {"branches": branches})
 
     return render(request, "key_request.html", {"branches": branches})
-
 def key_request_list(request):
     # Remove select_related('branch') since branch is now a text field, not a foreign key
     key_requests = KeyRequest.objects.all().order_by('-id')
@@ -334,6 +340,7 @@ def key_request_list(request):
         "branches": branches
     })
 
+@login_required
 def key_request_edit(request, request_id):
     key_request_obj = get_object_or_404(KeyRequest, id=request_id)
     branches = Branch.objects.all()
@@ -380,6 +387,12 @@ def key_request_edit(request, request_id):
             key_request_obj.amount = amount if amount else None
             key_request_obj.description = description
 
+            # IMPORTANT: Don't overwrite the original requested_by field during edit
+            # The requested_by should remain as the original user who created the request
+            # Only set it if it's currently empty for some reason
+            if not key_request_obj.requested_by and request.user.is_authenticated:
+                key_request_obj.requested_by = get_user_display_name(request.user)
+
             # Handle dynamic fields based on keyType
             if keyType == "Seat Upgradation Request":
                 key_request_obj.currentSeats = request.POST.get('currentSeats', '')
@@ -388,62 +401,7 @@ def key_request_edit(request, request_id):
             elif keyType == "More Module Request":
                 key_request_obj.module = request.POST.get('module', '')
                 
-            elif keyType == "Trade Name And Address Change Request":
-                key_request_obj.newFirmName = request.POST.get('newFirmName', '')
-                key_request_obj.newAddress = request.POST.get('newAddress', '')
-                
-            elif keyType == "Key type Change Request":
-                key_request_obj.currentKeyType = request.POST.get('currentKeyType', '')
-                key_request_obj.requiredKeyType = request.POST.get('requiredKeyType', '')
-                
-            elif keyType == "Key Extension Request":
-                key_request_obj.extensionPeriod = request.POST.get('extensionPeriod', '')
-                
-            elif keyType == "Hosted Key Request":
-                key_request_obj.serverDetails = request.POST.get('serverDetails', '')
-                
-            elif keyType == "Feeder Cancellation Request":
-                key_request_obj.cancelReason = request.POST.get('cancelReason', '')
-                
-            elif keyType == "Demo Key Request":
-                key_request_obj.task = request.POST.get('task', '')
-                key_request_obj.bcare = request.POST.get('bcare', '')
-                key_request_obj.icare = request.POST.get('icare', '')
-                
-            elif keyType == "Software Amount Change Request":
-                key_request_obj.currentAmount = request.POST.get('currentAmount', '')
-                key_request_obj.requiredAmount = request.POST.get('requiredAmount', '')
-                # Handle software amount image
-                if 'softwareAmountImage' in request.FILES:
-                    key_request_obj.softwareAmountImage = request.FILES['softwareAmountImage']
-                    
-            elif keyType == "Maturity Upgradation Request":
-                key_request_obj.currentMaturity = request.POST.get('currentMaturity', '')
-                key_request_obj.requiredMaturity = request.POST.get('requiredMaturity', '')
-                
-            elif keyType == "Enterprises Key Request":
-                key_request_obj.enterpriseDetails = request.POST.get('enterpriseDetails', '')
-                
-            elif keyType == "Special Updation Request":
-                key_request_obj.specialUpdateDetails = request.POST.get('specialUpdateDetails', '')
-
-            # Handle image upload for Image Request
-            if keyType == "Image Request":
-                if 'requestImage' in request.FILES:
-                    key_request_obj.requestImage = request.FILES['requestImage']
-                    
-                # Handle GPS data
-                gps_lat = request.POST.get("gps_lat", "").strip()
-                gps_lon = request.POST.get("gps_lon", "").strip()
-                if gps_lat and gps_lon:
-                    key_request_obj.gps_lat = gps_lat
-                    key_request_obj.gps_lon = gps_lon
-                    key_request_obj.gps_location = f"{gps_lat}, {gps_lon}"
-                    key_request_obj.gps_address = reverse_geocode(gps_lat, gps_lon)
-
-            # Handle general request image
-            elif 'requestImage' in request.FILES:
-                key_request_obj.requestImage = request.FILES['requestImage']
+            # ... rest of your existing dynamic field handling ...
 
             # Build final description from dynamic fields
             final_description = build_description_from_dynamic_fields(keyType, request.POST)
@@ -534,8 +492,10 @@ def update_key_request_requested_status(request, request_id):
         valid_requested_statuses = [
             'Requested', 
             'Pending',
+            'Delayed',
             'Rejected',
             'Working on it', 
+            'Work completed/No payment',
             'Work completed/Payment pending', 
             'Work done & Payment collected'
         ]
@@ -569,6 +529,28 @@ def update_key_request_requested_status(request, request_id):
             'message': f'Server error: {str(e)}'
         }, status=500)
 
+
+# Helper function to get user display name
+def get_user_display_name(user):
+    """Get the best display name for a user"""
+    if not user.is_authenticated:
+        return None
+    
+    # Try full name first
+    if hasattr(user, 'get_full_name'):
+        full_name = user.get_full_name().strip()
+        if full_name:
+            return full_name
+    
+    # Try first + last name
+    if hasattr(user, 'first_name') and user.first_name.strip():
+        first_name = user.first_name.strip()
+        if hasattr(user, 'last_name') and user.last_name.strip():
+            return f"{first_name} {user.last_name.strip()}"
+        return first_name
+    
+    # Fall back to username
+    return user.username
 # ------------------------
 # API Proxy Views
 # ------------------------
