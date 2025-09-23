@@ -3,7 +3,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
+   <meta charset="UTF-8">
     <title>All Key Requests</title>
     <style>
         /* ======  CSS RESET & BASE  ====== */
@@ -27,22 +27,23 @@
         .table-wrapper::-webkit-scrollbar{height:12px}
         .table-wrapper::-webkit-scrollbar-track{background:#f1f1f1;border-radius:6px}
         .table-wrapper::-webkit-scrollbar-thumb{background:#888;border-radius:6px}
-        table{width:100%;border-collapse:collapse;min-width:1400px}
+        table{width:100%;border-collapse:collapse;min-width:1500px}
         thead{background:#34495e;color:#fff}
         th,td{padding:12px;font-size:14px;border-bottom:1px solid #eee;text-align:left;vertical-align:top}
         th{font-weight:600}
 
-        /* Column widths */
+        /* Updated column widths to accommodate new field */
         th:nth-child(1),td:nth-child(1){width:60px;text-align:center} /* ID */
         th:nth-child(2),td:nth-child(2){width:120px} /* Date */
         th:nth-child(3),td:nth-child(3){width:200px} /* Client Info */
-        th:nth-child(4),td:nth-child(4){width:280px;white-space:normal} /* Request Details */
-        th:nth-child(5),td:nth-child(5){width:100px;text-align:center} /* Amount */
-        th:nth-child(6),td:nth-child(6){width:140px} /* Admin Status */
-        th:nth-child(7),td:nth-child(7){width:140px} /* Requested Status */
-        th:nth-child(8),td:nth-child(8){width:80px;text-align:center} /* View */
-        th:nth-child(9),td:nth-child(9){width:80px;text-align:center} /* Edit */
-        th:nth-child(10),td:nth-child(10){width:80px;text-align:center} /* Delete */
+        th:nth-child(4),td:nth-child(4){width:120px} /* Requested By */
+        th:nth-child(5),td:nth-child(5){width:280px;white-space:normal} /* Request Details */
+        th:nth-child(6),td:nth-child(6){width:100px;text-align:center} /* Amount */
+        th:nth-child(7),td:nth-child(7){width:140px} /* Admin Status */
+        th:nth-child(8),td:nth-child(8){width:140px} /* Requested Status */
+        th:nth-child(9),td:nth-child(9){width:80px;text-align:center} /* View */
+        th:nth-child(10),td:nth-child(10){width:80px;text-align:center} /* Edit */
+        th:nth-child(11),td:nth-child(11){width:80px;text-align:center} /* Delete */
 
         /* Client info styling */
         .client-info-container{display:flex;flex-direction:column;gap:4px}
@@ -50,6 +51,11 @@
         .client-branch{font-size:11px;color:#fff;background:#007bff;padding:2px 6px;border-radius:3px;display:inline-block;margin-bottom:2px;font-weight:500}
         .client-branch.no-branch{background:#6c757d;color:#fff}
         .client-location{font-size:12px;color:#7f8c8d;font-style:italic}
+
+        /* Requested By styling */
+        .requested-by-container{display:flex;flex-direction:column;gap:2px}
+        .requested-by-name{font-weight:600;color:#2c3e50;font-size:13px}
+        .requested-by-empty{color:#7f8c8d;font-style:italic;font-size:12px}
 
         .request-details{max-width:260px;word-wrap:break-word}
         .key-type{background:#ecf0f1;padding:4px 8px;border-radius:4px;font-size:12px;font-weight:500;display:inline-block;margin-bottom:6px}
@@ -64,6 +70,7 @@
         /* Status styling */
         .status-select{padding:8px 12px;border:2px solid;border-radius:20px;font-size:12px;font-weight:600;text-transform:uppercase;cursor:pointer;min-width:120px;text-align:center;transition:all 0.3s ease;outline:none}
         .status-select.status-pending{background:linear-gradient(135deg,#fff3cd,#ffeaa7);color:#856404;border-color:#ffc107}
+        .status-select.status-delayed{background:linear-gradient(135deg,#fff3cd,#ffeaa7);color:#856404;border-color:#ffc107}
         .status-select.status-onprocess{background:linear-gradient(135deg,#cce5ff,#99d6ff);color:#004085;border-color:#007bff}
         .status-select.status-completed{background:linear-gradient(135deg,#d4edda,#a8e6a1);color:#155724;border-color:#28a745}
         .status-select.status-rejected{background:linear-gradient(135deg,#f8d7da,#f1aeb5);color:#721c24;border-color:#dc3545}
@@ -71,6 +78,7 @@
         .status-select.status-workingonit{background:linear-gradient(135deg,#fff3e0,#ffcc80);color:#ef6c00;border-color:#ff9800}
         .status-select.status-workcompletedpaymentpending{background:linear-gradient(135deg,#f3e5f5,#ce93d8);color:#7b1fa2;border-color:#9c27b0}
         .status-select.status-workdonepaymentcollected{background:linear-gradient(135deg,#e8f5e8,#a5d6a7);color:#2e7d32;border-color:#4caf50}
+        .status-select.status-workcompletednopayment{background:linear-gradient(135deg,#e8f5e8,#a5d6a7);color:#2e7d32;border-color:#4caf50}
          .status-select.status-pending { 
     background: linear-gradient(135deg,#fff3cd,#ffeaa7);
     color:#856404; 
@@ -117,7 +125,7 @@
             .search-input{min-width:100%}
             .action-btns{flex-direction:row}
             .pagination-container{flex-direction:column;text-align:center}
-            table{min-width:1200px}
+            table{min-width:1300px}
             th,td{padding:8px;font-size:12px}
             
         }
@@ -145,6 +153,18 @@
                     <option value="this_year">This Year</option>
                 </select>
             </div>
+
+            <!-- NEW FROM-TO DATE PICKERS -->
+            <div class="filter-group">
+                <label for="fromDate">From</label>
+                <input type="date" id="fromDate">
+            </div>
+            <div class="filter-group">
+                <label for="toDate">To</label>
+                <input type="date" id="toDate">
+            </div>
+            <!-- END NEW -->
+
             <div class="filter-group">
                 <label for="keyTypeFilter">Key Type</label>
                 <select id="keyTypeFilter">
@@ -168,6 +188,7 @@
                 <select id="statusFilter">
                     <option value="">All Status</option>
                     <option value="pending">Pending</option>
+                    <option value="Delayed">Delayed</option>
                     <option value="on process">On Process</option>
                     <option value="completed">Completed</option>
                     <option value="rejected">Rejected</option>
@@ -178,8 +199,10 @@
                 <select id="requestedStatusFilter">
                     <option value="">All Requested Status</option>
                     <option value="requested">Requested</option>
+                    <option value="delayed">Delayed</option>
                     <option value="working on it">Working on it</option>
                     <option value="work completed/payment pending">Work completed/Payment pending</option>
+                    <option value="work completed/No payment">Work completed/No payment</option>
                     <option value="work done & payment collected">Work done & Payment collected</option>
                 </select>
             </div>
@@ -207,9 +230,10 @@
             <table>
                 <thead>
                 <tr>
-                    <th>🔢ID</th>
+                     <th>🔢ID</th>
                     <th>🗓️Date</th>
                     <th>👤Client Info</th>
+                    <th>👨‍💼Requested By</th>
                     <th>📋Request Details</th>
                     <th>₹Amount</th>
                     <th>📊Admin Status</th>
@@ -219,7 +243,7 @@
                     <th>🗑️Delete</th>
                 </tr>
                 </thead>
-                <tbody id="requestsTableBody">
+                 <tbody id="requestsTableBody">
                 {% for request in key_requests %}
                 <tr class="request-row"
                     data-client="{{ request.clientName|default:'Unknown Client'|lower }}"
@@ -261,9 +285,16 @@
     </div>
   {% endif %}
 </div>
-
-
 </td>
+  <td>
+                        <div class="requested-by-container">
+                            {% if request.requested_by %}
+                                <div class="requested-by-name">{{ request.requested_by }}</div>
+                            {% else %}
+                                <div class="requested-by-empty">Not specified</div>
+                            {% endif %}
+                        </div>
+                    </td>
 
                     <td class="request-details">
                         <div class="key-type">{{ request.keyType }}</div>
@@ -279,7 +310,6 @@
                             <span class="amount-empty">-</span>
                         {% endif %}
                     </td>
-
                     <td>
                         <select class="status-select status-{{ request.status|lower|cut:' '|default:'pending' }}"
                                 data-request-id="{{ request.id }}"
@@ -297,8 +327,10 @@
         onchange="updateRequestedStatus(this)">
     <option value="Requested" {% if request.requested_status == 'Requested' or not request.requested_status %}selected{% endif %}>Requested</option>
     <option value="Pending" {% if request.requested_status == 'Pending' %}selected{% endif %}>Pending</option> <!-- ✅ new -->
+    <option value="Delayed" {% if request.requested_status == 'Delayed' %}selected{% endif %}>Delayed</option>
     <option value="Working on it" {% if request.requested_status == 'Working on it' %}selected{% endif %}>Working on it</option>
     <option value="Work completed/Payment pending" {% if request.requested_status == 'Work completed/Payment pending' %}selected{% endif %}>Work completed/Payment pending</option>
+    <option value="Work completed/No payment" {% if request.requested_status == 'Work completed/No payment' %}selected{% endif %}>Work completed/No payment</option>
     <option value="Work done & Payment collected" {% if request.requested_status == 'Work done & Payment collected' %}selected{% endif %}>Work done & Payment collected</option>
     <option value="Rejected" {% if request.requested_status == 'Rejected' %}selected{% endif %}>Rejected</option> <!-- ✅ new -->
 </select>
@@ -306,10 +338,11 @@
                     </td>
 
                     <td>
-                        <button class="btn-view" onclick="viewDetails(this)"
+                         <button class="btn-view" onclick="viewDetails(this)"
         data-id="{{ forloop.counter }}"
         data-client="{{ request.clientName|default:'Unknown Client' }}"
         data-location="{{ request.location }}"
+        data-requested-by="{{ request.requested_by|default:'Not specified' }}"
         data-key-type="{{ request.keyType }}"
         data-date="{{ request.requestDate|date:'d M Y' }}"
         data-status="{{ request.status }}"
@@ -379,6 +412,12 @@
 
     <!-- JavaScript -->
     <script>
+        // ----------  NEW: set today as default for From & To ----------
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('fromDate').value = today;
+        document.getElementById('toDate').value   = today;
+        // -------------------------------------------------------------
+
         // Global variables
         let originalRows = [];
         let filteredRows = [];
@@ -406,7 +445,7 @@
 
         function initializeEventListeners() {
             // Filter inputs
-            const filterIds = ['searchInput', 'dateFilter', 'keyTypeFilter', 'statusFilter', 'requestedStatusFilter', 'branchFilter'];
+            const filterIds = ['searchInput', 'dateFilter', 'keyTypeFilter', 'statusFilter', 'requestedStatusFilter', 'branchFilter', 'fromDate', 'toDate'];
             filterIds.forEach(id => {
                 const element = document.getElementById(id);
                 element.addEventListener('input', applyFilters);
@@ -435,7 +474,10 @@
             const status = document.getElementById('statusFilter').value.toLowerCase();
             const requestedStatus = document.getElementById('requestedStatusFilter').value.toLowerCase();
             const branch = document.getElementById('branchFilter').value.toLowerCase();
-            const dateRange = getDateRange(dateFilter);
+            const fromDate = document.getElementById('fromDate').value;
+            const toDate   = document.getElementById('toDate').value;
+
+            const dateRange = getDateRange(dateFilter, fromDate, toDate);
 
             filteredRows = originalRows.filter(row => {
                 if (search && !row.dataset.search.includes(search)) return false;
@@ -467,7 +509,16 @@
             toggleNoResultsRow();
         }
 
-        function getDateRange(filterType) {
+        function getDateRange(filterType, fromDate, toDate) {
+            // if user picked explicit from-to, use it
+            if (fromDate && toDate) {
+                const start = new Date(fromDate);
+                const end   = new Date(toDate);
+                end.setHours(23, 59, 59, 999);
+                return {start, end};
+            }
+
+            // otherwise fall back to old quick filters
             const now = new Date();
             const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
@@ -491,6 +542,9 @@
         function clearFilters() {
             const filterIds = ['searchInput', 'dateFilter', 'keyTypeFilter', 'statusFilter', 'requestedStatusFilter', 'branchFilter'];
             filterIds.forEach(id => document.getElementById(id).value = '');
+            // reset date pickers to today
+            document.getElementById('fromDate').value = today;
+            document.getElementById('toDate').value   = today;
             applyFilters();
         }
 
@@ -517,7 +571,7 @@
 
         function updateResultsInfo() {
             const element = document.getElementById('resultsInfo');
-            const hasFilters = ['searchInput', 'dateFilter', 'keyTypeFilter', 'statusFilter', 'requestedStatusFilter', 'branchFilter']
+            const hasFilters = ['searchInput', 'dateFilter', 'keyTypeFilter', 'statusFilter', 'requestedStatusFilter', 'branchFilter', 'fromDate', 'toDate']
                 .some(id => document.getElementById(id).value);
 
             if (totalCount === 0) {
@@ -694,7 +748,7 @@
         }
 
         function updateRequestedStatusClass(select, status) {
-            select.classList.remove('status-requested', 'status-workingonit', 'status-workcompletedpaymentpending', 'status-workdonepaymentcollected');
+            select.classList.remove('status-requested', 'status-workingonit', 'status-workcompletedpaymentpending',  'status-workdonepaymentcollected','status-workcompletednopayment');
             const cleanStatus = status.toLowerCase().replace(/\s+/g, '').replace(/[\/&]/g, '');
             select.classList.add(`status-${cleanStatus}`);
         }

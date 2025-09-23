@@ -5,6 +5,7 @@ from django.db import models
 
 from django.db import models
 from app1.models import Branch
+from app1.models import User
   
 class License(models.Model):
     name             = models.CharField(max_length=255)
@@ -58,13 +59,16 @@ class KeyRequest(models.Model):
     REQUESTED_STATUS_CHOICES = [
         ("Requested", "Requested"),
         ("Pending", "Pending"),
+        ("Delayed", "Delayed"),
         ("Rejected", "Rejected"),
         ("Working on it", "Working on it"),
+        ("Work completed/No payment", "Work completed/No payment"),
         ("Work completed/Payment pending", "Work completed/Payment pending"),
         ("Work done & Payment collected", "Work done & Payment collected"),
     ]
 
     clientName = models.CharField(max_length=255)
+    requested_by = models.CharField(max_length=100, blank=True, null=True)
     location = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
     keyType = models.CharField(max_length=255, choices=KEY_TYPES)
