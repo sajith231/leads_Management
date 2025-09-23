@@ -9,7 +9,7 @@ from .views import save_offer_letter_details,get_offer_letter_details
 from .views import employee_management, add_employee,edit_employee,delete_employee
 from .views import document_list,DocumentSetting,add_document,add_document_setting,edit_document,delete_document,get_document_settings
 
-from .views import add_document_setting, get_document_settings, delete_document_setting
+from .views import add_document_setting, get_document_settings, delete_document_setting,all_requests_summary
 from .views import document_detail,save_document_settings
 from .views import get_document_setting_fields
 
@@ -303,6 +303,10 @@ urlpatterns = [
     path('reassign_work/<int:log_id>/', views.reassign_work, name='reassign_work'),
     path('update_complaint_status/', views.update_complaint_status, name='update_complaint_status'),
     path('reassign_complaint/', views.reassign_complaint, name='reassign_complaint'),
+
+
+    path('all-requests-summary/', views.all_requests_summary, name='all_requests_summary'),
+path('get-employee-requests/<int:employee_id>/', views.get_employee_requests_details, name='get_employee_requests'),
 
 
 

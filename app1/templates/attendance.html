@@ -86,6 +86,14 @@
                             0
                         </span>
                     </button></div>
+                    <div style="display: block;">
+                        <button class="btn btn-info position-relative" onclick="window.location.href='{% url 'all_requests_summary' %}'">
+                            Requests Summary
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none">
+                                0
+                            </span>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1936,6 +1944,49 @@ function checkNewRequests() {
         })
         .catch(error => console.error('Error checking early requests:', error));
 }
+</script>
+<script>
+    // Add this function to check for new requests
+function checkNewRequestsForSummary() {
+    fetch('/leave_request/list/?status=pending')
+        .then(response => response.json())
+        .then(data => {
+            if (data.leave_requests) {
+                const leaveCount = data.leave_requests.length;
+                
+                // Check late requests
+                fetch('/late_request/list/?status=pending')
+                    .then(response => response.json())
+                    .then(lateData => {
+                        const lateCount = lateData.late_requests ? lateData.late_requests.length : 0;
+                        
+                        // Check early requests
+                        fetch('/early_request/list/?status=pending')
+                            .then(response => response.json())
+                            .then(earlyData => {
+                                const earlyCount = earlyData.early_requests ? earlyData.early_requests.length : 0;
+                                
+                                const totalCount = leaveCount + lateCount + earlyCount;
+                                const badge = document.getElementById('requestsSummaryBadge');
+                                
+                                if (totalCount > 0) {
+                                    badge.textContent = totalCount;
+                                    badge.classList.remove('d-none');
+                                } else {
+                                    badge.classList.add('d-none');
+                                }
+                            });
+                    });
+            }
+        })
+        .catch(error => console.error('Error checking requests:', error));
+}
+
+// Call on page load and periodically
+document.addEventListener('DOMContentLoaded', function() {
+    checkNewRequestsForSummary();
+    setInterval(checkNewRequestsForSummary, 300000); // 5 minutes
+});
 </script>
 {% endif %}
 {% endblock %}

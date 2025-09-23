@@ -6479,3 +6479,166 @@ def reassign_complaint(request):
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
 
+
+
+from django.shortcuts import render
+from django.http import JsonResponse
+from django.utils import timezone
+from datetime import datetime, timedelta
+from .models import LeaveRequest, LateRequest, EarlyRequest, Employee
+
+def all_requests_summary(request):
+    # Get current month and year
+    now = timezone.now()
+    current_year = now.year
+    current_month = now.month
+    
+    # Get selected month from request
+    selected_month = request.GET.get('month')
+    if selected_month:
+        try:
+            selected_date = datetime.strptime(selected_month, '%Y-%m')
+            current_year = selected_date.year
+            current_month = selected_date.month
+        except ValueError:
+            pass
+    
+    # Get all employees
+    employees = Employee.objects.filter(status='active').order_by('name')
+    
+    # Prepare data for each employee
+    employee_requests = []
+    
+    for employee in employees:
+        # Get leave requests for the month
+        leave_requests = LeaveRequest.objects.filter(
+            employee=employee,
+            start_date__year=current_year,
+            start_date__month=current_month
+        ).order_by('start_date')
+        
+        # Get late requests for the month
+        late_requests = LateRequest.objects.filter(
+            employee=employee,
+            date__year=current_year,
+            date__month=current_month
+        ).order_by('date')
+        
+        # Get early requests for the month
+        early_requests = EarlyRequest.objects.filter(
+            employee=employee,
+            date__year=current_year,
+            date__month=current_month
+        ).order_by('date')
+        
+        # Count total requests
+        total_requests = leave_requests.count() + late_requests.count() + early_requests.count()
+        
+        employee_data = {
+            'employee': employee,
+            'leave_requests': leave_requests,
+            'late_requests': late_requests,
+            'early_requests': early_requests,
+            'total_requests': total_requests,
+            'leave_count': leave_requests.count(),
+            'late_count': late_requests.count(),
+            'early_count': early_requests.count(),
+        }
+        
+        employee_requests.append(employee_data)
+    
+    context = {
+        'employee_requests': employee_requests,
+        'current_year': current_year,
+        'current_month': current_month,
+        'selected_month': f"{current_year}-{str(current_month).zfill(2)}",
+    }
+    
+    return render(request, 'all_requests.html', context)
+
+def get_employee_requests_details(request, employee_id):
+    """API endpoint to get detailed requests for a specific employee"""
+    if request.method == 'GET':
+        # Get current month and year
+        now = timezone.now()
+        current_year = now.year
+        current_month = now.month
+        
+        # Get selected month from request
+        selected_month = request.GET.get('month')
+        if selected_month:
+            try:
+                selected_date = datetime.strptime(selected_month, '%Y-%m')
+                current_year = selected_date.year
+                current_month = selected_date.month
+            except ValueError:
+                pass
+        
+        try:
+            employee = Employee.objects.get(id=employee_id)
+            
+            # Get all requests for the employee in the selected month
+            leave_requests = LeaveRequest.objects.filter(
+                employee=employee,
+                start_date__year=current_year,
+                start_date__month=current_month
+            ).order_by('start_date')
+            
+            late_requests = LateRequest.objects.filter(
+                employee=employee,
+                date__year=current_year,
+                date__month=current_month
+            ).order_by('date')
+            
+            early_requests = EarlyRequest.objects.filter(
+                employee=employee,
+                date__year=current_year,
+                date__month=current_month
+            ).order_by('date')
+            
+            # Prepare response data
+            data = {
+                'success': True,
+                'employee_name': employee.name,
+                'leave_requests': [
+                    {
+                        'type': 'Leave',
+                        'start_date': req.start_date.strftime('%d-%m-%Y'),
+                        'end_date': req.end_date.strftime('%d-%m-%Y'),
+                        'reason': req.reason,
+                        'leave_type': req.get_leave_type_display(),
+                        'status': req.status,
+                        'created_at': req.created_at.strftime('%d-%m-%Y %H:%M'),
+                    }
+                    for req in leave_requests
+                ],
+                'late_requests': [
+                    {
+                        'type': 'Late',
+                        'date': req.date.strftime('%d-%m-%Y'),
+                        'delay_time': req.delay_time,
+                        'reason': req.reason,
+                        'status': req.status,
+                        'created_at': req.created_at.strftime('%d-%m-%Y %H:%M'),
+                    }
+                    for req in late_requests
+                ],
+                'early_requests': [
+                    {
+                        'type': 'Early',
+                        'date': req.date.strftime('%d-%m-%Y'),
+                        'early_time': req.early_time.strftime('%H:%M'),
+                        'reason': req.reason,
+                        'status': req.status,
+                        'created_at': req.created_at.strftime('%d-%m-%Y %H:%M'),
+                    }
+                    for req in early_requests
+                ],
+            }
+            
+            return JsonResponse(data)
+            
+        except Employee.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'Employee not found'})
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})

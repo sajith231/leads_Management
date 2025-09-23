@@ -1,0 +1,341 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+    .table-responsive {
+        overflow-x: auto;
+    }
+    .requests-table th {
+        background-color: #f8f9fa;
+        font-weight: 600;
+    }
+    .employee-row:hover {
+        background-color: #f5f5f5;
+    }
+    .badge {
+        font-size: 0.75em;
+    }
+    .eye-icon {
+        cursor: pointer;
+        color: #0d6efd;
+        transition: color 0.3s ease;
+    }
+    .eye-icon:hover {
+        color: #0b5ed7;
+    }
+    .modal-lg {
+        max-width: 90%;
+    }
+</style>
+
+<div class="container-fluid py-4">
+    <!-- Header Section -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <h2 class="card-title mb-0">Requests Summary</h2>
+                    <p class="text-muted mb-0">Overview of all requests for the selected month</p>
+                </div>
+                <div class="col-md-6 text-end">
+                    <label class="form-label me-2">Select Month</label>
+                    <input type="month" class="form-control d-inline-block w-auto" id="monthFilter" 
+                           value="{{ selected_month }}">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <!-- <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Total Employees</h5>
+                    <h2 class="mb-0">{{ employee_requests|length }}</h2>
+                </div>
+            </div>
+        </div> -->
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Total Requests</h5>
+                    <h2 class="mb-0" id="totalRequests">0</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Leave Requests</h5>
+                    <h2 class="mb-0" id="totalLeaveRequests">0</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Time Requests</h5>
+                    <h2 class="mb-0" id="totalTimeRequests">0</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Requests Table -->
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover requests-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Employee Name</th>
+                            <th>User ID</th>
+                            <th>Total Requests</th>
+                            <th>Leave Requests</th>
+                            <th>Late Requests</th>
+                            <th>Early Requests</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for emp_data in employee_requests %}
+                        <tr class="employee-row" data-employee-id="{{ emp_data.employee.id }}">
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ emp_data.employee.name }}</td>
+                            <td>{{ emp_data.employee.user.userid|default:"-" }}</td>
+                            <td>
+                                <span class="badge bg-primary">{{ emp_data.total_requests }}</span>
+                            </td>
+                            <td>
+                                <span class="badge bg-success">{{ emp_data.leave_count }}</span>
+                            </td>
+                            <td>
+                                <span class="badge bg-warning">{{ emp_data.late_count }}</span>
+                            </td>
+                            <td>
+                                <span class="badge bg-info">{{ emp_data.early_count }}</span>
+                            </td>
+                            <td>
+                                <i class="fas fa-eye eye-icon" 
+                                   onclick="viewEmployeeRequests({{ emp_data.employee.id }}, '{{ emp_data.employee.name }}')"
+                                   data-bs-toggle="tooltip" 
+                                   title="View all requests">
+                                </i>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center text-muted py-4">
+                                No employees found for the selected month.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Employee Requests Details -->
+<div class="modal fade" id="employeeRequestsModal" tabindex="-1" aria-labelledby="employeeRequestsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="employeeRequestsModalLabel">Request Details - <span id="modalEmployeeName"></span></h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-flex justify-content-between mb-3">
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-sm btn-outline-primary filter-type-btn active" data-type="all">All Requests</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary filter-type-btn" data-type="leave">Leave Requests</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary filter-type-btn" data-type="late">Late Requests</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary filter-type-btn" data-type="early">Early Requests</button>
+                    </div>
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover" id="requestsDetailsTable">
+                        <thead>
+                            <tr>
+                                <th>Type</th>
+                                <th>Date(s)</th>
+                                <th>Details</th>
+                                <th>Reason</th>
+                                <th>Status</th>
+                                <th>Requested On</th>
+                            </tr>
+                        </thead>
+                        <tbody id="requestsDetailsBody">
+                            <!-- Will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div id="noRequestsMessage" class="text-center text-muted py-4 d-none">
+                    No requests found for the selected filter.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Global variables
+let currentEmployeeId = null;
+let allEmployeeRequests = [];
+
+// Update summary counts
+function updateSummaryCounts() {
+    let totalRequests = 0;
+    let totalLeaveRequests = 0;
+    let totalTimeRequests = 0;
+    
+    document.querySelectorAll('.employee-row').forEach(row => {
+        const total = parseInt(row.querySelector('td:nth-child(4) .badge').textContent);
+        const leave = parseInt(row.querySelector('td:nth-child(5) .badge').textContent);
+        const late = parseInt(row.querySelector('td:nth-child(6) .badge').textContent);
+        const early = parseInt(row.querySelector('td:nth-child(7) .badge').textContent);
+        
+        totalRequests += total;
+        totalLeaveRequests += leave;
+        totalTimeRequests += (late + early);
+    });
+    
+    document.getElementById('totalRequests').textContent = totalRequests;
+    document.getElementById('totalLeaveRequests').textContent = totalLeaveRequests;
+    document.getElementById('totalTimeRequests').textContent = totalTimeRequests;
+}
+
+// View employee requests
+function viewEmployeeRequests(employeeId, employeeName) {
+    currentEmployeeId = employeeId;
+    document.getElementById('modalEmployeeName').textContent = employeeName;
+    
+    // Show loading state
+    const tbody = document.getElementById('requestsDetailsBody');
+    tbody.innerHTML = '<tr><td colspan="6" class="text-center">Loading...</td></tr>';
+    
+    const monthFilter = document.getElementById('monthFilter').value;
+    
+    // Fetch employee requests
+    fetch(`/get-employee-requests/${employeeId}/?month=${monthFilter}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                allEmployeeRequests = [
+                    ...data.leave_requests,
+                    ...data.late_requests,
+                    ...data.early_requests
+                ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+                
+                displayRequests('all');
+                new bootstrap.Modal(document.getElementById('employeeRequestsModal')).show();
+            } else {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center text-danger">Error loading requests</td></tr>';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center text-danger">Error loading requests</td></tr>';
+        });
+}
+
+// Display requests based on filter
+function displayRequests(type) {
+    const tbody = document.getElementById('requestsDetailsBody');
+    const noRequestsMessage = document.getElementById('noRequestsMessage');
+    
+    let filteredRequests = allEmployeeRequests;
+    if (type !== 'all') {
+        filteredRequests = allEmployeeRequests.filter(req => req.type.toLowerCase() === type);
+    }
+    
+    tbody.innerHTML = '';
+    
+    if (filteredRequests.length === 0) {
+        noRequestsMessage.classList.remove('d-none');
+        tbody.classList.add('d-none');
+    } else {
+        noRequestsMessage.classList.add('d-none');
+        tbody.classList.remove('d-none');
+        
+        filteredRequests.forEach(request => {
+            const row = document.createElement('tr');
+            
+            // Determine badge color based on status
+            let statusBadgeClass = 'badge bg-secondary';
+            if (request.status === 'approved') {
+                statusBadgeClass = 'badge bg-success';
+            } else if (request.status === 'rejected') {
+                statusBadgeClass = 'badge bg-danger';
+            } else if (request.status === 'pending') {
+                statusBadgeClass = 'badge bg-warning text-dark';
+            }
+            
+            // Format dates and details based on request type
+            let dates = '';
+            let details = '';
+            
+            if (request.type === 'Leave') {
+                dates = `${request.start_date} to ${request.end_date}`;
+                details = request.leave_type;
+            } else if (request.type === 'Late') {
+                dates = request.date;
+                details = `Delay: ${request.delay_time}`;
+            } else if (request.type === 'Early') {
+                dates = request.date;
+                details = `Time: ${request.early_time}`;
+            }
+            
+            row.innerHTML = `
+                <td>
+                    <span class="badge ${request.type === 'Leave' ? 'bg-success' : request.type === 'Late' ? 'bg-warning' : 'bg-info'}">
+                        ${request.type}
+                    </span>
+                </td>
+                <td>${dates}</td>
+                <td>${details}</td>
+                <td>${request.reason}</td>
+                <td><span class="${statusBadgeClass}">${request.status}</span></td>
+                <td>${request.created_at}</td>
+            `;
+            
+            tbody.appendChild(row);
+        });
+    }
+}
+
+// Month filter change handler
+document.getElementById('monthFilter').addEventListener('change', function() {
+    const selectedMonth = this.value;
+    window.location.href = `{% url 'all_requests_summary' %}?month=${selectedMonth}`;
+});
+
+// Filter button event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    // Update summary counts on page load
+    updateSummaryCounts();
+    
+    // Filter button handlers
+    document.querySelectorAll('.filter-type-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.filter-type-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            displayRequests(this.dataset.type);
+        });
+    });
+    
+    // Initialize tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+</script>
+{% endblock %}
