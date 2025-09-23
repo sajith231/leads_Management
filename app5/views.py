@@ -38,8 +38,15 @@ def jobcard_list(request):
     }
     return render(request, 'jobcard_list.html', context)
 
+import logging
+from datetime import datetime
+import requests
 
-from app1.models import User   # ✅ import your custom user model
+from django.shortcuts import render, redirect
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib import messages
+
+logger = logging.getLogger(__name__)
 
 @csrf_exempt
 def jobcard_create(request):
@@ -56,14 +63,15 @@ def jobcard_create(request):
         items = request.POST.getlist('items[]')
         items_data = []
 
+        # Build items_data structure with complaints kept (for DB), but serial/config left blank
         for idx, item_name in enumerate(items):
             if not item_name:
                 continue
 
             item_entry = {
                 "item": item_name,
-                "serial": request.POST.getlist('serials[]')[idx] if idx < len(request.POST.getlist('serials[]')) else '',
-                "config": request.POST.getlist('configs[]')[idx] if idx < len(request.POST.getlist('configs[]')) else '',
+                "serial": "",
+                "config": "",
                 "complaints": []
             }
 
@@ -81,15 +89,17 @@ def jobcard_create(request):
 
             items_data.append(item_entry)
 
-        # ✅ find creator (logged-in user from session)
+        # find creator (logged-in user from session)
         creator = None
+        creator_name = "Unknown"
         if request.session.get('custom_user_id'):
             try:
                 creator = User.objects.get(id=request.session['custom_user_id'])
+                creator_name = getattr(creator, "username", str(creator))
             except User.DoesNotExist:
                 creator = None
 
-        # ✅ Create job card with creator
+        # Create job card
         job_card = JobCard.objects.create(
             customer=customer,
             address=address,
@@ -99,7 +109,7 @@ def jobcard_create(request):
             created_by=creator
         )
 
-        # Save uploaded images
+        # Save uploaded images and update items_data image names
         for idx, item_name in enumerate(items):
             complaint_descriptions = request.POST.getlist(f'complaints-{idx}[]')
             for complaint_idx, description in enumerate(complaint_descriptions):
@@ -113,29 +123,82 @@ def jobcard_create(request):
                         item_index=idx,
                         complaint_index=complaint_idx
                     )
-                    items_data[idx]["complaints"][complaint_idx]["images"].append(image.name)
+                    try:
+                        items_data[idx]["complaints"][complaint_idx]["images"].append(image.name)
+                    except Exception:
+                        logger.debug("Index mismatch while attaching image name to items_data")
 
         job_card.items_data = items_data
         job_card.save()
 
+        # WhatsApp message details
+        created_date = job_card.created_at.strftime("%d-%m-%Y") if hasattr(job_card, "created_at") else datetime.now().strftime("%d-%m-%Y")
+
+        if hasattr(job_card, "ticket_no") and job_card.ticket_no:
+            ticket_no = str(job_card.ticket_no)
+        else:
+            ticket_no = f"JC{job_card.id:06d}"
+
+        creator_label = creator_name if not creator else getattr(creator, "username", str(creator))
+
+        # ITEMS: only item names (no serial/config/complaints)
+        items_lines = []
+        for idx, item in enumerate(items_data):
+            items_lines.append(f"{idx+1}. {item.get('item','')}")
+
+        items_block = "\n".join(items_lines) if items_lines else "No items listed."
+
+        # Build final message (single icon included)
+        message_text = (
+            f" *Job Card Created* \n\n"
+            f"*Created Date:* {created_date}\n"
+            f"*Ticket No:* {ticket_no}\n"
+            # f"*Creator:* {creator_label}\n\n"
+            f"*Customer:* {customer}\n"
+            f"*Address:* {address}\n"
+            f"*Phone:* {phone}\n\n"
+            f"*Items:*\n{items_block}\n"
+        )
+
+        # WhatsApp API
+        whatsapp_api_base = "https://app.dxing.in/api/send/whatsapp"
+        params_base = {
+            "secret": "7b8ae820ecb39f8d173d57b51e1fce4c023e359e",
+            "account": "1756959119812b4ba287f5ee0bc9d43bbf5bbe87fb68b9118fcf1af",
+            "type": "text",
+            "priority": 1
+        }
+
+        recipients = ["9946545535"]
+
+        for recipient in recipients:
+            params = params_base.copy()
+            params["recipient"] = recipient
+            params["message"] = message_text
+            try:
+                resp = requests.get(whatsapp_api_base, params=params, timeout=10)
+                if resp.status_code != 200:
+                    logger.error("WhatsApp API returned non-200 for %s: %s", recipient, resp.status_code)
+            except Exception as e:
+                logger.exception("Failed to send WhatsApp message to %s: %s", recipient, e)
+
         messages.success(request, "Job card(s) created successfully.")
         return redirect('app5:jobcard_list')
 
-    # ✅ GET request → fetch items + customers
+    # GET: fetch items + customers
     items = Item.objects.all().order_by("name")
-
     customer_data = []
     try:
         api_url = "https://accmaster.imcbs.com/api/sync/rrc-clients/"
-        response = requests.get(api_url)
+        response = requests.get(api_url, timeout=10)
         if response.status_code == 200:
             customer_data = response.json()
             for customer in customer_data:
                 customer['address'] = customer.get('address', '')
-                customer['phone_number'] = customer.get('mobile', '')  # map mobile → phone
+                customer['phone_number'] = customer.get('mobile', '')
                 customer['branch'] = customer.get('branch', '')
     except Exception as e:
-        print(f"Error fetching customer data: {e}")
+        logger.warning("Error fetching customer data: %s", e)
         customer_data = []
 
     return render(request, 'jobcard_form.html', {

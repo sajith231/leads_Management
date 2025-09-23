@@ -1712,15 +1712,81 @@ from datetime import date
 from django.db.models import Q
 from django.core.paginator import Paginator
 import json
+import requests
+import urllib.parse
+from datetime import datetime
+import logging
 
+logger = logging.getLogger(__name__)
+
+def send_whatsapp_notification(name, installation_date, software_amount):
+    """
+    Send WhatsApp notification when a new feeder is created
+    
+    Args:
+        name (str): Feeder name
+        installation_date (date): Installation date
+        software_amount (float): Software amount
+    
+    Returns:
+        bool: True if message sent successfully, False otherwise
+    """
+    
+    # WhatsApp API configuration
+    WHATSAPP_API_URL = "https://app.dxing.in/api/send/whatsapp"
+    SECRET = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
+    ACCOUNT = "1756959119812b4ba287f5ee0bc9d43bbf5bbe87fb68b9118fcf1af"
+    RECIPIENT = "919946545535"  # +91 919946545535
+    
+    try:
+        # Format the installation date to DD-MM-YYYY format
+        if installation_date:
+            formatted_date = installation_date.strftime("%d-%m-%Y")
+        else:
+            formatted_date = "Not specified"
+        
+        # Format software amount
+        formatted_amount = f"₹{float(software_amount):,.2f}" if software_amount else "₹0.00"
+        
+        # Create the message
+        message = f"""🏪 NEW FEEDER CREATED
+
+Shop Name: {name}
+Installation Date: {formatted_date}
+Software Amount: {formatted_amount}
+
+Created at: {datetime.now().strftime("%d-%m-%Y %H:%M")}"""
+        
+        # URL encode the message
+        encoded_message = urllib.parse.quote(message)
+        
+        # Prepare the API URL
+        api_url = f"{WHATSAPP_API_URL}?secret={SECRET}&account={ACCOUNT}&recipient={RECIPIENT}&type=text&message={encoded_message}&priority=1"
+        
+        # Send the request
+        response = requests.get(api_url, timeout=10)
+        
+        if response.status_code == 200:
+            logger.info(f"WhatsApp notification sent successfully for feeder: {name}")
+            return True
+        else:
+            logger.error(f"Failed to send WhatsApp notification. Status: {response.status_code}, Response: {response.text}")
+            return False
+            
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Network error while sending WhatsApp notification: {str(e)}")
+        return False
+    except Exception as e:
+        logger.error(f"Unexpected error while sending WhatsApp notification: {str(e)}")
+        return False
+
+# Modified feeder view with WhatsApp notification
 @csrf_exempt
 def feeder(request):
     business_types = BusinessType.objects.all()
     branches = Branch.objects.all()
 
-    # ------------------------------------------------------------------
     # Get the logged-in user's branch - ALL users now see only their branch
-    # ------------------------------------------------------------------
     try:
         custom_user = User.objects.get(userid=request.user.username)
         user_branch = custom_user.branch if custom_user.branch else None
@@ -1747,9 +1813,7 @@ def feeder(request):
         software = request.POST.get('software')
         nature = request.POST.get('nature')
         
-        # ------------------------------------------------------------------
         # All users now use their own branch only
-        # ------------------------------------------------------------------
         branch_id = user_branch_id  # Always use the user's branch
             
         no_of_system = request.POST.get('no_of_system')
@@ -1773,6 +1837,14 @@ def feeder(request):
                 except ValueError:
                     pass
 
+        # Parse installation date
+        parsed_installation_date = None
+        if installation_date:
+            try:
+                parsed_installation_date = parse_date(installation_date)
+            except (ValueError, TypeError):
+                parsed_installation_date = None
+
         feeder_obj = Feeder(
             name=name,
             address=address,
@@ -1791,7 +1863,7 @@ def feeder(request):
             no_of_system=no_of_system,
             pincode=pincode,
             country=country,
-            installation_date=parse_date(installation_date),
+            installation_date=parsed_installation_date,
             remarks=remarks,
             software_amount=software_amount,
             module_charges=module_charges,
@@ -1799,8 +1871,36 @@ def feeder(request):
             more_modules=', '.join(more_modules),
             module_prices=module_prices
         )
-        feeder_obj.save()
-        return redirect('feeder_list')
+        
+        try:
+            feeder_obj.save()
+            
+            # Send WhatsApp notification after successful save
+            try:
+                send_whatsapp_notification(
+                    name=name,
+                    installation_date=parsed_installation_date,
+                    software_amount=software_amount
+                )
+                logger.info(f"WhatsApp notification attempted for feeder: {name}")
+            except Exception as e:
+                # Log the error but don't fail the feeder creation
+                logger.error(f"WhatsApp notification failed for feeder {name}: {str(e)}")
+            
+            return redirect('feeder_list')
+            
+        except Exception as e:
+            logger.error(f"Error creating feeder: {str(e)}")
+            # Handle the error appropriately
+            return render(request, 'add_feeder.html', {
+                'business_types': business_types,
+                'branches': branches,
+                'today': date.today().isoformat(),
+                'user_branch': user_branch,
+                'user_branch_id': user_branch_id,
+                'is_branch_restricted': is_branch_restricted,
+                'error': f'Error creating feeder: {str(e)}'
+            })
 
     return render(request, 'add_feeder.html', {
         'business_types': business_types,

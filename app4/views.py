@@ -261,6 +261,72 @@ def get_branch_by_name(branch_name):
         logger.error(f"Error finding branch '{branch_name}': {str(e)}")
         return None
 
+import requests
+import urllib.parse
+from datetime import datetime
+import logging
+
+logger = logging.getLogger(__name__)
+
+def send_key_request_whatsapp_notification(client_name, key_type, location, branch_name, amount=None):
+    """
+    Send WhatsApp notification when a new key request is created
+    
+    Args:
+        client_name (str): Client name
+        key_type (str): Type of key request
+        location (str): Client location
+        branch_name (str): Branch name
+        amount (str): Amount if provided
+    
+    Returns:
+        bool: True if message sent successfully, False otherwise
+    """
+    
+    # WhatsApp API configuration
+    WHATSAPP_API_URL = "https://app.dxing.in/api/send/whatsapp"
+    SECRET = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
+    ACCOUNT = "1756959119812b4ba287f5ee0bc9d43bbf5bbe87fb68b9118fcf1af"
+    RECIPIENT = "9946545535"  # +91 99465 45535
+    
+    try:
+        # Format amount if provided
+        amount_text = f"\nAmount: ₹{amount}" if amount and amount.strip() else ""
+        
+        # Create the message
+        message = f"""🔑 NEW KEY REQUEST
+
+Client Info: {client_name}
+Request Type: {key_type}
+Location: {location}
+Branch: {branch_name}{amount_text}
+
+Created at: {datetime.now().strftime("%d-%m-%Y %H:%M")}"""
+        
+        # URL encode the message
+        encoded_message = urllib.parse.quote(message)
+        
+        # Prepare the API URL
+        api_url = f"{WHATSAPP_API_URL}?secret={SECRET}&account={ACCOUNT}&recipient={RECIPIENT}&type=text&message={encoded_message}&priority=1"
+        
+        # Send the request
+        response = requests.get(api_url, timeout=10)
+        
+        if response.status_code == 200:
+            logger.info(f"WhatsApp notification sent successfully for key request: {client_name}")
+            return True
+        else:
+            logger.error(f"Failed to send WhatsApp notification. Status: {response.status_code}, Response: {response.text}")
+            return False
+            
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Network error while sending WhatsApp notification: {str(e)}")
+        return False
+    except Exception as e:
+        logger.error(f"Unexpected error while sending WhatsApp notification: {str(e)}")
+        return False
+
+# Modified key_request view with WhatsApp notification
 @login_required
 def key_request(request):
     branches = Branch.objects.all()
@@ -308,7 +374,7 @@ def key_request(request):
             status="Pending",
             amount=amount if amount else None,
             branch_name=branch_name,
-            requested_by=requested_by_name  # ADD THIS LINE
+            requested_by=requested_by_name
         )
 
         # Handle image
@@ -322,14 +388,33 @@ def key_request(request):
 
         try:
             key_request_obj.save()
+            
+            # Send WhatsApp notification after successful save
+            try:
+                send_key_request_whatsapp_notification(
+                    client_name=clientName,
+                    key_type=keyType,
+                    location=location,
+                    branch_name=branch_name,
+                    amount=amount
+                )
+                logger.info(f"WhatsApp notification attempted for key request: {clientName}")
+            except Exception as e:
+                # Log the error but don't fail the key request creation
+                logger.error(f"WhatsApp notification failed for key request {clientName}: {str(e)}")
+            
             messages.success(request, "Key request submitted successfully!")
             return redirect("key_request_list")
+            
         except Exception as e:
             logger.error(f"Error saving key request: {str(e)}")
             messages.error(request, f"Error saving request: {str(e)}")
             return render(request, "key_request.html", {"branches": branches})
 
     return render(request, "key_request.html", {"branches": branches})
+
+
+
 def key_request_list(request):
     # Remove select_related('branch') since branch is now a text field, not a foreign key
     key_requests = KeyRequest.objects.all().order_by('-id')
@@ -615,9 +700,18 @@ def _load_clients() -> list:
 # ----------------------------------------------------------------
 
 # --------------  collections_add  (re-written)  -----------------
+import requests
+from datetime import datetime
+from django.shortcuts import render, redirect
+from django.contrib import messages
+import logging
+
+logger = logging.getLogger(__name__)
+
 def collections_add(request):
-    """Add new collection – client auto-complete + branch auto-fill."""
-    clients = _load_clients()                # fresh every request
+    """Add new collection – client auto-complete + branch auto-fill and send WhatsApp notification."""
+    clients = _load_clients()  # fresh every request
+
     if request.method == "POST":
         client_name = request.POST.get("client_name", "").strip()
         branch      = request.POST.get("branch", "").strip()
@@ -643,7 +737,8 @@ def collections_add(request):
             if screenshot.size > 5 * 1024 * 1024:
                 raise ValueError("File size must be less than 5 MB.")
 
-            Collection.objects.create(
+            # Save collection
+            collection = Collection.objects.create(
                 client_name=client_name,
                 branch=branch,
                 amount=amount,
@@ -651,6 +746,41 @@ def collections_add(request):
                 payment_screenshot=screenshot,
                 notes=notes or None,
             )
+
+            # Format date
+            date_created = datetime.now().strftime("%d-%m-%Y")
+
+            # WhatsApp message content (with icon 🎉 as example)
+            message_text = (
+                f" *New Collection Added* \n\n"
+                f"📝 Client Name: {client_name}\n"
+                f"🏢 Branch: {branch}\n"
+                f"💰 Amount: {amount}\n"
+                f"📦 Paid For: {paid_for}\n"
+                f"📅 Date Created: {date_created}"
+            )
+
+            # WhatsApp API base URL
+            api_url = "https://app.dxing.in/api/send/whatsapp"
+            params_base = {
+                "secret": "7b8ae820ecb39f8d173d57b51e1fce4c023e359e",
+                "account": "1756959119812b4ba287f5ee0bc9d43bbf5bbe87fb68b9118fcf1af",
+                "type": "text",
+                "priority": 1
+            }
+
+            # Recipient list
+            recipients = ["9946545535","7593820007","7593820005","6282351770"]  # formatted with country code
+
+            for no in recipients:
+                params = params_base.copy()
+                params["recipient"] = no
+                params["message"] = message_text
+                try:
+                    requests.get(api_url, params=params, timeout=10)
+                except Exception as e:
+                    logger.error(f"WhatsApp API failed for {no}: {e}")
+
             messages.success(request, f"Collection for {client_name} added successfully!")
             return redirect("collections_list")
 
@@ -667,6 +797,7 @@ def collections_add(request):
             })
 
     return render(request, "collections_add.html", {"clients_json": clients})
+
 
 def collections_list(request):
     """List all collections with search and filter functionality"""
