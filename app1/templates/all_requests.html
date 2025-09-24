@@ -1,30 +1,13 @@
 {% extends 'base.html' %}
 {% block content %}
 <style>
-    .table-responsive {
-        overflow-x: auto;
-    }
-    .requests-table th {
-        background-color: #f8f9fa;
-        font-weight: 600;
-    }
-    .employee-row:hover {
-        background-color: #f5f5f5;
-    }
-    .badge {
-        font-size: 0.75em;
-    }
-    .eye-icon {
-        cursor: pointer;
-        color: #0d6efd;
-        transition: color 0.3s ease;
-    }
-    .eye-icon:hover {
-        color: #0b5ed7;
-    }
-    .modal-lg {
-        max-width: 90%;
-    }
+    .table-responsive { overflow-x: auto; }
+    .requests-table th { background-color: #f8f9fa; font-weight: 600; }
+    .employee-row:hover { background-color: #f5f5f5; }
+    .badge { font-size: 0.75em; }
+    .eye-icon { cursor: pointer; color: #0d6efd; transition: color 0.3s ease; }
+    .eye-icon:hover { color: #0b5ed7; }
+    .modal-lg { max-width: 90%; }
 </style>
 
 <div class="container-fluid py-4">
@@ -38,8 +21,11 @@
                 </div>
                 <div class="col-md-6 text-end">
                     <label class="form-label me-2">Select Month</label>
-                    <input type="month" class="form-control d-inline-block w-auto" id="monthFilter" 
-                           value="{{ selected_month }}">
+                    <input type="month" class="form-control d-inline-block w-auto" id="monthFilter" value="{{ selected_month }}">
+                    <!-- TODAY button -->
+                    <button id="todayBtn" class="btn btn-outline-primary ms-3" title="Show today's all requests">
+                        TODAY
+                    </button>
                 </div>
             </div>
         </div>
@@ -47,14 +33,6 @@
 
     <!-- Summary Cards -->
     <div class="row mb-4">
-        <!-- <div class="col-md-3">
-            <div class="card bg-primary text-white">
-                <div class="card-body">
-                    <h5 class="card-title">Total Employees</h5>
-                    <h2 class="mb-0">{{ employee_requests|length }}</h2>
-                </div>
-            </div>
-        </div> -->
         <div class="col-md-3">
             <div class="card bg-success text-white">
                 <div class="card-body">
@@ -76,6 +54,16 @@
                 <div class="card-body">
                     <h5 class="card-title">Time Requests</h5>
                     <h2 class="mb-0" id="totalTimeRequests">0</h2>
+                </div>
+            </div>
+        </div>
+        <!-- Today summary card (hidden by default, shown when TODAY clicked) -->
+        <div class="col-md-3 d-none" id="todaySummaryCard">
+            <div class="card bg-dark text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Today - Total</h5>
+                    <h2 class="mb-0" id="todayTotal">0</h2>
+                    <p class="mb-0" style="font-size:0.9rem" id="todayBreakdown"></p>
                 </div>
             </div>
         </div>
@@ -104,31 +92,21 @@
                             <td>{{ forloop.counter }}</td>
                             <td>{{ emp_data.employee.name }}</td>
                             <td>{{ emp_data.employee.user.userid|default:"-" }}</td>
+                            <td><span class="badge bg-primary">{{ emp_data.total_requests }}</span></td>
+                            <td><span class="badge bg-success">{{ emp_data.leave_count }}</span></td>
+                            <td><span class="badge bg-warning">{{ emp_data.late_count }}</span></td>
+                            <td><span class="badge bg-info">{{ emp_data.early_count }}</span></td>
                             <td>
-                                <span class="badge bg-primary">{{ emp_data.total_requests }}</span>
-                            </td>
-                            <td>
-                                <span class="badge bg-success">{{ emp_data.leave_count }}</span>
-                            </td>
-                            <td>
-                                <span class="badge bg-warning">{{ emp_data.late_count }}</span>
-                            </td>
-                            <td>
-                                <span class="badge bg-info">{{ emp_data.early_count }}</span>
-                            </td>
-                            <td>
-                                <i class="fas fa-eye eye-icon" 
+                                <i class="fas fa-eye eye-icon"
                                    onclick="viewEmployeeRequests({{ emp_data.employee.id }}, '{{ emp_data.employee.name }}')"
-                                   data-bs-toggle="tooltip" 
+                                   data-bs-toggle="tooltip"
                                    title="View all requests">
                                 </i>
                             </td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="8" class="text-center text-muted py-4">
-                                No employees found for the selected month.
-                            </td>
+                            <td colspan="8" class="text-center text-muted py-4">No employees found for the selected month.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -138,7 +116,7 @@
     </div>
 </div>
 
-<!-- Modal for Employee Requests Details -->
+<!-- Modal for Employee Requests Details (unchanged) -->
 <div class="modal fade" id="employeeRequestsModal" tabindex="-1" aria-labelledby="employeeRequestsModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -155,187 +133,330 @@
                         <button type="button" class="btn btn-sm btn-outline-primary filter-type-btn" data-type="early">Early Requests</button>
                     </div>
                 </div>
-                
+
                 <div class="table-responsive">
                     <table class="table table-sm table-hover" id="requestsDetailsTable">
                         <thead>
                             <tr>
                                 <th>Type</th>
-                                <th>Date(s)</th>
+                                <th>Date</th>
                                 <th>Details</th>
                                 <th>Reason</th>
                                 <th>Status</th>
                                 <th>Requested On</th>
                             </tr>
                         </thead>
-                        <tbody id="requestsDetailsBody">
-                            <!-- Will be populated by JavaScript -->
-                        </tbody>
+                        <tbody id="requestsDetailsBody"></tbody>
                     </table>
                 </div>
-                
-                <div id="noRequestsMessage" class="text-center text-muted py-4 d-none">
-                    No requests found for the selected filter.
+
+                <div id="noRequestsMessage" class="text-center text-muted py-4 d-none">No requests found for the selected filter.</div>
+            </div>
+            <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button></div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Today's Requests -->
+<div class="modal fade" id="todayRequestsModal" tabindex="-1" aria-labelledby="todayRequestsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title" id="todayRequestsModalLabel">Today's Requests - <span id="todayDateLabel"></span></h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3 d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>Total:</strong> <span id="todayTotalCount">0</span>
+                        &nbsp;|&nbsp; Leave: <span id="todayLeaveCount">0</span>
+                        &nbsp;|&nbsp; Late: <span id="todayLateCount">0</span>
+                        &nbsp;|&nbsp; Early: <span id="todayEarlyCount">0</span>
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn btn-sm btn-outline-light" data-filter="all">All</button>
+                        <button class="btn btn-sm btn-outline-light" data-filter="approved">Approved</button>
+                        <button class="btn btn-sm btn-outline-light" data-filter="pending">Pending</button>
+                        <button class="btn btn-sm btn-outline-light" data-filter="rejected">Rejected</button>
+                    </div>
                 </div>
+
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover" id="todayRequestsTable">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Type</th>
+                                <th>Employee</th>
+                                <th>Date</th>
+                                <th>Details</th>
+                                <th>Reason</th>
+                                <th>Status</th>
+                                <th>Requested On</th>
+                            </tr>
+                        </thead>
+                        <tbody id="todayRequestsBody"></tbody>
+                    </table>
+                </div>
+
+                <div id="todayNoRequests" class="text-center text-muted py-4 d-none">No requests for today.</div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-            </div>
+            <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button></div>
         </div>
     </div>
 </div>
 
 <script>
-// Global variables
-let currentEmployeeId = null;
-let allEmployeeRequests = [];
+/* ---------------------------
+   Re-used functions from your template
+   (viewEmployeeRequests / displayRequests etc. are kept the same)
+   --------------------------- */
 
-// Update summary counts
+let allEmployeeRequests = []; // used by employee modal
+
 function updateSummaryCounts() {
     let totalRequests = 0;
     let totalLeaveRequests = 0;
     let totalTimeRequests = 0;
-    
+
     document.querySelectorAll('.employee-row').forEach(row => {
-        const total = parseInt(row.querySelector('td:nth-child(4) .badge').textContent);
-        const leave = parseInt(row.querySelector('td:nth-child(5) .badge').textContent);
-        const late = parseInt(row.querySelector('td:nth-child(6) .badge').textContent);
-        const early = parseInt(row.querySelector('td:nth-child(7) .badge').textContent);
-        
+        const total = parseInt(row.querySelector('td:nth-child(4) .badge').textContent) || 0;
+        const leave = parseInt(row.querySelector('td:nth-child(5) .badge').textContent) || 0;
+        const late = parseInt(row.querySelector('td:nth-child(6) .badge').textContent) || 0;
+        const early = parseInt(row.querySelector('td:nth-child(7) .badge').textContent) || 0;
+
         totalRequests += total;
         totalLeaveRequests += leave;
         totalTimeRequests += (late + early);
     });
-    
+
     document.getElementById('totalRequests').textContent = totalRequests;
     document.getElementById('totalLeaveRequests').textContent = totalLeaveRequests;
     document.getElementById('totalTimeRequests').textContent = totalTimeRequests;
 }
 
-// View employee requests
+/* ---------- Employee modal (unchanged logic - adapted) ---------- */
 function viewEmployeeRequests(employeeId, employeeName) {
-    currentEmployeeId = employeeId;
     document.getElementById('modalEmployeeName').textContent = employeeName;
-    
-    // Show loading state
     const tbody = document.getElementById('requestsDetailsBody');
     tbody.innerHTML = '<tr><td colspan="6" class="text-center">Loading...</td></tr>';
-    
+
     const monthFilter = document.getElementById('monthFilter').value;
-    
-    // Fetch employee requests
     fetch(`/get-employee-requests/${employeeId}/?month=${monthFilter}`)
-        .then(response => response.json())
+        .then(r => r.json())
         .then(data => {
             if (data.success) {
-                allEmployeeRequests = [
-                    ...data.leave_requests,
-                    ...data.late_requests,
-                    ...data.early_requests
-                ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-                
+                allEmployeeRequests = [...data.leave_requests, ...data.late_requests, ...data.early_requests]
+                    .map(item => {
+                        // normalize keys similar to today_requests format for shared rendering
+                        if (item.hasOwnProperty('start_date') && item.hasOwnProperty('end_date')) {
+                            return {
+                                type: 'Leave',
+                                start_date: item.start_date,
+                                end_date: item.end_date,
+                                details: item.leave_type || '',
+                                reason: item.reason || '',
+                                status: item.status || 'pending',
+                                created_at: item.created_at || ''
+                            };
+                        } else if (item.hasOwnProperty('delay_time')) {
+                            return {
+                                type: 'Late',
+                                date: item.date,
+                                details: item.delay_time || '',
+                                reason: item.reason || '',
+                                status: item.status || 'pending',
+                                created_at: item.created_at || ''
+                            };
+                        } else {
+                            return {
+                                type: 'Early',
+                                date: item.date,
+                                details: item.early_time || '',
+                                reason: item.reason || '',
+                                status: item.status || 'pending',
+                                created_at: item.created_at || ''
+                            };
+                        }
+                    })
+                    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
                 displayRequests('all');
                 new bootstrap.Modal(document.getElementById('employeeRequestsModal')).show();
             } else {
                 tbody.innerHTML = '<tr><td colspan="6" class="text-center text-danger">Error loading requests</td></tr>';
             }
         })
-        .catch(error => {
-            console.error('Error:', error);
+        .catch(err => {
+            console.error(err);
             tbody.innerHTML = '<tr><td colspan="6" class="text-center text-danger">Error loading requests</td></tr>';
         });
 }
 
-// Display requests based on filter
 function displayRequests(type) {
     const tbody = document.getElementById('requestsDetailsBody');
     const noRequestsMessage = document.getElementById('noRequestsMessage');
-    
-    let filteredRequests = allEmployeeRequests;
-    if (type !== 'all') {
-        filteredRequests = allEmployeeRequests.filter(req => req.type.toLowerCase() === type);
-    }
-    
+    let filtered = allEmployeeRequests;
+    if (type !== 'all') filtered = allEmployeeRequests.filter(r => r.type.toLowerCase() === type);
+
     tbody.innerHTML = '';
-    
-    if (filteredRequests.length === 0) {
+    if (filtered.length === 0) {
         noRequestsMessage.classList.remove('d-none');
         tbody.classList.add('d-none');
     } else {
         noRequestsMessage.classList.add('d-none');
         tbody.classList.remove('d-none');
-        
-        filteredRequests.forEach(request => {
+
+        filtered.forEach(request => {
             const row = document.createElement('tr');
-            
-            // Determine badge color based on status
-            let statusBadgeClass = 'badge bg-secondary';
-            if (request.status === 'approved') {
-                statusBadgeClass = 'badge bg-success';
-            } else if (request.status === 'rejected') {
-                statusBadgeClass = 'badge bg-danger';
-            } else if (request.status === 'pending') {
-                statusBadgeClass = 'badge bg-warning text-dark';
-            }
-            
-            // Format dates and details based on request type
+            let statusClass = 'badge bg-secondary';
+            if (request.status === 'approved') statusClass = 'badge bg-success';
+            if (request.status === 'rejected') statusClass = 'badge bg-danger';
+            if (request.status === 'pending') statusClass = 'badge bg-warning text-dark';
+
             let dates = '';
-            let details = '';
-            
             if (request.type === 'Leave') {
                 dates = `${request.start_date} to ${request.end_date}`;
-                details = request.leave_type;
-            } else if (request.type === 'Late') {
-                dates = request.date;
-                details = `Delay: ${request.delay_time}`;
-            } else if (request.type === 'Early') {
-                dates = request.date;
-                details = `Time: ${request.early_time}`;
+            } else {
+                dates = request.date || '';
             }
-            
+
             row.innerHTML = `
                 <td>
-                    <span class="badge ${request.type === 'Leave' ? 'bg-success' : request.type === 'Late' ? 'bg-warning' : 'bg-info'}">
-                        ${request.type}
-                    </span>
+                    <span class="badge ${request.type === 'Leave' ? 'bg-success' : request.type === 'Late' ? 'bg-warning' : 'bg-info'}">${request.type}</span>
                 </td>
                 <td>${dates}</td>
-                <td>${details}</td>
-                <td>${request.reason}</td>
-                <td><span class="${statusBadgeClass}">${request.status}</span></td>
-                <td>${request.created_at}</td>
+                <td>${request.details || ''}</td>
+                <td>${request.reason || ''}</td>
+                <td><span class="${statusClass}">${request.status}</span></td>
+                <td>${request.created_at || ''}</td>
             `;
-            
             tbody.appendChild(row);
         });
     }
 }
 
-// Month filter change handler
-document.getElementById('monthFilter').addEventListener('change', function() {
-    const selectedMonth = this.value;
-    window.location.href = `{% url 'all_requests_summary' %}?month=${selectedMonth}`;
+/* ---------- TODAY button behavior ---------- */
+document.getElementById('todayBtn').addEventListener('click', function() {
+    // default date = today
+    const today = new Date().toISOString().split('T')[0];
+    fetchTodayRequests(today);
 });
 
-// Filter button event listeners
-document.addEventListener('DOMContentLoaded', function() {
-    // Update summary counts on page load
-    updateSummaryCounts();
-    
-    // Filter button handlers
-    document.querySelectorAll('.filter-type-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            document.querySelectorAll('.filter-type-btn').forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
-            displayRequests(this.dataset.type);
+function fetchTodayRequests(dateISO) {
+    // show loading and open modal
+    document.getElementById('todayDateLabel').textContent = dateISO;
+    const modalEl = document.getElementById('todayRequestsModal');
+    const modal = new bootstrap.Modal(modalEl);
+
+    const tbody = document.getElementById('todayRequestsBody');
+    tbody.innerHTML = '<tr><td colspan="8" class="text-center">Loading...</td></tr>';
+    document.getElementById('todayNoRequests').classList.add('d-none');
+    document.getElementById('todaySummaryCard').classList.remove('d-none');
+
+    fetch(`/today-requests/?date=${dateISO}`)
+        .then(r => r.json())
+        .then(data => {
+            if (!data.success) {
+                tbody.innerHTML = `<tr><td colspan="8" class="text-center text-danger">${data.error || 'Error'}</td></tr>`;
+                modal.show();
+                return;
+            }
+
+            // update summary
+            const counts = data.counts || {};
+            document.getElementById('todayTotalCount').textContent = counts.total || 0;
+            document.getElementById('todayLeaveCount').textContent = counts.leave || 0;
+            document.getElementById('todayLateCount').textContent = counts.late || 0;
+            document.getElementById('todayEarlyCount').textContent = counts.early || 0;
+
+            document.getElementById('todayTotal').textContent = counts.total || 0;
+            document.getElementById('todayBreakdown').textContent = `L:${counts.leave||0} | Late:${counts.late||0} | E:${counts.early||0}`;
+
+            const reqs = data.requests || [];
+
+            // populate table
+            if (reqs.length === 0) {
+                document.getElementById('todayNoRequests').classList.remove('d-none');
+                tbody.innerHTML = '';
+            } else {
+                document.getElementById('todayNoRequests').classList.add('d-none');
+                tbody.innerHTML = '';
+                reqs.forEach((req, idx) => {
+                    const tr = document.createElement('tr');
+                    let statusClass = 'badge bg-secondary';
+                    if (req.status === 'approved') statusClass = 'badge bg-success';
+                    if (req.status === 'rejected') statusClass = 'badge bg-danger';
+                    if (req.status === 'pending') statusClass = 'badge bg-warning text-dark';
+
+                    let dates = '';
+                    if (req.type === 'Leave') {
+                        dates = `${req.start_date} to ${req.end_date}`;
+                    } else {
+                        dates = req.date || '';
+                    }
+
+                    tr.innerHTML = `
+                        <td>${idx + 1}</td>
+                        <td><span class="badge ${req.type === 'Leave' ? 'bg-success' : req.type === 'Late' ? 'bg-warning' : 'bg-info'}">${req.type}</span></td>
+                        <td>${req.employee_name || '-'}</td>
+                        <td>${dates}</td>
+                        <td>${req.details || ''}</td>
+                        <td>${req.reason || ''}</td>
+                        <td><span class="${statusClass}">${req.status}</span></td>
+                        <td>${req.created_at || ''}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+
+            modal.show();
+        })
+        .catch(err => {
+            console.error(err);
+            document.getElementById('todayRequestsBody').innerHTML = '<tr><td colspan="8" class="text-center text-danger">Error loading today requests</td></tr>';
+            modal.show();
         });
-    });
-    
-    // Initialize tooltips
-    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl);
+}
+
+// Today modal filter buttons (Approved/Pending/Rejected)
+document.querySelectorAll('#todayRequestsModal .btn-group button').forEach(btn => {
+    btn.addEventListener('click', function() {
+        document.querySelectorAll('#todayRequestsModal .btn-group button').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        const filter = this.getAttribute('data-filter'); // 'all'|'approved'|...
+        filterTodayRequests(filter);
     });
 });
+
+function filterTodayRequests(filter) {
+    const rows = Array.from(document.querySelectorAll('#todayRequestsBody tr'));
+    if (filter === 'all') {
+        rows.forEach(r => r.style.display = '');
+        return;
+    }
+    rows.forEach(r => {
+        const statusCell = r.querySelector('td:nth-child(7)');
+        if (!statusCell) return;
+        const statusText = statusCell.textContent.trim().toLowerCase();
+        r.style.display = (statusText === filter) ? '' : 'none';
+    });
+}
+
+// On page load
+document.addEventListener('DOMContentLoaded', function() {
+    updateSummaryCounts();
+
+    // month filter change handler (existing)
+    document.getElementById('monthFilter').addEventListener('change', function() {
+        const selectedMonth = this.value;
+        window.location.href = `{% url 'all_requests_summary' %}?month=${selectedMonth}`;
+    });
+
+    // initialize tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function(el){ return new bootstrap.Tooltip(el); });
+});
 </script>
+
 {% endblock %}

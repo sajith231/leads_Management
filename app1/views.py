@@ -3653,7 +3653,7 @@ def create_leave_request(request):
             )
 
             # List of phone numbers to notify
-            phone_numbers = ["9946545535", "7593820007", "7593820005","9846754998","8129191379","9061947005"]
+            phone_numbers = ["9061947005"]
             
             # Format dates for message (optional: keep this in D-M-Y format if desired for display)
             formatted_start = start_date.strftime('%d-%m-%Y')
@@ -3918,7 +3918,7 @@ def create_late_request(request):
             )
             
             # Send WhatsApp message to managers
-            phone_numbers = ["9946545535", "7593820007", "7593820005","9846754998","8129191379","9061947005"]
+            phone_numbers = ["9061947005"]
             message = (
                 f"New late request from {employee.name}.\n"
                 f"Date: {date_obj.strftime('%d-%m-%Y')}, "
@@ -5562,7 +5562,7 @@ def create_early_request(request):
             )
             
             # Send WhatsApp message to managers
-            phone_numbers = ["9946545535", "7593820007", "7593820005","9846754998","8129191379","9061947005"]
+            phone_numbers = ["9061947005"]
             message = (
                 f"New early request from {employee.name}. "
                 f"Date: {data['date']}, "
@@ -6642,3 +6642,156 @@ def get_employee_requests_details(request, employee_id):
             return JsonResponse({'success': False, 'error': 'Employee not found'})
     
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+
+
+from django.http import JsonResponse
+from django.utils import timezone
+from datetime import datetime
+from django.views.decorators.http import require_GET
+from .models import LeaveRequest, LateRequest, EarlyRequest, Employee
+
+@require_GET
+def today_requests(request):
+    """
+    Return all requests (leave / late / early) for a specific date (default = today)
+    All date fields are returned in DD-MM-YYYY format.
+    Response JSON:
+    {
+      "success": True,
+      "date": "24-09-2025",
+      "counts": {"total": 10, "leave": 4, "late": 3, "early": 3, "status_counts": {"approved":2,"pending":5,"rejected":3}},
+      "requests": [ {type, employee_id, employee_name, start_date, end_date, date, details, reason, status, created_at}, ... ]
+    }
+    """
+    # parse date param YYYY-MM-DD or use today
+    date_str = request.GET.get('date')
+    try:
+        if date_str:
+            query_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+        else:
+            query_date = timezone.localdate()
+    except ValueError:
+        return JsonResponse({'success': False, 'error': 'Invalid date format. Use YYYY-MM-DD.'})
+
+    # fetch active employees (so we can include names even if no requests)
+    employees = Employee.objects.filter(status='active')
+
+    requests_list = []
+    status_counts = {'approved': 0, 'pending': 0, 'rejected': 0, 'other': 0}
+    totals = {'leave': 0, 'late': 0, 'early': 0}
+
+    # helper to safely format dates
+    def fmt_date(d):
+        if not d:
+            return ''
+        try:
+            return d.strftime('%d-%m-%Y')
+        except Exception:
+            # if it's already a string in ISO, try parsing
+            try:
+                dt = datetime.fromisoformat(str(d))
+                return dt.strftime('%d-%m-%Y')
+            except Exception:
+                return str(d)
+
+    # LeaveRequests that include the query_date (start_date <= date <= end_date)
+    leave_qs = LeaveRequest.objects.filter(start_date__lte=query_date, end_date__gte=query_date).select_related('employee').order_by('-created_at')
+    for lr in leave_qs:
+        totals['leave'] += 1
+        st = (lr.status or '').lower()
+        if st in status_counts:
+            status_counts[st] += 1
+        else:
+            status_counts['other'] += 1
+
+        created_dt = getattr(lr, 'created_at', None)
+        requests_list.append({
+            'type': 'Leave',
+            'employee_id': lr.employee.id,
+            'employee_name': lr.employee.name,
+            'start_date': fmt_date(lr.start_date),
+            'end_date': fmt_date(lr.end_date),
+            'date': fmt_date(query_date),
+            'details': getattr(lr, 'leave_type', '') or '',
+            'reason': getattr(lr, 'reason', '') or '',
+            'status': st or 'unknown',
+            'created_at': (created_dt.strftime('%d-%m-%Y') if created_dt else ''),
+            # helper used only for sorting, removed before returning
+            'created_at_dt': created_dt
+        })
+
+    # LateRequests for that date
+    late_qs = LateRequest.objects.filter(date=query_date).select_related('employee').order_by('-created_at')
+    for lt in late_qs:
+        totals['late'] += 1
+        st = (lt.status or '').lower()
+        if st in status_counts:
+            status_counts[st] += 1
+        else:
+            status_counts['other'] += 1
+
+        created_dt = getattr(lt, 'created_at', None)
+        # use the single date as both start and end for consistency
+        requests_list.append({
+            'type': 'Late',
+            'employee_id': lt.employee.id,
+            'employee_name': lt.employee.name,
+            'start_date': fmt_date(lt.date),
+            'end_date': fmt_date(lt.date),
+            'date': fmt_date(lt.date),
+            'details': getattr(lt, 'delay_time', '') or '',
+            'reason': getattr(lt, 'reason', '') or '',
+            'status': st or 'unknown',
+            'created_at': (created_dt.strftime('%d-%m-%Y') if created_dt else ''),
+            'created_at_dt': created_dt
+        })
+
+    # EarlyRequests for that date
+    early_qs = EarlyRequest.objects.filter(date=query_date).select_related('employee').order_by('-created_at')
+    for er in early_qs:
+        totals['early'] += 1
+        st = (er.status or '').lower()
+        if st in status_counts:
+            status_counts[st] += 1
+        else:
+            status_counts['other'] += 1
+
+        created_dt = getattr(er, 'created_at', None)
+        requests_list.append({
+            'type': 'Early',
+            'employee_id': er.employee.id,
+            'employee_name': er.employee.name,
+            'start_date': fmt_date(er.date),
+            'end_date': fmt_date(er.date),
+            'date': fmt_date(er.date),
+            'details': getattr(er, 'early_time', '') or '',
+            'reason': getattr(er, 'reason', '') or '',
+            'status': st or 'unknown',
+            'created_at': (created_dt.strftime('%d-%m-%Y') if created_dt else ''),
+            'created_at_dt': created_dt
+        })
+
+    # sort by created_at_dt desc (most recent first). If created_at_dt is None fallback to empty string.
+    requests_list.sort(key=lambda x: x.get('created_at_dt') or datetime.min, reverse=True)
+
+    # remove helper key 'created_at_dt' before returning JSON
+    for r in requests_list:
+        if 'created_at_dt' in r:
+            r.pop('created_at_dt')
+
+    total_requests = totals['leave'] + totals['late'] + totals['early']
+    counts = {
+        'total': total_requests,
+        'leave': totals['leave'],
+        'late': totals['late'],
+        'early': totals['early'],
+        'status_counts': status_counts
+    }
+
+    return JsonResponse({
+        'success': True,
+        'date': fmt_date(query_date),
+        'counts': counts,
+        'requests': requests_list
+    })
