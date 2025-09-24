@@ -482,6 +482,137 @@ def edit_profile(request):
 
 
 
+# @login_required
+# def add_lead(request):
+#     """
+#     View to add a new lead.
+#     """
+#     # Determine the current user
+#     if request.user.is_superuser:
+#         try:
+#             current_user = User.objects.filter(userid=request.user.username, user_level='admin_level').first()
+#             if not current_user:
+#                 current_user = User.objects.create(
+#                     name=request.user.username,
+#                     userid=request.user.username,
+#                     password='default_password',
+#                     branch=Branch.objects.first() or Branch.objects.create(name='Default Branch'),
+#                     user_level='admin_level'
+#                 )
+#                 messages.info(request, "Created an admin user for lead management.")
+#         except Exception as e:
+#             messages.error(request, f"Error creating admin user: {str(e)}")
+#             return redirect('all_leads')
+#     else:
+#         try:
+#             current_user = User.objects.get(id=request.session['custom_user_id'])
+#         except User.DoesNotExist:
+#             messages.error(request, "User session is invalid.")
+#             return redirect('logout')
+
+#     # Handle POST
+#     if request.method == 'POST':
+#         form = LeadForm(request.POST, request.FILES)
+#         if form.is_valid():
+#             try:
+#                 lead = form.save(commit=False)
+#                 lead.user = current_user
+
+#                 # Location data
+#                 location_data = request.POST.get('location_data', '')
+#                 if location_data:
+#                     try:
+#                         location = json.loads(location_data)
+#                         lead.added_latitude = location.get('latitude')
+#                         lead.added_longitude = location.get('longitude')
+#                     except json.JSONDecodeError:
+#                         messages.warning(request, 'Invalid location data format.')
+
+#                 lead.save()
+#                 form.save_m2m()
+
+#                 # Requirement amounts & remarks
+#                 amounts_data = request.POST.get('requirement_amounts_data', '{}')
+#                 remarks_data = request.POST.get('requirement_remarks_data', '{}')
+#                 try:
+#                     amounts = json.loads(amounts_data)
+#                     remarks = json.loads(remarks_data)
+#                     for req_id, amount in amounts.items():
+#                         LeadRequirementAmount.objects.create(
+#                             lead=lead,
+#                             requirement_id=int(req_id),
+#                             amount=float(amount),
+#                             remarks=remarks.get(req_id, '')
+#                         )
+#                 except json.JSONDecodeError:
+#                     messages.warning(request, 'Invalid data format for requirements.')
+
+#                 # Hardware prices
+#                 hardware_prices_data = request.POST.get('hardware_prices_data', '{}')
+#                 try:
+#                     hardware_prices = json.loads(hardware_prices_data)
+#                     for hardware_id, custom_price in hardware_prices.items():
+#                         hardware = Hardware.objects.get(id=int(hardware_id))
+#                         LeadHardwarePrice.objects.create(
+#                             lead=lead,
+#                             hardware=hardware,
+#                             custom_price=float(custom_price)
+#                         )
+#                 except json.JSONDecodeError:
+#                     messages.warning(request, "Invalid hardware price data format.")
+#                 except Hardware.DoesNotExist:
+#                     messages.warning(request, f"Hardware with ID {hardware_id} not found.")
+#                 except ValueError:
+#                     messages.warning(request, f"Invalid price value for hardware ID {hardware_id}.")
+
+#                 messages.success(request, 'Lead added successfully!')
+
+#                 if request.user.is_superuser or current_user.user_level == 'normal':
+#                     return redirect('all_leads')
+#                 return redirect('user_dashboard')
+
+#             except Exception as e:
+#                 messages.error(request, f"Error saving lead: {str(e)}")
+#         else:
+#             messages.error(request, 'Please correct the errors below.')
+#     else:
+#         form = LeadForm()
+#         form.fields['location'].queryset = Location.objects.all()
+
+#     requirements = Requirement.objects.all()
+#     hardwares = Hardware.objects.all()
+
+#     return render(request, 'add_lead.html', {
+#         'form': form,
+#         'requirements': requirements,
+#         'hardwares': hardwares,
+#     })
+
+
+import requests
+import json
+from django.contrib import messages
+from django.shortcuts import redirect, render
+from django.contrib.auth.decorators import login_required
+from .forms import LeadForm
+from .models import Lead, LeadRequirementAmount, LeadHardwarePrice, Requirement, Hardware, User, Branch
+from django.utils import timezone
+
+# WhatsApp API credentials
+WHATSAPP_API_SECRET = '7b8ae820ecb39f8d173d57b51e1fce4c023e359e'
+WHATSAPP_API_ACCOUNT = '1756959119812b4ba287f5ee0bc9d43bbf5bbe87fb68b9118fcf1af'
+
+import urllib.parse
+
+def send_whatsapp_message(phone_number, message):
+    message = urllib.parse.quote(message)
+    url = f"https://app.dxing.in/api/send/whatsapp?secret={WHATSAPP_API_SECRET}&account={WHATSAPP_API_ACCOUNT}&recipient={phone_number}&type=text&message={message}&priority=1"
+    response = requests.get(url)
+    if response.status_code == 200:
+        print(f"WhatsApp message sent successfully to {phone_number}")
+    else:
+        print(f"Failed to send WhatsApp message to {phone_number}. Status code: {response.status_code}, Response: {response.text}")
+
 @login_required
 def add_lead(request):
     """
@@ -565,6 +696,12 @@ def add_lead(request):
                 except ValueError:
                     messages.warning(request, f"Invalid price value for hardware ID {hardware_id}.")
 
+                # Prepare WhatsApp message
+                created_at = lead.created_at.strftime("%Y-%m-%d %H:%M")
+                firm_name = lead.firm_name
+                message = f"New Lead Created!\nCreated At: {created_at}\nFirm Name: {firm_name}"
+                send_whatsapp_message("9946545535", message)
+
                 messages.success(request, 'Lead added successfully!')
 
                 if request.user.is_superuser or current_user.user_level == 'normal':
@@ -573,6 +710,7 @@ def add_lead(request):
 
             except Exception as e:
                 messages.error(request, f"Error saving lead: {str(e)}")
+                print(f"Error saving lead: {str(e)}")  # Log the exception
         else:
             messages.error(request, 'Please correct the errors below.')
     else:
@@ -587,9 +725,6 @@ def add_lead(request):
         'requirements': requirements,
         'hardwares': hardwares,
     })
-
-
-
 
 @login_required
 def edit_lead(request, lead_id):
@@ -6334,10 +6469,13 @@ def update_complaint_status(request):
     Update the status of a ServiceLogComplaint.
     Automatically sets started_time when status becomes 'In Progress'
     and completed_time when status becomes 'Completed'.
+    When status becomes 'Completed', send a WhatsApp notification to:
+      - the assigned person (if phone number present)
+      - the customer (if service_log.phone_number present)
     """
     try:
         data = json.loads(request.body)
-        cid = data.get('complaint_log_id')
+        cid = data.get('complaint_log_id') or data.get('complaint_id') or data.get('id')
         new_status = data.get('status')
 
         if not cid or not new_status:
@@ -6345,11 +6483,11 @@ def update_complaint_status(request):
 
         try:
             cid = int(cid)
-        except ValueError:
+        except (ValueError, TypeError):
             return JsonResponse({'success': False, 'error': 'complaint_log_id must be an integer'}, status=400)
 
         try:
-            complaint_log = ServiceLogComplaint.objects.get(id=cid)
+            complaint_log = ServiceLogComplaint.objects.select_related('service_log', 'complaint', 'assigned_person').get(id=cid)
         except ServiceLogComplaint.DoesNotExist:
             return JsonResponse({'success': False, 'error': 'Complaint log not found'}, status=404)
 
@@ -6362,6 +6500,50 @@ def update_complaint_status(request):
         complaint_log.status = new_status
         complaint_log.save()
 
+        # If completed, send notifications
+        if new_status == 'Completed':
+            service_log = complaint_log.service_log
+            complaint_desc = ''
+            try:
+                complaint_desc = complaint_log.complaint.description if complaint_log.complaint else ''
+            except Exception:
+                complaint_desc = ''
+
+            completed_time_str = complaint_log.completed_time.strftime('%d-%m-%Y %H:%M') if complaint_log.completed_time else ''
+
+            # Message to assigned person (if any)
+            assigned_person = getattr(complaint_log, 'assigned_person', None)
+            if assigned_person and getattr(assigned_person, 'phone_number', None):
+                msg_assigned = (
+                    f"✅ Work Completed\n\n"
+                    f"Ticket: {service_log.ticket_number or '-'}\n"
+                    f"Complaint: {complaint_desc or '-'}\n"
+                    f"Completed On: {completed_time_str}\n"
+                    f"Remarks: {complaint_log.note or '-'}\n\n"
+                    f"Thanks,\nIMC Business Solutions"
+                )
+                # URL-encode the message to be safe in the GET URL
+                try:
+                    send_whatsapp_message_for_service_log(assigned_person.phone_number, requests.utils.quote(msg_assigned))
+                except Exception as e:
+                    # Don't fail the API if messaging fails; log to console
+                    print(f"Error sending WhatsApp to assigned person: {e}")
+
+            # Message to customer phone (if present on ServiceLog)
+            customer_phone = getattr(service_log, 'phone_number', None) or getattr(service_log, 'customer_phone', None)
+            if customer_phone:
+                msg_customer = (
+                    f"Hello {service_log.customer_name or ''},\n\n"
+                    f"Your complaint '{complaint_desc or '-'}' (Ticket: {service_log.ticket_number or '-'}) has been completed on {completed_time_str}.\n"
+                    f"If you have any further issues, please contact us.\n\n"
+                    f"Thank you,\nIMC Business Solutions"
+                )
+                try:
+                    send_whatsapp_message_for_service_log(customer_phone, requests.utils.quote(msg_customer))
+                except Exception as e:
+                    print(f"Error sending WhatsApp to customer: {e}")
+
+        # return timestamps in ISO format (same as earlier behaviour)
         return JsonResponse({
             'success': True,
             'started_time': complaint_log.started_time.isoformat() if complaint_log.started_time else None,

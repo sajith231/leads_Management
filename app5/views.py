@@ -511,8 +511,24 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 
 from app1.models import User   # the model that holds your users
+import requests
+from django.contrib import messages
+from django.shortcuts import redirect, get_object_or_404
+from .models import JobCard
+from app1.models import User
 
-# In views.py, update the assign_new_job function
+# WhatsApp API credentials
+WHATSAPP_API_SECRET = '7b8ae820ecb39f8d173d57b51e1fce4c023e359e'
+WHATSAPP_API_ACCOUNT = '1756959119812b4ba287f5ee0bc9d43bbf5bbe87fb68b9118fcf1af'
+
+def send_whatsapp_message(phone_number, message):
+    url = f"https://app.dxing.in/api/send/whatsapp?secret={WHATSAPP_API_SECRET}&account={WHATSAPP_API_ACCOUNT}&recipient={phone_number}&type=text&message={message}&priority=1"
+    response = requests.get(url)
+    if response.status_code == 200:
+        print(f"WhatsApp message sent successfully to {phone_number}")
+    else:
+        print(f"Failed to send WhatsApp message to {phone_number}. Status code: {response.status_code}, Response: {response.text}")
+
 def assign_new_job(request):
     if request.method == 'POST':
         ticket_number = request.POST.get('ticketNumber')
@@ -525,10 +541,19 @@ def assign_new_job(request):
             jobcard.status = status
             jobcard.save()
             
+            # Fetch the technician's phone number from the User model
+            assigned_user = User.objects.get(name=technician)
+            if assigned_user.phone_number:
+                # Prepare the WhatsApp message
+                message = f"You have been assigned a new job. Ticket Number: {ticket_number}"
+                send_whatsapp_message(assigned_user.phone_number, message)
+            
             messages.success(request, f"Job {ticket_number} assigned to {technician} successfully!")
             return redirect('app5:jobcard_assign_table')
         except JobCard.DoesNotExist:
             messages.error(request, f"Job card with ticket number {ticket_number} not found")
+        except User.DoesNotExist:
+            messages.error(request, f"User {technician} not found")
         except Exception as e:
             messages.error(request, f"Error assigning job: {str(e)}")
     

@@ -260,71 +260,56 @@ def get_branch_by_name(branch_name):
     except Exception as e:
         logger.error(f"Error finding branch '{branch_name}': {str(e)}")
         return None
-
-import requests
 import urllib.parse
 from datetime import datetime
+import requests
 import logging
 
 logger = logging.getLogger(__name__)
 
-def send_key_request_whatsapp_notification(client_name, key_type, location, branch_name, amount=None):
+def send_key_request_whatsapp_notification(client_name, key_type, location, branch_name, amount=None, created_by=None):
     """
-    Send WhatsApp notification when a new key request is created
-    
-    Args:
-        client_name (str): Client name
-        key_type (str): Type of key request
-        location (str): Client location
-        branch_name (str): Branch name
-        amount (str): Amount if provided
-    
-    Returns:
-        bool: True if message sent successfully, False otherwise
+    Send WhatsApp notification when a new key request is created.
+    'created_by' should be the display name of the user who created the request.
     """
-    
-    # WhatsApp API configuration
     WHATSAPP_API_URL = "https://app.dxing.in/api/send/whatsapp"
     SECRET = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
     ACCOUNT = "1756959119812b4ba287f5ee0bc9d43bbf5bbe87fb68b9118fcf1af"
-    RECIPIENT = "9946545535"  # +91 99465 45535
-    
+    RECIPIENT = "9946545535"  
+
     try:
-        # Format amount if provided
-        amount_text = f"\nAmount: ₹{amount}" if amount and amount.strip() else ""
-        
-        # Create the message
-        message = f"""🔑 NEW KEY REQUEST
+        amount_text = f"\nAmount: ₹{amount}" if amount and str(amount).strip() else ""
+        created_by_text = f"\nRequested By: {created_by}" if created_by else "\nRequested By: -"
 
-Client Info: {client_name}
-Request Type: {key_type}
-Location: {location}
-Branch: {branch_name}{amount_text}
+        message = (
+            f"🔑 NEW KEY REQUEST\n\n"
+            f"Client Info: {client_name}\n"
+            f"Request Type: {key_type}\n"
+            f"Location: {location}\n"
+            f"Branch: {branch_name}{amount_text}\n"
+            f"{created_by_text}\n\n"
+            f"Created at: {datetime.now().strftime('%d-%m-%Y %H:%M')}"
+        )
 
-Created at: {datetime.now().strftime("%d-%m-%Y %H:%M")}"""
-        
-        # URL encode the message
         encoded_message = urllib.parse.quote(message)
-        
-        # Prepare the API URL
+
         api_url = f"{WHATSAPP_API_URL}?secret={SECRET}&account={ACCOUNT}&recipient={RECIPIENT}&type=text&message={encoded_message}&priority=1"
-        
-        # Send the request
-        response = requests.get(api_url, timeout=10)
-        
-        if response.status_code == 200:
-            logger.info(f"WhatsApp notification sent successfully for key request: {client_name}")
+
+        resp = requests.get(api_url, timeout=10)
+        if resp.status_code == 200:
+            logger.info("WhatsApp notification sent successfully for key request: %s", client_name)
             return True
         else:
-            logger.error(f"Failed to send WhatsApp notification. Status: {response.status_code}, Response: {response.text}")
+            logger.error("WhatsApp API returned non-200 for key request: %s - %s", resp.status_code, resp.text)
             return False
-            
+
     except requests.exceptions.RequestException as e:
-        logger.error(f"Network error while sending WhatsApp notification: {str(e)}")
+        logger.error("Network error sending WhatsApp for key request: %s", e)
         return False
     except Exception as e:
-        logger.error(f"Unexpected error while sending WhatsApp notification: {str(e)}")
+        logger.error("Unexpected error sending WhatsApp for key request: %s", e)
         return False
+
 
 # Modified key_request view with WhatsApp notification
 @login_required
@@ -362,7 +347,7 @@ def key_request(request):
         final_description = build_description_from_dynamic_fields(keyType, request.POST)
 
         # Get the logged-in user's name
-        requested_by_name = get_user_display_name(request.user)
+        requested_by_name = get_user_display_name(request.user) or "System"
 
         # Create object
         key_request_obj = KeyRequest(
@@ -389,29 +374,30 @@ def key_request(request):
         try:
             key_request_obj.save()
             
-            # Send WhatsApp notification after successful save
+            # Send WhatsApp notification after successful save (includes creator name)
             try:
                 send_key_request_whatsapp_notification(
                     client_name=clientName,
                     key_type=keyType,
                     location=location,
                     branch_name=branch_name,
-                    amount=amount
+                    amount=amount,
+                    created_by=requested_by_name
                 )
-                logger.info(f"WhatsApp notification attempted for key request: {clientName}")
+                logger.info("WhatsApp notification attempted for key request: %s (by %s)", clientName, requested_by_name)
             except Exception as e:
-                # Log the error but don't fail the key request creation
-                logger.error(f"WhatsApp notification failed for key request {clientName}: {str(e)}")
+                logger.error("WhatsApp notification failed for key request %s: %s", clientName, e)
             
             messages.success(request, "Key request submitted successfully!")
             return redirect("key_request_list")
             
         except Exception as e:
-            logger.error(f"Error saving key request: {str(e)}")
+            logger.error("Error saving key request: %s", e)
             messages.error(request, f"Error saving request: {str(e)}")
             return render(request, "key_request.html", {"branches": branches})
 
     return render(request, "key_request.html", {"branches": branches})
+
 
 
 
@@ -750,14 +736,18 @@ def collections_add(request):
             # Format date
             date_created = datetime.now().strftime("%d-%m-%Y")
 
-            # WhatsApp message content (with icon 🎉 as example)
+            # Who created the collection (if any)
+            created_by_name = get_user_display_name(request.user) if hasattr(request, 'user') and request.user.is_authenticated else "System"
+
+            # WhatsApp message content (with icon 🎉 as example) — now includes Created By
             message_text = (
                 f" *New Collection Added* \n\n"
                 f"📝 Client Name: {client_name}\n"
                 f"🏢 Branch: {branch}\n"
                 f"💰 Amount: {amount}\n"
                 f"📦 Paid For: {paid_for}\n"
-                f"📅 Date Created: {date_created}"
+                f"📅 Date Created: {date_created}\n"
+                f"👤 Created By: {created_by_name}"
             )
 
             # WhatsApp API base URL
@@ -770,7 +760,7 @@ def collections_add(request):
             }
 
             # Recipient list
-            recipients = ["9946545535","7593820007","7593820005","6282351770"]  # formatted with country code
+            recipients = ["9946545535","7593820007","7593820005","6282351770"]  # formatted with country code 
 
             for no in recipients:
                 params = params_base.copy()
@@ -779,7 +769,7 @@ def collections_add(request):
                 try:
                     requests.get(api_url, params=params, timeout=10)
                 except Exception as e:
-                    logger.error(f"WhatsApp API failed for {no}: {e}")
+                    logger.error("WhatsApp API failed for %s: %s", no, e)
 
             messages.success(request, f"Collection for {client_name} added successfully!")
             return redirect("collections_list")
@@ -797,6 +787,7 @@ def collections_add(request):
             })
 
     return render(request, "collections_add.html", {"clients_json": clients})
+
 
 
 def collections_list(request):
