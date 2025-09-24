@@ -6826,27 +6826,34 @@ def get_employee_requests_details(request, employee_id):
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
 
 
-
 from django.http import JsonResponse
 from django.utils import timezone
 from datetime import datetime
 from django.views.decorators.http import require_GET
 from .models import LeaveRequest, LateRequest, EarlyRequest, Employee
 
+import pytz
+import requests
+import time
+from urllib.parse import quote_plus
+
 @require_GET
 def today_requests(request):
     """
-    Return all requests (leave / late / early) for a specific date (default = today)
-    All date fields are returned in DD-MM-YYYY format.
-    Response JSON:
-    {
-      "success": True,
-      "date": "24-09-2025",
-      "counts": {"total": 10, "leave": 4, "late": 3, "early": 3, "status_counts": {"approved":2,"pending":5,"rejected":3}},
-      "requests": [ {type, employee_id, employee_name, start_date, end_date, date, details, reason, status, created_at}, ... ]
-    }
+    Send today's requests summary + one detailed message per request spaced by wait_seconds.
+
+    Automatic send times (IST): 11:00, 16:00, 18:00
+    Query params:
+      - force=1        -> force sending now regardless of IST clock
+      - dry_run=1      -> do NOT perform network calls; return constructed POST forms instead
+      - debug=1        -> include ist_now and extra debug info
+      - limit=N        -> max number of detailed messages (default 50)
+      - no_wait=1      -> skip waiting between messages (useful for local/dev)
+      - wait_seconds=N -> seconds to wait between detailed messages (default 60, bounds 1..3600)
+      - recipients=NUM1,NUM2 -> override recipients (comma-separated) (numbers may be short e.g. 9061...)
+      - date=YYYY-MM-DD -> optional date to query (defaults to today)
     """
-    # parse date param YYYY-MM-DD or use today
+    # ---------------- parse date ----------------
     date_str = request.GET.get('date')
     try:
         if date_str:
@@ -6854,39 +6861,31 @@ def today_requests(request):
         else:
             query_date = timezone.localdate()
     except ValueError:
-        return JsonResponse({'success': False, 'error': 'Invalid date format. Use YYYY-MM-DD.'})
+        return JsonResponse({'success': False, 'error': 'Invalid date format. Use YYYY-MM-DD.'}, status=400)
 
-    # fetch active employees (so we can include names even if no requests)
-    employees = Employee.objects.filter(status='active')
-
+    # ---------------- collect requests ----------------
     requests_list = []
     status_counts = {'approved': 0, 'pending': 0, 'rejected': 0, 'other': 0}
     totals = {'leave': 0, 'late': 0, 'early': 0}
 
-    # helper to safely format dates
     def fmt_date(d):
         if not d:
             return ''
         try:
             return d.strftime('%d-%m-%Y')
         except Exception:
-            # if it's already a string in ISO, try parsing
             try:
                 dt = datetime.fromisoformat(str(d))
                 return dt.strftime('%d-%m-%Y')
             except Exception:
                 return str(d)
 
-    # LeaveRequests that include the query_date (start_date <= date <= end_date)
+    # Leaves
     leave_qs = LeaveRequest.objects.filter(start_date__lte=query_date, end_date__gte=query_date).select_related('employee').order_by('-created_at')
     for lr in leave_qs:
         totals['leave'] += 1
         st = (lr.status or '').lower()
-        if st in status_counts:
-            status_counts[st] += 1
-        else:
-            status_counts['other'] += 1
-
+        status_counts[st] = status_counts.get(st, 0) + 1
         created_dt = getattr(lr, 'created_at', None)
         requests_list.append({
             'type': 'Leave',
@@ -6898,23 +6897,16 @@ def today_requests(request):
             'details': getattr(lr, 'leave_type', '') or '',
             'reason': getattr(lr, 'reason', '') or '',
             'status': st or 'unknown',
-            'created_at': (created_dt.strftime('%d-%m-%Y') if created_dt else ''),
-            # helper used only for sorting, removed before returning
-            'created_at_dt': created_dt
+            'created_at': (created_dt.strftime('%d-%m-%Y') if created_dt else '')
         })
 
-    # LateRequests for that date
+    # Late
     late_qs = LateRequest.objects.filter(date=query_date).select_related('employee').order_by('-created_at')
     for lt in late_qs:
         totals['late'] += 1
         st = (lt.status or '').lower()
-        if st in status_counts:
-            status_counts[st] += 1
-        else:
-            status_counts['other'] += 1
-
+        status_counts[st] = status_counts.get(st, 0) + 1
         created_dt = getattr(lt, 'created_at', None)
-        # use the single date as both start and end for consistency
         requests_list.append({
             'type': 'Late',
             'employee_id': lt.employee.id,
@@ -6925,20 +6917,15 @@ def today_requests(request):
             'details': getattr(lt, 'delay_time', '') or '',
             'reason': getattr(lt, 'reason', '') or '',
             'status': st or 'unknown',
-            'created_at': (created_dt.strftime('%d-%m-%Y') if created_dt else ''),
-            'created_at_dt': created_dt
+            'created_at': (created_dt.strftime('%d-%m-%Y') if created_dt else '')
         })
 
-    # EarlyRequests for that date
+    # Early
     early_qs = EarlyRequest.objects.filter(date=query_date).select_related('employee').order_by('-created_at')
     for er in early_qs:
         totals['early'] += 1
         st = (er.status or '').lower()
-        if st in status_counts:
-            status_counts[st] += 1
-        else:
-            status_counts['other'] += 1
-
+        status_counts[st] = status_counts.get(st, 0) + 1
         created_dt = getattr(er, 'created_at', None)
         requests_list.append({
             'type': 'Early',
@@ -6950,18 +6937,10 @@ def today_requests(request):
             'details': getattr(er, 'early_time', '') or '',
             'reason': getattr(er, 'reason', '') or '',
             'status': st or 'unknown',
-            'created_at': (created_dt.strftime('%d-%m-%Y') if created_dt else ''),
-            'created_at_dt': created_dt
+            'created_at': (created_dt.strftime('%d-%m-%Y') if created_dt else '')
         })
 
-    # sort by created_at_dt desc (most recent first). If created_at_dt is None fallback to empty string.
-    requests_list.sort(key=lambda x: x.get('created_at_dt') or datetime.min, reverse=True)
-
-    # remove helper key 'created_at_dt' before returning JSON
-    for r in requests_list:
-        if 'created_at_dt' in r:
-            r.pop('created_at_dt')
-
+    # ---------------- prepare payload ----------------
     total_requests = totals['leave'] + totals['late'] + totals['early']
     counts = {
         'total': total_requests,
@@ -6970,10 +6949,238 @@ def today_requests(request):
         'early': totals['early'],
         'status_counts': status_counts
     }
-
-    return JsonResponse({
+    json_payload = {
         'success': True,
         'date': fmt_date(query_date),
         'counts': counts,
-        'requests': requests_list
-    })
+        'requests': requests_list,
+    }
+
+    # ---------------- sending config ----------------
+    recipients_param = request.GET.get('recipients')
+    if recipients_param:
+        recipients = [r.strip() for r in recipients_param.split(',') if r.strip()]
+    else:
+        recipients = ['9061947005', '9061947022']
+
+    dxing_url = "https://app.dxing.in/api/send/whatsapp"
+    dxing_secret = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
+    dxing_account = "1756959119812b4ba287f5ee0bc9d43bbf5bbe87fb68b9118fcf1af"
+
+    send_results = []
+    send_attempted = False
+
+    # ---------------- flags / timing ----------------
+    try:
+        ist = pytz.timezone('Asia/Kolkata')
+        ist_now = timezone.now().astimezone(ist)
+    except Exception:
+        ist_now = timezone.now()
+
+    force_send = request.GET.get('force') in ('1', 'true', 'True')
+    dry_run = request.GET.get('dry_run') in ('1', 'true', 'True')
+    debug = request.GET.get('debug') in ('1', 'true', 'True')
+    no_wait = request.GET.get('no_wait') in ('1', 'true', 'True')
+
+    try:
+        limit = int(request.GET.get('limit')) if request.GET.get('limit') else 50
+    except Exception:
+        limit = 50
+    MAX_DETAILED = max(1, min(limit, 1000))
+
+    # wait_seconds param (default 60). Bound it to 1..3600
+    try:
+        wait_seconds = int(request.GET.get('wait_seconds')) if request.GET.get('wait_seconds') else 60
+    except Exception:
+        wait_seconds = 60
+    if wait_seconds < 1:
+        wait_seconds = 1
+    if wait_seconds > 3600:
+        wait_seconds = 3600
+
+    # helper: normalize numbers to Indian international format (prefix 91)
+    def normalize_number(no):
+        s = str(no).strip()
+        if s.startswith('+'):
+            return s
+        if s.startswith('0'):
+            s = s.lstrip('0')
+        if s.startswith('91') and len(s) >= 11:
+            return s
+        if len(s) <= 10:
+            return '91' + s
+        return s
+
+    # Allowed IST hours for automatic send
+    AUTO_HOURS_IST = (11, 16, 18)  # 11:00, 16:00, 18:00 IST
+
+    # ---------------- decide to send ----------------
+    # send if forced OR current IST time matches one of the AUTO_HOURS and minute == 0
+    ist_now_minute = ist_now.minute
+    ist_now_hour = ist_now.hour
+    if force_send or (ist_now_hour in AUTO_HOURS_IST and ist_now_minute == 0):
+        send_attempted = True
+
+        # Build summary message
+        summary_lines = [
+            f"Today's Requests ({fmt_date(query_date)}):",
+            f"Total: {counts['total']} | Leave: {counts['leave']} | Late: {counts['late']} | Early: {counts['early']}",
+            f"Approved: {status_counts.get('approved',0)} | Pending: {status_counts.get('pending',0)} | Rejected: {status_counts.get('rejected',0)}"
+        ]
+        summary_text = " | ".join(summary_lines)
+        if len(summary_text) > 700:
+            summary_text = summary_text[:700] + "..."
+
+        # Build detailed messages (one-line per request), limited by MAX_DETAILED
+        detailed_messages = []
+        for idx, item in enumerate(requests_list[:MAX_DETAILED], start=1):
+            if item['type'] == 'Leave':
+                msg = f"{idx}) {item['employee_name']} — Leave ({item.get('start_date','')}"
+                if item.get('start_date') != item.get('end_date'):
+                    msg += f" to {item.get('end_date','')}"
+                msg += f") — {item.get('details','')} — {item.get('status','')}"
+            elif item['type'] == 'Late':
+                msg = f"{idx}) {item['employee_name']} — Late ({item.get('date','')}) — {item.get('details','')} — {item.get('status','')}"
+            else:
+                msg = f"{idx}) {item['employee_name']} — Early ({item.get('date','')}) — {item.get('details','')} — {item.get('status','')}"
+            reason = item.get('reason','')
+            if reason:
+                rshort = (reason[:120] + '...') if len(reason) > 120 else reason
+                msg += f" — Reason: {rshort}"
+            detailed_messages.append(msg)
+
+        # Normalize recipient numbers
+        norm_recipients = [normalize_number(n) for n in recipients]
+
+        # Prepare dry_run constructed forms
+        constructed_calls = []
+        for rno in norm_recipients:
+            constructed_calls.append({
+                'recipient': rno,
+                'phase': 'summary',
+                'method': 'POST',
+                'url': dxing_url,
+                'form': {
+                    'secret': dxing_secret,
+                    'account': dxing_account,
+                    'recipient': rno,
+                    'type': 'text',
+                    'message': summary_text,
+                    'priority': '1'
+                }
+            })
+        for idx, dmsg in enumerate(detailed_messages, start=1):
+            for rno in norm_recipients:
+                constructed_calls.append({
+                    'recipient': rno,
+                    'phase': f'detail_{idx}',
+                    'method': 'POST',
+                    'url': dxing_url,
+                    'form': {
+                        'secret': dxing_secret,
+                        'account': dxing_account,
+                        'recipient': rno,
+                        'type': 'text',
+                        'message': dmsg,
+                        'priority': '1'
+                    }
+                })
+
+        # If dry_run, return the constructed calls for inspection (no network)
+        if dry_run:
+            json_payload['send_attempted'] = True
+            json_payload['dry_run'] = True
+            json_payload['constructed_calls'] = constructed_calls
+            if debug:
+                json_payload['ist_now'] = ist_now.isoformat()
+                json_payload['wait_seconds'] = wait_seconds
+                json_payload['norm_recipients'] = norm_recipients
+                json_payload['auto_hours_ist'] = AUTO_HOURS_IST
+            return JsonResponse(json_payload)
+
+        # Actually send: use a requests session and POST forms
+        SEND_TIMEOUT = 20
+        session = requests.Session()
+        headers = {'User-Agent': 'myimc-notifier/1.0'}
+
+        # 1) Send summary to each recipient
+        for rno in norm_recipients:
+            form = {
+                'secret': dxing_secret,
+                'account': dxing_account,
+                'recipient': rno,
+                'type': 'text',
+                'message': summary_text,
+                'priority': '1',
+            }
+            try:
+                resp = session.post(dxing_url, data=form, timeout=SEND_TIMEOUT, headers=headers)
+                send_results.append({
+                    'recipient': rno, 'phase': 'summary',
+                    'ok': resp.status_code in (200,201),
+                    'status_code': resp.status_code,
+                    'response_text': resp.text[:2000]
+                })
+            except Exception as e:
+                send_results.append({
+                    'recipient': rno, 'phase': 'summary',
+                    'ok': False,
+                    'error': str(e)
+                })
+
+        # Optionally wait before first detailed message (so summary and first detail are spaced)
+        if not no_wait and wait_seconds > 0:
+            try:
+                time.sleep(wait_seconds)
+            except Exception:
+                pass
+
+        # 2) Send detailed messages one-by-one, waiting wait_seconds between batches
+        for idx, dmsg in enumerate(detailed_messages, start=1):
+            for rno in norm_recipients:
+                form = {
+                    'secret': dxing_secret,
+                    'account': dxing_account,
+                    'recipient': rno,
+                    'type': 'text',
+                    'message': dmsg,
+                    'priority': '1',
+                }
+                try:
+                    resp = session.post(dxing_url, data=form, timeout=SEND_TIMEOUT, headers=headers)
+                    send_results.append({
+                        'recipient': rno,
+                        'phase': f'detail_{idx}',
+                        'ok': resp.status_code in (200,201),
+                        'status_code': resp.status_code,
+                        'response_text': resp.text[:2000]
+                    })
+                except Exception as e:
+                    send_results.append({
+                        'recipient': rno,
+                        'phase': f'detail_{idx}',
+                        'ok': False,
+                        'error': str(e)
+                    })
+            # wait between rounds unless no_wait requested or this was last message
+            if idx < len(detailed_messages) and not no_wait:
+                try:
+                    time.sleep(wait_seconds)
+                except Exception:
+                    # ignore sleep interruptions and continue
+                    pass
+
+    else:
+        send_attempted = False
+
+    # ---------------- final payload ----------------
+    json_payload['send_attempted'] = send_attempted
+    if send_attempted:
+        json_payload['send_results'] = send_results
+        json_payload['detailed_messages_count'] = len(detailed_messages)
+        json_payload['wait_seconds_used'] = wait_seconds
+    if debug:
+        json_payload['ist_now'] = ist_now.isoformat()
+        json_payload['auto_hours_ist'] = AUTO_HOURS_IST
+
+    return JsonResponse(json_payload)
