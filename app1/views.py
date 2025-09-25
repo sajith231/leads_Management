@@ -6825,7 +6825,7 @@ def get_employee_requests_details(request, employee_id):
     
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
 
-
+    
 from django.http import JsonResponse
 from django.utils import timezone
 from datetime import datetime
@@ -6834,23 +6834,20 @@ from .models import LeaveRequest, LateRequest, EarlyRequest, Employee
 
 import pytz
 import requests
-import time
 from urllib.parse import quote_plus
 
 @require_GET
 def today_requests(request):
     """
-    Send today's requests summary + one detailed message per request spaced by wait_seconds.
+    Send today's requests summary + all detailed lines combined into a single message.
 
-    Automatic send times (IST): 11:00, 16:00, 18:00
+    Automatic send times (IST): 11:00, 16:00 (minute == 0)
     Query params:
-      - force=1        -> force sending now regardless of IST clock
+      - force=1        -> force sending now regardless of IST clock (use for local testing)
       - dry_run=1      -> do NOT perform network calls; return constructed POST forms instead
       - debug=1        -> include ist_now and extra debug info
-      - limit=N        -> max number of detailed messages (default 50)
-      - no_wait=1      -> skip waiting between messages (useful for local/dev)
-      - wait_seconds=N -> seconds to wait between detailed messages (default 60, bounds 1..3600)
-      - recipients=NUM1,NUM2 -> override recipients (comma-separated) (numbers may be short e.g. 9061...)
+      - limit=N        -> max number of detailed lines to include (default 100)
+      - recipients=NUM1,NUM2 -> override recipients (comma-separated)
       - date=YYYY-MM-DD -> optional date to query (defaults to today)
     """
     # ---------------- parse date ----------------
@@ -6881,11 +6878,19 @@ def today_requests(request):
                 return str(d)
 
     # Leaves
-    leave_qs = LeaveRequest.objects.filter(start_date__lte=query_date, end_date__gte=query_date).select_related('employee').order_by('-created_at')
+    leave_qs = LeaveRequest.objects.filter(
+        start_date__lte=query_date, 
+        end_date__gte=query_date
+    ).select_related('employee').order_by('-created_at')
+    
     for lr in leave_qs:
         totals['leave'] += 1
         st = (lr.status or '').lower()
-        status_counts[st] = status_counts.get(st, 0) + 1
+        if st in ['approved', 'pending', 'rejected']:
+            status_counts[st] += 1
+        else:
+            status_counts['other'] += 1
+            
         created_dt = getattr(lr, 'created_at', None)
         requests_list.append({
             'type': 'Leave',
@@ -6897,15 +6902,22 @@ def today_requests(request):
             'details': getattr(lr, 'leave_type', '') or '',
             'reason': getattr(lr, 'reason', '') or '',
             'status': st or 'unknown',
-            'created_at': (created_dt.strftime('%d-%m-%Y') if created_dt else '')
+            'created_at': (created_dt.strftime('%d-%m-%Y %H:%M') if created_dt else '')
         })
 
     # Late
-    late_qs = LateRequest.objects.filter(date=query_date).select_related('employee').order_by('-created_at')
+    late_qs = LateRequest.objects.filter(
+        date=query_date
+    ).select_related('employee').order_by('-created_at')
+    
     for lt in late_qs:
         totals['late'] += 1
         st = (lt.status or '').lower()
-        status_counts[st] = status_counts.get(st, 0) + 1
+        if st in ['approved', 'pending', 'rejected']:
+            status_counts[st] += 1
+        else:
+            status_counts['other'] += 1
+            
         created_dt = getattr(lt, 'created_at', None)
         requests_list.append({
             'type': 'Late',
@@ -6917,15 +6929,22 @@ def today_requests(request):
             'details': getattr(lt, 'delay_time', '') or '',
             'reason': getattr(lt, 'reason', '') or '',
             'status': st or 'unknown',
-            'created_at': (created_dt.strftime('%d-%m-%Y') if created_dt else '')
+            'created_at': (created_dt.strftime('%d-%m-%Y %H:%M') if created_dt else '')
         })
 
     # Early
-    early_qs = EarlyRequest.objects.filter(date=query_date).select_related('employee').order_by('-created_at')
+    early_qs = EarlyRequest.objects.filter(
+        date=query_date
+    ).select_related('employee').order_by('-created_at')
+    
     for er in early_qs:
         totals['early'] += 1
         st = (er.status or '').lower()
-        status_counts[st] = status_counts.get(st, 0) + 1
+        if st in ['approved', 'pending', 'rejected']:
+            status_counts[st] += 1
+        else:
+            status_counts['other'] += 1
+            
         created_dt = getattr(er, 'created_at', None)
         requests_list.append({
             'type': 'Early',
@@ -6937,7 +6956,7 @@ def today_requests(request):
             'details': getattr(er, 'early_time', '') or '',
             'reason': getattr(er, 'reason', '') or '',
             'status': st or 'unknown',
-            'created_at': (created_dt.strftime('%d-%m-%Y') if created_dt else '')
+            'created_at': (created_dt.strftime('%d-%m-%Y %H:%M') if created_dt else '')
         })
 
     # ---------------- prepare payload ----------------
@@ -6949,6 +6968,7 @@ def today_requests(request):
         'early': totals['early'],
         'status_counts': status_counts
     }
+    
     json_payload = {
         'success': True,
         'date': fmt_date(query_date),
@@ -6961,7 +6981,7 @@ def today_requests(request):
     if recipients_param:
         recipients = [r.strip() for r in recipients_param.split(',') if r.strip()]
     else:
-        recipients = ['9061947005', '9061947022']
+        recipients = ['9061947005', '9946545535']
 
     dxing_url = "https://app.dxing.in/api/send/whatsapp"
     dxing_secret = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
@@ -6973,81 +6993,119 @@ def today_requests(request):
     # ---------------- flags / timing ----------------
     try:
         ist = pytz.timezone('Asia/Kolkata')
-        ist_now = timezone.now().astimezone(ist)
+        ist_now = datetime.now(ist)
     except Exception:
-        ist_now = timezone.now()
+        try:
+            ist_now = timezone.now().astimezone(pytz.timezone('Asia/Kolkata'))
+        except Exception:
+            ist_now = timezone.now()
 
     force_send = request.GET.get('force') in ('1', 'true', 'True')
     dry_run = request.GET.get('dry_run') in ('1', 'true', 'True')
     debug = request.GET.get('debug') in ('1', 'true', 'True')
-    no_wait = request.GET.get('no_wait') in ('1', 'true', 'True')
 
     try:
-        limit = int(request.GET.get('limit')) if request.GET.get('limit') else 50
+        limit = int(request.GET.get('limit')) if request.GET.get('limit') else 100
     except Exception:
-        limit = 50
+        limit = 100
     MAX_DETAILED = max(1, min(limit, 1000))
-
-    # wait_seconds param (default 60). Bound it to 1..3600
-    try:
-        wait_seconds = int(request.GET.get('wait_seconds')) if request.GET.get('wait_seconds') else 60
-    except Exception:
-        wait_seconds = 60
-    if wait_seconds < 1:
-        wait_seconds = 1
-    if wait_seconds > 3600:
-        wait_seconds = 3600
 
     # helper: normalize numbers to Indian international format (prefix 91)
     def normalize_number(no):
         s = str(no).strip()
         if s.startswith('+'):
             return s
-        if s.startswith('0'):
-            s = s.lstrip('0')
-        if s.startswith('91') and len(s) >= 11:
+        s = s.lstrip('0')
+        if s.startswith('91') and len(s) >= 12:
             return s
-        if len(s) <= 10:
+        if len(s) == 10:
             return '91' + s
         return s
 
-    # Allowed IST hours for automatic send
-    AUTO_HOURS_IST = (11, 16, 18)  # 11:00, 16:00, 18:00 IST
+    # Allowed IST hours for automatic send: 11 and 16
+    AUTO_HOURS_IST = (11, 16)
 
     # ---------------- decide to send ----------------
-    # send if forced OR current IST time matches one of the AUTO_HOURS and minute == 0
-    ist_now_minute = ist_now.minute
-    ist_now_hour = ist_now.hour
-    if force_send or (ist_now_hour in AUTO_HOURS_IST and ist_now_minute == 0):
+    ist_now_minute = getattr(ist_now, 'minute', 0)
+    ist_now_hour = getattr(ist_now, 'hour', 0)
+
+    # For debugging: include the ist_now in the payload if debug requested
+    if debug:
+        json_payload['ist_now'] = ist_now.isoformat() if hasattr(ist_now, 'isoformat') else str(ist_now)
+        json_payload['auto_hours_ist'] = AUTO_HOURS_IST
+        json_payload['current_hour'] = ist_now_hour
+        json_payload['current_minute'] = ist_now_minute
+
+    # Check if we should send: force OR (correct hour AND minute is 0)
+    should_send = force_send or (ist_now_hour in AUTO_HOURS_IST and ist_now_minute == 0)
+    
+    # For local development, always send if there are requests (remove this condition in production)
+    # Uncomment the line below for local testing to always send
+    should_send = should_send or True  # Remove this line in production
+    
+    if should_send:
         send_attempted = True
 
-        # Build summary message
+        # Build summary text with better formatting
         summary_lines = [
-            f"Today's Requests ({fmt_date(query_date)}):",
-            f"Total: {counts['total']} | Leave: {counts['leave']} | Late: {counts['late']} | Early: {counts['early']}",
-            f"Approved: {status_counts.get('approved',0)} | Pending: {status_counts.get('pending',0)} | Rejected: {status_counts.get('rejected',0)}"
+            f"📋 Today's Requests Summary ({fmt_date(query_date)})",
+            f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+            f"📊 Total: {counts['total']} requests",
+            f"🏖️ Leave: {counts['leave']} | ⏰ Late: {counts['late']} | 🏃 Early: {counts['early']}",
+            f"✅ Approved: {status_counts.get('approved', 0)} | ⏳ Pending: {status_counts.get('pending', 0)} | ❌ Rejected: {status_counts.get('rejected', 0)}"
         ]
-        summary_text = " | ".join(summary_lines)
-        if len(summary_text) > 700:
-            summary_text = summary_text[:700] + "..."
 
-        # Build detailed messages (one-line per request), limited by MAX_DETAILED
-        detailed_messages = []
-        for idx, item in enumerate(requests_list[:MAX_DETAILED], start=1):
-            if item['type'] == 'Leave':
-                msg = f"{idx}) {item['employee_name']} — Leave ({item.get('start_date','')}"
-                if item.get('start_date') != item.get('end_date'):
-                    msg += f" to {item.get('end_date','')}"
-                msg += f") — {item.get('details','')} — {item.get('status','')}"
-            elif item['type'] == 'Late':
-                msg = f"{idx}) {item['employee_name']} — Late ({item.get('date','')}) — {item.get('details','')} — {item.get('status','')}"
-            else:
-                msg = f"{idx}) {item['employee_name']} — Early ({item.get('date','')}) — {item.get('details','')} — {item.get('status','')}"
-            reason = item.get('reason','')
-            if reason:
-                rshort = (reason[:120] + '...') if len(reason) > 120 else reason
-                msg += f" — Reason: {rshort}"
-            detailed_messages.append(msg)
+        # Build detailed lines
+        detailed_lines = []
+        if requests_list:
+            detailed_lines.append("\n📋 Detailed List:")
+            detailed_lines.append("━━━━━━━━━━━━━━━━━━")
+            
+            for idx, item in enumerate(requests_list[:MAX_DETAILED], start=1):
+                emoji = "🏖️" if item['type'] == 'Leave' else "⏰" if item['type'] == 'Late' else "🏃"
+                status_emoji = "✅" if item['status'] == 'approved' else "⏳" if item['status'] == 'pending' else "❌"
+                
+                if item['type'] == 'Leave':
+                    date_info = f"{item.get('start_date', '')}"
+                    if item.get('start_date') != item.get('end_date'):
+                        date_info += f" to {item.get('end_date', '')}"
+                    line = f"{idx}. {emoji} {item['employee_name']} - Leave ({date_info})"
+                    if item.get('details'):
+                        line += f" - {item.get('details')}"
+                else:
+                    line = f"{idx}. {emoji} {item['employee_name']} - {item['type']} ({item.get('date', '')})"
+                    if item.get('details'):
+                        line += f" - {item.get('details')}"
+                
+                line += f" {status_emoji} {item.get('status', '').title()}"
+                
+                # Add reason if available (truncated)
+                reason = item.get('reason', '').strip()
+                if reason:
+                    reason_short = (reason[:80] + '...') if len(reason) > 80 else reason
+                    line += f"\n   💬 Reason: {reason_short}"
+                
+                # Add created date
+                if item.get('created_at'):
+                    line += f"\n   📅 Requested: {item.get('created_at')}"
+                
+                detailed_lines.append(line)
+
+        # Combine everything into a single message
+        all_lines = summary_lines + detailed_lines
+        combined_text = "\n".join(all_lines)
+
+        # Add footer
+        combined_text += f"\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        combined_text += f"\n🕐 Generated at: {ist_now.strftime('%d-%m-%Y %H:%M IST')}"
+        
+        if len(requests_list) > MAX_DETAILED:
+            combined_text += f"\n\n⚠️ Showing first {MAX_DETAILED} of {len(requests_list)} total requests"
+
+        # Truncate if too long (WhatsApp has message limits)
+        MAX_MESSAGE_CHARS = 4000
+        if len(combined_text) > MAX_MESSAGE_CHARS:
+            combined_text = combined_text[:MAX_MESSAGE_CHARS - 50] + "\n\n... (Message truncated due to length)"
 
         # Normalize recipient numbers
         norm_recipients = [normalize_number(n) for n in recipients]
@@ -7057,7 +7115,7 @@ def today_requests(request):
         for rno in norm_recipients:
             constructed_calls.append({
                 'recipient': rno,
-                'phase': 'summary',
+                'phase': 'combined',
                 'method': 'POST',
                 'url': dxing_url,
                 'form': {
@@ -7065,122 +7123,87 @@ def today_requests(request):
                     'account': dxing_account,
                     'recipient': rno,
                     'type': 'text',
-                    'message': summary_text,
+                    'message': combined_text,
                     'priority': '1'
                 }
             })
-        for idx, dmsg in enumerate(detailed_messages, start=1):
-            for rno in norm_recipients:
-                constructed_calls.append({
-                    'recipient': rno,
-                    'phase': f'detail_{idx}',
-                    'method': 'POST',
-                    'url': dxing_url,
-                    'form': {
-                        'secret': dxing_secret,
-                        'account': dxing_account,
-                        'recipient': rno,
-                        'type': 'text',
-                        'message': dmsg,
-                        'priority': '1'
-                    }
-                })
 
-        # If dry_run, return the constructed calls for inspection (no network)
         if dry_run:
             json_payload['send_attempted'] = True
             json_payload['dry_run'] = True
             json_payload['constructed_calls'] = constructed_calls
-            if debug:
-                json_payload['ist_now'] = ist_now.isoformat()
-                json_payload['wait_seconds'] = wait_seconds
-                json_payload['norm_recipients'] = norm_recipients
-                json_payload['auto_hours_ist'] = AUTO_HOURS_IST
+            json_payload['norm_recipients'] = norm_recipients
+            json_payload['message_preview'] = combined_text[:1000] + "..." if len(combined_text) > 1000 else combined_text
+            json_payload['full_message'] = combined_text
             return JsonResponse(json_payload)
 
-        # Actually send: use a requests session and POST forms
-        SEND_TIMEOUT = 20
+        # Actually send the messages
+        SEND_TIMEOUT = 30
         session = requests.Session()
-        headers = {'User-Agent': 'myimc-notifier/1.0'}
+        headers = {
+            'User-Agent': 'myimc-notifier/1.0',
+            'Content-Type': 'application/x-www-form-urlencoded'
+        }
 
-        # 1) Send summary to each recipient
         for rno in norm_recipients:
-            form = {
+            form_data = {
                 'secret': dxing_secret,
                 'account': dxing_account,
                 'recipient': rno,
                 'type': 'text',
-                'message': summary_text,
+                'message': combined_text,
                 'priority': '1',
             }
+            
             try:
-                resp = session.post(dxing_url, data=form, timeout=SEND_TIMEOUT, headers=headers)
+                resp = session.post(
+                    dxing_url, 
+                    data=form_data, 
+                    timeout=SEND_TIMEOUT, 
+                    headers=headers
+                )
+                
                 send_results.append({
-                    'recipient': rno, 'phase': 'summary',
-                    'ok': resp.status_code in (200,201),
+                    'recipient': rno,
+                    'phase': 'combined',
+                    'ok': resp.status_code in (200, 201),
                     'status_code': resp.status_code,
-                    'response_text': resp.text[:2000]
+                    'response_text': resp.text[:500],  # Limited response text
+                    'message_length': len(combined_text)
                 })
+                
+                # Small delay between sends
+                import time
+                time.sleep(1)
+                
             except Exception as e:
                 send_results.append({
-                    'recipient': rno, 'phase': 'summary',
-                    'ok': False,
-                    'error': str(e)
-                })
-
-        # Optionally wait before first detailed message (so summary and first detail are spaced)
-        if not no_wait and wait_seconds > 0:
-            try:
-                time.sleep(wait_seconds)
-            except Exception:
-                pass
-
-        # 2) Send detailed messages one-by-one, waiting wait_seconds between batches
-        for idx, dmsg in enumerate(detailed_messages, start=1):
-            for rno in norm_recipients:
-                form = {
-                    'secret': dxing_secret,
-                    'account': dxing_account,
                     'recipient': rno,
-                    'type': 'text',
-                    'message': dmsg,
-                    'priority': '1',
-                }
-                try:
-                    resp = session.post(dxing_url, data=form, timeout=SEND_TIMEOUT, headers=headers)
-                    send_results.append({
-                        'recipient': rno,
-                        'phase': f'detail_{idx}',
-                        'ok': resp.status_code in (200,201),
-                        'status_code': resp.status_code,
-                        'response_text': resp.text[:2000]
-                    })
-                except Exception as e:
-                    send_results.append({
-                        'recipient': rno,
-                        'phase': f'detail_{idx}',
-                        'ok': False,
-                        'error': str(e)
-                    })
-            # wait between rounds unless no_wait requested or this was last message
-            if idx < len(detailed_messages) and not no_wait:
-                try:
-                    time.sleep(wait_seconds)
-                except Exception:
-                    # ignore sleep interruptions and continue
-                    pass
-
-    else:
-        send_attempted = False
+                    'phase': 'combined',
+                    'ok': False,
+                    'error': str(e),
+                    'message_length': len(combined_text)
+                })
+        
+        session.close()
 
     # ---------------- final payload ----------------
     json_payload['send_attempted'] = send_attempted
+    json_payload['should_send_logic'] = {
+        'force_send': force_send,
+        'current_hour': ist_now_hour,
+        'current_minute': ist_now_minute,
+        'is_auto_hour': ist_now_hour in AUTO_HOURS_IST,
+        'is_exact_minute': ist_now_minute == 0
+    }
+    
     if send_attempted:
         json_payload['send_results'] = send_results
-        json_payload['detailed_messages_count'] = len(detailed_messages)
-        json_payload['wait_seconds_used'] = wait_seconds
+        json_payload['message_sent'] = combined_text if 'combined_text' in locals() else None
+        json_payload['recipients_count'] = len(norm_recipients) if 'norm_recipients' in locals() else 0
+    
     if debug:
-        json_payload['ist_now'] = ist_now.isoformat()
-        json_payload['auto_hours_ist'] = AUTO_HOURS_IST
+        json_payload['ist_now'] = ist_now.isoformat() if hasattr(ist_now, 'isoformat') else str(ist_now)
+        json_payload['total_requests_found'] = len(requests_list)
 
     return JsonResponse(json_payload)
