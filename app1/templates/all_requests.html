@@ -32,9 +32,9 @@
                     <div class="btn-group ms-3" role="group">
                         <button id="todayBtn" class="btn btn-outline-primary" title="Show today's all requests">
                             TODAY
-                        </button>
+                            </button>
 
-                        <script>
+                            <script>
                             // ---- Utilities ----
                             const IST_OFFSET_MIN = 330; // UTC+5:30
                             const MS = 1000, MIN = 60 * MS, HR = 60 * MIN;
@@ -48,49 +48,61 @@
 
                             // Convert IST wall time to UTC ms
                             function istWallTimeToUtcMs(y, m, d, hh, mm) {
+                                // Treat (y,m,d,hh,mm) as IST wall time; convert to UTC epoch ms
                                 const istMs = Date.UTC(y, m, d, hh, mm, 0, 0);
                                 return istMs - IST_OFFSET_MIN * MIN;
                             }
 
-                            // Determine next click time (IST)
+                            // Target times (IST) — sorted to be safe
+                            const targets = [
+                                [11, 0],  // 11:00
+                                [16, 0],  // 16:00
+                                [16, 45], // 16:45  <-- NEW
+                            ].sort(([h1, m1], [h2, m2]) => h1 - h2 || m1 - m2);
+
+                            // Determine next click time (as UTC ms) based on IST clock
                             function nextClickUtcMs() {
                                 const ist = nowIST();
                                 const y = ist.getUTCFullYear();
                                 const m = ist.getUTCMonth();
                                 const d = ist.getUTCDate();
 
-                                // Target times (IST)
-                                const targets = [
-                                    [11, 0],  // 11:00
-                                    [16, 0],  // 16:00
-                                ];
-
-                                // Try today first
+                                // Helper: next for specific IST date
+                                function nextForDate(y_, m_, d_) {
+                                const nowUtc = Date.now();
                                 for (const [hh, mm] of targets) {
-                                    const utcMs = istWallTimeToUtcMs(y, m, d, hh, mm);
-                                    if (utcMs > Date.now()) return utcMs;
+                                    const utcMs = istWallTimeToUtcMs(y_, m_, d_, hh, mm);
+                                    if (utcMs > nowUtc) return utcMs;
+                                }
+                                return null;
                                 }
 
-                                // Otherwise, pick tomorrow's first (11:00)
+                                // Try today first
+                                const todayNext = nextForDate(y, m, d);
+                                if (todayNext) return todayNext;
+
+                                // Otherwise, pick the first target tomorrow
                                 const tomorrowIst = new Date(ist.getTime() + 24 * HR);
                                 const yt = tomorrowIst.getUTCFullYear();
                                 const mt = tomorrowIst.getUTCMonth();
                                 const dt = tomorrowIst.getUTCDate();
-                                return istWallTimeToUtcMs(yt, mt, dt, 11, 0);
+                                // Since none matched today, the first target tomorrow is guaranteed to be in the future
+                                const [firstH, firstM] = targets[0];
+                                return istWallTimeToUtcMs(yt, mt, dt, firstH, firstM);
                             }
 
                             // Click the button
                             function clickTodayButton() {
                                 const btn = document.getElementById('todayBtn');
                                 if (btn) {
-                                    btn.click();
-                                    const ist = nowIST();
-                                    console.log(
-                                        "Button clicked at IST: " +
-                                        ist.toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })
-                                    );
+                                btn.click();
+                                const ist = nowIST();
+                                console.log(
+                                    "Button clicked at IST: " +
+                                    ist.toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })
+                                );
                                 } else {
-                                    console.warn("todayBtn not found at click time.");
+                                console.warn("todayBtn not found at click time.");
                                 }
                             }
 
@@ -102,28 +114,28 @@
 
                                 if (timeoutId) clearTimeout(timeoutId);
                                 timeoutId = setTimeout(() => {
-                                    clickTodayButton();
-                                    scheduleNext();
+                                clickTodayButton();
+                                scheduleNext(); // chain the next one
                                 }, delay);
 
                                 const nextIst = new Date(targetUtcMs + IST_OFFSET_MIN * MIN);
                                 console.log(
-                                    "Next auto-click scheduled for IST: " +
-                                    nextIst.toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })
+                                "Next auto-click scheduled for IST: " +
+                                nextIst.toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })
                                 );
                             }
 
                             // Wait until button exists before starting
                             function waitForButtonAndStart() {
                                 if (document.getElementById('todayBtn')) {
-                                    scheduleNext();
-                                    return;
+                                scheduleNext();
+                                return;
                                 }
                                 const obs = new MutationObserver(() => {
-                                    if (document.getElementById('todayBtn')) {
-                                        obs.disconnect();
-                                        scheduleNext();
-                                    }
+                                if (document.getElementById('todayBtn')) {
+                                    obs.disconnect();
+                                    scheduleNext();
+                                }
                                 });
                                 obs.observe(document.documentElement, { childList: true, subtree: true });
                             }
@@ -134,7 +146,8 @@
                             } else {
                                 waitForButtonAndStart();
                             }
-                        </script>
+                            </script>
+
 
 
 
