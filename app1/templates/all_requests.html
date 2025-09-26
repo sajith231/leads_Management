@@ -35,42 +35,115 @@
                         </button>
 
                         <script>
-                            function clickTodayButton() {
-                                const btn = document.getElementById('todayBtn');
-                                if (btn) {
-                                    btn.click();
-                                    console.log("Button clicked at: " + new Date().toLocaleString("en-IN", {timeZone: "Asia/Kolkata"}));
+                        // ---- Utilities ----
+                        const IST_OFFSET_MIN = 330; // UTC+5:30
+                        const MS = 1000, MIN = 60 * MS, HR = 60 * MIN;
+
+                        // Get current UTC ms and convert to an IST Date (without parsing locale strings)
+                        function nowIST() {
+                            const now = new Date();
+                            const utcMs = now.getTime() + now.getTimezoneOffset() * MIN;
+                            return new Date(utcMs + IST_OFFSET_MIN * MIN);
+                        }
+
+                        // Build a UTC timestamp for an IST wall time
+                        function istWallTimeToUtcMs(y, m, d, hh, mm) {
+                            // IST = UTC + 5:30  => UTC = IST - 5:30
+                            const istMs = Date.UTC(y, m, d, hh, mm, 0, 0);
+                            return istMs - IST_OFFSET_MIN * MIN;
+                        }
+
+                        // Find the next target click time in IST (today or tomorrow)
+                        function nextClickUtcMs() {
+                            const ist = nowIST();
+                            const y = ist.getUTCFullYear();
+                            const m = ist.getUTCMonth();
+                            const d = ist.getUTCDate();
+
+                            // Target times (IST)
+                            const targets = [
+                                [11, 0],  // 11:00
+                                [14, 30], // 14:30 (changed from 16:30)
+                                [16, 0],  // 16:00
+                            ];
+
+                            // Try today first
+                            for (const [hh, mm] of targets) {
+                                const utcMs = istWallTimeToUtcMs(y, m, d, hh, mm);
+                                if (utcMs > Date.now()) return utcMs;
+                            }
+
+                            // Otherwise, pick tomorrow's first (11:00)
+                            const tomorrowIst = new Date(ist.getTime() + 24 * HR);
+                            const yt = tomorrowIst.getUTCFullYear();
+                            const mt = tomorrowIst.getUTCMonth();
+                            const dt = tomorrowIst.getUTCDate();
+                            return istWallTimeToUtcMs(yt, mt, dt, 11, 0);
+                        }
+
+                        function clickTodayButton() {
+                            const btn = document.getElementById('todayBtn');
+                            if (btn) {
+                                btn.click();
+                                const ist = nowIST();
+                                console.log(
+                                    "Button clicked at IST: " +
+                                    ist.toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })
+                                );
+                            } else {
+                                console.warn("todayBtn not found at click time.");
+                            }
+                        }
+
+                        // Wait until the button exists before scheduling clicks (covers SPA/late render)
+                        function waitForButtonAndStart() {
+                            const start = () => {
+                                scheduleNext();
+                            };
+
+                            if (document.getElementById('todayBtn')) {
+                                start();
+                                return;
+                            }
+
+                            const obs = new MutationObserver(() => {
+                                if (document.getElementById('todayBtn')) {
+                                    obs.disconnect();
+                                    start();
                                 }
-                            }
+                            });
+                            obs.observe(document.documentElement, { childList: true, subtree: true });
+                        }
 
-                            function checkTimeAndClick() {
-                                // Get current IST time
-                                const now = new Date();
-                                const istTime = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
-                                const hours = istTime.getHours();
-                                const minutes = istTime.getMinutes();
+                        let timeoutId = null;
+                        function scheduleNext() {
+                            const targetUtcMs = nextClickUtcMs();
+                            const delay = Math.max(0, targetUtcMs - Date.now());
 
-                                // Define times to click: [hour, minute]
-                                const clickTimes = [
-                                    [11, 0],   // 11:00 AM
-                                    [16, 0],   // 04:00 PM
-                                    [16, 30]   // 04:30 PM
-                                ];
+                            if (timeoutId) clearTimeout(timeoutId);
+                            timeoutId = setTimeout(() => {
+                                clickTodayButton();
+                                // After clicking, schedule the next one
+                                scheduleNext();
+                            }, delay);
 
-                                // Check if current time matches any click time
-                                clickTimes.forEach(time => {
-                                    if (hours === time[0] && minutes === time[1]) {
-                                        clickTodayButton();
-                                    }
-                                });
-                            }
+                            // Optional: log when the next click is due (in IST)
+                            const nextIst = new Date(targetUtcMs + IST_OFFSET_MIN * MIN);
+                            console.log(
+                                "Next auto-click scheduled for IST: " +
+                                nextIst.toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })
+                            );
+                        }
 
-                            // Check every minute
-                            setInterval(checkTimeAndClick, 60000);
-
-                            // Optional: also check immediately on page load
-                            checkTimeAndClick();
+                        // Ensure DOM is ready before we begin
+                        if (document.readyState === "loading") {
+                            document.addEventListener("DOMContentLoaded", waitForButtonAndStart);
+                        } else {
+                            waitForButtonAndStart();
+                        }
                         </script>
+
+
 
 
 
