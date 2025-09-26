@@ -6834,21 +6834,21 @@ from .models import LeaveRequest, LateRequest, EarlyRequest, Employee
 
 import pytz
 import requests
+from urllib.parse import quote_plus
 
 @require_GET
 def today_requests(request):
     """
     Send today's requests summary + all detailed lines combined into a single message.
 
-    Automatic send times (IST): 11:00, 16:00, 16:45  (can be overridden via ?times=11:00,16:00,16:45)
+    Automatic send times (IST): 11:00, 16:00 (minute == 0)
     Query params:
-      - force=1               -> force sending now regardless of IST clock (use for local testing)
-      - dry_run=1             -> do NOT perform network calls; return constructed POST forms instead
-      - debug=1               -> include ist_now and extra debug info
-      - limit=N               -> max number of detailed lines to include (default 100)
-      - recipients=NUM1,NUM2  -> override recipients (comma-separated)
-      - date=YYYY-MM-DD       -> optional date to query (defaults to today)
-      - times=HH:MM,HH:MM     -> optional override of auto times in IST (e.g., times=11:00,16:00,16:45)
+      - force=1        -> force sending now regardless of IST clock (use for local testing)
+      - dry_run=1      -> do NOT perform network calls; return constructed POST forms instead
+      - debug=1        -> include ist_now and extra debug info
+      - limit=N        -> max number of detailed lines to include (default 100)
+      - recipients=NUM1,NUM2 -> override recipients (comma-separated)
+      - date=YYYY-MM-DD -> optional date to query (defaults to today)
     """
     # ---------------- parse date ----------------
     date_str = request.GET.get('date')
@@ -6879,10 +6879,10 @@ def today_requests(request):
 
     # Leaves
     leave_qs = LeaveRequest.objects.filter(
-        start_date__lte=query_date,
+        start_date__lte=query_date, 
         end_date__gte=query_date
     ).select_related('employee').order_by('-created_at')
-
+    
     for lr in leave_qs:
         totals['leave'] += 1
         st = (lr.status or '').lower()
@@ -6890,7 +6890,7 @@ def today_requests(request):
             status_counts[st] += 1
         else:
             status_counts['other'] += 1
-
+            
         created_dt = getattr(lr, 'created_at', None)
         requests_list.append({
             'type': 'Leave',
@@ -6909,7 +6909,7 @@ def today_requests(request):
     late_qs = LateRequest.objects.filter(
         date=query_date
     ).select_related('employee').order_by('-created_at')
-
+    
     for lt in late_qs:
         totals['late'] += 1
         st = (lt.status or '').lower()
@@ -6917,7 +6917,7 @@ def today_requests(request):
             status_counts[st] += 1
         else:
             status_counts['other'] += 1
-
+            
         created_dt = getattr(lt, 'created_at', None)
         requests_list.append({
             'type': 'Late',
@@ -6936,7 +6936,7 @@ def today_requests(request):
     early_qs = EarlyRequest.objects.filter(
         date=query_date
     ).select_related('employee').order_by('-created_at')
-
+    
     for er in early_qs:
         totals['early'] += 1
         st = (er.status or '').lower()
@@ -6944,7 +6944,7 @@ def today_requests(request):
             status_counts[st] += 1
         else:
             status_counts['other'] += 1
-
+            
         created_dt = getattr(er, 'created_at', None)
         requests_list.append({
             'type': 'Early',
@@ -6968,7 +6968,7 @@ def today_requests(request):
         'early': totals['early'],
         'status_counts': status_counts
     }
-
+    
     json_payload = {
         'success': True,
         'date': fmt_date(query_date),
@@ -6976,14 +6976,14 @@ def today_requests(request):
         'requests': requests_list,
     }
 
-    # ---------------- recipients ----------------
+    # ---------------- sending config ----------------
     recipients_param = request.GET.get('recipients')
     if recipients_param:
         recipients = [r.strip() for r in recipients_param.split(',') if r.strip()]
     else:
-        recipients = ['9061947005', '7306197537', '9946545535', '7593820007', '7593820005']
+        recipients = ['9061947005','7306197537','9946545535','7593820007','7593820005']
 
-    # ---------------- vendor config ----------------
+
     dxing_url = "https://app.dxing.in/api/send/whatsapp"
     dxing_secret = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
     dxing_account = "1756959119812b4ba287f5ee0bc9d43bbf5bbe87fb68b9118fcf1af"
@@ -6992,7 +6992,6 @@ def today_requests(request):
     send_attempted = False
 
     # ---------------- flags / timing ----------------
-    # IST time
     try:
         ist = pytz.timezone('Asia/Kolkata')
         ist_now = datetime.now(ist)
@@ -7012,74 +7011,61 @@ def today_requests(request):
         limit = 100
     MAX_DETAILED = max(1, min(limit, 1000))
 
-    # helper: normalize to E.164 style (+91xxxxxxxxxx)
+    # helper: normalize numbers to Indian international format (prefix 91)
     def normalize_number(no):
-        s = str(no).strip().replace(' ', '')
+        s = str(no).strip()
         if s.startswith('+'):
             return s
         s = s.lstrip('0')
-        if s.startswith('91') and len(s) >= 12 and s.isdigit():
-            return '+' + s
-        if len(s) == 10 and s.isdigit():
-            return '+91' + s
-        if s.isdigit() and len(s) >= 8:
-            return '+' + s  # generic fallback
-        return s  # last resort
+        if s.startswith('91') and len(s) >= 12:
+            return s
+        if len(s) == 10:
+            return '91' + s
+        return s
 
-    # ---------------- auto times ----------------
-    # default auto times: 11:00, 16:00, 16:45 (IST)
-    AUTO_TIMES_IST = [(11, 0), (16, 0), (16, 45)]
+    # Allowed IST hours for automatic send: 11 and 16
+    AUTO_HOURS_IST = (11, 16)
 
-    # allow override via query (?times=11:00,16:00,16:45)
-    times_param = request.GET.get('times')
-    if times_param:
-        parsed = []
-        for part in times_param.split(','):
-            part = part.strip()
-            try:
-                hh, mm = part.split(':')
-                parsed.append((int(hh), int(mm)))
-            except Exception:
-                pass
-        if parsed:
-            AUTO_TIMES_IST = parsed
-
+    # ---------------- decide to send ----------------
     ist_now_minute = getattr(ist_now, 'minute', 0)
     ist_now_hour = getattr(ist_now, 'hour', 0)
 
+    # For debugging: include the ist_now in the payload if debug requested
     if debug:
         json_payload['ist_now'] = ist_now.isoformat() if hasattr(ist_now, 'isoformat') else str(ist_now)
-        json_payload['auto_times_ist'] = AUTO_TIMES_IST
+        json_payload['auto_hours_ist'] = AUTO_HOURS_IST
         json_payload['current_hour'] = ist_now_hour
         json_payload['current_minute'] = ist_now_minute
 
-    # Check if we should send: force OR matches any (hour, minute)
-    should_send = force_send or any((ist_now_hour, ist_now_minute) == t for t in AUTO_TIMES_IST)
-
-    # IMPORTANT: Do NOT force-send unconditionally in production.
-    # (Removed the old `should_send = should_send or True` line.)
-
+    # Check if we should send: force OR (correct hour AND minute is 0)
+    should_send = force_send or (ist_now_hour in AUTO_HOURS_IST and ist_now_minute == 0)
+    
+    # For local development, always send if there are requests (remove this condition in production)
+    # Uncomment the line below for local testing to always send
+    should_send = should_send or True  # Remove this line in production
+    
     if should_send:
         send_attempted = True
 
-        # Build summary text
+        # Build summary text with better formatting
         summary_lines = [
             f"📋 Today's Requests Summary ({fmt_date(query_date)})",
-            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+            f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
             f"📊 Total: {counts['total']} requests",
             f"🏖️ Leave: {counts['leave']} | ⏰ Late: {counts['late']} | 🏃 Early: {counts['early']}",
             f"✅ Approved: {status_counts.get('approved', 0)} | ⏳ Pending: {status_counts.get('pending', 0)} | ❌ Rejected: {status_counts.get('rejected', 0)}"
         ]
 
-        # Detailed lines
+        # Build detailed lines
         detailed_lines = []
         if requests_list:
             detailed_lines.append("\n📋 Detailed List:")
             detailed_lines.append("━━━━━━━━━━━━━━━━━━")
+            
             for idx, item in enumerate(requests_list[:MAX_DETAILED], start=1):
                 emoji = "🏖️" if item['type'] == 'Leave' else "⏰" if item['type'] == 'Late' else "🏃"
                 status_emoji = "✅" if item['status'] == 'approved' else "⏳" if item['status'] == 'pending' else "❌"
-
+                
                 if item['type'] == 'Leave':
                     date_info = f"{item.get('start_date', '')}"
                     if item.get('start_date') != item.get('end_date'):
@@ -7091,39 +7077,41 @@ def today_requests(request):
                     line = f"{idx}. {emoji} {item['employee_name']} - {item['type']} ({item.get('date', '')})"
                     if item.get('details'):
                         line += f" - {item.get('details')}"
-
+                
                 line += f" {status_emoji} {item.get('status', '').title()}"
-
-                reason = (item.get('reason', '') or '').strip()
+                
+                # Add reason if available (truncated)
+                reason = item.get('reason', '').strip()
                 if reason:
                     reason_short = (reason[:80] + '...') if len(reason) > 80 else reason
                     line += f"\n   💬 Reason: {reason_short}"
-
+                
+                # Add created date
                 if item.get('created_at'):
                     line += f"\n   📅 Requested: {item.get('created_at')}"
-
+                
                 detailed_lines.append(line)
 
-        # Combine message
+        # Combine everything into a single message
         all_lines = summary_lines + detailed_lines
         combined_text = "\n".join(all_lines)
 
-        # Footer
-        combined_text += "\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        # Add footer
+        combined_text += f"\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
         combined_text += f"\n🕐 Generated at: {ist_now.strftime('%d-%m-%Y %H:%M IST')}"
-
+        
         if len(requests_list) > MAX_DETAILED:
             combined_text += f"\n\n⚠️ Showing first {MAX_DETAILED} of {len(requests_list)} total requests"
 
-        # Truncate to fit WhatsApp limits
+        # Truncate if too long (WhatsApp has message limits)
         MAX_MESSAGE_CHARS = 4000
         if len(combined_text) > MAX_MESSAGE_CHARS:
             combined_text = combined_text[:MAX_MESSAGE_CHARS - 50] + "\n\n... (Message truncated due to length)"
 
-        # Normalize recipients
+        # Normalize recipient numbers
         norm_recipients = [normalize_number(n) for n in recipients]
 
-        # Constructed calls (for dry_run)
+        # Prepare dry_run constructed forms
         constructed_calls = []
         for rno in norm_recipients:
             constructed_calls.append({
@@ -7142,17 +7130,15 @@ def today_requests(request):
             })
 
         if dry_run:
-            json_payload.update({
-                'send_attempted': True,
-                'dry_run': True,
-                'constructed_calls': constructed_calls,
-                'norm_recipients': norm_recipients,
-                'message_preview': combined_text[:1000] + "..." if len(combined_text) > 1000 else combined_text,
-                'full_message': combined_text
-            })
+            json_payload['send_attempted'] = True
+            json_payload['dry_run'] = True
+            json_payload['constructed_calls'] = constructed_calls
+            json_payload['norm_recipients'] = norm_recipients
+            json_payload['message_preview'] = combined_text[:1000] + "..." if len(combined_text) > 1000 else combined_text
+            json_payload['full_message'] = combined_text
             return JsonResponse(json_payload)
 
-        # Send
+        # Actually send the messages
         SEND_TIMEOUT = 30
         session = requests.Session()
         headers = {
@@ -7169,19 +7155,28 @@ def today_requests(request):
                 'message': combined_text,
                 'priority': '1',
             }
+            
             try:
-                resp = session.post(dxing_url, data=form_data, timeout=SEND_TIMEOUT, headers=headers)
+                resp = session.post(
+                    dxing_url, 
+                    data=form_data, 
+                    timeout=SEND_TIMEOUT, 
+                    headers=headers
+                )
+                
                 send_results.append({
                     'recipient': rno,
                     'phase': 'combined',
                     'ok': resp.status_code in (200, 201),
                     'status_code': resp.status_code,
-                    'response_text': resp.text[:500],
+                    'response_text': resp.text[:500],  # Limited response text
                     'message_length': len(combined_text)
                 })
-                # brief delay to be polite to the API
+                
+                # Small delay between sends
                 import time
                 time.sleep(1)
+                
             except Exception as e:
                 send_results.append({
                     'recipient': rno,
@@ -7190,6 +7185,7 @@ def today_requests(request):
                     'error': str(e),
                     'message_length': len(combined_text)
                 })
+        
         session.close()
 
     # ---------------- final payload ----------------
@@ -7198,15 +7194,17 @@ def today_requests(request):
         'force_send': force_send,
         'current_hour': ist_now_hour,
         'current_minute': ist_now_minute,
-        'matched_time': any((ist_now_hour, ist_now_minute) == t for t in (AUTO_TIMES_IST if 'AUTO_TIMES_IST' in locals() else []))
+        'is_auto_hour': ist_now_hour in AUTO_HOURS_IST,
+        'is_exact_minute': ist_now_minute == 0
     }
-
+    
     if send_attempted:
         json_payload['send_results'] = send_results
         json_payload['message_sent'] = combined_text if 'combined_text' in locals() else None
         json_payload['recipients_count'] = len(norm_recipients) if 'norm_recipients' in locals() else 0
-
+    
     if debug:
+        json_payload['ist_now'] = ist_now.isoformat() if hasattr(ist_now, 'isoformat') else str(ist_now)
         json_payload['total_requests_found'] = len(requests_list)
 
     return JsonResponse(json_payload)
