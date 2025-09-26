@@ -6981,7 +6981,7 @@ def today_requests(request):
     if recipients_param:
         recipients = [r.strip() for r in recipients_param.split(',') if r.strip()]
     else:
-        recipients = ['9061947005']
+        recipients = ['9061947005','7306197537','9946545535','7593820007','7593820005']
 
 
     dxing_url = "https://app.dxing.in/api/send/whatsapp"
