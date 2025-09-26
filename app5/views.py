@@ -169,7 +169,7 @@ def jobcard_create(request):
             "priority": 1
         }
 
-        recipients = ["9946545535"]
+        recipients = ["7593820007","7593820006","7593820005"]
 
         for recipient in recipients:
             params = params_base.copy()
