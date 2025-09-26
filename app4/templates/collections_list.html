@@ -4,8 +4,9 @@
 <div class="container mt-4">
     <!-- Add CSRF token for JavaScript -->
     {% csrf_token %}
-    <!-- Add URL pattern for delete -->
+    <!-- Add URL pattern for delete and status update -->
     <meta name="delete-url-pattern" content="{% url 'collections_delete' 0 %}">
+    <meta name="status-update-url" content="{% url 'collection_update_status' 0 %}">
     
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="mb-0">
@@ -16,24 +17,9 @@
         </a>
     </div>
     
-    <!-- Statistics Cards -->
+    <!-- Statistics Cards (without Total Collections) -->
     <div class="row mb-4">
-        <div class="col-md-3">
-            <div class="card bg-primary text-white">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h6 class="card-title">Total Collections</h6>
-                            <h4 class="mb-0" id="total-count">{{ collections.count|default:0 }}</h4>
-                        </div>
-                        <div class="align-self-center">
-                            <i class="fas fa-clipboard-list fa-2x"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
+        <div class="col-md-4">
             <div class="card bg-success text-white">
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
@@ -63,16 +49,31 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-2">
             <div class="card bg-warning text-white">
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
                         <div>
-                            <h6 class="card-title">Recent</h6>
-                            <h4 class="mb-0" id="recent-count">{{ recent_count|default:0 }}</h4>
+                            <h6 class="card-title">Pending</h6>
+                            <h4 class="mb-0" id="pending-count">{{ pending_count|default:0 }}</h4>
                         </div>
                         <div class="align-self-center">
                             <i class="fas fa-clock fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">Verified</h6>
+                            <h4 class="mb-0" id="verified-count">{{ verified_count|default:0 }}</h4>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-check-circle fa-2x"></i>
                         </div>
                     </div>
                 </div>
@@ -87,7 +88,7 @@
         </div>
         <div class="card-body">
             <form id="filterForm" class="row g-3">
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label for="searchInput" class="form-label">Search Client</label>
                     <div class="input-group">
                         <span class="input-group-text"><i class="fas fa-search"></i></span>
@@ -95,13 +96,21 @@
                                placeholder="Search by client name..." value="{{ request.GET.search }}">
                     </div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <label for="branchFilter" class="form-label">Branch</label>
                     <div class="input-group">
                         <span class="input-group-text"><i class="fas fa-building"></i></span>
                         <input type="text" id="branchFilter" name="branch" class="form-control" 
                                placeholder="Filter by branch..." value="{{ request.GET.branch }}">
                     </div>
+                </div>
+                <div class="col-md-2">
+                    <label for="statusFilter" class="form-label">Status</label>
+                    <select id="statusFilter" name="status_filter" class="form-select">
+                        <option value="">All Status</option>
+                        <option value="pending" {% if request.GET.status_filter == 'pending' %}selected{% endif %}>Pending</option>
+                        <option value="verified" {% if request.GET.status_filter == 'verified' %}selected{% endif %}>Verified</option>
+                    </select>
                 </div>
                 <div class="col-md-3">
                     <label for="dateFilter" class="form-label">Date Range</label>
@@ -137,14 +146,16 @@
                         <table class="table table-hover table-bordered" id="collectionsTable">
                             <thead class="table-dark">
                                 <tr>
-                                    <th width="5%">#</th>
-                                    <th width="15%">Client Name</th>
-                                    <th width="12%">Branch</th>
-                                    <th width="10%">Amount</th>
-                                    <th width="15%">Paid For</th>
-                                    <th width="12%">Date Created</th>
-                                    <th width="10%">Screenshot</th>
-                                    <th width="21%">Actions</th>
+                                    <th width="4%">#</th>
+                                    <th width="14%">Client Name</th>
+                                    <th width="9%">Branch</th>
+                                    <th width="11%">Created By</th>
+                                    <th width="7%">Amount</th>
+                                    <th width="11%">Paid For</th>
+                                    <th width="10%">Status</th>
+                                    <th width="9%">Date Created</th>
+                                    <th width="7%">Screenshot</th>
+                                    <th width="18%">Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="collectionsTableBody">
@@ -160,11 +171,46 @@
                                         <td>
                                             <span class="badge bg-secondary">{{ collection.branch }}</span>
                                         </td>
+                                        <td class="text-center">
+                                            <div class="created-by-info">
+                                                <i class="fas fa-user-circle text-primary me-1"></i>
+                                                <span class="fw-semibold">{{ collection.created_by|default:"Unknown" }}</span>
+                                            </div>
+                                        </td>
                                         <td>
                                             <span class="fw-bold text-success">₹{{ collection.amount|floatformat:2 }}</span>
                                         </td>
                                         <td>
                                             <span class="text-primary">{{ collection.paid_for|truncatechars:20 }}</span>
+                                        </td>
+                                        <td class="text-center">
+                                            <div class="dropdown">
+                                                <button class="btn btn-sm dropdown-toggle status-btn {% if collection.status == 'verified' %}btn-success{% else %}btn-warning{% endif %}" 
+                                                        type="button" id="statusDropdown{{ collection.id }}" 
+                                                        data-bs-toggle="dropdown" aria-expanded="false">
+                                                    {% if collection.status == 'pending' %}
+                                                        <i class="fas fa-clock me-1"></i>Pending
+                                                    {% else %}
+                                                        <i class="fas fa-check-circle me-1"></i>Verified
+                                                    {% endif %}
+                                                </button>
+                                                <ul class="dropdown-menu" aria-labelledby="statusDropdown{{ collection.id }}">
+                                                    <li>
+                                                        <a class="dropdown-item status-option" href="#" 
+                                                           data-status="pending" 
+                                                           data-collection-id="{{ collection.id }}">
+                                                            <i class="fas fa-clock me-2 text-warning"></i>Mark as Pending
+                                                        </a>
+                                                    </li>
+                                                    <li>
+                                                        <a class="dropdown-item status-option" href="#" 
+                                                           data-status="verified" 
+                                                           data-collection-id="{{ collection.id }}">
+                                                            <i class="fas fa-check-circle me-2 text-success"></i>Mark as Verified
+                                                        </a>
+                                                    </li>
+                                                </ul>
+                                            </div>
                                         </td>
                                         <td>
                                             <small>{{ collection.created_at|date:"d M Y" }}<br>
@@ -181,20 +227,23 @@
                                             {% endif %}
                                         </td>
                                         <td>
-                                            <div class="action-buttons">
-                                                <a href="{% url 'collections_edit' collection.id %}" 
-                                                   class="action-btn edit-btn" title="Edit Collection">
-                                                    <i class="fas fa-edit"></i>
-                                                    <span>Edit</span>
-                                                </a>
-                                                <button class="action-btn delete-btn" 
-                                                        onclick="deleteCollection(this, {{ collection.id }}, '{{ collection.client_name|escapejs }}')" 
-                                                        title="Delete Collection">
-                                                    <i class="fas fa-trash"></i>
-                                                    <span>Delete</span>
-                                                </button>
+                                            <!-- Horizontal Action Buttons -->
+                                            <div class="d-flex flex-column gap-1">
+                                                <div class="d-flex justify-content-between gap-1">
+                                                    <a href="{% url 'collections_edit' collection.id %}" 
+                                                       class="action-btn edit-btn flex-fill text-center" title="Edit Collection">
+                                                        <i class="fas fa-edit"></i>
+                                                        <span>Edit</span>
+                                                    </a>
+                                                    <button class="action-btn delete-btn flex-fill text-center" 
+                                                            onclick="deleteCollection(this, {{ collection.id }}, '{{ collection.client_name|escapejs }}')" 
+                                                            title="Delete Collection">
+                                                        <i class="fas fa-trash"></i>
+                                                        <span>Delete</span>
+                                                    </button>
+                                                </div>
                                                 <a href="{% url 'collection_receipt' collection.id %}" 
-                                                   class="action-btn receipt-btn" title="Download Receipt">
+                                                   class="action-btn receipt-btn text-center" title="Download Receipt">
                                                     <i class="fas fa-receipt"></i>
                                                     <span>Receipt</span>
                                                 </a>
@@ -212,10 +261,10 @@
                             <ul class="pagination justify-content-center">
                                 {% if page_obj.has_previous %}
                                     <li class="page-item">
-                                        <a class="page-link" href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.branch %}&branch={{ request.GET.branch }}{% endif %}{% if request.GET.date_filter %}&date_filter={{ request.GET.date_filter }}{% endif %}">First</a>
+                                        <a class="page-link" href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.branch %}&branch={{ request.GET.branch }}{% endif %}{% if request.GET.status_filter %}&status_filter={{ request.GET.status_filter }}{% endif %}{% if request.GET.date_filter %}&date_filter={{ request.GET.date_filter }}{% endif %}">First</a>
                                     </li>
                                     <li class="page-item">
-                                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.branch %}&branch={{ request.GET.branch }}{% endif %}{% if request.GET.date_filter %}&date_filter={{ request.GET.date_filter }}{% endif %}">Previous</a>
+                                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.branch %}&branch={{ request.GET.branch }}{% endif %}{% if request.GET.status_filter %}&status_filter={{ request.GET.status_filter }}{% endif %}{% if request.GET.date_filter %}&date_filter={{ request.GET.date_filter }}{% endif %}">Previous</a>
                                     </li>
                                 {% endif %}
 
@@ -225,10 +274,10 @@
 
                                 {% if page_obj.has_next %}
                                     <li class="page-item">
-                                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.branch %}&branch={{ request.GET.branch }}{% endif %}{% if request.GET.date_filter %}&date_filter={{ request.GET.date_filter }}{% endif %}">Next</a>
+                                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.branch %}&branch={{ request.GET.branch }}{% endif %}{% if request.GET.status_filter %}&status_filter={{ request.GET.status_filter }}{% endif %}{% if request.GET.date_filter %}&date_filter={{ request.GET.date_filter }}{% endif %}">Next</a>
                                     </li>
                                     <li class="page-item">
-                                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.branch %}&branch={{ request.GET.branch }}{% endif %}{% if request.GET.date_filter %}&date_filter={{ request.GET.date_filter }}{% endif %}">Last</a>
+                                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.branch %}&branch={{ request.GET.branch }}{% endif %}{% if request.GET.status_filter %}&status_filter={{ request.GET.status_filter }}{% endif %}{% if request.GET.date_filter %}&date_filter={{ request.GET.date_filter }}{% endif %}">Last</a>
                                     </li>
                                 {% endif %}
                             </ul>
@@ -311,10 +360,17 @@ function getDeleteUrl(collectionId) {
     return urlPattern.replace('0', collectionId);
 }
 
+// Get status update URL
+function getStatusUpdateUrl(collectionId) {
+    const urlPattern = document.querySelector('meta[name="status-update-url"]').content;
+    return urlPattern.replace('0', collectionId);
+}
+
 // Enhanced Filter Functionality
 document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.getElementById('searchInput');
     const branchFilter = document.getElementById('branchFilter');
+    const statusFilter = document.getElementById('statusFilter');
     const dateFilter = document.getElementById('dateFilter');
     const applyFilters = document.getElementById('applyFilters');
     const clearFilters = document.getElementById('clearFilters');
@@ -332,6 +388,7 @@ document.addEventListener('DOMContentLoaded', function() {
         searchTimeout = setTimeout(applyFiltersFunction, 500);
     });
 
+    statusFilter.addEventListener('change', applyFiltersFunction);
     dateFilter.addEventListener('change', applyFiltersFunction);
 
     // Apply filters button
@@ -341,6 +398,7 @@ document.addEventListener('DOMContentLoaded', function() {
     clearFilters.addEventListener('click', function() {
         searchInput.value = '';
         branchFilter.value = '';
+        statusFilter.value = '';
         dateFilter.value = '';
         applyFiltersFunction();
     });
@@ -352,23 +410,91 @@ document.addEventListener('DOMContentLoaded', function() {
             applyFiltersFunction();
         }
     });
+
+    // Status update functionality
+    document.querySelectorAll('.status-option').forEach(option => {
+        option.addEventListener('click', function(e) {
+            e.preventDefault();
+            const collectionId = this.getAttribute('data-collection-id');
+            const newStatus = this.getAttribute('data-status');
+            updateCollectionStatus(collectionId, newStatus);
+        });
+    });
 });
 
 // Apply filters function
 function applyFiltersFunction() {
     const searchValue = document.getElementById('searchInput').value.trim();
     const branchValue = document.getElementById('branchFilter').value.trim();
+    const statusValue = document.getElementById('statusFilter').value;
     const dateValue = document.getElementById('dateFilter').value;
 
     // Build URL parameters
     const params = new URLSearchParams();
     if (searchValue) params.append('search', searchValue);
     if (branchValue) params.append('branch', branchValue);
+    if (statusValue) params.append('status_filter', statusValue);
     if (dateValue) params.append('date_filter', dateValue);
 
     // Navigate to filtered results
     const newUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
     window.location.href = newUrl;
+}
+
+// Update collection status
+function updateCollectionStatus(collectionId, newStatus) {
+    const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
+    loadingModal.show();
+
+    fetch(getStatusUpdateUrl(collectionId), {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCSRFToken(),
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            status: newStatus
+        })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok: ' + response.status);
+        }
+        return response.json();
+    })
+    .then(data => {
+        loadingModal.hide();
+        if (data.success) {
+            // Update the status button appearance
+            const statusBtn = document.querySelector(`#statusDropdown${collectionId}`);
+            const statusIcon = statusBtn.querySelector('i');
+            const statusText = statusBtn.querySelector('span') || statusBtn.childNodes[2];
+            
+            if (newStatus === 'verified') {
+                statusBtn.className = 'btn btn-sm dropdown-toggle status-btn btn-success';
+                statusIcon.className = 'fas fa-check-circle me-1';
+                statusText.textContent = 'Verified';
+            } else {
+                statusBtn.className = 'btn btn-sm dropdown-toggle status-btn btn-warning';
+                statusIcon.className = 'fas fa-clock me-1';
+                statusText.textContent = 'Pending';
+            }
+            
+            showAlert('success', data.message);
+            
+            // Update statistics after a short delay
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
+        } else {
+            showAlert('danger', data.message || 'Status update failed');
+        }
+    })
+    .catch(err => {
+        loadingModal.hide();
+        console.error('Status update error:', err);
+        showAlert('danger', 'Network error – please try again. ' + err.message);
+    });
 }
 
 // Enhanced View Screenshot with full screen and zoom
@@ -526,7 +652,62 @@ function showAlert(type, message) {
     vertical-align: middle;
 }
 
-/* Enhanced Action Buttons */
+/* Status Button Styles */
+.status-btn {
+    min-width: 120px;
+    font-weight: 500;
+    border: none;
+}
+
+.status-btn.btn-success {
+    background: linear-gradient(135deg, #198754 0%, #157347 100%);
+}
+
+.status-btn.btn-warning {
+    background: linear-gradient(135deg, #ffc107 0%, #ffca2c 100%);
+    color: #000 !important;
+}
+
+.status-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.dropdown-menu {
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.dropdown-item:hover {
+    background-color: #f8f9fa;
+}
+
+/* Created By Field Styling */
+.created-by-info {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 8px;
+    background: rgba(13, 110, 253, 0.1);
+    border-radius: 8px;
+    border: 1px solid rgba(13, 110, 253, 0.2);
+}
+
+.created-by-info .fas.fa-user-circle {
+    color: #0d6efd;
+    font-size: 1.1em;
+}
+
+.created-by-info span {
+    color: #495057;
+    font-size: 0.85em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100px;
+}
+
+/* Enhanced Action Buttons - Horizontal Layout */
 .action-buttons {
     display: flex;
     gap: 5px;
@@ -606,6 +787,7 @@ function showAlert(type, message) {
     background: linear-gradient(135deg, #99d1ff 0%, #66c0ff 100%);
     border-color: #0056b3;
 }
+
 /* Screenshot Button */
 .screenshot-btn {
     transition: all 0.3s ease;
@@ -715,6 +897,20 @@ function showAlert(type, message) {
         padding: 5px 8px;
     }
     
+    .status-btn {
+        min-width: 100px;
+        font-size: 0.8rem;
+    }
+    
+    .created-by-info {
+        padding: 2px 4px;
+    }
+    
+    .created-by-info span {
+        font-size: 0.75em;
+        max-width: 80px;
+    }
+    
     .screenshot-controls {
         bottom: 10px;
         padding: 8px 16px;
@@ -746,6 +942,15 @@ function showAlert(type, message) {
     
     .action-btn i {
         font-size: 0.75em;
+    }
+    
+    .status-btn {
+        min-width: 80px;
+        font-size: 0.7rem;
+    }
+    
+    .created-by-info span {
+        max-width: 60px;
     }
 }
 

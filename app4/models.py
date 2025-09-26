@@ -104,33 +104,88 @@ class KeyRequest(models.Model):
 
 
 
+
 class Collection(models.Model):
+    """Payment-collection record with verification status."""
+
+    # ------------------------------------------------------------------
+    # Status
+    # ------------------------------------------------------------------
+    STATUS_PENDING = "pending"
+    STATUS_VERIFIED = "verified"
+
+    STATUS_CHOICES = [
+        (STATUS_PENDING, "Pending"),
+        (STATUS_VERIFIED, "Verified"),
+    ]
+
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default=STATUS_PENDING,
+        help_text="Collection verification status",
+    )
+
+    # ------------------------------------------------------------------
+    # Core fields
+    # ------------------------------------------------------------------
     client_name = models.CharField(max_length=255, help_text="Name of the client")
     branch = models.CharField(max_length=255, help_text="Branch name")
-    amount = models.DecimalField(max_digits=10, decimal_places=2, help_text="Amount collected")
+    amount = models.DecimalField(
+        max_digits=10, decimal_places=2, help_text="Amount collected"
+    )
     paid_for = models.CharField(max_length=255, help_text="What the payment was for")
     payment_screenshot = models.ImageField(
-        upload_to='payment_screenshots/', 
-        help_text="Screenshot of the payment"
+        upload_to="payment_screenshots/", help_text="Screenshot of the payment"
     )
     notes = models.TextField(blank=True, null=True, help_text="Additional notes")
+
+    # ------------------------------------------------------------------
+    # Audit
+    # ------------------------------------------------------------------
+    created_by = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text="User who created this collection",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    def __str__(self):
-        return f"{self.client_name} - ₹{self.amount}"
-
+    # ------------------------------------------------------------------
+    # Meta
+    # ------------------------------------------------------------------
     class Meta:
-        ordering = ['-created_at']
+        ordering = ["-created_at"]
         verbose_name = "Collection"
         verbose_name_plural = "Collections"
 
-    def get_amount_display(self):
-        """Return formatted amount with currency symbol"""
+    # ------------------------------------------------------------------
+    # Convenience
+    # ------------------------------------------------------------------
+    def __str__(self):
+        return f"{self.client_name} - ₹{self.amount} ({self.get_status_display()})"
+
+    @property
+    def is_pending(self) -> bool:
+        return self.status == self.STATUS_PENDING
+
+    @property
+    def is_verified(self) -> bool:
+        return self.status == self.STATUS_VERIFIED
+
+    def get_amount_display(self) -> str:
         return f"₹{self.amount:,.2f}"
 
-    def get_short_notes(self):
-        """Return truncated notes for list display"""
-        if self.notes:
-            return self.notes[:50] + "..." if len(self.notes) > 50 else self.notes
-        return ""
+    def get_short_notes(self) -> str:
+        if not self.notes:
+            return ""
+        return (
+            self.notes[:50] + "…" if len(self.notes) > 50 else self.notes
+        )
+
+    def get_status_badge_class(self) -> str:
+        """Bootstrap-5 class for the status badge."""
+        return (
+            "bg-success" if self.is_verified else "bg-warning text-dark"
+        )
