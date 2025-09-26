@@ -615,9 +615,10 @@ def _load_clients() -> list:
 # ----------------------------------------------------------------
 
 # --------------  collections_add  (re-written)  -----------------
+@login_required  
 def collections_add(request):
     """Add new collection – client auto-complete + branch auto-fill."""
-    clients = _load_clients()                # fresh every request
+    clients = _load_clients()                
     if request.method == "POST":
         client_name = request.POST.get("client_name", "").strip()
         branch      = request.POST.get("branch", "").strip()
@@ -625,6 +626,7 @@ def collections_add(request):
         paid_for    = request.POST.get("paid_for", "").strip()
         screenshot  = request.FILES.get("payment_screenshot")
         notes       = request.POST.get("notes", "").strip()
+        status      = request.POST.get("status", "pending")  # NEW: Default to pending
 
         if not all([client_name, branch, amount, paid_for, screenshot]):
             return render(request, "collections_add.html", {
@@ -643,6 +645,7 @@ def collections_add(request):
             if screenshot.size > 5 * 1024 * 1024:
                 raise ValueError("File size must be less than 5 MB.")
 
+            # Create collection with status
             Collection.objects.create(
                 client_name=client_name,
                 branch=branch,
@@ -650,6 +653,8 @@ def collections_add(request):
                 paid_for=paid_for,
                 payment_screenshot=screenshot,
                 notes=notes or None,
+                status=status,  # NEW: Include status
+                created_by=get_user_display_name(request.user)
             )
             messages.success(request, f"Collection for {client_name} added successfully!")
             return redirect("collections_list")
@@ -668,12 +673,14 @@ def collections_add(request):
 
     return render(request, "collections_add.html", {"clients_json": clients})
 
+
 def collections_list(request):
-    """List all collections with search and filter functionality"""
+    """List all collections with search, filter, and status functionality"""
     # Get filter parameters
     search_query = request.GET.get('search', '').strip()
     branch_filter = request.GET.get('branch', '').strip()
     date_filter = request.GET.get('date_filter', '').strip()
+    status_filter = request.GET.get('status_filter', '').strip()
 
     # Start with all collections
     collections = Collection.objects.all().order_by('-created_at')
@@ -689,6 +696,10 @@ def collections_list(request):
     # Apply branch filter
     if branch_filter:
         collections = collections.filter(branch__icontains=branch_filter)
+
+    # Apply status filter
+    if status_filter:
+        collections = collections.filter(status=status_filter)
 
     # Apply date filter
     if date_filter:
@@ -715,33 +726,66 @@ def collections_list(request):
                 created_at__month=last_month_month
             )
 
-    # Calculate statistics
-    all_collections = Collection.objects.all()
-    total_amount = all_collections.aggregate(Sum('amount'))['amount__sum'] or 0
+    # Calculate statistics - USE FILTERED COLLECTIONS for accurate counts
+    filtered_count = collections.count()
+    filtered_total_amount = collections.aggregate(Sum('amount'))['amount__sum'] or 0
     
+    # For "This Month" count, use the original unfiltered data but apply month filter
     today = timezone.now().date()
-    this_month_count = all_collections.filter(
+    this_month_count = Collection.objects.filter(
         created_at__year=today.year,
         created_at__month=today.month
     ).count()
     
-    recent_count = all_collections.filter(
-        created_at__gte=timezone.now() - timedelta(days=7)
-    ).count()
+    # Status statistics - use filtered collections for accuracy
+    pending_count = collections.filter(status='pending').count()
+    verified_count = collections.filter(status='verified').count()
 
     # Pagination
-    paginator = Paginator(collections, 10)  # 10 items per page
+    paginator = Paginator(collections, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
     return render(request, 'collections_list.html', {
         'collections': page_obj,
-        'total_amount': total_amount,
+        'total_amount': filtered_total_amount,
+        'total_count': filtered_count,  # Add this for the total count card
         'this_month_count': this_month_count,
-        'recent_count': recent_count,
+        'pending_count': pending_count,
+        'verified_count': verified_count,
         'is_paginated': page_obj.has_other_pages(),
         'page_obj': page_obj,
     })
+
+# Update collection_details to include status
+def collection_details(request, collection_id):
+    """Get collection details via AJAX"""
+    try:
+        collection = get_object_or_404(Collection, id=collection_id)
+        
+        return JsonResponse({
+            'success': True,
+            'id': collection.id,
+            'client_name': collection.client_name,
+            'branch': collection.branch,
+            'amount': str(collection.amount),
+            'paid_for': collection.paid_for,
+            'notes': collection.notes or '',
+            'status': collection.status,  # NEW
+            'status_display': collection.get_status_display(),  # NEW
+            'created_at': collection.created_at.strftime('%d %B %Y'),
+            'created_time': collection.created_at.strftime('%H:%M'),
+            'has_screenshot': bool(collection.payment_screenshot),
+            'screenshot_url': collection.payment_screenshot.url if collection.payment_screenshot else None
+        })
+        
+    except Exception as e:
+        logger.error(f"Error getting collection details: {str(e)}")
+        return JsonResponse({
+            'success': False,
+            'message': f'Error loading details: {str(e)}'
+        }, status=500)
+
 
 def collection_details(request, collection_id):
     """Get collection details via AJAX"""
@@ -769,11 +813,12 @@ def collection_details(request, collection_id):
             'message': f'Error loading details: {str(e)}'
         }, status=500)
 
+@login_required
 @require_http_methods(["GET", "POST"])
 def collections_edit(request, collection_id):
     """Edit collection record with client autocomplete functionality"""
     collection = get_object_or_404(Collection, id=collection_id)
-    clients = _load_clients()  # Load fresh clients data for autocomplete
+    clients = _load_clients()  
     
     if request.method == 'POST':
         client_name = request.POST.get('client_name', '').strip()
@@ -782,6 +827,7 @@ def collections_edit(request, collection_id):
         paid_for = request.POST.get('paid_for', '').strip()
         payment_screenshot = request.FILES.get('payment_screenshot')
         notes = request.POST.get('notes', '').strip()
+        status = request.POST.get('status', collection.status)  # NEW: Handle status
 
         # Validation
         if not all([client_name, branch, amount, paid_for]):
@@ -803,6 +849,11 @@ def collections_edit(request, collection_id):
             collection.amount = amount
             collection.paid_for = paid_for
             collection.notes = notes if notes else None
+            collection.status = status  # NEW: Update status
+            
+            # Ensure created_by is set if it's missing
+            if not collection.created_by:
+                collection.created_by = get_user_display_name(request.user)
 
             # Handle file upload
             if payment_screenshot:
@@ -844,7 +895,6 @@ def collections_edit(request, collection_id):
         'collection': collection,
         'clients_json': clients
     })
-
 @csrf_exempt
 @require_http_methods(["POST"])
 def collections_delete(request, collection_id):
@@ -930,7 +980,58 @@ def collection_receipt(request, collection_id):
         messages.error(request, f'Error generating receipt: {str(e)}')
         return redirect('collections_list')
     
+def get_user_display_name(user):
+    """Get the best display name for a user"""
+    if not user or not user.is_authenticated:
+        return "Anonymous User"
+    
+    # Try full name first
+    if hasattr(user, 'get_full_name'):
+        full_name = user.get_full_name()
+        if full_name and full_name.strip():
+            return full_name.strip()
+    
+    # Try first + last name
+    if hasattr(user, 'first_name') and user.first_name:
+        first_name = user.first_name.strip()
+        if hasattr(user, 'last_name') and user.last_name:
+            last_name = user.last_name.strip()
+            if last_name:
+                return f"{first_name} {last_name}"
+        return first_name
+    
+    # Fall back to username
+    if hasattr(user, 'username'):
+        return user.username
+    
+    return "Unknown User"
 
+@csrf_exempt
+@require_http_methods(["POST"])
+def collection_update_status(request, collection_id):
+    """Update collection status (pending/verified)"""
+    try:
+        collection = get_object_or_404(Collection, id=collection_id)
+        
+        # Parse JSON data
+        data = json.loads(request.body)
+        new_status = data.get('status')
+        
+        if new_status not in ['pending', 'verified']:
+            return JsonResponse({'success': False, 'message': 'Invalid status'})
+        
+        collection.status = new_status
+        collection.save()
+        
+        return JsonResponse({
+            'success': True, 
+            'message': f'Status updated to {new_status} successfully'
+        })
+        
+    except Collection.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Collection not found'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': f'Error: {str(e)}'})
 
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods

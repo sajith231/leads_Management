@@ -5,7 +5,7 @@
   <div class="row justify-content-center">
     <div class="col-12 col-md-10 col-lg-9 col-xl-8 col-xxl-7">
       <div class="card shadow">
-        <div class="card-header bg-warning text-dark">
+        <div class="card-header bg-primary text-white">
           <h3 class="mb-0"><i class="fas fa-edit me-2"></i>Edit Collection</h3>
         </div>
         <div class="card-body p-4 p-md-5">
@@ -13,6 +13,27 @@
             <div class="alert alert-danger alert-dismissible fade show" role="alert">
               {{ error }}
               <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+          {% endif %}
+
+          <!-- USER INFO DISPLAY -->
+          {% if user.is_authenticated %}
+            <div class="alert alert-info border-0 mb-4" style="background-color: #e7f3ff;">
+              <div class="d-flex align-items-center">
+                <i class="fas fa-user-circle fs-4 me-3 text-primary"></i>
+                <div>
+                  <div class="fw-semibold text-dark">Editing collection as:</div>
+                  <div class="text-primary fs-6">
+                    {% if user.get_full_name %}
+                      {{ user.get_full_name }}
+                    {% elif user.first_name %}
+                      {{ user.first_name }}{% if user.last_name %} {{ user.last_name }}{% endif %}
+                    {% else %}
+                      {{ user.username }}
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
             </div>
           {% endif %}
 
@@ -40,7 +61,7 @@
                     <i class="fas fa-chevron-down"></i>
                   </div>
                   <div class="client-dropdown-menu" id="client_dropdown_menu">
-                    {% for c in clients_json %}
+                    {% for c in clients_json|dictsort:"name" %}
                       <div class="client-dropdown-item" data-name="{{ c.name }}" data-branch="{{ c.branch }}">
                         <div class="client-name">{{ c.name }}</div>
                         <div class="client-details">{{ c.address }} ({{ c.branch }})</div>
@@ -57,13 +78,12 @@
                 </label>
                 <select class="form-select form-select-lg" id="branch" name="branch" required>
                   <option value="" disabled>Select branch</option>
-                  <option {% if collection.branch == "IMC Solutions LLP" %}selected{% endif %}>IMC Solutions LLP</option>
-                  <option {% if collection.branch == "IMC Mukkam" %}selected{% endif %}>IMC Mukkam</option>
-                  <option {% if collection.branch == "IMCB HO" %}selected{% endif %}>IMCB HO</option>
-                  <option {% if collection.branch == "IMCB DEV" %}selected{% endif %}>IMCB DEV</option>
-                  <option {% if collection.branch == "Sysmac Info System" %}selected{% endif %}>Sysmac Info System</option>
-                  <option {% if collection.branch == "Sysmac Computers" %}selected{% endif %}>Sysmac Computers</option>
-                  <option {% if collection.branch == "DQ Technologies" %}selected{% endif %}>DQ Technologies</option>
+                  <option value="IMC Mukkam" {% if collection.branch == "IMC Mukkam" %}selected{% endif %}>IMC Mukkam</option>
+                  <option value="IMCB HO" {% if collection.branch == "IMCB HO" %}selected{% endif %}>IMCB HO</option>
+                  <option value="IMCB DEV" {% if collection.branch == "IMCB DEV" %}selected{% endif %}>IMCB DEV</option>
+                  <option value="Sysmac Info System" {% if collection.branch == "Sysmac Info System" %}selected{% endif %}>Sysmac Info System</option>
+                  <option value="Sysmac Computers" {% if collection.branch == "Sysmac Computers" %}selected{% endif %}>Sysmac Computers</option>
+                  <option value="DQ Technologies" {% if collection.branch == "DQ Technologies" %}selected{% endif %}>DQ Technologies</option>
                 </select>
               </div>
             </div>
@@ -91,45 +111,28 @@
             <div class="mb-4">
               <label for="payment_screenshot" class="form-label fs-6">
                 <i class="fas fa-image me-2"></i>Payment Screenshot
-                {% if not collection.payment_screenshot %}
-                  <span class="text-danger">*</span>
-                {% endif %}
               </label>
+              <input type="file" class="form-control form-control-lg" id="payment_screenshot" name="payment_screenshot" accept="image/*">
+              <div class="form-text mt-2">
+                <i class="fas fa-info-circle me-1"></i>
+                Upload a new screenshot to replace the current one. Accepted formats: JPG, PNG, GIF (Max 5MB)
+              </div>
               
+              <!-- Current screenshot preview -->
               {% if collection.payment_screenshot %}
-                <div class="current-image-container mb-3">
-                  <div class="current-image-preview">
-                    <div class="image-preview-wrapper">
-                      <img src="{{ collection.payment_screenshot.url }}" alt="Current Screenshot" class="current-screenshot-thumbnail">
-                      <div class="image-overlay">
-                        <button type="button" class="btn btn-light btn-sm" onclick="viewCurrentImage()">
-                          <i class="fas fa-eye me-1"></i>View Full Size
-                        </button>
-                      </div>
-                    </div>
-                    <div class="image-info">
-                      <div class="image-status">
-                        <i class="fas fa-check-circle text-success me-2"></i>
-                        <span class="fw-semibold">Current screenshot uploaded</span>
-                      </div>
-                      <div class="image-description text-muted">
-                        Upload a new image to replace the current screenshot
-                      </div>
+                <div class="mt-3">
+                  <p class="mb-2"><strong>Current Screenshot:</strong></p>
+                  <div class="current-screenshot-container">
+                    <img src="{{ collection.payment_screenshot.url }}" alt="Current payment screenshot" class="img-thumbnail" style="max-height: 200px;">
+                    <div class="form-check mt-2">
+                      <input class="form-check-input" type="checkbox" id="remove_screenshot" name="remove_screenshot">
+                      <label class="form-check-label text-danger" for="remove_screenshot">
+                        Remove current screenshot
+                      </label>
                     </div>
                   </div>
                 </div>
               {% endif %}
-              
-              <input type="file" class="form-control form-control-lg" id="payment_screenshot" name="payment_screenshot" accept="image/*" {% if not collection.payment_screenshot %}required{% endif %}>
-              <div class="form-text mt-2">
-                <i class="fas fa-info-circle me-1"></i>
-                {% if collection.payment_screenshot %}
-                  Upload a new image to replace the current screenshot. Leave empty to keep current image.
-                {% else %}
-                  Please upload a screenshot of the payment.
-                {% endif %}
-                Accepted formats: JPG, PNG, GIF (Max 5MB)
-              </div>
             </div>
 
             <!-- NOTES -->
@@ -137,7 +140,7 @@
               <label for="notes" class="form-label fs-6">
                 <i class="fas fa-sticky-note me-2"></i>Additional Notes
               </label>
-              <textarea class="form-control form-control-lg" id="notes" name="notes" rows="4" placeholder="Any additional information or notes...">{{ collection.notes|default:"" }}</textarea>
+              <textarea class="form-control form-control-lg" id="notes" name="notes" rows="4" placeholder="Any additional information or notes...">{{ collection.notes }}</textarea>
             </div>
 
             <!-- BUTTONS -->
@@ -145,27 +148,12 @@
               <a href="{% url 'collections_list' %}" class="btn btn-secondary btn-lg me-md-3">
                 <i class="fas fa-times me-2"></i>Cancel
               </a>
-              <button type="submit" class="btn btn-warning btn-lg px-4">
+              <button type="submit" class="btn btn-primary btn-lg px-4">
                 <i class="fas fa-save me-2"></i>Update Collection
               </button>
             </div>
           </form>
         </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Modal for viewing current image -->
-<div class="modal fade" id="currentImageModal" tabindex="-1">
-  <div class="modal-dialog modal-lg modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Current Payment Screenshot</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body text-center p-4">
-        <img id="currentImageFull" src="{{ collection.payment_screenshot.url }}" alt="Payment Screenshot" class="img-fluid modal-image">
       </div>
     </div>
   </div>
@@ -332,12 +320,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 });
-
-// Function to view current image in modal
-function viewCurrentImage() {
-  const modal = new bootstrap.Modal(document.getElementById('currentImageModal'));
-  modal.show();
-}
 </script>
 
 <!-- Enhanced CSS -->
@@ -350,6 +332,18 @@ function viewCurrentImage() {
 .input-group-text{background-color:#f8f9fa;border-color:#dee2e6}
 .form-label{font-weight:500;margin-bottom:.5rem}
 .text-danger{color:#dc3545!important}
+
+/* User Info Alert Styling */
+.alert-info {
+  background: linear-gradient(135deg, #e7f3ff 0%, #f0f8ff 100%);
+  border: 1px solid #b6d7ff;
+  box-shadow: 0 2px 8px rgba(13, 110, 253, 0.1);
+}
+
+.alert-info .fas.fa-user-circle {
+  color: #0d6efd;
+  text-shadow: 0 1px 2px rgba(13, 110, 253, 0.2);
+}
 
 /* Enhanced Client Dropdown Styles */
 .client-dropdown-container {
@@ -427,72 +421,14 @@ function viewCurrentImage() {
   color: #6c757d;
 }
 
-/* Current Image Preview Styles */
-.current-image-container {
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-  border-radius: 15px;
-  padding: 20px;
-  border: 2px dashed #28a745;
+/* Current Screenshot Styling */
+.current-screenshot-container {
+  max-width: 300px;
 }
 
-.current-image-preview {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-}
-
-.image-preview-wrapper {
-  position: relative;
-  flex-shrink: 0;
-}
-
-.current-screenshot-thumbnail {
-  width: 120px;
-  height: 120px;
-  object-fit: cover;
-  border-radius: 12px;
-  border: 3px solid #28a745;
-  box-shadow: 0 4px 12px rgba(40, 167, 69, 0.2);
-}
-
-.image-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 12px;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.image-preview-wrapper:hover .image-overlay {
-  opacity: 1;
-}
-
-.image-info {
-  flex-grow: 1;
-}
-
-.image-status {
-  font-size: 1.1rem;
-  margin-bottom: 8px;
-}
-
-.image-description {
-  font-size: 0.95rem;
-  line-height: 1.4;
-}
-
-/* Modal Image Styles */
-.modal-image {
-  max-height: 70vh;
-  border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+.img-thumbnail {
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 /* Scrollbar styling for dropdown */
@@ -565,16 +501,19 @@ function viewCurrentImage() {
   .form-label {
     font-size: 0.95rem;
   }
-  
-  .current-image-preview {
-    flex-direction: column;
-    text-align: center;
-    gap: 15px;
+
+  .alert-info {
+    padding: 0.75rem;
   }
-  
-  .current-screenshot-thumbnail {
-    width: 100px;
-    height: 100px;
+
+  .alert-info .d-flex {
+    flex-direction: column;
+    align-items: flex-start !important;
+  }
+
+  .alert-info .fas.fa-user-circle {
+    margin-bottom: 0.5rem;
+    margin-right: 0 !important;
   }
 }
 
@@ -599,13 +538,8 @@ function viewCurrentImage() {
     max-height: 180px;
   }
   
-  .current-image-container {
-    padding: 15px;
-  }
-  
-  .current-screenshot-thumbnail {
-    width: 80px;
-    height: 80px;
+  .current-screenshot-container {
+    max-width: 100%;
   }
 }
 
@@ -635,11 +569,6 @@ function viewCurrentImage() {
   
   .client-details {
     font-size: 1rem;
-  }
-  
-  .current-screenshot-thumbnail {
-    width: 140px;
-    height: 140px;
   }
 }
 </style>

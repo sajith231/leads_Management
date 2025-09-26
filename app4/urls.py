@@ -28,7 +28,7 @@ path('collections/<int:collection_id>/details/', views.collection_details, name=
 path('collections/<int:collection_id>/edit/', views.collections_edit, name='collections_edit'),
 path('collections/<int:collection_id>/delete/', views.collections_delete, name='collections_delete'),
 path('collections/<int:collection_id>/receipt/', views.collection_receipt, name='collection_receipt'),
-
+path('collections/<int:collection_id>/update-status/', views.collection_update_status, name='collection_update_status'),
 
 path("api/collections/", views.api_collections_list, name="api_collections_list"),
 path("api/collections/add/", views.api_collections_add, name="api_collections_add"),

@@ -16,6 +16,27 @@
             </div>
           {% endif %}
 
+          <!-- USER INFO DISPLAY -->
+          {% if user.is_authenticated %}
+            <div class="alert alert-info border-0 mb-4" style="background-color: #e7f3ff;">
+              <div class="d-flex align-items-center">
+                <i class="fas fa-user-circle fs-4 me-3 text-primary"></i>
+                <div>
+                  <div class="fw-semibold text-dark">Creating collection as:</div>
+                  <div class="text-primary fs-6">
+                    {% if user.get_full_name %}
+                      {{ user.get_full_name }}
+                    {% elif user.first_name %}
+                      {{ user.first_name }}{% if user.last_name %} {{ user.last_name }}{% endif %}
+                    {% else %}
+                      {{ user.username }}
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+            </div>
+          {% endif %}
+
           <form method="post" enctype="multipart/form-data">
             {% csrf_token %}
 
@@ -39,7 +60,7 @@
                     <i class="fas fa-chevron-down"></i>
                   </div>
                   <div class="client-dropdown-menu" id="client_dropdown_menu">
-                    {% for c in clients_json %}
+                    {% for c in clients_json|dictsort:"name" %}
                       <div class="client-dropdown-item" data-name="{{ c.name }}" data-branch="{{ c.branch }}">
                         <div class="client-name">{{ c.name }}</div>
                         <div class="client-details">{{ c.address }} ({{ c.branch }})</div>
@@ -56,7 +77,6 @@
                 </label>
                 <select class="form-select form-select-lg" id="branch" name="branch" required>
                   <option value="" disabled selected>Select branch</option>
-                  <option>IMC Solutions LLP</option>
                   <option>IMC Mukkam</option>
                   <option>IMCB HO</option>
                   <option>IMCB DEV</option>
@@ -296,6 +316,18 @@ document.addEventListener('DOMContentLoaded', function() {
 .form-label{font-weight:500;margin-bottom:.5rem}
 .text-danger{color:#dc3545!important}
 
+/* User Info Alert Styling */
+.alert-info {
+  background: linear-gradient(135deg, #e7f3ff 0%, #f0f8ff 100%);
+  border: 1px solid #b6d7ff;
+  box-shadow: 0 2px 8px rgba(13, 110, 253, 0.1);
+}
+
+.alert-info .fas.fa-user-circle {
+  color: #0d6efd;
+  text-shadow: 0 1px 2px rgba(13, 110, 253, 0.2);
+}
+
 /* Enhanced Client Dropdown Styles */
 .client-dropdown-container {
   position: relative;
@@ -441,6 +473,20 @@ document.addEventListener('DOMContentLoaded', function() {
   
   .form-label {
     font-size: 0.95rem;
+  }
+
+  .alert-info {
+    padding: 0.75rem;
+  }
+
+  .alert-info .d-flex {
+    flex-direction: column;
+    align-items: flex-start !important;
+  }
+
+  .alert-info .fas.fa-user-circle {
+    margin-bottom: 0.5rem;
+    margin-right: 0 !important;
   }
 }
 
