@@ -1,0 +1,196 @@
+{% extends 'base.html' %}
+{% block title %}SIM Management{% endblock %}
+{% block header %}SIM Management{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+
+<style>
+  .btn{padding:5px 10px;text-decoration:none;background:rgb(34,216,230);color:#fff;border-radius:5px;margin-right:5px}
+  .btn-danger{background:#e53e3e}
+  .btn-warning{background:#f7f302;color:#000}
+  .btn-primary{background:#007bff}
+  .top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem}
+  .allbody{margin-top:2.5%}
+  .table{font-size:13px;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 6px rgba(0,0,0,.08)}
+  .table th{background:#007bff;color:#fff;text-align:center;padding:10px;font-size:14px}
+  .table td{text-align:center;vertical-align:middle;padding:8px 10px;color:#333}
+  .table-striped tbody tr:nth-of-type(odd){background:#f9f9f9}
+  .table-hover tbody tr:hover{background:#f1f7ff;transition:.2s}
+  @media (max-width:768px){.allbody{margin-top:15%}.table-responsive{font-size:12px}.btn{padding:3px 6px;font-size:12px}}
+</style>
+
+<div class="allbody">
+  <!-----------  AUTO-REMINDER BANNER (on page load)  ----------->
+  {% if auto_reminders %}
+  <div class="container mb-3">
+    {% for m in auto_reminders %}
+      <div class="alert alert-{{ m.level }} alert-dismissible fade show" role="alert">
+        <i class="bi bi-bell"></i> {{ m.message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+  <!-------------------------------------------------------------->
+
+  <div class="top-bar">
+    <h3>SIM Management</h3>
+    <input type="text" id="searchInput" placeholder="Search by SIM No / Provider"
+           class="form-control" style="max-width:250px" value="{{ search_query }}">
+    <button class="btn" style="background:#ffc107;color:#212529" id="reminderBtn">
+      <i class="bi bi-bell"></i> Reminder
+    </button>
+    <a href="{% url 'add_sim' %}" class="btn">Add New SIM</a>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-bordered table-striped">
+      <thead>
+        <tr>
+          <th>No</th><th>SIM No</th><th>View</th><th>Provider</th>
+          <th>Identify Person</th><th>Incharge</th><th>Last Recharge</th>
+          <th>Amount</th><th>Branch</th><th>Validity</th><th>Days Left</th>
+          <th>Edit</th><th>Delete</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for sim in sims %}
+        <tr>
+          <td>{{ forloop.counter0|add:sims.start_index }}</td>
+          <td>{{ sim.sim_no }}</td>
+          <!-- In sim_management.html, replace the eye icon section -->
+<td style="text-align:center">
+    <a href="{% url 'sim_recharge_history' sim.id %}" class="btn btn-primary btn-sm" title="View Recharge History">
+        <i class="bi bi-eye-fill"></i>
+    </a>
+</td>
+          <td>{{ sim.provider }}</td>
+          <td>{{ sim.identify_person }}</td>
+          <td>{{ sim.incharge }}</td>
+          <td>{{ sim.last_recharge_date|date:"d-m-Y" }}</td>
+          <td>{{ sim.amount }}</td>
+          <td>{{ sim.branch }}</td>
+          <td>{{ sim.validity|date:"d-m-Y" }}</td>
+          <td>
+            {% if sim.days_remaining is not None %}
+              {% if sim.days_remaining <= 5 %}
+                <span class="badge bg-danger">{{ sim.days_remaining }} d</span>
+              {% elif sim.days_remaining <= 15 %}
+                <span class="badge bg-warning text-dark">{{ sim.days_remaining }} d</span>
+              {% else %}
+                <span class="badge bg-success">{{ sim.days_remaining }} d</span>
+              {% endif %}
+            {% else %}-{% endif %}
+          </td>
+          <td>
+            <a href="{% url 'edit_sim' sim.id %}" class="btn btn-warning btn-sm" title="Edit"><i class="bi bi-pencil-square"></i></a>
+          </td>
+          <td>
+            <form method="post" action="{% url 'delete_sim' sim.id %}" style="display:inline"
+                  onsubmit="return confirm('Delete this SIM?')">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-danger btn-sm" title="Delete"><i class="bi bi-trash"></i></button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if sims.has_other_pages %}
+  <nav aria-label="Page navigation">
+    <ul class="pagination">
+      {% if sims.has_previous %}
+        <li class="page-item"><a class="page-link" href="?page=1&q={{ search_query }}">First</a></li>
+        <li class="page-item"><a class="page-link" href="?page={{ sims.previous_page_number }}&q={{ search_query }}">Prev</a></li>
+      {% endif %}
+      {% for num in sims.paginator.page_range %}
+        {% if num == sims.number %}
+          <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+        {% elif num > sims.number|add:'-3' and num < sims.number|add:'3' %}
+          <li class="page-item"><a class="page-link" href="?page={{ num }}&q={{ search_query }}">{{ num }}</a></li>
+        {% endif %}
+      {% endfor %}
+      {% if sims.has_next %}
+        <li class="page-item"><a class="page-link" href="?page={{ sims.next_page_number }}&q={{ search_query }}">Next</a></li>
+        <li class="page-item"><a class="page-link" href="?page={{ sims.paginator.num_pages }}&q={{ search_query }}">Last</a></li>
+      {% endif %}
+    </ul>
+    <div class="pagination-info">
+      <small class="text-muted">Showing {{ sims.start_index }} – {{ sims.end_index }} of {{ sims.paginator.count }} entries{% if search_query %} (filtered){% endif %}</small>
+    </div>
+  </nav>
+  {% endif %}
+</div>
+
+<!-- ---- Recharge / Reminder modal ---- -->
+<div class="modal fade" id="rechargeModal" tabindex="-1" aria-labelledby="rechargeModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="rechargeModalLabel">Recharge Details</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="rechargeModalBody"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ===== Search ===== */
+// Replace the existing JavaScript in sim_management.html with this debugging version:
+
+document.addEventListener('DOMContentLoaded', () => {
+  const searchInput = document.getElementById('searchInput');
+  let t;
+  
+  // Search functionality
+  searchInput.addEventListener('input', () => {
+    clearTimeout(t); 
+    t = setTimeout(() => {
+      location.href = '?q=' + encodeURIComponent(searchInput.value);
+    }, 1000);
+  });
+  
+  searchInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { 
+      e.preventDefault(); 
+      clearTimeout(t); 
+      location.href = '?q=' + encodeURIComponent(searchInput.value); 
+    }
+  });
+
+  // Modal and recharge detail functionality
+  const modalBody = document.getElementById('rechargeModalBody');
+  const modal = new bootstrap.Modal(document.getElementById('rechargeModal'));
+  
+  // Eye icon click handler
+
+
+  // Reminder button functionality
+  document.getElementById('reminderBtn').addEventListener('click', () => {
+    console.log('Reminder button clicked!'); // Debug log
+    modalBody.innerHTML = '<div class="text-center"><div class="spinner-border"></div><p class="mt-2">Loading reminders...</p></div>';
+    modal.show();
+    
+    fetch("{% url 'sim_reminder' %}")
+      .then(r => {
+        if (!r.ok) {
+          throw new Error(`HTTP error! status: ${r.status}`);
+        }
+        return r.text();
+      })
+      .then(html => modalBody.innerHTML = html)
+      .catch(err => {
+        console.error('Error fetching reminders:', err);
+        modalBody.innerHTML = `<div class="alert alert-danger">Could not load reminders: ${err.message}</div>`;
+      });
+  });
+});
+</script>
+{% endblock %}
