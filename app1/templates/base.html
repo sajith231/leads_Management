@@ -842,7 +842,7 @@
             </div>
             {% endif %}
 
-{% if 'feeder_list' in allowed_menus or 'show_clients' in allowed_menus or 'key_request_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+{% if 'feeder_list' in allowed_menus or 'show_clients' in allowed_menus or 'key_request_list' in allowed_menus or 'collections_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
 <div class="mainmenu" onclick="togglePlanetMenu()">
     <span>
         <i class="fas fa-globe"></i>
@@ -869,10 +869,12 @@
         <i class="fas fa-file-signature" style="margin-right: 5px;"></i>
         Key Request
     </a> 
+    {% if 'collections_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
     <a href="{% url 'collections_list' %}">
         <i class="fas fa-coins" style="margin-right: 5px;"></i>
         Collections
     </a>
+    {% endif %}
 </div>
 {% endif %}
 

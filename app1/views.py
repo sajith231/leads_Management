@@ -5234,6 +5234,7 @@ def configure_user_menu(request, user_id):
         {'id': 'license_edit', 'name': 'Edit License', 'icon': 'fas fa-edit'},
         {'id': 'license_delete', 'name': 'Delete License', 'icon': 'fas fa-trash'},
         {'id': 'key_request_list', 'name': 'Key Request', 'icon': 'fas fa-file-signature'},
+        {'id': 'collections_list', 'name': 'Collections', 'icon': 'fas fa-coins'},
     
         
     ]
