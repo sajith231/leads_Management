@@ -726,74 +726,73 @@ def send_collection_whatsapp(client_name, branch, created_by, amount, created_at
 # -------------------------------------------------
 # -------------------------------------------------
 
-@csrf_exempt
-@require_http_methods(["POST"])
-def api_collections_add(request):
-    try:
+@login_required
+def collections_add(request):
+    """Add new collection – client auto-complete + branch auto-fill."""
+    clients = _load_clients()
+    if request.method == "POST":
         client_name = request.POST.get("client_name", "").strip()
         branch      = request.POST.get("branch", "").strip()
         amount      = request.POST.get("amount", "").strip()
         paid_for    = request.POST.get("paid_for", "").strip()
-        notes       = request.POST.get("notes", "").strip()
         screenshot  = request.FILES.get("payment_screenshot")
+        notes       = request.POST.get("notes", "").strip()
+        status      = request.POST.get("status", "pending")  # default
 
-        # --- validation identical to your current code ---
         if not all([client_name, branch, amount, paid_for, screenshot]):
-            return JsonResponse(
-                {"success": False, "error": "All fields including screenshot are required"},
-                status=400
-            )
+            return render(request, "collections_add.html", {
+                "error": "Please fill all required fields and upload payment screenshot.",
+                "clients_json": clients,
+            })
+
         try:
             amount = float(amount)
             if amount <= 0:
-                raise ValueError("Amount must be positive")
+                raise ValueError("Amount must be greater than 0")
+
+            allowed = {"image/jpeg", "image/jpg", "image/png", "image/gif"}
+            if screenshot.content_type not in allowed:
+                raise ValueError("Only JPG / PNG / GIF images are allowed.")
+            if screenshot.size > 5 * 1024 * 1024:
+                raise ValueError("File size must be less than 5 MB.")
+
+            # create record
+            collection = Collection.objects.create(
+                client_name=client_name,
+                branch=branch,
+                amount=amount,
+                paid_for=paid_for,
+                payment_screenshot=screenshot,
+                notes=notes or None,
+                status=status,
+                created_by=get_user_display_name(request.user)
+            )
+
+            # >>>>>>  NEW: WhatsApp alert  <<<<<<
+            send_collection_whatsapp(
+                client_name=collection.client_name,
+                branch=collection.branch,               # <-- NEW
+                created_by=collection.created_by,
+                amount=collection.amount,
+                created_at=collection.created_at
+            )
+
+            messages.success(request, f"Collection for {client_name} added successfully!")
+            return redirect("collections_list")
+
         except ValueError as e:
-            return JsonResponse({"success": False, "error": str(e)}, status=400)
+            return render(request, "collections_add.html", {
+                "error": str(e),
+                "clients_json": clients,
+            })
+        except Exception as e:
+            logger.error("Error saving collection: %s", e)
+            return render(request, "collections_add.html", {
+                "error": f"Error saving collection: {e}",
+                "clients_json": clients,
+            })
 
-        allowed = {"image/jpeg", "image/jpg", "image/png", "image/gif"}
-        if screenshot.content_type not in allowed:
-            return JsonResponse({"success": False, "error": "Only JPG, PNG, GIF images allowed"}, status=400)
-        if screenshot.size > 5 * 1024 * 1024:
-            return JsonResponse({"success": False, "error": "File size must be < 5 MB"}, status=400)
-
-        # --- save ---
-        collection = Collection.objects.create(
-            client_name=client_name,
-            branch=branch,
-            amount=amount,
-            paid_for=paid_for,
-            payment_screenshot=screenshot,
-            notes=notes or None,
-            created_by="API"          # mark origin
-        )
-
-        # >>>>>>  WhatsApp alert (branch included)  <<<<<<
-        send_collection_whatsapp(
-            client_name=collection.client_name,
-            branch=collection.branch,
-            created_by=collection.created_by,
-            amount=collection.amount,
-            created_at=collection.created_at
-        )
-
-        return JsonResponse({
-            "success": True,
-            "message": "Collection added successfully",
-            "data": {
-                "id": collection.id,
-                "client_name": collection.client_name,
-                "branch": collection.branch,
-                "amount": str(collection.amount),
-                "paid_for": collection.paid_for,
-                "notes": collection.notes,
-                "created_at": collection.created_at.strftime("%Y-%m-%d %H:%M"),
-                "screenshot_url": collection.payment_screenshot.url if collection.payment_screenshot else None,
-            }
-        }, status=201)
-
-    except Exception as e:
-        logger.error(f"API error adding collection: {e}")
-        return JsonResponse({"success": False, "error": str(e)}, status=500)
+    return render(request, "collections_add.html", {"clients_json": clients})
 
 
 def collections_list(request):
@@ -1176,20 +1175,18 @@ logger = logging.getLogger(__name__)
 def api_collections_add(request):
     try:
         client_name = request.POST.get("client_name", "").strip()
-        branch = request.POST.get("branch", "").strip()
-        amount = request.POST.get("amount", "").strip()
-        paid_for = request.POST.get("paid_for", "").strip()
-        notes = request.POST.get("notes", "").strip()
-        screenshot = request.FILES.get("payment_screenshot")
+        branch      = request.POST.get("branch", "").strip()
+        amount      = request.POST.get("amount", "").strip()
+        paid_for    = request.POST.get("paid_for", "").strip()
+        notes       = request.POST.get("notes", "").strip()
+        screenshot  = request.FILES.get("payment_screenshot")
 
-        # Validate required fields
+        # --- validation identical to your current code ---
         if not all([client_name, branch, amount, paid_for, screenshot]):
             return JsonResponse(
                 {"success": False, "error": "All fields including screenshot are required"},
                 status=400
             )
-
-        # Validate amount
         try:
             amount = float(amount)
             if amount <= 0:
@@ -1197,20 +1194,13 @@ def api_collections_add(request):
         except ValueError as e:
             return JsonResponse({"success": False, "error": str(e)}, status=400)
 
-        # Validate image
         allowed = {"image/jpeg", "image/jpg", "image/png", "image/gif"}
         if screenshot.content_type not in allowed:
-            return JsonResponse(
-                {"success": False, "error": "Only JPG, PNG, GIF images allowed"},
-                status=400
-            )
+            return JsonResponse({"success": False, "error": "Only JPG, PNG, GIF images allowed"}, status=400)
         if screenshot.size > 5 * 1024 * 1024:
-            return JsonResponse(
-                {"success": False, "error": "File size must be < 5 MB"},
-                status=400
-            )
+            return JsonResponse({"success": False, "error": "File size must be < 5 MB"}, status=400)
 
-        # Save record
+        # --- save ---
         collection = Collection.objects.create(
             client_name=client_name,
             branch=branch,
@@ -1218,6 +1208,16 @@ def api_collections_add(request):
             paid_for=paid_for,
             payment_screenshot=screenshot,
             notes=notes or None,
+            created_by="API"          # mark origin
+        )
+
+        # >>>>>>  WhatsApp alert (branch included)  <<<<<<
+        send_collection_whatsapp(
+            client_name=collection.client_name,
+            branch=collection.branch,
+            created_by=collection.created_by,
+            amount=collection.amount,
+            created_at=collection.created_at
         )
 
         return JsonResponse({
