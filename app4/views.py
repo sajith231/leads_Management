@@ -686,63 +686,114 @@ def _load_clients() -> list:
 # ----------------------------------------------------------------
 
 # --------------  collections_add  (re-written)  -----------------
-@login_required  
-def collections_add(request):
-    """Add new collection – client auto-complete + branch auto-fill."""
-    clients = _load_clients()                
-    if request.method == "POST":
+# -------------------------------------------------
+# NEW: WhatsApp helper for COLLECTION added message
+# -------------------------------------------------
+import urllib.parse
+from datetime import datetime
+import requests
+import logging
+logger = logging.getLogger(__name__)
+
+WHATSAPP_API_URL = "https://app.dxing.in/api/send/whatsapp"
+WHATSAPP_SECRET   = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
+WHATSAPP_ACCOUNT  = "1756959119812b4ba287f5ee0bc9d43bbf5bbe87fb68b9118fcf1af"
+COLLECTION_RECIPIENTS = ["9061947005", "9946545535","6282351770","7593820007","7593820005"]   # hard-coded numbers
+
+def send_collection_whatsapp(client_name, branch, created_by, amount, created_at: datetime):
+    """
+    Fire identical WhatsApp alert to every number in COLLECTION_RECIPIENTS
+    """
+    for recipient in COLLECTION_RECIPIENTS:
+        try:
+            msg = (
+                f"💰 NEW COLLECTION ADDED\n\n"
+                f"Client Name : {client_name}\n"
+                f"Branch      : {branch}\n"
+                f"Created By  : {created_by}\n"
+                f"Amount      : ₹{amount}\n"
+                f"Date Created: {created_at.strftime('%d-%m-%Y %H:%M')}"
+            )
+            encoded = urllib.parse.quote(msg)
+            url = (f"{WHATSAPP_API_URL}?secret={WHATSAPP_SECRET}"
+                   f"&account={WHATSAPP_ACCOUNT}&recipient={recipient}"
+                   f"&type=text&message={encoded}&priority=1")
+            resp = requests.get(url, timeout=10)
+            resp.raise_for_status()
+            logger.info("Collection WhatsApp sent to %s", recipient)
+        except Exception as e:
+            logger.error("WhatsApp failed for %s : %s", recipient, e)
+# -------------------------------------------------
+# -------------------------------------------------
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def api_collections_add(request):
+    try:
         client_name = request.POST.get("client_name", "").strip()
         branch      = request.POST.get("branch", "").strip()
         amount      = request.POST.get("amount", "").strip()
         paid_for    = request.POST.get("paid_for", "").strip()
-        screenshot  = request.FILES.get("payment_screenshot")
         notes       = request.POST.get("notes", "").strip()
-        status      = request.POST.get("status", "pending")  # NEW: Default to pending
+        screenshot  = request.FILES.get("payment_screenshot")
 
+        # --- validation identical to your current code ---
         if not all([client_name, branch, amount, paid_for, screenshot]):
-            return render(request, "collections_add.html", {
-                "error": "Please fill all required fields and upload payment screenshot.",
-                "clients_json": clients,
-            })
-
+            return JsonResponse(
+                {"success": False, "error": "All fields including screenshot are required"},
+                status=400
+            )
         try:
             amount = float(amount)
             if amount <= 0:
-                raise ValueError("Amount must be greater than 0")
-
-            allowed = {"image/jpeg", "image/jpg", "image/png", "image/gif"}
-            if screenshot.content_type not in allowed:
-                raise ValueError("Only JPG / PNG / GIF images are allowed.")
-            if screenshot.size > 5 * 1024 * 1024:
-                raise ValueError("File size must be less than 5 MB.")
-
-            # Create collection with status
-            Collection.objects.create(
-                client_name=client_name,
-                branch=branch,
-                amount=amount,
-                paid_for=paid_for,
-                payment_screenshot=screenshot,
-                notes=notes or None,
-                status=status,  # NEW: Include status
-                created_by=get_user_display_name(request.user)
-            )
-            messages.success(request, f"Collection for {client_name} added successfully!")
-            return redirect("collections_list")
-
+                raise ValueError("Amount must be positive")
         except ValueError as e:
-            return render(request, "collections_add.html", {
-                "error": str(e),
-                "clients_json": clients,
-            })
-        except Exception as e:
-            logger.error("Error saving collection: %s", e)
-            return render(request, "collections_add.html", {
-                "error": f"Error saving collection: {e}",
-                "clients_json": clients,
-            })
+            return JsonResponse({"success": False, "error": str(e)}, status=400)
 
-    return render(request, "collections_add.html", {"clients_json": clients})
+        allowed = {"image/jpeg", "image/jpg", "image/png", "image/gif"}
+        if screenshot.content_type not in allowed:
+            return JsonResponse({"success": False, "error": "Only JPG, PNG, GIF images allowed"}, status=400)
+        if screenshot.size > 5 * 1024 * 1024:
+            return JsonResponse({"success": False, "error": "File size must be < 5 MB"}, status=400)
+
+        # --- save ---
+        collection = Collection.objects.create(
+            client_name=client_name,
+            branch=branch,
+            amount=amount,
+            paid_for=paid_for,
+            payment_screenshot=screenshot,
+            notes=notes or None,
+            created_by="API"          # mark origin
+        )
+
+        # >>>>>>  WhatsApp alert (branch included)  <<<<<<
+        send_collection_whatsapp(
+            client_name=collection.client_name,
+            branch=collection.branch,
+            created_by=collection.created_by,
+            amount=collection.amount,
+            created_at=collection.created_at
+        )
+
+        return JsonResponse({
+            "success": True,
+            "message": "Collection added successfully",
+            "data": {
+                "id": collection.id,
+                "client_name": collection.client_name,
+                "branch": collection.branch,
+                "amount": str(collection.amount),
+                "paid_for": collection.paid_for,
+                "notes": collection.notes,
+                "created_at": collection.created_at.strftime("%Y-%m-%d %H:%M"),
+                "screenshot_url": collection.payment_screenshot.url if collection.payment_screenshot else None,
+            }
+        }, status=201)
+
+    except Exception as e:
+        logger.error(f"API error adding collection: {e}")
+        return JsonResponse({"success": False, "error": str(e)}, status=500)
 
 
 def collections_list(request):

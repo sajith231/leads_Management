@@ -32,5 +32,6 @@ path('collections/<int:collection_id>/update-status/', views.collection_update_s
 
     path("api/collections/", views.api_collections_list, name="api_collections_list"),
     path("api/collections/add/", views.api_collections_add, name="api_collections_add"),
+    path("api/collections/whatsapp-test/", views.send_collection_whatsapp, name="collection_whatsapp_test"),
 
     ]
