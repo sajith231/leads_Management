@@ -21,79 +21,91 @@
   <form method="post" enctype="multipart/form-data">
   {% csrf_token %}
 
-  <div class="row">
-    <div class="col-md-6 mb-3">
-      <label class="form-label">SIM No</label>
-      <input type="text" name="sim_no" class="form-control"
-             value="{{ sim.sim_no|default:'' }}"
-             {% if sim %}readonly{% else %}required{% endif %}>
-    </div>
-    <div class="col-md-6 mb-3">
-      <label class="form-label">Provider</label>
-      <select name="provider" class="form-select" required>
-        <option value="" disabled {% if not sim.provider %}selected{% endif %}>-- Select Provider --</option>
-        <option value="Bsnl" {% if sim.provider == 'Bsnl' %}selected{% endif %}>Bsnl</option>
-        <option value="Vi" {% if sim.provider == 'Vi' %}selected{% endif %}>Vi</option>
-        <option value="Airtel" {% if sim.provider == 'Airtel' %}selected{% endif %}>Airtel</option>
-        <option value="Jio" {% if sim.provider == 'Jio' %}selected{% endif %}>Jio</option>
-      </select>
-    </div>
+  <!-- add_sim.html – full snippet of the rows that changed -->
+<div class="row">
+  <div class="col-md-6 mb-3">
+    <label class="form-label">SIM No</label>
+    <input type="text" name="sim_no" class="form-control"
+           value="{{ sim.sim_no|default:'' }}"
+           {% if sim %}readonly{% else %}required{% endif %}>
   </div>
+  <div class="col-md-6 mb-3">
+    <label class="form-label">Provider</label>
+    <select name="provider" class="form-select" required>
+      <option value="" disabled {% if not sim.provider %}selected{% endif %}>-- Select Provider --</option>
+      <option value="Bsnl" {% if sim.provider == 'Bsnl' %}selected{% endif %}>Bsnl</option>
+      <option value="Vi" {% if sim.provider == 'Vi' %}selected{% endif %}>Vi</option>
+      <option value="Airtel" {% if sim.provider == 'Airtel' %}selected{% endif %}>Airtel</option>
+      <option value="Jio" {% if sim.provider == 'Jio' %}selected{% endif %}>Jio</option>
+    </select>
+  </div>
+</div>
 
-  <div class="row">
-    <div class="col-md-6 mb-3">
-      <label class="form-label">Identify Person</label>
-      <select name="identify_person" class="form-select">
-        <option value="" disabled {% if not sim.identify_person %}selected{% endif %}>-- Select User --</option>
-        {% for u in users %}
-          <option value="{{ u.name }}" {% if sim.identify_person == u.name %}selected{% endif %}>{{ u.name }}</option>
-        {% endfor %}
-      </select>
-    </div>
-    <div class="col-md-6 mb-3">
-      <label class="form-label">In-charge</label>
-      <select name="incharge" class="form-select">
-        <option value="" disabled {% if not sim.incharge %}selected{% endif %}>-- Select User --</option>
-        {% for u in users %}
-          <option value="{{ u.name }}" {% if sim.incharge == u.name %}selected{% endif %}>{{ u.name }}</option>
-        {% endfor %}
-      </select>
-    </div>
+<div class="row">
+  <div class="col-md-6 mb-3">
+    <label class="form-label">Identify Person</label>
+    <select name="identify_person" class="form-select">
+      <option value="" disabled {% if not sim.identify_person %}selected{% endif %}>-- Select User --</option>
+      {% for u in users %}
+        <option value="{{ u.name }}" {% if sim.identify_person == u.name %}selected{% endif %}>{{ u.name }}</option>
+      {% endfor %}
+    </select>
   </div>
+  <div class="col-md-6 mb-3">
+    <label class="form-label">In-charge</label>
+    <select name="incharge" class="form-select">
+      <option value="" disabled {% if not sim.incharge %}selected{% endif %}>-- Select User --</option>
+      {% for u in users %}
+        <option value="{{ u.name }}" {% if sim.incharge == u.name %}selected{% endif %}>{{ u.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+</div>
 
-  <div class="row">
-    <div class="col-md-6 mb-3">
-      <label class="form-label">Last Recharge Date</label>
-      <input type="date" name="last_recharge_date" class="form-control"
-             value="{{ sim.last_recharge_date|date:'Y-m-d'|default:'' }}">
-    </div>
-    <div class="col-md-6 mb-3">
-      <label class="form-label">Amount</label>
-      <input type="number" name="amount" class="form-control"
-             value="{{ sim.amount|default:'' }}">
-    </div>
+<div class="row">
+  <div class="col-md-6 mb-3">
+    <label class="form-label">Last Recharge Date</label>
+    <input type="date" name="last_recharge_date" class="form-control"
+           value="{{ sim.last_recharge_date|date:'Y-m-d'|default:'' }}">
   </div>
+  <div class="col-md-6 mb-3">
+    <label class="form-label">Amount</label>
+    <input type="number" name="amount" class="form-control"
+           value="{{ sim.amount|default:'' }}">
+  </div>
+</div>
 
-  <div class="row">
-    <div class="col-md-6 mb-3">
-      <label class="form-label">Branch</label>
-      <select name="branch" class="form-select" required>
-        <option value="" disabled {% if not sim.branch %}selected{% endif %}>-- Select Branch --</option>
-        <option value="Sysmac Info" {% if sim.branch == 'Sysmac Info' %}selected{% endif %}>Sysmac Info</option>
-        <option value="Sysmac Computers" {% if sim.branch == 'Sysmac Computers' %}selected{% endif %}>Sysmac Computers</option>
-        <option value="IMC Dev" {% if sim.branch == 'IMC Dev' %}selected{% endif %}>IMC Dev</option>
-        <option value="IMC-HO" {% if sim.branch == 'IMC-HO' %}selected{% endif %}>IMC-HO</option>
-        <option value="IMC Mukkam" {% if sim.branch == 'IMC Mukkam' %}selected{% endif %}>IMC Mukkam</option>
-      </select>
-    </div>
-     <div class="col-md-6 mb-3">
-      <label class="form-label">Validity (days)</label>
-      <input type="number" name="validity_days" class="form-control"
-             min="0" step="1"
-             value="{{ sim.validity_days|default:'' }}"
-             placeholder="e.g. 28">
-    </div>
+<!-- NEW ROW: Recharged By + Valid Until -->
+<div class="row">
+  <div class="col-md-6 mb-3">
+    <label class="form-label">Recharged By</label>
+    <select name="recharged_by" class="form-select">
+      <option value="" disabled selected>-- Select User --</option>
+      {% for u in users %}
+        <option value="{{ u.name }}">{{ u.name }}</option>
+      {% endfor %}
+    </select>
   </div>
+  <div class="col-md-6 mb-3">
+    <label class="form-label">Valid Until</label>
+    <input type="date" name="validity_date" class="form-control"
+           value="{{ sim.validity_date|date:'Y-m-d'|default:'' }}">
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-6 mb-3">
+    <label class="form-label">Branch</label>
+    <select name="branch" class="form-select" required>
+      <option value="" disabled {% if not sim.branch %}selected{% endif %}>-- Select Branch --</option>
+      <option value="Sysmac Info" {% if sim.branch == 'Sysmac Info' %}selected{% endif %}>Sysmac Info</option>
+      <option value="Sysmac Computers" {% if sim.branch == 'Sysmac Computers' %}selected{% endif %}>Sysmac Computers</option>
+      <option value="IMC Dev" {% if sim.branch == 'IMC Dev' %}selected{% endif %}>IMC Dev</option>
+      <option value="IMC-HO" {% if sim.branch == 'IMC-HO' %}selected{% endif %}>IMC-HO</option>
+      <option value="IMC Mukkam" {% if sim.branch == 'IMC Mukkam' %}selected{% endif %}>IMC Mukkam</option>
+    </select>
+  </div>
+</div>
 
   <div class="d-flex justify-content-between mt-4">
     <a href="{% url 'sim_management' %}" class="btn btn-secondary">Cancel</a>

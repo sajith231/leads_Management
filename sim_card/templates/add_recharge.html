@@ -20,14 +20,16 @@
           <input type="number" name="amount" class="form-control" step="0.01" required>
         </div>
         <div class="mb-3">
-          <label class="form-label">Validity (days)</label>
-          <input type="number" name="validity_days" class="form-control"
-                 min="0" step="1" placeholder="e.g. 28">
-        </div>
-        <div class="mb-3">
-          <label class="form-label">Recharged By</label>
-          <input type="text" name="recharged_by" class="form-control" value="{{ sim.incharge|default:sim.identify_person }}">
-        </div>
+  <label class="form-label">Valid Until</label>
+  <input type="date" name="validity_date" class="form-control">
+</div>
+       <div class="mb-3">
+  <label class="form-label">Recharged By</label>
+  <input type="text"
+         name="recharged_by"
+         class="form-control"
+         placeholder="Enter name"><!-- no value=... -->
+</div>
         <div class="mb-3">
           <label class="form-label">Notes</label>
           <textarea name="notes" class="form-control" rows="3"></textarea>

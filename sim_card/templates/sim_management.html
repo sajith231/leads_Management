@@ -50,7 +50,7 @@
         <tr>
           <th>No</th><th>SIM No</th><th>View</th><th>Provider</th>
           <th>Identify Person</th><th>Incharge</th><th>Last Recharge</th>
-          <th>Amount</th><th>Branch</th><th>Validity (days)</th><th>Days Left</th>
+          <th>Amount</th><th>Branch</th><th>Valid Until</th><th>Days Left</th>
           <th>Edit</th><th>Delete</th>
         </tr>
       </thead>
@@ -71,7 +71,7 @@
           <td>{{ sim.last_recharge_date|date:"d-m-Y" }}</td>
           <td>{{ sim.amount }}</td>
           <td>{{ sim.branch }}</td>
-          <td>{{ sim.validity_days|default:"-" }}</td>
+          <td>{{ sim.validity_date|date:"d-m-Y"|default:"-" }}</td>
           <td>
             {% if sim.days_remaining is not None %}
               {% if sim.days_remaining <= 5 %}
