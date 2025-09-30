@@ -127,6 +127,26 @@ class Collection(models.Model):
     )
 
     # ------------------------------------------------------------------
+    # Collection Type (NEW)
+    # ------------------------------------------------------------------
+    TYPE_CASH    = "cash"
+    TYPE_ONLINE  = "online"
+    TYPE_CHEQUE  = "cheque"
+
+    COLLECTION_TYPE_CHOICES = [
+        (TYPE_CASH,   "By Cash"),
+        (TYPE_ONLINE, "Online Payment"),
+        (TYPE_CHEQUE, "Cheque"),
+    ]
+
+    collection_type = models.CharField(
+        max_length=10,
+        choices=COLLECTION_TYPE_CHOICES,
+        default=TYPE_CASH,
+        help_text="Payment mode used by the client",
+    )
+
+    # ------------------------------------------------------------------
     # Core fields
     # ------------------------------------------------------------------
     client_name = models.CharField(max_length=255, help_text="Name of the client")
@@ -189,3 +209,10 @@ class Collection(models.Model):
         return (
             "bg-success" if self.is_verified else "bg-warning text-dark"
         )
+
+    # ---------------------------------------------------------
+    # NEW: tiny helper for templates / admin
+    # ---------------------------------------------------------
+    def requires_proof(self) -> bool:
+        """Returns True when the payment mode demands an upload."""
+        return self.collection_type in {self.TYPE_ONLINE, self.TYPE_CHEQUE}

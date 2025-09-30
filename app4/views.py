@@ -698,7 +698,7 @@ logger = logging.getLogger(__name__)
 WHATSAPP_API_URL = "https://app.dxing.in/api/send/whatsapp"
 WHATSAPP_SECRET   = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
 WHATSAPP_ACCOUNT  = "1756959119812b4ba287f5ee0bc9d43bbf5bbe87fb68b9118fcf1af"
-COLLECTION_RECIPIENTS = ["9061947005", "9946545535","6282351770","7593820007","7593820005"]   # hard-coded numbers
+COLLECTION_RECIPIENTS = ["9061947005", "9946545535","6282351770","7593820007","7593820005","9562477819"]   # hard-coded numbers
 
 def send_collection_whatsapp(client_name, branch, created_by, amount, created_at: datetime):
     """
@@ -725,23 +725,24 @@ def send_collection_whatsapp(client_name, branch, created_by, amount, created_at
             logger.error("WhatsApp failed for %s : %s", recipient, e)
 # -------------------------------------------------
 # -------------------------------------------------
-
 @login_required
 def collections_add(request):
     """Add new collection – client auto-complete + branch auto-fill."""
     clients = _load_clients()
     if request.method == "POST":
-        client_name = request.POST.get("client_name", "").strip()
-        branch      = request.POST.get("branch", "").strip()
-        amount      = request.POST.get("amount", "").strip()
-        paid_for    = request.POST.get("paid_for", "").strip()
-        screenshot  = request.FILES.get("payment_screenshot")
-        notes       = request.POST.get("notes", "").strip()
-        status      = request.POST.get("status", "pending")  # default
+        client_name       = request.POST.get("client_name", "").strip()
+        branch            = request.POST.get("branch", "").strip()
+        amount            = request.POST.get("amount", "").strip()
+        paid_for          = request.POST.get("paid_for", "").strip()
+        collection_type   = request.POST.get("collection_type", "cash").strip()
+        screenshot        = request.FILES.get("payment_screenshot")
+        notes             = request.POST.get("notes", "").strip()
+        status            = request.POST.get("status", "pending")  # default
 
-        if not all([client_name, branch, amount, paid_for, screenshot]):
+        # basic required fields (screenshot NOT included here)
+        if not all([client_name, branch, amount, paid_for]):
             return render(request, "collections_add.html", {
-                "error": "Please fill all required fields and upload payment screenshot.",
+                "error": "Please fill all required fields.",
                 "clients_json": clients,
             })
 
@@ -750,11 +751,15 @@ def collections_add(request):
             if amount <= 0:
                 raise ValueError("Amount must be greater than 0")
 
-            allowed = {"image/jpeg", "image/jpg", "image/png", "image/gif"}
-            if screenshot.content_type not in allowed:
-                raise ValueError("Only JPG / PNG / GIF images are allowed.")
-            if screenshot.size > 5 * 1024 * 1024:
-                raise ValueError("File size must be less than 5 MB.")
+            # validate file only when needed
+            if collection_type in ('online', 'cheque'):
+                if not screenshot:
+                    raise ValueError(f"Proof image is required for {collection_type.replace('_', ' ').title()}")
+                allowed = {"image/jpeg", "image/jpg", "image/png", "image/gif"}
+                if screenshot.content_type not in allowed:
+                    raise ValueError("Only JPG / PNG / GIF images are allowed.")
+                if screenshot.size > 5 * 1024 * 1024:
+                    raise ValueError("File size must be less than 5 MB.")
 
             # create record
             collection = Collection.objects.create(
@@ -762,16 +767,17 @@ def collections_add(request):
                 branch=branch,
                 amount=amount,
                 paid_for=paid_for,
-                payment_screenshot=screenshot,
+                collection_type=collection_type,
+                payment_screenshot=screenshot or None,
                 notes=notes or None,
                 status=status,
                 created_by=get_user_display_name(request.user)
             )
 
-            # >>>>>>  NEW: WhatsApp alert  <<<<<<
+            # WhatsApp alert (unchanged)
             send_collection_whatsapp(
                 client_name=collection.client_name,
-                branch=collection.branch,               # <-- NEW
+                branch=collection.branch,
                 created_by=collection.created_by,
                 amount=collection.amount,
                 created_at=collection.created_at
@@ -793,7 +799,6 @@ def collections_add(request):
             })
 
     return render(request, "collections_add.html", {"clients_json": clients})
-
 
 def collections_list(request):
     """List all collections with search, filter, and status functionality"""
@@ -939,82 +944,81 @@ def collection_details(request, collection_id):
 def collections_edit(request, collection_id):
     """Edit collection record with client autocomplete functionality"""
     collection = get_object_or_404(Collection, id=collection_id)
-    clients = _load_clients()  
-    
-    if request.method == 'POST':
-        client_name = request.POST.get('client_name', '').strip()
-        branch = request.POST.get('branch', '').strip()
-        amount = request.POST.get('amount', '').strip()
-        paid_for = request.POST.get('paid_for', '').strip()
-        payment_screenshot = request.FILES.get('payment_screenshot')
-        notes = request.POST.get('notes', '').strip()
-        status = request.POST.get('status', collection.status)  # NEW: Handle status
+    clients = _load_clients()
 
-        # Validation
+    if request.method == "POST":
+        client_name        = request.POST.get("client_name", "").strip()
+        branch             = request.POST.get("branch", "").strip()
+        amount             = request.POST.get("amount", "").strip()
+        paid_for           = request.POST.get("paid_for", "").strip()
+        collection_type    = request.POST.get("collection_type", collection.collection_type).strip()
+        payment_screenshot = request.FILES.get("payment_screenshot")
+        notes              = request.POST.get("notes", "").strip()
+        status             = request.POST.get("status", collection.status)
+
+        # basic required fields (screenshot NOT included)
         if not all([client_name, branch, amount, paid_for]):
-            return render(request, 'collections_edit.html', {
-                'collection': collection,
-                'clients_json': clients,
-                'error': 'Please fill all required fields.'
+            return render(request, "collections_edit.html", {
+                "collection": collection,
+                "clients_json": clients,
+                "error": "Please fill all required fields.",
             })
 
         try:
-            # Validate amount
             amount = float(amount)
             if amount <= 0:
                 raise ValueError("Amount must be greater than 0")
 
-            # Update fields
-            collection.client_name = client_name
-            collection.branch = branch
-            collection.amount = amount
-            collection.paid_for = paid_for
-            collection.notes = notes if notes else None
-            collection.status = status  # NEW: Update status
-            
-            # Ensure created_by is set if it's missing
+            # validate screenshot only when required
+            requires_proof = collection_type in (Collection.TYPE_ONLINE, Collection.TYPE_CHEQUE)
+            if requires_proof and not payment_screenshot and not collection.payment_screenshot:
+                raise ValueError(f"Proof image is required for {collection_type.replace('_', ' ').title()}")
+
+            if payment_screenshot:
+                allowed = {"image/jpeg", "image/jpg", "image/png", "image/gif"}
+                if payment_screenshot.content_type not in allowed:
+                    raise ValueError("Only image files (JPG, PNG, GIF) are allowed")
+                if payment_screenshot.size > 5 * 1024 * 1024:
+                    raise ValueError("File size must be less than 5 MB")
+
+                # delete old file if exists
+                if collection.payment_screenshot and os.path.isfile(collection.payment_screenshot.path):
+                    os.remove(collection.payment_screenshot.path)
+                collection.payment_screenshot = payment_screenshot
+
+            # update all fields
+            collection.client_name      = client_name
+            collection.branch           = branch
+            collection.amount           = amount
+            collection.paid_for         = paid_for
+            collection.collection_type  = collection_type
+            collection.notes            = notes or None
+            collection.status           = status
+
             if not collection.created_by:
                 collection.created_by = get_user_display_name(request.user)
 
-            # Handle file upload
-            if payment_screenshot:
-                # Validate file type
-                allowed_types = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif']
-                if payment_screenshot.content_type not in allowed_types:
-                    raise ValueError("Only image files (JPG, PNG, GIF) are allowed")
-                
-                # Check file size (5MB limit)
-                if payment_screenshot.size > 5 * 1024 * 1024:
-                    raise ValueError("File size must be less than 5MB")
-                
-                # Delete old file if exists
-                if collection.payment_screenshot:
-                    if os.path.isfile(collection.payment_screenshot.path):
-                        os.remove(collection.payment_screenshot.path)
-                
-                collection.payment_screenshot = payment_screenshot
-
             collection.save()
-            messages.success(request, f'Collection for {client_name} updated successfully!')
-            return redirect('collections_list')
-            
+            messages.success(request, f"Collection for {client_name} updated successfully!")
+            return redirect("collections_list")
+
         except ValueError as e:
-            return render(request, 'collections_edit.html', {
-                'collection': collection,
-                'clients_json': clients,
-                'error': str(e)
+            return render(request, "collections_edit.html", {
+                "collection": collection,
+                "clients_json": clients,
+                "error": str(e),
             })
         except Exception as e:
             logger.error(f"Error updating collection: {str(e)}")
-            return render(request, 'collections_edit.html', {
-                'collection': collection,
-                'clients_json': clients,
-                'error': f'Error updating collection: {str(e)}'
+            return render(request, "collections_edit.html", {
+                "collection": collection,
+                "clients_json": clients,
+                "error": f"Error updating collection: {str(e)}",
             })
 
-    return render(request, 'collections_edit.html', {
-        'collection': collection,
-        'clients_json': clients
+    return render(request, "collections_edit.html", {
+        "collection": collection,
+        "clients_json": clients,
     })
 @csrf_exempt
 @require_http_methods(["POST"])
