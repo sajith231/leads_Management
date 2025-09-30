@@ -125,6 +125,10 @@
                 <span>Verified</span> 
             </div>
             <div class="d-flex align-items-center">
+                <i class="fas fa-home text-info me-2"></i>
+                <span>Work From Home</span>
+            </div>
+            <div class="d-flex align-items-center">
                 <i class="fas fa-star text-secondary me-2"></i>
                 <span>Not Marked</span>
             </div>
@@ -158,6 +162,7 @@
                                 <option value="full">Full Day</option>
                                 <option value="half">Half Day</option>
                                 <option value="leave">Leave</option>
+                                <option value="work_from_home">Work From Home</option> <!-- NEW -->
                                 <option value="initial">Not Marked</option>
                             </select>
                         </div>
@@ -1049,6 +1054,11 @@ function updateAttendanceIcon(icon, status, punchIn, punchOut) {
             iconClass = 'fas fa-star';
             iconColor = '#ffc107'; // Yellow for holiday
             tooltipText = 'Holiday';
+            break;
+        case 'work_from_home': // NEW
+            iconClass = 'fas fa-home';
+            iconColor = '#0dcaf0'; // Bootstrap "info" color
+            tooltipText = 'Work From Home';
             break;
         default:
             iconClass = 'fas fa-star';

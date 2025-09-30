@@ -647,7 +647,8 @@ class Attendance(models.Model):
             ('initial', 'Not Marked'),
             ('full', 'Full Day'),
             ('half', 'Half Day'),
-            ('leave', 'Leave')
+            ('leave', 'Leave'),
+            ('work_from_home', 'Work From Home'),  # <-- add this
         ], 
         default='initial'
     )
