@@ -4037,7 +4037,7 @@ def send_whatsapp_message_status_update(leave_request, action, approver_name=Non
 
     # On APPROVAL, also message these two numbers
     if action == 'approve':
-        recipients += ["9061947005", "9946545535"]
+        recipients += ["9946545535"]
 
     if not recipients:
         print("⚠️ No recipients found to send WhatsApp message.")
@@ -4288,7 +4288,7 @@ def process_late_request(request):
             if phone_number:
                 recipients.append(str(phone_number))
             if data['action'] == 'approve':
-                recipients += ["9061947005", "9946545535"]
+                recipients += ["9946545535"]
 
             if not recipients:
                 logger.warning("No recipients found for late request WhatsApp message.")
@@ -5977,7 +5977,7 @@ def process_early_request(request):
             if phone_number:
                 recipients.append(str(phone_number))
             if action == 'approve':
-                recipients += ["9061947005", "9946545535"]
+                recipients += ["9946545535"]
 
             if not recipients:
                 logger.warning("No recipients found for early request WhatsApp message.")
