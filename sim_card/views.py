@@ -11,21 +11,20 @@ from django.contrib import messages
 
 def _attach_days_remaining(sim_qs):
     """
-    Adds two dynamic attributes to every SIM in the queryset:
+    Adds dynamic attributes:
         .expiry_date        (date or None)
         .days_remaining     (int or None)
-    Uses last_recharge_date + validity_days.
+    Now uses validity_date instead of validity_days.
     """
     today = date.today()
     for sim in sim_qs:
-        if sim.last_recharge_date and sim.validity_days:
-            sim.expiry_date = sim.last_recharge_date + timedelta(days=sim.validity_days)
-            sim.days_remaining = (sim.expiry_date - today).days
+        if sim.validity_date:                # ← new field
+            sim.expiry_date = sim.validity_date
+            sim.days_remaining = (sim.validity_date - today).days
         else:
             sim.expiry_date = None
             sim.days_remaining = None
     return sim_qs
-
 
 def sim_management(request):
     search_query = request.GET.get('q', '').strip()
@@ -73,17 +72,17 @@ from app1.models import User
 
 def add_sim(request):
     if request.method == "POST":
-        sim_no = request.POST.get("sim_no")
-        provider = request.POST.get("provider")
+        sim_no          = request.POST.get("sim_no")
+        provider        = request.POST.get("provider")
         identify_person = request.POST.get("identify_person")
-        incharge = request.POST.get("incharge")
+        incharge        = request.POST.get("incharge")
         last_recharge_date = request.POST.get("last_recharge_date")
-        amount = request.POST.get("amount")
-        branch = request.POST.get("branch")
-        validity_days = request.POST.get("validity_days")
+        amount          = request.POST.get("amount")
+        recharged_by    = request.POST.get("recharged_by")      # ← NEW
+        branch          = request.POST.get("branch")
+        validity_date   = request.POST.get("validity_date")
 
         try:
-            # Create the SIM
             sim = SIM.objects.create(
                 sim_no=sim_no,
                 provider=provider,
@@ -92,19 +91,20 @@ def add_sim(request):
                 last_recharge_date=last_recharge_date or None,
                 amount=amount or None,
                 branch=branch,
-                validity_days=validity_days or None,
+                validity_date=validity_date or None,
             )
-            
-            # Create recharge record if last_recharge_date and amount are provided
+
+            # create first recharge record
             if last_recharge_date and amount:
                 SIMRecharge.objects.create(
                     sim=sim,
                     recharge_date=last_recharge_date,
                     amount=amount,
-                    recharged_by=incharge or identify_person or "System",
-                    notes=f"Initial recharge record"
+                    validity_date=validity_date or None,
+                    recharged_by=recharged_by or incharge or identify_person or "System",  # ← NEW
+                    notes="Initial recharge record"
                 )
-            
+
             messages.success(request, "SIM added successfully.")
             return redirect("sim_management")
 
@@ -125,42 +125,34 @@ def edit_sim(request, sim_id):
     sim = get_object_or_404(SIM, id=sim_id)
 
     if request.method == 'POST':
-        # Store old values to check if recharge record needs to be created
         old_recharge_date = sim.last_recharge_date
         old_amount = sim.amount
-        
-        # Update SIM fields
+
+        # update SIM
         sim.provider = request.POST.get('provider')
         sim.identify_person = request.POST.get('identify_person')
         sim.incharge = request.POST.get('incharge')
         sim.last_recharge_date = request.POST.get('last_recharge_date') or None
         sim.amount = request.POST.get('amount') or None
         sim.branch = request.POST.get('branch')
-        sim.validity = request.POST.get('validity') or None
+        sim.validity_date = request.POST.get('validity_date') or None
         sim.save()
 
-        # Check if recharge information was updated and create a new recharge record
         new_recharge_date = sim.last_recharge_date
         new_amount = sim.amount
-        
+        new_validity_date = sim.validity_date
+        new_recharged_by = request.POST.get('recharged_by')          # ← NEW
+
         if new_recharge_date and new_amount:
-            # Check if this is a new recharge (dates or amounts differ)
-            if (str(old_recharge_date) != str(new_recharge_date) or 
-                str(old_amount) != str(new_amount)):
-                
-                # Check if a recharge record already exists for this date
-                existing_recharge = SIMRecharge.objects.filter(
-                    sim=sim, 
-                    recharge_date=new_recharge_date
-                ).first()
-                
-                if not existing_recharge:
+            if str(old_recharge_date) != str(new_recharge_date) or str(old_amount) != str(new_amount):
+                if not SIMRecharge.objects.filter(sim=sim, recharge_date=new_recharge_date).exists():
                     SIMRecharge.objects.create(
                         sim=sim,
                         recharge_date=new_recharge_date,
                         amount=new_amount,
-                        recharged_by=sim.incharge or sim.identify_person or "System",
-                        notes=f"Recharge updated via edit"
+                        validity_date=new_validity_date,
+                        recharged_by=new_recharged_by or sim.incharge or sim.identify_person or "System",
+                        notes="Recharge updated via edit"
                     )
 
         messages.success(request, 'SIM updated successfully.')
@@ -186,21 +178,24 @@ from django.shortcuts import render
 from .models import SIM
 
 def sim_reminder(request):
-    """Return HTML fragment with SIMs that expire ≤ 2 days from today."""
+    """
+    Return HTML fragment with SIMs whose *validity_date* is ≤ 2 days away.
+    """
     today = date.today()
     threshold = today + timedelta(days=2)
 
-    # 1.  fetch only SIMs that have last_recharge + validity_days
+    # 1.  fetch only SIMs that have a validity_date
     sims = SIM.objects.filter(
         last_recharge_date__isnull=False,
-        validity_days__isnull=False
+        validity_date__isnull=False          # ← new field
     )
 
-    # 2.  attach computed expiry & days-remaining
-    sims = _attach_days_remaining(sims)
+    # 2.  attach dynamic expiry / days-remaining
+    sims = _attach_days_remaining(sims)      # already uses validity_date now
 
-    # 3.  keep only those that expire within next 2 days
-    sims = [s for s in sims if s.days_remaining is not None and s.days_remaining <= 2]
+    # 3.  keep those that expire within next 2 days
+    sims = [s for s in sims
+            if s.days_remaining is not None and s.days_remaining <= 2]
 
     # 4.  sort by soonest expiry
     sims.sort(key=lambda s: s.expiry_date)
@@ -220,11 +215,11 @@ def add_recharge(request, sim_id):
     sim = get_object_or_404(SIM, id=sim_id)
 
     if request.method == 'POST':
-        recharge_date = request.POST.get('recharge_date')
-        amount        = request.POST.get('amount')
-        validity_days = request.POST.get('validity_days')   # ← new: integer days
-        recharged_by  = request.POST.get('recharged_by')
-        notes         = request.POST.get('notes')
+        recharge_date   = request.POST.get('recharge_date')
+        amount          = request.POST.get('amount')
+        validity_date   = request.POST.get('validity_date')   # ← date field
+        recharged_by    = request.POST.get('recharged_by')
+        notes           = request.POST.get('notes')
 
         if recharge_date and amount:
             # 1. create the recharge record
@@ -232,6 +227,7 @@ def add_recharge(request, sim_id):
                 sim=sim,
                 recharge_date=recharge_date,
                 amount=amount,
+                validity_date=validity_date or None,            # ← store date
                 recharged_by=recharged_by or sim.incharge or sim.identify_person or "System",
                 notes=notes or "Manual recharge entry"
             )
@@ -239,7 +235,7 @@ def add_recharge(request, sim_id):
             # 2. update SIM with latest recharge info
             sim.last_recharge_date = recharge_date
             sim.amount = amount
-            sim.validity_days = validity_days or None          # ← integer days
+            sim.validity_date = validity_date or None          # ← date field
             sim.save()
 
             messages.success(request, 'Recharge record added successfully.')
@@ -248,7 +244,6 @@ def add_recharge(request, sim_id):
             messages.error(request, 'Recharge date and amount are required.')
 
     return render(request, 'add_recharge.html', {'sim': sim})
-
 
 
 from django.shortcuts import get_object_or_404, render

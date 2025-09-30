@@ -42,9 +42,10 @@
                             <p class="mb-2"><strong>Amount:</strong>
                                 <span class="text-success">₹{{ sim.amount|default:"-" }}</span>
                             </p>
-                             <p class="mb-2"><strong>Validity:</strong>
-                                <span class="badge bg-info">{{ sim.validity_days|default:"-" }} days</span>
-                            </p>
+                             <p class="mb-2">
+  <strong>Valid Until:</strong>
+  <span class="badge bg-info">{{ sim.validity_date|date:"d-m-Y"|default:"-" }}</span>
+</p>
                             {% if sim.days_remaining is not None %}
                                 <p class="mb-0"><strong>Days Left:</strong>
                                     <span class="badge {% if sim.days_remaining <= 0 %}bg-danger{% elif sim.days_remaining <= 5 %}bg-warning text-dark{% else %}bg-success{% endif %}">
