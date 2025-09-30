@@ -3882,7 +3882,6 @@ from django.contrib.auth.decorators import login_required
 import requests
 
 from .models import Attendance, LeaveRequest, User  # <-- your custom User
-
 @login_required
 def process_leave_request(request):
     if request.method == 'POST':
@@ -3918,7 +3917,6 @@ def process_leave_request(request):
                         attendance.status = 'leave' if leave_request.leave_type == 'full_day' else 'half'
                         attendance.save()
                     current_date += timedelta(days=1)
-
             else:
                 # Reject and delete leave attendance
                 leave_request.status = 'rejected'
@@ -3981,7 +3979,6 @@ def process_leave_request(request):
             })
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)})
-
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
 
 
@@ -3993,10 +3990,22 @@ def send_whatsapp_message_status_update(leave_request, action, approver_name=Non
     # Normalize approver name
     approver_name = (approver_name or "").strip() or "Admin"
 
+    # --- Resolve employee display name (possessive) ---
+    emp = getattr(leave_request, 'employee', None)
+    emp_first_last = f"{getattr(emp, 'first_name', '')} {getattr(emp, 'last_name', '')}".strip() if emp else ''
+    employee_name = (
+        (getattr(emp, 'name', None) if emp else None)
+        or (getattr(emp, 'employee_name', None) if emp else None)
+        or (emp_first_last if emp_first_last else None)
+        or (getattr(emp, 'userid', None) if emp else None)
+        or "Employee"
+    )
+    employee_possessive = (employee_name + "'" if str(employee_name).strip().lower().endswith('s') else employee_name + "'s")
+
     # Format the message with leave request details based on action
     if action == 'approve':
         message = (
-            f"✅ Your leave request has been approved.\n"
+            f"✅ {employee_possessive} leave request has been approved.\n"
             f"📅 Start Date: {leave_request.start_date.strftime('%d-%m-%Y')}\n"
             f"📅 End Date: {leave_request.end_date.strftime('%d-%m-%Y')}\n"
             f"📝 Reason: {leave_request.reason}\n"
@@ -4004,7 +4013,7 @@ def send_whatsapp_message_status_update(leave_request, action, approver_name=Non
         )
     elif action == 'reject':
         message = (
-            f"❌ Your leave request has been rejected.\n"
+            f"❌ {employee_possessive} leave request has been rejected.\n"
             f"📅 Start Date: {leave_request.start_date.strftime('%d-%m-%Y')}\n"
             f"📅 End Date: {leave_request.end_date.strftime('%d-%m-%Y')}\n"
             f"📝 Reason: {leave_request.reason}\n"
@@ -4012,7 +4021,7 @@ def send_whatsapp_message_status_update(leave_request, action, approver_name=Non
         )
     else:
         message = (
-            f"ℹ️ Leave request status updated.\n"
+            f"ℹ️ {employee_possessive} leave request status updated.\n"
             f"📅 Start Date: {leave_request.start_date.strftime('%d-%m-%Y')}\n"
             f"📅 End Date: {leave_request.end_date.strftime('%d-%m-%Y')}\n"
             f"📝 Reason: {leave_request.reason}\n"
@@ -4036,7 +4045,6 @@ def send_whatsapp_message_status_update(leave_request, action, approver_name=Non
 
     # Encode message for safe API call
     encoded_message = requests.utils.quote(message)
-
     all_ok = True
     for phone in recipients:
         url = (
@@ -4058,8 +4066,8 @@ def send_whatsapp_message_status_update(leave_request, action, approver_name=Non
         except requests.exceptions.RequestException as e:
             all_ok = False
             print(f"⚠️ Error sending WhatsApp message to {phone}: {e}")
-
     return all_ok
+
 
 
 
@@ -4198,7 +4206,6 @@ def get_late_requests(request):
 # at top of views.py ensure these imports exist:
 # import requests
 # from .models import User  # your custom User model
-
 @login_required
 def process_late_request(request):
     if request.method == 'POST':
@@ -4234,11 +4241,23 @@ def process_late_request(request):
             if not approver_name:
                 approver_name = getattr(request.user, 'username', None) or "Admin"
 
+            # --- Resolve employee display name (possessive) ---
+            emp = getattr(late_request, 'employee', None)
+            emp_first_last = f"{getattr(emp, 'first_name', '')} {getattr(emp, 'last_name', '')}".strip() if emp else ''
+            employee_name = (
+                (getattr(emp, 'name', None) if emp else None)
+                or (getattr(emp, 'employee_name', None) if emp else None)
+                or (emp_first_last if emp_first_last else None)
+                or (getattr(emp, 'userid', None) if emp else None)
+                or "Employee"
+            )
+            employee_possessive = (employee_name + "'" if str(employee_name).strip().lower().endswith('s') else employee_name + "'s")
+
             # --- Build message and update status ---
             if data['action'] == 'approve':
                 late_request.status = 'approved'
                 message = (
-                    f"✅ Your late request for {late_request.date.strftime('%d-%m-%Y')} has been approved.\n"
+                    f"✅ {employee_possessive} late request for {late_request.date.strftime('%d-%m-%Y')} has been approved.\n"
                     f"⏰ Delay Time: {late_request.delay_time}\n"
                     f"📝 Reason: {late_request.reason}\n"
                     f"👤 Approved By: {approver_name}"
@@ -4246,7 +4265,7 @@ def process_late_request(request):
             elif data['action'] == 'reject':
                 late_request.status = 'rejected'
                 message = (
-                    f"❌ Your late request for {late_request.date.strftime('%d-%m-%Y')} has been rejected.\n"
+                    f"❌ {employee_possessive} late request for {late_request.date.strftime('%d-%m-%Y')} has been rejected.\n"
                     f"⏰ Delay Time: {late_request.delay_time}\n"
                     f"📝 Reason: {late_request.reason}\n"
                     f"👤 Rejected By: {approver_name}"
@@ -4300,14 +4319,13 @@ def process_late_request(request):
                 'date': late_request.date.strftime('%Y-%m-%d'),
                 'action': data['action']
             })
-
         except LateRequest.DoesNotExist:
             return JsonResponse({'success': False, 'error': 'Late request not found'})
         except Exception as e:
             logger.exception("Unexpected error in process_late_request")
             return JsonResponse({'success': False, 'error': str(e)})
-
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
 
 
 
@@ -5893,7 +5911,7 @@ def process_early_request(request):
                 if cu:
                     approver_name = (cu.name or cu.userid)
 
-            # B) If not found, try attributes on request.user (sometimes people attach `name`)
+            # B) If not found, try attributes on request.user (sometimes people attach name)
             if not approver_name and hasattr(request.user, 'name') and str(getattr(request.user, 'name') or '').strip():
                 approver_name = str(request.user.name).strip()
 
@@ -5911,11 +5929,23 @@ def process_early_request(request):
             if not approver_name:
                 approver_name = getattr(request.user, 'username', None) or "Admin"
 
+            # --- Resolve employee display name (for possessive form) ---
+            emp = getattr(early_request, 'employee', None)
+            emp_first_last = f"{getattr(emp, 'first_name', '')} {getattr(emp, 'last_name', '')}".strip() if emp else ''
+            employee_name = (
+                (getattr(emp, 'name', None) if emp else None)
+                or (getattr(emp, 'employee_name', None) if emp else None)
+                or (emp_first_last if emp_first_last else None)
+                or (getattr(emp, 'userid', None) if emp else None)
+                or "Employee"
+            )
+            employee_possessive = (employee_name + "'" if str(employee_name).strip().lower().endswith('s') else employee_name + "'s")
+
             # Update the early request status and prepare message
             if action == 'approve':
                 early_request.status = 'approved'
                 message = (
-                    f"✅ Your early request for {early_request.date.strftime('%d-%m-%Y')} has been approved.\n"
+                    f"✅ {employee_possessive} early request for {early_request.date.strftime('%d-%m-%Y')} has been approved.\n"
                     f"⏰ Early Time: {early_request.early_time.strftime('%H:%M')}\n"
                     f"📝 Reason: {early_request.reason}\n"
                     f"👤 Approved By: {approver_name}"
@@ -5923,7 +5953,7 @@ def process_early_request(request):
             elif action == 'reject':
                 early_request.status = 'rejected'
                 message = (
-                    f"❌ Your early request for {early_request.date.strftime('%d-%m-%Y')} has been rejected.\n"
+                    f"❌ {employee_possessive} early request for {early_request.date.strftime('%d-%m-%Y')} has been rejected.\n"
                     f"⏰ Early Time: {early_request.early_time.strftime('%H:%M')}\n"
                     f"📝 Reason: {early_request.reason}\n"
                     f"👤 Rejected By: {approver_name}"
@@ -5954,7 +5984,6 @@ def process_early_request(request):
             else:
                 # URL encode the message
                 encoded_message = requests.utils.quote(message)
-
                 for r in recipients:
                     url = (
                         f"https://app.dxing.in/api/send/whatsapp?"
@@ -5980,15 +6009,14 @@ def process_early_request(request):
                 'date': early_request.date.strftime('%Y-%m-%d'),
                 'action': action
             })
-
         except EarlyRequest.DoesNotExist:
             logger.error(f"Early request not found with ID: {data.get('request_id')}")
             return JsonResponse({'success': False, 'error': 'Early request not found'})
         except Exception as e:
             logger.exception("Unexpected error in process_early_request")
             return JsonResponse({'success': False, 'error': str(e)})
-
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
 
 
 
