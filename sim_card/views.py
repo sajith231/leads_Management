@@ -9,10 +9,28 @@ from datetime import date
 from datetime import date, timedelta
 from django.contrib import messages
 
+def _attach_days_remaining(sim_qs):
+    """
+    Adds two dynamic attributes to every SIM in the queryset:
+        .expiry_date        (date or None)
+        .days_remaining     (int or None)
+    Uses last_recharge_date + validity_days.
+    """
+    today = date.today()
+    for sim in sim_qs:
+        if sim.last_recharge_date and sim.validity_days:
+            sim.expiry_date = sim.last_recharge_date + timedelta(days=sim.validity_days)
+            sim.days_remaining = (sim.expiry_date - today).days
+        else:
+            sim.expiry_date = None
+            sim.days_remaining = None
+    return sim_qs
+
+
 def sim_management(request):
     search_query = request.GET.get('q', '').strip()
-
     sims = SIM.objects.all().order_by('-created_at')
+
     if search_query:
         sims = sims.filter(
             sim_no__icontains=search_query
@@ -20,25 +38,19 @@ def sim_management(request):
             provider__icontains=search_query
         )
 
-    # --- reminder logic ---
     today = date.today()
-    threshold = today + timedelta(days=2)
-    expiring = sims.filter(validity__lte=threshold, validity__isnull=False)
+    # 1.  attach real expiry & days-remaining
+    sims = _attach_days_remaining(sims)
+
+    # 2.  auto-banner for soon-expired SIMs
+    expiring = [s for s in sims if s.days_remaining is not None and s.days_remaining <= 2]
     for sim in expiring:
-        days = (sim.validity - today).days
-        if days < 0:
+        if sim.days_remaining < 0:
             messages.warning(request, f'SIM {sim.sim_no} has already expired!')
-        elif days == 0:
+        elif sim.days_remaining == 0:
             messages.warning(request, f'SIM {sim.sim_no} expires today!')
         else:
-            messages.info(request, f'SIM {sim.sim_no} expires in {days} day(s).')
-    # ---------------------
-
-    for sim in sims:
-        if sim.validity:
-            sim.days_remaining = (sim.validity - today).days
-        else:
-            sim.days_remaining = None
+            messages.info(request, f'SIM {sim.sim_no} expires in {sim.days_remaining} day(s).')
 
     paginator = Paginator(sims, 10)
     page_number = request.GET.get('page')
@@ -68,7 +80,7 @@ def add_sim(request):
         last_recharge_date = request.POST.get("last_recharge_date")
         amount = request.POST.get("amount")
         branch = request.POST.get("branch")
-        validity = request.POST.get("validity")
+        validity_days = request.POST.get("validity_days")
 
         try:
             # Create the SIM
@@ -80,7 +92,7 @@ def add_sim(request):
                 last_recharge_date=last_recharge_date or None,
                 amount=amount or None,
                 branch=branch,
-                validity=validity or None,
+                validity_days=validity_days or None,
             )
             
             # Create recharge record if last_recharge_date and amount are provided
@@ -174,19 +186,24 @@ from django.shortcuts import render
 from .models import SIM
 
 def sim_reminder(request):
-    """Return a HTML fragment with SIMs that expire ≤ 2 days from today."""
+    """Return HTML fragment with SIMs that expire ≤ 2 days from today."""
     today = date.today()
-    threshold = today + timedelta(days=2)          # next 2 days
+    threshold = today + timedelta(days=2)
 
+    # 1.  fetch only SIMs that have last_recharge + validity_days
     sims = SIM.objects.filter(
-        validity__isnull=False
-    ).filter(
-        validity__lte=threshold
-    ).order_by('validity')
+        last_recharge_date__isnull=False,
+        validity_days__isnull=False
+    )
 
-    # decorate with days-remaining (same logic you already use)
-    for sim in sims:
-        sim.days_remaining = (sim.validity - today).days
+    # 2.  attach computed expiry & days-remaining
+    sims = _attach_days_remaining(sims)
+
+    # 3.  keep only those that expire within next 2 days
+    sims = [s for s in sims if s.days_remaining is not None and s.days_remaining <= 2]
+
+    # 4.  sort by soonest expiry
+    sims.sort(key=lambda s: s.expiry_date)
 
     return render(request, 'sim_reminder.html', {'sims': sims})
 
@@ -198,18 +215,19 @@ from .models import SIM, SIMRecharge
 from datetime import datetime, date
 
 
+# ----------  add_recharge view (no 'validity' field anywhere)  ----------
 def add_recharge(request, sim_id):
     sim = get_object_or_404(SIM, id=sim_id)
 
     if request.method == 'POST':
         recharge_date = request.POST.get('recharge_date')
-        amount = request.POST.get('amount')
-        validity = request.POST.get('validity')   # new field
-        recharged_by = request.POST.get('recharged_by')
-        notes = request.POST.get('notes')
+        amount        = request.POST.get('amount')
+        validity_days = request.POST.get('validity_days')   # ← new: integer days
+        recharged_by  = request.POST.get('recharged_by')
+        notes         = request.POST.get('notes')
 
         if recharge_date and amount:
-            # Create recharge record
+            # 1. create the recharge record
             SIMRecharge.objects.create(
                 sim=sim,
                 recharge_date=recharge_date,
@@ -218,27 +236,16 @@ def add_recharge(request, sim_id):
                 notes=notes or "Manual recharge entry"
             )
 
-            # Update SIM with latest values
+            # 2. update SIM with latest recharge info
             sim.last_recharge_date = recharge_date
             sim.amount = amount
-
-            if validity:
-                try:
-                    sim.validity = datetime.strptime(validity, "%Y-%m-%d").date()
-                except ValueError:
-                    messages.error(request, 'Invalid validity date format.')
-                    return render(request, 'add_recharge.html', {'sim': sim})
-
-            # calculate days remaining
-            if sim.validity:
-                sim.days_remaining = (sim.validity - date.today()).days
-
+            sim.validity_days = validity_days or None          # ← integer days
             sim.save()
 
             messages.success(request, 'Recharge record added successfully.')
             return redirect('sim_recharge_history', sim_id=sim.id)
         else:
-            messages.error(request, 'Please provide both recharge date and amount.')
+            messages.error(request, 'Recharge date and amount are required.')
 
     return render(request, 'add_recharge.html', {'sim': sim})
 
@@ -252,23 +259,36 @@ from datetime import date
 def sim_recharge_history(request, sim_id):
     sim = get_object_or_404(SIM, id=sim_id)
     recharges = SIMRecharge.objects.filter(sim=sim).order_by('-recharge_date')
-    last = recharges.first()
 
+    # decorate with latest recharge info
+    last = recharges.first()
     sim.last_recharge_date = last.recharge_date if last else None
     sim.amount = last.amount if last else None
-    sim.days_remaining = (sim.validity - date.today()).days if sim.validity else None
+
+    # decorate with expiry / days-left  (uses validity_days, not validity)
+    _attach_days_remaining([sim])          # single-object list, same helper
+
     total_amount = sum(r.amount for r in recharges)
 
     context = {
-        'sim': sim, 
-        'recharges': recharges, 
-        'total_amount': total_amount
+        'sim': sim,
+        'recharges': recharges,
+        'total_amount': total_amount,
     }
 
-    # Check if it's an AJAX request
-    if request.headers.get("x-requested-with") == "XMLHttpRequest":
-        html = render_to_string("sim_recharge_history.html", context, request=request)
-        return JsonResponse({"html": html})
+    # optional AJAX response
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        html = render_to_string('sim_recharge_history.html', context, request=request)
+        return JsonResponse({'html': html})
 
-    # Regular request - use the existing template for now
-    return render(request, "sim_recharge_history.html", context)
+    return render(request, 'sim_recharge_history.html', context)
+
+
+
+def delete_recharge(request, recharge_id):
+    """Delete a single recharge record and return to its history page."""
+    recharge = get_object_or_404(SIMRecharge, id=recharge_id)
+    sim_id = recharge.sim.id
+    recharge.delete()
+    messages.success(request, 'Recharge record deleted.')
+    return redirect('sim_recharge_history', sim_id=sim_id)

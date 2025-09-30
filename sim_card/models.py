@@ -9,7 +9,8 @@ class SIM(models.Model):
     last_recharge_date = models.DateField(blank=True, null=True)
     amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     branch = models.CharField(max_length=100, blank=True, null=True)
-    validity = models.DateField(blank=True, null=True)
+    validity_days = models.PositiveIntegerField(
+        blank=True, null=True, help_text="Validity in number of days")
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

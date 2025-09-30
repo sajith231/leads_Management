@@ -9,6 +9,7 @@ urlpatterns = [
     path('sim/reminder/', views.sim_reminder, name='sim_reminder'),
     path('sim/<int:sim_id>/recharge/add/', views.add_recharge, name='add_recharge'),
     path('sim/<int:sim_id>/recharges/', views.sim_recharge_history, name='sim_recharge_history'),
+    path('recharge/<int:recharge_id>/delete/', views.delete_recharge, name='delete_recharge'),
 
 
 ]

@@ -79,15 +79,19 @@
       <label class="form-label">Branch</label>
       <select name="branch" class="form-select" required>
         <option value="" disabled {% if not sim.branch %}selected{% endif %}>-- Select Branch --</option>
-        <option value="SYSMAC" {% if sim.branch == 'SYSMAC' %}selected{% endif %}>SYSMAC</option>
-        <option value="IMC" {% if sim.branch == 'IMC' %}selected{% endif %}>IMC</option>
-        <option value="IMC MUKKAM" {% if sim.branch == 'IMC MUKKAM' %}selected{% endif %}>IMC MUKKAM</option>
+        <option value="Sysmac Info" {% if sim.branch == 'Sysmac Info' %}selected{% endif %}>Sysmac Info</option>
+        <option value="Sysmac Computers" {% if sim.branch == 'Sysmac Computers' %}selected{% endif %}>Sysmac Computers</option>
+        <option value="IMC Dev" {% if sim.branch == 'IMC Dev' %}selected{% endif %}>IMC Dev</option>
+        <option value="IMC-HO" {% if sim.branch == 'IMC-HO' %}selected{% endif %}>IMC-HO</option>
+        <option value="IMC Mukkam" {% if sim.branch == 'IMC Mukkam' %}selected{% endif %}>IMC Mukkam</option>
       </select>
     </div>
-    <div class="col-md-6 mb-3">
-      <label class="form-label">Validity</label>
-      <input type="date" name="validity" class="form-control"
-             value="{{ sim.validity|date:'Y-m-d'|default:'' }}">
+     <div class="col-md-6 mb-3">
+      <label class="form-label">Validity (days)</label>
+      <input type="number" name="validity_days" class="form-control"
+             min="0" step="1"
+             value="{{ sim.validity_days|default:'' }}"
+             placeholder="e.g. 28">
     </div>
   </div>
 
