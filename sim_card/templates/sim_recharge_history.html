@@ -42,8 +42,8 @@
                             <p class="mb-2"><strong>Amount:</strong>
                                 <span class="text-success">₹{{ sim.amount|default:"-" }}</span>
                             </p>
-                            <p class="mb-2"><strong>Validity:</strong>
-                                <span class="badge bg-warning text-dark">{{ sim.validity|date:"d-m-Y"|default:"-" }}</span>
+                             <p class="mb-2"><strong>Validity:</strong>
+                                <span class="badge bg-info">{{ sim.validity_days|default:"-" }} days</span>
                             </p>
                             {% if sim.days_remaining is not None %}
                                 <p class="mb-0"><strong>Days Left:</strong>
@@ -80,19 +80,31 @@
                                         <th>Amount</th>
                                         <th>Recharged By</th>
                                         <th>Notes</th>
+                                         <th>Delete</th>  
                                     </tr>
                                 </thead>
-                                <tbody>
-                                    {% for r in recharges %}
-                                        <tr {% if forloop.first %}class="table-success"{% endif %}>
-                                            <td>{% if forloop.first %}<i class="bi bi-star-fill text-warning"></i>{% endif %} {{ forloop.counter }}</td>
-                                            <td><strong>{{ r.recharge_date|date:"d-m-Y" }}</strong><br><small class="text-muted">{{ r.recharge_date|date:"l" }}</small></td>
-                                            <td><span class="badge bg-success">₹{{ r.amount|floatformat:2 }}</span></td>
-                                            <td>{{ r.recharged_by|default:"-" }}</td>
-                                            <td><small>{{ r.notes|default:"-"|truncatechars:50 }}</small></td>
-                                        </tr>
-                                    {% endfor %}
-                                </tbody>
+                               <tbody>
+  {% for r in recharges %}
+    <tr {% if forloop.first %}class="table-success"{% endif %}>
+      <td>{% if forloop.first %}<i class="bi bi-star-fill text-warning"></i>{% endif %} {{ forloop.counter }}</td>
+      <td><strong>{{ r.recharge_date|date:"d-m-Y" }}</strong><br><small class="text-muted">{{ r.recharge_date|date:"l" }}</small></td>
+      <td><span class="badge bg-success">₹{{ r.amount|floatformat:2 }}</span></td>
+      <td>{{ r.recharged_by|default:"-" }}</td>
+      <td><small>{{ r.notes|default:"-"|truncatechars:50 }}</small></td>
+
+      <!-- DELETE BUTTON -->
+      <td>
+        <form method="post" action="{% url 'delete_recharge' r.id %}"
+              onsubmit="return confirm('Delete this recharge record?')" style="display:inline;">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger btn-sm">
+        <i class="bi bi-trash"></i> Delete
+          </button>
+        </form>
+      </td>
+    </tr>
+  {% endfor %}
+</tbody>
                             </table>
                         </div>
                     </div>
