@@ -149,7 +149,7 @@ DATABASES = {
 }
 
 
-# DATABASES = {
+# DATABASES = {c
 #     'default': {
 #         'ENGINE': 'django.db.backends.postgresql',
 #         'NAME': 'leading_management',
