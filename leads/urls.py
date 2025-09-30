@@ -31,6 +31,7 @@ urlpatterns = [
     path('flutter/', include('flutter.urls')),
     path('app5/', include('app5.urls')),
     path('sim_card/', include('sim_card.urls')),
+    path('fuel_management/', include('fuel_management.urls')),
     path('edit-field/<int:field_id>/', views.edit_field, name='edit_field'),
     path('feeder/', include('app2.urls')), 
     path('feeder/<int:feeder_id>/status-update/', app2_views.feeder_status_update, name='feeder_status_update'),

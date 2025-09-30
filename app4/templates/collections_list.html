@@ -88,22 +88,41 @@
         </div>
         <div class="card-body">
             <form id="filterForm" class="row g-3">
-                <div class="col-md-3">
+                <!-- Client search -->
+                <div class="col-md-2">
                     <label for="searchInput" class="form-label">Search Client</label>
                     <div class="input-group">
                         <span class="input-group-text"><i class="fas fa-search"></i></span>
                         <input type="text" id="searchInput" name="search" class="form-control" 
-                               placeholder="Search by client name..." value="{{ request.GET.search }}">
+                               placeholder="Client name..." value="{{ request.GET.search }}">
                     </div>
                 </div>
+
+                <!-- Branch dropdown -->
                 <div class="col-md-2">
                     <label for="branchFilter" class="form-label">Branch</label>
+                    <select id="branchFilter" name="branch" class="form-select">
+                        <option value="">All Branches</option>
+                        <option value="IMC Mukkam" {% if request.GET.branch == 'IMC Mukkam' %}selected{% endif %}>IMC Mukkam</option>
+                        <option value="IMCB HO" {% if request.GET.branch == 'IMCB HO' %}selected{% endif %}>IMCB HO</option>
+                        <option value="IMCB DEV" {% if request.GET.branch == 'IMCB DEV' %}selected{% endif %}>IMCB DEV</option>
+                        <option value="Sysmac Info System" {% if request.GET.branch == 'Sysmac Info System' %}selected{% endif %}>Sysmac Info System</option>
+                        <option value="Sysmac Computers" {% if request.GET.branch == 'Sysmac Computers' %}selected{% endif %}>Sysmac Computers</option>
+                        <option value="DQ Technologies" {% if request.GET.branch == 'DQ Technologies' %}selected{% endif %}>DQ Technologies</option>
+                    </select>
+                </div>
+
+                <!-- Created by (User) filter -->
+                <div class="col-md-2">
+                    <label for="userFilter" class="form-label">Created By</label>
                     <div class="input-group">
-                        <span class="input-group-text"><i class="fas fa-building"></i></span>
-                        <input type="text" id="branchFilter" name="branch" class="form-control" 
-                               placeholder="Filter by branch..." value="{{ request.GET.branch }}">
+                        <span class="input-group-text"><i class="fas fa-user"></i></span>
+                        <input type="text" id="userFilter" name="created_by" class="form-control"
+                               placeholder="Username..." value="{{ request.GET.created_by }}">
                     </div>
                 </div>
+
+                <!-- Status -->
                 <div class="col-md-2">
                     <label for="statusFilter" class="form-label">Status</label>
                     <select id="statusFilter" name="status_filter" class="form-select">
@@ -112,16 +131,15 @@
                         <option value="verified" {% if request.GET.status_filter == 'verified' %}selected{% endif %}>Verified</option>
                     </select>
                 </div>
-                <div class="col-md-3">
+
+                <!-- Date range (calendar picker) -->
+                <div class="col-md-2">
                     <label for="dateFilter" class="form-label">Date Range</label>
-                    <select id="dateFilter" name="date_filter" class="form-select">
-                        <option value="">All Time</option>
-                        <option value="today" {% if request.GET.date_filter == 'today' %}selected{% endif %}>Today</option>
-                        <option value="this_week" {% if request.GET.date_filter == 'this_week' %}selected{% endif %}>This Week</option>
-                        <option value="this_month" {% if request.GET.date_filter == 'this_month' %}selected{% endif %}>This Month</option>
-                        <option value="last_month" {% if request.GET.date_filter == 'last_month' %}selected{% endif %}>Last Month</option>
-                    </select>
+                    <input type="date" id="dateFilter" name="date_filter" class="form-control"
+                           value="{% if request.GET.date_filter %}{{ request.GET.date_filter }}{% else %}{% now 'Y-m-d' %}{% endif %}">
                 </div>
+                
+                <!-- Action buttons -->
                 <div class="col-md-2">
                     <label class="form-label">&nbsp;</label>
                     <div class="d-grid gap-2">
@@ -136,7 +154,7 @@
             </form>
         </div>
     </div>
-    
+
     <!-- Collections Table -->
     <div class="card shadow-sm">
         <div class="card-body">
@@ -160,7 +178,12 @@
                             </thead>
                             <tbody id="collectionsTableBody">
                                 {% for collection in collections %}
-                                    <tr id="collection-row-{{ collection.id }}">
+                                    <tr id="collection-row-{{ collection.id }}" 
+                                        data-client-name="{{ collection.client_name|lower }}"
+                                        data-branch="{{ collection.branch }}"
+                                        data-created-by="{{ collection.created_by|lower }}"
+                                        data-status="{{ collection.status }}"
+                                        data-date="{{ collection.created_at|date:'Y-m-d' }}">
                                         <td class="fw-bold">{{ forloop.counter }}</td>
                                         <td>
                                             <div class="fw-semibold">{{ collection.client_name }}</div>
@@ -261,10 +284,10 @@
                             <ul class="pagination justify-content-center">
                                 {% if page_obj.has_previous %}
                                     <li class="page-item">
-                                        <a class="page-link" href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.branch %}&branch={{ request.GET.branch }}{% endif %}{% if request.GET.status_filter %}&status_filter={{ request.GET.status_filter }}{% endif %}{% if request.GET.date_filter %}&date_filter={{ request.GET.date_filter }}{% endif %}">First</a>
+                                        <a class="page-link" href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.branch %}&branch={{ request.GET.branch }}{% endif %}{% if request.GET.created_by %}&created_by={{ request.GET.created_by }}{% endif %}{% if request.GET.status_filter %}&status_filter={{ request.GET.status_filter }}{% endif %}{% if request.GET.date_filter %}&date_filter={{ request.GET.date_filter }}{% endif %}">First</a>
                                     </li>
                                     <li class="page-item">
-                                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.branch %}&branch={{ request.GET.branch }}{% endif %}{% if request.GET.status_filter %}&status_filter={{ request.GET.status_filter }}{% endif %}{% if request.GET.date_filter %}&date_filter={{ request.GET.date_filter }}{% endif %}">Previous</a>
+                                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.branch %}&branch={{ request.GET.branch }}{% endif %}{% if request.GET.created_by %}&created_by={{ request.GET.created_by }}{% endif %}{% if request.GET.status_filter %}&status_filter={{ request.GET.status_filter }}{% endif %}{% if request.GET.date_filter %}&date_filter={{ request.GET.date_filter }}{% endif %}">Previous</a>
                                     </li>
                                 {% endif %}
 
@@ -274,10 +297,10 @@
 
                                 {% if page_obj.has_next %}
                                     <li class="page-item">
-                                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.branch %}&branch={{ request.GET.branch }}{% endif %}{% if request.GET.status_filter %}&status_filter={{ request.GET.status_filter }}{% endif %}{% if request.GET.date_filter %}&date_filter={{ request.GET.date_filter }}{% endif %}">Next</a>
+                                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.branch %}&branch={{ request.GET.branch }}{% endif %}{% if request.GET.created_by %}&created_by={{ request.GET.created_by }}{% endif %}{% if request.GET.status_filter %}&status_filter={{ request.GET.status_filter }}{% endif %}{% if request.GET.date_filter %}&date_filter={{ request.GET.date_filter }}{% endif %}">Next</a>
                                     </li>
                                     <li class="page-item">
-                                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.branch %}&branch={{ request.GET.branch }}{% endif %}{% if request.GET.status_filter %}&status_filter={{ request.GET.status_filter }}{% endif %}{% if request.GET.date_filter %}&date_filter={{ request.GET.date_filter }}{% endif %}">Last</a>
+                                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.branch %}&branch={{ request.GET.branch }}{% endif %}{% if request.GET.created_by %}&created_by={{ request.GET.created_by }}{% endif %}{% if request.GET.status_filter %}&status_filter={{ request.GET.status_filter }}{% endif %}{% if request.GET.date_filter %}&date_filter={{ request.GET.date_filter }}{% endif %}">Last</a>
                                     </li>
                                 {% endif %}
                             </ul>
@@ -366,48 +389,127 @@ function getStatusUpdateUrl(collectionId) {
     return urlPattern.replace('0', collectionId);
 }
 
+// Client-side filtering function
+function filterTable() {
+    const searchValue = document.getElementById('searchInput').value.toLowerCase().trim();
+    const branchValue = document.getElementById('branchFilter').value;
+    const userValue = document.getElementById('userFilter').value.toLowerCase().trim();
+    const statusValue = document.getElementById('statusFilter').value;
+    const dateValue = document.getElementById('dateFilter').value;
+
+    const rows = document.querySelectorAll('#collectionsTableBody tr');
+    let visibleCount = 0;
+
+    rows.forEach(row => {
+        const clientName = row.getAttribute('data-client-name') || '';
+        const branch = row.getAttribute('data-branch') || '';
+        const createdBy = row.getAttribute('data-created-by') || '';
+        const status = row.getAttribute('data-status') || '';
+        const date = row.getAttribute('data-date') || '';
+
+        let showRow = true;
+
+        // Filter by client name
+        if (searchValue && !clientName.includes(searchValue)) {
+            showRow = false;
+        }
+
+        // Filter by branch
+        if (branchValue && branch !== branchValue) {
+            showRow = false;
+        }
+
+        // Filter by created by (username)
+        if (userValue && !createdBy.includes(userValue)) {
+            showRow = false;
+        }
+
+        // Filter by status
+        if (statusValue && status !== statusValue) {
+            showRow = false;
+        }
+
+        // Filter by date
+        if (dateValue && date !== dateValue) {
+            showRow = false;
+        }
+
+        if (showRow) {
+            row.style.display = '';
+            visibleCount++;
+            // Update row number
+            row.querySelector('td:first-child').textContent = visibleCount;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+
+    // Show message if no results
+    const tbody = document.getElementById('collectionsTableBody');
+    const existingMessage = document.getElementById('noResultsMessage');
+    
+    if (visibleCount === 0 && !existingMessage) {
+        const messageRow = document.createElement('tr');
+        messageRow.id = 'noResultsMessage';
+        messageRow.innerHTML = `
+            <td colspan="10" class="text-center py-4">
+                <i class="fas fa-search fa-2x text-muted mb-2"></i>
+                <h6 class="text-muted">No collections match your filters</h6>
+                <p class="text-muted small mb-0">Try adjusting your search criteria</p>
+            </td>
+        `;
+        tbody.appendChild(messageRow);
+    } else if (visibleCount > 0 && existingMessage) {
+        existingMessage.remove();
+    }
+}
+
 // Enhanced Filter Functionality
 document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.getElementById('searchInput');
     const branchFilter = document.getElementById('branchFilter');
+    const userFilter = document.getElementById('userFilter');
     const statusFilter = document.getElementById('statusFilter');
     const dateFilter = document.getElementById('dateFilter');
     const applyFilters = document.getElementById('applyFilters');
     const clearFilters = document.getElementById('clearFilters');
 
-    // Real-time search functionality
+    // Real-time search functionality with debounce
     let searchTimeout;
+    
     searchInput.addEventListener('input', function() {
         clearTimeout(searchTimeout);
-        searchTimeout = setTimeout(applyFiltersFunction, 500);
+        searchTimeout = setTimeout(filterTable, 300);
+    });
+
+    userFilter.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(filterTable, 300);
     });
 
     // Filter change handlers
-    branchFilter.addEventListener('input', function() {
-        clearTimeout(searchTimeout);
-        searchTimeout = setTimeout(applyFiltersFunction, 500);
-    });
-
-    statusFilter.addEventListener('change', applyFiltersFunction);
-    dateFilter.addEventListener('change', applyFiltersFunction);
+    branchFilter.addEventListener('change', filterTable);
+    statusFilter.addEventListener('change', filterTable);
+    dateFilter.addEventListener('change', filterTable);
 
     // Apply filters button
-    applyFilters.addEventListener('click', applyFiltersFunction);
+    applyFilters.addEventListener('click', filterTable);
 
     // Clear filters button
     clearFilters.addEventListener('click', function() {
         searchInput.value = '';
         branchFilter.value = '';
+        userFilter.value = '';
         statusFilter.value = '';
         dateFilter.value = '';
-        applyFiltersFunction();
+        filterTable();
     });
 
     // Enter key support
     document.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter' && (e.target === searchInput || e.target === branchFilter)) {
+        if (e.key === 'Enter' && (e.target === searchInput || e.target === userFilter)) {
             e.preventDefault();
-            applyFiltersFunction();
+            filterTable();
         }
     });
 
@@ -421,25 +523,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
-
-// Apply filters function
-function applyFiltersFunction() {
-    const searchValue = document.getElementById('searchInput').value.trim();
-    const branchValue = document.getElementById('branchFilter').value.trim();
-    const statusValue = document.getElementById('statusFilter').value;
-    const dateValue = document.getElementById('dateFilter').value;
-
-    // Build URL parameters
-    const params = new URLSearchParams();
-    if (searchValue) params.append('search', searchValue);
-    if (branchValue) params.append('branch', branchValue);
-    if (statusValue) params.append('status_filter', statusValue);
-    if (dateValue) params.append('date_filter', dateValue);
-
-    // Navigate to filtered results
-    const newUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
-    window.location.href = newUrl;
-}
 
 // Update collection status
 function updateCollectionStatus(collectionId, newStatus) {
@@ -467,17 +550,17 @@ function updateCollectionStatus(collectionId, newStatus) {
         if (data.success) {
             // Update the status button appearance
             const statusBtn = document.querySelector(`#statusDropdown${collectionId}`);
-            const statusIcon = statusBtn.querySelector('i');
-            const statusText = statusBtn.querySelector('span') || statusBtn.childNodes[2];
+            const row = document.getElementById(`collection-row-${collectionId}`);
+            
+            // Update row data attribute
+            row.setAttribute('data-status', newStatus);
             
             if (newStatus === 'verified') {
                 statusBtn.className = 'btn btn-sm dropdown-toggle status-btn btn-success';
-                statusIcon.className = 'fas fa-check-circle me-1';
-                statusText.textContent = 'Verified';
+                statusBtn.innerHTML = '<i class="fas fa-check-circle me-1"></i>Verified';
             } else {
                 statusBtn.className = 'btn btn-sm dropdown-toggle status-btn btn-warning';
-                statusIcon.className = 'fas fa-clock me-1';
-                statusText.textContent = 'Pending';
+                statusBtn.innerHTML = '<i class="fas fa-clock me-1"></i>Pending';
             }
             
             showAlert('success', data.message);

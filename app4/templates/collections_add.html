@@ -87,6 +87,21 @@
               </div>
             </div>
 
+            <!-- =====  NEW : Collection Type  ===== -->
+            <div class="row mb-4">
+              <div class="col-12">
+                <label for="id_collection_type" class="form-label fs-6">
+                  <i class="fas fa-credit-card me-2"></i>Collection Type
+                </label>
+                <select class="form-select form-select-lg" id="id_collection_type" name="collection_type" required>
+                  <option value="cash" selected>By Cash</option>
+                  <option value="online">Online Payment</option>
+                  <option value="cheque">Cheque</option>
+                </select>
+              </div>
+            </div>
+            <!-- ==================================== -->
+
             <!-- AMOUNT & PAID FOR -->
             <div class="row mb-4">
               <div class="col-12 col-md-6 mb-3 mb-md-0">
@@ -106,15 +121,15 @@
               </div>
             </div>
 
-            <!-- SCREENSHOT -->
-            <div class="mb-4">
+            <!-- SCREENSHOT (conditional) -->
+            <div class="mb-4" id="screenshot-block" style="display:none;">
               <label for="payment_screenshot" class="form-label fs-6">
-                <i class="fas fa-image me-2"></i>Payment Screenshot <span class="text-danger">*</span>
+                <i class="fas fa-image me-2"></i>Payment Proof <span class="text-danger">*</span>
               </label>
-              <input type="file" class="form-control form-control-lg" id="payment_screenshot" name="payment_screenshot" accept="image/*" required>
+              <input type="file" class="form-control form-control-lg" id="payment_screenshot" name="payment_screenshot" accept="image/*">
               <div class="form-text mt-2">
                 <i class="fas fa-info-circle me-1"></i>
-                Please upload a screenshot of the payment. Accepted formats: JPG, PNG, GIF (Max 5MB)
+                Please upload a screenshot / proof. Max 5 MB (JPG, PNG, GIF)
               </div>
             </div>
 
@@ -142,7 +157,24 @@
   </div>
 </div>
 
-<!-- Enhanced JavaScript -->
+<!-- =====  JS : toggle screenshot block  ===== -->
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const typeSel = document.getElementById('id_collection_type');
+  const shotBlk = document.getElementById('screenshot-block');
+  const shotInp = document.getElementById('payment_screenshot');
+
+  function toggleShot() {
+    const need = ['online','cheque'].includes(typeSel.value);
+    shotBlk.style.display = need ? 'block' : 'none';
+    shotInp.required = need;
+  }
+  typeSel.addEventListener('change', toggleShot);
+  toggleShot();          // run once on load
+});
+</script>
+
+<!-- =====  existing enhanced JS  ===== -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
   // File size validation
@@ -305,7 +337,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
-<!-- Enhanced CSS -->
+<!-- =====  existing enhanced CSS  ===== -->
 <style>
 .card{border:none;border-radius:15px}
 .card-header{border-radius:15px 15px 0 0 !important;border:none}

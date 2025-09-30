@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     'flutter',
     'app5',
     'sim_card',
+    'fuel_management',
     'django.contrib.humanize',
     
 ]
