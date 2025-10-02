@@ -26,8 +26,8 @@
   <div class="col-md-6 mb-3">
     <label class="form-label">SIM No</label>
     <input type="text" name="sim_no" class="form-control"
-           value="{{ sim.sim_no|default:'' }}"
-           {% if sim %}readonly{% else %}required{% endif %}>
+       value="{{ sim.sim_no|default:'' }}"
+       required>
   </div>
   <div class="col-md-6 mb-3">
     <label class="form-label">Provider</label>
@@ -80,11 +80,12 @@
   <div class="col-md-6 mb-3">
     <label class="form-label">Recharged By</label>
     <select name="recharged_by" class="form-select">
-      <option value="" disabled selected>-- Select User --</option>
-      {% for u in users %}
-        <option value="{{ u.name }}">{{ u.name }}</option>
-      {% endfor %}
-    </select>
+  <option value="" disabled {% if not sim.recharged_by %}selected{% endif %}>-- Select User --</option>
+  {% for u in users %}
+    <option value="{{ u.name }}"
+            {% if sim.recharged_by == u.name %}selected{% endif %}>{{ u.name }}</option>
+  {% endfor %}
+</select>
   </div>
   <div class="col-md-6 mb-3">
     <label class="form-label">Valid Until</label>

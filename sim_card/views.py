@@ -116,44 +116,60 @@ def add_sim(request):
     return render(request, "add_sim.html", {"users": users})
 
 # app3/views.py  (add at bottom)
-from django.shortcuts import get_object_or_404
-from .models import SIM
+# ----------  views.py  ----------
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from .models import SIM, SIMRecharge
 from app1.models import User
 
+def _latest_recharge(sim: SIM) -> SIMRecharge | None:
+    """Return the most recent recharge row for this SIM."""
+    return SIMRecharge.objects.filter(sim=sim).order_by('-recharge_date').first()
 
 def edit_sim(request, sim_id):
     sim = get_object_or_404(SIM, id=sim_id)
 
     if request.method == 'POST':
-        old_recharge_date = sim.last_recharge_date
-        old_amount = sim.amount
+        # stash old values
+        old_recharge_date = str(sim.last_recharge_date) if sim.last_recharge_date else None
+        old_amount = str(sim.amount) if sim.amount else None
 
-        # update SIM
-        sim.provider = request.POST.get('provider')
+        # update SIM fields
+        sim.sim_no          = request.POST.get('sim_no')
+        sim.provider        = request.POST.get('provider')
         sim.identify_person = request.POST.get('identify_person')
-        sim.incharge = request.POST.get('incharge')
+        sim.incharge        = request.POST.get('incharge')
+        sim.branch          = request.POST.get('branch')
         sim.last_recharge_date = request.POST.get('last_recharge_date') or None
-        sim.amount = request.POST.get('amount') or None
-        sim.branch = request.POST.get('branch')
-        sim.validity_date = request.POST.get('validity_date') or None
+        sim.amount          = request.POST.get('amount') or None
+        sim.validity_date   = request.POST.get('validity_date') or None
         sim.save()
 
-        new_recharge_date = sim.last_recharge_date
-        new_amount = sim.amount
+        new_recharge_date = str(sim.last_recharge_date) if sim.last_recharge_date else None
+        new_amount        = str(sim.amount) if sim.amount else None
         new_validity_date = sim.validity_date
-        new_recharged_by = request.POST.get('recharged_by')          # ← NEW
+        new_recharged_by  = request.POST.get('recharged_by') or sim.incharge or sim.identify_person or 'System'
 
         if new_recharge_date and new_amount:
-            if str(old_recharge_date) != str(new_recharge_date) or str(old_amount) != str(new_amount):
-                if not SIMRecharge.objects.filter(sim=sim, recharge_date=new_recharge_date).exists():
-                    SIMRecharge.objects.create(
-                        sim=sim,
-                        recharge_date=new_recharge_date,
-                        amount=new_amount,
-                        validity_date=new_validity_date,
-                        recharged_by=new_recharged_by or sim.incharge or sim.identify_person or "System",
-                        notes="Recharge updated via edit"
-                    )
+            last = _latest_recharge(sim)
+
+            # same date & amount → just update the row
+            if (last and
+                str(last.recharge_date) == new_recharge_date and
+                str(last.amount) == new_amount):
+                last.recharged_by  = new_recharged_by
+                last.validity_date = new_validity_date
+                last.save(update_fields=['recharged_by', 'validity_date'])
+            else:
+                # changed → create new history row
+                SIMRecharge.objects.create(
+                    sim=sim,
+                    recharge_date=new_recharge_date,
+                    amount=new_amount,
+                    validity_date=new_validity_date,
+                    recharged_by=new_recharged_by,
+                    notes='Recharge updated via edit'
+                )
 
         messages.success(request, 'SIM updated successfully.')
         return redirect('sim_management')
@@ -211,31 +227,36 @@ from datetime import datetime, date
 
 
 # ----------  add_recharge view (no 'validity' field anywhere)  ----------
+from app1.models import User   # already imported
+
 def add_recharge(request, sim_id):
     sim = get_object_or_404(SIM, id=sim_id)
+    users = User.objects.filter(is_active=True).order_by('name')  # ← NEW
 
     if request.method == 'POST':
-        recharge_date   = request.POST.get('recharge_date')
-        amount          = request.POST.get('amount')
-        validity_date   = request.POST.get('validity_date')   # ← date field
-        recharged_by    = request.POST.get('recharged_by')
-        notes           = request.POST.get('notes')
+        recharge_date = request.POST.get('recharge_date')
+        amount        = request.POST.get('amount')
+        validity_date = request.POST.get('validity_date') or None
+        recharged_by  = request.POST.get('recharged_by')  # now a *pk* string
+        notes         = request.POST.get('notes')
 
         if recharge_date and amount:
-            # 1. create the recharge record
+            # fetch the selected user
+            recharged_user = get_object_or_404(User, pk=recharged_by) if recharged_by else None
+
             SIMRecharge.objects.create(
                 sim=sim,
                 recharge_date=recharge_date,
                 amount=amount,
-                validity_date=validity_date or None,            # ← store date
-                recharged_by=recharged_by or sim.incharge or sim.identify_person or "System",
+                validity_date=validity_date,
+                recharged_by=recharged_user.name if recharged_user else sim.incharge or sim.identify_person or "System",
                 notes=notes or "Manual recharge entry"
             )
 
-            # 2. update SIM with latest recharge info
+            # keep SIM header in sync
             sim.last_recharge_date = recharge_date
-            sim.amount = amount
-            sim.validity_date = validity_date or None          # ← date field
+            sim.amount             = amount
+            sim.validity_date      = validity_date
             sim.save()
 
             messages.success(request, 'Recharge record added successfully.')
@@ -243,7 +264,7 @@ def add_recharge(request, sim_id):
         else:
             messages.error(request, 'Recharge date and amount are required.')
 
-    return render(request, 'add_recharge.html', {'sim': sim})
+    return render(request, 'add_recharge.html', {'sim': sim, 'users': users})
 
 
 from django.shortcuts import get_object_or_404, render
@@ -287,3 +308,44 @@ def delete_recharge(request, recharge_id):
     recharge.delete()
     messages.success(request, 'Recharge record deleted.')
     return redirect('sim_recharge_history', sim_id=sim_id)
+
+
+
+from django.shortcuts import get_object_or_404, redirect
+from django.contrib import messages
+
+from django.shortcuts import get_object_or_404, redirect, render
+from django.contrib import messages
+from app1.models import User          # NEW
+from .models import SIMRecharge
+
+def edit_recharge(request, pk):
+    recharge = get_object_or_404(SIMRecharge, id=pk)
+    sim = recharge.sim
+    users = User.objects.filter(is_active=True).order_by('name')  # NEW
+
+    if request.method == 'POST':
+        # fetch the chosen user
+        user_pk = request.POST.get('recharged_by')
+        selected_user = get_object_or_404(User, pk=user_pk) if user_pk else None
+
+        recharge.recharge_date = request.POST.get('recharge_date')
+        recharge.amount        = request.POST.get('amount')
+        recharge.validity_date = request.POST.get('validity_date') or None
+        recharge.recharged_by  = selected_user.name if selected_user else ''
+        recharge.notes         = request.POST.get('notes')
+        recharge.save()
+
+        # keep SIM header in sync
+        latest = SIMRecharge.objects.filter(sim=sim).order_by('-recharge_date').first()
+        if latest == recharge:
+            sim.last_recharge_date = recharge.recharge_date
+            sim.amount             = recharge.amount
+            sim.validity_date      = recharge.validity_date
+            sim.save()
+
+        messages.success(request, 'Recharge updated.')
+        return redirect('sim_recharge_history', sim_id=sim.id)
+
+    return render(request, 'edit_recharge.html',
+                  {'recharge': recharge, 'users': users})

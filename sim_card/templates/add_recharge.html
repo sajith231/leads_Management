@@ -25,10 +25,12 @@
 </div>
        <div class="mb-3">
   <label class="form-label">Recharged By</label>
-  <input type="text"
-         name="recharged_by"
-         class="form-control"
-         placeholder="Enter name"><!-- no value=... -->
+  <select name="recharged_by" class="form-select" required>
+    <option value="" disabled selected>-- Select User --</option>
+    {% for u in users %}
+      <option value="{{ u.pk }}">{{ u.name }}</option>
+    {% endfor %}
+  </select>
 </div>
         <div class="mb-3">
           <label class="form-label">Notes</label>

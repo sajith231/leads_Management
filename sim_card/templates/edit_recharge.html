@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}{% if recharge %}Edit{% else %}Add{% endif %} Recharge{% endblock %}
+{% block header %}{% if recharge %}Edit{% else %}Add{% endif %} Recharge{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="card shadow">
+    <div class="card-header bg-primary text-white">
+      <h5 class="mb-0">
+        <i class="bi {% if recharge %}bi-pencil{% else %}bi-plus-circle{% endif %}"></i>
+        {% if recharge %}Edit{% else %}Add{% endif %} Recharge
+      </h5>
+    </div>
+    <div class="card-body">
+      <form method="post">
+        {% csrf_token %}
+
+        <div class="mb-3">
+          <label class="form-label">Recharge Date</label>
+          <input type="date" name="recharge_date" class="form-control"
+                 value="{{ recharge.recharge_date|date:'Y-m-d'|default:'' }}" required>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Amount</label>
+          <input type="number" name="amount" class="form-control" step="0.01"
+                 value="{{ recharge.amount|default:'' }}" required>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Valid Until</label>
+          <input type="date" name="validity_date" class="form-control"
+                 value="{{ recharge.validity_date|date:'Y-m-d'|default:'' }}">
+        </div>
+
+        <div class="mb-3">
+  <label class="form-label">Recharged By</label>
+  <select name="recharged_by" class="form-select" required>
+    <option value="" disabled {% if not recharge.recharged_by %}selected{% endif %}>-- Select User --</option>
+    {% for u in users %}
+      <option value="{{ u.pk }}"
+              {% if recharge.recharged_by == u.name %}selected{% endif %}>
+        {{ u.name }}
+      </option>
+    {% endfor %}
+  </select>
+</div> 
+
+        <div class="mb-3">
+          <label class="form-label">Notes</label>
+          <textarea name="notes" class="form-control" rows="3">{{ recharge.notes|default:'' }}</textarea>
+        </div>
+
+        <div class="d-flex justify-content-between">
+          <a href="{% url 'sim_recharge_history' recharge.sim.id %}"
+             class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Back
+          </a>
+          <button type="submit" class="btn btn-success">
+            <i class="bi bi-save"></i> Save
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
