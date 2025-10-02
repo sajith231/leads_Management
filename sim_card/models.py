@@ -29,6 +29,7 @@ class SIMRecharge(models.Model):
     notes = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     validity_date = models.DateField(blank=True, null=True)
+    
     class Meta:
         ordering = ['-recharge_date']
     

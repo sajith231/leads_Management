@@ -4,6 +4,9 @@
 {% block header %}SIM Recharge History - {{ sim.sim_no }}{% endblock %}
 
 {% block content %}
+<!-- Bootstrap Icons -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+
 <div class="container mt-4"> 
     <div class="card"> 
         {# ---------- HEADER ---------- #} 
@@ -81,7 +84,7 @@
                                         <th>Amount</th>
                                         <th>Recharged By</th>
                                         <th>Notes</th>
-                                         <th>Delete</th>  
+                                         <th>Actions</th>  
                                     </tr>
                                 </thead>
                                <tbody>
@@ -94,15 +97,24 @@
       <td><small>{{ r.notes|default:"-"|truncatechars:50 }}</small></td>
 
       <!-- DELETE BUTTON -->
-      <td>
-        <form method="post" action="{% url 'delete_recharge' r.id %}"
-              onsubmit="return confirm('Delete this recharge record?')" style="display:inline;">
-          {% csrf_token %}
-          <button type="submit" class="btn btn-danger btn-sm">
-        <i class="bi bi-trash"></i> Delete
-          </button>
-        </form>
-      </td>
+      <td class="text-nowrap">
+  <!-- EDIT -->
+  <a href="{% url 'edit_recharge' r.id %}"
+     class="btn btn-sm btn-outline-primary me-1"
+     title="Edit recharge">
+    <i class="bi bi-pencil"></i>
+  </a>
+
+  <!-- DELETE (kept as-is) -->
+  <form method="post" action="{% url 'delete_recharge' r.id %}"
+        onsubmit="return confirm('Delete this recharge record?')"
+        class="d-inline">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-sm btn-outline-danger">
+      <i class="bi bi-trash"></i>
+    </button>
+  </form>
+</td>
     </tr>
   {% endfor %}
 </tbody>
