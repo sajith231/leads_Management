@@ -710,7 +710,10 @@
                     {% endif %}
                 </a>
                 {% endif %}
-                <a href="{%url 'sim_management'%}"><i class="fas fa-sim-card"></i> SIM Management</a>
+                {% if 'sim_management' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+                 <a href="{% url 'sim_management' %}"><i class="fas fa-sim-card"></i> SIM Management</a>
+                {% endif %}
+
 
             </div>
             {% endif %}
