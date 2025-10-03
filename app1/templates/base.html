@@ -369,7 +369,7 @@
 
     <!-- Sidebar Navigation -->
     <div class="sidebar">
-        {% if 'Administration' in allowed_menus or 'sim_management' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+        {% if 'Administration' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
             <!-- Admin/Superuser Sidebar -->
             <div class="mainmenu" onclick="toggleAdminMenu()">
                 <span>
@@ -516,7 +516,7 @@
             <!-- Planet Menu -->
 
 
-{% if 'feeder_list' in allowed_menus or 'show_clients' in allowed_menus or 'key_request_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+{% if 'feeder_list' in allowed_menus or 'show_clients' in allowed_menus or 'key_request_list' in allowed_menus or 'collections_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
 <div class="mainmenu" onclick="togglePlanetMenu()">
     <span>
         <i class="fas fa-globe"></i>
@@ -545,12 +545,15 @@
         <i class="fas fa-file-signature" style="margin-right: 5px;"></i>
         Key Request
     </a>
+    {% endif %}
 
+    {% if 'collections_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
     <a href="{% url 'collections_list' %}">
-       <i class="fas fa-coins" style="margin-right: 5px;"></i>
+        <i class="fas fa-coins" style="margin-right: 5px;"></i>
         Collections
     </a>
     {% endif %}
+    
 
     <a href="{% url 'fuel_management' %}">
    <i class="fas fa-gas-pump" style="margin-right: 5px;"></i>
