@@ -13,22 +13,40 @@
         {% csrf_token %}
         <div class="mb-3">
           <label class="form-label">Recharge Date</label>
-          <input type="date" name="recharge_date" class="form-control" required>
+         <input type="date"
+       name="recharge_date"
+       class="form-control"
+       value="{% now 'Y-m-d' %}"  
+       required>
         </div>
         <div class="mb-3">
           <label class="form-label">Amount</label>
           <input type="number" name="amount" class="form-control" step="0.01" required>
         </div>
-        <div class="mb-3">
-  <label class="form-label">Valid Until</label>
-  <input type="date" name="validity_date" class="form-control">
+        <!-- AFTER amount -->
+<div class="mb-3">
+  <label class="form-label">Validity (days)</label>
+  <input type="number"
+         name="validity_days"
+         id="id_validity_days"
+         class="form-control"
+         min="0"
+         placeholder="e.g. 28">
+  <!-- invisible carrier for the calendar date -->
+  <input type="hidden"
+         name="validity_date"
+         id="id_validity_date">
 </div>
        <div class="mb-3">
   <label class="form-label">Recharged By</label>
-  <select name="recharged_by" class="form-select" required>
-    <option value="" disabled selected>-- Select User --</option>
+  <select name="recharged_by" class="form-select">
+    <option value="" disabled {% if not current_user %}selected{% endif %}>-- Select User --</option>
     {% for u in users %}
-      <option value="{{ u.pk }}">{{ u.name }}</option>
+      <option value="{{ u.pk }}" 
+              {% if current_user and u.username == current_user.username %}selected{% endif %}
+              {% if sim.recharged_by == u.name %}selected{% endif %}>
+        {{ u.name }}
+      </option>
     {% endfor %}
   </select>
 </div>
@@ -49,4 +67,23 @@
     </div>
   </div>
 </div>
+<script>
+/* identical JS as above – just replace rechargeInp
+   with the recharge_date field in this template */
+const daysInput = document.getElementById('id_validity_days');
+const dateInput = document.getElementById('id_validity_date');
+const rDateInp  = document.querySelector('input[name="recharge_date"]');
+
+function calc() {
+  const days = parseInt(daysInput.value, 10);
+  const rDate = rDateInp.value;
+  if (!isNaN(days) && rDate) {
+    const d = new Date(rDate);
+    d.setDate(d.getDate() + days);
+    dateInput.value = d.toISOString().split('T')[0];
+  }
+}
+daysInput.addEventListener('input', calc);
+rDateInp.addEventListener('change', calc);
+</script>
 {% endblock %}
