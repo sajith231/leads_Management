@@ -5224,7 +5224,9 @@ def configure_user_menu(request, user_id):
                 {'id': 'agent_list', 'name': 'Address Book', 'icon': 'fas fa-binoculars'},
                 {'id': 'credential_management', 'name': 'Credential Management', 'icon': 'fas fa-key'},  
                 {'id': 'document_list', 'name': 'Documentations', 'icon': 'fas fa-scroll'},
-                {'id': 'reminders', 'name': 'Reminders', 'icon': 'fas fa-bell'}
+                {'id': 'reminders', 'name': 'Reminders', 'icon': 'fas fa-bell'},
+                {'id': 'sim_management', 'name': 'SIM Management', 'icon': 'fas fa-sim-card'},
+
             ]
         },
         # Update the HR menu section in both views to:
@@ -5355,6 +5357,7 @@ def configure_user_menu(request, user_id):
         {'id': 'license_edit', 'name': 'Edit License', 'icon': 'fas fa-edit'},
         {'id': 'license_delete', 'name': 'Delete License', 'icon': 'fas fa-trash'},
         {'id': 'key_request_list', 'name': 'Key Request', 'icon': 'fas fa-file-signature'},
+        {'id': 'key_request', 'name': 'Add Key Request', 'icon': 'fas fa-plus-circle'},
         {'id': 'collections_list', 'name': 'Collections', 'icon': 'fas fa-coins'},
     
         

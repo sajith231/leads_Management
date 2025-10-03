@@ -217,7 +217,9 @@
             </div>
             <div class="filter-buttons">
                 <button type="button" class="btn-clear" onclick="clearFilters()">Clear</button>
-                <a href="{% url 'key_request' %}" class="btn-add">+ Add New Request</a>
+                {% if 'key_request' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+                    <a href="{% url 'key_request' %}" class="btn-add">+ Add New Request</a>
+                {% endif %}
             </div>
         </div>
     </div>
