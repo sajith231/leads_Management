@@ -32,14 +32,7 @@
         </thead>
         <tbody>
         {% for v in vehicles %}
-            <tr>
-                <td>{{ forloop.counter }}</td>
-                <td>{{ v.vehicle_number }}</td>
-                <td>{{ v.owner_name }}</td>
-                <td><a class="view" href="{% url 'vehicle_viewer' v.pk %}#rc" target="_blank">View</a></td>
-                <td><a class="view" href="{% url 'vehicle_viewer' v.pk %}#ins" target="_blank">View</a></td>
-                <td><a class="view" href="{% url 'vehicle_viewer' v.pk %}#pol" target="_blank">View</a></td>
-            </tr>
+           
         {% empty %}
             <tr><td colspan="6" style="text-align:center">No vehicles yet.</td></tr>
         {% endfor %}
