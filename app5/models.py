@@ -21,6 +21,9 @@ class JobCard(models.Model):
     phone = models.CharField(max_length=50)
     technician = models.CharField(max_length=100, blank=True, null=True)
     completion_details = models.JSONField(default=dict, blank=True)
+    assigned_date = models.DateTimeField(null=True, blank=True)
+    self_assigned = models.BooleanField(default=False, help_text="True if the job was self-assigned by the creator")
+    standby_issued = models.BooleanField(default=False, help_text="Whether standby equipment was issued")
     # Store all items and complaints as JSON data
     items_data = models.JSONField(default=list, help_text="Stores array of items with their complaints")
 
@@ -137,3 +140,170 @@ class Supplier(models.Model):
 
     def __str__(self):
         return self.name
+
+
+
+# Add these models to your app5/models.py file
+
+# app2/models.py  (or wherever your models live)
+from django.db import models
+from django.contrib.auth.models import User as AuthUser
+from app1.models import User
+import json
+from django.utils import timezone
+
+class JobCard(models.Model):
+    STATUS_CHOICES = [
+        ('logged', 'Logged'),
+        ('sent_technician', 'Sent To Technician'),
+        ('accepted', 'In Technician Hand'),
+        ('completed', 'Completed'),
+        ('returned', 'Returned'),
+        ('rejected', 'Rejected'),
+    ]
+    
+    PRIORITY_CHOICES = [
+        ('low', 'Low'),
+        ('medium', 'Medium'),
+        ('high', 'High'),
+    ]
+
+    ticket_no = models.CharField(max_length=20, unique=True, blank=True, null=True)
+    customer = models.CharField(max_length=200)
+    address = models.TextField()
+    phone = models.CharField(max_length=15)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='logged')
+    priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='medium')
+    
+    # Technician assignment
+    technician = models.CharField(max_length=100, blank=True, null=True)
+    assigned_date = models.DateTimeField(null=True, blank=True)
+    self_assigned = models.BooleanField(default=False)
+    
+    # Standby item tracking
+    standby_issued = models.BooleanField(default=False)
+    
+    # Items and complaints data (stored as JSON)
+    items_data = models.JSONField(default=list, blank=True)
+    completion_details = models.JSONField(default=dict, blank=True, null=True)
+    
+    # Timestamps and creator
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='created_jobcards')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs):
+        if not self.ticket_no:
+            # Get last job card
+            last_job = JobCard.objects.order_by('-id').first()
+            number = 0
+            if last_job and last_job.ticket_no:
+                # Extract only digits from ticket_no safely
+                digits = ''.join(filter(str.isdigit, last_job.ticket_no))
+                if digits:
+                    number = int(digits)
+            self.ticket_no = f"JC{number + 1:06d}"
+
+        # Set assigned_date when technician is assigned
+        if self.technician and not self.assigned_date:
+            self.assigned_date = timezone.now()
+            
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.ticket_no} - {self.customer}"
+
+    class Meta:
+        ordering = ['-created_at']
+
+
+class JobCardImage(models.Model):
+    jobcard = models.ForeignKey(JobCard, on_delete=models.CASCADE, related_name='images')
+    image = models.ImageField(upload_to='jobcard_images/')
+    item_index = models.IntegerField(default=0)
+    complaint_index = models.IntegerField(default=0)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Image for {self.jobcard.ticket_no}"
+
+
+class StandbyIssuance(models.Model):
+    STATUS_CHOICES = [
+        ('issued', 'Issued'),
+        ('returned', 'Returned'),
+        ('lost', 'Lost'),
+        ('damaged', 'Damaged'),
+    ]
+
+    standby_item = models.ForeignKey('app2.StandbyItem', on_delete=models.CASCADE, related_name='issuances')
+    job_card = models.ForeignKey(JobCard, on_delete=models.CASCADE, related_name='standby_issuances')
+    issued_to = models.CharField(max_length=200)  # Customer name
+    issued_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='issued_standby_items')
+    issued_date = models.DateTimeField(default=timezone.now)
+    expected_return_date = models.DateTimeField()
+    actual_return_date = models.DateTimeField(null=True, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='issued')
+    notes = models.TextField(blank=True)
+    
+    # Condition tracking
+    condition_on_issue = models.TextField(blank=True, help_text="Condition notes when issued")
+    condition_on_return = models.TextField(blank=True, help_text="Condition notes when returned")
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.standby_item.name} issued to {self.issued_to}"
+
+    class Meta:
+        ordering = ['-issued_date']
+        verbose_name = 'Standby Issuance'
+        verbose_name_plural = 'Standby Issuances'
+
+    def is_overdue(self):
+        if self.status == 'issued' and self.expected_return_date:
+            return timezone.now() > self.expected_return_date
+        return False
+
+    def save(self, *args, **kwargs):
+        # Update job card standby_issued status based on issuance status
+        if self.job_card:
+            if self.status == 'issued':
+                self.job_card.standby_issued = True
+            elif self.status in ['returned', 'lost', 'damaged']:
+                self.job_card.standby_issued = False
+            self.job_card.save()
+        
+        super().save(*args, **kwargs)
+
+
+class Item(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    description = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        ordering = ['name']
+
+
+class Supplier(models.Model):
+    name = models.CharField(max_length=200)
+    place = models.CharField(max_length=100)
+    phone = models.CharField(max_length=15)
+    address = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        ordering = ['name']
+
+
+        

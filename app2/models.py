@@ -355,24 +355,48 @@ class Feeder(models.Model):
 from django.db import models
 from django.contrib.auth.models import User
 
-class StandbyItem(models.Model):
-    serial_number = models.CharField(max_length=50, unique=True)
-    name = models.CharField(max_length=100)
-    notes = models.TextField(blank=True, null=True)
-    stock = models.PositiveIntegerField(default=0)
-    created_at = models.DateTimeField(auto_now_add=True)
-    created_by = models.ForeignKey(User, on_delete=models.CASCADE, default=1)  # Add default user ID
-    
-    def save(self, *args, **kwargs):
-        self.serial_number = self.serial_number.upper()
-        self.name = self.name.upper()  # Also uppercase the name
-        super().save(*args, **kwargs)
+# Add this to your models.py file for the StandbyItem model
 
-    def __str__(self):  # Fixed: double underscore
-        return self.name
+from django.db import models
+from django.contrib.auth.models import User
+
+class StandbyItem(models.Model):
+    STATUS_CHOICES = [
+        ('in_stock', 'In Stock'),
+        ('with_customer', 'With Customer'),
+    ]
     
+    name = models.CharField(max_length=200)
+    serial_number = models.CharField(max_length=100, unique=True)
+    notes = models.TextField(blank=True, null=True)
+    stock = models.IntegerField(default=0)
+    status = models.CharField(
+        max_length=20, 
+        choices=STATUS_CHOICES, 
+        default='in_stock',
+        help_text="Current status of the item"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.name} - {self.serial_number}"
+    
+    def get_status_display_class(self):
+        """Return CSS class for status styling"""
+        if self.status == 'in_stock':
+            return 'badge-success'
+        elif self.status == 'with_customer':
+            return 'badge-warning'
+        return 'badge-secondary'
+
     class Meta:
-        ordering = ['-created_at']  # Default ordering by creation date
+        ordering = ['-created_at']
+        verbose_name = "Standby Item"
+        verbose_name_plural = "Standby Items"
+
+
 
 
 class StandbyItemImage(models.Model):

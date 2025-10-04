@@ -2204,32 +2204,58 @@ from django.db.models import Q
 from .models import StandbyItem, StandbyItemImage
 
 # ✅ List all items with search functionality
+# Add these updated views to your views.py file
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.http import JsonResponse
+from django.db import IntegrityError
+from django.contrib import messages
+from django.db.models import Q
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+import json
+from .models import StandbyItem, StandbyItemImage
+
+# Updated List view with status filtering
+# In app2/views.py
 def Standby_item_list(request):
     search_query = request.GET.get('search', '').strip()
+    status_filter = request.GET.get('status', '').strip()
+    
+    # Get all items (remove any filtering that might hide 'with_customer' status)
     items = StandbyItem.objects.prefetch_related('images').all().order_by('-created_at')
 
+    # Apply search filter
     if search_query:
         items = items.filter(
             Q(name__icontains=search_query) | 
             Q(serial_number__icontains=search_query)
         )
+    
+    # Apply status filter if provided
+    if status_filter:
+        items = items.filter(status=status_filter)
 
-    return render(request, 'standby_table.html', {'items': items, 'search_query': search_query})
+    return render(request, 'standby_table.html', {
+        'items': items, 
+        'search_query': search_query,
+        'status_filter': status_filter
+    })
 
-# ✅ Add new item
+# Updated Add view with status field
 def Standby_add_item(request):
     if request.method == "POST":
         name = request.POST.get("itemname", "").upper()
         serial_number = request.POST.get("serialnumber", "").upper()
         notes = request.POST.get("notes", "")
         stock = request.POST.get("stock", 0)
+        status = request.POST.get("status", "in_stock")  # New field
         images = request.FILES.getlist("images")
 
         try:
             # Get current user, fallback to user ID 1 if not authenticated
             current_user = request.user if request.user.is_authenticated else None
             if not current_user:
-                # You might want to handle this differently based on your auth setup
                 from django.contrib.auth.models import User
                 current_user = User.objects.get(id=1)
             
@@ -2238,6 +2264,7 @@ def Standby_add_item(request):
                 serial_number=serial_number,
                 notes=notes,
                 stock=stock,
+                status=status,  # Include status
                 created_by=current_user
             )
 
@@ -2256,7 +2283,7 @@ def Standby_add_item(request):
 
     return render(request, "add_standby.html")
 
-# ✅ Edit item
+# Updated Edit view with status field
 def Standby_item_edit(request, item_id):
     item = get_object_or_404(StandbyItem, id=item_id)
 
@@ -2265,6 +2292,7 @@ def Standby_item_edit(request, item_id):
         item.serial_number = request.POST.get('serialnumber', '').upper()
         item.notes = request.POST.get('notes', '')
         item.stock = request.POST.get('stock', 0)
+        item.status = request.POST.get('status', item.status)  # Update status
         
         try:
             item.save()
@@ -2291,7 +2319,48 @@ def Standby_item_edit(request, item_id):
 
     return render(request, 'edit_standby.html', {'item': item})
 
-# ✅ Delete item
+# New AJAX view for status updates
+@csrf_exempt
+@require_POST
+def Standby_update_status(request, item_id):
+    try:
+        # Parse JSON data from request body
+        data = json.loads(request.body)
+        new_status = data.get('status')
+
+        if not new_status:
+            return JsonResponse({'success': False, 'error': 'Status not provided'}, status=400)
+
+        # Get the item object
+        item = get_object_or_404(StandbyItem, id=item_id)
+
+        # Validate status
+        valid_statuses = [choice[0] for choice in StandbyItem.STATUS_CHOICES]
+        if new_status not in valid_statuses:
+            return JsonResponse({
+                'success': False, 
+                'error': f'Invalid status. Valid options: {valid_statuses}'
+            }, status=400)
+
+        # Update status
+        item.status = new_status
+        item.save()
+
+        # Return success response
+        return JsonResponse({
+            'success': True,
+            'new_status': item.get_status_display(),
+            'status_class': item.get_status_display_class()
+        })
+
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Invalid JSON data'}, status=400)
+    except StandbyItem.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Item not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': f'Server error: {str(e)}'}, status=500)
+
+# Keep existing views unchanged
 def Standby_item_delete(request, item_id):
     if request.method == "POST":
         try:
@@ -2302,13 +2371,11 @@ def Standby_item_delete(request, item_id):
             messages.error(request, f"Error deleting item: {str(e)}")
     return redirect('item_list')
 
-# ✅ AJAX check for unique serial number
 def Standby_check_serial(request):
     serial = request.GET.get('serial', '').upper().strip()
-    item_id = request.GET.get('item_id', None)  # For edit mode
+    item_id = request.GET.get('item_id', None)
     
     if item_id:
-        # Exclude current item when editing
         exists = StandbyItem.objects.filter(serial_number=serial).exclude(id=item_id).exists()
     else:
         exists = StandbyItem.objects.filter(serial_number=serial).exists()
