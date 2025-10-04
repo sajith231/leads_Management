@@ -22,10 +22,6 @@ def vehicle_list(request):
     ctx = {'vehicles': Vehicle.objects.all()}
     return render(request, 'vehicle_list.html', ctx)
 
-def vehicle_viewer(request, pk):
-    """Full-size viewer for the 3 uploaded files."""
-    v = get_object_or_404(Vehicle, pk=pk)
-    return render(request, 'vehicle_viewer.html', {'v': v})
 
 
 

@@ -2,9 +2,7 @@
 
 {% block content %}
 <div class="container mt-4">
-    <!-- Add CSRF token for JavaScript -->
     {% csrf_token %}
-    <!-- Add URL pattern for delete and status update -->
     <meta name="delete-url-pattern" content="{% url 'collections_delete' 0 %}">
     <meta name="status-update-url" content="{% url 'collection_update_status' 0 %}">
     
@@ -16,334 +14,240 @@
             <i class="fas fa-plus me-1"></i>Add New Collection
         </a>
     </div>
-    
-    <!-- Statistics Cards (without Total Collections) -->
-    <div class="row mb-4">
-        <div class="col-md-4">
-            <div class="card bg-success text-white">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h6 class="card-title">Total Amount</h6>
-                            <h4 class="mb-0" id="total-amount">₹{{ total_amount|default:0 }}</h4>
-                        </div>
-                        <div class="align-self-center">
-                            <i class="fas fa-rupee-sign fa-2x"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card bg-info text-white">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h6 class="card-title">This Month</h6>
-                            <h4 class="mb-0" id="month-count">{{ this_month_count|default:0 }}</h4>
-                        </div>
-                        <div class="align-self-center">
-                            <i class="fas fa-calendar-month fa-2x"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-2">
-            <div class="card bg-warning text-white">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h6 class="card-title">Pending</h6>
-                            <h4 class="mb-0" id="pending-count">{{ pending_count|default:0 }}</h4>
-                        </div>
-                        <div class="align-self-center">
-                            <i class="fas fa-clock fa-2x"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card bg-success text-white">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h6 class="card-title">Verified</h6>
-                            <h4 class="mb-0" id="verified-count">{{ verified_count|default:0 }}</h4>
-                        </div>
-                        <div class="align-self-center">
-                            <i class="fas fa-check-circle fa-2x"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 
-    <!-- Enhanced Search and Filter -->
-    <div class="card shadow-sm mb-4">
-        <div class="card-header">
-            <h6 class="mb-0"><i class="fas fa-filter me-2"></i>Search & Filter Collections</h6>
+    <!-- Search and Filter -->
+    <div class="filter-card mb-4">
+        <div class="filter-header">
+            <h6><i class="fas fa-filter me-2"></i>Search & Filter</h6>
         </div>
-        <div class="card-body">
-            <form id="filterForm" class="row g-3">
-                <!-- Client search -->
-                <div class="col-md-2">
-                    <label for="searchInput" class="form-label">Search Client</label>
-                    <div class="input-group">
-                        <span class="input-group-text"><i class="fas fa-search"></i></span>
-                        <input type="text" id="searchInput" name="search" class="form-control" 
-                               placeholder="Client name..." value="{{ request.GET.search }}">
-                    </div>
+        <div class="filter-body">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Search Client</label>
+                    <input type="text" id="searchInput" class="form-control" placeholder="Enter client name...">
                 </div>
 
-                <!-- Branch dropdown -->
                 <div class="col-md-2">
-                    <label for="branchFilter" class="form-label">Branch</label>
-                    <select id="branchFilter" name="branch" class="form-select">
+                    <label class="form-label">Branch</label>
+                    <select id="branchFilter" class="form-select">
                         <option value="">All Branches</option>
-                        <option value="IMC Mukkam" {% if request.GET.branch == 'IMC Mukkam' %}selected{% endif %}>IMC Mukkam</option>
-                        <option value="IMCB HO" {% if request.GET.branch == 'IMCB HO' %}selected{% endif %}>IMCB HO</option>
-                        <option value="IMCB DEV" {% if request.GET.branch == 'IMCB DEV' %}selected{% endif %}>IMCB DEV</option>
-                        <option value="Sysmac Info System" {% if request.GET.branch == 'Sysmac Info System' %}selected{% endif %}>Sysmac Info System</option>
-                        <option value="Sysmac Computers" {% if request.GET.branch == 'Sysmac Computers' %}selected{% endif %}>Sysmac Computers</option>
-                        <option value="DQ Technologies" {% if request.GET.branch == 'DQ Technologies' %}selected{% endif %}>DQ Technologies</option>
+                        <option value="IMC Mukkam">IMC Mukkam</option>
+                        <option value="IMCB HO">IMCB HO</option>
+                        <option value="IMCB DEV">IMCB DEV</option>
+                        <option value="Sysmac Info System">Sysmac Info System</option>
+                        <option value="Sysmac Computers">Sysmac Computers</option>
+                        <option value="DQ Technologies">DQ Technologies</option>
                     </select>
                 </div>
 
-                <!-- Created by (User) filter -->
                 <div class="col-md-2">
-                    <label for="userFilter" class="form-label">Created By</label>
-                    <div class="input-group">
-                        <span class="input-group-text"><i class="fas fa-user"></i></span>
-                        <input type="text" id="userFilter" name="created_by" class="form-control"
-                               placeholder="Username..." value="{{ request.GET.created_by }}">
-                    </div>
+                    <label class="form-label">Created By</label>
+                    <input type="text" id="userFilter" class="form-control" placeholder="Username...">
                 </div>
 
-                <!-- Status -->
                 <div class="col-md-2">
-                    <label for="statusFilter" class="form-label">Status</label>
-                    <select id="statusFilter" name="status_filter" class="form-select">
+                    <label class="form-label">Status</label>
+                    <select id="statusFilter" class="form-select">
                         <option value="">All Status</option>
-                        <option value="pending" {% if request.GET.status_filter == 'pending' %}selected{% endif %}>Pending</option>
-                        <option value="verified" {% if request.GET.status_filter == 'verified' %}selected{% endif %}>Verified</option>
+                        <option value="pending">Pending</option>
+                        <option value="verified">Verified</option>
+                        <option value="multiple entry">Multiple Entry</option>
                     </select>
                 </div>
 
-                <!-- Date range (calendar picker) -->
                 <div class="col-md-2">
-                    <label for="dateFilter" class="form-label">Date Range</label>
-                    <input type="date" id="dateFilter" name="date_filter" class="form-control"
-                           value="{% if request.GET.date_filter %}{{ request.GET.date_filter }}{% else %}{% now 'Y-m-d' %}{% endif %}">
+                    <label class="form-label">Date</label>
+                    <input type="date" id="dateFilter" class="form-control">
                 </div>
                 
-                <!-- Action buttons -->
-                <div class="col-md-2">
+                <div class="col-md-1">
                     <label class="form-label">&nbsp;</label>
-                    <div class="d-grid gap-2">
-                        <button type="button" id="applyFilters" class="btn btn-primary">
-                            <i class="fas fa-search me-1"></i>Search
-                        </button>
-                        <button type="button" id="clearFilters" class="btn btn-outline-secondary">
-                            <i class="fas fa-times me-1"></i>Clear
-                        </button>
-                    </div>
+                    <button type="button" id="clearFilters" class="btn btn-secondary w-100">
+                        <i class="fas fa-times"></i> Clear
+                    </button>
                 </div>
-            </form>
+            </div>
         </div>
     </div>
 
     <!-- Collections Table -->
-    <div class="card shadow-sm">
-        <div class="card-body">
-            <div id="collectionsContainer">
-                {% if collections %}
-                    <div class="table-responsive">
-                        <table class="table table-hover table-bordered" id="collectionsTable">
-                            <thead class="table-dark">
-                                <tr>
-                                    <th width="4%">#</th>
-                                    <th width="14%">Client Name</th>
-                                    <th width="9%">Branch</th>
-                                    <th width="11%">Created By</th>
-                                    <th width="7%">Amount</th>
-                                    <th width="11%">Paid For</th>
-                                    <th width="10%">Status</th>
-                                    <th width="9%">Date Created</th>
-                                    <th width="7%">Screenshot</th>
-                                    <th width="18%">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="collectionsTableBody">
-                                {% for collection in collections %}
-                                    <tr id="collection-row-{{ collection.id }}" 
-                                        data-client-name="{{ collection.client_name|lower }}"
-                                        data-branch="{{ collection.branch }}"
-                                        data-created-by="{{ collection.created_by|lower }}"
-                                        data-status="{{ collection.status }}"
-                                        data-date="{{ collection.created_at|date:'Y-m-d' }}">
-                                        <td class="fw-bold">{{ forloop.counter }}</td>
-                                        <td>
-                                            <div class="fw-semibold">{{ collection.client_name }}</div>
-                                            {% if collection.notes %}
-                                                <small class="text-muted">{{ collection.notes|truncatechars:30 }}</small>
+    <div class="table-card">
+        {% if collections %}
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th width="3%">#</th>
+                            <th width="15%">Client Name</th>
+                            <th width="10%">Branch</th>
+                            <th width="10%">Created By</th>
+                            <th width="8%">Amount</th>
+                            <th width="12%">Paid For</th>
+                            <th width="10%">Status</th>
+                            <th width="10%">Date</th>
+                            <th width="8%">Screenshot</th>
+                            <th width="14%">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="collectionsTableBody">
+                        {% for collection in collections %}
+                            <tr id="collection-row-{{ collection.id }}" 
+                                data-client-name="{{ collection.client_name|lower }}"
+                                data-branch="{{ collection.branch }}"
+                                data-created-by="{{ collection.created_by|lower }}"
+                                data-status="{{ collection.status }}"
+                                data-date="{{ collection.created_at|date:'Y-m-d' }}">
+                                <td>{{ forloop.counter }}</td>
+                                <td>
+                                    <strong>{{ collection.client_name }}</strong>
+                                    {% if collection.notes %}
+                                        <br><small class="text-muted">{{ collection.notes|truncatechars:30 }}</small>
+                                    {% endif %}
+                                </td>
+                                <td><span class="badge bg-secondary">{{ collection.branch }}</span></td>
+                                <td>{{ collection.created_by|default:"—" }}</td>
+                                <td><strong class="text-success">₹{{ collection.amount|floatformat:2 }}</strong></td>
+                                <td>{{ collection.paid_for|truncatechars:20 }}</td>
+                                <td>
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm dropdown-toggle status-btn status-{{ collection.status|slugify }}" 
+                                                type="button" id="statusDropdown{{ collection.id }}" 
+                                                data-bs-toggle="dropdown">
+                                            {% if collection.status == 'pending' %}
+                                                <i class="fas fa-clock"></i> Pending
+                                            {% elif collection.status == 'verified' %}
+                                                <i class="fas fa-check-circle"></i> Verified
+                                            {% elif collection.status == 'multiple entry' %}
+                                                <i class="fas fa-layer-group"></i> Multiple Entry
                                             {% endif %}
-                                        </td>
-                                        <td>
-                                            <span class="badge bg-secondary">{{ collection.branch }}</span>
-                                        </td>
-                                        <td class="text-center">
-                                            <div class="created-by-info">
-                                                <i class="fas fa-user-circle text-primary me-1"></i>
-                                                <span class="fw-semibold">{{ collection.created_by|default:"Unknown" }}</span>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <span class="fw-bold text-success">₹{{ collection.amount|floatformat:2 }}</span>
-                                        </td>
-                                        <td>
-                                            <span class="text-primary">{{ collection.paid_for|truncatechars:20 }}</span>
-                                        </td>
-                                        <td class="text-center">
-                                            <div class="dropdown">
-                                                <button class="btn btn-sm dropdown-toggle status-btn {% if collection.status == 'verified' %}btn-success{% else %}btn-warning{% endif %}" 
-                                                        type="button" id="statusDropdown{{ collection.id }}" 
-                                                        data-bs-toggle="dropdown" aria-expanded="false">
-                                                    {% if collection.status == 'pending' %}
-                                                        <i class="fas fa-clock me-1"></i>Pending
-                                                    {% else %}
-                                                        <i class="fas fa-check-circle me-1"></i>Verified
-                                                    {% endif %}
-                                                </button>
-                                                <ul class="dropdown-menu" aria-labelledby="statusDropdown{{ collection.id }}">
-                                                    <li>
-                                                        <a class="dropdown-item status-option" href="#" 
-                                                           data-status="pending" 
-                                                           data-collection-id="{{ collection.id }}">
-                                                            <i class="fas fa-clock me-2 text-warning"></i>Mark as Pending
-                                                        </a>
-                                                    </li>
-                                                    <li>
-                                                        <a class="dropdown-item status-option" href="#" 
-                                                           data-status="verified" 
-                                                           data-collection-id="{{ collection.id }}">
-                                                            <i class="fas fa-check-circle me-2 text-success"></i>Mark as Verified
-                                                        </a>
-                                                    </li>
-                                                </ul>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <small>{{ collection.created_at|date:"d M Y" }}<br>
-                                            <span class="text-muted">{{ collection.created_at|time:"H:i" }}</span></small>
-                                        </td>
-                                        <td class="text-center">
-                                            {% if collection.payment_screenshot %}
-                                                <button class="btn btn-sm btn-outline-info screenshot-btn" 
-                                                        onclick="viewScreenshot('{{ collection.payment_screenshot.url }}', '{{ collection.client_name }}')">
-                                                    <i class="fas fa-image me-1"></i>View
-                                                </button>
-                                            {% else %}
-                                                <span class="text-muted">No image</span>
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            <!-- Horizontal Action Buttons -->
-                                            <div class="d-flex flex-column gap-1">
-                                                <div class="d-flex justify-content-between gap-1">
-                                                    <a href="{% url 'collections_edit' collection.id %}" 
-                                                       class="action-btn edit-btn flex-fill text-center" title="Edit Collection">
-                                                        <i class="fas fa-edit"></i>
-                                                        <span>Edit</span>
-                                                    </a>
-                                                    <button class="action-btn delete-btn flex-fill text-center" 
-                                                            onclick="deleteCollection(this, {{ collection.id }}, '{{ collection.client_name|escapejs }}')" 
-                                                            title="Delete Collection">
-                                                        <i class="fas fa-trash"></i>
-                                                        <span>Delete</span>
-                                                    </button>
-                                                </div>
-                                                <a href="{% url 'collection_receipt' collection.id %}" 
-                                                   class="action-btn receipt-btn text-center" title="Download Receipt">
-                                                    <i class="fas fa-receipt"></i>
-                                                    <span>Receipt</span>
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            <li>
+                                                <a class="dropdown-item status-option" href="#" 
+                                                   data-status="pending" 
+                                                   data-collection-id="{{ collection.id }}">
+                                                    <i class="fas fa-clock text-warning"></i> Pending
                                                 </a>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <!-- Pagination -->
-                    {% if is_paginated %}
-                        <nav aria-label="Page navigation" class="mt-3">
-                            <ul class="pagination justify-content-center">
-                                {% if page_obj.has_previous %}
-                                    <li class="page-item">
-                                        <a class="page-link" href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.branch %}&branch={{ request.GET.branch }}{% endif %}{% if request.GET.created_by %}&created_by={{ request.GET.created_by }}{% endif %}{% if request.GET.status_filter %}&status_filter={{ request.GET.status_filter }}{% endif %}{% if request.GET.date_filter %}&date_filter={{ request.GET.date_filter }}{% endif %}">First</a>
-                                    </li>
-                                    <li class="page-item">
-                                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.branch %}&branch={{ request.GET.branch }}{% endif %}{% if request.GET.created_by %}&created_by={{ request.GET.created_by }}{% endif %}{% if request.GET.status_filter %}&status_filter={{ request.GET.status_filter }}{% endif %}{% if request.GET.date_filter %}&date_filter={{ request.GET.date_filter }}{% endif %}">Previous</a>
-                                    </li>
-                                {% endif %}
-
-                                <li class="page-item active">
-                                    <span class="page-link">{{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
-                                </li>
-
-                                {% if page_obj.has_next %}
-                                    <li class="page-item">
-                                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.branch %}&branch={{ request.GET.branch }}{% endif %}{% if request.GET.created_by %}&created_by={{ request.GET.created_by }}{% endif %}{% if request.GET.status_filter %}&status_filter={{ request.GET.status_filter }}{% endif %}{% if request.GET.date_filter %}&date_filter={{ request.GET.date_filter }}{% endif %}">Next</a>
-                                    </li>
-                                    <li class="page-item">
-                                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.branch %}&branch={{ request.GET.branch }}{% endif %}{% if request.GET.created_by %}&created_by={{ request.GET.created_by }}{% endif %}{% if request.GET.status_filter %}&status_filter={{ request.GET.status_filter }}{% endif %}{% if request.GET.date_filter %}&date_filter={{ request.GET.date_filter }}{% endif %}">Last</a>
-                                    </li>
-                                {% endif %}
-                            </ul>
-                        </nav>
-                    {% endif %}
-                {% else %}
-                    <div class="text-center py-5">
-                        <i class="fas fa-money-check-alt fa-3x text-muted mb-3"></i>
-                        <h5 class="text-muted">No collections found</h5>
-                        <p class="text-muted">Start by adding your first collection record.</p>
-                        <a href="{% url 'collections_add' %}" class="btn btn-primary">
-                            <i class="fas fa-plus me-1"></i>Add First Collection
-                        </a>
-                    </div>
-                {% endif %}
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item status-option" href="#" 
+                                                   data-status="verified" 
+                                                   data-collection-id="{{ collection.id }}">
+                                                    <i class="fas fa-check-circle text-success"></i> Verified
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item status-option" href="#" 
+                                                   data-status="multiple entry" 
+                                                   data-collection-id="{{ collection.id }}">
+                                                    <i class="fas fa-layer-group text-info"></i> Multiple Entry
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </td>
+                                <td>
+                                    <small>{{ collection.created_at|date:"d M Y" }}<br>
+                                    {{ collection.created_at|time:"H:i" }}</small>
+                                </td>
+                                <td>
+                                    {% if collection.payment_screenshot %}
+                                        <button class="btn btn-sm btn-info" 
+                                                onclick="viewScreenshot('{{ collection.payment_screenshot.url }}', '{{ collection.client_name }}')">
+                                            <i class="fas fa-image"></i>
+                                        </button>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="{% url 'collections_edit' collection.id %}" 
+                                           class="btn btn-sm btn-warning" title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <button class="btn btn-sm btn-danger" 
+                                                onclick="deleteCollection(this, {{ collection.id }}, '{{ collection.client_name|escapejs }}')" 
+                                                title="Delete">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                        <a href="{% url 'collection_receipt' collection.id %}" 
+                                           class="btn btn-sm btn-primary" title="Receipt">
+                                            <i class="fas fa-receipt"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
-        </div>
+
+            <!-- Pagination -->
+            {% if is_paginated %}
+                <nav aria-label="Page navigation" class="mt-3" id="paginationContainer">
+                    <ul class="pagination justify-content-center">
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1">First</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+                            </li>
+                        {% endif %}
+
+                        <li class="page-item active">
+                            <span class="page-link">{{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+                        </li>
+
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Last</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            {% endif %}
+        {% else %}
+            <div class="empty-state">
+                <i class="fas fa-money-check-alt fa-3x text-muted mb-3"></i>
+                <h5>No collections found</h5>
+                <p class="text-muted">Start by adding your first collection record.</p>
+                <a href="{% url 'collections_add' %}" class="btn btn-primary">
+                    <i class="fas fa-plus me-1"></i>Add First Collection
+                </a>
+            </div>
+        {% endif %}
     </div>
 </div>
 
-<!-- Full Screen Screenshot Modal -->
+<!-- Screenshot Modal -->
 <div class="modal fade" id="screenshotModal" tabindex="-1">
     <div class="modal-dialog modal-fullscreen">
-        <div class="modal-content bg-dark">
-            <div class="modal-header border-secondary">
-                <h5 class="modal-title text-white">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
                     <i class="fas fa-image me-2"></i>Payment Screenshot
                 </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body d-flex align-items-center justify-content-center p-0">
-                <div class="screenshot-container">
-                    <img id="screenshotImage" src="" alt="Payment Screenshot" class="screenshot-image">
-                    <div class="screenshot-controls">
-                        <button class="btn btn-light me-2" onclick="zoomIn()">
-                            <i class="fas fa-search-plus"></i> Zoom In
+            <div class="modal-body p-0">
+                <div class="image-viewer">
+                    <img id="screenshotImage" src="" alt="Payment Screenshot" class="screenshot-img">
+                    <div class="zoom-controls">
+                        <button class="btn btn-light" onclick="zoomIn()" title="Zoom In">
+                            <i class="fas fa-search-plus"></i>
                         </button>
-                        <button class="btn btn-light me-2" onclick="zoomOut()">
-                            <i class="fas fa-search-minus"></i> Zoom Out
+                        <button class="btn btn-light" onclick="zoomOut()" title="Zoom Out">
+                            <i class="fas fa-search-minus"></i>
                         </button>
-                        <button class="btn btn-light" onclick="resetZoom()">
-                            <i class="fas fa-expand-arrows-alt"></i> Reset
+                        <button class="btn btn-light" onclick="resetZoom()" title="Reset Zoom">
+                            <i class="fas fa-expand-arrows-alt"></i>
                         </button>
+                        <span class="zoom-level">100%</span>
                     </div>
                 </div>
             </div>
@@ -352,44 +256,54 @@
 </div>
 
 <!-- Loading Modal -->
-<div class="modal fade" id="loadingModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+<div class="modal fade" id="loadingModal" tabindex="-1" data-bs-backdrop="static">
     <div class="modal-dialog modal-sm">
         <div class="modal-content">
             <div class="modal-body text-center py-4">
-                <div class="spinner-border text-danger" role="status">
-                    <span class="visually-hidden">Processing...</span>
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
                 </div>
-                <p class="mt-3 mb-0">Processing request...</p>
+                <p class="mt-3 mb-0">Processing...</p>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-// Global variables for zoom functionality
-let currentZoom = 1;
-const maxZoom = 3;
-const minZoom = 0.5;
-const zoomStep = 0.25;
-
 // Get CSRF token
 function getCSRFToken() {
     return document.querySelector('[name=csrfmiddlewaretoken]').value;
 }
 
-// Get the URL pattern and replace the ID
+// Get URLs
 function getDeleteUrl(collectionId) {
     const urlPattern = document.querySelector('meta[name="delete-url-pattern"]').content;
     return urlPattern.replace('0', collectionId);
 }
 
-// Get status update URL
 function getStatusUpdateUrl(collectionId) {
     const urlPattern = document.querySelector('meta[name="status-update-url"]').content;
     return urlPattern.replace('0', collectionId);
 }
 
-// Client-side filtering function
+// Store all rows data for filtering
+let allRowsData = [];
+
+// Initialize rows data on page load
+function initializeRowsData() {
+    const rows = document.querySelectorAll('#collectionsTableBody tr');
+    allRowsData = Array.from(rows).map((row, index) => ({
+        element: row,
+        originalIndex: index + 1,
+        clientName: (row.getAttribute('data-client-name') || '').toLowerCase(),
+        branch: row.getAttribute('data-branch') || '',
+        createdBy: (row.getAttribute('data-created-by') || '').toLowerCase(),
+        status: row.getAttribute('data-status') || '',
+        date: row.getAttribute('data-date') || ''
+    }));
+}
+
+// Filter table
 function filterTable() {
     const searchValue = document.getElementById('searchInput').value.toLowerCase().trim();
     const branchValue = document.getElementById('branchFilter').value;
@@ -397,65 +311,46 @@ function filterTable() {
     const statusValue = document.getElementById('statusFilter').value;
     const dateValue = document.getElementById('dateFilter').value;
 
-    const rows = document.querySelectorAll('#collectionsTableBody tr');
     let visibleCount = 0;
+    const hasActiveFilter = searchValue || branchValue || userValue || statusValue || dateValue;
 
-    rows.forEach(row => {
-        const clientName = row.getAttribute('data-client-name') || '';
-        const branch = row.getAttribute('data-branch') || '';
-        const createdBy = row.getAttribute('data-created-by') || '';
-        const status = row.getAttribute('data-status') || '';
-        const date = row.getAttribute('data-date') || '';
+    // Hide pagination when filters active
+    const paginationContainer = document.getElementById('paginationContainer');
+    if (paginationContainer) {
+        paginationContainer.style.display = hasActiveFilter ? 'none' : 'block';
+    }
 
+    // Filter and display rows
+    allRowsData.forEach(rowData => {
         let showRow = true;
 
-        // Filter by client name
-        if (searchValue && !clientName.includes(searchValue)) {
-            showRow = false;
-        }
-
-        // Filter by branch
-        if (branchValue && branch !== branchValue) {
-            showRow = false;
-        }
-
-        // Filter by created by (username)
-        if (userValue && !createdBy.includes(userValue)) {
-            showRow = false;
-        }
-
-        // Filter by status
-        if (statusValue && status !== statusValue) {
-            showRow = false;
-        }
-
-        // Filter by date
-        if (dateValue && date !== dateValue) {
-            showRow = false;
-        }
+        if (searchValue && !rowData.clientName.includes(searchValue)) showRow = false;
+        if (branchValue && rowData.branch !== branchValue) showRow = false;
+        if (userValue && !rowData.createdBy.includes(userValue)) showRow = false;
+        if (statusValue && rowData.status !== statusValue) showRow = false;
+        if (dateValue && rowData.date !== dateValue) showRow = false;
 
         if (showRow) {
-            row.style.display = '';
+            rowData.element.style.display = '';
             visibleCount++;
-            // Update row number
-            row.querySelector('td:first-child').textContent = visibleCount;
+            const firstCell = rowData.element.querySelector('td:first-child');
+            if (firstCell) firstCell.textContent = visibleCount;
         } else {
-            row.style.display = 'none';
+            rowData.element.style.display = 'none';
         }
     });
 
-    // Show message if no results
+    // Show no results message
     const tbody = document.getElementById('collectionsTableBody');
-    const existingMessage = document.getElementById('noResultsMessage');
+    let existingMessage = document.getElementById('noResultsMessage');
     
     if (visibleCount === 0 && !existingMessage) {
         const messageRow = document.createElement('tr');
         messageRow.id = 'noResultsMessage';
         messageRow.innerHTML = `
             <td colspan="10" class="text-center py-4">
-                <i class="fas fa-search fa-2x text-muted mb-2"></i>
+                <i class="fas fa-search fa-2x text-muted mb-2 d-block"></i>
                 <h6 class="text-muted">No collections match your filters</h6>
-                <p class="text-muted small mb-0">Try adjusting your search criteria</p>
             </td>
         `;
         tbody.appendChild(messageRow);
@@ -464,56 +359,46 @@ function filterTable() {
     }
 }
 
-// Enhanced Filter Functionality
+// Event listeners
 document.addEventListener('DOMContentLoaded', function() {
-    const searchInput = document.getElementById('searchInput');
-    const branchFilter = document.getElementById('branchFilter');
-    const userFilter = document.getElementById('userFilter');
-    const statusFilter = document.getElementById('statusFilter');
-    const dateFilter = document.getElementById('dateFilter');
-    const applyFilters = document.getElementById('applyFilters');
-    const clearFilters = document.getElementById('clearFilters');
-
-    // Real-time search functionality with debounce
-    let searchTimeout;
+    // Initialize rows data
+    initializeRowsData();
     
-    searchInput.addEventListener('input', function() {
-        clearTimeout(searchTimeout);
-        searchTimeout = setTimeout(filterTable, 300);
-    });
+    let searchTimeout;
 
-    userFilter.addEventListener('input', function() {
-        clearTimeout(searchTimeout);
-        searchTimeout = setTimeout(filterTable, 300);
-    });
-
-    // Filter change handlers
-    branchFilter.addEventListener('change', filterTable);
-    statusFilter.addEventListener('change', filterTable);
-    dateFilter.addEventListener('change', filterTable);
-
-    // Apply filters button
-    applyFilters.addEventListener('click', filterTable);
-
-    // Clear filters button
-    clearFilters.addEventListener('click', function() {
-        searchInput.value = '';
-        branchFilter.value = '';
-        userFilter.value = '';
-        statusFilter.value = '';
-        dateFilter.value = '';
-        filterTable();
-    });
-
-    // Enter key support
-    document.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter' && (e.target === searchInput || e.target === userFilter)) {
-            e.preventDefault();
-            filterTable();
+    // Real-time search
+    ['searchInput', 'userFilter'].forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.addEventListener('input', function() {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(filterTable, 300);
+            });
         }
     });
 
-    // Status update functionality
+    // Dropdown filters
+    ['branchFilter', 'statusFilter', 'dateFilter'].forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.addEventListener('change', filterTable);
+        }
+    });
+
+    // Clear filters
+    const clearBtn = document.getElementById('clearFilters');
+    if (clearBtn) {
+        clearBtn.addEventListener('click', function() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('branchFilter').value = '';
+            document.getElementById('userFilter').value = '';
+            document.getElementById('statusFilter').value = '';
+            document.getElementById('dateFilter').value = '';
+            filterTable();
+        });
+    }
+
+    // Status update handlers
     document.querySelectorAll('.status-option').forEach(option => {
         option.addEventListener('click', function(e) {
             e.preventDefault();
@@ -535,112 +420,119 @@ function updateCollectionStatus(collectionId, newStatus) {
             'X-CSRFToken': getCSRFToken(),
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-            status: newStatus
-        })
+        body: JSON.stringify({ status: newStatus })
     })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Network response was not ok: ' + response.status);
-        }
-        return response.json();
-    })
+    .then(response => response.json())
     .then(data => {
         loadingModal.hide();
         if (data.success) {
-            // Update the status button appearance
             const statusBtn = document.querySelector(`#statusDropdown${collectionId}`);
             const row = document.getElementById(`collection-row-${collectionId}`);
             
-            // Update row data attribute
-            row.setAttribute('data-status', newStatus);
+            if (row) row.setAttribute('data-status', newStatus);
             
-            if (newStatus === 'verified') {
-                statusBtn.className = 'btn btn-sm dropdown-toggle status-btn btn-success';
-                statusBtn.innerHTML = '<i class="fas fa-check-circle me-1"></i>Verified';
-            } else {
-                statusBtn.className = 'btn btn-sm dropdown-toggle status-btn btn-warning';
-                statusBtn.innerHTML = '<i class="fas fa-clock me-1"></i>Pending';
+            if (statusBtn) {
+                let btnClass = 'btn btn-sm dropdown-toggle status-btn ';
+                let btnContent = '';
+                
+                if (newStatus === 'verified') {
+                    btnClass += 'status-verified';
+                    btnContent = '<i class="fas fa-check-circle"></i> Verified';
+                } else if (newStatus === 'multiple entry') {
+                    btnClass += 'status-multiple-entry';
+                    btnContent = '<i class="fas fa-layer-group"></i> Multiple Entry';
+                } else {
+                    btnClass += 'status-pending';
+                    btnContent = '<i class="fas fa-clock"></i> Pending';
+                }
+                
+                statusBtn.className = btnClass;
+                statusBtn.innerHTML = btnContent;
             }
             
             showAlert('success', data.message);
-            
-            // Update statistics after a short delay
-            setTimeout(() => {
-                location.reload();
-            }, 1000);
+            setTimeout(() => location.reload(), 1000);
         } else {
             showAlert('danger', data.message || 'Status update failed');
         }
     })
     .catch(err => {
         loadingModal.hide();
-        console.error('Status update error:', err);
-        showAlert('danger', 'Network error – please try again. ' + err.message);
+        showAlert('danger', 'Network error: ' + err.message);
     });
 }
 
-// Enhanced View Screenshot with full screen and zoom
-function viewScreenshot(imageUrl, clientName) {
+// Zoom functionality
+let currentZoom = 1;
+const minZoom = 0.5;
+const maxZoom = 3;
+const zoomStep = 0.25;
+
+function updateZoomLevel() {
     const img = document.getElementById('screenshotImage');
-    const modal = document.getElementById('screenshotModal');
-    const modalTitle = modal.querySelector('.modal-title');
+    const zoomLevel = document.querySelector('.zoom-level');
     
-    // Reset zoom
-    currentZoom = 1;
-    
-    // Set image and title
-    img.src = imageUrl;
     img.style.transform = `scale(${currentZoom})`;
-    modalTitle.innerHTML = `<i class="fas fa-image me-2"></i>Payment Screenshot - ${clientName}`;
-    
-    // Show modal
-    new bootstrap.Modal(modal).show();
-    
-    // Add image load handler
-    img.onload = function() {
-        resetZoom();
-    };
+    zoomLevel.textContent = `${Math.round(currentZoom * 100)}%`;
 }
 
-// Zoom functions
 function zoomIn() {
     if (currentZoom < maxZoom) {
         currentZoom += zoomStep;
-        updateImageZoom();
+        updateZoomLevel();
     }
 }
 
 function zoomOut() {
     if (currentZoom > minZoom) {
         currentZoom -= zoomStep;
-        updateImageZoom();
+        updateZoomLevel();
     }
 }
 
 function resetZoom() {
     currentZoom = 1;
-    updateImageZoom();
+    updateZoomLevel();
 }
 
-function updateImageZoom() {
+// View screenshot
+function viewScreenshot(imageUrl, clientName) {
     const img = document.getElementById('screenshotImage');
-    img.style.transform = `scale(${currentZoom})`;
+    const modal = document.getElementById('screenshotModal');
+    
+    currentZoom = 1;
+    
+    img.src = imageUrl;
+    img.style.transform = 'scale(1)';
+    modal.querySelector('.modal-title').innerHTML = `<i class="fas fa-image me-2"></i>Payment Screenshot - ${clientName}`;
+    
+    new bootstrap.Modal(modal).show();
+    
+    setTimeout(() => {
+        updateZoomLevel();
+    }, 100);
 }
 
-// Mouse wheel zoom support
-document.getElementById('screenshotImage').addEventListener('wheel', function(e) {
-    e.preventDefault();
-    if (e.deltaY < 0) {
-        zoomIn();
-    } else {
-        zoomOut();
+// Mouse wheel zoom
+document.addEventListener('DOMContentLoaded', function() {
+    const screenshotModal = document.getElementById('screenshotModal');
+    if (screenshotModal) {
+        screenshotModal.addEventListener('wheel', function(e) {
+            if (screenshotModal.classList.contains('show')) {
+                e.preventDefault();
+                if (e.deltaY < 0) {
+                    zoomIn();
+                } else {
+                    zoomOut();
+                }
+            }
+        });
     }
 });
 
-// Delete Collection with improved error handling
+// Delete collection
 function deleteCollection(btn, collectionId, clientName) {
-    if (!confirm(`Are you sure you want to delete the collection for "${clientName}"?\n\nThis action cannot be undone.`)) {
+    if (!confirm(`Delete collection for "${clientName}"?\n\nThis cannot be undone.`)) {
         return;
     }
 
@@ -657,24 +549,18 @@ function deleteCollection(btn, collectionId, clientName) {
             'Content-Type': 'application/json',
         },
     })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Network response was not ok: ' + response.status);
-        }
-        return response.json();
-    })
+    .then(response => response.json())
     .then(data => {
         loadingModal.hide();
         if (data.success) {
-            row.style.transition = 'opacity 0.5s';
             row.style.opacity = '0';
-            setTimeout(() => row.remove(), 500);
-            showAlert('success', data.message);
-            
-            // Update statistics
             setTimeout(() => {
-                location.reload();
-            }, 1000);
+                row.remove();
+                initializeRowsData();
+                filterTable();
+            }, 300);
+            showAlert('success', data.message);
+            setTimeout(() => location.reload(), 1500);
         } else {
             showAlert('danger', data.message || 'Deletion failed');
             btn.disabled = false;
@@ -682,20 +568,18 @@ function deleteCollection(btn, collectionId, clientName) {
     })
     .catch(err => {
         loadingModal.hide();
-        console.error('Delete error:', err);
-        showAlert('danger', 'Network error – please try again. ' + err.message);
+        showAlert('danger', 'Network error: ' + err.message);
         btn.disabled = false;
     });
 }
 
-// Show alert message
+// Show alert
 function showAlert(type, message) {
-    const existingAlerts = document.querySelectorAll('.alert-dismissible');
-    existingAlerts.forEach(alert => alert.remove());
+    document.querySelectorAll('.alert-dismissible').forEach(alert => alert.remove());
     
     const alertHtml = `
-        <div class="alert alert-${type} alert-dismissible fade show position-fixed" 
-             style="top: 20px; right: 20px; z-index: 9999; min-width: 300px;" role="alert">
+        <div class="alert alert-${type} alert-dismissible fade show" 
+             style="position: fixed; top: 20px; right: 20px; z-index: 9999; min-width: 300px;">
             ${message}
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
@@ -705,355 +589,230 @@ function showAlert(type, message) {
     
     setTimeout(() => {
         const alert = document.querySelector('.alert-dismissible');
-        if (alert) {
-            const bsAlert = new bootstrap.Alert(alert);
-            bsAlert.close();
-        }
+        if (alert) new bootstrap.Alert(alert).close();
     }, 5000);
 }
 </script>
 
 <style>
-.card {
-    border: none;
-    border-radius: 12px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    transition: box-shadow 0.3s ease;
-}
-
-.card:hover {
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-}
-
-.table th {
-    font-weight: 600;
-    vertical-align: middle;
-    background: linear-gradient(135deg, #343a40 0%, #495057 100%);
-}
-
-.table td {
-    vertical-align: middle;
-}
-
-/* Status Button Styles */
-.status-btn {
-    min-width: 120px;
-    font-weight: 500;
-    border: none;
-}
-
-.status-btn.btn-success {
-    background: linear-gradient(135deg, #198754 0%, #157347 100%);
-}
-
-.status-btn.btn-warning {
-    background: linear-gradient(135deg, #ffc107 0%, #ffca2c 100%);
-    color: #000 !important;
-}
-
-.status-btn:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-.dropdown-menu {
-    border-radius: 8px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-}
-
-.dropdown-item:hover {
-    background-color: #f8f9fa;
-}
-
-/* Created By Field Styling */
-.created-by-info {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 4px 8px;
-    background: rgba(13, 110, 253, 0.1);
-    border-radius: 8px;
-    border: 1px solid rgba(13, 110, 253, 0.2);
-}
-
-.created-by-info .fas.fa-user-circle {
-    color: #0d6efd;
-    font-size: 1.1em;
-}
-
-.created-by-info span {
-    color: #495057;
-    font-size: 0.85em;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 100px;
-}
-
-/* Enhanced Action Buttons - Horizontal Layout */
-.action-buttons {
-    display: flex;
-    gap: 5px;
-    justify-content: center;
-    align-items: center;
-    flex-wrap: wrap;
-}
-
-.action-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 8px 12px;
-    border: 1px solid #ddd;
+/* Professional clean styles */
+.filter-card {
+    background: #ffffff;
+    border: 1px solid #e0e0e0;
     border-radius: 6px;
-    text-decoration: none;
-    font-size: 0.8rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+.filter-header {
+    padding: 14px 20px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #e0e0e0;
+    border-radius: 6px 6px 0 0;
+}
+
+.filter-header h6 {
+    margin: 0;
+    font-weight: 600;
+    font-size: 15px;
+    color: #2c3e50;
+}
+
+.filter-body {
+    padding: 20px;
+}
+
+.form-label {
+    font-size: 13px;
     font-weight: 500;
-    transition: all 0.3s ease;
-    cursor: pointer;
-    min-width: 70px;
-    height: 36px;
-    white-space: nowrap;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    color: #495057;
+    margin-bottom: 6px;
 }
 
-.action-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-}
-
-.action-btn i {
-    margin-right: 4px;
-    font-size: 0.9em;
-}
-
-.action-btn span {
-    font-size: 0.8em;
-    font-weight: 500;
-}
-
-/* Edit Button - Enhanced Yellow */
-.edit-btn {
-    color: #856404;
-    border-color: #ffc107;
-    background: linear-gradient(135deg, #fff3cd 0%, #ffecb5 100%);
-}
-
-.edit-btn:hover {
-    color: #533f03;
-    background: linear-gradient(135deg, #ffecb5 0%, #ffe082 100%);
-    border-color: #ffcd39;
-}
-
-/* Delete Button - Enhanced Red */
-.delete-btn {
-    color: #721c24;
-    border-color: #dc3545;
-    background: linear-gradient(135deg, #f8d7da 0%, #f1b0b7 100%);
-}
-
-.delete-btn:hover {
-    color: #491217;
-    background: linear-gradient(135deg, #f1b0b7 0%, #ea868f 100%);
-    border-color: #c82333;
-}
-
-/* Receipt Button - Enhanced Blue */
-.receipt-btn {
-    color: #004085;
-    border-color: #007bff;
-    background: linear-gradient(135deg, #cce7ff 0%, #99d1ff 100%);
-}
-
-.receipt-btn:hover {
-    color: #002752;
-    background: linear-gradient(135deg, #99d1ff 0%, #66c0ff 100%);
-    border-color: #0056b3;
-}
-
-/* Screenshot Button */
-.screenshot-btn {
-    transition: all 0.3s ease;
-}
-
-.screenshot-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(23, 162, 184, 0.2);
-}
-
-/* Full Screen Screenshot Modal */
-.modal-fullscreen .modal-content {
-    height: 100vh;
-}
-
-.screenshot-container {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: auto;
-}
-
-.screenshot-image {
-    max-width: 90%;
-    max-height: 90%;
-    object-fit: contain;
-    transition: transform 0.3s ease;
-    cursor: grab;
-    border-radius: 8px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-}
-
-.screenshot-image:active {
-    cursor: grabbing;
-}
-
-.screenshot-controls {
-    position: absolute;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(0, 0, 0, 0.8);
-    padding: 10px 20px;
-    border-radius: 25px;
-    backdrop-filter: blur(10px);
-}
-
-.screenshot-controls .btn {
-    border-radius: 20px;
-    padding: 8px 16px;
-}
-
-/* Filter Enhancement */
-.card-header {
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    border-bottom: 1px solid #dee2e6;
-    border-radius: 12px 12px 0 0;
-}
-
-.input-group-text {
-    background-color: #f8f9fa;
-    border-color: #ced4da;
+.form-control, .form-select {
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    font-size: 14px;
+    padding: 8px 12px;
 }
 
 .form-control:focus, .form-select:focus {
-    border-color: #86b7fe;
-    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13,110,253,0.15);
 }
 
-/* Badge Enhancement */
-.badge {
-    font-size: 0.75rem;
-    padding: 0.5em 0.75em;
-    border-radius: 0.5rem;
+.table-card {
+    background: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    overflow: hidden;
 }
 
-/* Table Enhancement */
-.table-hover tbody tr:hover {
-    background-color: rgba(13, 110, 253, 0.05);
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    transition: all 0.2s ease;
+.table {
+    margin-bottom: 0;
+    font-size: 14px;
 }
 
-/* Loading animation */
-.spinner-border {
-    width: 3rem;
-    height: 3rem;
+.table thead {
+    background: #2c3e50;
+    color: white;
 }
 
-/* Smooth animations */
+.table thead th {
+    font-weight: 600;
+    font-size: 13px;
+    padding: 14px 12px;
+    border: none;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.table tbody td {
+    padding: 12px;
+    vertical-align: middle;
+    border-bottom: 1px solid #f0f0f0;
+}
+
 .table tbody tr {
-    transition: all 0.3s ease;
+    transition: background-color 0.15s ease;
 }
 
-/* Mobile Responsiveness */
+.table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+.table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.status-btn {
+    min-width: 130px;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 6px 12px;
+}
+
+.status-pending {
+    background: #ffc107;
+    color: #000;
+    border: none;
+}
+
+.status-pending:hover {
+    background: #e0a800;
+}
+
+.status-verified {
+    background: #28a745;
+    color: white;
+    border: none;
+}
+
+.status-verified:hover {
+    background: #218838;
+}
+
+.status-multiple-entry {
+    background: #17a2b8;
+    color: white;
+    border: none;
+}
+
+.status-multiple-entry:hover {
+    background: #138496;
+}
+
+.btn-group .btn {
+    padding: 6px 10px;
+    font-size: 13px;
+}
+
+.badge {
+    font-size: 12px;
+    font-weight: 500;
+    padding: 5px 10px;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.pagination {
+    margin: 20px 0;
+}
+
+.pagination .page-link {
+    color: #2c3e50;
+    border: 1px solid #dee2e6;
+    padding: 8px 14px;
+    font-size: 14px;
+}
+
+.pagination .page-item.active .page-link {
+    background-color: #2c3e50;
+    border-color: #2c3e50;
+}
+
+.image-viewer {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    overflow: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f5f5f5;
+}
+
+.screenshot-img {
+    max-width: 100%;
+    max-height: 100%;
+    transition: transform 0.2s ease;
+    cursor: zoom-in;
+}
+
+.zoom-controls {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.7);
+    padding: 10px 20px;
+    border-radius: 30px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    z-index: 1000;
+}
+
+.zoom-controls .btn {
+    padding: 8px 12px;
+    border-radius: 6px;
+}
+
+.zoom-level {
+    color: white;
+    font-weight: 600;
+    min-width: 50px;
+    text-align: center;
+}
+
 @media (max-width: 768px) {
-    .action-buttons {
-        gap: 2px;
+    .btn-group {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
     }
     
-    .action-btn {
-        min-width: 60px;
-        padding: 5px 8px;
+    .btn-group .btn {
+        width: 100%;
     }
     
-    .status-btn {
-        min-width: 100px;
-        font-size: 0.8rem;
+    .filter-body .row {
+        gap: 15px 0 !important;
     }
-    
-    .created-by-info {
-        padding: 2px 4px;
-    }
-    
-    .created-by-info span {
-        font-size: 0.75em;
-        max-width: 80px;
-    }
-    
-    .screenshot-controls {
-        bottom: 10px;
-        padding: 8px 16px;
-    }
-    
-    .screenshot-controls .btn {
-        padding: 6px 12px;
-        font-size: 0.8rem;
-    }
-    
-    .alert-dismissible {
-        position: relative !important;
-        top: auto !important;
-        right: auto !important;
-        margin-bottom: 1rem;
-        min-width: auto !important;
-    }
-}
-
-@media (max-width: 576px) {
-    .action-btn {
-        min-width: 50px;
-        padding: 4px 6px;
-    }
-    
-    .action-btn span {
-        font-size: 0.7em;
-    }
-    
-    .action-btn i {
-        font-size: 0.75em;
-    }
-    
-    .status-btn {
-        min-width: 80px;
-        font-size: 0.7rem;
-    }
-    
-    .created-by-info span {
-        max-width: 60px;
-    }
-}
-
-/* Custom scrollbar for modal */
-.screenshot-container::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-}
-
-.screenshot-container::-webkit-scrollbar-track {
-    background: #2c2c2c;
-}
-
-.screenshot-container::-webkit-scrollbar-thumb {
-    background: #666;
-    border-radius: 4px;
-}
-
-.screenshot-container::-webkit-scrollbar-thumb:hover {
-    background: #888;
 }
 </style>
 {% endblock %}

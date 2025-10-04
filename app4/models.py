@@ -113,10 +113,12 @@ class Collection(models.Model):
     # ------------------------------------------------------------------
     STATUS_PENDING = "pending"
     STATUS_VERIFIED = "verified"
+    STATUS_MULTIPLE_ENTRY = "multiple entry"
 
     STATUS_CHOICES = [
         (STATUS_PENDING, "Pending"),
         (STATUS_VERIFIED, "Verified"),
+        (STATUS_MULTIPLE_ENTRY, "Multiple Entry"),
     ]
 
     status = models.CharField(
@@ -130,17 +132,20 @@ class Collection(models.Model):
     # Collection Type (NEW)
     # ------------------------------------------------------------------
     TYPE_CASH    = "cash"
-    TYPE_ONLINE  = "online"
+    TYPE_UPI  = "upi"
     TYPE_CHEQUE  = "cheque"
+    TYPE_NEFT  = "neft payement"
+
 
     COLLECTION_TYPE_CHOICES = [
         (TYPE_CASH,   "By Cash"),
-        (TYPE_ONLINE, "Online Payment"),
+        (TYPE_UPI, "UPI"),
         (TYPE_CHEQUE, "Cheque"),
+        (TYPE_NEFT, "NEFT Payment"),
     ]
 
     collection_type = models.CharField(
-        max_length=10,
+        max_length=15,
         choices=COLLECTION_TYPE_CHOICES,
         default=TYPE_CASH,
         help_text="Payment mode used by the client",
@@ -150,6 +155,7 @@ class Collection(models.Model):
     # Core fields
     # ------------------------------------------------------------------
     client_name = models.CharField(max_length=255, help_text="Name of the client")
+    payment_method = models.CharField(max_length=50, default='cash')
     branch = models.CharField(max_length=255, help_text="Branch name")
     amount = models.DecimalField(
         max_digits=10, decimal_places=2, help_text="Amount collected"

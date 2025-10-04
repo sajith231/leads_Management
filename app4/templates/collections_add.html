@@ -88,18 +88,19 @@
             </div>
 
             <!-- =====  NEW : Collection Type  ===== -->
-            <div class="row mb-4">
-              <div class="col-12">
-                <label for="id_collection_type" class="form-label fs-6">
-                  <i class="fas fa-credit-card me-2"></i>Collection Type
-                </label>
-                <select class="form-select form-select-lg" id="id_collection_type" name="collection_type" required>
-                  <option value="cash" selected>By Cash</option>
-                  <option value="online">Online Payment</option>
-                  <option value="cheque">Cheque</option>
-                </select>
-              </div>
-            </div>
+           <div class="row mb-4">
+  <div class="col-12">
+    <label for="id_collection_type" class="form-label fs-6">
+      <i class="fas fa-credit-card me-2"></i>Collection Type
+    </label>
+    <select class="form-select form-select-lg" id="id_collection_type" name="collection_type" required>
+      <option value="cash" selected>By Cash</option>
+      <option value="upi">UPI</option>
+      <option value="neft">NEFT Payment</option>   <!-- << NEW -->
+      <option value="cheque">Cheque</option>
+    </select>
+  </div>
+</div>
             <!-- ==================================== -->
 
             <!-- AMOUNT & PAID FOR -->
@@ -175,43 +176,54 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 
 <!-- =====  existing enhanced JS  ===== -->
+<!-- =====  JS : toggle screenshot block  + all other goodies  ===== -->
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-  // File size validation
-  const fileInput = document.getElementById('payment_screenshot');
-  const maxSize = 5 * 1024 * 1024; // 5MB
-  fileInput.addEventListener('change', function() {
-    if (this.files[0] && this.files[0].size > maxSize) {
+document.addEventListener('DOMContentLoaded', () => {
+  /* ----------  1.  screenshot show/hide logic  ---------- */
+  const typeSel  = document.getElementById('id_collection_type');
+  const shotBlk  = document.getElementById('screenshot-block');
+  const shotInp  = document.getElementById('payment_screenshot');
+
+  function toggleShot() {
+    /*  UPI / NEFT / Cheque  all need proof  */
+    const need = ['upi','neft','cheque'].includes(typeSel.value);
+    shotBlk.style.display = need ? 'block' : 'none';
+    shotInp.required = need;
+  }
+  typeSel.addEventListener('change', toggleShot);
+  toggleShot();          // run once on load
+
+  /* ----------  2.  file-size validation  ---------- */
+  shotInp.addEventListener('change', function () {
+    const max = 5 * 1024 * 1024;          // 5 MB
+    if (this.files[0] && this.files[0].size > max) {
       alert('File size must be less than 5MB');
       this.value = '';
     }
   });
 
-  // Amount formatting
+  /* ----------  3.  amount auto-format (2 decimals)  ---------- */
   const amountInput = document.getElementById('amount');
-  amountInput.addEventListener('blur', function() {
-    if (this.value) {
-      this.value = parseFloat(this.value).toFixed(2);
-    }
+  amountInput.addEventListener('blur', function () {
+    if (this.value) this.value = parseFloat(this.value).toFixed(2);
   });
 
-  // Enhanced Client Dropdown Functionality
-  const clientInput = document.getElementById('client_name_input');
-  const dropdownMenu = document.getElementById('client_dropdown_menu');
+  /* ----------  4.  enhanced client dropdown  ---------- */
+  const clientInput   = document.getElementById('client_name_input');
+  const dropdownMenu  = document.getElementById('client_dropdown_menu');
   const dropdownArrow = document.querySelector('.dropdown-arrow');
-  const branchSelect = document.getElementById('branch');
-  
+  const branchSelect  = document.getElementById('branch');
+
   let isDropdownOpen = false;
-  let selectedIndex = -1;
-  let allItems = Array.from(dropdownMenu.querySelectorAll('.client-dropdown-item'));
-  let filteredItems = [...allItems];
+  let selectedIndex  = -1;
+  const allItems     = Array.from(dropdownMenu.querySelectorAll('.client-dropdown-item'));
+  let filteredItems  = [...allItems];
 
   function showDropdown() {
     dropdownMenu.style.display = 'block';
     dropdownArrow.style.transform = 'rotate(180deg)';
     isDropdownOpen = true;
   }
-
   function hideDropdown() {
     dropdownMenu.style.display = 'none';
     dropdownArrow.style.transform = 'rotate(0deg)';
@@ -219,120 +231,50 @@ document.addEventListener('DOMContentLoaded', function() {
     selectedIndex = -1;
     clearHighlight();
   }
-
   function clearHighlight() {
-    allItems.forEach(item => item.classList.remove('highlighted'));
+    allItems.forEach(it => it.classList.remove('highlighted'));
   }
-
-  function highlightItem(index) {
+  function highlightItem(idx) {
     clearHighlight();
-    if (index >= 0 && index < filteredItems.length) {
-      filteredItems[index].classList.add('highlighted');
-    }
+    if (idx >= 0 && idx < filteredItems.length) filteredItems[idx].classList.add('highlighted');
   }
-
   function selectItem(item) {
-    const clientName = item.getAttribute('data-name');
-    const clientBranch = item.getAttribute('data-branch');
-    
-    clientInput.value = clientName;
-    branchSelect.value = clientBranch;
+    clientInput.value = item.getAttribute('data-name');
+    branchSelect.value = item.getAttribute('data-branch');
     hideDropdown();
   }
-
-  function filterItems(searchTerm) {
-    const term = searchTerm.toLowerCase();
-    
-    allItems.forEach(item => {
-      const name = item.getAttribute('data-name').toLowerCase();
-      const details = item.querySelector('.client-details').textContent.toLowerCase();
-      
-      if (name.includes(term) || details.includes(term)) {
-        item.style.display = 'block';
-      } else {
-        item.style.display = 'none';
-      }
+  function filterItems(term) {
+    const t = term.toLowerCase();
+    allItems.forEach(it => {
+      const name = it.getAttribute('data-name').toLowerCase();
+      const det  = it.querySelector('.client-details').textContent.toLowerCase();
+      it.style.display = (name.includes(t) || det.includes(t)) ? 'block' : 'none';
     });
-    
-    filteredItems = allItems.filter(item => item.style.display !== 'none');
+    filteredItems = allItems.filter(it => it.style.display !== 'none');
     selectedIndex = -1;
   }
 
-  // Event Listeners
-  clientInput.addEventListener('click', function() {
-    if (!isDropdownOpen) {
-      filterItems(this.value);
-      showDropdown();
-    }
-  });
-
-  clientInput.addEventListener('input', function() {
-    filterItems(this.value);
-    if (!isDropdownOpen) {
-      showDropdown();
-    }
-  });
-
-  clientInput.addEventListener('keydown', function(e) {
+  /* -----  event wiring  ----- */
+  clientInput.addEventListener('click', () => { filterItems(clientInput.value); showDropdown(); });
+  clientInput.addEventListener('input', () => { filterItems(clientInput.value); if (!isDropdownOpen) showDropdown(); });
+  clientInput.addEventListener('keydown', e => {
     if (!isDropdownOpen) return;
-
-    switch(e.key) {
-      case 'ArrowDown':
-        e.preventDefault();
-        selectedIndex = Math.min(selectedIndex + 1, filteredItems.length - 1);
-        highlightItem(selectedIndex);
-        break;
-        
-      case 'ArrowUp':
-        e.preventDefault();
-        selectedIndex = Math.max(selectedIndex - 1, -1);
-        highlightItem(selectedIndex);
-        break;
-        
-      case 'Enter':
-        e.preventDefault();
-        if (selectedIndex >= 0) {
-          selectItem(filteredItems[selectedIndex]);
-        }
-        break;
-        
-      case 'Escape':
-        hideDropdown();
-        break;
+    switch (e.key) {
+      case 'ArrowDown': e.preventDefault(); selectedIndex = Math.min(selectedIndex + 1, filteredItems.length - 1); highlightItem(selectedIndex); break;
+      case 'ArrowUp':   e.preventDefault(); selectedIndex = Math.max(selectedIndex - 1, -1); highlightItem(selectedIndex); break;
+      case 'Enter':     e.preventDefault(); if (selectedIndex >= 0) selectItem(filteredItems[selectedIndex]); break;
+      case 'Escape':    hideDropdown(); break;
     }
   });
-
-  dropdownArrow.addEventListener('click', function() {
-    if (isDropdownOpen) {
-      hideDropdown();
-    } else {
-      filterItems(clientInput.value);
-      showDropdown();
-    }
-  });
-
-  dropdownMenu.addEventListener('click', function(e) {
+  dropdownArrow.addEventListener('click', () => isDropdownOpen ? hideDropdown() : (filterItems(clientInput.value), showDropdown()));
+  dropdownMenu.addEventListener('click', e => {
     const item = e.target.closest('.client-dropdown-item');
-    if (item) {
-      selectItem(item);
-    }
+    if (item) selectItem(item);
   });
-
-  // Click outside to close
-  document.addEventListener('click', function(e) {
-    if (!e.target.closest('.client-dropdown-container')) {
-      hideDropdown();
-    }
-  });
-
-  // Hover effects
-  dropdownMenu.addEventListener('mouseover', function(e) {
+  document.addEventListener('click', e => { if (!e.target.closest('.client-dropdown-container')) hideDropdown(); });
+  dropdownMenu.addEventListener('mouseover', e => {
     const item = e.target.closest('.client-dropdown-item');
-    if (item) {
-      clearHighlight();
-      item.classList.add('highlighted');
-      selectedIndex = filteredItems.indexOf(item);
-    }
+    if (item) { clearHighlight(); item.classList.add('highlighted'); selectedIndex = filteredItems.indexOf(item); }
   });
 });
 </script>
