@@ -7395,3 +7395,125 @@ def today_requests(request):
         json_payload['total_requests_found'] = len(requests_list)
 
     return JsonResponse(json_payload)
+
+
+
+# --- Punch-out reminder (WhatsApp) ---
+from django.views.decorators.http import require_GET
+from django.db.models import Q
+from django.utils import timezone
+import pytz, requests
+from urllib.parse import quote
+
+@require_GET
+def send_punchout_reminders(request):
+    """
+    Sends a WhatsApp 'Punch-out reminder' at 6:15 PM IST to employees
+    who have punched in today but not punched out yet.
+    - Call with ?force=1 to bypass the 6:15 time check (useful for testing).
+    - Call with ?dry_run=1 to see who would get a message without sending.
+    """
+    ist = pytz.timezone("Asia/Kolkata")
+    now_ist = timezone.now().astimezone(ist)
+    today = now_ist.date()
+
+    force = request.GET.get("force") in ("1", "true", "True")
+    dry_run = request.GET.get("dry_run") in ("1", "true", "True")
+
+    # only run exactly at 18:15 IST unless forced
+    if not force:
+        if not (now_ist.hour == 18 and now_ist.minute == 15):
+            return JsonResponse({
+                "success": False,
+                "error": "Not reminder time",
+                "now_ist": now_ist.strftime("%Y-%m-%d %H:%M:%S"),
+                "expected_ist": "18:15",
+            }, status=400)
+
+    # find employees who punched in today but haven't punched out
+    qs = Attendance.objects.select_related("employee", "employee__user") \
+        .filter(date=today, punch_in__isnull=False, punch_out__isnull=True)
+
+    # same DXING creds you already use elsewhere
+    DX_URL = "https://app.dxing.in/api/send/whatsapp"
+    DX_SECRET = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
+    DX_ACCOUNT = "1756959119812b4ba287f5ee0bc9d43bbf5bbe87fb68b9118fcf1af"
+
+    def normalize_phone(s: str) -> str:
+        if not s:
+            return ""
+        s = str(s).strip().lstrip("+").lstrip("0")
+        # if already starts with country code 91 and length>=12, keep
+        if s.startswith("91") and len(s) >= 12:
+            return s
+        # 10-digit Indian mobile -> prepend 91
+        if len(s) == 10:
+            return "91" + s
+        return s  # fallback (don’t block; DX may still handle)
+
+    to_notify = []
+    for att in qs:
+        emp = att.employee
+        # prefer employee personal phone, then user’s phone_number
+        raw_phone = getattr(emp, "phone_personal", None) \
+            or (getattr(emp, "user", None) and getattr(emp.user, "phone_number", None))
+        phone = normalize_phone(raw_phone or "")
+
+        if not phone:
+            continue
+
+        msg = (
+            f"⏰ Punch-out reminder\n"
+            f"Hi {emp.name}, if your workday is over, please punch out.\n"
+            f"Date: {today.strftime('%d-%m-%Y')}\n"
+            f"— IMC"
+        )
+
+        to_notify.append({
+            "employee_id": emp.id,
+            "employee_name": emp.name,
+            "recipient": phone,
+            "message": msg
+        })
+
+    if dry_run:
+        return JsonResponse({
+            "success": True,
+            "dry_run": True,
+            "count": len(to_notify),
+            "targets": to_notify
+        })
+
+    # send via DXING (GET request, url-encoded message)
+    results = []
+    for item in to_notify:
+        url = (
+            f"{DX_URL}?secret={DX_SECRET}&account={DX_ACCOUNT}"
+            f"&recipient={item['recipient']}"
+            f"&type=text&message={quote(item['message'])}&priority=1"
+        )
+        try:
+            r = requests.get(url, timeout=15)
+            results.append({
+                "employee_id": item["employee_id"],
+                "employee_name": item["employee_name"],
+                "recipient": item["recipient"],
+                "ok": r.status_code in (200, 201),
+                "status_code": r.status_code,
+                "response": r.text[:300]
+            })
+        except Exception as e:
+            results.append({
+                "employee_id": item["employee_id"],
+                "employee_name": item["employee_name"],
+                "recipient": item["recipient"],
+                "ok": False,
+                "error": str(e)
+            })
+
+    return JsonResponse({
+        "success": True,
+        "sent_to": len(to_notify),
+        "results": results,
+        "timestamp_ist": now_ist.strftime("%Y-%m-%d %H:%M:%S")
+    })
