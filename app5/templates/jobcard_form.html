@@ -655,6 +655,130 @@
         color: #007bff;
     }
 
+    /* NEW: Self Assignment Modal Styles */
+    .modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        z-index: 10000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .modal-content {
+        background: #fff;
+        padding: 30px;
+        border-radius: 15px;
+        text-align: center;
+        max-width: 450px;
+        width: 90%;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        animation: modalSlideIn 0.3s ease;
+        position: relative;
+    }
+    
+    @keyframes modalSlideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-50px) scale(0.9);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+    
+    .modal-title {
+        font-size: 24px;
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+    }
+    
+    .modal-message {
+        font-size: 16px;
+        color: #666;
+        margin-bottom: 30px;
+        line-height: 1.5;
+    }
+    
+    .modal-buttons {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    
+    .btn-self-assign,
+    .btn-no-assign {
+        padding: 15px 25px;
+        font-size: 16px;
+        font-weight: 600;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        min-width: 140px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+    
+    .btn-self-assign {
+        background: #28a745;
+        color: white;
+    }
+    
+    .btn-self-assign:hover {
+        background: #218838;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(40, 167, 69, 0.4);
+    }
+    
+    .btn-no-assign {
+        background: #6c757d;
+        color: white;
+    }
+    
+    .btn-no-assign:hover {
+        background: #5a6268;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(108, 117, 125, 0.4);
+    }
+    
+    .close-modal {
+        position: absolute;
+        top: 10px;
+        right: 15px;
+        background: none;
+        border: none;
+        font-size: 24px;
+        color: #999;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 50%;
+        width: 35px;
+        height: 35px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+    }
+    
+    .close-modal:hover {
+        background: #f8f9fa;
+        color: #333;
+    }
+
     @media (max-width: 768px) {
         .form-row,
         .serial-config-row,
@@ -716,6 +840,20 @@
             width: 28px;
             height: 28px;
         }
+        
+        .modal-content {
+            padding: 20px;
+            margin: 20px;
+        }
+        
+        .modal-buttons {
+            flex-direction: column;
+        }
+        
+        .btn-self-assign,
+        .btn-no-assign {
+            width: 100%;
+        }
     }
 </style>
 </head>
@@ -723,8 +861,12 @@
     <div class="form-container">
         <button class="btn-back" onclick="history.back()">Back</button>
         <h2>Create Job Card</h2>
-        <form method="POST" enctype="multipart/form-data">
+        <form method="POST" enctype="multipart/form-data" id="jobCardForm">
             {% csrf_token %}
+            
+            <!-- Hidden field for self assignment -->
+            <input type="hidden" name="self_assigned" id="selfAssignedInput" value="">
+            
            <div class="customer-section">
     <h3>Customer Information</h3>
     <div class="customer-row">
@@ -755,7 +897,6 @@
         </div>
     </div>
 </div>
-
 
             
             <div id="itemsContainer">
@@ -840,23 +981,51 @@
             </div>
             
             <button type="button" class="add-item-btn" onclick="addItem()">+ Add Item</button>
-            <button class="btn-submit" type="submit">Create Job Card</button>
+            <button class="btn-submit" type="button" onclick="showSelfAssignModal()">Create Job Card</button>
         </form>
     </div>
     
+    <!-- Self Assignment Modal -->
+    <div id="selfAssignModal" class="modal">
+    <div class="modal-content">
+        <button class="close-modal" onclick="closeSelfAssignModal()">&times;</button>
+        <h3 class="modal-title">
+            <i class="fas fa-user-check" style="color: #28a745;"></i>
+            Self Assignment
+        </h3>
+        <div class="modal-message">
+            Do you want to assign this job card to yourself right now?
+        </div>
+        <div class="modal-buttons">
+            <button type="button" class="btn-self-assign" onclick="submitWithSelfAssign(true)">
+                <i class="fas fa-check"></i>
+                Yes, Assign to Me
+            </button>
+            <button type="button" class="btn-no-assign" onclick="submitWithSelfAssign(false)">
+                <i class="fas fa-times"></i>
+                No, Keep Unassigned
+            </button>
+        </div>
+    </div>
+</div>
+
+    
     <script>
         let itemCount = 1;
-        let complaintData = [[]]; // Store individual complaints for each item
+        let complaintData = [[]];
     const customers = [
     {% for customer in customer_data %}
     {
         name: "{{ customer.name|escapejs }}",
         address: "{{ customer.address|escapejs }}",
         branch: "{{ customer.branch|escapejs }}",
-        phone: "{{ customer.phone_number|default_if_none:''|escapejs }}"  // This should now contain the mobile number
+        phone: "{{ customer.phone_number|default_if_none:''|escapejs }}"  
     },
     {% endfor %}
 ];
+
+
+
 function searchCustomer() {
     const input = document.getElementById("customer-search").value.toLowerCase();
     const resultsBox = document.getElementById("customer-results");
@@ -912,8 +1081,6 @@ function selectCustomer(customer) {
     display.style.display = "block";
     document.getElementById("customer-results").style.display = "none";
 }
-
-
 
 // Close dropdown when clicking outside
 document.addEventListener("click", function(e) {
@@ -1028,9 +1195,6 @@ document.addEventListener("click", function(e) {
                 renderComplaints(index);
             }
         }
-        
-
-
 
         function addItem() {
             const index = itemCount;
@@ -1137,14 +1301,6 @@ document.addEventListener("click", function(e) {
                 h3.textContent = `Item ${idx + 1}`;
             });
         }
-
-        // // Phone number validation
-        // document.getElementById('phone').addEventListener('input', function() {
-        //     this.value = this.value.replace(/[^0-9]/g, '');
-        //     if (this.value.length > 10) {
-        //         this.value = this.value.slice(0, 10);
-        //     }
-        // });
         
         // Store all selected files for each input
         let allSelectedFiles = {};
@@ -1254,6 +1410,54 @@ document.addEventListener("click", function(e) {
                 input.style.borderColor = '#e1e8ed';
             }
         }
+
+        // NEW: Self Assignment Modal Functions
+        function showSelfAssignModal() {
+            // First validate the form
+            const form = document.getElementById('jobCardForm');
+            const requiredFields = form.querySelectorAll('[required]');
+            let isValid = true;
+            
+            requiredFields.forEach(field => {
+                if (!field.value.trim()) {
+                    isValid = false;
+                    field.style.borderColor = 'red';
+                    field.focus();
+                } else {
+                    field.style.borderColor = '#e1e8ed';
+                }
+            });
+            
+            if (!isValid) {
+                alert('Please fill in all required fields before proceeding.');
+                return;
+            }
+            
+            // Show the modal
+            document.getElementById('selfAssignModal').style.display = 'flex';
+        }
+        
+        function closeSelfAssignModal() {
+            document.getElementById('selfAssignModal').style.display = 'none';
+        }
+        
+        function submitWithSelfAssign(selfAssign) {
+            // Set the hidden field value
+            document.getElementById('selfAssignedInput').value = selfAssign ? 'true' : 'false';
+            
+            // Close the modal
+            closeSelfAssignModal();
+            
+            // Submit the form
+            document.getElementById('jobCardForm').submit();
+        }
+        
+        // Close modal when clicking outside
+        window.addEventListener('click', function(event) {
+            if (event.target === document.getElementById('selfAssignModal')) {
+                closeSelfAssignModal();
+            }
+        });
 
         // Initialize complaint data for first item
         complaintData[0] = [{number: 1, text: ''}];
