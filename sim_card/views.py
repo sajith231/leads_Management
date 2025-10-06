@@ -26,10 +26,16 @@ def _attach_days_remaining(sim_qs):
             sim.days_remaining = None
     return sim_qs
 
+from django.db.models import F, Value, IntegerField
+from django.db.models.functions import Coalesce
+
 def sim_management(request):
     search_query = request.GET.get('q', '').strip()
-    sims = SIM.objects.all().order_by('-created_at')
 
+    # base queryset
+    sims = SIM.objects.all()
+
+    # search filter
     if search_query:
         sims = sims.filter(
             sim_no__icontains=search_query
@@ -37,11 +43,14 @@ def sim_management(request):
             provider__icontains=search_query
         )
 
-    today = date.today()
-    # 1.  attach real expiry & days-remaining
+    # attach dynamic days-remaining
     sims = _attach_days_remaining(sims)
 
-    # 2.  auto-banner for soon-expired SIMs
+    # ---- NEW: sort by days-remaining ascending (None last) ----
+    sims = sorted(sims, key=lambda s: (s.days_remaining is None, s.days_remaining))
+
+    # auto-banner for soon-expired SIMs (keep existing code)
+    today = date.today()
     expiring = [s for s in sims if s.days_remaining is not None and s.days_remaining <= 2]
     for sim in expiring:
         if sim.days_remaining < 0:
@@ -51,6 +60,7 @@ def sim_management(request):
         else:
             messages.info(request, f'SIM {sim.sim_no} expires in {sim.days_remaining} day(s).')
 
+    # pagination
     paginator = Paginator(sims, 10)
     page_number = request.GET.get('page')
     sims_page = paginator.get_page(page_number)
