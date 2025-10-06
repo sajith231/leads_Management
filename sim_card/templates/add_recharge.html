@@ -40,11 +40,10 @@
        <div class="mb-3">
   <label class="form-label">Recharged By</label>
   <select name="recharged_by" class="form-select">
-    <option value="" disabled {% if not current_user %}selected{% endif %}>-- Select User --</option>
+    <option value="" disabled>-- Select User --</option>
     {% for u in users %}
       <option value="{{ u.pk }}" 
-              {% if current_user and u.username == current_user.username %}selected{% endif %}
-              {% if sim.recharged_by == u.name %}selected{% endif %}>
+              {% if current_user and current_user.pk == u.pk %}selected{% endif %}>
         {{ u.name }}
       </option>
     {% endfor %}

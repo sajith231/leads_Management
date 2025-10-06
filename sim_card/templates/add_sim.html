@@ -84,18 +84,18 @@
 <!-- NEW ROW: Recharged By + Validity Days -->
 <div class="row">
   <div class="col-md-6 mb-3">
-    <label class="form-label">Recharged By</label>
-    <select name="recharged_by" class="form-select">
-      <option value="" disabled {% if not current_user %}selected{% endif %}>-- Select User --</option>
-      {% for u in users %}
-        <option value="{{ u.pk }}" 
-                {% if current_user and u.username == current_user.username %}selected{% endif %}
-                {% if sim.recharged_by == u.name %}selected{% endif %}>
-          {{ u.name }}
-        </option>
-      {% endfor %}
-    </select>
-  </div>
+  <label class="form-label">Recharged By</label>
+  <select name="recharged_by" class="form-select">
+    <option value="" disabled>-- Select User --</option>
+    {% for u in users %}
+      <option value="{{ u.pk }}" 
+              {% if current_user and current_user.pk == u.pk %}selected{% endif %}
+              {% if sim and sim.recharged_by == u.name %}selected{% endif %}>
+        {{ u.name }}
+      </option>
+    {% endfor %}
+  </select>
+</div>
   <div class="col-md-6 mb-3">
     <label class="form-label">Validity (days)</label>
     <input type="number" name="validity_days" id="id_validity_days"
