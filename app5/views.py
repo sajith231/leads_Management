@@ -4,7 +4,8 @@ from django.contrib import messages
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
-from app2.models import StandbyItem, StandbyItemImage 
+from app2.models import StandbyItem, StandbyImage
+
 import os
 import json
 from collections import defaultdict
@@ -947,7 +948,8 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.http import JsonResponse
 from .models import JobCard, StandbyIssuance        # ✅ from app5
-from app2.models import StandbyItem, StandbyItemImage  # ✅ from app2
+from app2.models import StandbyItem, StandbyImage
+ # ✅ from app2
 from django.utils import timezone
 from django.db import models
 from django.db.models import Q
@@ -959,7 +961,8 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
 import json
 from .models import JobCard, JobCardImage, Item, StandbyIssuance          # ✅ only from app5
-from app2.models import StandbyItem, StandbyItemImage   # ✅ correct app for StandbyItem
+from app2.models import StandbyItem, StandbyImage
+ # ✅ correct app for StandbyItem
 from app1.models import User
 
 def standby_issue_form(request, jobcard_id):
@@ -992,6 +995,7 @@ def standby_issue_form(request, jobcard_id):
     }
     return render(request, 'standby_item_issued.html', context)
 
+@require_POST
 @require_POST
 def standby_issue_item(request, jobcard_id):
     """Handle the standby item issuance for a job card"""
@@ -1026,10 +1030,16 @@ def standby_issue_item(request, jobcard_id):
             issued_date=timezone.now()
         )
         
-        # Update standby item stock and status
+        # ✅ UPDATE STANDBY ITEM WITH CUSTOMER DETAILS
         standby_item.stock -= 1
-        if standby_item.stock == 0:
-            standby_item.status = 'with_customer'
+        standby_item.status = 'with_customer'
+        
+        # Store customer information in the standby item
+        standby_item.customer_name = jobcard.customer
+        standby_item.customer_place = jobcard.address  # Using address as place
+        standby_item.customer_phone = jobcard.phone
+        standby_item.issued_date = timezone.now()
+        
         standby_item.save()
         
         # Update job card standby issued status
@@ -1046,50 +1056,46 @@ def standby_issue_item(request, jobcard_id):
     
     return redirect('app5:standby_issue_form', jobcard_id=jobcard_id)
 
+from django.shortcuts import render, get_object_or_404, redirect
+from django.utils import timezone
+from django.views.decorators.csrf import csrf_exempt
+from .models import JobCard, StandbyIssuance
+
 @csrf_exempt
-@require_POST
 def standby_return_item(request, jobcard_id):
-    """Handle returning a standby item via AJAX"""
     jobcard = get_object_or_404(JobCard, id=jobcard_id)
     
-    try:
-        # Find the active issuance for this job card
-        issuance = StandbyIssuance.objects.filter(
-            job_card=jobcard, 
-            status='issued'
-        ).first()
+    # Use 'job_card' instead of 'jobcard' - note the underscore
+    active_issuances = StandbyIssuance.objects.filter(job_card=jobcard, status='issued')
+    
+    if request.method == 'POST':
+        # Process the return form
+        return_date = request.POST.get('return_date')
+        condition_notes = request.POST.get('condition_notes')
+        additional_notes = request.POST.get('additional_notes')
         
-        if issuance:
-            # Update issuance status
+        # Update all active issuances
+        for issuance in active_issuances:
+            issuance.actual_return_date = return_date
             issuance.status = 'returned'
-            issuance.actual_return_date = timezone.now()
+            if condition_notes:
+                issuance.condition_notes = condition_notes
+            if additional_notes:
+                issuance.additional_notes = additional_notes
             issuance.save()
-            
-            # Update standby item stock
-            standby_item = issuance.standby_item
-            standby_item.stock += 1
-            standby_item.status = 'in_stock'
-            standby_item.save()
-            
-            # Update job card status
-            jobcard.standby_issued = False
-            jobcard.save()
-            
-            return JsonResponse({
-                'success': True, 
-                'message': f'Standby item "{standby_item.name}" returned successfully!'
-            })
-        else:
-            return JsonResponse({
-                'success': False, 
-                'error': 'No active standby issuance found for this job card.'
-            })
-            
-    except Exception as e:
-        return JsonResponse({
-            'success': False, 
-            'error': f'Error returning standby item: {str(e)}'
-        })
+        
+        # Update job card standby status
+        jobcard.standby_issued = False
+        jobcard.save()
+        
+        return redirect('app5:standby_issuance_details', jobcard_id=jobcard.id)
+    
+    context = {
+        'jobcard': jobcard,
+        'active_issuances': active_issuances,
+        'today': timezone.now().date(),
+    }
+    return render(request, 'return_standby_item.html', context)
 
 def view_standby_issuance_details(request, jobcard_id):
     """View to display standby item issuance details for a specific job card"""
@@ -1163,3 +1169,68 @@ def update_standby_issued_status(request, jobcard_id):
         "success": False, 
         "error": "Invalid request"
     })
+
+
+
+# Add this to app5/views.py (at the end)
+
+@csrf_exempt
+def standby_issuance_return(request, jobcard_id):
+    """Handle returning standby items issued through job card"""
+    jobcard = get_object_or_404(JobCard, id=jobcard_id)
+    
+    # Get all active (issued) standby issuances for this job card
+    active_issuances = StandbyIssuance.objects.filter(
+        job_card=jobcard, 
+        status='issued'
+    ).select_related('standby_item')
+    
+    if request.method == 'POST':
+        # Get form data
+        return_date = request.POST.get('return_date')
+        condition_on_return = request.POST.get('condition_on_return', '').strip()
+        notes = request.POST.get('notes', '').strip()
+        
+        # Process each active issuance
+        for issuance in active_issuances:
+            # Update issuance status
+            issuance.actual_return_date = return_date
+            issuance.status = 'returned'
+            issuance.condition_on_return = condition_on_return
+            
+            # Append return notes to existing notes
+            if notes:
+                if issuance.notes:
+                    issuance.notes += f"\n\n--- RETURNED ON {return_date} ---\n{notes}"
+                else:
+                    issuance.notes = f"--- RETURNED ON {return_date} ---\n{notes}"
+            
+            issuance.save()
+            
+            # ✅ UPDATE STANDBY ITEM: RESTORE STOCK AND CLEAR CUSTOMER INFO
+            standby_item = issuance.standby_item
+            standby_item.stock += 1
+            standby_item.status = 'in_stock'
+            
+            # Clear customer information from standby item
+            standby_item.customer_name = None
+            standby_item.customer_place = None
+            standby_item.customer_phone = None
+            standby_item.issued_date = None
+            
+            standby_item.save()
+        
+        # Update job card standby status
+        jobcard.standby_issued = False
+        jobcard.save()
+        
+        messages.success(request, f'All standby items returned successfully for job card {jobcard.ticket_no}!')
+        return redirect('app5:standby_issuance_details', jobcard_id=jobcard.id)
+    
+    # For GET request, show the return form
+    context = {
+        'jobcard': jobcard,
+        'active_issuances': active_issuances,
+        'today': date.today(),
+    }
+    return render(request, 'return_standby_issuance.html', context)

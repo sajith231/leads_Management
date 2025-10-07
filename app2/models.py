@@ -355,36 +355,37 @@ class Feeder(models.Model):
 from django.db import models
 from django.contrib.auth.models import User
 
-# Add this to your models.py file for the StandbyItem model
-
-from django.db import models
-from django.contrib.auth.models import User
 
 class StandbyItem(models.Model):
     STATUS_CHOICES = [
         ('in_stock', 'In Stock'),
         ('with_customer', 'With Customer'),
     ]
-    
+
     name = models.CharField(max_length=200)
     serial_number = models.CharField(max_length=100, unique=True)
     notes = models.TextField(blank=True, null=True)
     stock = models.IntegerField(default=0)
     status = models.CharField(
-        max_length=20, 
-        choices=STATUS_CHOICES, 
+        max_length=20,
+        choices=STATUS_CHOICES,
         default='in_stock',
         help_text="Current status of the item"
     )
+
+    customer_name = models.CharField(max_length=200, blank=True, null=True)
+    customer_place = models.CharField(max_length=200, blank=True, null=True)
+    customer_phone = models.CharField(max_length=15, blank=True, null=True)
+    issued_date = models.DateField(blank=True, null=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     created_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
 
     def __str__(self):
         return f"{self.name} - {self.serial_number}"
-    
+
     def get_status_display_class(self):
-        """Return CSS class for status styling"""
         if self.status == 'in_stock':
             return 'badge-success'
         elif self.status == 'with_customer':
@@ -397,11 +398,17 @@ class StandbyItem(models.Model):
         verbose_name_plural = "Standby Items"
 
 
+class StandbyImage(models.Model):
+    IMAGE_TYPE_CHOICES = [
+        ('original', 'Original'),
+        ('return_condition', 'Return Condition'),
+        ('other', 'Other'),
+    ]
+    
+    item = models.ForeignKey(StandbyItem, on_delete=models.CASCADE, related_name='images')
+    image = models.ImageField(upload_to='standby_images/')
+    image_type = models.CharField(max_length=20, choices=IMAGE_TYPE_CHOICES, default='original')
+    uploaded_at = models.DateTimeField(auto_now_add=True)
 
-
-class StandbyItemImage(models.Model):
-    item = models.ForeignKey(StandbyItem, on_delete=models.CASCADE, related_name="images")
-    image = models.ImageField(upload_to="item_images/")
-
-    def __str__(self):  # Fixed: double underscore
+    def __str__(self):
         return f"Image for {self.item.name}"
