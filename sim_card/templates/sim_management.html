@@ -58,7 +58,7 @@
         {% for sim in sims %}
         <tr>
           <td>{{ forloop.counter0|add:sims.start_index }}</td>
-          <td>{{ sim.sim_no }}</td>
+          <td><strong>{{ sim.sim_no }}</strong></td>
           <!-- In sim_management.html, replace the eye icon section -->
 <td style="text-align:center">
     <a href="{% url 'sim_recharge_history' sim.id %}" class="btn btn-primary btn-sm" title="View Recharge History">
@@ -66,8 +66,8 @@
     </a>
 </td>
           <td>{{ sim.provider }}</td>
-          <td>{{ sim.identify_person }}</td>
-          <td>{{ sim.incharge }}</td>
+          <td>{{ sim.identify_person|default:"-" }}</td>
+          <td>{{ sim.incharge|default:"-" }}</td>
           <td>{{ sim.last_recharge_date|date:"d-m-Y" }}</td>
           <td>{{ sim.amount }}</td>
           <td>{{ sim.branch }}</td>
@@ -127,7 +127,7 @@
 
 <!-- ---- Recharge / Reminder modal ---- -->
 <div class="modal fade" id="rechargeModal" tabindex="-1" aria-labelledby="rechargeModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-lg">
+  <div class="modal-dialog modal-xl">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="rechargeModalLabel">Recharge Details</h5>

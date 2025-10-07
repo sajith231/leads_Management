@@ -26,10 +26,16 @@ def _attach_days_remaining(sim_qs):
             sim.days_remaining = None
     return sim_qs
 
+from django.db.models import F, Value, IntegerField
+from django.db.models.functions import Coalesce
+
 def sim_management(request):
     search_query = request.GET.get('q', '').strip()
-    sims = SIM.objects.all().order_by('-created_at')
 
+    # base queryset
+    sims = SIM.objects.all()
+
+    # search filter
     if search_query:
         sims = sims.filter(
             sim_no__icontains=search_query
@@ -37,11 +43,14 @@ def sim_management(request):
             provider__icontains=search_query
         )
 
-    today = date.today()
-    # 1.  attach real expiry & days-remaining
+    # attach dynamic days-remaining
     sims = _attach_days_remaining(sims)
 
-    # 2.  auto-banner for soon-expired SIMs
+    # ---- NEW: sort by days-remaining ascending (None last) ----
+    sims = sorted(sims, key=lambda s: (s.days_remaining is None, s.days_remaining))
+
+    # auto-banner for soon-expired SIMs (keep existing code)
+    today = date.today()
     expiring = [s for s in sims if s.days_remaining is not None and s.days_remaining <= 2]
     for sim in expiring:
         if sim.days_remaining < 0:
@@ -51,6 +60,7 @@ def sim_management(request):
         else:
             messages.info(request, f'SIM {sim.sim_no} expires in {sim.days_remaining} day(s).')
 
+    # pagination
     paginator = Paginator(sims, 10)
     page_number = request.GET.get('page')
     sims_page = paginator.get_page(page_number)
@@ -72,36 +82,67 @@ from app1.models import User
 
 def add_sim(request):
     if request.method == "POST":
-        sim_no          = request.POST.get("sim_no")
-        provider        = request.POST.get("provider")
-        identify_person = request.POST.get("identify_person")
-        incharge        = request.POST.get("incharge")
+        sim_no             = request.POST.get("sim_no")
+        provider           = request.POST.get("provider")
+        identify_person_id = request.POST.get("identify_person")
+        incharge_id        = request.POST.get("incharge")
         last_recharge_date = request.POST.get("last_recharge_date")
-        amount          = request.POST.get("amount")
-        recharged_by    = request.POST.get("recharged_by")      # ← NEW
-        branch          = request.POST.get("branch")
-        validity_date   = request.POST.get("validity_date")
+        amount             = request.POST.get("amount")
+        recharged_by_id    = request.POST.get("recharged_by")
+        branch             = request.POST.get("branch")
+        validity_days      = request.POST.get("validity_days")
+        validity_date      = request.POST.get("validity_date") or None
+
+        # Calculate validity_date if only days given
+        if validity_days and not validity_date and last_recharge_date:
+            try:
+                days = int(validity_days)
+                validity_date = (
+                    datetime.strptime(last_recharge_date, "%Y-%m-%d").date()
+                    + timedelta(days=days)
+                ).strftime("%Y-%m-%d")
+            except (ValueError, TypeError):
+                validity_date = None
+
+        # Resolve user names
+        identify_name = None
+        if identify_person_id:
+            identify_user = User.objects.filter(pk=identify_person_id).first()
+            identify_name = identify_user.name if identify_user else None
+            
+        incharge_name = None
+        if incharge_id:
+            incharge_user = User.objects.filter(pk=incharge_id).first()
+            incharge_name = incharge_user.name if incharge_user else None
+            
+        recharged_name = None
+        if recharged_by_id:
+            recharged_user = User.objects.filter(pk=recharged_by_id).first()
+            recharged_name = recharged_user.name if recharged_user else None
 
         try:
+            # Create SIM
             sim = SIM.objects.create(
                 sim_no=sim_no,
                 provider=provider,
-                identify_person=identify_person,
-                incharge=incharge,
+                identify_person=identify_name,
+                incharge=incharge_name,
                 last_recharge_date=last_recharge_date or None,
                 amount=amount or None,
                 branch=branch,
-                validity_date=validity_date or None,
+                validity_date=validity_date,
+                validity_days=validity_days or None,
             )
 
-            # create first recharge record
+            # Create first recharge record if recharge data exists
             if last_recharge_date and amount:
                 SIMRecharge.objects.create(
                     sim=sim,
                     recharge_date=last_recharge_date,
                     amount=amount,
-                    validity_date=validity_date or None,
-                    recharged_by=recharged_by or incharge or identify_person or "System",  # ← NEW
+                    validity_date=validity_date,
+                    validity_days=validity_days or None,
+                    recharged_by=recharged_name or incharge_name or identify_name or "System",
                     notes="Initial recharge record"
                 )
 
@@ -112,8 +153,24 @@ def add_sim(request):
             messages.error(request, f"SIM No {sim_no} already exists.")
             return redirect("add_sim")
 
+    # GET request - prepare context
     users = User.objects.filter(is_active=True).order_by('name')
-    return render(request, "add_sim.html", {"users": users})
+    
+    # Get current logged-in user from app1.User model
+    current_user = None
+    if request.user.is_authenticated:
+        # Try to match by userid first
+        current_user = User.objects.filter(userid=request.user.username).first()
+        # If not found, try by name
+        if not current_user:
+            current_user = User.objects.filter(name=request.user.username).first()
+    
+    context = {
+        "users": users,
+        "current_user": current_user
+    }
+    
+    return render(request, "add_sim.html", context)
 
 # app3/views.py  (add at bottom)
 # ----------  views.py  ----------
@@ -125,58 +182,111 @@ from app1.models import User
 def _latest_recharge(sim: SIM) -> SIMRecharge | None:
     """Return the most recent recharge row for this SIM."""
     return SIMRecharge.objects.filter(sim=sim).order_by('-recharge_date').first()
-
 def edit_sim(request, sim_id):
     sim = get_object_or_404(SIM, id=sim_id)
 
+    # Calculate validity_days from validity_date if needed (for display)
+    if sim.validity_date and sim.last_recharge_date and not sim.validity_days:
+        try:
+            days_diff = (sim.validity_date - sim.last_recharge_date).days
+            if days_diff > 0:
+                sim.validity_days = days_diff
+        except (TypeError, ValueError):
+            pass
+
     if request.method == 'POST':
-        # stash old values
-        old_recharge_date = str(sim.last_recharge_date) if sim.last_recharge_date else None
-        old_amount = str(sim.amount) if sim.amount else None
+        # --- convert pk → name ---
+        identify_id = request.POST.get('identify_person')
+        incharge_id = request.POST.get('incharge')
+        recharged_by_id = request.POST.get('recharged_by')
+        
+        identify_name = None
+        if identify_id:
+            identify_user = User.objects.filter(pk=identify_id).first()
+            identify_name = identify_user.name if identify_user else None
+            
+        incharge_name = None
+        if incharge_id:
+            incharge_user = User.objects.filter(pk=incharge_id).first()
+            incharge_name = incharge_user.name if incharge_user else None
+            
+        recharged_name = None
+        if recharged_by_id:
+            recharged_user = User.objects.filter(pk=recharged_by_id).first()
+            recharged_name = recharged_user.name if recharged_user else None
+
+        # Calculate validity_date from validity_days if provided
+        validity_days = request.POST.get('validity_days')
+        last_recharge_date = request.POST.get('last_recharge_date')
+        validity_date = request.POST.get('validity_date')
+        
+        if validity_days and last_recharge_date and not validity_date:
+            try:
+                days = int(validity_days)
+                validity_date = (
+                    datetime.strptime(last_recharge_date, "%Y-%m-%d").date()
+                    + timedelta(days=days)
+                ).strftime("%Y-%m-%d")
+            except (ValueError, TypeError):
+                validity_date = None
 
         # update SIM fields
-        sim.sim_no          = request.POST.get('sim_no')
-        sim.provider        = request.POST.get('provider')
-        sim.identify_person = request.POST.get('identify_person')
-        sim.incharge        = request.POST.get('incharge')
-        sim.branch          = request.POST.get('branch')
-        sim.last_recharge_date = request.POST.get('last_recharge_date') or None
-        sim.amount          = request.POST.get('amount') or None
-        sim.validity_date   = request.POST.get('validity_date') or None
+        sim.sim_no = request.POST.get('sim_no')
+        sim.provider = request.POST.get('provider')
+        sim.identify_person = identify_name
+        sim.incharge = incharge_name
+        sim.branch = request.POST.get('branch')
+        sim.last_recharge_date = last_recharge_date or None
+        sim.amount = request.POST.get('amount') or None
+        sim.validity_days = validity_days or None
+        sim.validity_date = validity_date or None
         sim.save()
 
-        new_recharge_date = str(sim.last_recharge_date) if sim.last_recharge_date else None
-        new_amount        = str(sim.amount) if sim.amount else None
-        new_validity_date = sim.validity_date
-        new_recharged_by  = request.POST.get('recharged_by') or sim.incharge or sim.identify_person or 'System'
-
-        if new_recharge_date and new_amount:
-            last = _latest_recharge(sim)
-
-            # same date & amount → just update the row
-            if (last and
-                str(last.recharge_date) == new_recharge_date and
-                str(last.amount) == new_amount):
-                last.recharged_by  = new_recharged_by
-                last.validity_date = new_validity_date
-                last.save(update_fields=['recharged_by', 'validity_date'])
+        # Update or create recharge record if recharge data exists
+        if last_recharge_date and request.POST.get('amount'):
+            last_recharge = _latest_recharge(sim)
+            
+            if last_recharge:
+                # Update existing recharge record
+                last_recharge.recharge_date = last_recharge_date
+                last_recharge.amount = request.POST.get('amount')
+                last_recharge.validity_date = validity_date
+                last_recharge.validity_days = validity_days or None
+                last_recharge.recharged_by = recharged_name or sim.incharge or sim.identify_person or 'System'
+                last_recharge.notes = 'Updated via SIM edit'
+                last_recharge.save()
             else:
-                # changed → create new history row
+                # Create new recharge record
                 SIMRecharge.objects.create(
                     sim=sim,
-                    recharge_date=new_recharge_date,
-                    amount=new_amount,
-                    validity_date=new_validity_date,
-                    recharged_by=new_recharged_by,
-                    notes='Recharge updated via edit'
+                    recharge_date=last_recharge_date,
+                    amount=request.POST.get('amount'),
+                    validity_date=validity_date,
+                    validity_days=validity_days or None,
+                    recharged_by=recharged_name or sim.incharge or sim.identify_person or 'System',
+                    notes='Initial recharge record from SIM edit'
                 )
 
         messages.success(request, 'SIM updated successfully.')
         return redirect('sim_management')
 
+    # GET request - prepare context with current user
     users = User.objects.filter(is_active=True).order_by('name')
-    return render(request, 'add_sim.html', {'sim': sim, 'users': users})
-
+    
+    # Get current logged-in user from app1.User model
+    current_user = None
+    if request.user.is_authenticated:
+        # Try to match by userid first
+        current_user = User.objects.filter(userid=request.user.username).first()
+        # If not found, try by name
+        if not current_user:
+            current_user = User.objects.filter(name=request.user.username).first()
+    
+    return render(request, 'add_sim.html', {
+        'sim': sim,
+        'users': users,
+        'current_user': current_user
+    })
 from django.contrib import messages
 from django.shortcuts import get_object_or_404, redirect
 from .models import SIM
@@ -231,32 +341,54 @@ from app1.models import User   # already imported
 
 def add_recharge(request, sim_id):
     sim = get_object_or_404(SIM, id=sim_id)
-    users = User.objects.filter(is_active=True).order_by('name')  # ← NEW
+    users = User.objects.filter(is_active=True).order_by('name')
 
     if request.method == 'POST':
         recharge_date = request.POST.get('recharge_date')
         amount        = request.POST.get('amount')
+        validity_days = request.POST.get('validity_days')
         validity_date = request.POST.get('validity_date') or None
-        recharged_by  = request.POST.get('recharged_by')  # now a *pk* string
+        recharged_by_id = request.POST.get('recharged_by')
         notes         = request.POST.get('notes')
 
         if recharge_date and amount:
-            # fetch the selected user
-            recharged_user = get_object_or_404(User, pk=recharged_by) if recharged_by else None
+            # Calculate validity_date if only days given
+            if validity_days and not validity_date:
+                try:
+                    days = int(validity_days)
+                    validity_date = (
+                        datetime.strptime(recharge_date, "%Y-%m-%d").date()
+                        + timedelta(days=days)
+                    ).strftime("%Y-%m-%d")
+                except ValueError:
+                    validity_date = None
 
+            # Resolve user name
+            recharged_name = None
+            if recharged_by_id:
+                recharged_user = User.objects.filter(pk=recharged_by_id).first()
+                recharged_name = recharged_user.name if recharged_user else None
+            
+            # Fallback to SIM's default users if no recharged_by selected
+            if not recharged_name:
+                recharged_name = sim.incharge or sim.identify_person or "System"
+
+            # Create recharge history row
             SIMRecharge.objects.create(
                 sim=sim,
                 recharge_date=recharge_date,
                 amount=amount,
                 validity_date=validity_date,
-                recharged_by=recharged_user.name if recharged_user else sim.incharge or sim.identify_person or "System",
+                validity_days=validity_days or None,
+                recharged_by=recharged_name,
                 notes=notes or "Manual recharge entry"
             )
 
-            # keep SIM header in sync
+            # Keep SIM header in sync
             sim.last_recharge_date = recharge_date
-            sim.amount             = amount
-            sim.validity_date      = validity_date
+            sim.amount       = amount
+            sim.validity_date = validity_date
+            sim.validity_days = validity_days or None
             sim.save()
 
             messages.success(request, 'Recharge record added successfully.')
@@ -264,8 +396,22 @@ def add_recharge(request, sim_id):
         else:
             messages.error(request, 'Recharge date and amount are required.')
 
-    return render(request, 'add_recharge.html', {'sim': sim, 'users': users})
-
+    # GET request - prepare context
+    current_user = None
+    if request.user.is_authenticated:
+        # Try to match by userid first
+        current_user = User.objects.filter(userid=request.user.username).first()
+        # If not found, try by name
+        if not current_user:
+            current_user = User.objects.filter(name=request.user.username).first()
+    
+    context = {
+        'sim': sim,
+        'users': users,
+        'current_user': current_user
+    }
+    
+    return render(request, 'add_recharge.html', context)
 
 from django.shortcuts import get_object_or_404, render
 from django.http import JsonResponse
@@ -322,26 +468,52 @@ from .models import SIMRecharge
 def edit_recharge(request, pk):
     recharge = get_object_or_404(SIMRecharge, id=pk)
     sim = recharge.sim
-    users = User.objects.filter(is_active=True).order_by('name')  # NEW
+    users = User.objects.filter(is_active=True).order_by('name')
+
+    # Calculate validity_days from validity_date if needed (for display)
+    if recharge.validity_date and recharge.recharge_date and not recharge.validity_days:
+        try:
+            days_diff = (recharge.validity_date - recharge.recharge_date).days
+            if days_diff > 0:
+                recharge.validity_days = days_diff
+        except (TypeError, ValueError):
+            pass
 
     if request.method == 'POST':
-        # fetch the chosen user
         user_pk = request.POST.get('recharged_by')
         selected_user = get_object_or_404(User, pk=user_pk) if user_pk else None
 
-        recharge.recharge_date = request.POST.get('recharge_date')
-        recharge.amount        = request.POST.get('amount')
-        recharge.validity_date = request.POST.get('validity_date') or None
-        recharge.recharged_by  = selected_user.name if selected_user else ''
-        recharge.notes         = request.POST.get('notes')
+        # Calculate validity_date from validity_days if provided
+        validity_days = request.POST.get('validity_days')
+        recharge_date = request.POST.get('recharge_date')
+        validity_date = request.POST.get('validity_date')
+        
+        if validity_days and recharge_date and not validity_date:
+            try:
+                days = int(validity_days)
+                validity_date = (
+                    datetime.strptime(recharge_date, "%Y-%m-%d").date()
+                    + timedelta(days=days)
+                ).strftime("%Y-%m-%d")
+            except (ValueError, TypeError):
+                validity_date = None
+
+        # ---- read & save the recharge row ----
+        recharge.recharge_date = recharge_date
+        recharge.amount = request.POST.get('amount')
+        recharge.validity_days = validity_days or None
+        recharge.validity_date = validity_date or None
+        recharge.recharged_by = selected_user.name if selected_user else ''
+        recharge.notes = request.POST.get('notes')
         recharge.save()
 
-        # keep SIM header in sync
+        # ---- ALWAYS sync header with the newest recharge ----
         latest = SIMRecharge.objects.filter(sim=sim).order_by('-recharge_date').first()
-        if latest == recharge:
-            sim.last_recharge_date = recharge.recharge_date
-            sim.amount             = recharge.amount
-            sim.validity_date      = recharge.validity_date
+        if latest:
+            sim.last_recharge_date = latest.recharge_date
+            sim.amount = latest.amount
+            sim.validity_date = latest.validity_date
+            sim.validity_days = latest.validity_days
             sim.save()
 
         messages.success(request, 'Recharge updated.')

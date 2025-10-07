@@ -45,18 +45,24 @@
   <div class="col-md-6 mb-3">
     <label class="form-label">Identify Person</label>
     <select name="identify_person" class="form-select">
-      <option value="" disabled {% if not sim.identify_person %}selected{% endif %}>-- Select User --</option>
+      <option value="" disabled selected>-- Select User --</option>
       {% for u in users %}
-        <option value="{{ u.name }}" {% if sim.identify_person == u.name %}selected{% endif %}>{{ u.name }}</option>
+        <option value="{{ u.pk }}"   
+          {% if sim.identify_person == u.name %}selected{% endif %}>
+          {{ u.name }}
+        </option>
       {% endfor %}
     </select>
   </div>
   <div class="col-md-6 mb-3">
     <label class="form-label">In-charge</label>
     <select name="incharge" class="form-select">
-      <option value="" disabled {% if not sim.incharge %}selected{% endif %}>-- Select User --</option>
+      <option value="" disabled selected>-- Select User --</option>
       {% for u in users %}
-        <option value="{{ u.name }}" {% if sim.incharge == u.name %}selected{% endif %}>{{ u.name }}</option>
+        <option value="{{ u.pk }}"  
+          {% if sim.incharge == u.name %}selected{% endif %}>
+          {{ u.name }}
+        </option>
       {% endfor %}
     </select>
   </div>
@@ -75,21 +81,28 @@
   </div>
 </div>
 
-<!-- NEW ROW: Recharged By + Valid Until -->
+<!-- NEW ROW: Recharged By + Validity Days -->
 <div class="row">
   <div class="col-md-6 mb-3">
-    <label class="form-label">Recharged By</label>
-    <select name="recharged_by" class="form-select">
-  <option value="" disabled {% if not sim.recharged_by %}selected{% endif %}>-- Select User --</option>
-  {% for u in users %}
-    <option value="{{ u.name }}"
-            {% if sim.recharged_by == u.name %}selected{% endif %}>{{ u.name }}</option>
-  {% endfor %}
-</select>
-  </div>
+  <label class="form-label">Recharged By</label>
+  <select name="recharged_by" class="form-select">
+    <option value="" disabled>-- Select User --</option>
+    {% for u in users %}
+      <option value="{{ u.pk }}" 
+              {% if current_user and current_user.pk == u.pk %}selected{% endif %}
+              {% if sim and sim.recharged_by == u.name %}selected{% endif %}>
+        {{ u.name }}
+      </option>
+    {% endfor %}
+  </select>
+</div>
   <div class="col-md-6 mb-3">
-    <label class="form-label">Valid Until</label>
-    <input type="date" name="validity_date" class="form-control"
+    <label class="form-label">Validity (days)</label>
+    <input type="number" name="validity_days" id="id_validity_days"
+           class="form-control" min="0"
+           value="{{ sim.validity_days|default:'' }}">
+    <!-- hidden carrier for the calendar date -->
+    <input type="hidden" name="validity_date" id="id_validity_date"
            value="{{ sim.validity_date|date:'Y-m-d'|default:'' }}">
   </div>
 </div>
@@ -114,4 +127,23 @@
   </div>
 </form>
 </div>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const daysInput   = document.getElementById('id_validity_days');
+  const dateInput   = document.getElementById('id_validity_date');
+  const rechargeInp = document.querySelector('input[name="last_recharge_date"]');
+
+  function calcDate() {
+    const days = parseInt(daysInput.value, 10);
+    const rDate = rechargeInp.value;
+    if (!isNaN(days) && rDate) {
+      const d = new Date(rDate);
+      d.setDate(d.getDate() + days);
+      dateInput.value = d.toISOString().split('T')[0];
+    }
+  }
+  daysInput.addEventListener('input', calcDate);
+  rechargeInp.addEventListener('change', calcDate);
+});
+</script>
 {% endblock %}

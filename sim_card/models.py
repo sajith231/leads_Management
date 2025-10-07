@@ -12,6 +12,9 @@ class SIM(models.Model):
     validity_date = models.DateField(
         blank=True, null=True,
         help_text="Recharge valid until this date")
+    validity_days = models.PositiveSmallIntegerField(
+                      blank=True, null=True,
+                      help_text="No. of days the recharge is valid")
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -29,6 +32,8 @@ class SIMRecharge(models.Model):
     notes = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     validity_date = models.DateField(blank=True, null=True)
+    validity_days = models.PositiveSmallIntegerField(
+                      blank=True, null=True)
     
     class Meta:
         ordering = ['-recharge_date']
