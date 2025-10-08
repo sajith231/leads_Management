@@ -28,6 +28,7 @@ def _attach_days_remaining(sim_qs):
 
 from django.db.models import F, Value, IntegerField
 from django.db.models.functions import Coalesce
+from django.db.models import Q
 
 def sim_management(request):
     search_query = request.GET.get('q', '').strip()
@@ -38,10 +39,11 @@ def sim_management(request):
     # search filter
     if search_query:
         sims = sims.filter(
-            sim_no__icontains=search_query
-        ) | sims.filter(
-            provider__icontains=search_query
-        )
+        Q(sim_no__icontains=search_query) |
+        Q(provider__icontains=search_query) |
+        Q(identify_person__icontains=search_query) |
+        Q(incharge__icontains=search_query)
+    )
 
     # attach dynamic days-remaining
     sims = _attach_days_remaining(sims)
