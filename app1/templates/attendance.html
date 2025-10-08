@@ -53,53 +53,58 @@
                     <input type="text" class="form-control" id="nameFilter" onkeyup="filterEmployees()" placeholder="Enter name">
                 </div>
                 <div class="d-grid gap-2 d-md-flex" style="white-space: nowrap;">
-                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#holidayModal">
-                      Add Holiday
-                    </button>
-                    <button class="btn btn-info position-relative" onclick="loadLeaveRequests()">
-                      View Leave Requests
-                      <span id="leaveRequestsBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none">
-                        0
-                      </span>
-                    </button>
-                    <button class="btn btn-info position-relative" onclick="loadAdminLateRequests()">
-                      View Late Requests
-                      <span id="lateRequestsBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none">
-                        0
-                      </span>
-                    </button>
-                    <button class="btn btn-info position-relative" onclick="loadAdminEarlyRequests()">
-                        View Early Requests
-                        <span id="earlyRequestsBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none">
-                            0
-                        </span>
-                    </button>
-                    <button class="btn btn-info" onclick="loadAdminWFHRequests()">
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#holidayModal">
+                    Add Holiday
+                </button>
+                <button class="btn btn-info position-relative" onclick="loadLeaveRequests()">
+                    View Leave Requests
+                    <span id="leaveRequestsBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none">
+                    0
+                    </span>
+                </button>
+                <button class="btn btn-info position-relative" onclick="loadAdminLateRequests()">
+                    View Late Requests
+                    <span id="lateRequestsBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none">
+                    0
+                    </span>
+                </button>
+                <button class="btn btn-info position-relative" onclick="loadAdminEarlyRequests()">
+                    View Early Requests
+                    <span id="earlyRequestsBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none">
+                    0
+                    </span>
+                </button>
+                <button class="btn btn-info" onclick="loadAdminWFHRequests()">
                     <i class="fas fa-home"></i> WFH Requests
-                    </button>
-                    <span id="wfhRequestsBadge" class="badge bg-danger d-none">New</span>
+                </button>
+                <span id="wfhRequestsBadge" class="badge bg-danger d-none">New</span>
 
-                    <div><button class="btn btn-info position-relative" onclick="window.location.href='{% url 'attendance_total_summary' %}'">
-                        Total Summary
-                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none">
-                            0
-                        </span>
-                    </button></div>
-                    <div><button class="btn btn-info position-relative" onclick="window.location.href='{% url 'break_time_management' %}'">
-                        Break Time Management
-                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none">
-                            0
-                        </span>
-                    </button></div>
-                    <div style="display: block;">
-                        <button class="btn btn-info position-relative" onclick="window.location.href='{% url 'all_requests_summary' %}'">
-                            Requests Summary
-                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none">
-                                0
-                            </span>
-                        </button>
-                    </div>
+                <div>
+                    <button class="btn btn-info position-relative" onclick="window.location.href='{% url 'attendance_total_summary' %}'">
+                    Total Summary
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none">
+                        0
+                    </span>
+                    </button>
                 </div>
+                </div>
+
+                <!-- New row for last two buttons -->
+                <div class="d-flex gap-2 mt-2">
+                <button class="btn btn-info position-relative" onclick="window.location.href='{% url 'break_time_management' %}'">
+                    Break Time Management
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none">
+                    0
+                    </span>
+                </button>
+                <button class="btn btn-info position-relative" onclick="window.location.href='{% url 'all_requests_summary' %}'">
+                    Requests Summary
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none">
+                    0
+                    </span>
+                </button>
+                </div>
+
             </div>
         </div>
     </div>
@@ -346,6 +351,7 @@
                                 <th>Start Date</th>
                                 <th>End Date</th>
                                 <th>Reason</th>
+                                <th>Note</th> 
                                 <th>Leave Type</th> 
                                 <th>Status</th>
                                 <th>Requested On</th>
@@ -461,41 +467,56 @@
         </div>
     </div>
 </div>
-<div class="modal fade" id="adminWFHRequestsModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-xxl">
+<!-- Admin WFH Requests Modal (styled like other modals) -->
+<div class="modal fade" id="adminWFHRequestsModal" tabindex="-1" aria-labelledby="adminWFHRequestsModalLabel" aria-hidden="true">
+  <div class="modal-dialog" style="max-width: 1200px; width: 100%;">
     <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">WFH Requests</h5>
-        <div class="btn-group ms-3" role="group">
-          <button class="btn btn-sm btn-outline-secondary filter-btn active" data-status="all">All</button>
-          <button class="btn btn-sm btn-outline-warning filter-btn" data-status="pending">Pending</button>
-          <button class="btn btn-sm btn-outline-success filter-btn" data-status="approved">Approved</button>
-          <button class="btn btn-sm btn-outline-danger filter-btn" data-status="rejected">Rejected</button>
-        </div>
-        <button class="btn-close" data-bs-dismiss="modal"></button>
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="adminWFHRequestsModalLabel">WFH Requests</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <div class="modal-body table-responsive">
-        <table class="table table-striped align-middle">
-          <thead>
-            <tr>
-              <th>Employee</th><th>From</th><th>To</th><th>Reason</th>
-              <th>Status</th><th>Created</th><th>Actions</th><th>Delete</th>
-            </tr>
-          </thead>
-          <tbody id="adminWFHRequestsTableBody"></tbody>
-        </table>
-        <div class="d-flex justify-content-between">
-          <small id="adminWFHRequestsPaginationInfo"></small>
+
+      <div class="modal-body">
+        <div class="d-flex justify-content-between mb-3">
+          <div class="btn-group" role="group">
+            <button type="button" class="btn btn-sm btn-outline-primary filter-btn" data-status="all">All</button>
+            <button type="button" class="btn btn-sm btn-outline-primary filter-btn active" data-status="pending">Pending</button>
+            <button type="button" class="btn btn-sm btn-outline-primary filter-btn" data-status="approved">Approved</button>
+            <button type="button" class="btn btn-sm btn-outline-primary filter-btn" data-status="rejected">Rejected</button>
+          </div>
           <div>
-            <button id="prevAdminWFHRequests" class="btn btn-sm btn-outline-secondary">Prev</button>
-            <button id="nextAdminWFHRequests" class="btn btn-sm btn-outline-secondary">Next</button>
+            <button id="prevAdminWFHRequests" class="btn btn-sm btn-outline-primary" disabled>Previous</button>
+            <span id="adminWFHRequestsPaginationInfo" class="mx-2">Showing 1-10</span>
+            <button id="nextAdminWFHRequests" class="btn btn-sm btn-outline-primary">Next</button>
           </div>
         </div>
+
+        <div class="table-responsive">
+          <table class="table table-hover align-middle">
+            <thead>
+              <tr>
+                <th>Employee</th>
+                <th>From</th>
+                <th>To</th>
+                <th>Reason</th>
+                <th>Status</th>
+                <th>Created</th>
+                <th>Actions</th>
+                <th>Delete</th>
+              </tr>
+            </thead>
+            <tbody id="adminWFHRequestsTableBody"></tbody>
+          </table>
+        </div>
       </div>
-      <div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Close</button></div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
     </div>
   </div>
 </div>
+
 
 
 <style>
@@ -571,6 +592,7 @@ function updateLeaveRequestsTable(page, statusFilter = 'all') {
             <td>${request.start_date}</td>
             <td>${request.end_date}</td>
             <td>${request.reason}</td>
+            <td>${request.note || ''}</td>
             <td>${request.leave_type}</td> <!-- Added leave type here -->
             <td><span class="${statusBadgeClass}">${request.status}</span></td>
             <td>${request.created_at}</td>

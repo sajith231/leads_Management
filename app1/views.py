@@ -3774,34 +3774,37 @@ def create_leave_request(request):
             data = json.loads(request.body)
             employee = Employee.objects.get(user_id=request.session.get('custom_user_id'))
             
-            # Updated date parsing format to match Y-M-D (e.g., '2025-09-22')
             start_date = datetime.strptime(data['start_date'], '%Y-%m-%d').date()
-            end_date = datetime.strptime(data['end_date'], '%Y-%m-%d').date()
+            end_date   = datetime.strptime(data['end_date'],   '%Y-%m-%d').date()
+            note       = (data.get('note') or '').strip()  # NEW
+
+            if not note:
+                return JsonResponse({'success': False, 'error': 'Note is required'})
 
             leave_request = LeaveRequest.objects.create(
                 employee=employee,
                 start_date=start_date,
                 end_date=end_date,
                 leave_type=data['leave_type'],
-                reason=data['reason'],
+                reason=data['reason'],   # keep Reason
+                note=note,               # NEW
                 status='pending'
             )
 
-            # List of phone numbers to notify
             phone_numbers = ["9946545535", "7593820007", "7593820005","9846754998","8129191379","9061947005"]
             
-            # Format dates for message (optional: keep this in D-M-Y format if desired for display)
             formatted_start = start_date.strftime('%d-%m-%Y')
-            formatted_end = end_date.strftime('%d-%m-%Y')
+            formatted_end   = end_date.strftime('%d-%m-%Y')
 
+            # Include NOTE in WhatsApp
             message = (
                 f"New leave request from {employee.name}.\n"
-                f"Type: {leave_request.get_leave_type_display()}, "
-                f"Start Date: {formatted_start}, End Date: {formatted_end}, "
-                f"Reason: {data['reason']}"
+                f"Type: {leave_request.get_leave_type_display()}\n"
+                f"From: {formatted_start}  To: {formatted_end}\n"
+                f"Reason: {data['reason']}\n"
+                f"Note: {note}"
             )
             
-            # Send WhatsApp message to each number
             for number in phone_numbers:
                 send_whatsapp_message_new_request(number, message)
             
@@ -3810,6 +3813,7 @@ def create_leave_request(request):
             return JsonResponse({'success': False, 'error': str(e)})
     
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
 
 
 
@@ -3850,13 +3854,12 @@ def get_leave_requests(request):
     
     if request.user.is_superuser or request.session.get('user_level') == 'normal':
         leave_requests = LeaveRequest.objects.all().select_related('employee').order_by('-created_at')
-        if status_filter:
-            leave_requests = leave_requests.filter(status=status_filter)
     else:
         employee = Employee.objects.get(user_id=request.session.get('custom_user_id'))
         leave_requests = LeaveRequest.objects.filter(employee=employee).select_related('employee').order_by('-created_at')
-        if status_filter:
-            leave_requests = leave_requests.filter(status=status_filter)
+
+    if status_filter:
+        leave_requests = leave_requests.filter(status=status_filter)
     
     data = [{
         'id': req.id,
@@ -3865,6 +3868,7 @@ def get_leave_requests(request):
         'end_date': req.end_date.strftime('%d-%m-%Y'),
         'leave_type': req.get_leave_type_display(),
         'reason': req.reason,
+        'note': req.note,                                # NEW
         'status': req.status,
         'processed_by': req.processed_by.username if req.processed_by else None,
         'processed_at': req.processed_at.strftime('%Y-%m-%d %H:%M') if req.processed_at else None,
@@ -3872,6 +3876,7 @@ def get_leave_requests(request):
     } for req in leave_requests]
     
     return JsonResponse({'leave_requests': data})
+
 
 # views.py (make sure these imports exist)
 import json
@@ -6975,6 +6980,7 @@ def get_employee_requests_details(request, employee_id):
                         'start_date': req.start_date.strftime('%d-%m-%Y'),
                         'end_date': req.end_date.strftime('%d-%m-%Y'),
                         'reason': req.reason,
+                        'note': req.note,   
                         'leave_type': req.get_leave_type_display(),
                         'status': req.status,
                         'created_at': req.created_at.strftime('%d-%m-%Y %H:%M'),
