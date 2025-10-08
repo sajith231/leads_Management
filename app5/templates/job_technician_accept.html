@@ -25,29 +25,28 @@
         }
         
         body {
-            /* font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #f5f7fa;
             padding: 20px;
-            color: #333; */
+            color: #333;
         }
 
-
         .btn-standby:disabled {
-    background-color: #6c757d !important;
-    color: white !important;
-    cursor: not-allowed !important;
-    opacity: 0.6 !important;
-    transform: none !important;
-}
+            background-color: #6c757d !important;
+            color: white !important;
+            cursor: not-allowed !important;
+            opacity: 0.6 !important;
+            transform: none !important;
+        }
 
-.btn-standby:disabled:hover {
-    background-color: #6c757d !important;
-    transform: none !important;
-}
+        .btn-standby:disabled:hover {
+            background-color: #6c757d !important;
+            transform: none !important;
+        }
         
         .container {
             max-width: 1200px;
             margin: 0 auto;
+            padding: 0 15px;
         }
         
         .page-header {
@@ -135,15 +134,82 @@
             outline: none;
         }
         
+        /* Enhanced Horizontal Scroller - Highly Visible Blue Theme */
         .table-responsive {
             border-radius: 8px;
-            overflow: hidden;
+            overflow-x: auto;
+            overflow-y: visible;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: auto;
+            scrollbar-color: #0062cc #e9ecef;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border: 1px solid #e9ecef;
+            background: #f8f9fa;
+        }
+        
+        /* Custom scrollbar for Webkit browsers - Highly Visible */
+        .table-responsive::-webkit-scrollbar {
+            height: 16px;
+            background: #f1f1f1;
+            border-radius: 0 0 8px 8px;
+        }
+        
+        .table-responsive::-webkit-scrollbar-track {
+            background: #e9ecef;
+            border-radius: 8px;
+            margin: 0 10px;
+            border: 1px solid #dee2e6;
+        }
+        
+        .table-responsive::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #0062cc, #0095ff);
+            border-radius: 8px;
+            border: 2px solid #e9ecef;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        .table-responsive::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, #0056b3, #007bff);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+        }
+        
+        .table-responsive::-webkit-scrollbar-thumb:active {
+            background: linear-gradient(135deg, #004085, #0062cc);
+        }
+        
+        /* Scroll hint for mobile users */
+        .scroll-hint {
+            display: none;
+            text-align: center;
+            color: var(--primary);
+            font-size: 0.9rem;
+            margin-bottom: 12px;
+            padding: 10px;
+            background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+            border-radius: 8px;
+            border: 2px solid #bbdefb;
+            font-weight: 500;
+        }
+        
+        .scroll-hint i {
+            margin-right: 8px;
+            animation: bounce 2s infinite;
+            font-size: 1.1rem;
+        }
+        
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateX(0); }
+            40% { transform: translateX(-8px); }
+            60% { transform: translateX(-4px); }
         }
         
         .table {
             margin-bottom: 0;
             border-collapse: separate;
             border-spacing: 0;
+            min-width: 800px;
+            width: 100%;
         }
         
         .table th {
@@ -152,12 +218,18 @@
             font-weight: 600;
             padding: 12px 15px;
             border: none;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            white-space: nowrap;
+            border-bottom: 2px solid #dee2e6;
         }
         
         .table td {
             padding: 12px 15px;
             vertical-align: middle;
             border-bottom: 1px solid #e9ecef;
+            white-space: nowrap;
         }
         
         .table tr:last-child td {
@@ -480,6 +552,61 @@
                 width: 95%;
                 margin: 10% auto;
             }
+            
+            /* Show scroll hint on mobile */
+            .scroll-hint {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            
+            /* Adjust scrollbar for mobile */
+            .table-responsive::-webkit-scrollbar {
+                height: 14px;
+            }
+            
+            .table-responsive::-webkit-scrollbar-track {
+                margin: 0 8px;
+            }
+        }
+
+        /* Extra small devices */
+        @media (max-width: 576px) {
+            .container {
+                padding: 0 10px;
+            }
+            
+            .page-header {
+                padding: 15px;
+            }
+            
+            .stats-cards {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            .stat-card {
+                padding: 15px;
+            }
+            
+            .table-responsive::-webkit-scrollbar {
+                height: 12px;
+            }
+            
+            .scroll-hint {
+                font-size: 0.85rem;
+                padding: 8px;
+            }
+            
+            .table th, .table td {
+                padding: 10px 8px;
+                font-size: 0.85rem;
+            }
+            
+            .btn-action {
+                padding: 5px 10px;
+                font-size: 0.8rem;
+            }
         }
     </style>
 </head>
@@ -558,6 +685,12 @@
                 <h4 class="mb-0">Job Cards List</h4>
             </div>
 
+            <!-- Scroll hint for mobile users -->
+            <div class="scroll-hint">
+                <i class="fas fa-arrows-left-right"></i>
+                Scroll horizontally to view all columns
+            </div>
+
             <div class="table-responsive">
                 <table class="table" id="jobTable">
                     <thead>
@@ -582,39 +715,38 @@
                             <td>{{ jobcard.technician }}</td>
                             
                             <!-- Standby Status Column -->
-                            <!-- Standby Status Column -->
-<td>
-    {% if jobcard.status == 'completed' or jobcard.status == 'rejected' %}
-        <!-- Read-only display for completed/rejected jobs -->
-        <span class="standby-issued-badge {% if jobcard.standby_issued %}standby-issued-yes{% else %}standby-issued-no{% endif %}">
-            {% if jobcard.standby_issued %}
-                <i class="fas fa-check-circle"></i> With Customer
-            {% else %}
-                <i class="fas fa-times-circle"></i> Not Issued
-            {% endif %}
-        </span>
-    {% else %}
-        <!-- Interactive button for active jobs -->
-        {% if jobcard.status == 'accepted' %}
-            <!-- Active button for "In Technician Hand" status -->
-            <button class="btn-action btn-standby {% if jobcard.standby_issued %}with-customer{% endif %}" 
-                    onclick="toggleStandbyIssued('{{ jobcard.id }}')"
-                    id="standby-btn-{{ jobcard.id }}"
-                    data-standby-status="{{ jobcard.standby_issued|yesno:'true,false' }}">
-                {% if jobcard.standby_issued %}
-                    <i class="fas fa-undo-alt"></i> With Customer
-                {% else %}
-                    <i class="fas fa-box"></i> Issue Standby
-                {% endif %}
-            </button>
-        {% else %}
-            <!-- Disabled button for other statuses -->
-            <button class="btn-action btn-standby" disabled title="Only available when job is 'In Technician Hand'">
-                <i class="fas fa-box"></i> Issue Standby
-            </button>
-        {% endif %}
-    {% endif %}
-</td>
+                            <td>
+                                {% if jobcard.status == 'completed' or jobcard.status == 'rejected' %}
+                                    <!-- Read-only display for completed/rejected jobs -->
+                                    <span class="standby-issued-badge {% if jobcard.standby_issued %}standby-issued-yes{% else %}standby-issued-no{% endif %}">
+                                        {% if jobcard.standby_issued %}
+                                            <i class="fas fa-check-circle"></i> With Customer
+                                        {% else %}
+                                            <i class="fas fa-times-circle"></i> Not Issued
+                                        {% endif %}
+                                    </span>
+                                {% else %}
+                                    <!-- Interactive button for active jobs -->
+                                    {% if jobcard.status == 'accepted' %}
+                                        <!-- Active button for "In Technician Hand" status -->
+                                        <button class="btn-action btn-standby {% if jobcard.standby_issued %}with-customer{% endif %}" 
+                                                onclick="toggleStandbyIssued('{{ jobcard.id }}')"
+                                                id="standby-btn-{{ jobcard.id }}"
+                                                data-standby-status="{{ jobcard.standby_issued|yesno:'true,false' }}">
+                                            {% if jobcard.standby_issued %}
+                                                <i class="fas fa-undo-alt"></i> With Customer
+                                            {% else %}
+                                                <i class="fas fa-box"></i> Issue Standby
+                                            {% endif %}
+                                        </button>
+                                    {% else %}
+                                        <!-- Disabled button for other statuses -->
+                                        <button class="btn-action btn-standby" disabled title="Only available when job is 'In Technician Hand'">
+                                            <i class="fas fa-box"></i> Issue Standby
+                                        </button>
+                                    {% endif %}
+                                {% endif %}
+                            </td>
                             
                             <td>
                                 <div class="action-buttons">
@@ -694,28 +826,28 @@
         });
 
         // ✅ Enhanced toggleStandbyIssued function with status validation
-function toggleStandbyIssued(jobId) {
-    const button = document.getElementById(`standby-btn-${jobId}`);
-    const row = document.querySelector(`tr[data-job-id="${jobId}"]`);
-    const currentStatus = row.dataset.standbyIssued === 'true';
-    const jobStatus = row.dataset.status;
-    
-    // Double-check that job is in accepted status
-    if (jobStatus !== 'accepted') {
-        alert('❌ Standby items can only be issued when job status is "In Technician Hand"');
-        return;
-    }
-    
-    if (currentStatus) {
-        // If standby is already issued (with customer), show return confirmation
-        if (confirm('Are you sure you want to return the standby equipment for this job?')) {
-            returnStandbyItem(jobId);
+        function toggleStandbyIssued(jobId) {
+            const button = document.getElementById(`standby-btn-${jobId}`);
+            const row = document.querySelector(`tr[data-job-id="${jobId}"]`);
+            const currentStatus = row.dataset.standbyIssued === 'true';
+            const jobStatus = row.dataset.status;
+            
+            // Double-check that job is in accepted status
+            if (jobStatus !== 'accepted') {
+                alert('❌ Standby items can only be issued when job status is "In Technician Hand"');
+                return;
+            }
+            
+            if (currentStatus) {
+                // If standby is already issued (with customer), show return confirmation
+                if (confirm('Are you sure you want to return the standby equipment for this job?')) {
+                    returnStandbyItem(jobId);
+                }
+            } else {
+                // If standby is not issued, redirect to issue form
+                window.location.href = `/app5/jobcard/${jobId}/standby-issue/`;
+            }
         }
-    } else {
-        // If standby is not issued, redirect to issue form
-        window.location.href = `/app5/jobcard/${jobId}/standby-issue/`;
-    }
-}
 
         function returnStandbyItem(jobId) {
             fetch(`/app5/jobcard/${jobId}/standby-return/`, {

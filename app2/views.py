@@ -2338,166 +2338,117 @@ from django.http import JsonResponse
 from django.db import IntegrityError
 from django.contrib import messages
 from django.db.models import Q
-from .models import StandbyItem, StandbyItemImage
-
-# ✅ List all items with search functionality
-# Add these updated views to your views.py file
-
-from django.shortcuts import render, redirect, get_object_or_404
-from django.http import JsonResponse
-from django.db import IntegrityError
-from django.contrib import messages
-from django.db.models import Q
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
+from django.contrib.auth.models import User
 import json
-from .models import StandbyItem, StandbyItemImage
+from .models import StandbyItem, StandbyImage
 
-# Updated List view with status filtering
-# In app2/views.py
+
 def Standby_item_list(request):
     search_query = request.GET.get('search', '').strip()
     status_filter = request.GET.get('status', '').strip()
-    
-    # Get all items (remove any filtering that might hide 'with_customer' status)
     items = StandbyItem.objects.prefetch_related('images').all().order_by('-created_at')
 
-    # Apply search filter
     if search_query:
-        items = items.filter(
-            Q(name__icontains=search_query) | 
-            Q(serial_number__icontains=search_query)
-        )
-    
-    # Apply status filter if provided
+        items = items.filter(Q(name__icontains=search_query) | Q(serial_number__icontains=search_query))
     if status_filter:
         items = items.filter(status=status_filter)
 
     return render(request, 'standby_table.html', {
-        'items': items, 
+        'items': items,
         'search_query': search_query,
-        'status_filter': status_filter
+        'status_filter': status_filter,
     })
 
-# Updated Add view with status field
+
 def Standby_add_item(request):
     if request.method == "POST":
         name = request.POST.get("itemname", "").upper()
         serial_number = request.POST.get("serialnumber", "").upper()
         notes = request.POST.get("notes", "")
         stock = request.POST.get("stock", 0)
-        status = request.POST.get("status", "in_stock")  # New field
+        status = request.POST.get("status", "in_stock")
+
+        customer_name = request.POST.get("customer_name", "")
+        customer_place = request.POST.get("customer_place", "")
+        customer_phone = request.POST.get("customer_phone", "")
+        issued_date = request.POST.get("issued_date", None)
+
         images = request.FILES.getlist("images")
 
         try:
-            # Get current user, fallback to user ID 1 if not authenticated
-            current_user = request.user if request.user.is_authenticated else None
-            if not current_user:
-                from django.contrib.auth.models import User
-                current_user = User.objects.get(id=1)
-            
+            current_user = request.user if request.user.is_authenticated else User.objects.first()
+
             item = StandbyItem.objects.create(
                 name=name,
                 serial_number=serial_number,
                 notes=notes,
                 stock=stock,
-                status=status,  # Include status
-                created_by=current_user
+                status=status,
+                customer_name=customer_name if status == 'with_customer' else None,
+                customer_place=customer_place if status == 'with_customer' else None,
+                customer_phone=customer_phone if status == 'with_customer' else None,
+                issued_date=issued_date if status == 'with_customer' else None,
+                created_by=current_user,
             )
 
             for img in images:
-                StandbyItemImage.objects.create(item=item, image=img)
+                StandbyImage.objects.create(item=item, image=img)
 
             messages.success(request, "Item added successfully!")
             return redirect("item_list")
 
         except IntegrityError:
             messages.error(request, f"Serial Number '{serial_number}' already exists!")
-            return redirect("add")
         except Exception as e:
             messages.error(request, f"Error creating item: {str(e)}")
-            return redirect("add")
+
+        return redirect("add")
 
     return render(request, "add_standby.html")
 
-# Updated Edit view with status field
+
 def Standby_item_edit(request, item_id):
     item = get_object_or_404(StandbyItem, id=item_id)
-
     if request.method == "POST":
         item.name = request.POST.get('itemname', '').upper()
         item.serial_number = request.POST.get('serialnumber', '').upper()
         item.notes = request.POST.get('notes', '')
         item.stock = request.POST.get('stock', 0)
-        item.status = request.POST.get('status', item.status)  # Update status
-        
+        item.status = request.POST.get('status', item.status)
+
+        if item.status == 'with_customer':
+            item.customer_name = request.POST.get('customer_name', '')
+            item.customer_place = request.POST.get('customer_place', '')
+            item.customer_phone = request.POST.get('customer_phone', '')
+            item.issued_date = request.POST.get('issued_date', None)
+        else:
+            item.customer_name = None
+            item.customer_place = None
+            item.customer_phone = None
+            item.issued_date = None
+
         try:
             item.save()
-            
-            # Handle image deletions
             delete_ids = request.POST.get('delete_images', '')
             if delete_ids:
                 ids = [id.strip() for id in delete_ids.split(',') if id.strip()]
-                StandbyItemImage.objects.filter(id__in=ids, item=item).delete()
-
-            # Handle new image uploads
+                StandbyImage.objects.filter(id__in=ids, item=item).delete()
             for image in request.FILES.getlist('images'):
-                StandbyItemImage.objects.create(item=item, image=image)
-
+                StandbyImage.objects.create(item=item, image=image)
             messages.success(request, "Item updated successfully!")
             return redirect('item_list')
-            
         except IntegrityError:
             messages.error(request, "Serial number already exists!")
-            return redirect("item_edit", item_id=item.id)
         except Exception as e:
             messages.error(request, f"Error updating item: {str(e)}")
-            return redirect("item_edit", item_id=item.id)
+
+        return redirect("item_edit", item_id=item.id)
 
     return render(request, 'edit_standby.html', {'item': item})
 
-# New AJAX view for status updates
-@csrf_exempt
-@require_POST
-def Standby_update_status(request, item_id):
-    try:
-        # Parse JSON data from request body
-        data = json.loads(request.body)
-        new_status = data.get('status')
 
-        if not new_status:
-            return JsonResponse({'success': False, 'error': 'Status not provided'}, status=400)
-
-        # Get the item object
-        item = get_object_or_404(StandbyItem, id=item_id)
-
-        # Validate status
-        valid_statuses = [choice[0] for choice in StandbyItem.STATUS_CHOICES]
-        if new_status not in valid_statuses:
-            return JsonResponse({
-                'success': False, 
-                'error': f'Invalid status. Valid options: {valid_statuses}'
-            }, status=400)
-
-        # Update status
-        item.status = new_status
-        item.save()
-
-        # Return success response
-        return JsonResponse({
-            'success': True,
-            'new_status': item.get_status_display(),
-            'status_class': item.get_status_display_class()
-        })
-
-    except json.JSONDecodeError:
-        return JsonResponse({'success': False, 'error': 'Invalid JSON data'}, status=400)
-    except StandbyItem.DoesNotExist:
-        return JsonResponse({'success': False, 'error': 'Item not found'}, status=404)
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': f'Server error: {str(e)}'}, status=500)
-
-# Keep existing views unchanged
 def Standby_item_delete(request, item_id):
     if request.method == "POST":
         try:
@@ -2508,13 +2459,125 @@ def Standby_item_delete(request, item_id):
             messages.error(request, f"Error deleting item: {str(e)}")
     return redirect('item_list')
 
+
 def Standby_check_serial(request):
     serial = request.GET.get('serial', '').upper().strip()
     item_id = request.GET.get('item_id', None)
-    
     if item_id:
         exists = StandbyItem.objects.filter(serial_number=serial).exclude(id=item_id).exists()
     else:
         exists = StandbyItem.objects.filter(serial_number=serial).exists()
-    
     return JsonResponse({'exists': exists})
+
+
+@csrf_exempt
+def Standby_get_customer_info(request, item_id):
+    """
+    Returns JSON with customer info for a standby item
+    """
+    try:
+        item = get_object_or_404(StandbyItem, id=item_id)
+
+        # Debug: Check what data we have
+        print(f"Item Status: {item.status}")
+        print(f"Customer Name: {item.customer_name}")
+        print(f"Customer Place: {item.customer_place}")
+        print(f"Customer Phone: {item.customer_phone}")
+        print(f"Issued Date: {item.issued_date}")
+
+        # Ensure the item is currently with a customer
+        if item.status.lower() != 'with_customer':
+            return JsonResponse({
+                'success': False,
+                'error': f'Item "{item.name}" is not currently with a customer. Current status: {item.status}'
+            })
+
+        # Format the issued date properly
+        issued_date_formatted = 'N/A'
+        if item.issued_date:
+            issued_date_formatted = item.issued_date.strftime('%d %b %Y')
+
+        data = {
+            'item_name': item.name,
+            'serial_number': item.serial_number,
+            'customer_name': item.customer_name or 'N/A',
+            'customer_place': item.customer_place or 'N/A',
+            'customer_phone': item.customer_phone or 'N/A',
+            'issued_date': issued_date_formatted,
+        }
+
+        return JsonResponse({'success': True, 'data': data})
+
+    except StandbyItem.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'error': 'Item not found'
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': f'Server error: {str(e)}'
+        })
+
+
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from django.utils import timezone
+from datetime import date
+
+@login_required
+def standby_return_item(request, item_id):
+    """Handle returning standby item to stock with images"""
+    item = get_object_or_404(StandbyItem, id=item_id)
+    
+    # Check if item is actually with customer
+    if item.status != 'with_customer':
+        messages.error(request, f'Item "{item.name}" is not currently with a customer.')
+        return redirect('item_list')
+    
+    if request.method == 'POST':
+        # Get form data
+        return_date = request.POST.get('return_date')
+        return_notes = request.POST.get('return_notes', '')
+        stock = request.POST.get('stock', item.stock)
+        return_images = request.FILES.getlist('return_images')
+        
+        # Update item status and details
+        item.status = 'in_stock'
+        item.stock = stock
+        
+        # Add return notes to existing notes
+        if return_notes:
+            current_notes = item.notes or ''
+            return_info = f"\n\n--- RETURNED ON {return_date} ---\n{return_notes}"
+            item.notes = current_notes + return_info
+        
+        # Clear customer information
+        item.customer_name = None
+        item.customer_place = None
+        item.customer_phone = None
+        item.issued_date = None
+        
+        item.save()
+        
+        # Handle return images - REMOVE the image_type parameter
+        for image in return_images:
+            StandbyImage.objects.create(
+                item=item, 
+                image=image
+                # Remove: image_type='return_condition' - this field doesn't exist
+            )
+        
+        messages.success(request, f'Item "{item.name}" has been returned to stock successfully!')
+        return redirect('item_list')
+    
+    # For GET request, show the return form with current customer info
+    context = {
+        'item': item,
+        'today': date.today(),
+    }
+    return render(request, 'return_standby_items.html', context)
+
+    
+
