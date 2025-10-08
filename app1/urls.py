@@ -307,13 +307,7 @@ urlpatterns = [
 
     path('all-requests-summary/', views.all_requests_summary, name='all_requests_summary'),
     path('get-employee-requests/<int:employee_id>/', views.get_employee_requests_details, name='get_employee_requests'),
-    path('today-requests/', views.today_requests, name='today_requests'),
 
-
-
-
-
-    path('attendance/punchout-reminder/', views.send_punchout_reminders, name='punchout_reminder'),
 
 
 
