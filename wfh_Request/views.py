@@ -7,7 +7,7 @@ from django.shortcuts import get_object_or_404
 from app1.models import Employee, Attendance  # existing
 from .models import WorkFromHomeRequest
 
-ADMIN_NUMBERS = ["9061947005"]
+ADMIN_NUMBERS = ["9946545535", "7593820007", "7593820005","9846754998","8129191379"]
 WA_SECRET = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
 WA_ACCOUNT = "1756959119812b4ba287f5ee0bc9d43bbf5bbe87fb68b9118fcf1af"
 
