@@ -10,7 +10,7 @@ from .views import employee_management, add_employee,edit_employee,delete_employ
 from .views import document_list,DocumentSetting,add_document,add_document_setting,edit_document,delete_document,get_document_settings
 
 from .views import add_document_setting, get_document_settings, delete_document_setting,all_requests_summary
-from .views import document_detail,save_document_settings,today_requests
+from .views import document_detail,save_document_settings
 from .views import get_document_setting_fields
 
 from .views import view_attachment

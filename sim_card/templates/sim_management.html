@@ -36,7 +36,7 @@
 
   <div class="top-bar">
     <h3>SIM Management</h3>
-    <input type="text" id="searchInput" placeholder="Search by SIM No / Provider"
+    <input type="text" id="searchInput" placeholder="Search by SIM No,Provider,Incharge,Identify person..."
            class="form-control" style="max-width:250px" value="{{ search_query }}">
     <button class="btn" style="background:#ffc107;color:#212529" id="reminderBtn">
       <i class="bi bi-bell"></i> Reminder
@@ -48,10 +48,19 @@
     <table class="table table-bordered table-striped">
       <thead>
         <tr>
-          <th>No</th><th>SIM No</th><th>View</th><th>Provider</th>
-          <th>Identify Person</th><th>Incharge</th><th>Last Recharge</th>
-          <th>Amount</th><th>Branch</th><th>Valid Until</th><th>Days Left</th>
-          <th>Edit</th><th>Delete</th>
+          <th>No</th>
+          <th>SIM No</th>
+          <th>Incharge</th>
+          <th>Last Recharge</th>
+          <th>Valid Until</th>
+          <th>Days Left</th>
+          <th>Provider</th>
+          <th>Identify Person</th>
+          <th>Branch</th>
+          <th>Amount</th>
+          <th>View</th>
+          <th>Edit</th>
+          <th>Delete</th>
         </tr>
       </thead>
       <tbody>
@@ -59,18 +68,8 @@
         <tr>
           <td>{{ forloop.counter0|add:sims.start_index }}</td>
           <td><strong>{{ sim.sim_no }}</strong></td>
-          <!-- In sim_management.html, replace the eye icon section -->
-<td style="text-align:center">
-    <a href="{% url 'sim_recharge_history' sim.id %}" class="btn btn-primary btn-sm" title="View Recharge History">
-        <i class="bi bi-eye-fill"></i>
-    </a>
-</td>
-          <td>{{ sim.provider }}</td>
-          <td>{{ sim.identify_person|default:"-" }}</td>
-          <td>{{ sim.incharge|default:"-" }}</td>
+           <td>{{ sim.incharge|default:"-" }}</td>
           <td>{{ sim.last_recharge_date|date:"d-m-Y" }}</td>
-          <td>{{ sim.amount }}</td>
-          <td>{{ sim.branch }}</td>
           <td>{{ sim.validity_date|date:"d-m-Y"|default:"-" }}</td>
           <td>
             {% if sim.days_remaining is not None %}
@@ -83,6 +82,18 @@
               {% endif %}
             {% else %}-{% endif %}
           </td>
+
+          <td>{{ sim.provider }}</td>
+         
+          <td>{{ sim.identify_person|default:"-" }}</td>
+          <td>{{ sim.branch }}</td>
+          <td>{{ sim.amount }}</td>
+          
+          <td style="text-align:center">
+    <a href="{% url 'sim_recharge_history' sim.id %}" class="btn btn-primary btn-sm" title="View Recharge History">
+        <i class="bi bi-eye-fill"></i>
+    </a>
+</td>
           <td>
             <a href="{% url 'edit_sim' sim.id %}" class="btn btn-warning btn-sm" title="Edit"><i class="bi bi-pencil-square"></i></a>
           </td>
