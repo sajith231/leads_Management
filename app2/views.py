@@ -770,13 +770,14 @@ import requests
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.utils.dateparse import parse_date
 from app1.models import User, Branch  # Import User and Branch from app1
-
 from datetime import datetime, timedelta
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.shortcuts import render
+from django.contrib.auth import get_user_model
 import requests
-from app1.models import User   # used to read the branch
+# NOTE: No direct import of app1.models.User here; we use get_user_model()
+# to work whether you're on the default auth.User or a custom user.
 
 @login_required
 def show_clients(request):
@@ -786,12 +787,18 @@ def show_clients(request):
 
     # ------------------------------------------------------------------
     # 1.  Determine the logged-in user's branch (fallback to None)
+    #     - Works whether your user model has `userid` or only `username`
     # ------------------------------------------------------------------
-    try:
-        custom_user = User.objects.get(userid=request.user.username)
-        user_branch = custom_user.branch.name if custom_user.branch else None
-    except User.DoesNotExist:
-        user_branch = None
+    UserModel = get_user_model()
+    custom_user = (
+        UserModel.objects.filter(userid=request.user.username).first()  # custom field case
+        or UserModel.objects.filter(username=request.user.username).first()  # default auth case
+        or UserModel.objects.filter(id=request.user.id).first()  # absolute fallback
+    )
+    user_branch = (
+        getattr(getattr(custom_user, "branch", None), "name", None)
+        if custom_user else None
+    )
 
     # ------------------------------------------------------------------
     # 2.  Fetch external data (same as before)
@@ -826,33 +833,36 @@ def show_clients(request):
     # ------------------------------------------------------------------
     # 4.  Build filter choices
     # ------------------------------------------------------------------
-    unique_branches   = sorted({c.get('branch', '')   for c in clients if c.get('branch')})
-    unique_software   = sorted({c.get('software', '') for c in clients if c.get('software')})
-    unique_natures    = sorted({c.get('nature', '')   for c in clients if c.get('nature')})
-    unique_amc_labels = sorted({c.get('amc_label', '') for c in clients if c.get('amc_label')})
-    unique_sp         = sorted({c.get('sp', '')       for c in clients if c.get('sp')})
-    unique_lic_types  = sorted({c.get('lictype_label', '') for c in clients if c.get('lictype_label')})
+    unique_branches   = sorted({c.get('branch', '')         for c in clients if c.get('branch')})
+    unique_software   = sorted({c.get('software', '')       for c in clients if c.get('software')})
+    unique_natures    = sorted({c.get('nature', '')         for c in clients if c.get('nature')})
+    unique_amc_labels = sorted({c.get('amc_label', '')      for c in clients if c.get('amc_label')})
+    unique_sp         = sorted({c.get('sp', '')             for c in clients if c.get('sp')})
+    unique_lic_types  = sorted({c.get('lictype_label', '')  for c in clients if c.get('lictype_label')})
 
     # ------------------------------------------------------------------
     # 5.  Read filter parameters with automatic branch restriction
     # ------------------------------------------------------------------
-    search_query        = request.GET.get('search', '').strip()
-    
-    # FIXED: Auto-apply branch filter for non-IMC/SYSMAC users
+    search_query = request.GET.get('search', '').strip()
+
+    # Auto-apply branch filter for non-IMC/SYSMAC users
     if user_branch and user_branch not in ['IMC', 'SYSMAC']:
         # For restricted users, always use their branch (ignore URL parameter)
         selected_branch = user_branch
     else:
         # For IMC/SYSMAC users, use the URL parameter or empty
         selected_branch = request.GET.get('branch', '')
-    
-    selected_software   = request.GET.get('software', '')
-    selected_nature     = request.GET.get('nature', '')
-    selected_amc        = request.GET.get('amc', '')
-    selected_sp         = request.GET.get('sp', '')
-    selected_lictype    = request.GET.get('lictype', '')
-    selected_direct     = request.GET.get('direct_dealing', 'Yes')   # default
-    selected_rows       = int(request.GET.get('rows', 15))
+
+    selected_software = request.GET.get('software', '')
+    selected_nature   = request.GET.get('nature', '')
+    selected_amc      = request.GET.get('amc', '')
+    selected_sp       = request.GET.get('sp', '')
+    selected_lictype  = request.GET.get('lictype', '')
+    selected_direct   = request.GET.get('direct_dealing', 'Yes')   # default
+    try:
+        selected_rows = int(request.GET.get('rows', 15))
+    except (TypeError, ValueError):
+        selected_rows = 15
 
     # ------------------------------------------------------------------
     # 6.  Apply filters
@@ -860,9 +870,10 @@ def show_clients(request):
     filtered = clients
     if search_query:
         terms = search_query.lower().split()
-        filtered = [c for c in filtered
-                    if all(t in ' '.join([str(v) for v in c.values()]).lower()
-                           for t in terms)]
+        filtered = [
+            c for c in filtered
+            if all(t in ' '.join([str(v) for v in c.values()]).lower() for t in terms)
+        ]
 
     for key, val, field in (
         ('branch',   selected_branch,   'branch'),
@@ -876,8 +887,10 @@ def show_clients(request):
             filtered = [c for c in filtered if str(c.get(field, '')) == val]
 
     if selected_direct != 'All':
-        filtered = [c for c in filtered
-                    if str(c.get('directdealing_label', '')).lower() == selected_direct.lower()]
+        filtered = [
+            c for c in filtered
+            if str(c.get('directdealing_label', '')).lower() == selected_direct.lower()
+        ]
 
     # ------------------------------------------------------------------
     # 7.  Pagination
@@ -910,10 +923,11 @@ def show_clients(request):
         'rows_options': [10, 20, 50, 100],
         'selected_rows': selected_rows,
         'selected_direct_dealing': selected_direct,
-        'user_branch': user_branch,          # << injected for template
-        'selected_branch': selected_branch,  # << injected for template
-        'is_branch_restricted': user_branch and user_branch not in ['IMC', 'SYSMAC'],  # << NEW: helper flag
+        'user_branch': user_branch,          # for template
+        'selected_branch': selected_branch,  # for template
+        'is_branch_restricted': bool(user_branch and user_branch not in ['IMC', 'SYSMAC']),
     })
+
 
 
 
