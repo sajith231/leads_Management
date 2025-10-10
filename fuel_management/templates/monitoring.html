@@ -1,0 +1,388 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    .monitoring-container {
+        font-family: Arial, sans-serif;
+        background-color: #f5f5f5;
+        padding: 20px;
+        min-height: 100vh;
+    }
+
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .header {
+        background-color: #2c3e50;
+        color: white;
+        padding: 20px 30px;
+        border-radius: 4px;
+        margin-bottom: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .header h1 {
+        font-size: 1.5em;
+        font-weight: normal;
+    }
+
+    .back-btn {
+        padding: 8px 16px;
+        background-color: #34495e;
+        color: white;
+        text-decoration: none;
+        border-radius: 3px;
+        font-size: 0.9em;
+        transition: background-color 0.3s;
+    }
+
+    .back-btn:hover {
+        background-color: #415a77;
+    }
+
+    .content-box {
+        background: white;
+        border-radius: 4px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+
+    .section-title {
+        font-size: 1.2em;
+        color: #2c3e50;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #3498db;
+    }
+
+    .staff-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+
+    .staff-item {
+        background: #f8f9fa;
+        border: 2px solid #e0e0e0;
+        border-radius: 4px;
+        padding: 15px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .staff-item:hover {
+        border-color: #3498db;
+        background: #fff;
+    }
+
+    .staff-item.active {
+        border-color: #3498db;
+        background: #e3f2fd;
+    }
+
+    .staff-name {
+        font-size: 1.1em;
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 10px;
+    }
+
+    .staff-summary {
+        font-size: 0.85em;
+        color: #7f8c8d;
+        line-height: 1.6;
+    }
+
+    .detail-section {
+        display: none;
+    }
+
+    .detail-section.active {
+        display: block;
+    }
+
+    .metrics {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 15px;
+        margin-bottom: 30px;
+    }
+
+    .metric-box {
+        background: #f8f9fa;
+        border-left: 4px solid #3498db;
+        padding: 15px;
+        border-radius: 3px;
+    }
+
+    .metric-box.primary {
+        border-left-color: #3498db;
+    }
+
+    .metric-box.success {
+        border-left-color: #27ae60;
+    }
+
+    .metric-box.warning {
+        border-left-color: #f39c12;
+    }
+
+    .metric-box.danger {
+        border-left-color: #e74c3c;
+    }
+
+    .metric-label {
+        font-size: 0.75em;
+        color: #7f8c8d;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+        letter-spacing: 0.5px;
+    }
+
+    .metric-value {
+        font-size: 1.8em;
+        font-weight: 600;
+        color: #2c3e50;
+    }
+
+    .metric-unit {
+        font-size: 0.5em;
+        color: #7f8c8d;
+        margin-left: 3px;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+
+    thead {
+        background-color: #34495e;
+        color: white;
+    }
+
+    th {
+        padding: 12px;
+        text-align: left;
+        font-weight: 600;
+        font-size: 0.85em;
+        text-transform: uppercase;
+    }
+
+    td {
+        padding: 12px;
+        border-bottom: 1px solid #e0e0e0;
+    }
+
+    tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+
+    tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .no-data {
+        text-align: center;
+        padding: 40px;
+        color: #7f8c8d;
+    }
+
+    .badge {
+        padding: 4px 8px;
+        border-radius: 3px;
+        font-size: 0.8em;
+        font-weight: 500;
+        text-transform: capitalize;
+    }
+
+    .badge-two { background-color: #e3f2fd; color: #1565c0; }
+    .badge-four { background-color: #fff3e0; color: #e65100; }
+
+    @media (max-width: 768px) {
+        .header {
+            flex-direction: column;
+            gap: 10px;
+            align-items: flex-start;
+        }
+
+        .staff-list {
+            grid-template-columns: 1fr;
+        }
+
+        .metrics {
+            grid-template-columns: 1fr;
+        }
+
+        table {
+            font-size: 0.85em;
+        }
+
+        th, td {
+            padding: 8px;
+        }
+    }
+</style>
+
+<div class="monitoring-container">
+    <div class="container">
+        <div class="header">
+            <h1>Fuel Monitoring Dashboard</h1>
+            <a href="{% url 'fuel_management' %}" class="back-btn">← Back</a>
+        </div>
+
+        <div class="content-box">
+            <h2 class="section-title">Staff Members</h2>
+            
+            {% if staff_analytics %}
+            <div class="staff-list">
+                {% for staff in staff_analytics %}
+                <div class="staff-item" onclick="showStaffDetails('{{ staff.staff_name|escapejs }}')">
+                    <div class="staff-name">{{ staff.staff_name }}</div>
+                    <div class="staff-summary">
+                        {{ staff.total_trips }} trips • {{ staff.total_distance|floatformat:0 }} km<br>
+                        Avg: {{ staff.avg_mileage|floatformat:1 }} km/L • ₹{{ staff.total_cost|floatformat:0 }}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="no-data">
+                <p>No fuel entries available for monitoring.</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Detailed Analytics for Each Staff -->
+        {% for staff in staff_analytics %}
+        <div class="detail-section" id="detail-{{ staff.staff_name|slugify }}">
+            <div class="content-box">
+                <h2 class="section-title">{{ staff.staff_name }} - Performance Metrics</h2>
+
+                <div class="metrics">
+                    <div class="metric-box primary">
+                        <div class="metric-label">Average Mileage</div>
+                        <div class="metric-value">
+                            {{ staff.avg_mileage|floatformat:2 }}
+                            <span class="metric-unit">km/L</span>
+                        </div>
+                    </div>
+
+                    <div class="metric-box success">
+                        <div class="metric-label">Total Distance</div>
+                        <div class="metric-value">
+                            {{ staff.total_distance|floatformat:0 }}
+                            <span class="metric-unit">km</span>
+                        </div>
+                    </div>
+
+                    <div class="metric-box warning">
+                        <div class="metric-label">Total Fuel Cost</div>
+                        <div class="metric-value">
+                            ₹{{ staff.total_cost|floatformat:0 }}
+                        </div>
+                    </div>
+
+                    <div class="metric-box danger">
+                        <div class="metric-label">Cost per KM</div>
+                        <div class="metric-value">
+                            ₹{{ staff.cost_per_km|floatformat:2 }}
+                            <span class="metric-unit">/km</span>
+                        </div>
+                    </div>
+
+                    <div class="metric-box primary">
+                        <div class="metric-label">Fuel Consumed</div>
+                        <div class="metric-value">
+                            {{ staff.estimated_fuel|floatformat:1 }}
+                            <span class="metric-unit">L</span>
+                        </div>
+                    </div>
+
+                    <div class="metric-box success">
+                        <div class="metric-label">Total Trips</div>
+                        <div class="metric-value">
+                            {{ staff.total_trips }}
+                        </div>
+                    </div>
+                </div>
+
+                <h3 class="section-title">Trip Details</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Vehicle</th>
+                            <th>Route</th>
+                            <th>Distance (km)</th>
+                            <th>Cost (₹)</th>
+                            <th>Mileage (km/L)</th>
+                            <th>Fuel Used (L)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for trip in staff.trips %}
+                        <tr>
+                            <td>{{ trip.date|date:"d-M-Y" }}</td>
+                            <td>
+                                <span class="badge badge-{{ trip.vehicle_type|cut:' ' }}">
+                                    {{ trip.get_vehicle_type_display }}
+                                </span>
+                            </td>
+                            <td>{{ trip.trip_from }} → {{ trip.trip_to }}</td>
+                            <td>{{ trip.distance_traveled|floatformat:1 }}</td>
+                            <td>₹{{ trip.fuel_cost }}</td>
+                            <td>{{ trip.mileage|floatformat:2 }}</td>
+                            <td>{{ trip.fuel_used|floatformat:2 }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+function showStaffDetails(staffName) {
+    // Remove active class from all staff items
+    document.querySelectorAll('.staff-item').forEach(item => {
+        item.classList.remove('active');
+    });
+    
+    // Hide all detail sections
+    document.querySelectorAll('.detail-section').forEach(section => {
+        section.classList.remove('active');
+    });
+    
+    // Add active class to clicked item
+    event.currentTarget.classList.add('active');
+    
+    // Show selected staff details
+    const staffSlug = staffName.toLowerCase().replace(/\s+/g, '-');
+    const detailSection = document.getElementById('detail-' + staffSlug);
+    if (detailSection) {
+        detailSection.classList.add('active');
+        // Smooth scroll to the detail section
+        setTimeout(() => {
+            detailSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+    }
+}
+</script>
+
+{% endblock %}  

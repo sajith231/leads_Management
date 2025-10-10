@@ -38,6 +38,16 @@
     </button>
     
 </div>
+<div style="margin-bottom: 20px;" class="buttons">
+  <button class="btn btn-info" data-bs-toggle="modal" data-bs-target="#wfhRequestModal">
+    <i class="fas fa-home"></i> Request WFH
+  </button>
+  <button class="btn btn-outline-info" onclick="loadUserWFHRequests()">
+    <i class="fas fa-list"></i> My WFH Requests
+  </button>
+</div>
+
+
 <div style="margin-bottom: 20px;">
     {% if ongoing_task %}
     <div class="d-flex justify-content-center mt-3">
@@ -230,6 +240,10 @@
             <option value="Health Emergency">Health Emergency</option>
         </select>
     </div>
+    <div class="mb-3">
+  <label for="note" class="form-label">Note <span class="text-danger">*</span></label>
+  <textarea id="note" class="form-control" rows="3" required placeholder="Add any details"></textarea>
+</div>
 </form>
             </div>
             <div class="modal-footer">
@@ -270,6 +284,7 @@
                                 <th>End Date</th>
                                 <th>Leave Type</th>
                                 <th>Reason</th>
+                                <th>Note</th> 
                                 <th>Status</th>
                                 <th>Requested On</th>
                                 <th>Actions</th>
@@ -458,6 +473,81 @@
         </div>
     </div>
 </div>
+<div class="modal fade" id="wfhRequestModal" tabindex="-1" aria-labelledby="wfhRequestModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="wfhRequestModalLabel">Request Work From Home</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="wfhRequestForm">
+          <div class="mb-3">
+            <label class="form-label">From Date</label>
+            <input type="date" class="form-control" id="wfhStartDate" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">To Date</label>
+            <input type="date" class="form-control" id="wfhEndDate" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Reason</label>
+            <textarea class="form-control" id="wfhReason" rows="3" required placeholder="Reason for WFH"></textarea>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button class="btn btn-primary" onclick="submitWFHRequest()">Submit Request</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="viewWFHRequestsModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title">My WFH Requests</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body table-responsive">
+        <div class="d-md-flex justify-content-between mb-3">
+          <div class="btn-group" role="group">
+            <button class="btn btn-sm btn-outline-primary filter-btn active" data-status="all">All</button>
+            <button class="btn btn-sm btn-outline-warning filter-btn" data-status="pending">Pending</button>
+            <button class="btn btn-sm btn-outline-success filter-btn" data-status="approved">Approved</button>
+            <button class="btn btn-sm btn-outline-danger filter-btn" data-status="rejected">Rejected</button>
+          </div>
+          <div class="d-flex mt-2 mt-md-0">
+            <button id="prevWFHRequests" class="btn btn-sm btn-outline-primary" disabled>Previous</button>
+            <span id="wfhRequestsPaginationInfo" class="mx-2">Showing 1-10</span>
+            <button id="nextWFHRequests" class="btn btn-sm btn-outline-primary">Next</button>
+          </div>
+        </div>
+        <table class="table table-hover align-middle">
+          <thead>
+            <tr>
+              <th>From</th>
+              <th>To</th>
+              <th>Reason</th>
+              <th>Note</th> 
+              <th>Status</th>
+              <th>Created</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="userWFHRequestsTableBody"></tbody>
+        </table>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
 <script>
     // Global variables
     let currentEmployeeId = null;
@@ -878,8 +968,11 @@
         start_date: document.getElementById('startDate').value,
         end_date: document.getElementById('endDate').value,
         leave_type: document.getElementById('leaveType').value,
-        reason: document.getElementById('reason').value
+        reason: document.getElementById('reason').value,
+        note:       document.getElementById('note').value.trim()   // NEW
+
     };
+
 
     // Get CSRF token from meta tag or cookie
     function getCSRFToken() {
@@ -1027,6 +1120,7 @@ function populateUserLeaveRequestsTable(requests) {
             <td>${request.start_date}</td>
             <td>${request.end_date}</td>
             <td>${request.reason}</td>
+            <td>${request.note || ''}</td>
             <td><span class="${statusBadgeClass}">${request.status}</span></td>
             <td>${request.created_at}</td>
             <td>
@@ -1077,6 +1171,7 @@ function updateUserLeaveRequestsTable(page, statusFilter) {
             <td>${request.end_date}</td>
             <td>${request.leave_type}</td>
             <td>${request.reason}</td>
+            <td>${request.note || ''}</td>
             <td><span class="${statusBadgeClass}">${request.status}</span></td>
             <td>${request.created_at}</td>
             <td>
@@ -1818,4 +1913,157 @@ document.addEventListener('DOMContentLoaded', function() {
         return cookieValue;
     }
 </script>
+<script>
+let currentWFHPage = 1;
+const wfhPerPage = 10;
+let allWFHRequests = [];
+let currentWFHFilterStatus = 'pending'; // default to pending
+
+function getCSRFTokenGeneric() {
+  const meta = document.querySelector('meta[name="csrf-token"]');
+  if (meta) return meta.getAttribute('content');
+  const m = document.cookie.split(';').map(c=>c.trim().split('='));
+  for (const [k,v] of m) if (k==='csrftoken') return v;
+  const inp = document.querySelector('input[name="csrfmiddlewaretoken"]');
+  return inp ? inp.value : null;
+}
+
+function submitWFHRequest() {
+  const form = document.getElementById('wfhRequestForm');
+  if (!form.checkValidity()) { form.reportValidity(); return; }
+
+  const start = new Date(document.getElementById('wfhStartDate').value);
+  const end   = new Date(document.getElementById('wfhEndDate').value);
+  if (end < start) { alert('To Date cannot be before From Date'); return; }
+
+  const payload = {
+    start_date: document.getElementById('wfhStartDate').value,
+    end_date:   document.getElementById('wfhEndDate').value,
+    reason:     document.getElementById('wfhReason').value
+  };
+
+  fetch('/wfh_request/create/', {
+    method:'POST',
+    headers:{'Content-Type':'application/json','X-CSRFToken':getCSRFTokenGeneric()},
+    body: JSON.stringify(payload)
+  }).then(r=>r.json()).then(d=>{
+    if (d.success) {
+      alert('WFH request submitted successfully!');
+      const modal = bootstrap.Modal.getInstance(document.getElementById('wfhRequestModal'));
+      if (modal) modal.hide();
+      form.reset();
+      if (typeof loadUserWFHRequests === 'function') loadUserWFHRequests();
+    } else {
+      alert('Error: ' + (d.error || 'Unknown error'));
+    }
+  }).catch(e=>alert('Error: ' + e.message));
+}
+
+function loadUserWFHRequests() {
+  fetch('/wfh_request/list/')
+    .then(r=>r.json())
+    .then(d=>{
+      if (d.success) {
+        allWFHRequests = (d.wfh_requests||[]).sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+
+        // Ensure filter defaults to "pending"
+        currentWFHFilterStatus = 'pending';
+        // Update active state on filter buttons
+        document.querySelectorAll('#viewWFHRequestsModal .filter-btn').forEach(b=>b.classList.remove('active'));
+        const pendingBtn = document.querySelector('#viewWFHRequestsModal .filter-btn[data-status="pending"]');
+        if (pendingBtn) pendingBtn.classList.add('active');
+
+        updateUserWFHRequestsTable(1, 'pending');
+        new bootstrap.Modal(document.getElementById('viewWFHRequestsModal')).show();
+      } else {
+        alert('Error loading WFH requests');
+      }
+    })
+    .catch(()=>alert('Error loading WFH requests'));
+}
+
+function updateUserWFHRequestsTable(page, statusFilter='pending') {
+  currentWFHPage = page; currentWFHFilterStatus = statusFilter;
+  const startIndex = (page-1)*wfhPerPage, endIndex = startIndex + wfhPerPage;
+
+  let rows = allWFHRequests;
+  if (statusFilter!=='all') rows = rows.filter(r=>r.status===statusFilter);
+  const slice = rows.slice(startIndex, endIndex);
+
+  const tbody = document.getElementById('userWFHRequestsTableBody');
+  tbody.innerHTML = '';
+
+  slice.forEach(req=>{
+    let badge = 'badge bg-secondary';
+    if (req.status==='approved') badge='badge bg-success';
+    else if (req.status==='rejected') badge='badge bg-danger';
+    else if (req.status==='pending') badge='badge bg-warning text-dark';
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${req.start_date}</td>
+      <td>${req.end_date}</td>
+      <td>${req.reason}</td>
+      <td><span class="${badge}">${req.status}</span></td>
+      <td>${req.created_at}</td>
+      <td>
+        ${req.status==='pending' ? `
+          <button class="btn btn-sm btn-danger" onclick="deleteWFHRequest(${req.id})">
+            <i class="fas fa-trash"></i> Delete
+          </button>` : ``}
+      </td>`;
+    tbody.appendChild(tr);
+  });
+
+  document.getElementById('wfhRequestsPaginationInfo').textContent =
+    `Showing ${rows.length?startIndex+1:0}-${Math.min(endIndex, rows.length)} of ${rows.length}`;
+  document.getElementById('prevWFHRequests').disabled = page===1;
+  document.getElementById('nextWFHRequests').disabled = endIndex>=rows.length;
+}
+
+function deleteWFHRequest(id) {
+  if (!confirm('Delete this WFH request?')) return;
+  fetch('/wfh_request/delete/', {
+    method:'POST',
+    headers:{'Content-Type':'application/json','X-CSRFToken':getCSRFTokenGeneric()},
+    body: JSON.stringify({request_id:id})
+  }).then(r=>r.json()).then(d=>{
+    if (d.success) { alert('Deleted'); loadUserWFHRequests(); }
+    else alert('Error: ' + d.error);
+  }).catch(e=>alert('Error: ' + e.message));
+}
+
+document.addEventListener('DOMContentLoaded', function(){
+  // Pagination controls
+  document.getElementById('prevWFHRequests').addEventListener('click', ()=>{
+    if (currentWFHPage>1) updateUserWFHRequestsTable(currentWFHPage-1,currentWFHFilterStatus);
+  });
+  document.getElementById('nextWFHRequests').addEventListener('click', ()=>{
+    updateUserWFHRequestsTable(currentWFHPage+1,currentWFHFilterStatus);
+  });
+
+  // Filter buttons
+  document.querySelectorAll('#viewWFHRequestsModal .filter-btn').forEach(b=>{
+    b.addEventListener('click', function(){
+      document.querySelectorAll('#viewWFHRequestsModal .filter-btn').forEach(x=>x.classList.remove('active'));
+      this.classList.add('active');
+      updateUserWFHRequestsTable(1, this.dataset.status);
+    });
+  });
+
+  // Optional: if user opens modal by other means and the default "All" is marked active in HTML,
+  // set it to "Pending" on first view.
+  const modalEl = document.getElementById('viewWFHRequestsModal');
+  if (modalEl) {
+    modalEl.addEventListener('show.bs.modal', ()=>{
+      document.querySelectorAll('#viewWFHRequestsModal .filter-btn').forEach(x=>x.classList.remove('active'));
+      const pendingBtn = document.querySelector('#viewWFHRequestsModal .filter-btn[data-status="pending"]');
+      if (pendingBtn) pendingBtn.classList.add('active');
+      updateUserWFHRequestsTable(1, 'pending');
+    }, { once: true });
+  }
+});
+</script>
+
+
 {% endblock %}

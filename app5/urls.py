@@ -44,9 +44,9 @@ urlpatterns = [
 
    path('jobcard/<int:jobcard_id>/standby-issue/', views.standby_issue_form, name='standby_issue_form'),
     path('jobcard/<int:jobcard_id>/standby-issue-item/', views.standby_issue_item, name='standby_issue_item'),
-    path('jobcard/<int:jobcard_id>/standby-return/', views.standby_return_item, name='standby_return_item'),
+      path('jobcard/<int:jobcard_id>/standby-return/', views.standby_issuance_return, name='standby_return_item'),
     path('jobcard/<int:jobcard_id>/standby-details/', views.view_standby_issuance_details, name='view_standby_issuance_details'),
-
+   
 
 ]
 

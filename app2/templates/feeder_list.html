@@ -3,165 +3,189 @@
 {% block content %}
 <style>
   .module-badge {
-    display: block;
-    background: #e9ecef;
-    color: #495057;
-    padding: 2px 6px;
-    border-radius: 3px;
-    margin-bottom: 2px;
-    font-size: 11px;
-    white-space: nowrap;
-  }
+  display: inline-block;
+  background: #e9ecef;
+  color: #495057;
+  padding: 2px 6px;
+  border-radius: 3px;
+  margin: 2px;
+  font-size: 11px;
+  white-space: nowrap;
+}
 
-  .container {
-    background: #fff;
-    padding: 30px;
-    border-radius: 10px;
-    max-width: 1400px;
-    margin: auto;
-    box-shadow: 0 0 10px rgba(0,0,0,0.1);
-  }
+.container-fluid {
+  background: #fff;
+  padding: 30px;
+  border-radius: 10px;
+  max-width: 1400px;
+  margin: auto;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
 
-  .header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-bottom: 20px;
-  }
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 20px;
+}
 
-  .breadcrumb {
-    font-size: 14px;
-    color: #888;
-  }
+.breadcrumb {
+  font-size: 14px;
+  color: #888;
+}
 
-  h2 {
-    margin: 0;
-    font-size: 24px;
-    color: #333;
-  }
+h2 {
+  margin: 0;
+  font-size: 24px;
+  color: #333;
+}
 
-  .add-btn {
-    background-color: #4d6bf9;
-    color: white;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    text-decoration: none;
-    font-size: 14px;
-  }
+.add-btn {
+  background-color: #4d6bf9;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  text-decoration: none;
+  font-size: 14px;
+  display: inline-block;
+}
 
-  .add-btn:hover {
-    background-color: #3d5af1;
-  }
+.add-btn:hover {
+  background-color: #3d5af1;
+}
 
-  .search-box {
-    margin-bottom: 20px;
-  }
+.search-box {
+  margin-bottom: 0;
+}
 
-  .search-box input {
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    width: 100%;
-    max-width: 300px;
-    font-size: 14px;
-  }
+.search-box input {
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  width: 300px;
+  font-size: 14px;
+}
 
-  .total-count {
-    color: #666;
-    font-size: 14px;
-    margin-bottom: 10px;
-  }
+.total-count {
+  color: #666;
+  font-size: 14px;
+  margin-bottom: 10px;
+}
 
-  .table-container {
-    overflow-x: auto;
-    margin-top: 20px;
-  }
+.table-container {
+  overflow-x: auto;
+  overflow-y: visible;
+  margin-top: 20px;
+}
 
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    min-width: 1300px;
-  }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 1300px;
+  position: relative;
+}
 
-  th, td {
-    padding: 12px 8px;
-    text-align: left;
-    border-bottom: 1px solid #ddd;
-    font-size: 14px;
-  }
+th, td {
+  padding: 12px 8px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+  font-size: 14px;
+  vertical-align: middle;
+}
 
-  th {
-    background-color: #f8f9fa;
-    font-weight: bold;
-    color: #333;
-    position: sticky;
-    top: 0;
-  }
+th {
+  background-color: #f8f9fa;
+  font-weight: bold;
+  color: #333;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
 
-  tr:hover {
-    background-color: #f5f5f5;
-  }
+tbody tr {
+  position: relative;
+}
 
-  .actions {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-  }
+tbody tr:hover {
+  background-color: #f5f5f5;
+}
 
-  .btn {
-    padding: 5px 10px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 12px;
-    text-decoration: none;
-  }
+.actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
 
-  .btn-edit {
-    background-color: #17a2b8;
-    color: white;
-  }
+.btn {
+  padding: 5px 10px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  text-decoration: none;
+  display: inline-block;
+}
 
-  .btn-delete {
-    background-color: #dc3545;
-    color: white;
-  }
+.btn-edit {
+  background-color: #17a2b8;
+  color: white;
+}
 
-  .btn-view {
-    background-color: #28a745;
-    color: white;
-  }
+.btn-edit:hover {
+  background-color: #138496;
+}
 
-  .no-data {
-    text-align: center;
-    padding: 40px;
-    color: #888;
-  }
+.btn-delete {
+  background-color: #dc3545;
+  color: white;
+}
 
-  /* Status Styles */
-  .status-dropdown {
-    position: relative;
-    display: inline-block;
-  }
+.btn-delete:hover {
+  background-color: #c82333;
+}
 
-  .status-btn {
-    padding: 6px 12px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 12px;
-    font-weight: bold;
-    min-width: 100px;
-    text-align: center;
-  }
+.no-data {
+  text-align: center;
+  padding: 40px;
+  color: #888;
+}
 
-  .status-pending {
-  background-color: #fff3cd;  /* Light yellow */
-  color: #856404;             /* Dark amber text */
+/* Status Styles - FIXED OVERLAP */
+.status-dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+tbody tr {
+  position: relative;
+  z-index: 1;
+}
+
+tbody tr:has(.status-dropdown .show) {
+  z-index: 1001;
+}
+
+.status-btn {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: bold;
+  min-width: 120px;
+  text-align: center;
+  display: inline-block;
+  position: relative;
+  z-index: 1;
+}
+
+.status-pending {
+  background-color: #fff3cd;
+  color: #856404;
 }
 
 .status-accepted {
@@ -180,134 +204,167 @@
 }
 
 .status-key-uploaded {
-  background-color: #d1c4e9;  /* Soft purple */
-  color: #4a148c;             /* Deep purple text */
+  background-color: #d1c4e9;
+  color: #4a148c;
 }
 
+.status-dropdown-content {
+  display: none;
+  position: absolute;
+  background-color: #ffffff;
+  min-width: 160px;
+  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.3);
+  z-index: 10000;
+  border-radius: 4px;
+  top: calc(100% + 2px);
+  left: 0;
+  border: 1px solid #ddd;
+}
 
+.status-dropdown-content.show {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
 
-  .status-dropdown-content {
-    display: none;
-    position: absolute;
-    background-color: #f9f9f9;
-    min-width: 160px;
-    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-    z-index: 1;
-    border-radius: 4px;
-    top: 100%;
-    left: 0;
+.status-dropdown-content button {
+  background-color: transparent;
+  color: #333;
+  padding: 10px 16px;
+  text-decoration: none;
+  display: block;
+  border: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background-color 0.2s;
+}
+
+.status-dropdown-content button:hover {
+  background-color: #f1f1f1;
+}
+
+.status-dropdown-content button:first-child {
+  border-radius: 4px 4px 0 0;
+}
+
+.status-dropdown-content button:last-child {
+  border-radius: 0 0 4px 4px;
+}
+
+.modules-cell {
+  max-width: 220px;
+  overflow: visible;
+}
+
+.pagination-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-top: 30px;
+}
+
+.pagination {
+  display: flex;
+  list-style: none;
+  padding: 0;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.pagination li {
+  display: inline-block;
+}
+
+.pagination a, .pagination span {
+  display: block;
+  padding: 8px 14px;
+  text-decoration: none;
+  color: #333;
+  border-right: 1px solid #ccc;
+  font-size: 14px;
+  background: white;
+}
+
+.pagination li:last-child a, .pagination li:last-child span {
+  border-right: none;
+}
+
+.pagination .active span {
+  background-color: #4d6bf9;
+  color: white;
+  font-weight: bold;
+}
+
+.pagination a:hover {
+  background-color: #f0f0f0;
+}
+
+.pagination .disabled a {
+  pointer-events: none;
+  color: #ccc;
+  background-color: #f9f9f9;
+}
+
+.search-filter-section {
+  margin-bottom: 20px;
+}
+
+.filter-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  align-items: center;
+}
+
+select {
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: white;
+  font-size: 14px;
+  min-width: 150px;
+  cursor: pointer;
+}
+
+.clear-btn {
+  padding: 10px 16px;
+  background: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.clear-btn:hover {
+  background: #5a6268;
+}
+
+@media (max-width: 768px) {
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
-  .status-dropdown-content button {
-    background-color: transparent;
-    color: black;
-    padding: 8px 16px;
-    text-decoration: none;
-    display: block;
-    border: none;
+  .filter-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .search-box input,
+  select,
+  .add-btn,
+  .clear-btn {
     width: 100%;
-    text-align: left;
-    cursor: pointer;
-    font-size: 12px;
   }
 
-  .status-dropdown-content button:hover {
-    background-color: #f1f1f1;
+  .actions {
+    flex-direction: column;
+    gap: 5px;
   }
-
-  .status-dropdown:hover .status-dropdown-content {
-    display: block;
-  }
-
-  .modules-cell {
-    max-width: 200px;
-    overflow: hidden;
-  }
-
-  .pagination-wrapper {
-    display: flex;
-    justify-content: center;
-    margin-top: 30px;
-  }
-
-  .pagination {
-    display: flex;
-    list-style: none;
-    padding: 0;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    overflow: hidden;
-  }
-
-  .pagination li {
-    display: inline-block;
-  }
-
-  .pagination a, .pagination span {
-    display: block;
-    padding: 8px 14px;
-    text-decoration: none;
-    color: #333;
-    border-right: 1px solid #ccc;
-    font-size: 14px;
-    background: white;
-  }
-
-  .pagination li:last-child a, .pagination li:last-child span {
-    border-right: none;
-  }
-
-  .pagination .active span {
-    background-color: #4d6bf9;
-    color: white;
-    font-weight: bold;
-  }
-
-  .pagination a:hover {
-    background-color: #f0f0f0;
-  }
-
-  .pagination .disabled a {
-    pointer-events: none;
-    color: #ccc;
-    background-color: #f9f9f9;
-  }
-
-  @media (max-width: 768px) {
-    .header {
-      flex-direction: column;
-      align-items: flex-start;
-    }
-
-    .add-btn {
-      width: 100%;
-      text-align: center; 
-    }
-
-    .search-box input {
-      width: 100%;
-    }
-
-    .actions {
-      flex-direction: column;
-      gap: 5px;
-    }
-  }
-
-  @media (max-width: 480px) {
-    h2 {
-      font-size: 20px;
-    }
-
-    .btn {
-      font-size: 11px;
-      padding: 6px 8px;
-    }
-
-    .status-btn {
-      font-size: 10px;
-    }
-  }
+}
 </style>
 
 <div class="container-fluid">
@@ -316,51 +373,43 @@
       <div class="breadcrumb">Home / Feeder / List</div>
       <h2>Feeder List</h2>
     </div>
-    
   </div>
 
-<div class="search-filter-section" style="margin-bottom: 20px;">
-  <form method="get" id="filter-form" style="display: flex; flex-wrap: wrap; gap: 15px; align-items: center;">
-    <div>
-      <a href="{% url 'feeder' %}" class="add-btn">+ Add New Feeder</a>
-    </div>
-    <!-- Search Input with Auto-filter -->
-    <div class="search-box" style="margin-bottom: 0;">
-      <input type="text" 
-             name="q" 
-             id="search-input"
-             placeholder="Search by name, software, or branch..." 
-             value="{{ query }}"
-             style="padding: 10px 12px; border: 1px solid #ddd; border-radius: 6px; width: 300px; font-size: 14px;">
-    </div>
+  <div class="search-filter-section">
+    <form method="get" id="filter-form" class="filter-form">
+      <div>
+        <a href="{% url 'feeder' %}" class="add-btn">+ Add New Feeder</a>
+      </div>
+      
+      <div class="search-box">
+        <input type="text" 
+               name="q" 
+               id="search-input"
+               placeholder="Search by name, software, or branch..." 
+               value="{{ query }}">
+      </div>
 
-    <!-- Branch Filter Dropdown -->
-    <select name="branch" id="branch-select" style="padding: 10px 12px; border: 1px solid #ddd; border-radius: 6px; background: white; font-size: 14px; min-width: 150px;">
-      <option value="">All Branches</option>
-      {% for b in branches %}
-        <option value="{{ b.name }}" {% if request.GET.branch == b.name %}selected{% endif %}>{{ b.name }}</option>
-      {% endfor %}
-    </select>
+      <select name="branch" id="branch-select">
+        <option value="">All Branches</option>
+        {% for b in branches %}
+          <option value="{{ b.name }}" {% if request.GET.branch == b.name %}selected{% endif %}>{{ b.name }}</option>
+        {% endfor %}
+      </select>
 
-    <!-- Status Filter Dropdown -->
-    <select name="status" id="status-select" style="padding: 10px 12px; border: 1px solid #ddd; border-radius: 6px; background: white; font-size: 14px; min-width: 150px;">
-      <option value="">All Status</option>
-      <option value="pending" {% if request.GET.status == 'pending' %}selected{% endif %}>Pending</option>
-      <option value="accepted" {% if request.GET.status == 'accepted' %}selected{% endif %}>Accepted</option>
-      <option value="key_uploaded" {% if request.GET.status == 'key_uploaded' %}selected{% endif %}>Key Uploaded</option>
-      <option value="rejected" {% if request.GET.status == 'rejected' %}selected{% endif %}>Rejected</option>
-      <option value="under_process" {% if request.GET.status == 'under_process' %}selected{% endif %}>Under Process</option>
-    </select>
+      <select name="status" id="status-select">
+        <option value="">All Status</option>
+        <option value="pending" {% if request.GET.status == 'pending' %}selected{% endif %}>Pending</option>
+        <option value="accepted" {% if request.GET.status == 'accepted' %}selected{% endif %}>Accepted</option>
+        <option value="key_uploaded" {% if request.GET.status == 'key_uploaded' %}selected{% endif %}>Key Uploaded</option>
+        <option value="rejected" {% if request.GET.status == 'rejected' %}selected{% endif %}>Rejected</option>
+        <option value="under_process" {% if request.GET.status == 'under_process' %}selected{% endif %}>Under Process</option>
+      </select>
 
-    <!-- Clear Filters Button -->
-    <button type="button" 
-            id="clear-filters" 
-            style="padding: 10px 16px; background: #6c757d; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">
-      Clear All
-    </button>
-
-  </form>
-</div>
+      <button type="button" id="clear-filters" class="clear-btn">
+        Clear All
+      </button>
+    </form>
+  </div>
 
   <div class="total-count">
     Total Records: {{ page_obj.paginator.count }}
@@ -378,9 +427,7 @@
           <th>Installation Date</th>
           <th>Software Amount</th>
           <th>More Modules</th>
-          {% if 'feeder_status' in allowed_menus %}
           <th>Status</th>
-          {% endif %}
           <th>Actions</th>
         </tr>
       </thead>
@@ -406,42 +453,37 @@
                 </span>
               {% endfor %}
             {% else %}
-              <span class="text-muted">None</span>
+              <span style="color: #999;">None</span>
             {% endif %}
           </td>
-          {% if 'feeder_status' in allowed_menus %}
           <td>
-            <div class="status-dropdown">
-              <button class="status-btn {{ feeder.get_status_display_class }}" 
+            {% if 'feeder_status' in allowed_menus %}
+            <div class="status-dropdown" id="status-dropdown-{{ feeder.id }}">
+              <button type="button" 
+                      class="status-btn {{ feeder.get_status_display_class }}" 
                       id="status-btn-{{ feeder.id }}"
                       data-feeder-id="{{ feeder.id }}"
-                      data-current-status="{{ feeder.status }}">
+                      data-current-status="{{ feeder.status }}"
+                      onclick="toggleStatusDropdown({{ feeder.id }}, event)">
                 {{ feeder.get_status_display }}
               </button>
               <div class="status-dropdown-content">
-                <button type="button" onclick="updateStatus({{ feeder.id }}, 'pending')" 
-                        data-status="pending">Pending</button>
-                <button type="button" onclick="updateStatus({{ feeder.id }}, 'accepted')" 
-                        data-status="accepted">Accepted</button>
-                <button type="button" onclick="updateStatus({{ feeder.id }}, 'key_uploaded')" 
-                        data-status="key_uploaded">Key Uploaded</button>
-                <button type="button" onclick="updateStatus({{ feeder.id }}, 'rejected')" 
-                        data-status="rejected">Rejected</button>
-                <button type="button" onclick="updateStatus({{ feeder.id }}, 'under_process')" 
-                        data-status="under_process">Under Process</button>
+                <button type="button" onclick="updateStatus({{ feeder.id }}, 'pending', event)">Pending</button>
+                <button type="button" onclick="updateStatus({{ feeder.id }}, 'accepted', event)">Accepted</button>
+                <button type="button" onclick="updateStatus({{ feeder.id }}, 'key_uploaded', event)">Key Uploaded</button>
+                <button type="button" onclick="updateStatus({{ feeder.id }}, 'rejected', event)">Rejected</button>
+                <button type="button" onclick="updateStatus({{ feeder.id }}, 'under_process', event)">Under Process</button>
               </div>
             </div>
-          </td>
-          {% else %}
-          <td>
+            {% else %}
             <span class="status-btn {{ feeder.get_status_display_class }}">
               {{ feeder.get_status_display }}
             </span>
+            {% endif %}
           </td>
-          {% endif %}
           <td class="actions">
             <a href="{% url 'feeder_edit' feeder.id %}" class="btn btn-edit">Edit</a>
-            <form method="post" action="{% url 'feeder_delete' feeder.id %}" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this feeder?')">
+            <form method="post" action="{% url 'feeder_delete' feeder.id %}" style="display:inline; margin: 0;" onsubmit="return confirm('Are you sure you want to delete this feeder?')">
               {% csrf_token %}
               <button type="submit" class="btn btn-delete">Delete</button>
             </form>
@@ -456,11 +498,12 @@
     </div>
     {% endif %}
 
+    {% if page_obj %}
     <div class="pagination-wrapper">
       <ul class="pagination">
         {% if page_obj.has_previous %}
-          <li><a href="?page=1{% if query %}&q={{ query }}{% endif %}">&laquo;</a></li>
-          <li><a href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}">&lsaquo;</a></li>
+          <li><a href="?page=1{% if query %}&q={{ query }}{% endif %}{% if request.GET.branch %}&branch={{ request.GET.branch }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">&laquo;</a></li>
+          <li><a href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if request.GET.branch %}&branch={{ request.GET.branch }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">&lsaquo;</a></li>
         {% else %}
           <li class="disabled"><a>&laquo;</a></li>
           <li class="disabled"><a>&lsaquo;</a></li>
@@ -470,34 +513,26 @@
           {% if num == page_obj.number %}
             <li class="active"><span>{{ num }}</span></li>
           {% elif num >= page_obj.number|add:'-2' and num <= page_obj.number|add:'2' %}
-            <li><a href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}">{{ num }}</a></li>
+            <li><a href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}{% if request.GET.branch %}&branch={{ request.GET.branch }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">{{ num }}</a></li>
           {% elif num == 1 or num == page_obj.paginator.num_pages %}
-            <li><a href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}">{{ num }}</a></li>
+            <li><a href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}{% if request.GET.branch %}&branch={{ request.GET.branch }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">{{ num }}</a></li>
           {% elif num == page_obj.number|add:'-3' or num == page_obj.number|add:'3' %}
             <li><span>…</span></li>
           {% endif %}
         {% endfor %}
 
         {% if page_obj.has_next %}
-          <li><a href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}">&rsaquo;</a></li>
-          <li><a href="?page={{ page_obj.paginator.num_pages }}{% if query %}&q={{ query }}{% endif %}">&raquo;</a></li>
+          <li><a href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if request.GET.branch %}&branch={{ request.GET.branch }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">&rsaquo;</a></li>
+          <li><a href="?page={{ page_obj.paginator.num_pages }}{% if query %}&q={{ query }}{% endif %}{% if request.GET.branch %}&branch={{ request.GET.branch }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">&raquo;</a></li>
         {% else %}
           <li class="disabled"><a>&rsaquo;</a></li>
           <li class="disabled"><a>&raquo;</a></li>
         {% endif %}
       </ul>
     </div>
+    {% endif %}
   </div>
 </div>
-<script>
-  document.getElementById('branch-select').addEventListener('change', function() {
-    document.getElementById('filter-form').submit();
-  });
-
-  document.getElementById('status-select').addEventListener('change', function() {
-    document.getElementById('filter-form').submit();
-  });
-</script>
 
 <script>
 // Get CSRF token
@@ -516,9 +551,82 @@ function getCookie(name) {
     return cookieValue;
 }
 
-function updateStatus(feederId, newStatus) {
+// Toggle status dropdown
+function toggleStatusDropdown(feederId, event) {
+    console.log('toggleStatusDropdown called for feeder:', feederId);
+    
+    if (event) {
+        event.stopPropagation();
+        event.preventDefault();
+    }
+    
+    const dropdown = document.querySelector(`#status-dropdown-${feederId}`);
+    const dropdownContent = dropdown.querySelector('.status-dropdown-content');
+    
+    if (!dropdownContent) {
+        console.error('Dropdown content not found for feeder:', feederId);
+        return;
+    }
+    
+    // Close all other dropdowns and reset their row z-index
+    document.querySelectorAll('.status-dropdown-content').forEach(d => {
+        if (d !== dropdownContent) {
+            d.classList.remove('show');
+            const parentRow = d.closest('tr');
+            if (parentRow) {
+                parentRow.style.zIndex = '1';
+            }
+        }
+    });
+    
+    // Toggle current dropdown
+    const isShowing = dropdownContent.classList.toggle('show');
+    
+    // Set z-index on the parent row
+    const parentRow = dropdown.closest('tr');
+    if (parentRow) {
+        parentRow.style.zIndex = isShowing ? '1001' : '1';
+    }
+    
+    console.log('Toggled dropdown, show class:', dropdownContent.classList.contains('show'));
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(event) {
+    if (!event.target.closest('.status-dropdown')) {
+        document.querySelectorAll('.status-dropdown-content').forEach(d => {
+            d.classList.remove('show');
+            const parentRow = d.closest('tr');
+            if (parentRow) {
+                parentRow.style.zIndex = '1';
+            }
+        });
+        console.log('Closed all dropdowns due to outside click');
+    }
+});
+
+// Update status function
+function updateStatus(feederId, newStatus, event) {
+    console.log('updateStatus called:', feederId, newStatus);
+    
+    if (event) {
+        event.stopPropagation();
+        event.preventDefault();
+    }
+    
+    // Close the dropdown immediately
+    const dropdown = document.querySelector(`#status-dropdown-${feederId}`);
+    const dropdownContent = dropdown.querySelector('.status-dropdown-content');
+    if (dropdownContent) {
+        dropdownContent.classList.remove('show');
+        const parentRow = dropdown.closest('tr');
+        if (parentRow) {
+            parentRow.style.zIndex = '1';
+        }
+    }
+    
     const csrftoken = getCookie('csrftoken');
-    const statusBtn = document.getElementById(`status-btn-${feederId}`); // FIXED: Added backticks
+    const statusBtn = document.getElementById(`status-btn-${feederId}`);
     
     if (!statusBtn) {
         console.error('Status button not found for feeder:', feederId);
@@ -531,8 +639,8 @@ function updateStatus(feederId, newStatus) {
     // Show loading state
     statusBtn.textContent = 'Updating...';
     statusBtn.disabled = true;
-
-    // Make the AJAX request - FIXED: Added backticks and corrected URL
+    
+    // Make the AJAX request
     fetch(`/feeder/${feederId}/status-update/`, {
         method: 'POST',
         headers: {
@@ -544,24 +652,17 @@ function updateStatus(feederId, newStatus) {
         })
     })
     .then(response => {
-        console.log('Response status:', response.status);
-        
         if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`); // FIXED: Added backticks
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
-        
         return response.json();
     })
     .then(data => {
-        console.log('Response data:', data);
-        
         if (data.success) {
             // Update button with new status
             statusBtn.textContent = data.new_status;
-            statusBtn.className = `status-btn ${data.status_class}`; // FIXED: Added backticks
-            
-            // Show success message (optional)
-            console.log('Status updated successfully');
+            statusBtn.className = `status-btn ${data.status_class}`;
+            statusBtn.setAttribute('data-current-status', newStatus);
         } else {
             throw new Error(data.error || 'Unknown error occurred');
         }
@@ -574,7 +675,7 @@ function updateStatus(feederId, newStatus) {
         statusBtn.className = originalClass;
         
         // Show error message to user
-        alert(`Error updating status: ${error.message}`); // FIXED: Added backticks
+        alert(`Error updating status: ${error.message}`);
     })
     .finally(() => {
         // Re-enable button
@@ -582,31 +683,10 @@ function updateStatus(feederId, newStatus) {
     });
 }
 
-// Helper function to get status class (keeping your existing logic)
-function getStatusClass(status) {
-    const statusClasses = {
-        'pending': 'status-pending',
-        'accepted': 'status-accepted',
-        'rejected': 'status-rejected',
-        'under_process': 'status-under-process',
-        'key_uploaded': 'status-key-uploaded',
-    };
-    return statusClasses[status] || 'status-pending';
-}
-
-// Add some debugging
+// Filter form functionality
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Feeder list page loaded');
+    console.log('DOM loaded - initializing feeder list functionality');
     
-    // Check if CSRF token is available
-    const csrfToken = getCookie('csrftoken');
-    if (!csrfToken) {
-        console.warn('CSRF token not found. This may cause issues with status updates.');
-    }
-});
-</script>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.getElementById('search-input');
     const branchSelect = document.getElementById('branch-select');
     const statusSelect = document.getElementById('status-select');
@@ -614,18 +694,20 @@ document.addEventListener('DOMContentLoaded', function() {
     const filterForm = document.getElementById('filter-form');
     
     let searchTimeout;
+    let lastSearchValue = searchInput ? searchInput.value : '';
 
     // Auto-submit form with debounce for search input
     function debounceSearch() {
         clearTimeout(searchTimeout);
-        searchTimeout = setTimeout(() => {
-            filterForm.submit();
-        }, 500); // Wait 500ms after user stops typing
-    }
-
-    // Auto-submit for dropdown changes (immediate)
-    function immediateFilter() {
-        filterForm.submit();
+        const currentValue = searchInput.value;
+        
+        // Only trigger search if value has changed
+        if (currentValue !== lastSearchValue) {
+            searchTimeout = setTimeout(() => {
+                lastSearchValue = currentValue;
+                filterForm.submit();
+            }, 500);
+        }
     }
 
     // Event listeners
@@ -634,17 +716,18 @@ document.addEventListener('DOMContentLoaded', function() {
         searchInput.addEventListener('keyup', function(e) {
             if (e.key === 'Enter') {
                 clearTimeout(searchTimeout);
+                lastSearchValue = searchInput.value;
                 filterForm.submit();
             }
         });
     }
 
     if (branchSelect) {
-        branchSelect.addEventListener('change', immediateFilter);
+        branchSelect.addEventListener('change', () => filterForm.submit());
     }
 
     if (statusSelect) {
-        statusSelect.addEventListener('change', immediateFilter);
+        statusSelect.addEventListener('change', () => filterForm.submit());
     }
 
     // Clear all filters
@@ -653,17 +736,35 @@ document.addEventListener('DOMContentLoaded', function() {
             searchInput.value = '';
             branchSelect.value = '';
             statusSelect.value = '';
-            filterForm.submit();
+            
+            // Submit form to clear filters
+            window.location.href = window.location.pathname;
         });
     }
 
-    // Show loading indicator during search (optional)
+    // Show loading cursor during form submission
     filterForm.addEventListener('submit', function() {
         document.body.style.cursor = 'wait';
-        setTimeout(() => {
-            document.body.style.cursor = 'default';
-        }, 2000);
+    });
+    
+    // Check CSRF token
+    const csrfToken = getCookie('csrftoken');
+    if (!csrfToken) {
+        console.warn('CSRF token not found. Status updates may fail.');
+    }
+    
+    // Debug: Check if dropdown elements exist
+    const dropdowns = document.querySelectorAll('.status-dropdown');
+    console.log('Found status dropdowns:', dropdowns.length);
+    dropdowns.forEach((dropdown, index) => {
+        const content = dropdown.querySelector('.status-dropdown-content');
+        console.log(`Dropdown ${index}:`, {
+            id: dropdown.id,
+            hasContent: !!content,
+            contentVisible: content ? window.getComputedStyle(content).display : 'N/A'
+        });
     });
 });
 </script>
+
 {% endblock %}
