@@ -398,6 +398,25 @@ class StandbyItem(models.Model):
         verbose_name_plural = "Standby Items"
 
 
+class StandbyReturn(models.Model):
+    """Model to track standby item returns"""
+    item = models.ForeignKey(StandbyItem, on_delete=models.CASCADE, related_name='returns')
+    return_date = models.DateField()
+    return_notes = models.TextField(blank=True, null=True)
+    returned_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    stock_on_return = models.IntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    # Store original customer info at time of return
+    customer_name_at_return = models.CharField(max_length=200, blank=True, null=True)
+    customer_place_at_return = models.CharField(max_length=200, blank=True, null=True)
+    customer_phone_at_return = models.CharField(max_length=15, blank=True, null=True)
+    issued_date_at_return = models.DateField(blank=True, null=True)
+
+    def __str__(self):
+        return f"Return of {self.item.name} on {self.return_date}"
+
+# Update the StandbyImage model to link to returns
 class StandbyImage(models.Model):
     IMAGE_TYPE_CHOICES = [
         ('original', 'Original'),
@@ -409,6 +428,15 @@ class StandbyImage(models.Model):
     image = models.ImageField(upload_to='standby_images/')
     image_type = models.CharField(max_length=20, choices=IMAGE_TYPE_CHOICES, default='original')
     uploaded_at = models.DateTimeField(auto_now_add=True)
+    
+    # Link return images to specific return records
+    standby_return = models.ForeignKey(
+        StandbyReturn, 
+        on_delete=models.CASCADE, 
+        related_name='return_images',
+        null=True, 
+        blank=True
+    )
 
     def __str__(self):
-        return f"Image for {self.item.name}"
+        return f"Image for {self.item.name} ({self.image_type})"
