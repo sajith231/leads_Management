@@ -1799,19 +1799,22 @@ def send_whatsapp_notification(name, installation_date, software_amount, created
         logger.error(f"Unexpected error while sending WhatsApp notification: {str(e)}")
         return False
 
-
 # Modified feeder view with created_by included in message
 @csrf_exempt
 def feeder(request):
+    # Ensure we resolve the correct custom user model (app1.User) even if "User" is shadowed elsewhere
+    from django.apps import apps
+    AppUser = apps.get_model('app1', 'User')
+
     business_types = BusinessType.objects.all()
     branches = Branch.objects.all()
 
     # Get the logged-in user's branch - ALL users now see only their branch
     try:
-        custom_user = User.objects.get(userid=request.user.username)
+        custom_user = AppUser.objects.get(userid=request.user.username)
         user_branch = custom_user.branch if custom_user.branch else None
         user_branch_id = custom_user.branch.id if custom_user.branch else None
-    except User.DoesNotExist:
+    except AppUser.DoesNotExist:
         user_branch = None
         user_branch_id = None
 
@@ -1934,6 +1937,7 @@ def feeder(request):
         'user_branch_id': user_branch_id,
         'is_branch_restricted': is_branch_restricted,
     })
+
 
 
 
