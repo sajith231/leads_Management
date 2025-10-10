@@ -1,9 +1,14 @@
 {% extends "base.html" %}
 
-{% block title %}Job Card List{% endblock %}
+{% block title %}My Job Cards{% endblock %}
 
 {% block content %}
-    <title>Assigned Job Cards</title>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Job Cards</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
@@ -20,15 +25,28 @@
         }
         
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #f5f7fa;
             padding: 20px;
             color: #333;
+        }
+
+        .btn-standby:disabled {
+            background-color: #6c757d !important;
+            color: white !important;
+            cursor: not-allowed !important;
+            opacity: 0.6 !important;
+            transform: none !important;
+        }
+
+        .btn-standby:disabled:hover {
+            background-color: #6c757d !important;
+            transform: none !important;
         }
         
         .container {
             max-width: 1200px;
             margin: 0 auto;
+            padding: 0 15px;
         }
         
         .page-header {
@@ -116,15 +134,82 @@
             outline: none;
         }
         
+        /* Enhanced Horizontal Scroller - Highly Visible Blue Theme */
         .table-responsive {
             border-radius: 8px;
-            overflow: hidden;
+            overflow-x: auto;
+            overflow-y: visible;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: auto;
+            scrollbar-color: #0062cc #e9ecef;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border: 1px solid #e9ecef;
+            background: #f8f9fa;
+        }
+        
+        /* Custom scrollbar for Webkit browsers - Highly Visible */
+        .table-responsive::-webkit-scrollbar {
+            height: 16px;
+            background: #f1f1f1;
+            border-radius: 0 0 8px 8px;
+        }
+        
+        .table-responsive::-webkit-scrollbar-track {
+            background: #e9ecef;
+            border-radius: 8px;
+            margin: 0 10px;
+            border: 1px solid #dee2e6;
+        }
+        
+        .table-responsive::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #0062cc, #0095ff);
+            border-radius: 8px;
+            border: 2px solid #e9ecef;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        .table-responsive::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, #0056b3, #007bff);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+        }
+        
+        .table-responsive::-webkit-scrollbar-thumb:active {
+            background: linear-gradient(135deg, #004085, #0062cc);
+        }
+        
+        /* Scroll hint for mobile users */
+        .scroll-hint {
+            display: none;
+            text-align: center;
+            color: var(--primary);
+            font-size: 0.9rem;
+            margin-bottom: 12px;
+            padding: 10px;
+            background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+            border-radius: 8px;
+            border: 2px solid #bbdefb;
+            font-weight: 500;
+        }
+        
+        .scroll-hint i {
+            margin-right: 8px;
+            animation: bounce 2s infinite;
+            font-size: 1.1rem;
+        }
+        
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateX(0); }
+            40% { transform: translateX(-8px); }
+            60% { transform: translateX(-4px); }
         }
         
         .table {
             margin-bottom: 0;
             border-collapse: separate;
             border-spacing: 0;
+            min-width: 800px;
+            width: 100%;
         }
         
         .table th {
@@ -133,12 +218,18 @@
             font-weight: 600;
             padding: 12px 15px;
             border: none;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            white-space: nowrap;
+            border-bottom: 2px solid #dee2e6;
         }
         
         .table td {
             padding: 12px 15px;
             vertical-align: middle;
             border-bottom: 1px solid #e9ecef;
+            white-space: nowrap;
         }
         
         .table tr:last-child td {
@@ -169,6 +260,44 @@
         .badge-rejected {
             background-color: #f8d7da;
             color: #721c24;
+        }
+
+        .btn-standby {
+            background-color: #6f42c1;
+            color: white;
+            font-size: 0.85rem;
+        }
+        
+        .btn-standby:hover {
+            background-color: #5a2d91;
+            transform: translateY(-2px);
+        }
+        
+        .btn-standby.with-customer {
+            background-color: #28a745;
+        }
+        
+        .btn-standby.with-customer:hover {
+            background-color: #218838;
+        }
+        
+        .standby-issued-badge {
+            background-color: #e9ecef;
+            color: #495057;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        
+        .standby-issued-yes {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .standby-issued-no {
+            background-color: #eb0414;
+            color: white;
         }
         
         .badge-completed {
@@ -268,8 +397,6 @@
             opacity: 0.5;
         }
         
-       
-        
         .back-button {
             display: inline-flex;
             align-items: center;
@@ -317,7 +444,6 @@
             color: var(--gray);
         }
 
-        /* Filter Section Styles */
         .filter-section {
             background-color: #f8f9fa;
             border-radius: 8px;
@@ -335,7 +461,6 @@
             min-width: 150px;
         }
 
-        /* Modal Styles */
         .modal {
             display: none;
             position: fixed;
@@ -357,6 +482,7 @@
             max-width: 500px;
             border-radius: 10px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            position: relative;
         }
 
         .close {
@@ -365,6 +491,9 @@
             font-size: 28px;
             font-weight: bold;
             cursor: pointer;
+            position: absolute;
+            right: 15px;
+            top: 10px;
         }
 
         .close:hover {
@@ -423,22 +552,75 @@
                 width: 95%;
                 margin: 10% auto;
             }
+            
+            /* Show scroll hint on mobile */
+            .scroll-hint {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            
+            /* Adjust scrollbar for mobile */
+            .table-responsive::-webkit-scrollbar {
+                height: 14px;
+            }
+            
+            .table-responsive::-webkit-scrollbar-track {
+                margin: 0 8px;
+            }
+        }
+
+        /* Extra small devices */
+        @media (max-width: 576px) {
+            .container {
+                padding: 0 10px;
+            }
+            
+            .page-header {
+                padding: 15px;
+            }
+            
+            .stats-cards {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            .stat-card {
+                padding: 15px;
+            }
+            
+            .table-responsive::-webkit-scrollbar {
+                height: 12px;
+            }
+            
+            .scroll-hint {
+                font-size: 0.85rem;
+                padding: 8px;
+            }
+            
+            .table th, .table td {
+                padding: 10px 8px;
+                font-size: 0.85rem;
+            }
+            
+            .btn-action {
+                padding: 5px 10px;
+                font-size: 0.8rem;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div>
-            <button class="back-button" onclick="goBack()">
-                <i class="fas fa-arrow-left"></i> Back
-            </button>
-           
+        <button class="back-button" onclick="goBack()">
+            <i class="fas fa-arrow-left"></i> Back
+        </button>
         
         <div class="page-header">
             <div class="header-content">
                 <div>
                     <h2 class="mb-1"><i class="fas fa-user-cog me-2"></i> My Job Cards</h2>
-                    <p class="mb-0">View and manage your assigned job cards</p>
+                    <p class="mb-0">Welcome, {{ current_user_name }} - View and manage your assigned job cards</p>
                 </div>
                 <div class="search-box">
                     <i class="fas fa-search text-muted"></i>
@@ -451,12 +633,12 @@
             <div class="stat-card success">
                 <i class="fas fa-check-circle"></i>
                 <div class="stat-number">{{ accepted_count }}</div>
-                <div class="stat-title">Accepted</div>
+                <div class="stat-title">In Technician Hand</div>
             </div>
             <div class="stat-card warning">
                 <i class="fas fa-clock"></i>
                 <div class="stat-number">{{ pending_count }}</div>
-                <div class="stat-title">Pending</div>
+                <div class="stat-title">Sent To Technician</div>
             </div>
             <div class="stat-card danger">
                 <i class="fas fa-times-circle"></i>
@@ -475,17 +657,17 @@
             </div>
         </div>
 
-        <!-- Filter Section -->
         <div class="filter-section">
             <div class="row g-2 align-items-center">
                 <div class="col-md-8">
                     <label for="statusFilter" class="filter-label mb-0">Filter by Status:</label>
                     <select class="form-select form-select-sm d-inline-block w-auto ms-2" id="statusFilter">
                         <option value="all">All Jobs</option>
-                        <option value="sent_technician">Pending</option>
-                        <option value="accepted">Accepted</option>
+                        <option value="sent_technician">Sent To Technician</option>
+                        <option value="accepted">In Technician Hand</option>
                         <option value="completed">Completed</option>
                         <option value="rejected">Rejected</option>
+                        <option value="returned">Returned</option>
                     </select>
                 </div>
                 <div class="col-md-4">
@@ -503,6 +685,12 @@
                 <h4 class="mb-0">Job Cards List</h4>
             </div>
 
+            <!-- Scroll hint for mobile users -->
+            <div class="scroll-hint">
+                <i class="fas fa-arrows-left-right"></i>
+                Scroll horizontally to view all columns
+            </div>
+
             <div class="table-responsive">
                 <table class="table" id="jobTable">
                     <thead>
@@ -510,85 +698,98 @@
                             <th>Ticket No</th>
                             <th>Customer Name</th>
                             <th>Technician Name</th>
+                            <th>Standby Status</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for jobcard in processed_jobcards %}
-                            {% if jobcard.technician and jobcard.technician == request.user.get_full_name|default:request.user.username %}
-                            <tr class="priority-{{ jobcard.priority|default:'medium' }} jobcard-row" 
-                                data-status="{{ jobcard.status }}" 
-                                data-technician="{{ jobcard.technician|default:'' }}"
-                                data-original-status="{{ jobcard.status }}">
-                                <td><strong>{{ jobcard.ticket_no }}</strong></td>
-                                <td>{{ jobcard.customer }}</td>
-                                <td>{{ jobcard.technician }}</td>
-                                <td>
-                                    <div class="action-buttons">
-                                        {% if jobcard.status == 'sent_technician' %}
-                                            <button class="btn-action btn-accept" onclick="updateStatus('{{ jobcard.id }}', 'accepted')">
-                                                <i class="fas fa-check"></i> Accept
-                                            </button>
-                                            <button class="btn-action btn-reject" onclick="updateStatus('{{ jobcard.id }}', 'rejected')">
-                                                <i class="fas fa-times"></i> Reject
-                                            </button>
-                                            <button class="btn-action btn-complete" onclick="showCompleteModal('{{ jobcard.id }}')">
-                                                <i class="fas fa-clipboard-check"></i> Complete
-                                            </button>
-                                        {% elif jobcard.status == 'accepted' %}
-                                            <button class="btn-action btn-complete" onclick="showCompleteModal('{{ jobcard.id }}')">
-                                                <i class="fas fa-clipboard-check"></i> Complete
-                                            </button>
-                                            <button class="btn-action btn-reject" onclick="updateStatus('{{ jobcard.id }}', 'rejected')">
-                                                <i class="fas fa-times"></i> Reject
-                                            </button>
-                                        {% elif jobcard.status == 'completed' %}
-                                            <button class="btn-action btn-view" onclick="showCompletionDetails('{{ jobcard.id }}')">
-                                                <i class="fas fa-eye"></i> View
-                                            </button>
-                                            <button class="btn-action btn-reopen" onclick="updateStatus('{{ jobcard.id }}', 'accepted')">
-                                                <i class="fas fa-redo"></i> Reopen
-                                            </button>
-                                        {% elif jobcard.status == 'rejected' %}
-                                            <button class="btn-action btn-reopen" onclick="updateStatus('{{ jobcard.id }}', 'accepted')">
-                                                <i class="fas fa-redo"></i> Reopen
-                                            </button>
+                        <tr class="priority-{{ jobcard.priority|default:'medium' }} jobcard-row" 
+                            data-status="{{ jobcard.status }}" 
+                            data-technician="{{ jobcard.technician|default:'' }}"
+                            data-original-status="{{ jobcard.status }}"
+                            data-standby-issued="{{ jobcard.standby_issued|yesno:'true,false' }}"
+                            data-job-id="{{ jobcard.id }}">
+                            <td><strong>{{ jobcard.ticket_no }}</strong></td>
+                            <td>{{ jobcard.customer }}</td>
+                            <td>{{ jobcard.technician }}</td>
+                            
+                            <!-- Standby Status Column -->
+                            <td>
+                                {% if jobcard.status == 'completed' or jobcard.status == 'rejected' %}
+                                    <!-- Read-only display for completed/rejected jobs -->
+                                    <span class="standby-issued-badge {% if jobcard.standby_issued %}standby-issued-yes{% else %}standby-issued-no{% endif %}">
+                                        {% if jobcard.standby_issued %}
+                                            <i class="fas fa-check-circle"></i> With Customer
+                                        {% else %}
+                                            <i class="fas fa-times-circle"></i> Not Issued
                                         {% endif %}
-                                    </div>
-                                    
-                                    <!-- Completion Details Section -->
-                                    {% if jobcard.status == 'completed' and jobcard.completion_details %}
-                                    <div class="completion-details" id="details-{{ jobcard.id }}" style="display: none;">
-                                        <h6>Completion Details</h6>
-                                        <div class="detail-item">
-                                            <span class="detail-label">Work Done:</span>
-                                            <span>{{ jobcard.completion_details.work_done|default:"Not specified" }}</span>
-                                        </div>
-                                        <div class="detail-item">
-                                            <span class="detail-label">Parts Used:</span>
-                                            <span>{{ jobcard.completion_details.parts_used|default:"None" }}</span>
-                                        </div>
-                                        <div class="detail-item">
-                                            <span class="detail-label">Time Spent:</span>
-                                            <span>{{ jobcard.completion_details.time_spent|default:"0" }} hours</span>
-                                        </div>
-                                        <div class="detail-item">
-                                            <span class="detail-label">Completed On:</span>
-                                            <span>{{ jobcard.updated_at|date:"M d, Y H:i" }}</span>
-                                        </div>
-                                    </div>
+                                    </span>
+                                {% else %}
+                                    <!-- Interactive button for active jobs -->
+                                    {% if jobcard.status == 'accepted' %}
+                                        <!-- Active button for "In Technician Hand" status -->
+                                        <button class="btn-action btn-standby {% if jobcard.standby_issued %}with-customer{% endif %}" 
+                                                onclick="toggleStandbyIssued('{{ jobcard.id }}')"
+                                                id="standby-btn-{{ jobcard.id }}"
+                                                data-standby-status="{{ jobcard.standby_issued|yesno:'true,false' }}">
+                                            {% if jobcard.standby_issued %}
+                                                <i class="fas fa-undo-alt"></i> With Customer
+                                            {% else %}
+                                                <i class="fas fa-box"></i> Issue Standby
+                                            {% endif %}
+                                        </button>
+                                    {% else %}
+                                        <!-- Disabled button for other statuses -->
+                                        <button class="btn-action btn-standby" disabled title="Only available when job is 'In Technician Hand'">
+                                            <i class="fas fa-box"></i> Issue Standby
+                                        </button>
                                     {% endif %}
-                                </td>
-                            </tr>
-                            {% endif %}
+                                {% endif %}
+                            </td>
+                            
+                            <td>
+                                <div class="action-buttons">
+                                    {% if jobcard.status == 'sent_technician' %}
+                                        <button class="btn-action btn-accept" onclick="updateStatus('{{ jobcard.id }}', 'accepted')">
+                                            <i class="fas fa-check"></i> Accept
+                                        </button>
+                                        <button class="btn-action btn-reject" onclick="updateStatus('{{ jobcard.id }}', 'rejected')">
+                                            <i class="fas fa-times"></i> Reject
+                                        </button>
+                                        <button class="btn-action btn-complete" onclick="showCompleteModal('{{ jobcard.id }}')">
+                                            <i class="fas fa-clipboard-check"></i> Complete
+                                        </button>
+                                        
+                                    {% elif jobcard.status == 'accepted' %}
+                                        <button class="btn-action btn-complete" onclick="showCompleteModal('{{ jobcard.id }}')">
+                                            <i class="fas fa-clipboard-check"></i> Complete
+                                        </button>
+                                        <button class="btn-action btn-reject" onclick="updateStatus('{{ jobcard.id }}', 'rejected')">
+                                            <i class="fas fa-times"></i> Reject
+                                        </button>
+                                        
+                                    {% elif jobcard.status == 'completed' %}
+                                        <button class="btn-action btn-reopen" onclick="updateStatus('{{ jobcard.id }}', 'accepted')">
+                                            <i class="fas fa-redo"></i> Reopen
+                                        </button>
+                                        
+                                    {% elif jobcard.status == 'rejected' %}
+                                        <button class="btn-action btn-reopen" onclick="updateStatus('{{ jobcard.id }}', 'accepted')">
+                                            <i class="fas fa-redo"></i> Reopen
+                                        </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
                         {% empty %}
-                            <tr>
-                                <td colspan="4" class="empty-state">
-                                    <i class="fas fa-inbox"></i>
-                                    <h4>No assigned job cards found</h4>
-                                    <p>You don't have any job cards assigned to you at the moment.</p>
-                                </td>
-                            </tr>
+                        <tr>
+                            <td colspan="5" class="empty-state">
+                                <i class="fas fa-inbox"></i>
+                                <h4>No assigned job cards found</h4>
+                                <p>You don't have any job cards assigned to you at the moment.</p>
+                            </td>
+                        </tr>
                         {% endfor %}
                     </tbody>
                 </table>
@@ -596,51 +797,90 @@
         </div>
     </div>
 
-    <!-- Complete Job Modal -->
+    <!-- Simple Complete Job Modal -->
     <div id="completeModal" class="modal">
         <div class="modal-content">
-            <span class="close">&times;</span>
+            <span class="close" onclick="closeCompleteModal()">&times;</span>
             <h3><i class="fas fa-clipboard-check"></i> Complete Job</h3>
-            <form id="completeForm">
-                <div class="form-group">
-                    <label for="workDone" class="form-label">Work Done:</label>
-                    <textarea id="workDone" class="form-control" rows="3" placeholder="Describe the work completed..."></textarea>
-                </div>
-                <div class="form-group">
-                    <label for="partsUsed" class="form-label">Parts Used:</label>
-                    <input type="text" id="partsUsed" class="form-control" placeholder="List parts used (if any)">
-                </div>
-                <div class="form-group">
-                    <label for="timeSpent" class="form-label">Time Spent (hours):</label>
-                    <input type="number" id="timeSpent" class="form-control" step="0.5" min="0" placeholder="0">
-                </div>
-                <div class="form-group">
-                    <label for="notes" class="form-label">Additional Notes:</label>
-                    <textarea id="notes" class="form-control" rows="2" placeholder="Any additional notes..."></textarea>
-                </div>
-                <div style="text-align: right; margin-top: 20px;">
-                    <button type="button" class="btn-action btn-complete" onclick="submitComplete()">
-                        <i class="fas fa-check"></i> Complete Job
-                    </button>
-                </div>
-            </form>
+            <p>Are you sure you want to mark this job as completed?</p>
+            <div style="text-align: right; margin-top: 20px;">
+                <button type="button" class="btn-action btn-reject" onclick="closeCompleteModal()">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button type="button" class="btn-action btn-complete" onclick="submitCompleteSimple()">
+                    <i class="fas fa-check"></i> Confirm Complete
+                </button>
+            </div>
         </div>
     </div>
 
     <script>
         let currentJobId = null;
-        
-        // Get current user's name from Django context
-        const currentUserName = "{{ request.user.get_full_name|default:request.user.username }}";
+        const currentUserName = "{{ current_user_name|escapejs }}";
 
-        // Initialize page to show only current user's jobs
         document.addEventListener('DOMContentLoaded', function() {
-    showCurrentUserJobsOnly();
-    // Apply default filter: Pending
-    document.getElementById('statusFilter').value = 'sent_technician';
-    filterJobCards('sent_technician');
-});
+            console.log('Current user:', currentUserName);
+            showCurrentUserJobsOnly();
+            document.getElementById('statusFilter').value = 'sent_technician';
+            filterJobCards('sent_technician');
+        });
 
+        // ✅ Enhanced toggleStandbyIssued function with status validation
+        function toggleStandbyIssued(jobId) {
+            const button = document.getElementById(`standby-btn-${jobId}`);
+            const row = document.querySelector(`tr[data-job-id="${jobId}"]`);
+            const currentStatus = row.dataset.standbyIssued === 'true';
+            const jobStatus = row.dataset.status;
+            
+            // Double-check that job is in accepted status
+            if (jobStatus !== 'accepted') {
+                alert('❌ Standby items can only be issued when job status is "In Technician Hand"');
+                return;
+            }
+            
+            if (currentStatus) {
+                // If standby is already issued (with customer), show return confirmation
+                if (confirm('Are you sure you want to return the standby equipment for this job?')) {
+                    returnStandbyItem(jobId);
+                }
+            } else {
+                // If standby is not issued, redirect to issue form
+                window.location.href = `/app5/jobcard/${jobId}/standby-issue/`;
+            }
+        }
+
+        function returnStandbyItem(jobId) {
+            fetch(`/app5/jobcard/${jobId}/standby-return/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({})
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    const button = document.getElementById(`standby-btn-${jobId}`);
+                    const row = document.querySelector(`tr[data-job-id="${jobId}"]`);
+                    
+                    if (button && row) {
+                        button.innerHTML = `<i class="fas fa-box"></i> Issue Standby`;
+                        button.classList.remove('with-customer');
+                        button.dataset.standbyStatus = 'false';
+                        row.dataset.standbyIssued = 'false';
+                    }
+                    
+                    alert('Standby equipment returned successfully!');
+                } else {
+                    alert("Error returning standby equipment: " + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert("Error returning standby equipment: " + error);
+            });
+        }
 
         function updateStatus(jobId, action) {
             if (!confirm(`Are you sure you want to ${action} this job card?`)) return;
@@ -660,6 +900,9 @@
                 } else {
                     alert("Error: " + data.error);
                 }
+            })
+            .catch(error => {
+                alert("Error updating status: " + error);
             });
         }
 
@@ -667,15 +910,19 @@
             currentJobId = jobId;
             document.getElementById('completeModal').style.display = 'block';
         }
-
-        function submitComplete() {
+        
+        function closeCompleteModal() {
+            document.getElementById('completeModal').style.display = 'none';
+            currentJobId = null;
+        }
+        
+        function submitCompleteSimple() {
             if (!currentJobId) return;
-
-            const workDone = document.getElementById('workDone').value;
-            const partsUsed = document.getElementById('partsUsed').value;
-            const timeSpent = document.getElementById('timeSpent').value;
-            const notes = document.getElementById('notes').value;
-
+            
+            if (!confirm('Are you sure you want to mark this job as completed?')) {
+                return;
+            }
+            
             fetch(`/app5/jobcard/${currentJobId}/update-status/`, {
                 method: 'POST',
                 headers: {
@@ -683,35 +930,21 @@
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({ 
-                    action: 'completed',
-                    completion_details: {
-                        work_done: workDone,
-                        parts_used: partsUsed,
-                        time_spent: timeSpent,
-                        notes: notes
-                    }
+                    action: 'completed'
                 })
             })
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
-                    document.getElementById('completeModal').style.display = 'none';
+                    closeCompleteModal();
                     location.reload();
                 } else {
                     alert("Error: " + data.error);
                 }
+            })
+            .catch(error => {
+                alert("Error completing job: " + error);
             });
-        }
-
-        function showCompletionDetails(jobId) {
-            const detailsElement = document.getElementById(`details-${jobId}`);
-            if (detailsElement) {
-                if (detailsElement.style.display === 'none') {
-                    detailsElement.style.display = 'block';
-                } else {
-                    detailsElement.style.display = 'none';
-                }
-            }
         }
 
         function getCookie(name) {
@@ -729,25 +962,25 @@
             return cookieValue;
         }
 
-        // Filter to show only current user's jobs
         function showCurrentUserJobsOnly() {
             const rows = document.querySelectorAll('.jobcard-row');
+            let visibleCount = 0;
             
             rows.forEach(row => {
                 const technicianName = row.dataset.technician.trim();
                 
-                // Compare with current logged-in user
-                if (technicianName === currentUserName || technicianName === currentUserName.trim()) {
+                if (technicianName === currentUserName) {
                     row.style.display = '';
+                    visibleCount++;
                 } else {
                     row.style.display = 'none';
                 }
             });
             
+            console.log(`Showing ${visibleCount} jobs for user: ${currentUserName}`);
             updateEmptyState();
         }
 
-        // Search functionality
         document.getElementById('searchInput').addEventListener('keyup', function() {
             const searchText = this.value.toLowerCase();
             const rows = document.querySelectorAll('#jobTable tbody tr');
@@ -756,8 +989,7 @@
                 if (row.classList.contains('jobcard-row')) {
                     const technicianName = row.dataset.technician.trim();
                     
-                    // Only show search results for current user's jobs
-                    if (technicianName === currentUserName || technicianName === currentUserName.trim()) {
+                    if (technicianName === currentUserName) {
                         const text = row.textContent.toLowerCase();
                         if (text.includes(searchText)) {
                             row.style.display = '';
@@ -773,7 +1005,6 @@
             updateEmptyState();
         });
 
-        // Filter functionality
         document.getElementById('statusFilter').addEventListener('change', function() {
             const selectedStatus = this.value;
             filterJobCards(selectedStatus);
@@ -785,8 +1016,7 @@
             rows.forEach(row => {
                 const technicianName = row.dataset.technician.trim();
                 
-                // Only show jobs for current user
-                if (technicianName === currentUserName || technicianName === currentUserName.trim()) {
+                if (technicianName === currentUserName) {
                     if (status === 'all') {
                         row.style.display = '';
                     } else {
@@ -805,24 +1035,17 @@
         }
 
         function resetFilters() {
-    // Reset status filter to default (Pending)
-    document.getElementById('statusFilter').value = 'sent_technician';
-    
-    // Reset search
-    document.getElementById('searchInput').value = '';
-    
-    // Apply the filter again
-    filterJobCards('sent_technician');
-}
+            document.getElementById('statusFilter').value = 'sent_technician';
+            document.getElementById('searchInput').value = '';
+            filterJobCards('sent_technician');
+        }
 
         function updateEmptyState(visibleCount = null) {
-            // Remove existing empty state
             const existingEmpty = document.querySelector('.filter-empty-state');
             if (existingEmpty) {
                 existingEmpty.remove();
             }
             
-            // If visibleCount is not provided, count visible rows
             if (visibleCount === null) {
                 const rows = document.querySelectorAll('.jobcard-row');
                 visibleCount = Array.from(rows).filter(row => 
@@ -835,28 +1058,27 @@
                 const emptyRow = document.createElement('tr');
                 emptyRow.className = 'filter-empty-state';
                 emptyRow.innerHTML = `
-                    
+                    <td colspan="5" class="empty-state">
+                        <i class="fas fa-search"></i>
+                        <h4>No job cards match your criteria</h4>
+                        <p>Try adjusting your filters or search terms.</p>
+                    </td>
                 `;
                 tbody.appendChild(emptyRow);
             }
         }
 
-        // Back button functionality
         function goBack() {
             window.history.back();
-        }
-
-        // Modal event listeners
-        document.querySelector('.close').onclick = function() {
-            document.getElementById('completeModal').style.display = 'none';
         }
 
         window.onclick = function(event) {
             const modal = document.getElementById('completeModal');
             if (event.target == modal) {
-                modal.style.display = 'none';
+                closeCompleteModal();
             }
         }
-        
     </script>
+</body>
+</html>
 {% endblock %}

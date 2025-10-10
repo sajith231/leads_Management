@@ -32,27 +32,24 @@
         th,td{padding:12px;font-size:14px;border-bottom:1px solid #eee;text-align:left;vertical-align:top}
         th{font-weight:600}
 
-        /* Updated column widths to accommodate new field */
-        th:nth-child(1),td:nth-child(1){width:60px;text-align:center} /* ID */
-        th:nth-child(2),td:nth-child(2){width:120px} /* Date */
-        th:nth-child(3),td:nth-child(3){width:200px} /* Client Info */
-        th:nth-child(4),td:nth-child(4){width:120px} /* Requested By */
-        th:nth-child(5),td:nth-child(5){width:280px;white-space:normal} /* Request Details */
-        th:nth-child(6),td:nth-child(6){width:100px;text-align:center} /* Amount */
-        th:nth-child(7),td:nth-child(7){width:140px} /* Admin Status */
-        th:nth-child(8),td:nth-child(8){width:140px} /* Requested Status */
-        th:nth-child(9),td:nth-child(9){width:80px;text-align:center} /* View */
-        th:nth-child(10),td:nth-child(10){width:80px;text-align:center} /* Edit */
-        th:nth-child(11),td:nth-child(11){width:80px;text-align:center} /* Delete */
+        th:nth-child(1),td:nth-child(1){width:60px;text-align:center}
+        th:nth-child(2),td:nth-child(2){width:120px}
+        th:nth-child(3),td:nth-child(3){width:200px}
+        th:nth-child(4),td:nth-child(4){width:120px}
+        th:nth-child(5),td:nth-child(5){width:280px;white-space:normal}
+        th:nth-child(6),td:nth-child(6){width:100px;text-align:center}
+        th:nth-child(7),td:nth-child(7){width:140px}
+        th:nth-child(8),td:nth-child(8){width:140px}
+        th:nth-child(9),td:nth-child(9){width:80px;text-align:center}
+        th:nth-child(10),td:nth-child(10){width:80px;text-align:center}
+        th:nth-child(11),td:nth-child(11){width:80px;text-align:center}
 
-        /* Client info styling */
         .client-info-container{display:flex;flex-direction:column;gap:4px}
         .client-name{font-weight:600;color:#2c3e50;font-size:14px;margin-bottom:2px}
         .client-branch{font-size:11px;color:#fff;background:#007bff;padding:2px 6px;border-radius:3px;display:inline-block;margin-bottom:2px;font-weight:500}
         .client-branch.no-branch{background:#6c757d;color:#fff}
         .client-location{font-size:12px;color:#7f8c8d;font-style:italic}
 
-        /* Requested By styling */
         .requested-by-container{display:flex;flex-direction:column;gap:2px}
         .requested-by-name{font-weight:600;color:#2c3e50;font-size:13px}
         .requested-by-empty{color:#7f8c8d;font-style:italic;font-size:12px}
@@ -67,7 +64,6 @@
         .btn-edit{background:#6c757d}
         .btn-delete{background:#6c757d}
 
-        /* Status styling */
         .status-select{padding:8px 12px;border:2px solid;border-radius:20px;font-size:12px;font-weight:600;text-transform:uppercase;cursor:pointer;min-width:120px;text-align:center;transition:all 0.3s ease;outline:none}
         .status-select.status-pending{background:linear-gradient(135deg,#fff3cd,#ffeaa7);color:#856404;border-color:#ffc107}
         .status-select.status-delayed{background:linear-gradient(135deg,#fff3cd,#ffeaa7);color:#856404;border-color:#ffc107}
@@ -79,17 +75,6 @@
         .status-select.status-workcompletedpaymentpending{background:linear-gradient(135deg,#f3e5f5,#ce93d8);color:#7b1fa2;border-color:#9c27b0}
         .status-select.status-workdonepaymentcollected{background:linear-gradient(135deg,#e8f5e8,#a5d6a7);color:#2e7d32;border-color:#4caf50}
         .status-select.status-workcompletednopayment{background:linear-gradient(135deg,#e8f5e8,#a5d6a7);color:#2e7d32;border-color:#4caf50}
-         .status-select.status-pending { 
-    background: linear-gradient(135deg,#fff3cd,#ffeaa7);
-    color:#856404; 
-    border-color:#ffc107; 
-}
-
-.status-select.status-rejected { 
-    background: linear-gradient(135deg,#f8d7da,#f1aeb5);
-    color:#721c24; 
-    border-color:#dc3545; 
-}
 
         .amount{font-weight:600;color:#e74c3c;font-size:14px}
         .amount-empty{color:#7f8c8d;font-style:italic}
@@ -127,23 +112,22 @@
             .pagination-container{flex-direction:column;text-align:center}
             table{min-width:1300px}
             th,td{padding:8px;font-size:12px}
-            
         }
     </style>
 </head>
 <body>
 <div class="container">
-    <header><h1>📋 All Key Requests</h1></header>
+    <header><h1>All Key Requests</h1></header>
 
     <!-- Filters Section -->
     <div class="filters-container">
         <div class="filters-row">
             <div class="filter-group">
-                <label for="searchInput">Search</label>
+                <label for="searchInput">Search 🔎</label>
                 <input type="text" id="searchInput" class="search-input" placeholder="Search by client name, location, or key type...">
             </div>
             <div class="filter-group">
-                <label for="dateFilter">Date Filter</label>
+                <label for="dateFilter">Date Filter 🗓️</label>
                 <select id="dateFilter">
                     <option value="">All Dates</option>
                     <option value="today">Today</option>
@@ -154,7 +138,6 @@
                 </select>
             </div>
 
-            <!-- NEW FROM-TO DATE PICKERS -->
             <div class="filter-group">
                 <label for="fromDate">From</label>
                 <input type="date" id="fromDate">
@@ -163,10 +146,9 @@
                 <label for="toDate">To</label>
                 <input type="date" id="toDate">
             </div>
-            <!-- END NEW -->
 
             <div class="filter-group">
-                <label for="keyTypeFilter">Key Type</label>
+                <label for="keyTypeFilter">Key Type 🔑</label>
                 <select id="keyTypeFilter">
                     <option value="">All Key Types</option>
                     <option value="Seat Upgradation Request">Seat Upgradation Request</option>
@@ -184,7 +166,7 @@
                 </select>
             </div>
             <div class="filter-group">
-                <label for="statusFilter">Admin Status</label>
+                <label for="statusFilter">Admin Status 👨🏻‍💼</label>
                 <select id="statusFilter">
                     <option value="">All Status</option>
                     <option value="pending">Pending</option>
@@ -195,10 +177,11 @@
                 </select>
             </div>
             <div class="filter-group">
-                <label for="requestedStatusFilter">Requested Status</label>
+                <label for="requestedStatusFilter">Requested Status 📊</label>
                 <select id="requestedStatusFilter">
                     <option value="">All Requested Status</option>
                     <option value="requested">Requested</option>
+                    <option value="pending">Pending</option>
                     <option value="delayed">Delayed</option>
                     <option value="working on it">Working on it</option>
                     <option value="work completed/payment pending">Work completed/Payment pending</option>
@@ -207,9 +190,20 @@
                 </select>
             </div>
             <div class="filter-group">
-                <label for="branchFilter">Branch</label>
+                <label for="branchFilter">Branch 🏠︎</label>
                 <select id="branchFilter">
                     <option value="">All Branches</option>
+                    <option value="IMC">IMC</option>
+                    <option value="IMC Mukkam">IMC Mukkam</option>
+                    <option value="IMC Chavakkad">IMC Chavakkad</option>
+                    <option value="IMC Palakkad">IMC Palakkad</option>
+                    <option value="IMC Koothuparamba">IMC Koothuparamba</option>
+                    <option value="RITS Wayanad">RITS Wayanad</option>
+                    <option value="RITS H.O">RITS H.O</option>
+                    <option value="Sysmac">Sysmac</option>
+                    <option value="Sysmac kuttyadi">Sysmac kuttyadi</option>
+                    <option value="RUBIX">RUBIX</option>
+                    <option value="WINWAY">WINWAY</option>
                     {% for branch in branches %}
                         <option value="{{ branch.name|lower }}">{{ branch.name }}</option>
                     {% endfor %}
@@ -232,17 +226,17 @@
             <table>
                 <thead>
                 <tr>
-                     <th>🔢ID</th>
-                    <th>🗓️Date</th>
-                    <th>👤Client Info</th>
-                    <th>👨‍💼Requested By</th>
-                    <th>📋Request Details</th>
-                    <th>₹Amount</th>
-                    <th>📊Admin Status</th>
-                    <th>📄Requested Status</th>
-                    <th>👁‍🗨View</th>
-                    <th>✏️Edit</th>
-                    <th>🗑️Delete</th>
+                     <th>ID</th>
+                    <th>Date</th>
+                    <th>Client Info</th>
+                    <th>Requested By</th>
+                    <th>Request Details</th>
+                    <th>Amount</th>
+                    <th>Admin Status</th>
+                    <th>Requested Status</th>
+                    <th>View</th>
+                    <th>Edit</th>
+                    <th>Delete</th>
                 </tr>
                 </thead>
                  <tbody id="requestsTableBody">
@@ -273,15 +267,13 @@
     <span class="client-branch no-branch">No Branch</span>
 {% endif %}
 
-  <!-- Show client entered location -->
-  <div class="client-location">📍 {{ request.location }}</div>
+  <div class="client-location">{{ request.location }}</div>
 
-  <!-- Show GPS address if available -->
   {% if request.gps_address %}
-    <div class="client-location">🌍 {{ request.gps_address }}</div>
+    <div class="client-location">{{ request.gps_address }}</div>
   {% elif request.gps_location %}
     <div class="client-location">
-      🌍 <a href="https://www.google.com/maps?q={{ request.gps_location }}" target="_blank">
+      <a href="https://www.google.com/maps?q={{ request.gps_location }}" target="_blank">
         {{ request.gps_location }}
       </a>
     </div>
@@ -307,7 +299,7 @@
 
                     <td>
                         {% if request.amount %}
-                            <span class="amount">₹{{ request.amount }}</span>
+                            <span class="amount">{{ request.amount }}</span>
                         {% else %}
                             <span class="amount-empty">-</span>
                         {% endif %}
@@ -328,13 +320,13 @@
         data-request-id="{{ request.id }}"
         onchange="updateRequestedStatus(this)">
     <option value="Requested" {% if request.requested_status == 'Requested' or not request.requested_status %}selected{% endif %}>Requested</option>
-    <option value="Pending" {% if request.requested_status == 'Pending' %}selected{% endif %}>Pending</option> <!-- ✅ new -->
+    <option value="Pending" {% if request.requested_status == 'Pending' %}selected{% endif %}>Pending</option>
     <option value="Delayed" {% if request.requested_status == 'Delayed' %}selected{% endif %}>Delayed</option>
     <option value="Working on it" {% if request.requested_status == 'Working on it' %}selected{% endif %}>Working on it</option>
     <option value="Work completed/Payment pending" {% if request.requested_status == 'Work completed/Payment pending' %}selected{% endif %}>Work completed/Payment pending</option>
     <option value="Work completed/No payment" {% if request.requested_status == 'Work completed/No payment' %}selected{% endif %}>Work completed/No payment</option>
     <option value="Work done & Payment collected" {% if request.requested_status == 'Work done & Payment collected' %}selected{% endif %}>Work done & Payment collected</option>
-    <option value="Rejected" {% if request.requested_status == 'Rejected' %}selected{% endif %}>Rejected</option> <!-- ✅ new -->
+    <option value="Rejected" {% if request.requested_status == 'Rejected' %}selected{% endif %}>Rejected</option>
 </select>
 
                     </td>
@@ -368,8 +360,8 @@
                 </tr>
                 {% empty %}
                 <tr class="no-data-row">
-                    <td colspan="10" class="no-results">
-                        <div class="no-results-icon">📋</div>
+                    <td colspan="11" class="no-results">
+                        <div class="no-results-icon">No Data</div>
                         <div style="font-size:18px;font-weight:600;">No key requests found</div>
                         <div style="margin-top:10px;"><a href="{% url 'key_request' %}" class="btn-filter">Create your first request</a></div>
                     </td>
@@ -398,7 +390,6 @@
         </div>
     </div>
 
-    <!-- Hidden CSRF Token -->
     {% csrf_token %}
 
     <!-- Modals -->
@@ -412,15 +403,7 @@
         </div>
     </div>
 
-    <!-- JavaScript -->
     <script>
-        // ----------  NEW: set today as default for From & To ----------
-        const today = new Date().toISOString().split('T')[0];
-        document.getElementById('fromDate').value = today;
-        document.getElementById('toDate').value   = today;
-        // -------------------------------------------------------------
-
-        // Global variables
         let originalRows = [];
         let filteredRows = [];
         let totalCount = 0;
@@ -428,7 +411,6 @@
         let currentPage = 1;
         let pageSize = 25;
 
-        // Initialize on page load
         document.addEventListener('DOMContentLoaded', function() {
             initializeApp();
         });
@@ -439,6 +421,9 @@
             totalCount = originalRows.length;
             filteredCount = totalCount;
 
+            document.getElementById('fromDate').value = '';
+            document.getElementById('toDate').value = '';
+
             initializeEventListeners();
             initializeStatusColors();
             updateResultsInfo();
@@ -446,7 +431,6 @@
         }
 
         function initializeEventListeners() {
-            // Filter inputs
             const filterIds = ['searchInput', 'dateFilter', 'keyTypeFilter', 'statusFilter', 'requestedStatusFilter', 'branchFilter', 'fromDate', 'toDate'];
             filterIds.forEach(id => {
                 const element = document.getElementById(id);
@@ -454,7 +438,6 @@
                 element.addEventListener('change', applyFilters);
             });
 
-            // Page size selector
             document.getElementById('pageSize').addEventListener('change', function(e) {
                 pageSize = parseInt(e.target.value);
                 currentPage = 1;
@@ -468,7 +451,6 @@
             });
         }
 
-        // Filtering functions
         function applyFilters() {
             const search = document.getElementById('searchInput').value.toLowerCase();
             const dateFilter = document.getElementById('dateFilter').value;
@@ -488,7 +470,7 @@
                 if (requestedStatus && row.dataset.requestedStatus !== requestedStatus) return false;
 
                 if (branch) {
-                    const rowBranch = row.dataset.branch || '';
+                    const rowBranch = (row.dataset.branch || '').trim();
                     if (branch === 'no-branch') {
                         if (rowBranch !== 'no-branch' && rowBranch !== '') return false;
                     } else {
@@ -498,7 +480,12 @@
 
                 if (dateRange) {
                     const rowDate = new Date(row.dataset.date);
-                    if (rowDate < dateRange.start || rowDate > dateRange.end) return false;
+                    rowDate.setHours(0, 0, 0, 0);
+                    const start = new Date(dateRange.start);
+                    start.setHours(0, 0, 0, 0);
+                    const end = new Date(dateRange.end);
+                    end.setHours(23, 59, 59, 999);
+                    if (rowDate < start || rowDate > end) return false;
                 }
 
                 return true;
@@ -512,41 +499,40 @@
         }
 
         function getDateRange(filterType, fromDate, toDate) {
-            // if user picked explicit from-to, use it
-            if (fromDate && toDate) {
+            if (filterType) {
+                const now = new Date();
+                const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+                switch(filterType) {
+                    case 'today':
+                        return {start: today, end: new Date(today.getTime() + 24*60*60*1000 - 1)};
+                    case 'yesterday':
+                        const yesterday = new Date(today.getTime() - 24*60*60*1000);
+                        return {start: yesterday, end: new Date(yesterday.getTime() + 24*60*60*1000 - 1)};
+                    case 'last_week':
+                        return {start: new Date(today.getTime() - 7*24*60*60*1000), end: now};
+                    case 'this_month':
+                        return {start: new Date(now.getFullYear(), now.getMonth(), 1), end: now};
+                    case 'this_year':
+                        return {start: new Date(now.getFullYear(), 0, 1), end: now};
+                }
+            }
+            
+            if (fromDate && toDate && !filterType) {
                 const start = new Date(fromDate);
                 const end   = new Date(toDate);
                 end.setHours(23, 59, 59, 999);
                 return {start, end};
             }
 
-            // otherwise fall back to old quick filters
-            const now = new Date();
-            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-            switch(filterType) {
-                case 'today':
-                    return {start: today, end: new Date(today.getTime() + 24*60*60*1000 - 1)};
-                case 'yesterday':
-                    const yesterday = new Date(today.getTime() - 24*60*60*1000);
-                    return {start: yesterday, end: new Date(yesterday.getTime() + 24*60*60*1000 - 1)};
-                case 'last_week':
-                    return {start: new Date(today.getTime() - 7*24*60*60*1000), end: today};
-                case 'this_month':
-                    return {start: new Date(now.getFullYear(), now.getMonth(), 1), end: now};
-                case 'this_year':
-                    return {start: new Date(now.getFullYear(), 0, 1), end: now};
-                default:
-                    return null;
-            }
+            return null;
         }
 
         function clearFilters() {
             const filterIds = ['searchInput', 'dateFilter', 'keyTypeFilter', 'statusFilter', 'requestedStatusFilter', 'branchFilter'];
             filterIds.forEach(id => document.getElementById(id).value = '');
-            // reset date pickers to today
-            document.getElementById('fromDate').value = today;
-            document.getElementById('toDate').value   = today;
+            document.getElementById('fromDate').value = '';
+            document.getElementById('toDate').value = '';
             applyFilters();
         }
 
@@ -558,8 +544,8 @@
                 if (!noRow) {
                     tbody.insertAdjacentHTML('beforeend', `
                         <tr class="no-data-row">
-                            <td colspan="10" class="no-results">
-                                <div class="no-results-icon">🔍</div>
+                            <td colspan="11" class="no-results">
+                                <div class="no-results-icon">No Match</div>
                                 <div style="font-size:18px;font-weight:600;">No requests match your filters</div>
                                 <div style="margin-top:10px;"><button class="btn-clear" onclick="clearFilters()">Clear Filters</button></div>
                             </td>
@@ -585,9 +571,7 @@
             }
         }
 
-        // Pagination functions
         function updatePagination() {
-            // Hide all rows first
             originalRows.forEach(row => row.style.display = 'none');
 
             if (filteredCount === 0) {
@@ -601,7 +585,6 @@
             const start = (currentPage - 1) * pageSize;
             const end = Math.min(start + pageSize, filteredCount);
 
-            // Show current page rows
             for (let i = start; i < end; i++) {
                 filteredRows[i].style.display = '';
             }
@@ -628,10 +611,8 @@
                 container.appendChild(btn);
             };
 
-            // Previous button
-            addButton('‹ Previous', currentPage - 1, currentPage === 1 ? 'disabled' : '');
+            addButton('Previous', currentPage - 1, currentPage === 1 ? 'disabled' : '');
 
-            // Page numbers
             const maxVisiblePages = 5;
             let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
             let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
@@ -654,8 +635,7 @@
                 addButton(totalPages.toString(), totalPages);
             }
 
-            // Next button
-            addButton('Next ›', currentPage + 1, currentPage === totalPages ? 'disabled' : '');
+            addButton('Next', currentPage + 1, currentPage === totalPages ? 'disabled' : '');
         }
 
         function goToPage(page) {
@@ -665,7 +645,6 @@
             updatePagination();
         }
 
-        // Status update functions
         function getCookie(name) {
             let cookieValue = null;
             if (document.cookie && document.cookie !== '') {
@@ -686,7 +665,6 @@
             const newStatus = selectElement.value;
             const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || getCookie('csrftoken');
 
-            // Update UI immediately
             updateStatusClass(selectElement, newStatus);
             selectElement.closest('tr').dataset.status = newStatus.toLowerCase();
 
@@ -717,7 +695,6 @@
             const newRequestedStatus = selectElement.value;
             const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || getCookie('csrftoken');
 
-            // Update UI immediately
             updateRequestedStatusClass(selectElement, newRequestedStatus);
             selectElement.closest('tr').dataset.requestedStatus = newRequestedStatus.toLowerCase();
 
@@ -744,44 +721,43 @@
         }
 
         function updateStatusClass(select, status) {
-            select.classList.remove('status-pending', 'status-onprocess', 'status-completed', 'status-rejected');
+            select.classList.remove('status-pending', 'status-onprocess', 'status-completed', 'status-rejected', 'status-delayed');
             const cleanStatus = status.toLowerCase().replace(/\s+/g, '');
             select.classList.add(`status-${cleanStatus}`);
         }
 
         function updateRequestedStatusClass(select, status) {
-            select.classList.remove('status-requested', 'status-workingonit', 'status-workcompletedpaymentpending',  'status-workdonepaymentcollected','status-workcompletednopayment');
+            select.classList.remove('status-requested', 'status-pending', 'status-delayed', 'status-workingonit', 'status-workcompletedpaymentpending', 'status-workdonepaymentcollected', 'status-workcompletednopayment', 'status-rejected');
             const cleanStatus = status.toLowerCase().replace(/\s+/g, '').replace(/[\/&]/g, '');
             select.classList.add(`status-${cleanStatus}`);
         }
 
-        // Modal functions
         function viewDetails(button) {
-    const data = button.dataset;
-    const cleanDesc = data.desc ? data.desc.replace(/\\"/g, '"').replace(/\\'/g, "'").replace(/\\\\/g, "\\") : 'No description provided';
+            const data = button.dataset;
+            const cleanDesc = data.desc ? data.desc.replace(/\\"/g, '"').replace(/\\'/g, "'").replace(/\\\\/g, "\\") : 'No description provided';
 
-    document.getElementById('detailsBody').innerHTML = `
-        <div class="details-section"><div class="details-label">Request ID:</div><div class="details-value">${data.id}</div></div>
-        <div class="details-section"><div class="details-label">Client Name:</div><div class="details-value">${data.client}</div></div>
-        <div class="details-section"><div class="details-label">Location:</div><div class="details-value">${data.location}</div></div>
-        <div class="details-section"><div class="details-label">Branch:</div><div class="details-value">${data.branch || 'Not assigned'}</div></div>
-        <div class="details-section"><div class="details-label">Key Type:</div><div class="details-value">${data.keyType}</div></div>
-        <div class="details-section"><div class="details-label">Amount:</div><div class="details-value">${data.amount || 'Not specified'}</div></div>
-        <div class="details-section"><div class="details-label">Description:</div><div class="details-value">${cleanDesc}</div></div>
-        <div class="details-section"><div class="details-label">Date Requested:</div><div class="details-value">${data.date}</div></div>
-        <div class="details-section"><div class="details-label">Admin Status:</div><div class="details-value">${data.status}</div></div>
-        <div class="details-section"><div class="details-label">Requested Status:</div><div class="details-value">${data.requestedStatus || 'Requested'}</div></div>
-        ${data.img ? `<div class="details-section"><div class="details-label">Request Image:</div><img src="${data.img}" class="modal-image"></div>` : ''}
-        ${data.gps ? `<div class="details-section"><div class="details-label">GPS:</div><div class="details-value"><a href="https://www.google.com/maps?q=${data.gps}" target="_blank">${data.gps}</a></div></div>` : ''}
-    `;
-    document.getElementById('detailsModal').style.display = 'block';
-}
+            document.getElementById('detailsBody').innerHTML = `
+                <div class="details-section"><div class="details-label">Request ID:</div><div class="details-value">${data.id}</div></div>
+                <div class="details-section"><div class="details-label">Client Name:</div><div class="details-value">${data.client}</div></div>
+                <div class="details-section"><div class="details-label">Location:</div><div class="details-value">${data.location}</div></div>
+                <div class="details-section"><div class="details-label">Branch:</div><div class="details-value">${data.branch || 'Not assigned'}</div></div>
+                <div class="details-section"><div class="details-label">Requested By:</div><div class="details-value">${data.requestedBy || 'Not specified'}</div></div>
+                <div class="details-section"><div class="details-label">Key Type:</div><div class="details-value">${data.keyType}</div></div>
+                <div class="details-section"><div class="details-label">Amount:</div><div class="details-value">${data.amount || 'Not specified'}</div></div>
+                <div class="details-section"><div class="details-label">Description:</div><div class="details-value">${cleanDesc}</div></div>
+                <div class="details-section"><div class="details-label">Date Requested:</div><div class="details-value">${data.date}</div></div>
+                <div class="details-section"><div class="details-label">Admin Status:</div><div class="details-value">${data.status}</div></div>
+                <div class="details-section"><div class="details-label">Requested Status:</div><div class="details-value">${data.requestedStatus || 'Requested'}</div></div>
+                ${data.img ? `<div class="details-section"><div class="details-label">Request Image:</div><img src="${data.img}" class="modal-image"></div>` : ''}
+                ${data.gps ? `<div class="details-section"><div class="details-label">GPS:</div><div class="details-value"><a href="https://www.google.com/maps?q=${data.gps}" target="_blank">${data.gps}</a></div></div>` : ''}
+            `;
+            document.getElementById('detailsModal').style.display = 'block';
+        }
 
         function closeDetailsModal() {
             document.getElementById('detailsModal').style.display = 'none';
         }
 
-        // Close modal when clicking outside
         window.onclick = function(event) {
             if (event.target.classList.contains('modal')) {
                 event.target.style.display = 'none';

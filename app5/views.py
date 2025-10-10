@@ -4,7 +4,8 @@ from django.contrib import messages
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
-from .models import JobCard, JobCardImage, Item
+from app2.models import StandbyItem, StandbyImage
+
 import os
 import json
 from collections import defaultdict
@@ -55,23 +56,52 @@ def jobcard_create(request):
         address = request.POST.get('address', '').strip()
         phone = request.POST.get('phone', '').strip()
         status = request.POST.get('status', 'logged')
+        
+        # NEW: Check if self-assigned
+        self_assigned = request.POST.get('self_assigned') == 'true'
+        technician = None  # Initialize technician
+        assigned_date = None  # Initialize assigned_date
+        
+        # Get the current user as creator
+        creator = None
+        creator_name = "Unknown"
+        
+        if request.session.get('custom_user_id'):
+            try:
+                creator = User.objects.get(id=request.session['custom_user_id'])
+                creator_name = getattr(creator, "name", creator.username if hasattr(creator, 'username') else str(creator))
+            except User.DoesNotExist:
+                pass
+        
+        if self_assigned:
+            status = 'sent_technician'  # Change status if self-assigned
+            assigned_date = timezone.now()  # Set assigned date to current time
+            
+            # Set technician to current user's name
+            if creator:
+                technician = creator_name
+            else:
+                technician = "Self-Assigned User"  # Fallback
 
         if not customer or not address or not phone:
             messages.error(request, "Customer name, address, and phone are required fields.")
             return redirect('app5:jobcard_create')
 
         items = request.POST.getlist('items[]')
+        serials = request.POST.getlist('serials[]')
+        configs = request.POST.getlist('configs[]')
         items_data = []
 
-        # Build items_data structure with complaints kept (for DB), but serial/config left blank
+        # Build items_data structure with proper serial and config
         for idx, item_name in enumerate(items):
             if not item_name:
                 continue
 
             item_entry = {
                 "item": item_name,
-                "serial": "",
-                "config": "",
+                "serial": serials[idx] if idx < len(serials) else "",
+                "config": configs[idx] if idx < len(configs) else "",
+                "status": status,  # Add status for each item
                 "complaints": []
             }
 
@@ -87,26 +117,19 @@ def jobcard_create(request):
                     "images": []
                 })
 
-            items_data.append(item_entry)
+            items_data.append(item_entry) 
 
-        # find creator (logged-in user from session)
-        creator = None
-        creator_name = "Unknown"
-        if request.session.get('custom_user_id'):
-            try:
-                creator = User.objects.get(id=request.session['custom_user_id'])
-                creator_name = getattr(creator, "username", str(creator))
-            except User.DoesNotExist:
-                creator = None
-
-        # Create job card
+        # Create job card - UPDATED with self_assigned field
         job_card = JobCard.objects.create(
             customer=customer,
             address=address,
             phone=phone,
             status=status,
             items_data=items_data,
-            created_by=creator
+            created_by=creator,
+            technician=technician,  # Set technician for self-assigned jobs
+            assigned_date=assigned_date,  # Set assigned_date for self-assigned jobs
+            self_assigned=self_assigned  # NEW: Add the self_assigned flag
         )
 
         # Save uploaded images and update items_data image names
@@ -131,7 +154,7 @@ def jobcard_create(request):
         job_card.items_data = items_data
         job_card.save()
 
-        # WhatsApp message details
+        # WhatsApp message details - UPDATED to include self-assignment info
         created_date = job_card.created_at.strftime("%d-%m-%Y") if hasattr(job_card, "created_at") else datetime.now().strftime("%d-%m-%Y")
 
         if hasattr(job_card, "ticket_no") and job_card.ticket_no:
@@ -139,7 +162,10 @@ def jobcard_create(request):
         else:
             ticket_no = f"JC{job_card.id:06d}"
 
-        creator_label = creator_name if not creator else getattr(creator, "username", str(creator))
+        # NEW: Add self-assignment info to WhatsApp message
+        assignment_info = ""
+        if self_assigned and technician:
+            assignment_info = f"*Assigned To:* {technician} (Self-Assigned)\n"
 
         # ITEMS: only item names (no serial/config/complaints)
         items_lines = []
@@ -148,12 +174,12 @@ def jobcard_create(request):
 
         items_block = "\n".join(items_lines) if items_lines else "No items listed."
 
-        # Build final message (single icon included)
+        # Build final message - UPDATED with assignment info
         message_text = (
-            f" *Job Card Created* \n\n"
+            f"📋 *Job Card Created* \n\n"
             f"*Created Date:* {created_date}\n"
             f"*Ticket No:* {ticket_no}\n"
-            # f"*Creator:* {creator_label}\n\n"
+            f"{assignment_info}"
             f"*Customer:* {customer}\n"
             f"*Address:* {address}\n"
             f"*Phone:* {phone}\n\n"
@@ -169,7 +195,7 @@ def jobcard_create(request):
             "priority": 1
         }
 
-        recipients = ["7593820007","7593820006","7593820005"]
+        recipients = ["9946545535"]
 
         for recipient in recipients:
             params = params_base.copy()
@@ -182,10 +208,14 @@ def jobcard_create(request):
             except Exception as e:
                 logger.exception("Failed to send WhatsApp message to %s: %s", recipient, e)
 
-        messages.success(request, "Job card(s) created successfully.")
+        success_message = "Job card created successfully."
+        if self_assigned:
+            success_message += f" Self-assigned to {technician}."
+        
+        messages.success(request, success_message)
         return redirect('app5:jobcard_list')
 
-    # GET: fetch items + customers
+    # GET: fetch items + customers (existing code remains the same)
     items = Item.objects.all().order_by("name")
     customer_data = []
     try:
@@ -455,28 +485,56 @@ def delete_item(request, item_id):
 
 @csrf_exempt
 def update_jobcard_status(request, pk):
-    """Alias for update_status to match URLs"""
-    return update_status(request, pk)
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            action = data.get("action")
+            completion_details = data.get("completion_details", {})
+            item_index = data.get("item_index")
 
-from django.http import JsonResponse
-from django.shortcuts import get_object_or_404
+            jobcard = JobCard.objects.get(pk=pk)
 
-@csrf_exempt
-def api_jobcard_detail(request, pk):
-    """API endpoint to get jobcard details"""
-    try:
-        jobcard = get_object_or_404(JobCard, pk=pk)
-        return JsonResponse({
-            "id": jobcard.pk,
-            "customer": jobcard.customer,
-            "address": jobcard.address,
-            "phone": jobcard.phone,
-            "status": jobcard.status,
-            "ticket_no": jobcard.ticket_no,
-            "items_data": jobcard.items_data,
-        })
-    except Exception as e:
-        return JsonResponse({"error": str(e)}, status=400)
+            if action == "accepted":
+                jobcard.status = "accepted"
+                # Also update individual item status if item_index is provided
+                if item_index is not None and jobcard.items_data:
+                    if 0 <= item_index < len(jobcard.items_data):
+                        jobcard.items_data[item_index]['status'] = "accepted"
+                        
+            elif action == "rejected":
+                jobcard.status = "rejected"
+                if item_index is not None and jobcard.items_data:
+                    if 0 <= item_index < len(jobcard.items_data):
+                        jobcard.items_data[item_index]['status'] = "rejected"
+                        
+            elif action == "completed":
+                jobcard.status = "completed"
+                if item_index is not None and jobcard.items_data:
+                    if 0 <= item_index < len(jobcard.items_data):
+                        jobcard.items_data[item_index]['status'] = "completed"
+                
+                # Save completion details if provided
+                if completion_details:
+                    if not hasattr(jobcard, 'completion_details') or jobcard.completion_details is None:
+                        jobcard.completion_details = {}
+                    
+                    jobcard.completion_details.update({
+                        'work_done': completion_details.get('work_done', ''),
+                        'parts_used': completion_details.get('parts_used', ''),
+                        'time_spent': completion_details.get('time_spent', '0'),
+                        'notes': completion_details.get('notes', ''),
+                        'completed_at': timezone.now().isoformat()
+                    })
+            else:
+                return JsonResponse({"success": False, "error": "Invalid action"})
+
+            jobcard.save()
+            return JsonResponse({"success": True})
+        except JobCard.DoesNotExist:
+            return JsonResponse({"success": False, "error": "JobCard not found"})
+        except Exception as e:
+            return JsonResponse({"success": False, "error": str(e)})
+    return JsonResponse({"success": False, "error": "Invalid request"})
 
 
 from django.shortcuts import render
@@ -538,15 +596,28 @@ def assign_new_job(request):
         try:
             jobcard = JobCard.objects.get(ticket_no=ticket_number)
             jobcard.technician = technician
-            jobcard.status = status
+            jobcard.status = status  # Update main status
+            
+            # ✅ SET THE ASSIGNED DATE WHEN ASSIGNING TO TECHNICIAN
+            if not jobcard.assigned_date:  # Only set if not already set
+                jobcard.assigned_date = timezone.now()
+            
+            # ✅ UPDATE INDIVIDUAL ITEM STATUSES TO 'sent_technician'
+            if jobcard.items_data:
+                for item in jobcard.items_data:
+                    item['status'] = 'sent_technician'  # Update each item's status
+            
             jobcard.save()
             
             # Fetch the technician's phone number from the User model
-            assigned_user = User.objects.get(name=technician)
-            if assigned_user.phone_number:
-                # Prepare the WhatsApp message
-                message = f"You have been assigned a new job. Ticket Number: {ticket_number}"
-                send_whatsapp_message(assigned_user.phone_number, message)
+            try:
+                assigned_user = User.objects.get(name=technician)
+                if assigned_user.phone_number:
+                    # Prepare the WhatsApp message
+                    message = f"You have been assigned a new job. Ticket Number: {ticket_number}"
+                    send_whatsapp_message(assigned_user.phone_number, message)
+            except User.DoesNotExist:
+                pass  # Silently fail if user not found
             
             messages.success(request, f"Job {ticket_number} assigned to {technician} successfully!")
             return redirect('app5:jobcard_assign_table')
@@ -593,13 +664,25 @@ from django.contrib import messages
 
 def jobcard_assign_edit(request, pk):
     jobcard = get_object_or_404(JobCard, pk=pk)
-    technicians = User.objects.filter(status='active').order_by('name')  # Add this line
+    technicians = User.objects.filter(status='active').order_by('name')
 
     if request.method == "POST":
         technician = request.POST.get("technician")
         status = request.POST.get("status", "sent_technician")
-        jobcard.technician = technician
+        
+        # Check if technician is being assigned/changed
+        if technician and technician != jobcard.technician:
+            jobcard.technician = technician
+            # ✅ SET/UPDATE THE ASSIGNED DATE WHEN TECHNICIAN CHANGES
+            jobcard.assigned_date = timezone.now()
+        
         jobcard.status = status
+        
+        # ✅ UPDATE INDIVIDUAL ITEM STATUSES
+        if jobcard.items_data:
+            for item in jobcard.items_data:
+                item['status'] = status  # Update each item's status
+        
         jobcard.save()
 
         messages.success(request, f"Job {jobcard.ticket_no} updated successfully!")
@@ -607,10 +690,41 @@ def jobcard_assign_edit(request, pk):
 
     context = {
         "assign": jobcard,
-        "technicians": technicians,  # Add this line
+        "technicians": technicians,
         "jobcards": JobCard.objects.all()
     }
     return render(request, "jobcard_assign_edit.html", context)
+
+
+# In your views.py
+def assign_job_to_technician(request):
+    if request.method == 'POST':
+        ticket_number = request.POST.get('ticketNumber')
+        technician_name = request.POST.get('technician')
+        status = request.POST.get('status', 'sent_technician')
+        
+        try:
+            jobcard = JobCard.objects.get(ticket_no=ticket_number)
+            
+            # Update the job card with technician and status
+            jobcard.technician = technician_name
+            jobcard.status = status  # This should be 'sent_technician'
+            
+            # If you have per-item status, update that too
+            if hasattr(jobcard, 'items_data'):
+                for item in jobcard.items_data:
+                    item['status'] = 'sent_technician'
+            
+            jobcard.save()
+            
+            messages.success(request, f'Job assigned to {technician_name} successfully!')
+            return redirect('app5:jobcard_assign_table')
+            
+        except JobCard.DoesNotExist:
+            messages.error(request, 'Job card not found!')
+
+    
+   
 
 # supplier
 
@@ -665,10 +779,55 @@ def supplier_master_edit(request, pk):
 from django.shortcuts import render
 from .models import JobCard
 
+
+    # Get current user's name from session
 def job_technician_accept(request):
-    # Include all relevant jobcards for the logged-in technician
+    current_user_name = "Unknown"
+    if request.session.get('custom_user_id'):
+        try:
+            current_user = User.objects.get(id=request.session['custom_user_id'])
+            current_user_name = getattr(current_user, "name", current_user.username if hasattr(current_user, 'username') else str(current_user))
+        except User.DoesNotExist:
+            pass
+    
+    # Handle status updates via POST
+    if request.method == "POST":
+        jobcard_id = request.POST.get('jobcard_id')
+        action = request.POST.get('action')
+        
+        try:
+            jobcard = JobCard.objects.get(pk=jobcard_id, technician=current_user_name)
+            
+            if action == "accept":
+                jobcard.status = "accepted"
+                if jobcard.items_data:
+                    for item in jobcard.items_data:
+                        item['status'] = "accepted"
+                messages.success(request, f"Job {jobcard.ticket_no} accepted successfully!")
+                
+            elif action == "reject":
+                jobcard.status = "rejected"
+                if jobcard.items_data:
+                    for item in jobcard.items_data:
+                        item['status'] = "rejected"
+                messages.success(request, f"Job {jobcard.ticket_no} rejected!")
+                
+            elif action == "complete":
+                jobcard.status = "completed"
+                if jobcard.items_data:
+                    for item in jobcard.items_data:
+                        item['status'] = "completed"
+                messages.success(request, f"Job {jobcard.ticket_no} marked as completed!")
+            
+            jobcard.save()
+            return redirect('app5:job_technician_accept')
+            
+        except JobCard.DoesNotExist:
+            messages.error(request, "Job card not found or you are not assigned to this job")
+    
+    # Get jobcards assigned to current technician
     processed_jobcards = JobCard.objects.filter(
-        technician=request.user.get_full_name() or request.user.username,
+        technician=current_user_name,
         status__in=["sent_technician", "accepted", "rejected", "completed"]
     )
 
@@ -677,10 +836,7 @@ def job_technician_accept(request):
     pending_count = processed_jobcards.filter(status="sent_technician").count()
     rejected_count = processed_jobcards.filter(status="rejected").count()
     completed_count = processed_jobcards.filter(status="completed").count()
-
-    total_count = (
-        accepted_count + pending_count + rejected_count + completed_count
-    )
+    total_count = processed_jobcards.count()
 
     context = {
         "processed_jobcards": processed_jobcards,
@@ -689,10 +845,28 @@ def job_technician_accept(request):
         "rejected_count": rejected_count,
         "completed_count": completed_count,
         "total_count": total_count,
+        "current_user_name": current_user_name,
     }
     return render(request, "job_technician_accept.html", context)
 
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+from .models import JobCard  # Make sure to import your JobCard model
 
+def api_jobcard_detail(request, pk):
+    """
+    API endpoint to get job card details
+    """
+    jobcard = get_object_or_404(JobCard, pk=pk)
+    
+    # Return JSON response with job card data
+    data = {
+        'id': jobcard.id,
+        'title': jobcard.title,
+        'description': jobcard.description,
+        # Add other fields as needed
+    }
+    return JsonResponse(data)
 
 @csrf_exempt
 def update_jobcard_status(request, pk):
@@ -701,20 +875,33 @@ def update_jobcard_status(request, pk):
             data = json.loads(request.body)
             action = data.get("action")
             completion_details = data.get("completion_details", {})
+            item_index = data.get("item_index")
 
             jobcard = JobCard.objects.get(pk=pk)
 
-            if action == "accepted":
-                jobcard.status = "accepted"
-            elif action == "rejected":
-                jobcard.status = "rejected"
-            elif action == "completed":
-                jobcard.status = "completed"
-                # Save completion details if provided
-                if completion_details:
-                    # Store completion details in the jobcard
-                    # You might want to add a completion_details field to your JobCard model
-                    # or store it in the existing items_data field
+            # Map actions to status values
+            status_mapping = {
+                "accepted": "accepted",  # This maps to "In Technician Hand" in display
+                "rejected": "rejected",
+                "completed": "completed"
+            }
+
+            if action in status_mapping:
+                new_status = status_mapping[action]
+                jobcard.status = new_status
+                
+                # Update individual item status if item_index is provided
+                if item_index is not None and jobcard.items_data:
+                    if 0 <= item_index < len(jobcard.items_data):
+                        jobcard.items_data[item_index]['status'] = new_status
+                
+                # Update ALL items' status to maintain consistency
+                elif jobcard.items_data:
+                    for item in jobcard.items_data:
+                        item['status'] = new_status
+                
+                # Handle completion details for completed status
+                if action == "completed" and completion_details:
                     if not hasattr(jobcard, 'completion_details') or jobcard.completion_details is None:
                         jobcard.completion_details = {}
                     
@@ -725,16 +912,352 @@ def update_jobcard_status(request, pk):
                         'notes': completion_details.get('notes', ''),
                         'completed_at': timezone.now().isoformat()
                     })
+                
+                jobcard.save()
+                return JsonResponse({
+                    "success": True, 
+                    "status": new_status,
+                    "display_status": get_status_display(new_status)
+                })
             else:
                 return JsonResponse({"success": False, "error": "Invalid action"})
 
-            jobcard.save()
-            return JsonResponse({"success": True})
         except JobCard.DoesNotExist:
             return JsonResponse({"success": False, "error": "JobCard not found"})
         except Exception as e:
             return JsonResponse({"success": False, "error": str(e)})
+    
+    return JsonResponse({"success": False, "error": "Invalid request"})
+
+
+def get_status_display(status):
+    """Helper function to get consistent status display across the application"""
+    status_display_map = {
+        'logged': 'Logged',
+        'sent_technician': 'Sent To Technician',
+        'accepted': 'In Technician Hand',
+        'completed': 'Completed',
+        'returned': 'Returned',
+        'rejected': 'Rejected'
+    }
+    return status_display_map.get(status, status.title())
+
+
+@csrf_exempt
+def update_standby_issued(request, pk):
+    """API endpoint to update standby issued status"""
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            standby_issued = data.get("standby_issued", False)
+            
+            jobcard = JobCard.objects.get(pk=pk)
+            jobcard.standby_issued = standby_issued
+            jobcard.save()
+            
+            return JsonResponse({
+                "success": True, 
+                "standby_issued": jobcard.standby_issued
+            })
+            
+        except JobCard.DoesNotExist:
+            return JsonResponse({"success": False, "error": "JobCard not found"})
+        except Exception as e:
+            return JsonResponse({"success": False, "error": str(e)})
+    
     return JsonResponse({"success": False, "error": "Invalid request"})
 
 
 
+# views.py - Add these views
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from django.http import JsonResponse
+from .models import JobCard, StandbyIssuance        # ✅ from app5
+from app2.models import StandbyItem, StandbyImage
+ # ✅ from app2
+from django.utils import timezone
+from django.db import models
+from django.db.models import Q
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_exempt
+from django.utils import timezone
+import json
+from .models import JobCard, JobCardImage, Item, StandbyIssuance          # ✅ only from app5
+from app2.models import StandbyItem, StandbyImage
+ # ✅ correct app for StandbyItem
+from app1.models import User
+
+def standby_issue_form(request, jobcard_id):
+    """Show the standby issue form for a specific job card"""
+    jobcard = get_object_or_404(JobCard, id=jobcard_id)
+    
+    # Check if the current user is assigned to this job card
+    current_user_name = "Unknown"
+    if request.session.get('custom_user_id'):
+        try:
+            current_user = User.objects.get(id=request.session['custom_user_id'])
+            current_user_name = getattr(current_user, "name", current_user.username if hasattr(current_user, 'username') else str(current_user))
+        except User.DoesNotExist:
+            pass
+    
+    if jobcard.technician != current_user_name:
+        messages.error(request, "You are not assigned to this job card.")
+        return redirect('app5:job_technician_accept')
+    
+    # ✅ FIXED: Get only "in_stock" standby items with their images
+    available_items = StandbyItem.objects.filter(
+        status='in_stock', 
+        stock__gt=0
+    ).prefetch_related('images').order_by('name')
+    
+    context = {
+        'jobcard': jobcard,
+        'available_items': available_items,
+        'current_user_name': current_user_name,
+    }
+    return render(request, 'standby_item_issued.html', context)
+
+@require_POST
+@require_POST
+def standby_issue_item(request, jobcard_id):
+    """Handle the standby item issuance for a job card"""
+    jobcard = get_object_or_404(JobCard, id=jobcard_id)
+    standby_item_id = request.POST.get('item_id')
+    
+    try:
+        # Get the current user
+        current_user = None
+        if request.session.get('custom_user_id'):
+            try:
+                current_user = User.objects.get(id=request.session['custom_user_id'])
+            except User.DoesNotExist:
+                pass
+        
+        # Get the standby item
+        standby_item = StandbyItem.objects.get(id=standby_item_id)
+        
+        # Validate stock availability
+        if standby_item.stock < 1:
+            messages.error(request, f"Item '{standby_item.name}' is out of stock")
+            return redirect('app5:standby_issue_form', jobcard_id=jobcard_id)
+        
+        # Create the standby issuance record
+        issuance = StandbyIssuance.objects.create(
+            standby_item=standby_item,
+            job_card=jobcard,
+            issued_to=jobcard.customer,
+            issued_by=current_user,
+            expected_return_date=timezone.now() + timezone.timedelta(days=7),
+            status='issued',
+            issued_date=timezone.now()
+        )
+        
+        # ✅ UPDATE STANDBY ITEM WITH CUSTOMER DETAILS
+        standby_item.stock -= 1
+        standby_item.status = 'with_customer'
+        
+        # Store customer information in the standby item
+        standby_item.customer_name = jobcard.customer
+        standby_item.customer_place = jobcard.address  # Using address as place
+        standby_item.customer_phone = jobcard.phone
+        standby_item.issued_date = timezone.now()
+        
+        standby_item.save()
+        
+        # Update job card standby issued status
+        jobcard.standby_issued = True
+        jobcard.save()
+        
+        messages.success(request, f'Standby item "{standby_item.name}" issued successfully to {jobcard.customer}!')
+        return redirect('app5:job_technician_accept')
+        
+    except StandbyItem.DoesNotExist:
+        messages.error(request, "Selected standby item not found.")
+    except Exception as e:
+        messages.error(request, f"Error issuing standby item: {str(e)}")
+    
+    return redirect('app5:standby_issue_form', jobcard_id=jobcard_id)
+
+from django.shortcuts import render, get_object_or_404, redirect
+from django.utils import timezone
+from django.views.decorators.csrf import csrf_exempt
+from .models import JobCard, StandbyIssuance
+
+@csrf_exempt
+def standby_return_item(request, jobcard_id):
+    jobcard = get_object_or_404(JobCard, id=jobcard_id)
+    
+    # Use 'job_card' instead of 'jobcard' - note the underscore
+    active_issuances = StandbyIssuance.objects.filter(job_card=jobcard, status='issued')
+    
+    if request.method == 'POST':
+        # Process the return form
+        return_date = request.POST.get('return_date')
+        condition_notes = request.POST.get('condition_notes')
+        additional_notes = request.POST.get('additional_notes')
+        
+        # Update all active issuances
+        for issuance in active_issuances:
+            issuance.actual_return_date = return_date
+            issuance.status = 'returned'
+            if condition_notes:
+                issuance.condition_notes = condition_notes
+            if additional_notes:
+                issuance.additional_notes = additional_notes
+            issuance.save()
+        
+        # Update job card standby status
+        jobcard.standby_issued = False
+        jobcard.save()
+        
+        return redirect('app5:standby_issuance_details', jobcard_id=jobcard.id)
+    
+    context = {
+        'jobcard': jobcard,
+        'active_issuances': active_issuances,
+        'today': timezone.now().date(),
+    }
+    return render(request, 'return_standby_item.html', context)
+
+def view_standby_issuance_details(request, jobcard_id):
+    """View to display standby item issuance details for a specific job card"""
+    jobcard = get_object_or_404(JobCard, id=jobcard_id)
+    
+    # Get standby issuance records for this job card
+    standby_issuances = StandbyIssuance.objects.filter(job_card=jobcard).order_by('-issued_date')
+    
+    context = {
+        'jobcard': jobcard,
+        'standby_issuances': standby_issuances,
+    }
+    return render(request, 'standby_issuance_details.html', context)
+
+def get_standby_item_details(request, item_id):
+    """API endpoint to get standby item details"""
+    try:
+        item = get_object_or_404(StandbyItem, id=item_id)
+        
+        # Get image URLs
+        image_urls = [img.image.url for img in item.images.all()]
+        
+        return JsonResponse({
+            'success': True,
+            'item': {
+                'id': item.id,
+                'name': item.name,
+                'serial_number': item.serial_number,
+                'stock': item.stock,
+                'status': item.status,
+                'notes': item.notes,
+                'images': image_urls,
+                'created_at': item.created_at.isoformat() if item.created_at else None,
+            }
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        })
+
+@csrf_exempt
+def update_standby_issued_status(request, jobcard_id):
+    """API endpoint to update standby issued status"""
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            standby_issued = data.get("standby_issued", False)
+            
+            jobcard = JobCard.objects.get(id=jobcard_id)
+            jobcard.standby_issued = standby_issued
+            jobcard.save()
+            
+            return JsonResponse({
+                "success": True, 
+                "standby_issued": jobcard.standby_issued
+            })
+            
+        except JobCard.DoesNotExist:
+            return JsonResponse({
+                "success": False, 
+                "error": "JobCard not found"
+            })
+        except Exception as e:
+            return JsonResponse({
+                "success": False, 
+                "error": str(e)
+            })
+    
+    return JsonResponse({
+        "success": False, 
+        "error": "Invalid request"
+    })
+
+
+
+# Add this to app5/views.py (at the end)
+
+@csrf_exempt
+def standby_issuance_return(request, jobcard_id):
+    """Handle returning standby items issued through job card"""
+    jobcard = get_object_or_404(JobCard, id=jobcard_id)
+    
+    # Get all active (issued) standby issuances for this job card
+    active_issuances = StandbyIssuance.objects.filter(
+        job_card=jobcard, 
+        status='issued'
+    ).select_related('standby_item')
+    
+    if request.method == 'POST':
+        # Get form data
+        return_date = request.POST.get('return_date')
+        condition_on_return = request.POST.get('condition_on_return', '').strip()
+        notes = request.POST.get('notes', '').strip()
+        
+        # Process each active issuance
+        for issuance in active_issuances:
+            # Update issuance status
+            issuance.actual_return_date = return_date
+            issuance.status = 'returned'
+            issuance.condition_on_return = condition_on_return
+            
+            # Append return notes to existing notes
+            if notes:
+                if issuance.notes:
+                    issuance.notes += f"\n\n--- RETURNED ON {return_date} ---\n{notes}"
+                else:
+                    issuance.notes = f"--- RETURNED ON {return_date} ---\n{notes}"
+            
+            issuance.save()
+            
+            # ✅ UPDATE STANDBY ITEM: RESTORE STOCK AND CLEAR CUSTOMER INFO
+            standby_item = issuance.standby_item
+            standby_item.stock += 1
+            standby_item.status = 'in_stock'
+            
+            # Clear customer information from standby item
+            standby_item.customer_name = None
+            standby_item.customer_place = None
+            standby_item.customer_phone = None
+            standby_item.issued_date = None
+            
+            standby_item.save()
+        
+        # Update job card standby status
+        jobcard.standby_issued = False
+        jobcard.save()
+        
+        messages.success(request, f'All standby items returned successfully for job card {jobcard.ticket_no}!')
+        return redirect('app5:standby_issuance_details', jobcard_id=jobcard.id)
+    
+    # For GET request, show the return form
+    context = {
+        'jobcard': jobcard,
+        'active_issuances': active_issuances,
+        'today': date.today(),
+    }
+    return render(request, 'return_standby_issuance.html', context)

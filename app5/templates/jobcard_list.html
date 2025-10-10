@@ -13,6 +13,38 @@
         margin-bottom: 25px;
         font-size: 28px;
     }
+
+    .dropdown {
+    position: relative;
+    display: inline-block;
+}
+.dropdown-toggle {
+    background: black;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+}
+.dropdown-menu {
+    display: none;
+    position: absolute;
+    background: white;
+    min-width: 220px;
+    box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
+    border-radius: 6px;
+    z-index: 1000;
+}
+.dropdown-menu a {
+    color: black;
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+    font-size: 14px;
+}
+.dropdown-menu a:hover {
+    background: #f1f1f1;
+}
     .top-bar {
         display: flex;
         justify-content: space-between;
@@ -712,7 +744,7 @@
             <option value="">All Status</option>
             <option value="logged">Logged</option>
             <option value="sent_technician">Sent To Technician</option>
-            <option value="pending">Pending</option>
+            <option value="pending">In Technician Hand</option>
             <option value="completed">Completed</option>
             <option value="returned">Returned</option>
             <option value="rejected">Rejected</option>
@@ -725,16 +757,26 @@
 
     <!-- Right side: action buttons -->
     <div class="action-buttons" style="display:flex; gap:15px;">
-        <a href="{% url 'app5:jobcard_create' %}" class="btn-add">
-            <i class="fas fa-plus"></i> Add New
-        </a>
-        <a href="{% url 'app5:item_master' %}" class="btn-add btn-service" title="Service Items">
-            <i class="fas fa-tools"></i> Service Items
-        </a>
-        <a href="{% url 'app5:supplier_master' %}" class="btn-add btn-supplier" title="Supplier Master">
-        <i class="fas fa-industry"></i> Supplier Master
-    </a>
+    <div class="dropdown">
+        <button class="btn-add dropdown-toggle" style="padding: 12px 18px; font-size:16px;" onclick="toggleDropdown()">
+            <i class="fas fa-bars"></i> Jump List
+        </button>
+        <div id="menuDropdown" class="dropdown-menu">
+            <a href="{% url 'app5:jobcard_create' %}">
+                <i class="fas fa-plus"></i> Add New
+            </a>
+            <a href="{% url 'app5:item_master' %}">
+                <i class="fas fa-tools"></i> Service Items
+            </a>
+            <a href="{% url 'app5:supplier_master' %}">
+                <i class="fas fa-industry"></i> Supplier Master
+            </a>
+            <a href="{% url 'item_list' %}">
+                <i class="fas fa-clock"></i> StandBy Item
+            </a>
+        </div>
     </div>
+</div>
 </div>
 
 <div class="table-container">
@@ -757,44 +799,58 @@
             {% for jobcard in page_obj %}
                 <tr class="customer-row" data-ticket="{{ jobcard.ticket_no }}" data-date="{{ jobcard.created_at|date:'Y-m-d' }}">
                     <td>{{ forloop.counter0|add:page_obj.start_index }}</td>
-                    <td>{{ jobcard.created_at|date:"d/m/Y" }}</td>
+                   <td>
+    {{ jobcard.created_at|date:"d/m/Y" }}
+    {% if jobcard.self_assigned %}
+        <div style="margin-top: 4px; color: #007bff; font-size: 10px;">
+            <span class="self-assigned-badge" title="Self-assigned by {{ jobcard.technician|default:'Technician' }}">
+                <i class="fas fa-user-check"></i> Self-Assigned
+            </span>
+        </div>
+    {% endif %}
+</td>
                     <td>
-                        <div class="ticket-info">
-                            <span class="ticket-number">{{ jobcard.ticket_no }}</span>
-                            <div class="creator-info">
-                                <i class="fas fa-user-edit"></i>
-                                <span>
-                                    {% if jobcard.created_by %}
-                                        {% if jobcard.created_by.name %}
-                                            {{ jobcard.created_by.name }}
-                                        {% elif jobcard.created_by.username %}
-                                            {{ jobcard.created_by.username }}
-                                        {% else %}
-                                            User ID: {{ jobcard.created_by.id }}
-                                        {% endif %}
-                                    {% elif jobcard.user %}
-                                        {% if jobcard.user.name %}
-                                            {{ jobcard.user.name }}
-                                        {% elif jobcard.user.username %}
-                                            {{ jobcard.user.username }}
-                                        {% else %}
-                                            User ID: {{ jobcard.user.id }}
-                                        {% endif %}
-                                    {% elif jobcard.added_by %}
-                                        {% if jobcard.added_by.name %}
-                                            {{ jobcard.added_by.name }}
-                                        {% elif jobcard.added_by.username %}
-                                            {{ jobcard.added_by.username }}
-                                        {% else %}
-                                            User ID: {{ jobcard.added_by.id }}
-                                        {% endif %}
-                                    {% else %}
-                                        Unknown User
-                                    {% endif %}
-                                </span>
-                            </div>
-                        </div>
-                    </td>
+    <div class="ticket-info">
+        <span class="ticket-number">{{ jobcard.ticket_no }}</span>
+        {% if jobcard.self_assigned %}
+            <span class="self-assigned-badge" title="Self-assigned by {{ jobcard.technician|default:'Technician' }}">
+                <!-- <i class="fas fa-user-check"></i> Self -->
+            </span>
+        {% endif %}
+        <div class="creator-info">
+            <i class="fas fa-user-edit"></i>
+            <span>
+                {% if jobcard.created_by %}
+                    {% if jobcard.created_by.name %}
+                        {{ jobcard.created_by.name }}
+                    {% elif jobcard.created_by.username %}
+                        {{ jobcard.created_by.username }}
+                    {% else %}
+                        User ID: {{ jobcard.created_by.id }}
+                    {% endif %}
+                {% elif jobcard.user %}
+                    {% if jobcard.user.name %}
+                        {{ jobcard.user.name }}
+                    {% elif jobcard.user.username %}
+                        {{ jobcard.user.username }}
+                    {% else %}
+                        User ID: {{ jobcard.user.id }}
+                    {% endif %}
+                {% elif jobcard.added_by %}
+                    {% if jobcard.added_by.name %}
+                        {{ jobcard.added_by.name }}
+                    {% elif jobcard.added_by.username %}
+                        {{ jobcard.added_by.username }}
+                    {% else %}
+                        User ID: {{ jobcard.added_by.id }}
+                    {% endif %}
+                {% else %}
+                    Unknown User
+                {% endif %}
+            </span>
+        </div>
+    </div>
+</td>
                     <td>
                         <div class="customer-info">
                             <div class="customer-field name">
@@ -848,30 +904,36 @@
                             </div>
                         {% endfor %}
                     </td>
-                    <td data-status-column>
-                        {% for item_data in jobcard.items_data %}
-                            <div style="margin-bottom: 8px;">
-                                <div style="font-size: 12px; color: #070707;">{{ item_data.item }}:</div>
-                                {% with status=item_data.status|default:jobcard.status %}
-                                <span class="status-badge status-{{ status }}" 
-                                      data-jobcard-id="{{ jobcard.pk }}"
-                                      data-item-index="{{ forloop.counter0 }}"
-                                      data-status="{{ status }}"
-                                      onclick="updateStatus({{ jobcard.pk }}, '{{ status }}', {{ forloop.counter0 }}, '{{ item_data.item|escapejs }}')"
-                                      title="Click to change status for {{ item_data.item }}">
-                                    {% if status == 'logged' %}Logged
-                                    {% elif status == 'sent_technician' %}Sent To Technician
-                                    {% elif status == 'pending' %}Pending
-                                    {% elif status == 'completed' %}Completed
-                                    {% elif status == 'returned' %}Returned
-                                    {% elif status == 'rejected' %}Rejected
-                                    {% else %}{{ status|capfirst }}
-                                    {% endif %}
-                                </span>
-                                {% endwith %}
-                            </div>
-                        {% endfor %}
-                    </td>              
+                   <td data-status-column>
+    {% for item_data in jobcard.items_data %}
+        <div style="margin-bottom: 8px;">
+            <div style="font-size: 12px; color: #070707;">{{ item_data.item }}:</div>
+            {% with status=item_data.status|default:jobcard.status %}
+            <span class="status-badge status-{{ status }}" 
+                  data-jobcard-id="{{ jobcard.pk }}"
+                  data-item-index="{{ forloop.counter0 }}"
+                  data-status="{{ status }}"
+                  onclick="updateStatus({{ jobcard.pk }}, '{{ status }}', {{ forloop.counter0 }}, '{{ item_data.item|escapejs }}')"
+                  title="Click to change status for {{ item_data.item }}{% if jobcard.technician %} - Assigned to: {{ jobcard.technician }}{% endif %}">
+                {% if status == 'logged' %}Logged
+                {% elif status == 'sent_technician' %}Sent To Technician
+                {% elif status == 'accepted' %}In Technician Hand
+                {% elif status == 'completed' %}Completed
+                {% elif status == 'returned' %}Returned
+                {% elif status == 'rejected' %}Rejected
+                {% else %}{{ status|capfirst }}
+                {% endif %}
+            </span>
+           {% if jobcard.technician and status == 'sent_technician' or jobcard.technician and status == 'accepted' %}
+    <div style="font-size: 10px; color: #007bff; margin-top: 2px;">
+        <i class="fas fa-user"></i> {{ jobcard.technician }}
+    </div>
+{% endif %}
+
+            {% endwith %}
+        </div>
+    {% endfor %}
+</td>      
                     <td style="text-align: center;">
                         {% for item_data in jobcard.items_data %}
                             {% for complaint in item_data.complaints %}
@@ -920,6 +982,13 @@
                         <a href="{% url 'app5:jobcard_edit' jobcard.pk %}" class="btn-edit" title="Edit Job Card">
                             <i class="fas fa-edit"></i>
                         </a>
+
+                         <a href="{% url 'app5:view_standby_issuance_details' jobcard.pk %}" 
+       class="btn-view" 
+       title="View Standby Item Details"
+       style="background: #17a2b8; color: #fff; padding: 6px 10px; border-radius: 4px; margin-right: 4px; margin-bottom: 4px; font-size: 12px; text-decoration: none; display: inline-block; cursor: pointer; border: none; transition: all 0.3s ease; font-weight: bold;">
+        <i class="fas fa-eye"></i>
+    </a>
                         <button class="btn-delete" 
                                 onclick="confirmDelete('{{ jobcard.ticket_no }}', '{{ jobcard.customer|escapejs }}', '{{ jobcard.phone }}', '{{ jobcard.pk }}')" 
                                 title="Delete Job Card">
@@ -1006,7 +1075,7 @@
 </div>
 
 <!-- Status Update Modal -->
-<div id="statusModal" class="modal">
+<!-- <div id="statusModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
             <h3 class="modal-title">
@@ -1033,7 +1102,7 @@
             </div>
         </div>
     </div>
-</div>
+</div> -->
 
 <!-- Delete Confirmation Modal -->
 <div id="deleteModal" class="modal">
@@ -1255,12 +1324,12 @@
         const newStatus = document.getElementById('statusSelect').value;
 
         if (!csrftoken) {
-            showAlert('⛔ CSRF token not found. Please refresh the page.', 'error');
+            showAlert('CSRF token not found. Please refresh the page.', 'error');
             return;
         }
 
         if (!currentJobId) {
-            showAlert('⛔ No job card selected for status update.', 'error');
+            showAlert('No job card selected for status update.', 'error');
             return;
         }
 
@@ -1283,7 +1352,7 @@
             credentials: 'same-origin',
             body: JSON.stringify({ 
                 status: newStatus,
-                item_index: parseInt(currentItemIndex)  // Make sure this is sent as integer
+                item_index: parseInt(currentItemIndex)
             })
         })
         .then(response => {
@@ -1330,14 +1399,15 @@
                 }
 
                 closeStatusModal();
-                showAlert(`✅ Status updated to "${displayText}" successfully!`, 'success');
-                performSearch(); // Refresh search results after status change
+                showAlert(`Status updated to "${displayText}" successfully!`, 'success');
+                performSearch();
             } else {
                 throw new Error(data.error || 'Unknown error occurred');
             }
         })
         .catch(error => {
             console.error('Status update error:', error);
+            showAlert(`Failed to update status: ${error.message}`, 'error');
             
             if (statusBadge) {
                 statusBadge.classList.remove('status-updating');
@@ -1552,6 +1622,20 @@
             event.target.style.display = 'none';
         }
     });
+
+
+    function toggleDropdown() {
+    const menu = document.getElementById("menuDropdown");
+    menu.style.display = menu.style.display === "block" ? "none" : "block";
+}
+window.onclick = function(e) {
+    if (!e.target.matches('.dropdown-toggle')) {
+        const dropdowns = document.getElementsByClassName("dropdown-menu");
+        for (let i = 0; i < dropdowns.length; i++) {
+            dropdowns[i].style.display = "none";
+        }
+    }
+}
 
     // Initialize on page load
     document.addEventListener('DOMContentLoaded', function() {

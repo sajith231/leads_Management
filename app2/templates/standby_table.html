@@ -1,4 +1,3 @@
-
 {% extends "base.html" %}
 
 {% block content %}
@@ -13,6 +12,53 @@
     margin-bottom: 15px;
     margin-top: 3%;
   }
+/* Customer Modal Styles */
+#customerModal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.7);
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+#customerModal .modal-content {
+  background: #fff;
+  border-radius: 12px;
+  position: relative;
+  max-width: 500px;
+  width: 90%;
+  padding: 25px;
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+.return-btn {
+  color: #17a2b8;
+}
+.return-btn:hover {
+  color: #138496;
+}
+
+#customerDetails strong {
+  color: #2c3e50;
+  display: inline-block;
+  min-width: 140px;
+  text-align: right;
+  margin-right: 10px;
+}
+
+#customerDetails div {
+  margin-bottom: 10px;
+  padding: 8px;
+  background: #f8f9fa;
+  border-radius: 6px;
+}
+
   .header-container h2 {
     margin: 0;
     font-size: 28px;
@@ -37,20 +83,37 @@
     background: #333;
   }
 
-  /* Search */
-  .search-container {
+  /* Search and Filters */
+  .filters-container {
     margin-bottom: 20px;
     background: #fff;
-    padding: 12px 15px;
+    padding: 15px;
     border-radius: 6px;
     box-shadow: 0 2px 6px rgba(0,0,0,0.05);
   }
-  .search-container input {
-    width: 100%;
+  
+  .filter-row {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  
+  .search-input {
+    flex: 1;
+    min-width: 250px;
     padding: 10px;
     border: 1px solid #ccc;
     border-radius: 6px;
     font-size: 14px;
+  }
+  
+  .status-filter {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 14px;
+    min-width: 150px;
   }
 
   /* Table */
@@ -86,6 +149,64 @@
   
   tbody tr:hover {
     background-color: #f0f8ff;
+  }
+
+  /* Status Badges */
+  .status-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  
+  .badge-success {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+  }
+  
+  .badge-warning {
+    background: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeaa7;
+  }
+  
+  .status-badge:hover {
+    transform: scale(1.05);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+
+  /* Status Dropdown */
+  .status-dropdown {
+    position: relative;
+    display: inline-block;
+  }
+  
+  .status-dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: #fff;
+    min-width: 160px;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+    border-radius: 6px;
+    z-index: 1000;
+    border: 1px solid #ddd;
+  }
+  
+  .status-dropdown-content a {
+    color: #333;
+    padding: 10px 16px;
+    text-decoration: none;
+    display: block;
+    font-size: 13px;
+    transition: background 0.3s;
+  }
+  
+  .status-dropdown-content a:hover {
+    background-color: #f1f1f1;
   }
 
   /* Icon Buttons */
@@ -277,12 +398,22 @@
     }
     
     table {
-      min-width: 800px;
+      min-width: 900px;
     }
     
     .modal-content {
       margin: 10px;
       max-width: calc(100% - 20px);
+    }
+    
+    .filter-row {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    
+    .search-input, .status-filter {
+      min-width: auto;
+      width: 100%;
     }
   }
 </style>
@@ -290,15 +421,25 @@
 
 <!-- Header -->
 <div class="header-container">
-  <h2>StandBy Product</h2>
+  <h2>StandBy Product Management</h2>
   <a href="{% url 'add' %}" class="add-btn"><i class="fas fa-plus"></i> Add New</a>
 </div>
 
-<!-- Search -->
-<div class="search-container">
-  <form method="get" action="" id="search-form">
-    <input type="text" name="search" id="search-input" value="{{ request.GET.search }}" 
-           placeholder="Search by Name or Serial Number..." autocomplete="off">
+<!-- Search and Filters -->
+<div class="filters-container">
+  <form method="get" action="" id="filter-form">
+    <div class="filter-row">
+      <input type="text" name="search" id="search-input" 
+             value="{{ request.GET.search }}" 
+             placeholder="Search by Name or Serial Number..." 
+             class="search-input" autocomplete="off">
+      
+      <select name="status" id="status-filter" class="status-filter">
+        <option value="">All Status</option>
+        <option value="in_stock" {% if request.GET.status == 'in_stock' %}selected{% endif %}>In Stock</option>
+        <option value="with_customer" {% if request.GET.status == 'with_customer' %}selected{% endif %}>With Customer</option>
+      </select>
+    </div>
   </form>
 </div>
 
@@ -312,60 +453,91 @@
   <th>Created By</th>
   <th>Item Name</th>
   <th>Serial Number</th>
+  <th>Status</th>
   <th>Notes</th>
   <th>Images</th>
   <th>Stock</th>
-  
   <th>Actions</th>
 </tr>
 </thead>
 <tbody>
 {% for item in items %}
 <tr>
-  <td>{{ forloop.counter }}</td>
-  <td>{{ item.created_at|date:"d M Y" }}</td>
-  <td>{{ item.created_by.username|default:"System" }}</td>
-  <td><strong>{{ item.name }}</strong></td>
-  <td><code>{{ item.serial_number }}</code></td>
-  <td>
-    {% if item.notes and item.notes|length > 0 %}
-      <i class="fa-solid fa-note-sticky icon-btn notes-icon" 
-         title="View Notes" 
-         onclick="openNotesModal('{{ item.name|escapejs }}', `{{ item.notes|escapejs }}`)"></i>
-    {% else %}
-      <span style="color:#888;">—</span>
-    {% endif %}
-  </td>
-  <td>
-    {% if item.images.all %}
-      <i class="fas fa-images icon-btn images-icon" 
-         title="View Images ({{ item.images.count }} image{{ item.images.count|pluralize }})"
-         onclick="openImageModal({{ item.id }})"></i>
-      {% for img in item.images.all %}
-        <input type="hidden" class="image-url" data-item="{{ item.id }}" value="{{ img.image.url }}">
-      {% endfor %}
-    {% else %}
-      <span style="color:#888;">—</span>
-    {% endif %}
-  </td>
-  <td><strong>{{ item.stock }}</strong></td>
-  
-  <td>
-    <a href="{% url 'item_edit' item.id %}" class="action-btn edit-btn" title="Edit Item">
-      <i class="fas fa-edit"></i>
+    <td>{{ forloop.counter }}</td>
+    <td>{{ item.created_at|date:"d M Y" }}</td>
+    <td>{{ item.created_by.username|default:"System" }}</td>
+    <td><strong>{{ item.name }}</strong></td>
+    <td><code>{{ item.serial_number }}</code></td>
+    <td>
+  <div class="status-dropdown">
+    <span class="status-badge {{ item.get_status_display_class }}" 
+          onclick="toggleStatusDropdown({{ item.id }})">
+      {{ item.get_status_display }}
+    </span>
+    <div class="status-dropdown-content" id="dropdown-{{ item.id }}">
+      <a href="#" onclick="updateStatus({{ item.id }}, 'in_stock', event)">
+        <span class="status-badge badge-success">In Stock</span>
+      </a>
+      <a href="#" onclick="updateStatus({{ item.id }}, 'with_customer', event)">
+        <span class="status-badge badge-warning">With Customer</span>
+      </a>
+    </div>
+  </div>
+
+  {% if item.status == 'with_customer' %}
+    <a href="#" class="icon-btn" style="color:#007bff;" title="View Customer Info" 
+       onclick="viewCustomerInfo({{ item.id }})">
+      <i class="fas fa-eye"></i>
     </a>
-    <form action="{% url 'item_delete' item.id %}" method="POST" style="display:inline;" 
-          onsubmit="return confirm('Are you sure you want to delete this item?');">
-      {% csrf_token %}
-      <button type="submit" class="action-btn delete-btn" title="Delete Item">
-        <i class="fas fa-trash-alt"></i>
-      </button>
-    </form>
-  </td>
+  {% endif %}
+</td>
+
+    <td>
+        {% if item.notes and item.notes|length > 0 %}
+            <i class="fa-solid fa-note-sticky icon-btn notes-icon" 
+               title="View Notes" 
+               onclick="openNotesModal('{{ item.name|escapejs }}', `{{ item.notes|escapejs }}`)"></i>
+        {% else %}
+            <span style="color:#888;">—</span>
+        {% endif %}
+    </td>
+    <td>
+        {% if item.images.all %}
+            <i class="fas fa-images icon-btn images-icon" 
+               title="View Images ({{ item.images.count }} image{{ item.images.count|pluralize }})"
+               onclick="openImageModal({{ item.id }})"></i>
+            {% for img in item.images.all %}
+                <input type="hidden" class="image-url" data-item="{{ item.id }}" value="{{ img.image.url }}">
+            {% endfor %}
+        {% else %}
+            <span style="color:#888;">—</span>
+        {% endif %}
+    </td>
+    <td><strong>{{ item.stock }}</strong></td>
+    <td>
+        <a href="{% url 'item_edit' item.id %}" class="action-btn edit-btn" title="Edit Item">
+            <i class="fas fa-edit"></i>
+        </a>
+        <form action="{% url 'item_delete' item.id %}" method="POST" style="display:inline;" 
+              onsubmit="return confirm('Are you sure you want to delete this item?');">
+            {% csrf_token %}
+            <button type="submit" class="action-btn delete-btn" title="Delete Item">
+                <i class="fas fa-trash-alt"></i>
+            </button>
+
+{% if item.status == 'with_customer' %}
+  <a href="{% url 'standby_return_item' item.id %}" class="action-btn return-btn" 
+     title="Return Item">
+      <i class="fas fa-undo-alt"></i>
+  </a>
+{% endif %}
+
+        </form>
+    </td>
 </tr>
 {% empty %}
 <tr>
-  <td colspan="9" class="no-data">
+  <td colspan="10" class="no-data">
     <i class="fas fa-inbox" style="font-size: 48px; margin-bottom: 10px; color: #ccc;"></i><br>
     No items found
     {% if request.GET.search %}
@@ -392,6 +564,28 @@
   </div>
 </div>
 
+<!-- Customer Info Modal -->
+<div id="customerModal" class="modal">
+  <div class="modal-content" style="max-width: 500px;">
+    <span class="close-btn" onclick="closeCustomerModal()">&times;</span>
+    <div class="modal-header">
+      <h3>
+        <i class="fas fa-user"></i>
+        Customer Information
+      </h3>
+    </div>
+    <div id="customerDetails" style="padding: 20px; text-align: left; line-height: 1.6;">
+      <!-- Customer details will be loaded here -->
+    </div>
+    <div style="padding: 15px; border-top: 1px solid #eee; text-align: center;">
+      <button onclick="closeCustomerModal()" style="padding: 8px 20px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">
+        Close
+      </button>
+    </div>
+  </div>
+</div>
+
+
 <!-- Image Modal (Slider) -->
 <div id="imageModal">
   <div class="modal-content">
@@ -406,27 +600,161 @@
 </div>
 
 <script>
-// ✅ Search functionality with debounce
+// Search functionality with debounce
 const searchInput = document.getElementById('search-input');
-const searchForm = document.getElementById('search-form');
+const statusFilter = document.getElementById('status-filter');
+const filterForm = document.getElementById('filter-form');
 let searchTimer;
 
 searchInput.addEventListener('input', function() {
     clearTimeout(searchTimer);
     searchTimer = setTimeout(() => {
-        searchForm.submit();
+        filterForm.submit();
     }, 500);
+});
+
+statusFilter.addEventListener('change', function() {
+    filterForm.submit();
 });
 
 // Clear search on Escape key
 searchInput.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
         this.value = '';
-        searchForm.submit();
+        filterForm.submit();
     }
 });
 
-/* ✅ Notes Modal */
+/* Status Management */
+function toggleStatusDropdown(itemId) {
+    // Close all other dropdowns first
+    document.querySelectorAll('.status-dropdown-content').forEach(dropdown => {
+        if (dropdown.id !== `dropdown-${itemId}`) {
+            dropdown.style.display = 'none';
+        }
+    });
+    
+    // Toggle current dropdown
+    const dropdown = document.getElementById(`dropdown-${itemId}`);
+    dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+}
+
+function updateStatus(itemId, newStatus, event) {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    // Close dropdown
+    document.getElementById(`dropdown-${itemId}`).style.display = 'none';
+    
+    // Show loading indicator
+    const statusBadge = document.querySelector(`#dropdown-${itemId}`).previousElementSibling;
+    const originalText = statusBadge.textContent;
+    statusBadge.textContent = 'Updating...';
+    statusBadge.className = 'status-badge badge-secondary';
+    
+    // Send AJAX request
+    fetch(`/api/standby/update-status/${itemId}/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify({ status: newStatus })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            statusBadge.textContent = data.new_status;
+            statusBadge.className = `status-badge ${data.status_class}`;
+            
+            // Show success message
+            showNotification('Status updated successfully!', 'success');
+        } else {
+            // Revert on error
+            statusBadge.textContent = originalText;
+            showNotification(data.error || 'Failed to update status', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        statusBadge.textContent = originalText;
+        showNotification('Network error occurred', 'error');
+    });
+}
+
+// Close dropdowns when clicking outside
+document.addEventListener('click', function(event) {
+    if (!event.target.closest('.status-dropdown')) {
+        document.querySelectorAll('.status-dropdown-content').forEach(dropdown => {
+            dropdown.style.display = 'none';
+        });
+    }
+});
+
+function viewCustomerInfo(itemId) {
+  fetch(`/app5/standby_get_customer_info/${itemId}/`)
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        const info = data.data;
+        document.getElementById('customerDetails').innerHTML = `
+          <p><strong>Item Name:</strong> ${info.item_name}</p>
+          <p><strong>Serial No.:</strong> ${info.serial_number}</p>
+          <p><strong>Customer:</strong> ${info.customer_name}</p>
+          <p><strong>Place:</strong> ${info.customer_place}</p>
+          <p><strong>Phone:</strong> ${info.customer_phone}</p>
+          <p><strong>Issued Date:</strong> ${info.issued_date}</p>
+        `;
+        document.getElementById('customerModal').style.display = 'block';
+      } else {
+        alert(data.error || 'No customer info available.');
+      }
+    })
+    .catch(error => console.error('Error fetching customer info:', error));
+}
+
+function closeCustomerModal() {
+  document.getElementById('customerModal').style.display = 'none';
+}
+
+// Close modal with Escape key
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    closeCustomerModal();
+  }
+});
+
+
+// Notification function
+function showNotification(message, type) {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 15px 20px;
+        border-radius: 5px;
+        color: white;
+        font-weight: bold;
+        z-index: 10000;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        ${type === 'success' ? 'background: #28a745;' : 'background: #dc3545;'}
+    `;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    
+    // Fade in
+    setTimeout(() => notification.style.opacity = '1', 100);
+    
+    // Remove after 3 seconds
+    setTimeout(() => {
+        notification.style.opacity = '0';
+        setTimeout(() => document.body.removeChild(notification), 300);
+    }, 3000);
+}
+
+/* Notes Modal */
 const notesModal = document.getElementById('notesModal');
 const modalItemName = document.getElementById('modalItemName');
 const modalText = document.getElementById('modalText');
@@ -436,14 +764,13 @@ function openNotesModal(itemName, notes) {
     
     if (notes && notes.trim().length > 0) {
         modalText.textContent = notes.trim();
-        modalText.className = ''; // Remove any existing classes
+        modalText.className = '';
     } else {
         modalText.innerHTML = '<div class="empty-notes">No notes available for this item.</div>';
     }
     
     notesModal.style.display = 'flex';
     
-    // Focus trap for accessibility
     setTimeout(() => {
         modalText.focus();
     }, 100);
@@ -453,7 +780,36 @@ function closeNotesModal() {
     notesModal.style.display = 'none'; 
 }
 
-/* ✅ Image Modal with Slider */
+
+
+function viewCustomerInfo(itemId) {
+  fetch(`/app2/standby/customer-info/${itemId}/`)
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        const d = data.data;
+        document.getElementById('customerDetails').innerHTML = `
+          <strong>Item:</strong> ${d.item_name}<br>
+          <strong>Serial Number:</strong> ${d.serial_number}<br>
+          <strong>Customer Name:</strong> ${d.customer_name}<br>
+          <strong>Place:</strong> ${d.customer_place}<br>
+          <strong>Phone:</strong> ${d.customer_phone}<br>
+          <strong>Issued Date:</strong> ${d.issued_date}
+        `;
+        document.getElementById('customerModal').style.display = 'flex';
+      } else {
+        alert(data.error || 'Unable to fetch customer info.');
+      }
+    })
+    .catch(err => alert('Error: ' + err));
+}
+
+function closeCustomerModal() {
+  document.getElementById('customerModal').style.display = 'none';
+}
+
+
+/* Image Modal with Slider */
 const imageModal = document.getElementById('imageModal');
 const sliderImage = document.getElementById('sliderImage');
 const imageCounter = document.getElementById('imageCounter');
@@ -483,7 +839,6 @@ function updateSlider() {
     sliderImage.src = images[currentIndex];
     imageCounter.textContent = `${currentIndex + 1} / ${images.length}`;
     
-    // Show/hide navigation buttons
     prevBtn.style.display = images.length > 1 ? 'block' : 'none';
     nextBtn.style.display = images.length > 1 ? 'block' : 'none';
 }
@@ -502,7 +857,7 @@ function prevImage() {
     }
 }
 
-// ✅ Keyboard navigation for image slider
+// Keyboard navigation for image slider
 document.addEventListener('keydown', function(e) {
     if (imageModal.style.display === 'flex') {
         if (e.key === 'ArrowRight') nextImage();
@@ -514,18 +869,18 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
-// ✅ Close modals when clicking outside
+// Close modals when clicking outside
 window.onclick = function(e) {
     if (e.target === notesModal) closeNotesModal();
     if (e.target === imageModal) closeImageModal();
 };
 
-// ✅ Handle image loading errors
+// Handle image loading errors
 sliderImage.addEventListener('error', function() {
     this.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDMwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIzMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0xMTcuNSA4NS41TDE0Mi41IDExMC41TDE4Mi41IDcwLjVMMjE3LjUgMTA1LjVWMTMwLjVIODIuNVY4NS41SDE0Mi41IiBzdHJva2U9IiM5Q0E0QTgiLz4KPGNpcmNsZSBjeD0iMTEwIiBjeT0iNzAiIHI9IjEwIiBzdHJva2U9IiM5Q0E0QTgiLz4KPHRleHQgeD0iMTUwIiB5PSIxNjAiIGZpbGw9IiM2QjcyODAiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgdGV4dC1hbmNob3I9Im1pZGRsZSI+SW1hZ2UgTm90IEZvdW5kPC90ZXh0Pgo8L3N2Zz4K';
 });
 
-console.log('StandBy Product Management System Loaded Successfully! 🚀');
+console.log('StandBy Product Management System with Status Tracking Loaded Successfully! 🚀');
 </script>
 
 {% endblock %}

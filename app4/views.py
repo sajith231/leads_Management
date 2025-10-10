@@ -737,7 +737,7 @@ def collections_add(request):
         collection_type   = request.POST.get("collection_type", "cash").strip()
         screenshot        = request.FILES.get("payment_screenshot")
         notes             = request.POST.get("notes", "").strip()
-        status            = request.POST.get("status", "pending")  # default
+        status            = request.POST.get("status", "pending")
 
         # basic required fields (screenshot NOT included here)
         if not all([client_name, branch, amount, paid_for]):
@@ -751,8 +751,8 @@ def collections_add(request):
             if amount <= 0:
                 raise ValueError("Amount must be greater than 0")
 
-            # validate file only when needed
-            if collection_type in ('online', 'cheque'):
+            # validate file only when needed   // << UPDATED
+            if collection_type in ('online', 'cheque', 'neft'):        # << added neft
                 if not screenshot:
                     raise ValueError(f"Proof image is required for {collection_type.replace('_', ' ').title()}")
                 allowed = {"image/jpeg", "image/jpg", "image/png", "image/gif"}
@@ -774,7 +774,7 @@ def collections_add(request):
                 created_by=get_user_display_name(request.user)
             )
 
-            # WhatsApp alert (unchanged)
+            # WhatsApp alert
             send_collection_whatsapp(
                 client_name=collection.client_name,
                 branch=collection.branch,
@@ -802,9 +802,11 @@ def collections_add(request):
 
 def collections_list(request):
     """List all collections with search, filter, and status functionality"""
+
     # Get filter parameters
     search_query = request.GET.get('search', '').strip()
     branch_filter = request.GET.get('branch', '').strip()
+    created_by_filter = request.GET.get('created_by', '').strip()
     date_filter = request.GET.get('date_filter', '').strip()
     status_filter = request.GET.get('status_filter', '').strip()
 
@@ -818,10 +820,14 @@ def collections_list(request):
             Q(paid_for__icontains=search_query) |
             Q(notes__icontains=search_query)
         )
-    
+
     # Apply branch filter
     if branch_filter:
         collections = collections.filter(branch__icontains=branch_filter)
+
+    # Apply created_by filter
+    if created_by_filter:
+        collections = collections.filter(created_by__username__icontains=created_by_filter)
 
     # Apply status filter
     if status_filter:
@@ -829,60 +835,45 @@ def collections_list(request):
 
     # Apply date filter
     if date_filter:
-        today = timezone.now().date()
-        if date_filter == 'today':
-            collections = collections.filter(created_at__date=today)
-        elif date_filter == 'this_week':
-            week_start = today - timedelta(days=today.weekday())
-            collections = collections.filter(created_at__date__gte=week_start)
-        elif date_filter == 'this_month':
-            collections = collections.filter(
-                created_at__year=today.year,
-                created_at__month=today.month
-            )
-        elif date_filter == 'last_month':
-            if today.month == 1:
-                last_month_year = today.year - 1
-                last_month_month = 12
-            else:
-                last_month_year = today.year
-                last_month_month = today.month - 1
-            collections = collections.filter(
-                created_at__year=last_month_year,
-                created_at__month=last_month_month
-            )
+        try:
+            filter_date = datetime.strptime(date_filter, '%Y-%m-%d').date()
+            collections = collections.filter(created_at__date=filter_date)
+        except ValueError:
+            pass  # Ignore invalid date formats
 
-    # Calculate statistics - USE FILTERED COLLECTIONS for accurate counts
+    # Calculate statistics using filtered data
     filtered_count = collections.count()
     filtered_total_amount = collections.aggregate(Sum('amount'))['amount__sum'] or 0
-    
-    # For "This Month" count, use the original unfiltered data but apply month filter
+
+    # "This Month" count — based on full Collection data
     today = timezone.now().date()
     this_month_count = Collection.objects.filter(
         created_at__year=today.year,
         created_at__month=today.month
     ).count()
-    
-    # Status statistics - use filtered collections for accuracy
+
+    # Status-based counts
     pending_count = collections.filter(status='pending').count()
     verified_count = collections.filter(status='verified').count()
+    multiple_entry_count = collections.filter(status='multiple entry').count()
 
     # Pagination
     paginator = Paginator(collections, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
+    # Render to template
     return render(request, 'collections_list.html', {
         'collections': page_obj,
         'total_amount': filtered_total_amount,
-        'total_count': filtered_count,  # Add this for the total count card
+        'total_count': filtered_count,
         'this_month_count': this_month_count,
         'pending_count': pending_count,
         'verified_count': verified_count,
+        'multiple_entry_count': multiple_entry_count,
         'is_paginated': page_obj.has_other_pages(),
         'page_obj': page_obj,
-    })
-
+    }) 
 # Update collection_details to include status
 def collection_details(request, collection_id):
     """Get collection details via AJAX"""
@@ -970,9 +961,9 @@ def collections_edit(request, collection_id):
                 raise ValueError("Amount must be greater than 0")
 
             # validate screenshot only when required
-            requires_proof = collection_type in (Collection.TYPE_ONLINE, Collection.TYPE_CHEQUE)
+            requires_proof = collection_type in {"upi", "neft", "cheque"}
             if requires_proof and not payment_screenshot and not collection.payment_screenshot:
-                raise ValueError(f"Proof image is required for {collection_type.replace('_', ' ').title()}")
+                raise ValueError(f"Proof image is required for {collection_type.title()}")
 
             if payment_screenshot:
                 allowed = {"image/jpeg", "image/jpg", "image/png", "image/gif"}
@@ -1020,6 +1011,7 @@ def collections_edit(request, collection_id):
         "collection": collection,
         "clients_json": clients,
     })
+
 @csrf_exempt
 @require_http_methods(["POST"])
 def collections_delete(request, collection_id):
@@ -1134,30 +1126,33 @@ def get_user_display_name(user):
 @csrf_exempt
 @require_http_methods(["POST"])
 def collection_update_status(request, collection_id):
-    """Update collection status (pending/verified)"""
+    """Update collection status (pending / verified / multiple entry)"""
     try:
         collection = get_object_or_404(Collection, id=collection_id)
-        
+
         # Parse JSON data
         data = json.loads(request.body)
-        new_status = data.get('status')
-        
-        if new_status not in ['pending', 'verified']:
-            return JsonResponse({'success': False, 'message': 'Invalid status'})
-        
+        new_status = data.get('status', '').strip()
+
+        # ✅ Allow all valid statuses
+        valid_statuses = ['pending', 'verified', 'multiple entry']
+
+        if new_status not in valid_statuses:
+            return JsonResponse({'success': False, 'message': 'Invalid status value'})
+
+        # ✅ Update and save
         collection.status = new_status
         collection.save()
-        
+
         return JsonResponse({
-            'success': True, 
-            'message': f'Status updated to {new_status} successfully'
+            'success': True,
+            'message': f'Status updated to “{new_status.title()}” successfully',
         })
-        
-    except Collection.DoesNotExist:
-        return JsonResponse({'success': False, 'message': 'Collection not found'})
+
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'message': 'Invalid JSON data'})
     except Exception as e:
         return JsonResponse({'success': False, 'message': f'Error: {str(e)}'})
-
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.http import JsonResponse
@@ -1182,15 +1177,19 @@ def api_collections_add(request):
         branch      = request.POST.get("branch", "").strip()
         amount      = request.POST.get("amount", "").strip()
         paid_for    = request.POST.get("paid_for", "").strip()
+        payment_method = request.POST.get("payment_method", "").strip()  # NEW: Get payment method
         notes       = request.POST.get("notes", "").strip()
+        created_by  = request.POST.get("created_by", "").strip()  # NEW: Get actual user name
         screenshot  = request.FILES.get("payment_screenshot")
 
-        # --- validation identical to your current code ---
-        if not all([client_name, branch, amount, paid_for, screenshot]):
+        # --- Basic validation ---
+        if not all([client_name, branch, amount, paid_for, payment_method]):
             return JsonResponse(
-                {"success": False, "error": "All fields including screenshot are required"},
+                {"success": False, "error": "Client name, branch, amount, paid_for, and payment_method are required"},
                 status=400
             )
+        
+        # --- Amount validation ---
         try:
             amount = float(amount)
             if amount <= 0:
@@ -1198,24 +1197,33 @@ def api_collections_add(request):
         except ValueError as e:
             return JsonResponse({"success": False, "error": str(e)}, status=400)
 
-        allowed = {"image/jpeg", "image/jpg", "image/png", "image/gif"}
-        if screenshot.content_type not in allowed:
-            return JsonResponse({"success": False, "error": "Only JPG, PNG, GIF images allowed"}, status=400)
-        if screenshot.size > 5 * 1024 * 1024:
-            return JsonResponse({"success": False, "error": "File size must be < 5 MB"}, status=400)
+        # --- Screenshot validation (only for online payments) ---
+        if payment_method.lower() != "cash":
+            if not screenshot:
+                return JsonResponse(
+                    {"success": False, "error": "Payment screenshot is required for online payments"},
+                    status=400
+                )
+            
+            allowed = {"image/jpeg", "image/jpg", "image/png", "image/gif"}
+            if screenshot.content_type not in allowed:
+                return JsonResponse({"success": False, "error": "Only JPG, PNG, GIF images allowed"}, status=400)
+            if screenshot.size > 5 * 1024 * 1024:
+                return JsonResponse({"success": False, "error": "File size must be < 5 MB"}, status=400)
 
-        # --- save ---
+        # --- Save collection ---
         collection = Collection.objects.create(
             client_name=client_name,
             branch=branch,
             amount=amount,
             paid_for=paid_for,
-            payment_screenshot=screenshot,
+            payment_method=payment_method,
+            payment_screenshot=screenshot if payment_method.lower() != "cash" else None,
             notes=notes or None,
-            created_by="API"          # mark origin
+            created_by=created_by if created_by else "Mobile App"  # Use provided name or fallback
         )
 
-        # >>>>>>  WhatsApp alert (branch included)  <<<<<<
+        # --- WhatsApp alert ---
         send_collection_whatsapp(
             client_name=collection.client_name,
             branch=collection.branch,
@@ -1233,7 +1241,9 @@ def api_collections_add(request):
                 "branch": collection.branch,
                 "amount": str(collection.amount),
                 "paid_for": collection.paid_for,
+                "payment_method": collection.payment_method,
                 "notes": collection.notes,
+                "created_by": collection.created_by,
                 "created_at": collection.created_at.strftime("%Y-%m-%d %H:%M"),
                 "screenshot_url": collection.payment_screenshot.url if collection.payment_screenshot else None,
             }
@@ -1256,7 +1266,9 @@ def api_collections_list(request):
                 "branch": c.branch,
                 "amount": str(c.amount),
                 "paid_for": c.paid_for,
+                "payment_method": getattr(c, 'payment_method', 'N/A'),
                 "notes": c.notes,
+                "created_by": c.created_by,
                 "created_at": c.created_at.strftime("%Y-%m-%d %H:%M"),
                 "screenshot_url": c.payment_screenshot.url if c.payment_screenshot else None,
             }
@@ -1273,7 +1285,7 @@ def api_collections_list(request):
 
 # http://127.0.0.1:8000/app4/api/collections/
 
-#http://127.0.0.1:8000/app4/api/collections/add/
+#http://127.0.0.1:8000/app4/api/collections/add/ 
 
 
 # {
@@ -1282,4 +1294,5 @@ def api_collections_list(request):
 #   "amount": "1200.50",
 #   "paid_for": "Annual Subscription",
 #   "notes": "First collection entry"
+#   "payment_screenshot"
 # }

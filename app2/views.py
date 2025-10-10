@@ -1799,19 +1799,22 @@ def send_whatsapp_notification(name, installation_date, software_amount, created
         logger.error(f"Unexpected error while sending WhatsApp notification: {str(e)}")
         return False
 
-
 # Modified feeder view with created_by included in message
 @csrf_exempt
 def feeder(request):
+    # Ensure we resolve the correct custom user model (app1.User) even if "User" is shadowed elsewhere
+    from django.apps import apps
+    AppUser = apps.get_model('app1', 'User')
+
     business_types = BusinessType.objects.all()
     branches = Branch.objects.all()
 
     # Get the logged-in user's branch - ALL users now see only their branch
     try:
-        custom_user = User.objects.get(userid=request.user.username)
+        custom_user = AppUser.objects.get(userid=request.user.username)
         user_branch = custom_user.branch if custom_user.branch else None
         user_branch_id = custom_user.branch.id if custom_user.branch else None
-    except User.DoesNotExist:
+    except AppUser.DoesNotExist:
         user_branch = None
         user_branch_id = None
 
@@ -1937,6 +1940,7 @@ def feeder(request):
 
 
 
+
 # Updated feeder_list view with proper search functionality
 def feeder_list(request):
     query = request.GET.get('q', '').strip()
@@ -2000,145 +2004,25 @@ def feeder_list(request):
         'selected_branch': selected_branch,
         'selected_status': selected_status,
         'total_count': paginator.count,
+        'allowed_menus': ['feeder_status'],
     }
 
     return render(request, 'feeder_list.html', context)
 
-
 def feeder_edit(request, feeder_id):
-    feeder = get_object_or_404(Feeder, id=feeder_id)
+    from django.apps import apps
+    AppUser = apps.get_model('app1', 'User')  # ensure we use app1.User (has `userid`, `branch`)
 
-    # ------------------------------------------------------------------
-    # Get the logged-in user's branch - ALL users now see only their branch
-    # ------------------------------------------------------------------
-    try:
-        custom_user = User.objects.get(userid=request.user.username)
-        user_branch = custom_user.branch if custom_user.branch else None
-        user_branch_id = custom_user.branch.id if custom_user.branch else None
-    except User.DoesNotExist:
-        user_branch = None
-        user_branch_id = None
-
-    # All users are now branch restricted (removed IMC/SYSMAC exception)
-    is_branch_restricted = user_branch is not None
-
-    selected_modules = [m.strip() for m in (feeder.more_modules or '').split(',') if m.strip()]
-    try:
-        price_dict = (
-            json.loads(feeder.module_prices)
-            if isinstance(feeder.module_prices, str)
-            else feeder.module_prices
-        )
-    except (ValueError, TypeError):
-        price_dict = {}
-
-    if request.method == 'POST':
-        # Update all simple fields
-        feeder.name = request.POST.get('name')
-        feeder.address = request.POST.get('address')
-        feeder.location = request.POST.get('location')
-        feeder.area = request.POST.get('area')
-        feeder.district = request.POST.get('district')
-        feeder.state = request.POST.get('state')
-        feeder.contact_person = request.POST.get('contact_person')
-        feeder.contact_number = request.POST.get('contact_number')
-        feeder.email = request.POST.get('email')
-        feeder.reputed_person_name = request.POST.get('reputed_person_name', '')
-        feeder.reputed_person_number = request.POST.get('reputed_person_number', '')
-        feeder.software = request.POST.get('software')
-        
-        # Handle foreign key fields properly
-        nature_id = request.POST.get('nature')
-        if nature_id and nature_id.strip():
-            try:
-                feeder.nature_id = int(nature_id)
-            except (ValueError, TypeError):
-                feeder.nature_id = None
-        else:
-            feeder.nature_id = None
-        
-        # ------------------------------------------------------------------
-        # All users now use their own branch only
-        # ------------------------------------------------------------------
-        feeder.branch_id = user_branch_id  # Always use the user's branch
-        
-        # Handle numeric fields
-        no_of_system = request.POST.get('no_of_system')
-        if no_of_system and no_of_system.strip():
-            try:
-                feeder.no_of_system = int(no_of_system)
-            except (ValueError, TypeError):
-                feeder.no_of_system = None
-        else:
-            feeder.no_of_system = None
-            
-        pincode = request.POST.get('pincode')
-        if pincode and pincode.strip():
-            try:
-                feeder.pincode = int(pincode)
-            except (ValueError, TypeError):
-                feeder.pincode = None
-        else:
-            feeder.pincode = None
-        
-        feeder.country = request.POST.get('country', 'India')
-        
-        # Handle date field
-        installation_date = request.POST.get('installation_date')
-        if installation_date and installation_date.strip():
-            feeder.installation_date = installation_date
-        else:
-            feeder.installation_date = None
-            
-        feeder.remarks = request.POST.get('remarks', '')
-        feeder.software_amount = request.POST.get('software_amount', '') or 0
-        
-        # Handle total_cost field
-        total_cost = request.POST.get('total_cost')
-        feeder.module_charges = total_cost or 0
-        
-        # Handle modules
-        feeder.modules = ', '.join(request.POST.getlist('modules'))
-        feeder.more_modules = ', '.join(request.POST.getlist('more_modules'))
-
-        # Re-save module prices
-        new_prices = {
-            m: request.POST.get(f'price_{m}', '0')
-            for m in request.POST.getlist('more_modules')
-        }
-        feeder.module_prices = json.dumps(new_prices)
-        
-        try:
-            feeder.save()
-            return redirect('feeder_list')
-        except Exception as e:
-            print(f"Error saving feeder: {e}")
-
-    business_types = BusinessType.objects.all()
-    branches = Branch.objects.all()
-
-    return render(request, 'feeder_edit.html', {
-        'feeder': feeder,
-        'selected_modules': selected_modules,
-        'price_dict': price_dict,
-        'business_types': business_types,
-        'branches': branches,
-        'user_branch': user_branch,
-        'user_branch_id': user_branch_id,
-        'is_branch_restricted': is_branch_restricted,
-    })
-# ----------  EDIT  ----------
-def feeder_edit(request, feeder_id):
     feeder = get_object_or_404(Feeder, id=feeder_id)
 
     # ------------------------------------------------------------------
     # Get the logged-in user's branch (similar to clients view)
     # ------------------------------------------------------------------
     try:
-        custom_user = User.objects.get(userid=request.user.username)
+        custom_user = AppUser.objects.get(userid=request.user.username)
         user_branch = custom_user.branch if custom_user.branch else None
         user_branch_id = custom_user.branch.id if custom_user.branch else None
-    except User.DoesNotExist:
+    except AppUser.DoesNotExist:
         user_branch = None
         user_branch_id = None
 
@@ -2218,7 +2102,7 @@ def feeder_edit(request, feeder_id):
         
         feeder.country = request.POST.get('country', 'India')
         
-        # Handle date field
+        # Handle date field (kept as-is; string assigned directly)
         installation_date = request.POST.get('installation_date')
         if installation_date and installation_date.strip():
             feeder.installation_date = installation_date
@@ -2249,7 +2133,6 @@ def feeder_edit(request, feeder_id):
         except Exception as e:
             # Add error handling - you might want to show this error to the user
             print(f"Error saving feeder: {e}")
-            # You could add a message framework message here
             # messages.error(request, f"Error updating feeder: {e}")
 
     business_types = BusinessType.objects.all()
@@ -2265,6 +2148,7 @@ def feeder_edit(request, feeder_id):
         'user_branch_id': user_branch_id,
         'is_branch_restricted': is_branch_restricted,
     })
+
 
 
 # ----------  DELETE  ----------
@@ -2338,97 +2222,117 @@ from django.http import JsonResponse
 from django.db import IntegrityError
 from django.contrib import messages
 from django.db.models import Q
-from .models import StandbyItem, StandbyItemImage
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+from django.contrib.auth.models import User
+import json
+from .models import StandbyItem, StandbyImage
 
-# ✅ List all items with search functionality
+
 def Standby_item_list(request):
     search_query = request.GET.get('search', '').strip()
+    status_filter = request.GET.get('status', '').strip()
     items = StandbyItem.objects.prefetch_related('images').all().order_by('-created_at')
 
     if search_query:
-        items = items.filter(
-            Q(name__icontains=search_query) | 
-            Q(serial_number__icontains=search_query)
-        )
+        items = items.filter(Q(name__icontains=search_query) | Q(serial_number__icontains=search_query))
+    if status_filter:
+        items = items.filter(status=status_filter)
 
-    return render(request, 'standby_table.html', {'items': items, 'search_query': search_query})
+    return render(request, 'standby_table.html', {
+        'items': items,
+        'search_query': search_query,
+        'status_filter': status_filter,
+    })
 
-# ✅ Add new item
+
 def Standby_add_item(request):
     if request.method == "POST":
         name = request.POST.get("itemname", "").upper()
         serial_number = request.POST.get("serialnumber", "").upper()
         notes = request.POST.get("notes", "")
         stock = request.POST.get("stock", 0)
+        status = request.POST.get("status", "in_stock")
+
+        customer_name = request.POST.get("customer_name", "")
+        customer_place = request.POST.get("customer_place", "")
+        customer_phone = request.POST.get("customer_phone", "")
+        issued_date = request.POST.get("issued_date", None)
+
         images = request.FILES.getlist("images")
 
         try:
-            # Get current user, fallback to user ID 1 if not authenticated
-            current_user = request.user if request.user.is_authenticated else None
-            if not current_user:
-                # You might want to handle this differently based on your auth setup
-                from django.contrib.auth.models import User
-                current_user = User.objects.get(id=1)
-            
+            current_user = request.user if request.user.is_authenticated else User.objects.first()
+
             item = StandbyItem.objects.create(
                 name=name,
                 serial_number=serial_number,
                 notes=notes,
                 stock=stock,
-                created_by=current_user
+                status=status,
+                customer_name=customer_name if status == 'with_customer' else None,
+                customer_place=customer_place if status == 'with_customer' else None,
+                customer_phone=customer_phone if status == 'with_customer' else None,
+                issued_date=issued_date if status == 'with_customer' else None,
+                created_by=current_user,
             )
 
             for img in images:
-                StandbyItemImage.objects.create(item=item, image=img)
+                StandbyImage.objects.create(item=item, image=img)
 
             messages.success(request, "Item added successfully!")
             return redirect("item_list")
 
         except IntegrityError:
             messages.error(request, f"Serial Number '{serial_number}' already exists!")
-            return redirect("add")
         except Exception as e:
             messages.error(request, f"Error creating item: {str(e)}")
-            return redirect("add")
+
+        return redirect("add")
 
     return render(request, "add_standby.html")
 
-# ✅ Edit item
+
 def Standby_item_edit(request, item_id):
     item = get_object_or_404(StandbyItem, id=item_id)
-
     if request.method == "POST":
         item.name = request.POST.get('itemname', '').upper()
         item.serial_number = request.POST.get('serialnumber', '').upper()
         item.notes = request.POST.get('notes', '')
         item.stock = request.POST.get('stock', 0)
-        
+        item.status = request.POST.get('status', item.status)
+
+        if item.status == 'with_customer':
+            item.customer_name = request.POST.get('customer_name', '')
+            item.customer_place = request.POST.get('customer_place', '')
+            item.customer_phone = request.POST.get('customer_phone', '')
+            item.issued_date = request.POST.get('issued_date', None)
+        else:
+            item.customer_name = None
+            item.customer_place = None
+            item.customer_phone = None
+            item.issued_date = None
+
         try:
             item.save()
-            
-            # Handle image deletions
             delete_ids = request.POST.get('delete_images', '')
             if delete_ids:
                 ids = [id.strip() for id in delete_ids.split(',') if id.strip()]
-                StandbyItemImage.objects.filter(id__in=ids, item=item).delete()
-
-            # Handle new image uploads
+                StandbyImage.objects.filter(id__in=ids, item=item).delete()
             for image in request.FILES.getlist('images'):
-                StandbyItemImage.objects.create(item=item, image=image)
-
+                StandbyImage.objects.create(item=item, image=image)
             messages.success(request, "Item updated successfully!")
             return redirect('item_list')
-            
         except IntegrityError:
             messages.error(request, "Serial number already exists!")
-            return redirect("item_edit", item_id=item.id)
         except Exception as e:
             messages.error(request, f"Error updating item: {str(e)}")
-            return redirect("item_edit", item_id=item.id)
+
+        return redirect("item_edit", item_id=item.id)
 
     return render(request, 'edit_standby.html', {'item': item})
 
-# ✅ Delete item
+
 def Standby_item_delete(request, item_id):
     if request.method == "POST":
         try:
@@ -2439,15 +2343,125 @@ def Standby_item_delete(request, item_id):
             messages.error(request, f"Error deleting item: {str(e)}")
     return redirect('item_list')
 
-# ✅ AJAX check for unique serial number
+
 def Standby_check_serial(request):
     serial = request.GET.get('serial', '').upper().strip()
-    item_id = request.GET.get('item_id', None)  # For edit mode
-    
+    item_id = request.GET.get('item_id', None)
     if item_id:
-        # Exclude current item when editing
         exists = StandbyItem.objects.filter(serial_number=serial).exclude(id=item_id).exists()
     else:
         exists = StandbyItem.objects.filter(serial_number=serial).exists()
-    
     return JsonResponse({'exists': exists})
+
+
+@csrf_exempt
+def Standby_get_customer_info(request, item_id):
+    """
+    Returns JSON with customer info for a standby item
+    """
+    try:
+        item = get_object_or_404(StandbyItem, id=item_id)
+
+        # Debug: Check what data we have
+        print(f"Item Status: {item.status}")
+        print(f"Customer Name: {item.customer_name}")
+        print(f"Customer Place: {item.customer_place}")
+        print(f"Customer Phone: {item.customer_phone}")
+        print(f"Issued Date: {item.issued_date}")
+
+        # Ensure the item is currently with a customer
+        if item.status.lower() != 'with_customer':
+            return JsonResponse({
+                'success': False,
+                'error': f'Item "{item.name}" is not currently with a customer. Current status: {item.status}'
+            })
+
+        # Format the issued date properly
+        issued_date_formatted = 'N/A'
+        if item.issued_date:
+            issued_date_formatted = item.issued_date.strftime('%d %b %Y')
+
+        data = {
+            'item_name': item.name,
+            'serial_number': item.serial_number,
+            'customer_name': item.customer_name or 'N/A',
+            'customer_place': item.customer_place or 'N/A',
+            'customer_phone': item.customer_phone or 'N/A',
+            'issued_date': issued_date_formatted,
+        }
+
+        return JsonResponse({'success': True, 'data': data})
+
+    except StandbyItem.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'error': 'Item not found'
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': f'Server error: {str(e)}'
+        })
+
+
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from django.utils import timezone
+from datetime import date
+
+@login_required
+def standby_return_item(request, item_id):
+    """Handle returning standby item to stock with images"""
+    item = get_object_or_404(StandbyItem, id=item_id)
+    
+    # Check if item is actually with customer
+    if item.status != 'with_customer':
+        messages.error(request, f'Item "{item.name}" is not currently with a customer.')
+        return redirect('item_list')
+    
+    if request.method == 'POST':
+        # Get form data
+        return_date = request.POST.get('return_date')
+        return_notes = request.POST.get('return_notes', '')
+        stock = request.POST.get('stock', item.stock)
+        return_images = request.FILES.getlist('return_images')
+        
+        # Update item status and details
+        item.status = 'in_stock'
+        item.stock = stock
+        
+        # Add return notes to existing notes
+        if return_notes:
+            current_notes = item.notes or ''
+            return_info = f"\n\n--- RETURNED ON {return_date} ---\n{return_notes}"
+            item.notes = current_notes + return_info
+        
+        # Clear customer information
+        item.customer_name = None
+        item.customer_place = None
+        item.customer_phone = None
+        item.issued_date = None
+        
+        item.save()
+        
+        # Handle return images - REMOVE the image_type parameter
+        for image in return_images:
+            StandbyImage.objects.create(
+                item=item, 
+                image=image
+                # Remove: image_type='return_condition' - this field doesn't exist
+            )
+        
+        messages.success(request, f'Item "{item.name}" has been returned to stock successfully!')
+        return redirect('item_list')
+    
+    # For GET request, show the return form with current customer info
+    context = {
+        'item': item,
+        'today': date.today(),
+    }
+    return render(request, 'return_standby_items.html', context)
+
+    
+
