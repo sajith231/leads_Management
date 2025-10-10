@@ -2008,141 +2008,20 @@ def feeder_list(request):
 
     return render(request, 'feeder_list.html', context)
 
-
 def feeder_edit(request, feeder_id):
-    feeder = get_object_or_404(Feeder, id=feeder_id)
+    from django.apps import apps
+    AppUser = apps.get_model('app1', 'User')  # ensure we use app1.User (has `userid`, `branch`)
 
-    # ------------------------------------------------------------------
-    # Get the logged-in user's branch - ALL users now see only their branch
-    # ------------------------------------------------------------------
-    try:
-        custom_user = User.objects.get(userid=request.user.username)
-        user_branch = custom_user.branch if custom_user.branch else None
-        user_branch_id = custom_user.branch.id if custom_user.branch else None
-    except User.DoesNotExist:
-        user_branch = None
-        user_branch_id = None
-
-    # All users are now branch restricted (removed IMC/SYSMAC exception)
-    is_branch_restricted = user_branch is not None
-
-    selected_modules = [m.strip() for m in (feeder.more_modules or '').split(',') if m.strip()]
-    try:
-        price_dict = (
-            json.loads(feeder.module_prices)
-            if isinstance(feeder.module_prices, str)
-            else feeder.module_prices
-        )
-    except (ValueError, TypeError):
-        price_dict = {}
-
-    if request.method == 'POST':
-        # Update all simple fields
-        feeder.name = request.POST.get('name')
-        feeder.address = request.POST.get('address')
-        feeder.location = request.POST.get('location')
-        feeder.area = request.POST.get('area')
-        feeder.district = request.POST.get('district')
-        feeder.state = request.POST.get('state')
-        feeder.contact_person = request.POST.get('contact_person')
-        feeder.contact_number = request.POST.get('contact_number')
-        feeder.email = request.POST.get('email')
-        feeder.reputed_person_name = request.POST.get('reputed_person_name', '')
-        feeder.reputed_person_number = request.POST.get('reputed_person_number', '')
-        feeder.software = request.POST.get('software')
-        
-        # Handle foreign key fields properly
-        nature_id = request.POST.get('nature')
-        if nature_id and nature_id.strip():
-            try:
-                feeder.nature_id = int(nature_id)
-            except (ValueError, TypeError):
-                feeder.nature_id = None
-        else:
-            feeder.nature_id = None
-        
-        # ------------------------------------------------------------------
-        # All users now use their own branch only
-        # ------------------------------------------------------------------
-        feeder.branch_id = user_branch_id  # Always use the user's branch
-        
-        # Handle numeric fields
-        no_of_system = request.POST.get('no_of_system')
-        if no_of_system and no_of_system.strip():
-            try:
-                feeder.no_of_system = int(no_of_system)
-            except (ValueError, TypeError):
-                feeder.no_of_system = None
-        else:
-            feeder.no_of_system = None
-            
-        pincode = request.POST.get('pincode')
-        if pincode and pincode.strip():
-            try:
-                feeder.pincode = int(pincode)
-            except (ValueError, TypeError):
-                feeder.pincode = None
-        else:
-            feeder.pincode = None
-        
-        feeder.country = request.POST.get('country', 'India')
-        
-        # Handle date field
-        installation_date = request.POST.get('installation_date')
-        if installation_date and installation_date.strip():
-            feeder.installation_date = installation_date
-        else:
-            feeder.installation_date = None
-            
-        feeder.remarks = request.POST.get('remarks', '')
-        feeder.software_amount = request.POST.get('software_amount', '') or 0
-        
-        # Handle total_cost field
-        total_cost = request.POST.get('total_cost')
-        feeder.module_charges = total_cost or 0
-        
-        # Handle modules
-        feeder.modules = ', '.join(request.POST.getlist('modules'))
-        feeder.more_modules = ', '.join(request.POST.getlist('more_modules'))
-
-        # Re-save module prices
-        new_prices = {
-            m: request.POST.get(f'price_{m}', '0')
-            for m in request.POST.getlist('more_modules')
-        }
-        feeder.module_prices = json.dumps(new_prices)
-        
-        try:
-            feeder.save()
-            return redirect('feeder_list')
-        except Exception as e:
-            print(f"Error saving feeder: {e}")
-
-    business_types = BusinessType.objects.all()
-    branches = Branch.objects.all()
-
-    return render(request, 'feeder_edit.html', {
-        'feeder': feeder,
-        'selected_modules': selected_modules,
-        'price_dict': price_dict,
-        'business_types': business_types,
-        'branches': branches,
-        'user_branch': user_branch,
-        'user_branch_id': user_branch_id,
-        'is_branch_restricted': is_branch_restricted,
-    })
-# ----------  EDIT  ----------
-def feeder_edit(request, feeder_id):
     feeder = get_object_or_404(Feeder, id=feeder_id)
 
     # ------------------------------------------------------------------
     # Get the logged-in user's branch (similar to clients view)
     # ------------------------------------------------------------------
     try:
-        custom_user = User.objects.get(userid=request.user.username)
+        custom_user = AppUser.objects.get(userid=request.user.username)
         user_branch = custom_user.branch if custom_user.branch else None
         user_branch_id = custom_user.branch.id if custom_user.branch else None
-    except User.DoesNotExist:
+    except AppUser.DoesNotExist:
         user_branch = None
         user_branch_id = None
 
@@ -2222,7 +2101,7 @@ def feeder_edit(request, feeder_id):
         
         feeder.country = request.POST.get('country', 'India')
         
-        # Handle date field
+        # Handle date field (kept as-is; string assigned directly)
         installation_date = request.POST.get('installation_date')
         if installation_date and installation_date.strip():
             feeder.installation_date = installation_date
@@ -2253,7 +2132,6 @@ def feeder_edit(request, feeder_id):
         except Exception as e:
             # Add error handling - you might want to show this error to the user
             print(f"Error saving feeder: {e}")
-            # You could add a message framework message here
             # messages.error(request, f"Error updating feeder: {e}")
 
     business_types = BusinessType.objects.all()
@@ -2269,6 +2147,7 @@ def feeder_edit(request, feeder_id):
         'user_branch_id': user_branch_id,
         'is_branch_restricted': is_branch_restricted,
     })
+
 
 
 # ----------  DELETE  ----------
