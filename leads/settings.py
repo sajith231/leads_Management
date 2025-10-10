@@ -61,6 +61,8 @@ INSTALLED_APPS = [
     'sim_card',
     'fuel_management',
     'django.contrib.humanize',
+    "wfh_Request",
+    "punchout_reminder",
     
 ]
 

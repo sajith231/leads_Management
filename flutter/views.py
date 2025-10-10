@@ -373,6 +373,12 @@ class BreakStatusView(APIView):
 
 
 # ---------- LEAVE REQUEST ----------
+# ---------- LEAVE REQUEST ----------
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
+import json
+from datetime import datetime
+
 @csrf_exempt
 def create_leave_request(request):
     if request.method == 'POST':
@@ -380,22 +386,42 @@ def create_leave_request(request):
             data = json.loads(request.body)
             userid, password = data.get('userid'), data.get('password')
 
+            # auth
             try:
                 user = User.objects.get(userid=userid, password=password)
                 employee = Employee.objects.get(user=user)
             except (User.DoesNotExist, Employee.DoesNotExist):
                 return JsonResponse({'success': False, 'error': 'Invalid credentials'})
 
+            # required inputs
             start_date = datetime.strptime(data['start_date'], '%Y-%m-%d').date()
-            end_date = datetime.strptime(data['end_date'], '%Y-%m-%d').date()
+            end_date   = datetime.strptime(data['end_date'],   '%Y-%m-%d').date()
+            reason     = (data.get('reason') or '').strip()   # keep existing Reason
+            note       = (data.get('note')   or '').strip()   # NEW (required)
 
+            if not note:
+                return JsonResponse({'success': False, 'error': 'Note is required'})
+
+            # save
             leave_request = LeaveRequest.objects.create(
-                employee=employee, start_date=start_date, end_date=end_date,
-                leave_type=data['leave_type'], reason=data['reason'], status='pending'
+                employee=employee,
+                start_date=start_date,
+                end_date=end_date,
+                leave_type=data['leave_type'],
+                reason=reason,
+                note=note,                     # NEW
+                status='pending'
             )
 
-            phones = ["9946545535", "7593820007", "7593820005", "9846754998","8129191379","9061947005"]
-            msg = f"New leave request from {employee.name}. {start_date:%d-%m-%Y} → {end_date:%d-%m-%Y} Type: {leave_request.get_leave_type_display()} Reason: {data['reason']}"
+            # WhatsApp (now includes NOTE)
+            phones = ["9946545535", "7593820007", "7593820005", "9846754998", "8129191379", "9061947005"]
+            msg = (
+                f"New leave request from {employee.name}.\n"
+                f"Type: {leave_request.get_leave_type_display()}\n"
+                f"From: {start_date:%d-%m-%Y}  To: {end_date:%d-%m-%Y}\n"
+                f"Reason: {reason}\n"
+                f"Note: {note}"
+            )
             for p in phones:
                 send_whatsapp(p, msg)
 
@@ -425,11 +451,20 @@ def get_leave_requests(request):
         qs = qs.filter(status=status_filter)
     qs = qs.order_by('-created_at')
 
-    payload = [{'id': lr.id, 'start_date': lr.start_date.strftime('%d-%m-%Y'),
-                'end_date': lr.end_date.strftime('%d-%m-%Y'),
-                'leave_type': lr.get_leave_type_display(),
-                'reason': lr.reason, 'status': lr.status} for lr in qs]
+    # include NOTE in payload
+    payload = [{
+        'id': lr.id,
+        'start_date': lr.start_date.strftime('%d-%m-%Y'),
+        'end_date': lr.end_date.strftime('%d-%m-%Y'),
+        'leave_type': lr.get_leave_type_display(),
+        'reason': lr.reason,
+        'note': lr.note,                          # NEW
+        'status': lr.status,
+        'created_at': lr.created_at.strftime('%Y-%m-%d %H:%M'),
+    } for lr in qs]
+
     return JsonResponse({'leave_requests': payload})
+
 
 
 @csrf_exempt
@@ -604,3 +639,22 @@ def delete_early_request(request):
         return JsonResponse({'success': False, 'error': 'Request not found or not pending'}, status=404)
 
     return JsonResponse({'success': True}, status=200)
+
+
+
+
+
+# http://127.0.0.1:8000/flutter/leave/create/
+
+
+# {
+#   "userid": "3",
+#   "password": "3",
+#   "start_date": "2025-10-10",
+#   "end_date": "2025-10-12",
+#   "leave_type": "full_day",
+#   "reason": "TEST",
+#   "note": "TEST"
+  
+  
+# }

@@ -701,6 +701,7 @@ class LeaveRequest(models.Model):
     end_date = models.DateField()
     leave_type = models.CharField(max_length=20, choices=LEAVE_TYPE_CHOICES, default='full_day')
     reason = models.TextField()
+    note = models.TextField(blank=False, default='')    # NEW (required Note)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     created_at = models.DateTimeField(auto_now_add=True)
     processed_by = models.ForeignKey(DjangoUser, on_delete=models.SET_NULL, null=True, blank=True, related_name='processed_leave_requests')
