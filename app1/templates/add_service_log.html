@@ -9,6 +9,9 @@
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
+<!-- Font Awesome for icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
 <style>
     .image-thumbnail {
     width: 60px;
@@ -38,6 +41,436 @@
 .image-preview-container img:hover {
     transform: scale(1.05);
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* Customer Details Modal Styling */
+.customer-details-modal {
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    border: none;
+}
+
+.customer-details-modal .modal-header {
+    background: linear-gradient(135deg, #4f6df5 0%, #3a56e4 100%);
+    color: white;
+    border-bottom: none;
+    padding: 1.5rem;
+    position: relative;
+}
+
+.customer-details-modal .modal-header::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #ff7eb3, #ff758c, #ff7eb3);
+    background-size: 200% 100%;
+    animation: shimmer 3s infinite linear;
+}
+
+@keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+.customer-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    width: 100%;
+}
+
+.customer-avatar {
+    font-size: 3rem;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.customer-title {
+    flex: 1;
+}
+
+.customer-title h5 {
+    margin: 0;
+    font-weight: 600;
+    font-size: 1.4rem;
+}
+
+.customer-name {
+    display: block;
+    font-size: 1.1rem;
+    font-weight: 500;
+    margin-top: 5px;
+    opacity: 0.95;
+}
+
+.customer-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-top: 8px;
+}
+
+.customer-detail-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.85rem;
+    opacity: 0.9;
+}
+
+.customer-detail-item i {
+    font-size: 0.8rem;
+}
+
+.direct-dealing-badge {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.customer-details-modal .btn-close {
+    filter: invert(1);
+    opacity: 0.8;
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+}
+
+.customer-details-modal .btn-close:hover {
+    opacity: 1;
+}
+
+.customer-details-modal .modal-body {
+    padding: 0;
+}
+
+.customer-details-modal .modal-footer {
+    border-top: 1px solid #e9ecef;
+    padding: 1rem 1.5rem;
+}
+
+/* Customer Details Content Styling */
+.customer-details-content {
+    padding: 1.5rem;
+}
+
+.customer-info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.customer-section {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 1.25rem;
+    border-left: 4px solid #4f6df5;
+    transition: all 0.3s ease;
+}
+
+.customer-section:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+}
+
+.customer-section h6 {
+    color: #4f6df5;
+    margin-bottom: 1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.customer-section h6 i {
+    font-size: 1.1rem;
+}
+
+.info-row {
+    display: flex;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.info-row:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.info-label {
+    font-weight: 600;
+    color: #495057;
+    min-width: 140px;
+    font-size: 0.9rem;
+}
+
+.info-value {
+    color: #6c757d;
+    flex: 1;
+    font-size: 0.9rem;
+}
+
+.highlight-value {
+    color: #4f6df5;
+    font-weight: 600;
+}
+
+.badge-status {
+    display: inline-block;
+    padding: 0.35em 0.65em;
+    font-size: 0.75em;
+    font-weight: 700;
+    line-height: 1;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    border-radius: 0.375rem;
+}
+
+.badge-amc {
+    background-color: #d1ecf1;
+    color: #0c5460;
+}
+
+.badge-priority {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.badge-license {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.loading-content {
+    padding: 3rem 1rem;
+}
+
+/* Customer Details Tabs Styling */
+.customer-tabs {
+    border-bottom: 1px solid #dee2e6;
+    margin-bottom: 1.5rem;
+}
+
+.customer-tabs .nav-tabs {
+    border-bottom: none;
+}
+
+.customer-tabs .nav-link {
+    border: none;
+    color: #6c757d;
+    font-weight: 500;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px 8px 0 0;
+    transition: all 0.3s ease;
+}
+
+.customer-tabs .nav-link:hover {
+    color: #4f6df5;
+    background-color: rgba(79, 109, 245, 0.05);
+}
+
+.customer-tabs .nav-link.active {
+    color: #4f6df5;
+    background-color: white;
+    border-bottom: 3px solid #4f6df5;
+    font-weight: 600;
+}
+
+.customer-tabs .nav-link i {
+    margin-right: 8px;
+    font-size: 0.9rem;
+}
+
+/* Service History Styling */
+.service-history-container {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.service-history-item {
+    background: white;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    transition: all 0.3s ease;
+}
+
+.service-history-item:hover {
+    border-color: #4f6df5;
+    box-shadow: 0 2px 8px rgba(79, 109, 245, 0.1);
+}
+
+.service-history-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.5rem;
+}
+
+.service-history-ticket {
+    font-weight: 600;
+    color: #4f6df5;
+    font-size: 0.9rem;
+}
+
+.service-history-date {
+    color: #6c757d;
+    font-size: 0.8rem;
+}
+
+.service-history-complaints {
+    margin-bottom: 0.5rem;
+}
+
+.service-history-complaint {
+    background: #f8f9fa;
+    border-radius: 4px;
+    padding: 0.25rem 0.5rem;
+    margin-right: 0.5rem;
+    margin-bottom: 0.25rem;
+    font-size: 0.8rem;
+    display: inline-block;
+}
+
+.service-history-remarks {
+    color: #495057;
+    font-size: 0.85rem;
+    margin-bottom: 0.5rem;
+}
+
+.service-history-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.75rem;
+    color: #6c757d;
+}
+
+.service-history-technician {
+    font-weight: 500;
+}
+
+.service-history-status {
+    padding: 0.2rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: 600;
+}
+
+.status-completed {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.status-pending {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.status-in-progress {
+    background-color: #cce7ff;
+    color: #004085;
+}
+
+.no-service-history {
+    text-align: center;
+    padding: 2rem;
+    color: #6c757d;
+}
+
+.no-service-history i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    color: #dee2e6;
+}
+
+.loading-tab {
+    text-align: center;
+    padding: 2rem;
+}
+
+.loading-tab .spinner-border {
+    width: 2rem;
+    height: 2rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .customer-info-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .customer-header {
+        flex-direction: column;
+        text-align: center;
+        gap: 10px;
+    }
+    
+    .customer-avatar {
+        font-size: 2.5rem;
+    }
+    
+    .customer-details {
+        justify-content: center;
+        gap: 10px;
+    }
+    
+    .customer-detail-item {
+        font-size: 0.8rem;
+    }
+    
+    .service-history-header {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .service-history-footer {
+        flex-direction: column;
+        gap: 0.5rem;
+        align-items: flex-start;
+    }
+}
+</style>
+<style>
+.neon-badge {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border: 1px solid #00ff88;
+    color: #00ff88;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 0 10px rgba(0, 255, 136, 0.5),
+                0 0 20px rgba(0, 255, 136, 0.3),
+                0 0 30px rgba(0, 255, 136, 0.1);
+    text-shadow: 0 0 5px rgba(0, 255, 136, 0.5);
+    animation: neon-pulse 2s ease-in-out infinite alternate;
+}
+
+@keyframes neon-pulse {
+    from {
+        box-shadow: 0 0 10px rgba(0, 255, 136, 0.5),
+                    0 0 20px rgba(0, 255, 136, 0.3),
+                    0 0 30px rgba(0, 255, 136, 0.1);
+    }
+    to {
+        box-shadow: 0 0 15px rgba(0, 255, 136, 0.7),
+                    0 0 25px rgba(0, 255, 136, 0.5),
+                    0 0 35px rgba(0, 255, 136, 0.3);
+    }
 }
 </style>
 <div class="container mt-5" style="max-width: 800px;">
@@ -145,29 +578,84 @@
 <!-- Customer Details Modal -->
 <div class="modal fade" id="customerDetailsModal" tabindex="-1" aria-labelledby="customerDetailsModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
-        <div class="modal-content">
+        <div class="modal-content customer-details-modal">
             <div class="modal-header">
-                <h5 class="modal-title" id="customerDetailsModalLabel">Customer Details</h5>
+                <div class="customer-header">
+                    <div class="customer-avatar">
+                        <i class="fas fa-user-circle"></i>
+                    </div>
+                    <div class="customer-title">
+                        <h5 class="modal-title" id="customerDetailsModalLabel">Customer Details</h5>
+                        <span class="customer-name" id="modalCustomerName"></span>
+                        <div class="customer-details">
+                            <span class="customer-detail-item">
+                                <i class="fas fa-id-card"></i>
+                                <span id="modalCustomerCode"></span>
+                            </span>
+                            <span class="customer-detail-item">
+                                <i class="fas fa-mobile-alt"></i>
+                                <span id="modalCustomerMobile"></span>
+                            </span>
+                            <span class="direct-dealing-badge neon-badge" id="modalDirectDealing">
+    <i class="fas fa-handshake"></i>
+    <span class="badge-text">Direct Dealing</span>
+</span>
+                        </div>
+                    </div>
+                </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <div id="customerDetailsContent">
-                    <div class="text-center">
-                        <div class="spinner-border" role="status">
-                            <span class="visually-hidden">Loading...</span>
+                    <div class="customer-tabs">
+                        <ul class="nav nav-tabs" id="customerTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="details-tab" data-bs-toggle="tab" data-bs-target="#details" type="button" role="tab" aria-controls="details" aria-selected="true">
+                                    <i class="fas fa-info-circle"></i>Details
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="service-history-tab" data-bs-toggle="tab" data-bs-target="#service-history" type="button" role="tab" aria-controls="service-history" aria-selected="false" onclick="loadServiceHistory()">
+                                    <i class="fas fa-history"></i>Service History
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <div class="tab-content" id="customerTabContent">
+                        <!-- Details Tab -->
+                        <div class="tab-pane fade show active" id="details" role="tabpanel" aria-labelledby="details-tab">
+                            <div class="text-center loading-content">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <p class="mt-2 text-muted">Loading customer details...</p>
+                            </div>
                         </div>
-                        <p class="mt-2">Loading customer details...</p>
+                        
+                        <!-- Service History Tab -->
+                        <div class="tab-pane fade" id="service-history" role="tabpanel" aria-labelledby="service-history-tab">
+                            <div class="text-center loading-content">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <p class="mt-2 text-muted">Loading service history...</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
     </div>
 </div>
 
 <script>
+// Global variable to store current customer data
+let currentCustomerData = null;
+
 document.addEventListener('DOMContentLoaded', function() {
     const customerCodeSelect = document.getElementById('customer_code');
     const customerNameInput = document.getElementById('customer_name');
@@ -322,6 +810,425 @@ function stopRecording() {
         mediaRecorder.stream.getTracks().forEach(track => track.stop());
     }
 }
+
+// Updated function to show customer details in modal
+function showCustomerDetails(customerData) {
+    currentCustomerData = customerData;
+    const modal = new bootstrap.Modal(document.getElementById('customerDetailsModal'));
+    const content = document.getElementById('customerDetailsContent');
+    const customerName = document.getElementById('modalCustomerName');
+    const customerCode = document.getElementById('modalCustomerCode');
+    const customerMobile = document.getElementById('modalCustomerMobile');
+    const directDealingBadge = document.getElementById('modalDirectDealing');
+
+    // Update customer header information
+    customerName.textContent = customerData.name || 'N/A';
+    customerCode.textContent = customerData.code || 'N/A';
+    customerMobile.textContent = customerData.mobile || 'N/A';
+    
+    // Update Direct Dealing badge
+    if (customerData.directdealing && customerData.directdealing !== 'N/A') {
+        directDealingBadge.style.display = 'inline-flex';
+        directDealingBadge.innerHTML = `<i class="fas fa-handshake"></i> ${customerData.directdealing}`;
+    } else {
+        directDealingBadge.style.display = 'none';
+    }
+
+    // Load customer details in the details tab
+    loadCustomerDetails(customerData);
+    
+    modal.show();
+}
+
+// Function to load customer details in the details tab
+function loadCustomerDetails(customerData) {
+    const detailsTab = document.getElementById('details');
+    
+    // Calculate AG (Age from installation date to now)
+    let agText = 'N/A';
+    if (customerData.installationdate) {
+        const installDate = new Date(customerData.installationdate);
+        const today = new Date();
+
+        let years = today.getFullYear() - installDate.getFullYear();
+        let months = today.getMonth() - installDate.getMonth();
+
+        if (months < 0) {
+            years--;
+            months += 12;
+        }
+
+        agText = `${years} yr${years !== 1 ? 's' : ''} ${months} month${months !== 1 ? 's' : ''}`;
+    }
+
+    // Format date to dd-mm-yyyy
+    const formattedInstallDate = customerData.installationdate
+        ? new Date(customerData.installationdate).toLocaleDateString('en-GB')
+        : 'N/A';
+
+    // Create AMC badge
+    const amcBadge = customerData.amc 
+        ? `<span class="badge-status badge-amc">${customerData.amc}</span>` 
+        : 'N/A';
+    
+    // Create priority badge
+    const priorityBadge = customerData.priority 
+        ? `<span class="badge-status badge-priority">${customerData.priority}</span>` 
+        : 'N/A';
+    
+    // Create license badge
+    const licenseBadge = customerData.lictype 
+        ? `<span class="badge-status badge-license">${customerData.lictype}</span>` 
+        : 'N/A';
+
+    detailsTab.innerHTML = `
+        <div class="customer-details-content">
+            <div class="customer-info-grid">
+                <div class="customer-section">
+                    <h6><i class="fas fa-user"></i> Personal Information</h6>
+                    <div class="info-row">
+                        <div class="info-label">Name:</div>
+                        <div class="info-value highlight-value">${customerData.name || 'N/A'}</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">Mobile:</div>
+                        <div class="info-value">${customerData.mobile || 'N/A'}</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">Account Code:</div>
+                        <div class="info-value">${customerData.accountcode || 'N/A'}</div>
+                    </div>
+                </div>
+                
+                <div class="customer-section">
+                    <h6><i class="fas fa-map-marker-alt"></i> Location Details</h6>
+                    <div class="info-row">
+                        <div class="info-label">Address:</div>
+                        <div class="info-value">${customerData.address || 'N/A'}</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">Address 3:</div>
+                        <div class="info-value">${customerData.address3 || 'N/A'}</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">District:</div>
+                        <div class="info-value">${customerData.district || 'N/A'}</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">State:</div>
+                        <div class="info-value">${customerData.state || 'N/A'}</div>
+                    </div>
+                </div>
+                
+                <div class="customer-section">
+                    <h6><i class="fas fa-building"></i> Business Details</h6>
+                    <div class="info-row">
+                        <div class="info-label">Branch:</div>
+                        <div class="info-value">${customerData.branch || 'N/A'}</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">Route:</div>
+                        <div class="info-value">${customerData.route || 'N/A'}</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">Nature:</div>
+                        <div class="info-value">${customerData.nature || 'N/A'}</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">Direct Dealing:</div>
+                        <div class="info-value">${customerData.directdealing || 'N/A'}</div>
+                    </div>
+                </div>
+                
+                <div class="customer-section">
+                    <h6><i class="fas fa-cogs"></i> Service Information</h6>
+                    <div class="info-row">
+                        <div class="info-label">Software:</div>
+                        <div class="info-value">${customerData.software || 'N/A'}</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">Installation Date:</div>
+                        <div class="info-value">${formattedInstallDate}</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">Age:</div>
+                        <div class="info-value highlight-value">${agText}</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">License Type:</div>
+                        <div class="info-value">${licenseBadge}</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">Clients:</div>
+                        <div class="info-value">${customerData.clients || 'N/A'}</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">SP:</div>
+                        <div class="info-value">${customerData.sp || 'N/A'}</div>
+                    </div>
+                </div>
+                
+                <div class="customer-section">
+                    <h6><i class="fas fa-chart-line"></i> Additional Information</h6>
+                    <div class="info-row">
+                        <div class="info-label">AMC:</div>
+                        <div class="info-value">${amcBadge}</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">AMC Amount:</div>
+                        <div class="info-value">${customerData.amcamt || 'N/A'}</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">Priority:</div>
+                        <div class="info-value">${priorityBadge}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Function to load service history
+// Function to load service history
+// Function to load service history
+function loadServiceHistory() {
+    const serviceHistoryTab = document.getElementById('service-history');
+    
+    if (!currentCustomerData) {
+        serviceHistoryTab.innerHTML = `
+            <div class="no-service-history">
+                <i class="fas fa-exclamation-circle"></i>
+                <p>No customer data available</p>
+            </div>
+        `;
+        return;
+    } 
+
+    // Show loading state
+    serviceHistoryTab.innerHTML = `
+        <div class="loading-tab">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading service history...</span>
+            </div>
+            <p class="mt-2 text-muted">Loading service history...</p>
+        </div>
+    `;
+
+    // Fetch service history from your Django backend
+    fetch(`/api/service-history/?customer_name=${encodeURIComponent(currentCustomerData.name)}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(serviceHistory => {
+            if (serviceHistory.length === 0) {
+                serviceHistoryTab.innerHTML = `
+                    <div class="no-service-history">
+                        <i class="fas fa-history"></i>
+                        <p>No previous service history found</p>
+                        <small class="text-muted">This customer has no previous service logs</small>
+                    </div>
+                `;
+                return;
+            }
+
+            let serviceHistoryHTML = `
+                <div class="service-history-container">
+                    <h6 class="mb-3">Previous Service Records (${serviceHistory.length})</h6>
+            `;
+
+            serviceHistory.forEach(log => {
+                const serviceDate = log.service_date ? new Date(log.service_date).toLocaleDateString('en-GB') : 'Date not available';
+                const complaints = log.complaints || [];
+                const statusClass = getStatusClass(log.status);
+                
+                serviceHistoryHTML += `
+                    <div class="service-history-item">
+                        <div class="service-history-header">
+                            <div class="service-history-basic-info">
+                                <div class="service-history-ticket">Ticket: ${log.ticket_number || 'N/A'}</div>
+                                <div class="service-history-meta">
+                                    <span class="service-history-date">${serviceDate}</span>
+                                    <span class="service-history-type">${log.complaint_type || 'N/A'}</span>
+                                </div>
+                            </div>
+                            <span class="service-history-status ${statusClass}">${log.status || 'Pending'}</span>
+                        </div>
+                        
+                        ${complaints.length > 0 ? `
+                            <div class="service-history-complaints">
+                                ${complaints.map(complaint => {
+                                    const complaintStatusClass = getStatusClass(complaint.status);
+                                    return `<span class="service-history-complaint">
+                                        ${complaint.description}
+                                        <span class="complaint-status ${complaintStatusClass}">${complaint.status || 'Pending'}</span>
+                                    </span>`;
+                                }).join('')}
+                            </div>
+                        ` : ''}
+                        
+                        ${log.remarks ? `
+                            <div class="service-history-remarks">
+                                <strong>Remarks:</strong> ${log.remarks}
+                            </div>
+                        ` : ''}
+                        
+                        <div class="service-history-footer">
+                            <span class="service-history-technician">
+                                <i class="fas fa-user"></i> ${log.assigned_person || 'Not assigned'}
+                            </span>
+                        </div>
+                    </div>
+                `;
+            });
+
+            serviceHistoryHTML += '</div>';
+            serviceHistoryTab.innerHTML = serviceHistoryHTML;
+        })
+        .catch(error => {
+            console.error('Error loading service history:', error);
+            serviceHistoryTab.innerHTML = `
+                <div class="no-service-history">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <p>Failed to load service history</p>
+                    <small class="text-muted">Please try again later</small>
+                </div>
+            `;
+        });
+}
+
+// Add CSS for complaint status badges
+const style = document.createElement('style');
+style.textContent = `
+    .complaint-status {
+        padding: 0.15rem 0.4rem;
+        border-radius: 8px;
+        font-size: 0.65rem;
+        font-weight: 600;
+        margin-left: 0.5rem;
+    }
+        /* Service History Compact Styling */
+.service-history-basic-info {
+    flex: 1;
+}
+
+.service-history-meta {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    margin-top: 2px;
+}
+
+.service-history-date {
+    color: #6c757d;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.service-history-type {
+    background: #e9ecef;
+    padding: 0.2rem 0.6rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    color: #495057;
+    font-weight: 500;
+}
+
+.service-history-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.5rem;
+    gap: 10px;
+}
+
+.service-history-complaints {
+    margin-bottom: 0.5rem;
+}
+
+.service-history-remarks {
+    color: #495057;
+    font-size: 0.85rem;
+    margin-bottom: 0.5rem;
+    line-height: 1.3;
+}
+
+.service-history-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.75rem;
+    color: #6c757d;
+    padding-top: 0.25rem;
+    border-top: 1px solid #f1f3f4;
+}
+
+/* Reduce overall item padding */
+.service-history-item {
+    background: white;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+    transition: all 0.3s ease;
+}
+
+.service-history-item:hover {
+    border-color: #4f6df5;
+    box-shadow: 0 2px 8px rgba(79, 109, 245, 0.1);
+}
+
+/* Complaint status styling */
+.complaint-status {
+    padding: 0.1rem 0.3rem;
+    border-radius: 6px;
+    font-size: 0.6rem;
+    font-weight: 600;
+    margin-left: 0.5rem;
+}
+`;
+document.head.appendChild(style);
+// Helper function to get status class
+function getStatusClass(status) {
+    if (!status) return 'status-pending';
+    
+    const statusLower = status.toLowerCase();
+    if (statusLower.includes('complete') || statusLower.includes('resolved')) {
+        return 'status-completed';
+    } else if (statusLower.includes('progress')) {
+        return 'status-in-progress';
+    } else {
+        return 'status-pending';
+    }
+}
+
+// Reset tabs when modal is closed
+document.getElementById('customerDetailsModal').addEventListener('hidden.bs.modal', function () {
+    // Reset to details tab
+    const detailsTab = document.getElementById('details-tab');
+    const serviceHistoryTab = document.getElementById('service-history-tab');
+    
+    detailsTab.classList.add('active');
+    serviceHistoryTab.classList.remove('active');
+    
+    const detailsContent = document.getElementById('details');
+    const serviceHistoryContent = document.getElementById('service-history');
+    
+    detailsContent.classList.add('show', 'active');
+    serviceHistoryContent.classList.remove('show', 'active');
+    
+    // Clear service history content
+    serviceHistoryContent.innerHTML = `
+        <div class="text-center loading-content">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2 text-muted">Loading service history...</p>
+        </div>
+    `;
+});
 </script>
 
 <style>
@@ -558,85 +1465,6 @@ document.addEventListener("DOMContentLoaded", function () {
             showCustomerDetails(selectedCustomerData);
         }
     });
-
-    // Function to show customer details in modal
-    function showCustomerDetails(customerData) {
-        const modal = new bootstrap.Modal(document.getElementById('customerDetailsModal'));
-        const content = document.getElementById('customerDetailsContent');
-
-            // Calculate AG (Age from installation date to now)
-    let agText = 'N/A';
-    if (customerData.installationdate) {
-        const installDate = new Date(customerData.installationdate);
-        const today = new Date();
-
-        let years = today.getFullYear() - installDate.getFullYear();
-        let months = today.getMonth() - installDate.getMonth();
-
-        if (months < 0) {
-            years--;
-            months += 12;
-        }
-
-        agText = `${years} yr${years !== 1 ? 's' : ''} ${months} month${months !== 1 ? 's' : ''}`;
-    }
-
-    // Format date to dd-mm-yyyy
-    const formattedInstallDate = customerData.installationdate
-        ? new Date(customerData.installationdate).toLocaleDateString('en-GB')
-        : 'N/A';
-        
-        content.innerHTML = `
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h6 class="mb-0">Customer Details</h6>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <p><strong>Code:</strong> ${customerData.code || 'N/A'}</p>
-                            <p><strong>Name:</strong> ${customerData.name || 'N/A'}</p>
-                            <p><strong>Mobile:</strong> ${customerData.mobile || 'N/A'}</p>
-                            <p><strong>Account Code:</strong> ${customerData.accountcode || 'N/A'}</p>
-                        </div>
-                        <div class="col-md-6">
-                            <p><strong>Address:</strong> ${customerData.address || 'N/A'}</p>
-                            <p><strong>Address 3:</strong> ${customerData.address3 || 'N/A'}</p>
-                            <p><strong>District:</strong> ${customerData.district || 'N/A'}</p>
-                            <p><strong>State:</strong> ${customerData.state || 'N/A'}</p>
-                        </div>
-                    </div>
-                    <div class="row mt-3">
-                        <div class="col-md-6">
-                            <p><strong>Branch:</strong> ${customerData.branch || 'N/A'}</p>
-                            <p><strong>Route:</strong> ${customerData.route || 'N/A'}</p>
-                            <p><strong>Nature:</strong> ${customerData.nature || 'N/A'}</p>
-                            <p><strong>Direct Dealing:</strong> ${customerData.directdealing || 'N/A'}</p>
-                        </div>
-                        <div class="col-md-6">
-                            <p><strong>Software:</strong> ${customerData.software || 'N/A'}</p>
-                            <p><strong>Installation Date:</strong> 
-                            ${customerData.installationdate ? new Date(customerData.installationdate).toLocaleDateString('en-GB') : 'N/A'}
-                            </p>
-                            <p><strong>Age:</strong> ${agText}</p>
-                            <p><strong>License Type:</strong> ${customerData.lictype || 'N/A'}</p>
-                            <p><strong>Clients:</strong> ${customerData.clients || 'N/A'}</p>
-                            <p><strong>SP:</strong> ${customerData.sp || 'N/A'}</p>
-                        </div>
-                    </div>
-                    <div class="row mt-3">
-                        <div class="col-md-12">
-                            <p><strong>AMC:</strong> ${customerData.amc || 'N/A'}</p>
-                            <p><strong>AMC Amount:</strong> ${customerData.amcamt || 'N/A'}</p>
-                            <p><strong>Priority:</strong> ${customerData.priority || 'N/A'}</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        modal.show();
-    }
 
     // Fetch customers when the page loads
     fetch('/proxy/customers/')
@@ -1112,4 +1940,4 @@ document.addEventListener('DOMContentLoaded', function() {
     updateComplaintOptions(); // Initial call to populate the dropdown
 });
 </script>
-{% endblock %} 
+{% endblock %}

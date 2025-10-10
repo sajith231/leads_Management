@@ -315,7 +315,7 @@ path('today-requests/', views.today_requests, name='today_requests'),
 
 
     
-
+ path('api/service-history/', views.get_service_history, name='get_service_history'),
 
 
 
