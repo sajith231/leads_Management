@@ -502,14 +502,18 @@
             <label class="form-label">Place</label>
             <input type="text" class="form-control" name="place" id="place" value="{{ log.place|default_if_none:'' }}" placeholder="Enter place">
         </div>
+        <div class="mb-3">
+            <label class="form-label">Phone Number</label>
+            <input type="text" class="form-control" name="phone_number" value="{{ log.phone_number|default_if_none:'' }}" placeholder="Customer's contact number">
+        </div>
 
         <div class="mb-3">
             <label class="form-label">Complaint Type</label>
             <select class="form-select" name="complaint_type" id="complaint_type" required>
                 <option value="">-- Select Type --</option>
                 <option value="software" {% if log and log.complaint_type == 'software' %}selected{% endif %}>Software</option>
-                <option value="hardware" {% if log and log.complaint_type == 'hardware' %}selected{% endif %}>Hardware</option>
-                <option value="both" {% if log and log.complaint_type == 'both' %}selected{% endif %}>Both</option>
+                <!-- <option value="hardware" {% if log and log.complaint_type == 'hardware' %}selected{% endif %}>Hardware</option>
+                <option value="both" {% if log and log.complaint_type == 'both' %}selected{% endif %}>Both</option> -->
             </select>
         </div>
 
@@ -533,10 +537,7 @@
             <textarea class="form-control" name="remarks" rows="3" placeholder="Additional remarks or observations...">{{ log.remarks|default_if_none:'' }}</textarea>
         </div>
 
-        <div class="mb-3">
-            <label class="form-label">Phone Number</label>
-            <input type="text" class="form-control" name="phone_number" value="{{ log.phone_number|default_if_none:'' }}" placeholder="Customer's contact number">
-        </div>
+        
 
         <div class="mb-3">
             <label class="form-label">Voice Note</label><br>
@@ -1690,8 +1691,8 @@ function addComplaintBlock(selectedId = '', note = '') {
 
     // drop the HTML in
     div.innerHTML = `
-        <div class="row g-3 align-items-start">
-            <div class="col-md-4">
+        <div class="complaint-flex mb-3">
+            <div class="flex-item flex-complaint">
                 <label class="form-label">Complaint</label>
                 <select class="form-select complaint-select"
                         name="complaints"
@@ -1700,20 +1701,14 @@ function addComplaintBlock(selectedId = '', note = '') {
                     ${complaintOptions}
                 </select>
             </div>
-            <div class="col-md-4">
+            <div class="flex-item flex-note">
                 <label class="form-label">Note</label>
                 <input type="text" class="form-control note-input" name="note_placeholder_${complaintIndex}" placeholder="Optional note" value="${note}">
             </div>
-            <div class="col-md-3">
-                <label class="form-label">Upload Images</label>
-                <input type="file" class="form-control image-input" name="images_placeholder_${complaintIndex}" multiple accept="image/*">
-                <small class="text-muted">Hold Ctrl to select multiple images</small>
-            </div>
-            <div class="col-md-1 text-end d-flex align-items-end">
-                <button type="button" class="btn btn-danger btn-sm mt-auto" onclick="removeComplaintBlock(this)">
-                    <i class="bi bi-x"></i>
-                </button>
-            </div>
+            <button type="button" class="btn btn-danger btn-sm flex-remove" onclick="removeComplaintBlock(this)">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>
         </div>
         <div class="image-preview-container mt-2" id="image-preview-${complaintIndex}" style="display: none;">
             <div class="d-flex flex-wrap gap-2"></div>
