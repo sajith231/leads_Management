@@ -143,7 +143,7 @@ CKEDITOR_CONFIGS = {
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'hello',
+        'NAME': 'leading_management',
         'USER': 'postgres',
         'PASSWORD': 'info@imc',
         'HOST': 'localhost',
