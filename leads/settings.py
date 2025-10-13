@@ -62,6 +62,7 @@ INSTALLED_APPS = [
     'fuel_management',
     'django.contrib.humanize',
     "wfh_Request",
+    "punchout_reminder",
     
 ]
 

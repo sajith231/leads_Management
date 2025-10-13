@@ -770,13 +770,14 @@ import requests
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.utils.dateparse import parse_date
 from app1.models import User, Branch  # Import User and Branch from app1
-
 from datetime import datetime, timedelta
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.shortcuts import render
+from django.contrib.auth import get_user_model
 import requests
-from app1.models import User   # used to read the branch
+# NOTE: No direct import of app1.models.User here; we use get_user_model()
+# to work whether you're on the default auth.User or a custom user.
 
 @login_required
 def show_clients(request):
@@ -786,12 +787,18 @@ def show_clients(request):
 
     # ------------------------------------------------------------------
     # 1.  Determine the logged-in user's branch (fallback to None)
+    #     - Works whether your user model has `userid` or only `username`
     # ------------------------------------------------------------------
-    try:
-        custom_user = User.objects.get(userid=request.user.username)
-        user_branch = custom_user.branch.name if custom_user.branch else None
-    except User.DoesNotExist:
-        user_branch = None
+    UserModel = get_user_model()
+    custom_user = (
+        UserModel.objects.filter(userid=request.user.username).first()  # custom field case
+        or UserModel.objects.filter(username=request.user.username).first()  # default auth case
+        or UserModel.objects.filter(id=request.user.id).first()  # absolute fallback
+    )
+    user_branch = (
+        getattr(getattr(custom_user, "branch", None), "name", None)
+        if custom_user else None
+    )
 
     # ------------------------------------------------------------------
     # 2.  Fetch external data (same as before)
@@ -826,33 +833,36 @@ def show_clients(request):
     # ------------------------------------------------------------------
     # 4.  Build filter choices
     # ------------------------------------------------------------------
-    unique_branches   = sorted({c.get('branch', '')   for c in clients if c.get('branch')})
-    unique_software   = sorted({c.get('software', '') for c in clients if c.get('software')})
-    unique_natures    = sorted({c.get('nature', '')   for c in clients if c.get('nature')})
-    unique_amc_labels = sorted({c.get('amc_label', '') for c in clients if c.get('amc_label')})
-    unique_sp         = sorted({c.get('sp', '')       for c in clients if c.get('sp')})
-    unique_lic_types  = sorted({c.get('lictype_label', '') for c in clients if c.get('lictype_label')})
+    unique_branches   = sorted({c.get('branch', '')         for c in clients if c.get('branch')})
+    unique_software   = sorted({c.get('software', '')       for c in clients if c.get('software')})
+    unique_natures    = sorted({c.get('nature', '')         for c in clients if c.get('nature')})
+    unique_amc_labels = sorted({c.get('amc_label', '')      for c in clients if c.get('amc_label')})
+    unique_sp         = sorted({c.get('sp', '')             for c in clients if c.get('sp')})
+    unique_lic_types  = sorted({c.get('lictype_label', '')  for c in clients if c.get('lictype_label')})
 
     # ------------------------------------------------------------------
     # 5.  Read filter parameters with automatic branch restriction
     # ------------------------------------------------------------------
-    search_query        = request.GET.get('search', '').strip()
-    
-    # FIXED: Auto-apply branch filter for non-IMC/SYSMAC users
+    search_query = request.GET.get('search', '').strip()
+
+    # Auto-apply branch filter for non-IMC/SYSMAC users
     if user_branch and user_branch not in ['IMC', 'SYSMAC']:
         # For restricted users, always use their branch (ignore URL parameter)
         selected_branch = user_branch
     else:
         # For IMC/SYSMAC users, use the URL parameter or empty
         selected_branch = request.GET.get('branch', '')
-    
-    selected_software   = request.GET.get('software', '')
-    selected_nature     = request.GET.get('nature', '')
-    selected_amc        = request.GET.get('amc', '')
-    selected_sp         = request.GET.get('sp', '')
-    selected_lictype    = request.GET.get('lictype', '')
-    selected_direct     = request.GET.get('direct_dealing', 'Yes')   # default
-    selected_rows       = int(request.GET.get('rows', 15))
+
+    selected_software = request.GET.get('software', '')
+    selected_nature   = request.GET.get('nature', '')
+    selected_amc      = request.GET.get('amc', '')
+    selected_sp       = request.GET.get('sp', '')
+    selected_lictype  = request.GET.get('lictype', '')
+    selected_direct   = request.GET.get('direct_dealing', 'Yes')   # default
+    try:
+        selected_rows = int(request.GET.get('rows', 15))
+    except (TypeError, ValueError):
+        selected_rows = 15
 
     # ------------------------------------------------------------------
     # 6.  Apply filters
@@ -860,9 +870,10 @@ def show_clients(request):
     filtered = clients
     if search_query:
         terms = search_query.lower().split()
-        filtered = [c for c in filtered
-                    if all(t in ' '.join([str(v) for v in c.values()]).lower()
-                           for t in terms)]
+        filtered = [
+            c for c in filtered
+            if all(t in ' '.join([str(v) for v in c.values()]).lower() for t in terms)
+        ]
 
     for key, val, field in (
         ('branch',   selected_branch,   'branch'),
@@ -876,8 +887,10 @@ def show_clients(request):
             filtered = [c for c in filtered if str(c.get(field, '')) == val]
 
     if selected_direct != 'All':
-        filtered = [c for c in filtered
-                    if str(c.get('directdealing_label', '')).lower() == selected_direct.lower()]
+        filtered = [
+            c for c in filtered
+            if str(c.get('directdealing_label', '')).lower() == selected_direct.lower()
+        ]
 
     # ------------------------------------------------------------------
     # 7.  Pagination
@@ -910,10 +923,11 @@ def show_clients(request):
         'rows_options': [10, 20, 50, 100],
         'selected_rows': selected_rows,
         'selected_direct_dealing': selected_direct,
-        'user_branch': user_branch,          # << injected for template
-        'selected_branch': selected_branch,  # << injected for template
-        'is_branch_restricted': user_branch and user_branch not in ['IMC', 'SYSMAC'],  # << NEW: helper flag
+        'user_branch': user_branch,          # for template
+        'selected_branch': selected_branch,  # for template
+        'is_branch_restricted': bool(user_branch and user_branch not in ['IMC', 'SYSMAC']),
     })
+
 
 
 
@@ -1011,47 +1025,67 @@ def delete_department(request, id):
 
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import JobRole, Department
+# views.py - replace your existing job_roles function with this
+from django.apps import apps
+from django.contrib import messages
+from django.shortcuts import redirect
 
 @login_required
 def job_roles(request):
-    # Get the custom user ID from session
+    AppUser = apps.get_model('app1', 'User')   # always the custom user model
+    JobRole = apps.get_model('app2', 'JobRole')
+    Department = apps.get_model('app2', 'Department')
+
+    # prefer explicit custom_user id stored in session (your code uses this in places)
+    custom_user = None
     custom_user_id = request.session.get('custom_user_id')
-    
-    # If no custom_user_id in session, try to get from request.user
-    if not custom_user_id:
-        # Fallback: try to find user by username if using Django's built-in auth
+
+    if custom_user_id:
         try:
-            # Assuming you have a way to map Django user to your custom User model
-            # You might need to adjust this based on your authentication setup
-            custom_user = User.objects.get(userid=request.user.username)
-        except User.DoesNotExist:
-            # If still no user found, redirect to login or show error
-            from django.contrib import messages
-            messages.error(request, "User session not found. Please login again.")
-            return redirect('login')
+            custom_user = AppUser.objects.get(id=custom_user_id)
+        except AppUser.DoesNotExist:
+            custom_user = None
+
+    # If we still don't have custom_user, try several sensible fallbacks.
+    if not custom_user:
+        # 1) try by custom userid field (app1.User.userid)
+        custom_user = AppUser.objects.filter(userid=request.user.username).first()
+
+    if not custom_user:
+        # 2) try by username field (in case you have username column on app1.User)
+        custom_user = AppUser.objects.filter(username=getattr(request.user, 'username', None)).first()
+
+    if not custom_user:
+        # 3) try by id matching request.user.id
+        custom_user = AppUser.objects.filter(id=getattr(request.user, 'id', None)).first()
+
+    # If still None, create a safe shim object so templates won't crash.
+    if not custom_user:
+        class _Shim:
+            pass
+        custom_user = _Shim()
+        # if request.user is a Django superuser, give the shim admin privileges so page shows all roles
+        if getattr(request.user, 'is_superuser', False):
+            custom_user.user_level = 'admin_level'
+            # also indicate superuser in template via 'is_superuser' property if useful:
+            custom_user.is_superuser = True
+        else:
+            custom_user.user_level = 'normal'
+            custom_user.is_superuser = False
+
+    # Now determine which roles to show
+    if getattr(custom_user, 'user_level', None) in ['admin_level', '4level'] or getattr(request.user, 'is_superuser', False):
+        # show all roles to admins / superusers
+        roles = JobRole.objects.select_related('department').all().order_by('department__name', 'title')
     else:
-        # Fetch the user object using session ID
-        try:
-            custom_user = User.objects.get(id=custom_user_id)
-        except User.DoesNotExist:
-            from django.contrib import messages
-            messages.error(request, "User not found. Please login again.")
-            return redirect('login')
-    
-    # Check if user is superuser (admin_level or 4level)
-    if custom_user.user_level in ['admin_level', '4level']:
-        # Superuser can see all job roles
-        roles = JobRole.objects.select_related('department').all()
-    else:
-        # Regular users can only see their assigned job role
-        if custom_user.job_role:
+        # regular users see only their assigned job role (if any)
+        if getattr(custom_user, 'job_role', None):
             roles = JobRole.objects.select_related('department').filter(id=custom_user.job_role.id)
         else:
-            # If user has no job role assigned, show empty queryset
             roles = JobRole.objects.none()
-    
-    # Pass custom_user instead of user to avoid overriding request.user
+
     return render(request, 'job_roles.html', {'roles': roles, 'custom_user': custom_user})
+
 
 # views.py
 
@@ -1799,19 +1833,22 @@ def send_whatsapp_notification(name, installation_date, software_amount, created
         logger.error(f"Unexpected error while sending WhatsApp notification: {str(e)}")
         return False
 
-
 # Modified feeder view with created_by included in message
 @csrf_exempt
 def feeder(request):
+    # Ensure we resolve the correct custom user model (app1.User) even if "User" is shadowed elsewhere
+    from django.apps import apps
+    AppUser = apps.get_model('app1', 'User')
+
     business_types = BusinessType.objects.all()
     branches = Branch.objects.all()
 
     # Get the logged-in user's branch - ALL users now see only their branch
     try:
-        custom_user = User.objects.get(userid=request.user.username)
+        custom_user = AppUser.objects.get(userid=request.user.username)
         user_branch = custom_user.branch if custom_user.branch else None
         user_branch_id = custom_user.branch.id if custom_user.branch else None
-    except User.DoesNotExist:
+    except AppUser.DoesNotExist:
         user_branch = None
         user_branch_id = None
 
@@ -1937,6 +1974,7 @@ def feeder(request):
 
 
 
+
 # Updated feeder_list view with proper search functionality
 def feeder_list(request):
     query = request.GET.get('q', '').strip()
@@ -2000,145 +2038,25 @@ def feeder_list(request):
         'selected_branch': selected_branch,
         'selected_status': selected_status,
         'total_count': paginator.count,
+        'allowed_menus': ['feeder_status'],
     }
 
     return render(request, 'feeder_list.html', context)
 
-
 def feeder_edit(request, feeder_id):
-    feeder = get_object_or_404(Feeder, id=feeder_id)
+    from django.apps import apps
+    AppUser = apps.get_model('app1', 'User')  # ensure we use app1.User (has `userid`, `branch`)
 
-    # ------------------------------------------------------------------
-    # Get the logged-in user's branch - ALL users now see only their branch
-    # ------------------------------------------------------------------
-    try:
-        custom_user = User.objects.get(userid=request.user.username)
-        user_branch = custom_user.branch if custom_user.branch else None
-        user_branch_id = custom_user.branch.id if custom_user.branch else None
-    except User.DoesNotExist:
-        user_branch = None
-        user_branch_id = None
-
-    # All users are now branch restricted (removed IMC/SYSMAC exception)
-    is_branch_restricted = user_branch is not None
-
-    selected_modules = [m.strip() for m in (feeder.more_modules or '').split(',') if m.strip()]
-    try:
-        price_dict = (
-            json.loads(feeder.module_prices)
-            if isinstance(feeder.module_prices, str)
-            else feeder.module_prices
-        )
-    except (ValueError, TypeError):
-        price_dict = {}
-
-    if request.method == 'POST':
-        # Update all simple fields
-        feeder.name = request.POST.get('name')
-        feeder.address = request.POST.get('address')
-        feeder.location = request.POST.get('location')
-        feeder.area = request.POST.get('area')
-        feeder.district = request.POST.get('district')
-        feeder.state = request.POST.get('state')
-        feeder.contact_person = request.POST.get('contact_person')
-        feeder.contact_number = request.POST.get('contact_number')
-        feeder.email = request.POST.get('email')
-        feeder.reputed_person_name = request.POST.get('reputed_person_name', '')
-        feeder.reputed_person_number = request.POST.get('reputed_person_number', '')
-        feeder.software = request.POST.get('software')
-        
-        # Handle foreign key fields properly
-        nature_id = request.POST.get('nature')
-        if nature_id and nature_id.strip():
-            try:
-                feeder.nature_id = int(nature_id)
-            except (ValueError, TypeError):
-                feeder.nature_id = None
-        else:
-            feeder.nature_id = None
-        
-        # ------------------------------------------------------------------
-        # All users now use their own branch only
-        # ------------------------------------------------------------------
-        feeder.branch_id = user_branch_id  # Always use the user's branch
-        
-        # Handle numeric fields
-        no_of_system = request.POST.get('no_of_system')
-        if no_of_system and no_of_system.strip():
-            try:
-                feeder.no_of_system = int(no_of_system)
-            except (ValueError, TypeError):
-                feeder.no_of_system = None
-        else:
-            feeder.no_of_system = None
-            
-        pincode = request.POST.get('pincode')
-        if pincode and pincode.strip():
-            try:
-                feeder.pincode = int(pincode)
-            except (ValueError, TypeError):
-                feeder.pincode = None
-        else:
-            feeder.pincode = None
-        
-        feeder.country = request.POST.get('country', 'India')
-        
-        # Handle date field
-        installation_date = request.POST.get('installation_date')
-        if installation_date and installation_date.strip():
-            feeder.installation_date = installation_date
-        else:
-            feeder.installation_date = None
-            
-        feeder.remarks = request.POST.get('remarks', '')
-        feeder.software_amount = request.POST.get('software_amount', '') or 0
-        
-        # Handle total_cost field
-        total_cost = request.POST.get('total_cost')
-        feeder.module_charges = total_cost or 0
-        
-        # Handle modules
-        feeder.modules = ', '.join(request.POST.getlist('modules'))
-        feeder.more_modules = ', '.join(request.POST.getlist('more_modules'))
-
-        # Re-save module prices
-        new_prices = {
-            m: request.POST.get(f'price_{m}', '0')
-            for m in request.POST.getlist('more_modules')
-        }
-        feeder.module_prices = json.dumps(new_prices)
-        
-        try:
-            feeder.save()
-            return redirect('feeder_list')
-        except Exception as e:
-            print(f"Error saving feeder: {e}")
-
-    business_types = BusinessType.objects.all()
-    branches = Branch.objects.all()
-
-    return render(request, 'feeder_edit.html', {
-        'feeder': feeder,
-        'selected_modules': selected_modules,
-        'price_dict': price_dict,
-        'business_types': business_types,
-        'branches': branches,
-        'user_branch': user_branch,
-        'user_branch_id': user_branch_id,
-        'is_branch_restricted': is_branch_restricted,
-    })
-# ----------  EDIT  ----------
-def feeder_edit(request, feeder_id):
     feeder = get_object_or_404(Feeder, id=feeder_id)
 
     # ------------------------------------------------------------------
     # Get the logged-in user's branch (similar to clients view)
     # ------------------------------------------------------------------
     try:
-        custom_user = User.objects.get(userid=request.user.username)
+        custom_user = AppUser.objects.get(userid=request.user.username)
         user_branch = custom_user.branch if custom_user.branch else None
         user_branch_id = custom_user.branch.id if custom_user.branch else None
-    except User.DoesNotExist:
+    except AppUser.DoesNotExist:
         user_branch = None
         user_branch_id = None
 
@@ -2218,7 +2136,7 @@ def feeder_edit(request, feeder_id):
         
         feeder.country = request.POST.get('country', 'India')
         
-        # Handle date field
+        # Handle date field (kept as-is; string assigned directly)
         installation_date = request.POST.get('installation_date')
         if installation_date and installation_date.strip():
             feeder.installation_date = installation_date
@@ -2249,7 +2167,6 @@ def feeder_edit(request, feeder_id):
         except Exception as e:
             # Add error handling - you might want to show this error to the user
             print(f"Error saving feeder: {e}")
-            # You could add a message framework message here
             # messages.error(request, f"Error updating feeder: {e}")
 
     business_types = BusinessType.objects.all()
@@ -2265,6 +2182,7 @@ def feeder_edit(request, feeder_id):
         'user_branch_id': user_branch_id,
         'is_branch_restricted': is_branch_restricted,
     })
+
 
 
 # ----------  DELETE  ----------
