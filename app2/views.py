@@ -1025,47 +1025,67 @@ def delete_department(request, id):
 
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import JobRole, Department
+# views.py - replace your existing job_roles function with this
+from django.apps import apps
+from django.contrib import messages
+from django.shortcuts import redirect
 
 @login_required
 def job_roles(request):
-    # Get the custom user ID from session
+    AppUser = apps.get_model('app1', 'User')   # always the custom user model
+    JobRole = apps.get_model('app2', 'JobRole')
+    Department = apps.get_model('app2', 'Department')
+
+    # prefer explicit custom_user id stored in session (your code uses this in places)
+    custom_user = None
     custom_user_id = request.session.get('custom_user_id')
-    
-    # If no custom_user_id in session, try to get from request.user
-    if not custom_user_id:
-        # Fallback: try to find user by username if using Django's built-in auth
+
+    if custom_user_id:
         try:
-            # Assuming you have a way to map Django user to your custom User model
-            # You might need to adjust this based on your authentication setup
-            custom_user = User.objects.get(userid=request.user.username)
-        except User.DoesNotExist:
-            # If still no user found, redirect to login or show error
-            from django.contrib import messages
-            messages.error(request, "User session not found. Please login again.")
-            return redirect('login')
+            custom_user = AppUser.objects.get(id=custom_user_id)
+        except AppUser.DoesNotExist:
+            custom_user = None
+
+    # If we still don't have custom_user, try several sensible fallbacks.
+    if not custom_user:
+        # 1) try by custom userid field (app1.User.userid)
+        custom_user = AppUser.objects.filter(userid=request.user.username).first()
+
+    if not custom_user:
+        # 2) try by username field (in case you have username column on app1.User)
+        custom_user = AppUser.objects.filter(username=getattr(request.user, 'username', None)).first()
+
+    if not custom_user:
+        # 3) try by id matching request.user.id
+        custom_user = AppUser.objects.filter(id=getattr(request.user, 'id', None)).first()
+
+    # If still None, create a safe shim object so templates won't crash.
+    if not custom_user:
+        class _Shim:
+            pass
+        custom_user = _Shim()
+        # if request.user is a Django superuser, give the shim admin privileges so page shows all roles
+        if getattr(request.user, 'is_superuser', False):
+            custom_user.user_level = 'admin_level'
+            # also indicate superuser in template via 'is_superuser' property if useful:
+            custom_user.is_superuser = True
+        else:
+            custom_user.user_level = 'normal'
+            custom_user.is_superuser = False
+
+    # Now determine which roles to show
+    if getattr(custom_user, 'user_level', None) in ['admin_level', '4level'] or getattr(request.user, 'is_superuser', False):
+        # show all roles to admins / superusers
+        roles = JobRole.objects.select_related('department').all().order_by('department__name', 'title')
     else:
-        # Fetch the user object using session ID
-        try:
-            custom_user = User.objects.get(id=custom_user_id)
-        except User.DoesNotExist:
-            from django.contrib import messages
-            messages.error(request, "User not found. Please login again.")
-            return redirect('login')
-    
-    # Check if user is superuser (admin_level or 4level)
-    if custom_user.user_level in ['admin_level', '4level']:
-        # Superuser can see all job roles
-        roles = JobRole.objects.select_related('department').all()
-    else:
-        # Regular users can only see their assigned job role
-        if custom_user.job_role:
+        # regular users see only their assigned job role (if any)
+        if getattr(custom_user, 'job_role', None):
             roles = JobRole.objects.select_related('department').filter(id=custom_user.job_role.id)
         else:
-            # If user has no job role assigned, show empty queryset
             roles = JobRole.objects.none()
-    
-    # Pass custom_user instead of user to avoid overriding request.user
+
     return render(request, 'job_roles.html', {'roles': roles, 'custom_user': custom_user})
+
 
 # views.py
 
