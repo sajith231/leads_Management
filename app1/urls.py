@@ -316,7 +316,7 @@ urlpatterns = [
 
 
     
- path('api/service-history/', views.get_service_history, name='get_service_history'),
+
 
 
 
