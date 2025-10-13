@@ -1,44 +1,74 @@
 # models.py (updated)
 from django.db import models
-import os
+from django.contrib.auth.models import User
 import uuid
-import json
+import os
+from django.utils import timezone
 from app1.models import User 
-
 class JobCard(models.Model):
     STATUS_CHOICES = [
         ('logged', 'Logged'),
         ('sent_technician', 'Sent To Technician'),
-        ('pending', 'Pending'),
+        ('accepted', 'In Technician Hand'),  # Added from second version
+        ('pending', 'Pending'),  # From first version
         ('completed', 'Completed'),
         ('returned', 'Returned'),
         ('rejected', 'Rejected'),
     ]
+    
+    PRIORITY_CHOICES = [
+        ('low', 'Low'),  # Added from second version
+        ('medium', 'Medium'),
+        ('high', 'High'),
+    ]
 
+    # Core job card information
     ticket_no = models.CharField(max_length=20, unique=True, blank=True)
-    customer = models.CharField(max_length=100)
+    customer = models.CharField(max_length=200)  # Increased length from second version
     address = models.TextField()
-    phone = models.CharField(max_length=50)
-    technician = models.CharField(max_length=100, blank=True, null=True)
-    completion_details = models.JSONField(default=dict, blank=True)
-    assigned_date = models.DateTimeField(null=True, blank=True)
-    self_assigned = models.BooleanField(default=False, help_text="True if the job was self-assigned by the creator")
-    standby_issued = models.BooleanField(default=False, help_text="Whether standby equipment was issued")
-    # Store all items and complaints as JSON data
-    items_data = models.JSONField(default=list, help_text="Stores array of items with their complaints")
-
-    # ✅ Add this field
+    phone = models.CharField(max_length=50)  # Kept longer length from first version
+    
+    # Status and priority
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
         default='logged'
     )
+    priority = models.CharField(
+        max_length=10, 
+        choices=PRIORITY_CHOICES, 
+        default='medium'
+    )
+    
+    # Technician assignment
+    technician = models.CharField(max_length=100, blank=True, null=True)
+    assigned_date = models.DateTimeField(null=True, blank=True)
+    self_assigned = models.BooleanField(
+        default=False, 
+        help_text="True if the job was self-assigned by the creator"
+    )
+    
+    # Equipment tracking
+    standby_issued = models.BooleanField(
+        default=False, 
+        help_text="Whether standby equipment was issued"
+    )
+    
+    # JSON data storage
+    items_data = models.JSONField(
+        default=list, 
+        blank=True,
+        help_text="Stores array of items with their complaints"
+    )
+    completion_details = models.JSONField(default=dict, blank=True, null=True)
+    
+    # Audit fields
     created_by = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name="jobcards"
+        related_name="jobcards"  # Consistent naming
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -47,26 +77,46 @@ class JobCard(models.Model):
         ordering = ['-created_at']
 
     def __str__(self):
-        return f"{self.customer} - {self.ticket_no}"
+        return f"{self.ticket_no} - {self.customer}"  # Consistent format
 
-    
     def save(self, *args, **kwargs):
+        # Generate ticket number if not exists
         if not self.ticket_no:
-            self.ticket_no = self.generate_ticket_number()
+            # Try the sequential numbering first (from second version)
+            last_job = JobCard.objects.order_by('-id').first()
+            if last_job and last_job.ticket_no and last_job.ticket_no.startswith('JC'):
+                try:
+                    digits = ''.join(filter(str.isdigit, last_job.ticket_no))
+                    if digits:
+                        number = int(digits)
+                        self.ticket_no = f"JC{number + 1:06d}"
+                except (ValueError, TypeError):
+                    # Fallback to UUID method if sequential fails
+                    self.ticket_no = self._generate_uuid_ticket()
+            else:
+                # Use UUID method as fallback (from first version)
+                self.ticket_no = self._generate_uuid_ticket()
+
+        # Set assigned_date when technician is assigned
+        if self.technician and not self.assigned_date:
+            self.assigned_date = timezone.now()
+            
         super().save(*args, **kwargs)
 
-    def generate_ticket_number(self):
+    def _generate_uuid_ticket(self):
+        """Generate ticket number using UUID method"""
         while True:
             ticket_no = f"TK-{uuid.uuid4().hex[:8].upper()}"
             if not JobCard.objects.filter(ticket_no=ticket_no).exists():
                 return ticket_no
 
     def delete(self, *args, **kwargs):
-        # Delete all associated images
+        # Delete all associated images before deleting job card
         for image in self.images.all():
             image.delete()
         super().delete(*args, **kwargs)
 
+    # Utility methods from first version
     def get_total_items(self):
         """Return total number of items in this job card"""
         return len(self.items_data) if self.items_data else 0
@@ -97,136 +147,47 @@ class JobCard(models.Model):
                         complaints.append(f"{item_name}: {desc}")
         return '; '.join(complaints) if complaints else 'No complaints'
 
+    @property
+    def is_assigned(self):
+        """Check if job card is assigned to a technician"""
+        return bool(self.technician)
+
+    @property
+    def can_be_completed(self):
+        """Check if job card can be marked as completed"""
+        return self.status in ['sent_technician', 'accepted', 'pending']
+
 
 class JobCardImage(models.Model):
-    jobcard = models.ForeignKey(JobCard, related_name='images', on_delete=models.CASCADE)
+    jobcard = models.ForeignKey(
+        JobCard, 
+        related_name='images', 
+        on_delete=models.CASCADE
+    )
     image = models.ImageField(upload_to='jobcard_images/')
     uploaded_at = models.DateTimeField(auto_now_add=True)
     
     # Additional fields to identify which item and complaint this image belongs to
-    item_index = models.IntegerField(default=0, help_text="Index of item in items_data array")
-    complaint_index = models.IntegerField(default=0, help_text="Index of complaint within item")
+    item_index = models.IntegerField(
+        default=0, 
+        help_text="Index of item in items_data array"
+    )
+    complaint_index = models.IntegerField(
+        default=0, 
+        help_text="Index of complaint within item"
+    )
 
     def __str__(self):
         return f"Image for {self.jobcard.customer} - {self.jobcard.ticket_no}"
 
     def delete(self, *args, **kwargs):
+        # Delete the actual image file from storage
         if self.image and os.path.isfile(self.image.path):
             os.remove(self.image.path)
         super().delete(*args, **kwargs)
 
     class Meta:
-        ordering = ['item_index', 'complaint_index', 'uploaded_at']
-
-
-# Model item master
-class Item(models.Model):
-    name = models.CharField(max_length=255, unique=True)
-
-    def __str__(self):
-        return self.name
-    
-
-
-# supplier
-
-class Supplier(models.Model):
-    serial_no = models.CharField(max_length=50)  # <-- new field
-    name = models.CharField(max_length=200)
-    place = models.CharField(max_length=200)
-    phone = models.CharField(max_length=20)
-    address = models.TextField()
-
-
-    def __str__(self):
-        return self.name
-
-
-
-# Add these models to your app5/models.py file
-
-# app2/models.py  (or wherever your models live)
-from django.db import models
-from django.contrib.auth.models import User as AuthUser
-from app1.models import User
-import json
-from django.utils import timezone
-
-class JobCard(models.Model):
-    STATUS_CHOICES = [
-        ('logged', 'Logged'),
-        ('sent_technician', 'Sent To Technician'),
-        ('accepted', 'In Technician Hand'),
-        ('completed', 'Completed'),
-        ('returned', 'Returned'),
-        ('rejected', 'Rejected'),
-    ]
-    
-    PRIORITY_CHOICES = [
-        ('low', 'Low'),
-        ('medium', 'Medium'),
-        ('high', 'High'),
-    ]
-
-    ticket_no = models.CharField(max_length=20, unique=True, blank=True, null=True)
-    customer = models.CharField(max_length=200)
-    address = models.TextField()
-    phone = models.CharField(max_length=15)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='logged')
-    priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='medium')
-    
-    
-    # Technician assignment
-    technician = models.CharField(max_length=100, blank=True, null=True)
-    assigned_date = models.DateTimeField(null=True, blank=True)
-    self_assigned = models.BooleanField(default=False)
-    
-    # Standby item tracking
-    standby_issued = models.BooleanField(default=False)
-    
-    # Items and complaints data (stored as JSON)
-    items_data = models.JSONField(default=list, blank=True)
-    completion_details = models.JSONField(default=dict, blank=True, null=True)
-    
-    # Timestamps and creator
-    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='created_jobcards')
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    def save(self, *args, **kwargs):
-        if not self.ticket_no:
-            # Get last job card
-            last_job = JobCard.objects.order_by('-id').first()
-            number = 0
-            if last_job and last_job.ticket_no:
-                # Extract only digits from ticket_no safely
-                digits = ''.join(filter(str.isdigit, last_job.ticket_no))
-                if digits:
-                    number = int(digits)
-            self.ticket_no = f"JC{number + 1:06d}"
-
-        # Set assigned_date when technician is assigned
-        if self.technician and not self.assigned_date:
-            self.assigned_date = timezone.now()
-            
-        super().save(*args, **kwargs)
-
-    def __str__(self):
-        return f"{self.ticket_no} - {self.customer}"
-
-    class Meta:
-        ordering = ['-created_at']
-
-
-class JobCardImage(models.Model):
-    jobcard = models.ForeignKey(JobCard, on_delete=models.CASCADE, related_name='images')
-    image = models.ImageField(upload_to='jobcard_images/')
-    item_index = models.IntegerField(default=0)
-    complaint_index = models.IntegerField(default=0)
-    uploaded_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"Image for {self.jobcard.ticket_no}"
+        ordering = ['item_index', 'complaint_index', 'uploaded_at']   
 
 
 class StandbyIssuance(models.Model):
@@ -277,7 +238,7 @@ class StandbyIssuance(models.Model):
             self.job_card.save()
         
         super().save(*args, **kwargs)
-
+# item
 
 class Item(models.Model):
     name = models.CharField(max_length=100, unique=True)
@@ -291,7 +252,7 @@ class Item(models.Model):
     class Meta:
         ordering = ['name']
 
-
+# Supplier
 class Supplier(models.Model):
     name = models.CharField(max_length=200)
     place = models.CharField(max_length=100)
