@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     'flutter',
     'app5',
     'sim_card',
+    'my_drive',
     'fuel_management',
     'django.contrib.humanize',
     
@@ -142,7 +143,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'leading_management',
         'USER': 'postgres',
-        'PASSWORD': 'info@imc',
+        'PASSWORD': '12345',
         'HOST': 'localhost',
         'PORT': '5432',
     }
