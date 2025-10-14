@@ -770,13 +770,14 @@ import requests
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.utils.dateparse import parse_date
 from app1.models import User, Branch  # Import User and Branch from app1
-
 from datetime import datetime, timedelta
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.shortcuts import render
+from django.contrib.auth import get_user_model
 import requests
-from app1.models import User   # used to read the branch
+# NOTE: No direct import of app1.models.User here; we use get_user_model()
+# to work whether you're on the default auth.User or a custom user.
 
 @login_required
 def show_clients(request):
@@ -786,12 +787,18 @@ def show_clients(request):
 
     # ------------------------------------------------------------------
     # 1.  Determine the logged-in user's branch (fallback to None)
+    #     - Works whether your user model has `userid` or only `username`
     # ------------------------------------------------------------------
-    try:
-        custom_user = User.objects.get(userid=request.user.username)
-        user_branch = custom_user.branch.name if custom_user.branch else None
-    except User.DoesNotExist:
-        user_branch = None
+    UserModel = get_user_model()
+    custom_user = (
+        UserModel.objects.filter(userid=request.user.username).first()  # custom field case
+        or UserModel.objects.filter(username=request.user.username).first()  # default auth case
+        or UserModel.objects.filter(id=request.user.id).first()  # absolute fallback
+    )
+    user_branch = (
+        getattr(getattr(custom_user, "branch", None), "name", None)
+        if custom_user else None
+    )
 
     # ------------------------------------------------------------------
     # 2.  Fetch external data (same as before)
@@ -826,33 +833,36 @@ def show_clients(request):
     # ------------------------------------------------------------------
     # 4.  Build filter choices
     # ------------------------------------------------------------------
-    unique_branches   = sorted({c.get('branch', '')   for c in clients if c.get('branch')})
-    unique_software   = sorted({c.get('software', '') for c in clients if c.get('software')})
-    unique_natures    = sorted({c.get('nature', '')   for c in clients if c.get('nature')})
-    unique_amc_labels = sorted({c.get('amc_label', '') for c in clients if c.get('amc_label')})
-    unique_sp         = sorted({c.get('sp', '')       for c in clients if c.get('sp')})
-    unique_lic_types  = sorted({c.get('lictype_label', '') for c in clients if c.get('lictype_label')})
+    unique_branches   = sorted({c.get('branch', '')         for c in clients if c.get('branch')})
+    unique_software   = sorted({c.get('software', '')       for c in clients if c.get('software')})
+    unique_natures    = sorted({c.get('nature', '')         for c in clients if c.get('nature')})
+    unique_amc_labels = sorted({c.get('amc_label', '')      for c in clients if c.get('amc_label')})
+    unique_sp         = sorted({c.get('sp', '')             for c in clients if c.get('sp')})
+    unique_lic_types  = sorted({c.get('lictype_label', '')  for c in clients if c.get('lictype_label')})
 
     # ------------------------------------------------------------------
     # 5.  Read filter parameters with automatic branch restriction
     # ------------------------------------------------------------------
-    search_query        = request.GET.get('search', '').strip()
-    
-    # FIXED: Auto-apply branch filter for non-IMC/SYSMAC users
+    search_query = request.GET.get('search', '').strip()
+
+    # Auto-apply branch filter for non-IMC/SYSMAC users
     if user_branch and user_branch not in ['IMC', 'SYSMAC']:
         # For restricted users, always use their branch (ignore URL parameter)
         selected_branch = user_branch
     else:
         # For IMC/SYSMAC users, use the URL parameter or empty
         selected_branch = request.GET.get('branch', '')
-    
-    selected_software   = request.GET.get('software', '')
-    selected_nature     = request.GET.get('nature', '')
-    selected_amc        = request.GET.get('amc', '')
-    selected_sp         = request.GET.get('sp', '')
-    selected_lictype    = request.GET.get('lictype', '')
-    selected_direct     = request.GET.get('direct_dealing', 'Yes')   # default
-    selected_rows       = int(request.GET.get('rows', 15))
+
+    selected_software = request.GET.get('software', '')
+    selected_nature   = request.GET.get('nature', '')
+    selected_amc      = request.GET.get('amc', '')
+    selected_sp       = request.GET.get('sp', '')
+    selected_lictype  = request.GET.get('lictype', '')
+    selected_direct   = request.GET.get('direct_dealing', 'Yes')   # default
+    try:
+        selected_rows = int(request.GET.get('rows', 15))
+    except (TypeError, ValueError):
+        selected_rows = 15
 
     # ------------------------------------------------------------------
     # 6.  Apply filters
@@ -860,9 +870,10 @@ def show_clients(request):
     filtered = clients
     if search_query:
         terms = search_query.lower().split()
-        filtered = [c for c in filtered
-                    if all(t in ' '.join([str(v) for v in c.values()]).lower()
-                           for t in terms)]
+        filtered = [
+            c for c in filtered
+            if all(t in ' '.join([str(v) for v in c.values()]).lower() for t in terms)
+        ]
 
     for key, val, field in (
         ('branch',   selected_branch,   'branch'),
@@ -876,8 +887,10 @@ def show_clients(request):
             filtered = [c for c in filtered if str(c.get(field, '')) == val]
 
     if selected_direct != 'All':
-        filtered = [c for c in filtered
-                    if str(c.get('directdealing_label', '')).lower() == selected_direct.lower()]
+        filtered = [
+            c for c in filtered
+            if str(c.get('directdealing_label', '')).lower() == selected_direct.lower()
+        ]
 
     # ------------------------------------------------------------------
     # 7.  Pagination
@@ -910,10 +923,11 @@ def show_clients(request):
         'rows_options': [10, 20, 50, 100],
         'selected_rows': selected_rows,
         'selected_direct_dealing': selected_direct,
-        'user_branch': user_branch,          # << injected for template
-        'selected_branch': selected_branch,  # << injected for template
-        'is_branch_restricted': user_branch and user_branch not in ['IMC', 'SYSMAC'],  # << NEW: helper flag
+        'user_branch': user_branch,          # for template
+        'selected_branch': selected_branch,  # for template
+        'is_branch_restricted': bool(user_branch and user_branch not in ['IMC', 'SYSMAC']),
     })
+
 
 
 
@@ -1011,47 +1025,67 @@ def delete_department(request, id):
 
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import JobRole, Department
+# views.py - replace your existing job_roles function with this
+from django.apps import apps
+from django.contrib import messages
+from django.shortcuts import redirect
 
 @login_required
 def job_roles(request):
-    # Get the custom user ID from session
+    AppUser = apps.get_model('app1', 'User')   # always the custom user model
+    JobRole = apps.get_model('app2', 'JobRole')
+    Department = apps.get_model('app2', 'Department')
+
+    # prefer explicit custom_user id stored in session (your code uses this in places)
+    custom_user = None
     custom_user_id = request.session.get('custom_user_id')
-    
-    # If no custom_user_id in session, try to get from request.user
-    if not custom_user_id:
-        # Fallback: try to find user by username if using Django's built-in auth
+
+    if custom_user_id:
         try:
-            # Assuming you have a way to map Django user to your custom User model
-            # You might need to adjust this based on your authentication setup
-            custom_user = User.objects.get(userid=request.user.username)
-        except User.DoesNotExist:
-            # If still no user found, redirect to login or show error
-            from django.contrib import messages
-            messages.error(request, "User session not found. Please login again.")
-            return redirect('login')
+            custom_user = AppUser.objects.get(id=custom_user_id)
+        except AppUser.DoesNotExist:
+            custom_user = None
+
+    # If we still don't have custom_user, try several sensible fallbacks.
+    if not custom_user:
+        # 1) try by custom userid field (app1.User.userid)
+        custom_user = AppUser.objects.filter(userid=request.user.username).first()
+
+    if not custom_user:
+        # 2) try by username field (in case you have username column on app1.User)
+        custom_user = AppUser.objects.filter(username=getattr(request.user, 'username', None)).first()
+
+    if not custom_user:
+        # 3) try by id matching request.user.id
+        custom_user = AppUser.objects.filter(id=getattr(request.user, 'id', None)).first()
+
+    # If still None, create a safe shim object so templates won't crash.
+    if not custom_user:
+        class _Shim:
+            pass
+        custom_user = _Shim()
+        # if request.user is a Django superuser, give the shim admin privileges so page shows all roles
+        if getattr(request.user, 'is_superuser', False):
+            custom_user.user_level = 'admin_level'
+            # also indicate superuser in template via 'is_superuser' property if useful:
+            custom_user.is_superuser = True
+        else:
+            custom_user.user_level = 'normal'
+            custom_user.is_superuser = False
+
+    # Now determine which roles to show
+    if getattr(custom_user, 'user_level', None) in ['admin_level', '4level'] or getattr(request.user, 'is_superuser', False):
+        # show all roles to admins / superusers
+        roles = JobRole.objects.select_related('department').all().order_by('department__name', 'title')
     else:
-        # Fetch the user object using session ID
-        try:
-            custom_user = User.objects.get(id=custom_user_id)
-        except User.DoesNotExist:
-            from django.contrib import messages
-            messages.error(request, "User not found. Please login again.")
-            return redirect('login')
-    
-    # Check if user is superuser (admin_level or 4level)
-    if custom_user.user_level in ['admin_level', '4level']:
-        # Superuser can see all job roles
-        roles = JobRole.objects.select_related('department').all()
-    else:
-        # Regular users can only see their assigned job role
-        if custom_user.job_role:
+        # regular users see only their assigned job role (if any)
+        if getattr(custom_user, 'job_role', None):
             roles = JobRole.objects.select_related('department').filter(id=custom_user.job_role.id)
         else:
-            # If user has no job role assigned, show empty queryset
             roles = JobRole.objects.none()
-    
-    # Pass custom_user instead of user to avoid overriding request.user
+
     return render(request, 'job_roles.html', {'roles': roles, 'custom_user': custom_user})
+
 
 # views.py
 
@@ -1799,19 +1833,22 @@ def send_whatsapp_notification(name, installation_date, software_amount, created
         logger.error(f"Unexpected error while sending WhatsApp notification: {str(e)}")
         return False
 
-
 # Modified feeder view with created_by included in message
 @csrf_exempt
 def feeder(request):
+    # Ensure we resolve the correct custom user model (app1.User) even if "User" is shadowed elsewhere
+    from django.apps import apps
+    AppUser = apps.get_model('app1', 'User')
+
     business_types = BusinessType.objects.all()
     branches = Branch.objects.all()
 
     # Get the logged-in user's branch - ALL users now see only their branch
     try:
-        custom_user = User.objects.get(userid=request.user.username)
+        custom_user = AppUser.objects.get(userid=request.user.username)
         user_branch = custom_user.branch if custom_user.branch else None
         user_branch_id = custom_user.branch.id if custom_user.branch else None
-    except User.DoesNotExist:
+    except AppUser.DoesNotExist:
         user_branch = None
         user_branch_id = None
 
@@ -1937,6 +1974,7 @@ def feeder(request):
 
 
 
+
 # Updated feeder_list view with proper search functionality
 def feeder_list(request):
     query = request.GET.get('q', '').strip()
@@ -2000,145 +2038,25 @@ def feeder_list(request):
         'selected_branch': selected_branch,
         'selected_status': selected_status,
         'total_count': paginator.count,
+        'allowed_menus': ['feeder_status'],
     }
 
     return render(request, 'feeder_list.html', context)
 
-
 def feeder_edit(request, feeder_id):
-    feeder = get_object_or_404(Feeder, id=feeder_id)
+    from django.apps import apps
+    AppUser = apps.get_model('app1', 'User')  # ensure we use app1.User (has `userid`, `branch`)
 
-    # ------------------------------------------------------------------
-    # Get the logged-in user's branch - ALL users now see only their branch
-    # ------------------------------------------------------------------
-    try:
-        custom_user = User.objects.get(userid=request.user.username)
-        user_branch = custom_user.branch if custom_user.branch else None
-        user_branch_id = custom_user.branch.id if custom_user.branch else None
-    except User.DoesNotExist:
-        user_branch = None
-        user_branch_id = None
-
-    # All users are now branch restricted (removed IMC/SYSMAC exception)
-    is_branch_restricted = user_branch is not None
-
-    selected_modules = [m.strip() for m in (feeder.more_modules or '').split(',') if m.strip()]
-    try:
-        price_dict = (
-            json.loads(feeder.module_prices)
-            if isinstance(feeder.module_prices, str)
-            else feeder.module_prices
-        )
-    except (ValueError, TypeError):
-        price_dict = {}
-
-    if request.method == 'POST':
-        # Update all simple fields
-        feeder.name = request.POST.get('name')
-        feeder.address = request.POST.get('address')
-        feeder.location = request.POST.get('location')
-        feeder.area = request.POST.get('area')
-        feeder.district = request.POST.get('district')
-        feeder.state = request.POST.get('state')
-        feeder.contact_person = request.POST.get('contact_person')
-        feeder.contact_number = request.POST.get('contact_number')
-        feeder.email = request.POST.get('email')
-        feeder.reputed_person_name = request.POST.get('reputed_person_name', '')
-        feeder.reputed_person_number = request.POST.get('reputed_person_number', '')
-        feeder.software = request.POST.get('software')
-        
-        # Handle foreign key fields properly
-        nature_id = request.POST.get('nature')
-        if nature_id and nature_id.strip():
-            try:
-                feeder.nature_id = int(nature_id)
-            except (ValueError, TypeError):
-                feeder.nature_id = None
-        else:
-            feeder.nature_id = None
-        
-        # ------------------------------------------------------------------
-        # All users now use their own branch only
-        # ------------------------------------------------------------------
-        feeder.branch_id = user_branch_id  # Always use the user's branch
-        
-        # Handle numeric fields
-        no_of_system = request.POST.get('no_of_system')
-        if no_of_system and no_of_system.strip():
-            try:
-                feeder.no_of_system = int(no_of_system)
-            except (ValueError, TypeError):
-                feeder.no_of_system = None
-        else:
-            feeder.no_of_system = None
-            
-        pincode = request.POST.get('pincode')
-        if pincode and pincode.strip():
-            try:
-                feeder.pincode = int(pincode)
-            except (ValueError, TypeError):
-                feeder.pincode = None
-        else:
-            feeder.pincode = None
-        
-        feeder.country = request.POST.get('country', 'India')
-        
-        # Handle date field
-        installation_date = request.POST.get('installation_date')
-        if installation_date and installation_date.strip():
-            feeder.installation_date = installation_date
-        else:
-            feeder.installation_date = None
-            
-        feeder.remarks = request.POST.get('remarks', '')
-        feeder.software_amount = request.POST.get('software_amount', '') or 0
-        
-        # Handle total_cost field
-        total_cost = request.POST.get('total_cost')
-        feeder.module_charges = total_cost or 0
-        
-        # Handle modules
-        feeder.modules = ', '.join(request.POST.getlist('modules'))
-        feeder.more_modules = ', '.join(request.POST.getlist('more_modules'))
-
-        # Re-save module prices
-        new_prices = {
-            m: request.POST.get(f'price_{m}', '0')
-            for m in request.POST.getlist('more_modules')
-        }
-        feeder.module_prices = json.dumps(new_prices)
-        
-        try:
-            feeder.save()
-            return redirect('feeder_list')
-        except Exception as e:
-            print(f"Error saving feeder: {e}")
-
-    business_types = BusinessType.objects.all()
-    branches = Branch.objects.all()
-
-    return render(request, 'feeder_edit.html', {
-        'feeder': feeder,
-        'selected_modules': selected_modules,
-        'price_dict': price_dict,
-        'business_types': business_types,
-        'branches': branches,
-        'user_branch': user_branch,
-        'user_branch_id': user_branch_id,
-        'is_branch_restricted': is_branch_restricted,
-    })
-# ----------  EDIT  ----------
-def feeder_edit(request, feeder_id):
     feeder = get_object_or_404(Feeder, id=feeder_id)
 
     # ------------------------------------------------------------------
     # Get the logged-in user's branch (similar to clients view)
     # ------------------------------------------------------------------
     try:
-        custom_user = User.objects.get(userid=request.user.username)
+        custom_user = AppUser.objects.get(userid=request.user.username)
         user_branch = custom_user.branch if custom_user.branch else None
         user_branch_id = custom_user.branch.id if custom_user.branch else None
-    except User.DoesNotExist:
+    except AppUser.DoesNotExist:
         user_branch = None
         user_branch_id = None
 
@@ -2218,7 +2136,7 @@ def feeder_edit(request, feeder_id):
         
         feeder.country = request.POST.get('country', 'India')
         
-        # Handle date field
+        # Handle date field (kept as-is; string assigned directly)
         installation_date = request.POST.get('installation_date')
         if installation_date and installation_date.strip():
             feeder.installation_date = installation_date
@@ -2249,7 +2167,6 @@ def feeder_edit(request, feeder_id):
         except Exception as e:
             # Add error handling - you might want to show this error to the user
             print(f"Error saving feeder: {e}")
-            # You could add a message framework message here
             # messages.error(request, f"Error updating feeder: {e}")
 
     business_types = BusinessType.objects.all()
@@ -2265,6 +2182,7 @@ def feeder_edit(request, feeder_id):
         'user_branch_id': user_branch_id,
         'is_branch_restricted': is_branch_restricted,
     })
+
 
 
 # ----------  DELETE  ----------
@@ -2338,166 +2256,164 @@ from django.http import JsonResponse
 from django.db import IntegrityError
 from django.contrib import messages
 from django.db.models import Q
-from .models import StandbyItem, StandbyItemImage
-
-# ✅ List all items with search functionality
-# Add these updated views to your views.py file
-
-from django.shortcuts import render, redirect, get_object_or_404
-from django.http import JsonResponse
-from django.db import IntegrityError
-from django.contrib import messages
-from django.db.models import Q
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
+from django.contrib.auth.models import User
 import json
-from .models import StandbyItem, StandbyItemImage
+from .models import StandbyItem, StandbyImage
 
-# Updated List view with status filtering
-# In app2/views.py
+
 def Standby_item_list(request):
     search_query = request.GET.get('search', '').strip()
     status_filter = request.GET.get('status', '').strip()
-    
-    # Get all items (remove any filtering that might hide 'with_customer' status)
-    items = StandbyItem.objects.prefetch_related('images').all().order_by('-created_at')
+    items = StandbyItem.objects.prefetch_related('images', 'returns').all().order_by('-created_at')
 
-    # Apply search filter
     if search_query:
-        items = items.filter(
-            Q(name__icontains=search_query) | 
-            Q(serial_number__icontains=search_query)
-        )
-    
-    # Apply status filter if provided
+        items = items.filter(Q(name__icontains=search_query) | Q(serial_number__icontains=search_query))
     if status_filter:
         items = items.filter(status=status_filter)
 
+    # Add standby_notes, standby_images, and return history to each item
+    for item in items:
+        # Extract original notes (before return section)
+        notes = item.notes or ''
+        return_section = notes.find('--- RETURNED ON')
+        if return_section != -1:
+            item.standby_notes = notes[:return_section].strip()
+        else:
+            item.standby_notes = notes
+        
+        # Filter only original standby images (not return images)
+        item.standby_images = item.images.filter(image_type='original')
+        
+        # Get return history
+        item.return_history = item.returns.all().order_by('-return_date')
+
     return render(request, 'standby_table.html', {
-        'items': items, 
+        'items': items,
         'search_query': search_query,
-        'status_filter': status_filter
+        'status_filter': status_filter,
     })
 
-# Updated Add view with status field
+
 def Standby_add_item(request):
     if request.method == "POST":
         name = request.POST.get("itemname", "").upper()
         serial_number = request.POST.get("serialnumber", "").upper()
         notes = request.POST.get("notes", "")
         stock = request.POST.get("stock", 0)
-        status = request.POST.get("status", "in_stock")  # New field
+        status = request.POST.get("status", "in_stock")
+
+        customer_name = request.POST.get("customer_name", "")
+        customer_place = request.POST.get("customer_place", "")
+        customer_phone = request.POST.get("customer_phone", "")
+        issued_date = request.POST.get("issued_date", None)
+
         images = request.FILES.getlist("images")
 
         try:
-            # Get current user, fallback to user ID 1 if not authenticated
-            current_user = request.user if request.user.is_authenticated else None
-            if not current_user:
-                from django.contrib.auth.models import User
-                current_user = User.objects.get(id=1)
-            
+            current_user = request.user if request.user.is_authenticated else User.objects.first()
+
             item = StandbyItem.objects.create(
                 name=name,
                 serial_number=serial_number,
                 notes=notes,
                 stock=stock,
-                status=status,  # Include status
-                created_by=current_user
+                status=status,
+                customer_name=customer_name if status == 'with_customer' else None,
+                customer_place=customer_place if status == 'with_customer' else None,
+                customer_phone=customer_phone if status == 'with_customer' else None,
+                issued_date=issued_date if status == 'with_customer' else None,
+                created_by=current_user,
             )
 
             for img in images:
-                StandbyItemImage.objects.create(item=item, image=img)
+                StandbyImage.objects.create(item=item, image=img)
 
             messages.success(request, "Item added successfully!")
             return redirect("item_list")
 
         except IntegrityError:
             messages.error(request, f"Serial Number '{serial_number}' already exists!")
-            return redirect("add")
         except Exception as e:
             messages.error(request, f"Error creating item: {str(e)}")
-            return redirect("add")
+
+        return redirect("add")
 
     return render(request, "add_standby.html")
 
-# Updated Edit view with status field
+
 def Standby_item_edit(request, item_id):
     item = get_object_or_404(StandbyItem, id=item_id)
-
+    
+    # Filter only original images (exclude return images)
+    original_images = item.images.filter(image_type='original')
+    
+    # Extract original notes (before any return sections)
+    notes = item.notes or ''
+    return_section = notes.find('--- RETURNED ON')
+    if return_section != -1:
+        original_notes = notes[:return_section].strip()
+    else:
+        original_notes = notes
+    
     if request.method == "POST":
         item.name = request.POST.get('itemname', '').upper()
         item.serial_number = request.POST.get('serialnumber', '').upper()
-        item.notes = request.POST.get('notes', '')
-        item.stock = request.POST.get('stock', 0)
-        item.status = request.POST.get('status', item.status)  # Update status
         
+        # Only update the original notes part
+        new_notes = request.POST.get('notes', '')
+        if return_section != -1:
+            # Keep the return history and append new notes
+            return_history = notes[return_section:]
+            item.notes = f"{new_notes}\n\n{return_history}"
+        else:
+            item.notes = new_notes
+            
+        item.stock = request.POST.get('stock', 0)
+        item.status = request.POST.get('status', item.status)
+
+        if item.status == 'with_customer':
+            item.customer_name = request.POST.get('customer_name', '')
+            item.customer_place = request.POST.get('customer_place', '')
+            item.customer_phone = request.POST.get('customer_phone', '')
+            item.issued_date = request.POST.get('issued_date', None)
+        else:
+            item.customer_name = None
+            item.customer_place = None
+            item.customer_phone = None
+            item.issued_date = None
+
         try:
             item.save()
-            
-            # Handle image deletions
             delete_ids = request.POST.get('delete_images', '')
             if delete_ids:
                 ids = [id.strip() for id in delete_ids.split(',') if id.strip()]
-                StandbyItemImage.objects.filter(id__in=ids, item=item).delete()
-
-            # Handle new image uploads
+                # Only delete from original images
+                StandbyImage.objects.filter(id__in=ids, item=item, image_type='original').delete()
+            
+            # Add new images as original type
             for image in request.FILES.getlist('images'):
-                StandbyItemImage.objects.create(item=item, image=image)
-
+                StandbyImage.objects.create(item=item, image=image, image_type='original')
+                
             messages.success(request, "Item updated successfully!")
             return redirect('item_list')
-            
         except IntegrityError:
             messages.error(request, "Serial number already exists!")
-            return redirect("item_edit", item_id=item.id)
         except Exception as e:
             messages.error(request, f"Error updating item: {str(e)}")
-            return redirect("item_edit", item_id=item.id)
 
-    return render(request, 'edit_standby.html', {'item': item})
+        return redirect("item_edit", item_id=item.id)
 
-# New AJAX view for status updates
-@csrf_exempt
-@require_POST
-def Standby_update_status(request, item_id):
-    try:
-        # Parse JSON data from request body
-        data = json.loads(request.body)
-        new_status = data.get('status')
+    # Pass only original images and notes to template
+    context = {
+        'item': item,
+        'original_images': original_images,
+        'original_notes': original_notes,
+    }
+    return render(request, 'edit_standby.html', context)
 
-        if not new_status:
-            return JsonResponse({'success': False, 'error': 'Status not provided'}, status=400)
 
-        # Get the item object
-        item = get_object_or_404(StandbyItem, id=item_id)
-
-        # Validate status
-        valid_statuses = [choice[0] for choice in StandbyItem.STATUS_CHOICES]
-        if new_status not in valid_statuses:
-            return JsonResponse({
-                'success': False, 
-                'error': f'Invalid status. Valid options: {valid_statuses}'
-            }, status=400)
-
-        # Update status
-        item.status = new_status
-        item.save()
-
-        # Return success response
-        return JsonResponse({
-            'success': True,
-            'new_status': item.get_status_display(),
-            'status_class': item.get_status_display_class()
-        })
-
-    except json.JSONDecodeError:
-        return JsonResponse({'success': False, 'error': 'Invalid JSON data'}, status=400)
-    except StandbyItem.DoesNotExist:
-        return JsonResponse({'success': False, 'error': 'Item not found'}, status=404)
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': f'Server error: {str(e)}'}, status=500)
-
-# Keep existing views unchanged
 def Standby_item_delete(request, item_id):
     if request.method == "POST":
         try:
@@ -2508,13 +2424,222 @@ def Standby_item_delete(request, item_id):
             messages.error(request, f"Error deleting item: {str(e)}")
     return redirect('item_list')
 
+
 def Standby_check_serial(request):
     serial = request.GET.get('serial', '').upper().strip()
     item_id = request.GET.get('item_id', None)
-    
     if item_id:
         exists = StandbyItem.objects.filter(serial_number=serial).exclude(id=item_id).exists()
     else:
         exists = StandbyItem.objects.filter(serial_number=serial).exists()
-    
     return JsonResponse({'exists': exists})
+
+
+@csrf_exempt
+def Standby_get_customer_info(request, item_id):
+    """
+    Returns JSON with customer info for a standby item
+    """
+    try:
+        item = get_object_or_404(StandbyItem, id=item_id)
+
+        # Debug: Check what data we have
+        print(f"Item Status: {item.status}")
+        print(f"Customer Name: {item.customer_name}")
+        print(f"Customer Place: {item.customer_place}")
+        print(f"Customer Phone: {item.customer_phone}")
+        print(f"Issued Date: {item.issued_date}")
+
+        # Ensure the item is currently with a customer
+        if item.status.lower() != 'with_customer':
+            return JsonResponse({
+                'success': False,
+                'error': f'Item "{item.name}" is not currently with a customer. Current status: {item.status}'
+            })
+
+        # Format the issued date properly
+        issued_date_formatted = 'N/A'
+        if item.issued_date:
+            issued_date_formatted = item.issued_date.strftime('%d %b %Y')
+
+        data = {
+            'item_name': item.name,
+            'serial_number': item.serial_number,
+            'customer_name': item.customer_name or 'N/A',
+            'customer_place': item.customer_place or 'N/A',
+            'customer_phone': item.customer_phone or 'N/A',
+            'issued_date': issued_date_formatted,
+        }
+
+        return JsonResponse({'success': True, 'data': data})
+
+    except StandbyItem.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'error': 'Item not found'
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': f'Server error: {str(e)}'
+        })
+
+
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from django.utils import timezone
+from datetime import date
+from .models import StandbyReturn
+# Add this import at the top of your views.py file:
+# from .models import StandbyItem, StandbyImage, StandbyReturn
+
+# app2/views.py - Replace the standby_return_item function with this fixed version
+
+@login_required
+def standby_return_item(request, item_id):
+    """Handle returning standby item to stock with proper database storage"""
+    item = get_object_or_404(StandbyItem, id=item_id)
+    
+    # Check if item is actually with customer
+    if item.status != 'with_customer':
+        messages.error(request, f'Item "{item.name}" is not currently with a customer.')
+        return redirect('item_list')
+    
+    if request.method == 'POST':
+        # Get form data
+        return_date_str = request.POST.get('return_date')
+        return_notes = request.POST.get('return_notes', '').strip()
+        stock = request.POST.get('stock', item.stock)
+        return_images = request.FILES.getlist('return_images')
+        
+        # Parse return date
+        try:
+            from django.utils.dateparse import parse_date
+            return_date = parse_date(return_date_str)
+            if not return_date:
+                return_date = timezone.now().date()
+        except:
+            return_date = timezone.now().date()
+        
+        logger.info(f"Processing return for item {item.id} - {item.name}")
+        
+        # ✅ CRITICAL: Save customer info BEFORE clearing from item
+        customer_name_at_return = item.customer_name
+        customer_place_at_return = item.customer_place
+        customer_phone_at_return = item.customer_phone
+        issued_date_at_return = item.issued_date
+        
+        # ✅ CREATE StandbyReturn record to preserve history
+        standby_return = StandbyReturn.objects.create(
+            item=item,
+            return_date=return_date,
+            return_notes=return_notes,
+            returned_by=request.user,
+            stock_on_return=stock,
+            customer_name_at_return=customer_name_at_return,
+            customer_place_at_return=customer_place_at_return,
+            customer_phone_at_return=customer_phone_at_return,
+            issued_date_at_return=issued_date_at_return
+        )
+        logger.info(f"Created StandbyReturn record: {standby_return.id}")
+        
+        # ✅ Save return images and LINK to StandbyReturn record
+        images_saved = 0
+        for image in return_images:
+            try:
+                StandbyImage.objects.create(
+                    item=item,
+                    image=image,
+                    image_type='return_condition',
+                    standby_return=standby_return  # ✅ Link to return record
+                )
+                images_saved += 1
+            except Exception as e:
+                logger.error(f"Error saving return image: {e}")
+        
+        logger.info(f"Saved {images_saved} return images linked to return {standby_return.id}")
+        
+        # ✅ Update item status and clear customer info
+        item.status = 'in_stock'
+        item.stock = stock
+        item.customer_name = None
+        item.customer_place = None
+        item.customer_phone = None
+        item.issued_date = None
+        
+        # Optional: Add return summary to item notes
+        if return_notes:
+            return_summary = f"\n\n--- RETURNED ON {return_date.strftime('%d-%m-%Y')} ---\n"
+            return_summary += f"Customer: {customer_name_at_return}\n"
+            return_summary += f"Notes: {return_notes}"
+            item.notes = (item.notes or '') + return_summary
+        
+        item.save()
+        logger.info(f"Item {item.id} updated - status: {item.status}, stock: {item.stock}")
+        
+        # ✅ CRITICAL FIX: Find and update related StandbyIssuance
+        try:
+            from app5.models import StandbyIssuance
+            
+            # Find the active issuance for this item and customer
+            related_issuance = StandbyIssuance.objects.filter(
+                standby_item=item,
+                issued_to=customer_name_at_return,
+                status='issued'
+            ).first()
+            
+            if related_issuance:
+                # ✅ Update the issuance with return details
+                related_issuance.actual_return_date = return_date
+                related_issuance.status = 'returned'
+                related_issuance.condition_on_return = return_notes
+                
+                # Add reference to StandbyReturn record in notes
+                timestamp = timezone.now().strftime('%d-%m-%Y %H:%M')
+                additional_info = f"\n\n--- RETURNED ON {timestamp} ---"
+                additional_info += f"\nReturn Record ID: {standby_return.id}"
+                additional_info += f"\nReturn Date: {return_date.strftime('%d-%m-%Y')}"
+                additional_info += f"\nReturned By: {request.user.get_full_name() or request.user.username}"
+                if return_notes:
+                    additional_info += f"\nCondition: {return_notes}"
+                if images_saved > 0:
+                    additional_info += f"\n{images_saved} return image(s) uploaded"
+                
+                related_issuance.notes = (related_issuance.notes or '') + additional_info
+                related_issuance.save()
+                logger.info(f"Updated issuance {related_issuance.id}")
+                
+                # Update job card
+                if related_issuance.job_card:
+                    related_issuance.job_card.standby_issued = False
+                    related_issuance.job_card.save()
+                    logger.info(f"Updated job card {related_issuance.job_card.id}")
+            else:
+                logger.warning(f"No active issuance found for item {item.id}")
+                
+        except Exception as e:
+            logger.error(f"Error updating issuance: {e}")
+            messages.warning(request, f"Item returned but couldn't update issuance: {str(e)}")
+        
+        # Success message
+        success_msg = f'Item "{item.name}" returned to stock successfully!'
+        success_msg += f' Return record #{standby_return.id} created.'
+        if images_saved > 0:
+            success_msg += f' {images_saved} image(s) uploaded.'
+        messages.success(request, success_msg)
+        
+        return redirect('item_list')
+    
+    # GET request - show return form
+    context = {
+        'item': item,
+        'today': date.today(),
+    }
+    return render(request, 'return_standby_items.html', context)
+
+
+
+
+    
+

@@ -132,7 +132,9 @@ urlpatterns = [
     path('edit/<int:item_id>/', views.Standby_item_edit, name='item_edit'),
     path('delete/<int:item_id>/', views.Standby_item_delete, name='item_delete'),
     path('check-serial/', views.Standby_check_serial, name='check_serial'),
-
+    path('standby/customer-info/<int:item_id>/', views.Standby_get_customer_info, name='standby_customer_info'),
+  # urls.py
+   path('standby/return/<int:item_id>/', views.standby_return_item, name='standby_return_item'), 
 
 
 

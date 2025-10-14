@@ -12,10 +12,59 @@
     margin-bottom: 15px;
     margin-top: 3%;
   }
+
+  /* Customer Modal Styles */
+  #customerModal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.7);
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+  }
+
+  #customerModal .modal-content {
+    background: #fff;
+    border-radius: 12px;
+    position: relative;
+    max-width: 500px;
+    width: 90%;
+    padding: 25px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  }
+
+  .return-btn {
+    font-weight: bold;
+    color: #1e06f5;
+  }
+  .return-btn:hover {
+    color: #8270d4;
+  }
+
+  #customerDetails strong {
+    color: #146fca;
+    display: inline-block;
+    min-width: 140px;
+    text-align: right;
+    margin-right: 10px;
+  }
+
+  #customerDetails div {
+    margin-bottom: 10px;
+    padding: 8px;
+    background: #f8f9fa;
+    border-radius: 6px;
+  }
+
   .header-container h2 {
     margin: 0;
     font-size: 28px;
-    color: #333;
+    color: #060606;
     font-weight: bold;
     width: 100%;
     text-align: center;
@@ -75,6 +124,8 @@
     border-radius: 8px;
     overflow: hidden;
     box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    max-height: 70vh;
+    overflow-y: auto;
   }
   
   table {
@@ -94,6 +145,9 @@
     color: #fff;
     font-weight: bold;
     text-transform: uppercase;
+    position: sticky;
+    top: 0;
+    z-index: 10;
   }
   
   tbody tr:nth-child(even) {
@@ -147,6 +201,8 @@
     border-radius: 6px;
     z-index: 1000;
     border: 1px solid #ddd;
+    max-height: 200px;
+    overflow-y: auto;
   }
   
   .status-dropdown-content a {
@@ -219,6 +275,7 @@
     padding: 25px;
     text-align: center;
     box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    overflow: hidden;
   }
 
   .close-btn {
@@ -237,8 +294,11 @@
 
   /* Notes Modal Styling */
   .notes-modal-content {
-    max-width: 600px;
+    max-width: 300px;
     text-align: left;
+    display: flex;
+    flex-direction: column;
+    height: 30%;
   }
   
   .modal-header {
@@ -247,6 +307,7 @@
     margin-bottom: 20px;
     padding-bottom: 15px;
     border-bottom: 2px solid #eee;
+    flex-shrink: 0;
   }
   
   .modal-header h3 {
@@ -276,6 +337,34 @@
     line-height: 1.6;
     color: #333;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    flex-grow: 1;
+  }
+
+  /* Scrollbar Styling */
+  .table-container::-webkit-scrollbar,
+  #modalText::-webkit-scrollbar,
+  .status-dropdown-content::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .table-container::-webkit-scrollbar-track,
+  #modalText::-webkit-scrollbar-track,
+  .status-dropdown-content::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+  }
+
+  .table-container::-webkit-scrollbar-thumb,
+  #modalText::-webkit-scrollbar-thumb,
+  .status-dropdown-content::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+  }
+
+  .table-container::-webkit-scrollbar-thumb:hover,
+  #modalText::-webkit-scrollbar-thumb:hover,
+  .status-dropdown-content::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
   }
 
   /* Empty state */
@@ -348,6 +437,7 @@
   @media (max-width: 768px) {
     .table-container {
       overflow-x: auto;
+      max-height: 60vh;
     }
     
     table {
@@ -357,6 +447,7 @@
     .modal-content {
       margin: 10px;
       max-width: calc(100% - 20px);
+      max-height: calc(100% - 20px);
     }
     
     .filter-row {
@@ -368,9 +459,12 @@
       min-width: auto;
       width: 100%;
     }
+
+    #modalText {
+      max-height: 300px;
+    }
   }
 </style>
-
 
 <!-- Header -->
 <div class="header-container">
@@ -422,42 +516,54 @@
     <td><strong>{{ item.name }}</strong></td>
     <td><code>{{ item.serial_number }}</code></td>
     <td>
-        <div class="status-dropdown">
-            <span class="status-badge {{ item.get_status_display_class }}" 
-                  onclick="toggleStatusDropdown({{ item.id }})">
-                {{ item.get_status_display }}
-            </span>
-            <div class="status-dropdown-content" id="dropdown-{{ item.id }}">
-                <a href="#" onclick="updateStatus({{ item.id }}, 'in_stock', event)">
-                    <span class="status-badge badge-success">In Stock</span>
-                </a>
-                <a href="#" onclick="updateStatus({{ item.id }}, 'with_customer', event)">
-                    <span class="status-badge badge-warning">With Customer</span>
-                </a>
-            </div>
-        </div>
-    </td>
+  <div class="status-dropdown">
+    <span class="status-badge {{ item.get_status_display_class }}" 
+          onclick="toggleStatusDropdown({{ item.id }})">
+      {{ item.get_status_display }}
+    </span>
+    <div class="status-dropdown-content" id="dropdown-{{ item.id }}">
+      <a href="#" onclick="updateStatus({{ item.id }}, 'in_stock', event)">
+        <span class="status-badge badge-success">In Stock</span>
+      </a>
+      <a href="#" onclick="updateStatus({{ item.id }}, 'with_customer', event)">
+        <span class="status-badge badge-warning">With Customer</span>
+      </a>
+    </div>
+  </div>
+
+  {% if item.status == 'with_customer' %}
+    <a href="#" class="icon-btn" style="color:#007bff;" title="View Customer Info" 
+       onclick="viewCustomerInfo({{ item.id }})">
+      <i class="fas fa-eye"></i>
+    </a>
+  {% endif %}
+</td>
+
+    <!-- Notes Column - Only show original standby item notes -->
     <td>
-        {% if item.notes and item.notes|length > 0 %}
+        {% if item.standby_notes and item.standby_notes|length > 0 %}
             <i class="fa-solid fa-note-sticky icon-btn notes-icon" 
                title="View Notes" 
-               onclick="openNotesModal('{{ item.name|escapejs }}', `{{ item.notes|escapejs }}`)"></i>
+               onclick="openNotesModal('{{ item.name|escapejs }}', `{{ item.standby_notes|escapejs }}`)"></i>
         {% else %}
             <span style="color:#888;">—</span>
         {% endif %}
     </td>
+
+    <!-- Images Column - Only show original standby item images -->
     <td>
-        {% if item.images.all %}
+        {% if item.standby_images %}
             <i class="fas fa-images icon-btn images-icon" 
-               title="View Images ({{ item.images.count }} image{{ item.images.count|pluralize }})"
+               title="View Images ({{ item.standby_images.count }} image{{ item.standby_images.count|pluralize }})"
                onclick="openImageModal({{ item.id }})"></i>
-            {% for img in item.images.all %}
+            {% for img in item.standby_images %}
                 <input type="hidden" class="image-url" data-item="{{ item.id }}" value="{{ img.image.url }}">
             {% endfor %}
         {% else %}
             <span style="color:#888;">—</span>
         {% endif %}
     </td>
+    
     <td><strong>{{ item.stock }}</strong></td>
     <td>
         <a href="{% url 'item_edit' item.id %}" class="action-btn edit-btn" title="Edit Item">
@@ -469,6 +575,14 @@
             <button type="submit" class="action-btn delete-btn" title="Delete Item">
                 <i class="fas fa-trash-alt"></i>
             </button>
+
+{% if item.status == 'with_customer' %}
+  <a href="{% url 'standby_return_item' item.id %}" class="action-btn return-btn" 
+     title="Return Item">
+      <i class="fas fa-undo-alt"></i>
+  </a>
+{% endif %}
+
         </form>
     </td>
 </tr>
@@ -500,6 +614,28 @@
     <div id="modalText"></div>
   </div>
 </div>
+
+<!-- Customer Info Modal -->
+<div id="customerModal" class="modal">
+  <div class="modal-content" style="max-width: 500px;">
+    <span class="close-btn" onclick="closeCustomerModal()">&times;</span>
+    <div class="modal-header">
+      <h3>
+        <i class="fas fa-user"></i>
+        Customer Information
+      </h3>
+    </div>
+    <div id="customerDetails" style="padding: 20px; text-align: left; line-height: 1.6;">
+      <!-- Customer details will be loaded here -->
+    </div>
+    <div style="padding: 15px; border-top: 1px solid #eee; text-align: center;">
+      <button onclick="closeCustomerModal()" style="padding: 8px 20px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">
+        Close
+      </button>
+    </div>
+  </div>
+</div>
+
 
 <!-- Image Modal (Slider) -->
 <div id="imageModal">
@@ -606,6 +742,40 @@ document.addEventListener('click', function(event) {
     }
 });
 
+function viewCustomerInfo(itemId) {
+  fetch(`/app5/standby_get_customer_info/${itemId}/`)
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        const info = data.data;
+        document.getElementById('customerDetails').innerHTML = `
+          <p><strong>Item Name:</strong> ${info.item_name}</p>
+          <p><strong>Serial No.:</strong> ${info.serial_number}</p>
+          <p><strong>Customer:</strong> ${info.customer_name}</p>
+          <p><strong>Place:</strong> ${info.customer_place}</p>
+          <p><strong>Phone:</strong> ${info.customer_phone}</p>
+          <p><strong>Issued Date:</strong> ${info.issued_date}</p>
+        `;
+        document.getElementById('customerModal').style.display = 'block';
+      } else {
+        alert(data.error || 'No customer info available.');
+      }
+    })
+    .catch(error => console.error('Error fetching customer info:', error));
+}
+
+function closeCustomerModal() {
+  document.getElementById('customerModal').style.display = 'none';
+}
+
+// Close modal with Escape key
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    closeCustomerModal();
+  }
+});
+
+
 // Notification function
 function showNotification(message, type) {
     const notification = document.createElement('div');
@@ -660,6 +830,35 @@ function openNotesModal(itemName, notes) {
 function closeNotesModal() { 
     notesModal.style.display = 'none'; 
 }
+
+
+
+function viewCustomerInfo(itemId) {
+  fetch(`/app2/standby/customer-info/${itemId}/`)
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        const d = data.data;
+        document.getElementById('customerDetails').innerHTML = `
+          <strong>Item:</strong> ${d.item_name}<br>
+          <strong>Serial Number:</strong> ${d.serial_number}<br>
+          <strong>Customer Name:</strong> ${d.customer_name}<br>
+          <strong>Place:</strong> ${d.customer_place}<br>
+          <strong>Phone:</strong> ${d.customer_phone}<br>
+          <strong>Issued Date:</strong> ${d.issued_date}
+        `;
+        document.getElementById('customerModal').style.display = 'flex';
+      } else {
+        alert(data.error || 'Unable to fetch customer info.');
+      }
+    })
+    .catch(err => alert('Error: ' + err));
+}
+
+function closeCustomerModal() {
+  document.getElementById('customerModal').style.display = 'none';
+}
+
 
 /* Image Modal with Slider */
 const imageModal = document.getElementById('imageModal');

@@ -36,6 +36,11 @@ urlpatterns = [
     path('edit-field/<int:field_id>/', views.edit_field, name='edit_field'),
     path('feeder/', include('app2.urls')), 
     path('feeder/<int:feeder_id>/status-update/', app2_views.feeder_status_update, name='feeder_status_update'),
+    path('wfh_request/', include('wfh_Request.urls')),
+    # path('punchout_reminder/', include('punchout_reminder.urls')),
+
+
+
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 if settings.DEBUG:
