@@ -1,0 +1,784 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Back Button -->
+    <div class="mb-4">
+        <a href="{% url 'add_service_log' %}" class="btn btn-outline-primary">
+            <i class="fas fa-arrow-left me-2"></i>Back to Service Log
+        </a>
+    </div>
+
+    <!-- Customer Details Card -->
+    <div class="card shadow-lg border-0">
+        <!-- Customer Header -->
+        <div class="card-header customer-header text-white">
+            <div class="row align-items-center">
+                <div class="col-auto">
+                    <div class="customer-avatar">
+                        <i class="fas fa-user-circle"></i>
+                    </div>
+                </div>
+                <div class="col">
+                    <h1 class="customer-name mb-2">{{ customer_data.name|default:"N/A" }}</h1>
+                    <div class="customer-meta">
+                        <span class="meta-item">
+                            <i class="fas fa-id-card me-2"></i>
+                            {{ customer_data.code|default:"N/A" }}
+                        </span>
+                        <span class="meta-item">
+                            <i class="fas fa-mobile-alt me-2"></i>
+                            {{ customer_data.mobile|default:"N/A" }}
+                        </span>
+                        {% if customer_data.directdealing and customer_data.directdealing != 'N/A' %}
+                        <span class="neon-badge">
+                            <i class="fas fa-handshake me-1"></i>
+                            {{ customer_data.directdealing }}
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs Navigation -->
+        <div class="card-header customer-tabs">
+            <ul class="nav nav-tabs card-header-tabs" id="customerTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="details-tab" data-bs-toggle="tab" data-bs-target="#details" type="button" role="tab" aria-controls="details" aria-selected="true">
+                        <i class="fas fa-info-circle me-2"></i>Customer Details
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="service-history-tab" data-bs-toggle="tab" data-bs-target="#service-history" type="button" role="tab" aria-controls="service-history" aria-selected="false">
+                        <i class="fas fa-history me-2"></i>Service History
+                    </button>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Tab Content -->
+        <div class="card-body">
+            <div class="tab-content" id="customerTabContent">
+                <!-- Details Tab -->
+                <div class="tab-pane fade show active" id="details" role="tabpanel" aria-labelledby="details-tab">
+                    <div class="details-grid">
+                        <!-- Personal Information -->
+                        <div class="info-card">
+                            <h6><i class="fas fa-user me-2"></i>Personal Information</h6>
+                            <div class="info-row">
+                                <div class="info-label">Name:</div>
+                                <div class="info-value highlight-value">{{ customer_data.name|default:"N/A" }}</div>
+                            </div>
+                            <div class="info-row">
+                                <div class="info-label">Mobile:</div>
+                                <div class="info-value">{{ customer_data.mobile|default:"N/A" }}</div>
+                            </div>
+                            <div class="info-row">
+                                <div class="info-label">Account Code:</div>
+                                <div class="info-value">{{ customer_data.accountcode|default:"N/A" }}</div>
+                            </div>
+                        </div>
+
+                        <!-- Location Details -->
+                        <div class="info-card">
+                            <h6><i class="fas fa-map-marker-alt me-2"></i>Location Details</h6>
+                            <div class="info-row">
+                                <div class="info-label">Address:</div>
+                                <div class="info-value">{{ customer_data.address|default:"N/A" }}</div>
+                            </div>
+                            <div class="info-row">
+                                <div class="info-label">Address 3:</div>
+                                <div class="info-value">{{ customer_data.address3|default:"N/A" }}</div>
+                            </div>
+                            <div class="info-row">
+                                <div class="info-label">District:</div>
+                                <div class="info-value">{{ customer_data.district|default:"N/A" }}</div>
+                            </div>
+                            <div class="info-row">
+                                <div class="info-label">State:</div>
+                                <div class="info-value">{{ customer_data.state|default:"N/A" }}</div>
+                            </div>
+                        </div>
+
+                        <!-- Business Details -->
+                        <div class="info-card">
+                            <h6><i class="fas fa-building me-2"></i>Business Details</h6>
+                            <div class="info-row">
+                                <div class="info-label">Branch:</div>
+                                <div class="info-value">{{ customer_data.branch|default:"N/A" }}</div>
+                            </div>
+                            <div class="info-row">
+                                <div class="info-label">Route:</div>
+                                <div class="info-value">{{ customer_data.route|default:"N/A" }}</div>
+                            </div>
+                            <div class="info-row">
+                                <div class="info-label">Nature:</div>
+                                <div class="info-value">{{ customer_data.nature|default:"N/A" }}</div>
+                            </div>
+                            <div class="info-row">
+                                <div class="info-label">Direct Dealing:</div>
+                                <div class="info-value">{{ customer_data.directdealing|default:"N/A" }}</div>
+                            </div>
+                        </div>
+
+                        <!-- Service Information -->
+                        <div class="info-card">
+                            <h6><i class="fas fa-cogs me-2"></i>Service Information</h6>
+                            <div class="info-row">
+                                <div class="info-label">Software:</div>
+                                <div class="info-value">{{ customer_data.software|default:"N/A" }}</div>
+                            </div>
+                            <div class="info-row">
+                                <div class="info-label">Installation Date:</div>
+                                <div class="info-value" id="installationDateDisplay">
+                                    <!-- Installation date will be populated by JavaScript -->
+                                    {% if customer_data.installationdate %}
+                                        {% if customer_data.installationdate != 'None' %}
+                                            {{ customer_data.installationdate|date:"d-m-Y" }}
+                                        {% else %}
+                                            N/A
+                                        {% endif %}
+                                    {% else %}
+                                        N/A
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="info-row">
+                                <div class="info-label">Age:</div>
+                                <div class="info-value highlight-value" id="customerAge">Calculating...</div>
+                            </div>
+                            <div class="info-row">
+                                <div class="info-label">License Type:</div>
+                                <div class="info-value">
+                                    {% if customer_data.lictype %}
+                                    <span class="badge-status badge-license">{{ customer_data.lictype }}</span>
+                                    {% else %}
+                                    N/A
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="info-row">
+                                <div class="info-label">Clients:</div>
+                                <div class="info-value">{{ customer_data.clients|default:"N/A" }}</div>
+                            </div>
+                            <div class="info-row">
+                                <div class="info-label">SP:</div>
+                                <div class="info-value">{{ customer_data.sp|default:"N/A" }}</div>
+                            </div>
+                        </div>
+
+                        <!-- Additional Information -->
+                        <div class="info-card">
+                            <h6><i class="fas fa-chart-line me-2"></i>Additional Information</h6>
+                            <div class="info-row">
+                                <div class="info-label">AMC:</div>
+                                <div class="info-value">
+                                    {% if customer_data.amc %}
+                                    <span class="badge-status badge-amc">{{ customer_data.amc }}</span>
+                                    {% else %}
+                                    N/A
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="info-row">
+                                <div class="info-label">AMC Amount:</div>
+                                <div class="info-value">{{ customer_data.amcamt|default:"N/A" }}</div>
+                            </div>
+                            <div class="info-row">
+                                <div class="info-label">Priority:</div>
+                                <div class="info-value">
+                                    {% if customer_data.priority %}
+                                    <span class="badge-status badge-priority">{{ customer_data.priority }}</span>
+                                    {% else %}
+                                    N/A
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Service History Tab -->
+                <div class="tab-pane fade" id="service-history" role="tabpanel" aria-labelledby="service-history-tab">
+                    <div id="serviceHistoryContent">
+                        <div class="loading-content">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading service history...</span>
+                            </div>
+                            <p class="mt-3 text-muted">Loading service history...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.customer-header {
+    background: linear-gradient(135deg, #4f6df5 0%, #3a56e4 100%);
+    padding: 2.5rem 2rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.customer-header::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+    transform: rotate(45deg);
+}
+
+.customer-avatar {
+    font-size: 4rem;
+    text-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.customer-name {
+    font-size: 2.2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.customer-meta {
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    font-size: 1rem;
+    opacity: 0.95;
+}
+
+.neon-badge {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 8px 16px;
+    border-radius: 25px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    border: 2px solid #00ff88;
+    color: #00ff88;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 0 15px rgba(0, 255, 136, 0.5);
+    animation: neon-pulse 2s ease-in-out infinite alternate;
+}
+
+@keyframes neon-pulse {
+    from { box-shadow: 0 0 10px rgba(0, 255, 136, 0.5); }
+    to { box-shadow: 0 0 20px rgba(0, 255, 136, 0.8); }
+}
+
+.customer-tabs {
+    background: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    padding: 0;
+}
+
+.customer-tabs .nav-tabs {
+    border-bottom: none;
+    padding: 0 2rem;
+}
+
+.customer-tabs .nav-link {
+    border: none;
+    color: #6c757d;
+    font-weight: 500;
+    padding: 1.2rem 2rem;
+    border-radius: 12px 12px 0 0;
+    transition: all 0.3s ease;
+    font-size: 1rem;
+}
+
+.customer-tabs .nav-link:hover {
+    color: #4f6df5;
+    background-color: rgba(79, 109, 245, 0.05);
+}
+
+.customer-tabs .nav-link.active {
+    color: #4f6df5;
+    background-color: white;
+    border-bottom: 4px solid #4f6df5;
+    font-weight: 600;
+}
+
+.details-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+    gap: 1.5rem;
+    padding: 1rem 0;
+}
+
+.info-card {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 15px;
+    padding: 1.5rem;
+    border-left: 5px solid #4f6df5;
+    transition: all 0.3s ease;
+    height: fit-content;
+}
+
+.info-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.info-card h6 {
+    color: #4f6df5;
+    margin-bottom: 1.2rem;
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.info-row {
+    display: flex;
+    margin-bottom: 0.8rem;
+    padding-bottom: 0.8rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.info-row:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.info-label {
+    font-weight: 600;
+    color: #495057;
+    min-width: 160px;
+    font-size: 0.95rem;
+    flex-shrink: 0;
+}
+
+.info-value {
+    color: #6c757d;
+    flex: 1;
+    font-size: 0.95rem;
+    word-break: break-word;
+}
+
+.highlight-value {
+    color: #4f6df5;
+    font-weight: 600;
+}
+
+.badge-status {
+    display: inline-block;
+    padding: 0.4em 0.8em;
+    font-size: 0.8em;
+    font-weight: 700;
+    line-height: 1;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    border-radius: 0.5rem;
+}
+
+.badge-amc {
+    background-color: #d1ecf1;
+    color: #0c5460;
+}
+
+.badge-priority {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.badge-license {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+/* Service History Styles */
+.service-history-container {
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.service-history-item {
+    background: white;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+    transition: all 0.3s ease;
+}
+
+.service-history-item:hover {
+    border-color: #4f6df5;
+    box-shadow: 0 5px 15px rgba(79, 109, 245, 0.1);
+}
+
+.service-history-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.75rem;
+}
+
+.service-history-ticket {
+    font-weight: 600;
+    color: #4f6df5;
+    font-size: 0.95rem;
+}
+
+.service-history-meta {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    margin-top: 5px;
+}
+
+.service-history-date {
+    color: #6c757d;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.service-history-type {
+    background: #e9ecef;
+    padding: 0.3rem 0.8rem;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    color: #495057;
+    font-weight: 500;
+}
+
+.service-history-status {
+    padding: 0.3rem 0.8rem;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.status-completed {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.status-pending {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.status-in-progress {
+    background-color: #cce7ff;
+    color: #004085;
+}
+
+.service-history-complaints {
+    margin-bottom: 0.75rem;
+}
+
+.service-history-complaint {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 0.5rem 0.8rem;
+    margin-right: 0.5rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.85rem;
+    display: inline-block;
+}
+
+.complaint-status {
+    padding: 0.2rem 0.5rem;
+    border-radius: 8px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    margin-left: 0.5rem;
+}
+
+.service-history-remarks {
+    color: #495057;
+    font-size: 0.9rem;
+    margin-bottom: 0.75rem;
+    line-height: 1.4;
+}
+
+.service-history-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.8rem;
+    color: #6c757d;
+    padding-top: 0.5rem;
+    border-top: 1px solid #f1f3f4;
+}
+
+.loading-content {
+    padding: 3rem;
+    text-align: center;
+}
+
+.no-data {
+    text-align: center;
+    padding: 3rem;
+    color: #6c757d;
+}
+
+.no-data i {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    color: #dee2e6;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .customer-header {
+        padding: 1.5rem;
+    }
+    
+    .customer-name {
+        font-size: 1.5rem;
+    }
+    
+    .customer-meta {
+        flex-direction: column;
+        gap: 0.5rem;
+        align-items: flex-start;
+    }
+    
+    .details-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .info-row {
+        flex-direction: column;
+        gap: 0.3rem;
+    }
+    
+    .info-label {
+        min-width: auto;
+    }
+    
+    .customer-tabs .nav-link {
+        padding: 1rem 1.5rem;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Format and display installation date
+    formatInstallationDate();
+    
+    // Calculate and display customer age
+    calculateCustomerAge();
+    
+    // Load service history when service history tab is clicked
+    document.getElementById('service-history-tab').addEventListener('click', function() {
+        loadServiceHistory();
+    });
+});
+
+function formatInstallationDate() {
+    const installationDateElement = document.getElementById('installationDateDisplay');
+    const installationDate = '{{ customer_data.installationdate }}';
+    
+    console.log('Raw installation date:', installationDate); // Debug log
+    
+    if (installationDate && installationDate !== 'None' && installationDate !== 'N/A') {
+        try {
+            // Try to parse the date in multiple formats
+            let parsedDate;
+            
+            // If it's already a Date object string
+            if (installationDate.includes('T')) {
+                parsedDate = new Date(installationDate);
+            } 
+            // If it's in format "YYYY-MM-DD"
+            else if (/^\d{4}-\d{2}-\d{2}$/.test(installationDate)) {
+                parsedDate = new Date(installationDate);
+            }
+            // If it's in format "DD-MM-YYYY"
+            else if (/^\d{2}-\d{2}-\d{4}$/.test(installationDate)) {
+                const parts = installationDate.split('-');
+                parsedDate = new Date(parts[2], parts[1] - 1, parts[0]);
+            }
+            // Default fallback
+            else {
+                parsedDate = new Date(installationDate);
+            }
+            
+            if (!isNaN(parsedDate.getTime())) {
+                const formattedDate = parsedDate.toLocaleDateString('en-GB', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric'
+                });
+                installationDateElement.textContent = formattedDate;
+            } else {
+                installationDateElement.textContent = 'N/A';
+            }
+        } catch (error) {
+            console.error('Error parsing installation date:', error);
+            installationDateElement.textContent = 'N/A';
+        }
+    } else {
+        installationDateElement.textContent = 'N/A';
+    }
+}
+
+function calculateCustomerAge() {
+    const installationDate = '{{ customer_data.installationdate }}';
+    console.log('Age calculation - installation date:', installationDate); // Debug log
+    
+    if (installationDate && installationDate !== 'None' && installationDate !== 'N/A') {
+        try {
+            let installDate;
+            
+            // Try different date parsing methods
+            if (installationDate.includes('T')) {
+                installDate = new Date(installationDate);
+            } else if (/^\d{4}-\d{2}-\d{2}$/.test(installationDate)) {
+                installDate = new Date(installationDate);
+            } else if (/^\d{2}-\d{2}-\d{4}$/.test(installationDate)) {
+                const parts = installationDate.split('-');
+                installDate = new Date(parts[2], parts[1] - 1, parts[0]);
+            } else {
+                installDate = new Date(installationDate);
+            }
+            
+            if (isNaN(installDate.getTime())) {
+                document.getElementById('customerAge').textContent = 'N/A';
+                return;
+            }
+            
+            const today = new Date();
+            
+            let years = today.getFullYear() - installDate.getFullYear();
+            let months = today.getMonth() - installDate.getMonth();
+            
+            if (months < 0) {
+                years--;
+                months += 12;
+            }
+            
+            // Adjust for days if needed
+            if (today.getDate() < installDate.getDate()) {
+                months--;
+                if (months < 0) {
+                    years--;
+                    months += 12;
+                }
+            }
+            
+            const ageText = `${years} yr${years !== 1 ? 's' : ''} ${months} month${months !== 1 ? 's' : ''}`;
+            document.getElementById('customerAge').textContent = ageText;
+        } catch (error) {
+            console.error('Error calculating customer age:', error);
+            document.getElementById('customerAge').textContent = 'N/A';
+        }
+    } else {
+        document.getElementById('customerAge').textContent = 'N/A';
+    }
+}
+
+function loadServiceHistory() {
+    const serviceHistoryContent = document.getElementById('serviceHistoryContent');
+    const customerName = '{{ customer_data.name }}'.split('-')[0].trim();
+    
+    fetch(`/api/service-history/?customer_name=${encodeURIComponent(customerName)}`)
+        .then(response => {
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            return response.json();
+        })
+        .then(serviceHistory => {
+            if (!Array.isArray(serviceHistory) || serviceHistory.length === 0) {
+                serviceHistoryContent.innerHTML = `
+                    <div class="no-data">
+                        <i class="fas fa-history"></i>
+                        <h5>No Service History</h5>
+                        <p class="text-muted">This customer has no previous service records</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let serviceHistoryHTML = `
+                <div class="service-history-container">
+                    <h5 class="mb-4">Service History (${serviceHistory.length} records)</h5>
+            `;
+            
+            serviceHistory.forEach(log => {
+                const serviceDate = log.service_date ? new Date(log.service_date).toLocaleDateString('en-GB') : 'Date not available';
+                const complaints = log.complaints || [];
+                const statusClass = getStatusClass(log.status);
+                
+                serviceHistoryHTML += `
+                    <div class="service-history-item">
+                        <div class="service-history-header">
+                            <div class="service-history-basic-info">
+                                <div class="service-history-ticket">Ticket: ${log.ticket_number || 'N/A'}</div>
+                                <div class="service-history-meta">
+                                    <span class="service-history-date">${serviceDate}</span>
+                                    <span class="service-history-type">${log.complaint_type || 'N/A'}</span>
+                                </div>
+                            </div>
+                            <span class="service-history-status ${statusClass}">${log.status || 'Pending'}</span>
+                        </div>
+                        
+                        ${complaints.length > 0 ? `
+                            <div class="service-history-complaints">
+                                ${complaints.map(complaint => {
+                                    const complaintStatusClass = getStatusClass(complaint.status);
+                                    return `<span class="service-history-complaint">
+                                        ${complaint.description}
+                                        <span class="complaint-status ${complaintStatusClass}">${complaint.status || 'Pending'}</span>
+                                        ${complaint.note ? `<br><small class="text-muted">Note: ${complaint.note}</small>` : ''}
+                                    </span>`;
+                                }).join('')}
+                            </div>
+                        ` : ''}
+                        
+                        ${log.remarks ? `
+                            <div class="service-history-remarks">
+                                <strong>Remarks:</strong> ${log.remarks}
+                            </div>
+                        ` : ''}
+                        
+                        <div class="service-history-footer">
+                            <span class="service-history-technician">
+                                <i class="fas fa-user"></i> ${log.assigned_person || 'Not assigned'}
+                            </span>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            serviceHistoryHTML += '</div>';
+            serviceHistoryContent.innerHTML = serviceHistoryHTML;
+        })
+        .catch(error => {
+            console.error('Error loading service history:', error);
+            serviceHistoryContent.innerHTML = `
+                <div class="no-data">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <h5>Failed to Load History</h5>
+                    <p class="text-muted">Unable to load service history at this time</p>
+                </div>
+            `;
+        });
+}
+
+function getStatusClass(status) {
+    if (!status) return 'status-pending';
+    const statusLower = status.toLowerCase();
+    if (statusLower.includes('complete') || statusLower.includes('resolved')) return 'status-completed';
+    if (statusLower.includes('progress')) return 'status-in-progress';
+    return 'status-pending';
+}
+</script>
+{% endblock %}

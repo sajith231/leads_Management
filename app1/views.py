@@ -6228,7 +6228,6 @@ from .models import ServiceLog, Complaint, ServiceLogComplaint, User,ComplaintIm
 from django.utils import timezone
 from django.core.files.base import ContentFile
 import base64
-
 @login_required
 def add_service_log(request):
     complaints = Complaint.objects.all()
@@ -6373,6 +6372,22 @@ def get_service_history(request):
         })
     
     return JsonResponse(service_history, safe=False)
+from django.shortcuts import render, redirect
+import json
+
+@login_required
+def customer_details(request):
+    """Render customer details page"""
+    customer_data_json = request.GET.get('data', '{}')
+    try:
+        customer_data = json.loads(customer_data_json)
+    except json.JSONDecodeError:
+        customer_data = {}
+    
+    return render(request, 'customer_details.html', {
+        'customer_data': customer_data
+    })
+
 
 from django.shortcuts import render, redirect
 from .models import ServiceLog, Complaint, ServiceLogComplaint, ComplaintImage, User

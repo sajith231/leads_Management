@@ -478,51 +478,90 @@
 
     <form method="post" enctype="multipart/form-data" class="card p-4 shadow-sm">
         {% csrf_token %}
+<!-- ======  ONE BOX – THREE ROWS  ====== -->
+<div class="card shadow-lg mb-4 border-0">
+    <!-- Header -->
+    <div class="card-header text-center py-3 text-white"
+         style="background: linear-gradient(135deg,#6a11cb 0%, #2575fc 100%);">
+        <h5 class="mb-0 fw-bold"><i class="fas fa-id-card me-2"></i>Customer Information</h5>
+    </div>
 
-        <div class="mb-3" style="position: relative;">
-            <label for="customer" class="form-label">Customer</label>
-            <div class="input-group">
-                <input type="text" class="form-control" id="customer" name="customer" placeholder="Search or type new customer" autocomplete="off">
-                <button class="btn btn-outline-secondary" type="button" id="newCustomerBtn">New Customer</button>
-                <button class="btn btn-outline-info" type="button" id="viewCustomerBtn" title="View Customer Details" disabled>
-                    <i class="fas fa-eye"></i>
-                </button>
+    <div class="card-body p-0">
+        <!-- Customer row -->
+        <div class="d-flex align-items-center px-4 py-3 border-bottom"
+             style="background: linear-gradient(135deg,#667eea 0%, #764ba2 100%);">
+            <div class="text-white fw-600 me-3" style="min-width:100px;">
+                <i class="fas fa-user-circle me-2"></i>Customer
             </div>
-            <div id="customerDropdown" class="dropdown-menu">
-                <p style="padding: 10px; margin: 0;">Loading customers...</p>
+            <div class="flex-grow-1">
+                <div class="input-group input-group-sm">
+                    <input type="text" class="form-control" id="customer" name="customer"
+                           placeholder="Search or type new customer" autocomplete="off">
+                    <button class="btn btn-light" type="button" id="newCustomerBtn">New</button>
+                    <button class="btn btn-light" type="button" id="viewCustomerBtn" title="View Customer Details" disabled>
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+                <div id="customerDropdown" class="dropdown-menu w-100"></div>
+                <div class="new-customer-section mt-2" style="display:none;">
+                    <input type="text" class="form-control form-control-sm" name="customer_name" id="customer_name"
+                           value="{{ log.customer_name|default_if_none:'' }}" placeholder="Enter customer name manually">
+                </div>
             </div>
         </div>
 
-        <div class="mb-3 new-customer-section" style="display: none;">
-            <label class="form-label">Customer Name (Manual Entry)</label>
-            <input type="text" class="form-control" name="customer_name" id="customer_name" value="{{ log.customer_name|default_if_none:'' }}" placeholder="Enter customer name manually">
+        <!-- Place row -->
+        <div class="d-flex align-items-center px-4 py-3 border-bottom"
+             style="background: linear-gradient(135deg,#f093fb 0%, #f5576c 100%);">
+            <div class="text-white fw-600 me-3" style="min-width:100px;">
+                <i class="fas fa-map-marker-alt me-2"></i>Place
+            </div>
+            <div class="flex-grow-1">
+                <input type="text" class="form-control form-control-sm" name="place" id="place"
+                       value="{{ log.place|default_if_none:'' }}" placeholder="Enter place">
+            </div>
         </div>
 
-        <div class="mb-3">
-            <label class="form-label">Place</label>
-            <input type="text" class="form-control" name="place" id="place" value="{{ log.place|default_if_none:'' }}" placeholder="Enter place">
+        <!-- Phone row -->
+        <div class="d-flex align-items-center px-4 py-3"
+             style="background: linear-gradient(135deg,#4facfe 0%, #00f2fe 100%);">
+            <div class="text-white fw-600 me-3" style="min-width:100px;">
+                <i class="fas fa-phone me-2"></i>Phone
+            </div>
+            <div class="flex-grow-1">
+                <input type="text" class="form-control form-control-sm" name="phone_number"
+                       value="{{ log.phone_number|default_if_none:'' }}" placeholder="Customer's contact number">
+            </div>
         </div>
+    </div><!-- /card-body -->
+</div><!-- /card -->
+
 
         <div class="mb-3">
             <label class="form-label">Complaint Type</label>
             <select class="form-select" name="complaint_type" id="complaint_type" required>
                 <option value="">-- Select Type --</option>
-                <option value="software" {% if log and log.complaint_type == 'software' %}selected{% endif %}>Software</option>
-                <option value="hardware" {% if log and log.complaint_type == 'hardware' %}selected{% endif %}>Hardware</option>
-                <option value="both" {% if log and log.complaint_type == 'both' %}selected{% endif %}>Both</option>
+                <option value="software" 
+                    {% if log and log.complaint_type == 'software' %}selected{% elif not log %}selected{% endif %}>
+                    Software
+                </option>
+                <!-- keep other types here if required -->
+                {% comment %} add more options like <option value="hardware">Hardware</option> {% endcomment %}
             </select>
         </div>
 
+        <!-- ---------- Complaints Container (shown automatically when complaint_type exists) ---------- -->
         <div class="mb-4" id="complaints-container" style="display: none;">
             <label class="form-label mb-3">Select Complaints</label>
             
             <div id="complaint-blocks-container">
-                
                 <!-- Dynamic complaint blocks will be added here -->
             </div>
+
             <button type="button" class="btn btn-outline-secondary btn-sm mt-2" onclick="addComplaintBlock()">
                 <i class="bi bi-plus-circle"></i> Add Another Complaint
             </button>
+
             <div id="no-complaints-selected" class="alert alert-info mt-3" style="display: none;">
                 <i class="bi bi-info-circle"></i> Please select at least one complaint to proceed.
             </div>
@@ -533,10 +572,7 @@
             <textarea class="form-control" name="remarks" rows="3" placeholder="Additional remarks or observations...">{{ log.remarks|default_if_none:'' }}</textarea>
         </div>
 
-        <div class="mb-3">
-            <label class="form-label">Phone Number</label>
-            <input type="text" class="form-control" name="phone_number" value="{{ log.phone_number|default_if_none:'' }}" placeholder="Customer's contact number">
-        </div>
+        
 
         <div class="mb-3">
             <label class="form-label">Voice Note</label><br>
@@ -812,32 +848,13 @@ function stopRecording() {
 }
 
 // Updated function to show customer details in modal
+// Updated function to redirect to customer details page
 function showCustomerDetails(customerData) {
-    currentCustomerData = customerData;
-    const modal = new bootstrap.Modal(document.getElementById('customerDetailsModal'));
-    const content = document.getElementById('customerDetailsContent');
-    const customerName = document.getElementById('modalCustomerName');
-    const customerCode = document.getElementById('modalCustomerCode');
-    const customerMobile = document.getElementById('modalCustomerMobile');
-    const directDealingBadge = document.getElementById('modalDirectDealing');
-
-    // Update customer header information
-    customerName.textContent = customerData.name || 'N/A';
-    customerCode.textContent = customerData.code || 'N/A';
-    customerMobile.textContent = customerData.mobile || 'N/A';
+    // Encode customer data for URL
+    const encodedData = encodeURIComponent(JSON.stringify(customerData));
     
-    // Update Direct Dealing badge
-    if (customerData.directdealing && customerData.directdealing !== 'N/A') {
-        directDealingBadge.style.display = 'inline-flex';
-        directDealingBadge.innerHTML = `<i class="fas fa-handshake"></i> ${customerData.directdealing}`;
-    } else {
-        directDealingBadge.style.display = 'none';
-    }
-
-    // Load customer details in the details tab
-    loadCustomerDetails(customerData);
-    
-    modal.show();
+    // Redirect to customer details page
+    window.location.href = `/customer-details/?data=${encodedData}`;
 }
 
 // Function to load customer details in the details tab
@@ -1014,16 +1031,22 @@ function loadServiceHistory() {
         </div>
     `;
 
+    // Get the base customer name (before any dash/address)
+    const customerName = currentCustomerData.name.split('-')[0].trim();
+    
     // Fetch service history from your Django backend
-    fetch(`/api/service-history/?customer_name=${encodeURIComponent(currentCustomerData.name)}`)
+    fetch(`/api/service-history/?customer_name=${encodeURIComponent(customerName)}`)
         .then(response => {
+            console.log('Response status:', response.status);
             if (!response.ok) {
-                throw new Error('Network response was not ok');
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
             return response.json();
         })
         .then(serviceHistory => {
-            if (serviceHistory.length === 0) {
+            console.log('Service history received:', serviceHistory);
+            
+            if (!Array.isArray(serviceHistory) || serviceHistory.length === 0) {
                 serviceHistoryTab.innerHTML = `
                     <div class="no-service-history">
                         <i class="fas fa-history"></i>
@@ -1064,6 +1087,7 @@ function loadServiceHistory() {
                                     return `<span class="service-history-complaint">
                                         ${complaint.description}
                                         <span class="complaint-status ${complaintStatusClass}">${complaint.status || 'Pending'}</span>
+                                        ${complaint.note ? `<br><small class="text-muted">Note: ${complaint.note}</small>` : ''}
                                     </span>`;
                                 }).join('')}
                             </div>
@@ -1093,7 +1117,9 @@ function loadServiceHistory() {
                 <div class="no-service-history">
                     <i class="fas fa-exclamation-triangle"></i>
                     <p>Failed to load service history</p>
-                    <small class="text-muted">Please try again later</small>
+                    <small class="text-muted">Error: ${error.message}</small>
+                    <br>
+                    <small class="text-muted">Please check the console for more details</small>
                 </div>
             `;
         });
@@ -1391,6 +1417,46 @@ document.getElementById('customerDetailsModal').addEventListener('hidden.bs.moda
         padding: 15px;
     }
 }
+/* Larger dropdown for complaints */
+.larger-dropdown {
+    min-width: 400px !important;
+    max-width: 600px !important;
+    width: auto !important;
+}
+
+.larger-dropdown .select2-results__options {
+    max-height: 300px !important;
+    font-size: 14px;
+}
+
+.larger-dropdown .select2-results__option {
+    padding: 10px 12px !important;
+    line-height: 1.4 !important;
+    white-space: normal !important;
+    min-height: 40px !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+/* Make the select2 container itself larger */
+.complaint-block .select2-container {
+    width: 100% !important;
+}
+
+.complaint-block .select2-selection--single {
+    height: 45px !important;
+    padding: 8px 12px !important;
+    font-size: 14px !important;
+}
+
+.complaint-block .select2-selection__rendered {
+    line-height: 28px !important;
+    font-size: 14px !important;
+}
+
+.complaint-block .select2-selection__arrow {
+    height: 43px !important;
+}
 </style>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
@@ -1666,184 +1732,134 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 </script>
 <script>
-// Updated JavaScript code to replace the existing script in add_service_log.html
-
 let complaintIndex = 0;
 let currentComplaintType = '';
 
-function addComplaintBlock(selectedId = '', note = '') {
-    const container = document.getElementById('complaint-blocks-container');
-    const div = document.createElement('div');
-    div.classList.add('complaint-block', 'p-3', 'border', 'rounded', 'mb-3');
-    div.dataset.index = complaintIndex;
+// Helper: returns whether complaint c should be shown for currentComplaintType
+function complaintMatchesType(complaintType) {
+    return currentComplaintType === 'both' || currentComplaintType === complaintType;
+}
 
-    // build the <option>s exactly as you already do …
+// Add a complaint block (vertical layout: complaint on top, note under)
+// Add a complaint block (vertical layout: complaint on top, note under)
+// Add a complaint block (horizontal layout: complaint and remove button side by side)
+function addComplaintBlock(selectedId = '', noteText = '') {
+    const container = document.getElementById('complaint-blocks-container');
+    const idx = complaintIndex++;
+
+    const block = document.createElement('div');
+    block.className = 'complaint-block p-3 border rounded mb-3';
+    block.dataset.index = idx;
+
+    // Build complaint options from server-side template data
     let complaintOptions = '<option value="">-- Select Complaint --</option>';
     {% for c in complaints %}
-        if (currentComplaintType === 'both' || currentComplaintType === '{{ c.complaint_type }}') {
-            const selected = selectedId === '{{ c.id }}' ? 'selected' : '';
-            complaintOptions += `<option value="{{ c.id }}" ${selected}>
-                                    {{ c.description }} ({{ c.complaint_type|title }})
-                                 </option>`;
+        if (complaintMatchesType('{{ c.complaint_type }}')) {
+            const sel = selectedId && selectedId.toString() === '{{ c.id }}' ? 'selected' : '';
+            complaintOptions += `<option value="{{ c.id }}" ${sel}>{{ c.description|escapejs }} ({{ c.complaint_type|title }})</option>`;
         }
     {% endfor %}
 
-    // drop the HTML in
-    div.innerHTML = `
-        <div class="row g-3 align-items-start">
-            <div class="col-md-4">
+    // Horizontal layout: complaint select and remove button side by side
+    block.innerHTML = `
+        <div class="d-flex align-items-start gap-3">
+            <div class="flex-grow-1">
                 <label class="form-label">Complaint</label>
-                <select class="form-select complaint-select"
-                        name="complaints"
-                        required
-                        onchange="updateNoteFieldName(this)">
+                <select class="form-select complaint-select" name="" onchange="updateNoteFieldName(this)" required>
                     ${complaintOptions}
                 </select>
             </div>
-            <div class="col-md-4">
-                <label class="form-label">Note</label>
-                <input type="text" class="form-control note-input" name="note_placeholder_${complaintIndex}" placeholder="Optional note" value="${note}">
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">Upload Images</label>
-                <input type="file" class="form-control image-input" name="images_placeholder_${complaintIndex}" multiple accept="image/*">
-                <small class="text-muted">Hold Ctrl to select multiple images</small>
-            </div>
-            <div class="col-md-1 text-end d-flex align-items-end">
-                <button type="button" class="btn btn-danger btn-sm mt-auto" onclick="removeComplaintBlock(this)">
-                    <i class="bi bi-x"></i>
+            <div class="remove-wrap" style="margin-top: 28px;">
+                <button type="button" class="btn btn-danger btn-sm" onclick="removeComplaintBlock(this)" title="Remove complaint">
+                    <i class="fas fa-times"></i>
                 </button>
             </div>
         </div>
-        <div class="image-preview-container mt-2" id="image-preview-${complaintIndex}" style="display: none;">
-            <div class="d-flex flex-wrap gap-2"></div>
-        </div>
     `;
 
-    container.appendChild(div);
-    $(div).find('.complaint-select').select2({
+    container.appendChild(block);
+
+    // Initialize select2 for the complaint select with larger dropdown
+    const selEl = block.querySelector('.complaint-select');
+    try { $(selEl).select2('destroy'); } catch (e) {}
+    $(selEl).select2({
         placeholder: '-- Select Complaint --',
         allowClear: true,
         width: '100%',
-        dropdownParent: $(div)          // fixes z‑index if you ever use modals
-    });
-    complaintIndex++;
-
-    // Initialize image preview for this block
-    const imageInput = div.querySelector('.image-input');
-    imageInput.addEventListener('change', function() {
-        previewImages(this);
+        dropdownParent: $(block),
+        dropdownCssClass: 'larger-dropdown' // Add custom CSS class for larger dropdown
     });
 
+    // If selectedId provided (edit mode), programmatically set value and update note field name
     if (selectedId) {
-        const imageInput = div.querySelector('.image-input');
-        const noteInput = div.querySelector('.note-input');
-        imageInput.name = `images_${selectedId}`;
-        noteInput.name = `note_${selectedId}`;
+        selEl.value = selectedId;
+        try { $(selEl).trigger('change.select2'); } catch (e) { /* ignore */ }
+        updateNoteFieldName(selEl);
     }
 
-    complaintIndex++;
     updateComplaintSelectionStatus();
 }
 
-function previewImages(input) {
-    const previewContainer = input.closest('.complaint-block').querySelector('.image-preview-container');
-    const previewDiv = previewContainer.querySelector('.d-flex');
-    previewDiv.innerHTML = '';
-    
-    if (input.files.length > 0) {
-        previewContainer.style.display = 'block';
-        
-        for (let i = 0; i < input.files.length; i++) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const previewItem = document.createElement('div');
-                previewItem.style.position = 'relative';
-                previewItem.style.width = '80px';
-                previewItem.style.height = '80px';
-                previewItem.style.border = '1px solid #ddd';
-                previewItem.style.borderRadius = '4px';
-                previewItem.style.overflow = 'hidden';
-                
-                const img = document.createElement('img');
-                img.src = e.target.result;
-                img.style.width = '100%';
-                img.style.height = '100%';
-                img.style.objectFit = 'cover';
-                
-                previewItem.appendChild(img);
-                previewDiv.appendChild(previewItem);
-            }
-            reader.readAsDataURL(input.files[i]);
-        }
-    } else {
-        previewContainer.style.display = 'none';
-    }
-}
-
-
-
-function updateNoteFieldName(selectElement) {
-    const block = selectElement.closest('.complaint-block');
+// Called when a complaint select changes; updates the corresponding note input's name and enabled state
+function updateNoteFieldName(selectEl) {
+    const block = selectEl.closest('.complaint-block');
     const noteInput = block.querySelector('.note-input');
-    const imageInput = block.querySelector('.image-input');
-    const selectedComplaintId = selectElement.value;
+    const selectedComplaintId = selectEl.value;
+    const idx = block.dataset.index || 'placeholder';
 
     if (selectedComplaintId) {
         noteInput.name = `note_${selectedComplaintId}`;
-        imageInput.name = `images_${selectedComplaintId}`;
         noteInput.disabled = false;
-        imageInput.disabled = false;
     } else {
-        const idx = block.getAttribute('data-index');
         noteInput.name = `note_placeholder_${idx}`;
-        imageInput.name = `images_placeholder_${idx}`;
-        noteInput.disabled = true;
-        imageInput.disabled = true;
         noteInput.value = '';
+        noteInput.disabled = true;
+        // clear select2 visible value
+        try { $(selectEl).val(null).trigger('change.select2'); } catch(e) {}
     }
 }
 
-
-
+// Remove a complaint block
 function removeComplaintBlock(button) {
     const block = button.closest('.complaint-block');
-    block.remove();
+    if (block) block.remove();
     updateComplaintSelectionStatus();
 }
 
+// Show/hide the "no complaints selected" alert
 function updateComplaintSelectionStatus() {
     const blocks = document.querySelectorAll('.complaint-block');
     const alertBox = document.getElementById('no-complaints-selected');
-    if (blocks.length === 0) {
+    if (!blocks || blocks.length === 0) {
         alertBox.style.display = 'block';
     } else {
         alertBox.style.display = 'none';
     }
 }
 
+// Refresh options for all complaint selects when complaint type changes
 function updateComplaintOptions() {
-    // Update all existing complaint dropdowns with the new complaint type
-    const complaintSelects = document.querySelectorAll('.complaint-select');
-    
-    complaintSelects.forEach(select => {
-        const currentValue = select.value;
+    const selects = document.querySelectorAll('.complaint-select');
+    selects.forEach(sel => {
+        const currentValue = sel.value;
         let newOptions = '<option value="">-- Select Complaint --</option>';
-        
-        // Add complaints that match the selected type
         {% for c in complaints %}
-             if (currentComplaintType === 'both' || currentComplaintType === '{{ c.complaint_type }}') {
-                const selected = currentValue === '{{ c.id }}' ? 'selected' : '';
-                newOptions += `<option value="{{ c.id }}" ${selected}>{{ c.description }}</option>`;
+            if (complaintMatchesType('{{ c.complaint_type }}')) {
+                const selAttr = currentValue && currentValue.toString() === '{{ c.id }}' ? 'selected' : '';
+                newOptions += `<option value="{{ c.id }}" ${selAttr}>{{ c.description|escapejs }} ({{ c.complaint_type|title }})</option>`;
             }
         {% endfor %}
-        
-        select.innerHTML = newOptions;
-        
-        // Update the note field name based on selection
-        updateNoteFieldName(select);
-        
-        // If the previously selected complaint doesn't match the new type, reset
+
+        try { $(sel).select2('destroy'); } catch(e) {}
+        sel.innerHTML = newOptions;
+        $(sel).select2({
+            placeholder: '-- Select Complaint --',
+            allowClear: true,
+            width: '100%',
+            dropdownParent: $(sel).closest('.complaint-block')
+        });
+
+        // If previously selected value no longer matches type, clear it
         if (currentValue) {
             let foundMatch = false;
             {% for c in complaints %}
@@ -1852,49 +1868,61 @@ function updateComplaintOptions() {
                 }
             {% endfor %}
             if (!foundMatch) {
-                select.value = '';
-                updateNoteFieldName(select);
+                sel.value = '';
+                try { $(sel).val(null).trigger('change.select2'); } catch(e) {}
             }
         }
+
+        updateNoteFieldName(sel);
     });
 }
 
-document.addEventListener('DOMContentLoaded', function () {
+// DOM ready initialization
+document.addEventListener('DOMContentLoaded', function() {
     const complaintTypeSelect = document.getElementById('complaint_type');
-    
-    complaintTypeSelect.addEventListener('change', function () {
-        const container = document.getElementById('complaints-container');
-        const blocks = document.getElementById('complaint-blocks-container');
-        
-        currentComplaintType = this.value;
+    const complaintsContainer = document.getElementById('complaints-container');
+    const blocksContainer = document.getElementById('complaint-blocks-container');
 
-        if (this.value) {
-            container.style.display = 'block';
-            
-            // Update existing complaint dropdowns
+    // Initial complaint type (template may have set default)
+    currentComplaintType = (complaintTypeSelect.value && complaintTypeSelect.value !== '') ? complaintTypeSelect.value : 'software';
+    complaintTypeSelect.value = currentComplaintType;
+
+    // Show container if a type exists initially
+    if (currentComplaintType) {
+        complaintsContainer.style.display = 'block';
+    }
+
+    // When complaint type changes
+    complaintTypeSelect.addEventListener('change', function() {
+        currentComplaintType = this.value;
+        if (currentComplaintType) {
+            complaintsContainer.style.display = 'block';
             updateComplaintOptions();
-            
-            // If no blocks exist, add the first one
-            if (blocks.children.length === 0) {
+            if (blocksContainer.children.length === 0) {
                 addComplaintBlock();
             }
         } else {
-            container.style.display = 'none';
-            blocks.innerHTML = '';
+            complaintsContainer.style.display = 'none';
+            blocksContainer.innerHTML = '';
             complaintIndex = 0;
             currentComplaintType = '';
         }
+        updateComplaintSelectionStatus();
     });
 
-    // Initialize on page load if editing
+    // If editing an existing log, build its complaint blocks from server-side data
     {% if log and log.complaint_type %}
         currentComplaintType = '{{ log.complaint_type }}';
-        if (currentComplaintType) {
-            document.getElementById('complaints-container').style.display = 'block';
-            // Add existing complaint blocks for edit mode
-            {% for sc in selected_complaints %}
-                addComplaintBlock('{{ sc.complaint.id }}', '{{ sc.note|escapejs }}');
-            {% endfor %}
+        complaintTypeSelect.value = currentComplaintType;
+        document.getElementById('complaints-container').style.display = 'block';
+
+        {% for sc in selected_complaints %}
+            addComplaintBlock('{{ sc.complaint.id }}', `{{ sc.note|escapejs }}`);
+        {% endfor %}
+    {% else %}
+        // Not editing: if container visible and no blocks, add an initial block
+        if (complaintsContainer.style.display !== 'none' && blocksContainer.children.length === 0) {
+            addComplaintBlock();
         }
     {% endif %}
 
