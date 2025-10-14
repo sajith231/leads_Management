@@ -6097,7 +6097,7 @@ def servicelog_list(request):
     added_by_filter        = request.GET.get('added_by', '')
     assigned_person_filter = request.GET.get('assigned_person', '')
     status_filter          = request.GET.get('status', '')
-    complaint_status_filter = request.GET.get('pending', 'Pending')
+    complaint_status_filter = request.GET.get('complaint_status', 'Pending')
     complaint_filter       = request.GET.get('complaint_type', '')
     start_date_filter      = request.GET.get('start_date', today)
     end_date_filter        = request.GET.get('end_date', today)
