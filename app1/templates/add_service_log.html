@@ -13,6 +13,19 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
 <style>
+/* Customer dropdown sizing and behavior */
+#customerDropdown {
+    display: none; /* shown via JS */
+    max-height: 300px;
+    overflow-y: auto;
+    width: 100% !important;
+}
+
+#customerDropdown .dropdown-item {
+    white-space: normal;
+    line-height: 1.3;
+}
+
     .image-thumbnail {
     width: 60px;
     height: 60px;
@@ -1419,9 +1432,15 @@ document.getElementById('customerDetailsModal').addEventListener('hidden.bs.moda
 }
 /* Larger dropdown for complaints */
 .larger-dropdown {
-    min-width: 400px !important;
-    max-width: 600px !important;
-    width: auto !important;
+    min-width: unset !important;
+    max-width: none !important;
+    width: 100% !important;
+}
+
+/* Ensure dropdown matches select width when open */
+.select2-container--open .select2-dropdown {
+    width: 100% !important;
+    left: 0 !important;
 }
 
 .larger-dropdown .select2-results__options {
@@ -1456,6 +1475,33 @@ document.getElementById('customerDetailsModal').addEventListener('hidden.bs.moda
 
 .complaint-block .select2-selection__arrow {
     height: 43px !important;
+}
+
+/* Complaint summary label shown after selection */
+.complaint-summary {
+    display: none;
+    font-weight: 700;
+    color: #343a40;
+    padding: 10px 12px;
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+    width: 100%;
+}
+
+.complaint-summary .badge-type {
+    font-weight: 600;
+    margin-left: 8px;
+    background: #e9ecef;
+    color: #495057;
+    padding: 0.1rem 0.4rem;
+    border-radius: 8px;
+    font-size: 0.7rem;
+}
+
+.complaint-actions {
+    display: flex;
+    gap: 8px;
 }
 </style>
 <script>
@@ -1543,7 +1589,8 @@ document.addEventListener("DOMContentLoaded", function () {
             data.forEach(customer => {
                 const option = document.createElement("div");
                 option.classList.add("dropdown-item");
-                option.textContent = `${customer.name}, ${customer.address}`;
+                const branchVal = customer.branch || customer.branch_name || '';
+                option.textContent = `${customer.name}${branchVal ? ' — ' + branchVal : ''}${customer.address ? ', ' + customer.address : ''}`;
                 option.setAttribute("data-address", customer.address);
                 option.setAttribute("data-customer-code", customer.code);
                 option.addEventListener("click", function () {
@@ -1735,6 +1782,13 @@ document.addEventListener("DOMContentLoaded", function () {
 let complaintIndex = 0;
 let currentComplaintType = '';
 
+// Build all complaints array from server for sorting/filtering
+const allComplaints = [
+    {% for c in complaints %}
+    { id: '{{ c.id }}', description: '{{ c.description|escapejs }}', type: '{{ c.complaint_type }}' },
+    {% endfor %}
+];
+
 // Helper: returns whether complaint c should be shown for currentComplaintType
 function complaintMatchesType(complaintType) {
     return currentComplaintType === 'both' || currentComplaintType === complaintType;
@@ -1751,30 +1805,34 @@ function addComplaintBlock(selectedId = '', noteText = '') {
     block.className = 'complaint-block p-3 border rounded mb-3';
     block.dataset.index = idx;
 
-    // Build complaint options from server-side template data
+    // Build complaint options from preloaded array, filter by type and sort alphabetically
     let complaintOptions = '<option value="">-- Select Complaint --</option>';
-    {% for c in complaints %}
-        if (complaintMatchesType('{{ c.complaint_type }}')) {
-            const sel = selectedId && selectedId.toString() === '{{ c.id }}' ? 'selected' : '';
-            complaintOptions += `<option value="{{ c.id }}" ${sel}>{{ c.description|escapejs }} ({{ c.complaint_type|title }})</option>`;
-        }
-    {% endfor %}
+    const filteredSorted = allComplaints
+        .filter(c => complaintMatchesType(c.type))
+        .sort((a, b) => a.description.localeCompare(b.description));
+    filteredSorted.forEach(c => {
+        const selAttr = selectedId && selectedId.toString() === c.id ? 'selected' : '';
+        complaintOptions += `<option value="${c.id}" ${selAttr}>${c.description} (${c.type.charAt(0).toUpperCase() + c.type.slice(1)})</option>`;
+    });
 
-    // Horizontal layout: complaint select and remove button side by side
+    // Vertical layout: numbered label, full-width select, and actions
+    const complaintNumber = container.children.length + 1;
     block.innerHTML = `
-        <div class="d-flex align-items-start gap-3">
-            <div class="flex-grow-1">
-                <label class="form-label">Complaint</label>
-                <select class="form-select complaint-select" name="complaints" onchange="updateNoteFieldName(this)" required>
-                    ${complaintOptions}
-                </select>
-            </div>
-            <div class="remove-wrap" style="margin-top: 28px;">
+        <div class="mb-2 d-flex justify-content-between align-items-center">
+            <label class="form-label mb-0">${complaintNumber}</label>
+            <div class="complaint-actions">
                 <button type="button" class="btn btn-danger btn-sm" onclick="removeComplaintBlock(this)" title="Remove complaint">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
         </div>
+        <div class="mb-2">
+            <select class="form-select complaint-select" name="complaints" onchange="updateNoteFieldName(this)" required>
+                ${complaintOptions}
+            </select>
+            <div class="complaint-summary mt-2"></div>
+        </div>
+        
     `;
 
     container.appendChild(block);
@@ -1787,7 +1845,16 @@ function addComplaintBlock(selectedId = '', noteText = '') {
         allowClear: true,
         width: '100%',
         dropdownParent: $(block),
-        dropdownCssClass: 'larger-dropdown' // Add custom CSS class for larger dropdown
+        dropdownCssClass: 'larger-dropdown', // Add custom CSS class for larger dropdown
+        templateResult: function(data) {
+            if (!data.id) return data.text;
+            const $result = $('<span><strong>' + data.text + '</strong></span>');
+            return $result;
+        },
+        templateSelection: function(data) {
+            if (!data.id) return data.text;
+            return $('<span><strong>' + data.text + '</strong></span>');
+        }
     });
 
     // If selectedId provided (edit mode), programmatically set value and update note field name
@@ -1803,19 +1870,29 @@ function addComplaintBlock(selectedId = '', noteText = '') {
 // Called when a complaint select changes; updates the corresponding note input's name and enabled state
 function updateNoteFieldName(selectEl) {
     const block = selectEl.closest('.complaint-block');
-    const noteInput = block.querySelector('.note-input');
     const selectedComplaintId = selectEl.value;
     const idx = block.dataset.index || 'placeholder';
 
     if (selectedComplaintId) {
-        noteInput.name = `note_${selectedComplaintId}`;
-        noteInput.disabled = false;
+        // Hide the dropdown and show bold summary with type
+        const selectedText = $(selectEl).find('option:selected').text();
+        const [namePart, typePartRaw] = selectedText.split(' (');
+        const typePart = typePartRaw ? typePartRaw.replace(')', '') : '';
+        const summaryEl = block.querySelector('.complaint-summary');
+        summaryEl.innerHTML = `<strong>${namePart}</strong>${typePart ? ' <span class="badge-type">' + typePart + '</span>' : ''}`;
+        summaryEl.style.display = 'block';
+        $(selectEl).select2('close');
+        $(selectEl).next('.select2').hide();
     } else {
-        noteInput.name = `note_placeholder_${idx}`;
-        noteInput.value = '';
-        noteInput.disabled = true;
         // clear select2 visible value
         try { $(selectEl).val(null).trigger('change.select2'); } catch(e) {}
+        // Show back the select if previously hidden
+        $(selectEl).next('.select2').show();
+        const summaryEl = block.querySelector('.complaint-summary');
+        if (summaryEl) {
+            summaryEl.style.display = 'none';
+            summaryEl.textContent = '';
+        }
     }
 }
 
@@ -1843,12 +1920,13 @@ function updateComplaintOptions() {
     selects.forEach(sel => {
         const currentValue = sel.value;
         let newOptions = '<option value="">-- Select Complaint --</option>';
-        {% for c in complaints %}
-            if (complaintMatchesType('{{ c.complaint_type }}')) {
-                const selAttr = currentValue && currentValue.toString() === '{{ c.id }}' ? 'selected' : '';
-                newOptions += `<option value="{{ c.id }}" ${selAttr}>{{ c.description|escapejs }} ({{ c.complaint_type|title }})</option>`;
-            }
-        {% endfor %}
+        const filteredSorted = allComplaints
+            .filter(c => complaintMatchesType(c.type))
+            .sort((a, b) => a.description.localeCompare(b.description));
+        filteredSorted.forEach(c => {
+            const selAttr = currentValue && currentValue.toString() === c.id ? 'selected' : '';
+            newOptions += `<option value="${c.id}" ${selAttr}>${c.description} (${c.type.charAt(0).toUpperCase() + c.type.slice(1)})</option>`;
+        });
 
         try { $(sel).select2('destroy'); } catch(e) {}
         sel.innerHTML = newOptions;
@@ -1856,17 +1934,26 @@ function updateComplaintOptions() {
             placeholder: '-- Select Complaint --',
             allowClear: true,
             width: '100%',
-            dropdownParent: $(sel).closest('.complaint-block')
+            dropdownParent: $(sel).closest('.complaint-block'),
+            templateResult: function(data) {
+                if (!data.id) return data.text;
+                const $result = $('<span><strong>' + data.text + '</strong></span>');
+                return $result;
+            },
+            templateSelection: function(data) {
+                if (!data.id) return data.text;
+                return $('<span><strong>' + data.text + '</strong></span>');
+            }
         });
 
         // If previously selected value no longer matches type, clear it
         if (currentValue) {
             let foundMatch = false;
-            {% for c in complaints %}
-                if ('{{ c.id }}' === currentValue && '{{ c.complaint_type }}' === currentComplaintType) {
+            allComplaints.forEach(c => {
+                if (c.id === currentValue && c.type === currentComplaintType) {
                     foundMatch = true;
                 }
-            {% endfor %}
+            });
             if (!foundMatch) {
                 sel.value = '';
                 try { $(sel).val(null).trigger('change.select2'); } catch(e) {}
