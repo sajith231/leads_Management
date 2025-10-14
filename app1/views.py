@@ -6236,7 +6236,6 @@ from .models import ServiceLog, Complaint, ServiceLogComplaint, User,ComplaintIm
 from django.utils import timezone
 from django.core.files.base import ContentFile
 import base64
-
 @login_required
 def add_service_log(request):
     complaints = Complaint.objects.all()
@@ -6329,7 +6328,73 @@ def add_service_log(request):
 
     return render(request, 'add_service_log.html', {'complaints': complaints, 'customers': customers})
 
+from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
+from .models import ServiceLog, ServiceLogComplaint
 
+@login_required
+def get_service_history(request):
+    customer_name = request.GET.get('customer_name', '')
+    
+    if not customer_name:
+        return JsonResponse([], safe=False)
+    
+    # Get service logs for this customer - using 'date' field for ordering
+    service_logs = ServiceLog.objects.filter(customer_name__icontains=customer_name).order_by('-date')
+    
+    service_history = []
+    for log in service_logs:
+        # Get complaints for this service log
+        complaints = ServiceLogComplaint.objects.filter(service_log=log).select_related('complaint')
+        complaint_data = [{
+            'description': sc.complaint.description,
+            'note': sc.note,
+            'status': sc.status  # Get status from ServiceLogComplaint
+        } for sc in complaints]
+        
+        # Format the customer name (remove address part if exists)
+        display_customer_name = log.customer_name
+        if '-' in log.customer_name:
+            display_customer_name = log.customer_name.split('-')[0].strip()
+        
+        # Determine overall status based on complaints
+        overall_status = 'Pending'
+        if complaints:
+            statuses = [sc.status for sc in complaints]
+            if all(status == 'Completed' for status in statuses):
+                overall_status = 'Completed'
+            elif any(status == 'In Progress' for status in statuses):
+                overall_status = 'In Progress'
+            elif any(status == 'Completed' for status in statuses):
+                overall_status = 'Partially Completed'
+        
+        service_history.append({
+            'ticket_number': log.ticket_number,
+            'service_date': log.date.isoformat() if log.date else '',
+            'complaints': complaint_data,
+            'remarks': log.remarks,
+            'complaint_type': log.complaint_type,  # Use the raw value
+            'status': overall_status,
+            'assigned_person': log.assigned_person.name if log.assigned_person else 'Not assigned',
+            'customer_name': display_customer_name
+        })
+    
+    return JsonResponse(service_history, safe=False)
+from django.shortcuts import render, redirect
+import json
+
+@login_required
+def customer_details(request):
+    """Render customer details page"""
+    customer_data_json = request.GET.get('data', '{}')
+    try:
+        customer_data = json.loads(customer_data_json)
+    except json.JSONDecodeError:
+        customer_data = {}
+    
+    return render(request, 'customer_details.html', {
+        'customer_data': customer_data
+    })
 
 
 from django.shortcuts import render, redirect

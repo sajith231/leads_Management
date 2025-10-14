@@ -478,34 +478,64 @@
 
     <form method="post" enctype="multipart/form-data" class="card p-4 shadow-sm">
         {% csrf_token %}
+<!-- ======  ONE BOX – THREE ROWS  ====== -->
+<div class="card shadow-lg mb-4 border-0">
+    <!-- Header -->
+    <div class="card-header text-center py-3 text-white"
+         style="background: linear-gradient(135deg,#6a11cb 0%, #2575fc 100%);">
+        <h5 class="mb-0 fw-bold"><i class="fas fa-id-card me-2"></i>Customer Information</h5>
+    </div>
 
-        <div class="mb-3" style="position: relative;">
-            <label for="customer" class="form-label">Customer</label>
-            <div class="input-group">
-                <input type="text" class="form-control" id="customer" name="customer" placeholder="Search or type new customer" autocomplete="off">
-                <button class="btn btn-outline-secondary" type="button" id="newCustomerBtn">New Customer</button>
-                <button class="btn btn-outline-info" type="button" id="viewCustomerBtn" title="View Customer Details" disabled>
-                    <i class="fas fa-eye"></i>
-                </button>
+    <div class="card-body p-0">
+        <!-- Customer row -->
+        <div class="d-flex align-items-center px-4 py-3 border-bottom"
+             style="background: linear-gradient(135deg,#667eea 0%, #764ba2 100%);">
+            <div class="text-white fw-600 me-3" style="min-width:100px;">
+                <i class="fas fa-user-circle me-2"></i>Customer
             </div>
-            <div id="customerDropdown" class="dropdown-menu">
-                <p style="padding: 10px; margin: 0;">Loading customers...</p>
+            <div class="flex-grow-1">
+                <div class="input-group input-group-sm">
+                    <input type="text" class="form-control" id="customer" name="customer"
+                           placeholder="Search or type new customer" autocomplete="off">
+                    <button class="btn btn-light" type="button" id="newCustomerBtn">New</button>
+                    <button class="btn btn-light" type="button" id="viewCustomerBtn" title="View Customer Details" disabled>
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+                <div id="customerDropdown" class="dropdown-menu w-100"></div>
+                <div class="new-customer-section mt-2" style="display:none;">
+                    <input type="text" class="form-control form-control-sm" name="customer_name" id="customer_name"
+                           value="{{ log.customer_name|default_if_none:'' }}" placeholder="Enter customer name manually">
+                </div>
             </div>
         </div>
 
-        <div class="mb-3 new-customer-section" style="display: none;">
-            <label class="form-label">Customer Name (Manual Entry)</label>
-            <input type="text" class="form-control" name="customer_name" id="customer_name" value="{{ log.customer_name|default_if_none:'' }}" placeholder="Enter customer name manually">
+        <!-- Place row -->
+        <div class="d-flex align-items-center px-4 py-3 border-bottom"
+             style="background: linear-gradient(135deg,#f093fb 0%, #f5576c 100%);">
+            <div class="text-white fw-600 me-3" style="min-width:100px;">
+                <i class="fas fa-map-marker-alt me-2"></i>Place
+            </div>
+            <div class="flex-grow-1">
+                <input type="text" class="form-control form-control-sm" name="place" id="place"
+                       value="{{ log.place|default_if_none:'' }}" placeholder="Enter place">
+            </div>
         </div>
 
-        <div class="mb-3">
-            <label class="form-label">Place</label>
-            <input type="text" class="form-control" name="place" id="place" value="{{ log.place|default_if_none:'' }}" placeholder="Enter place">
+        <!-- Phone row -->
+        <div class="d-flex align-items-center px-4 py-3"
+             style="background: linear-gradient(135deg,#4facfe 0%, #00f2fe 100%);">
+            <div class="text-white fw-600 me-3" style="min-width:100px;">
+                <i class="fas fa-phone me-2"></i>Phone
+            </div>
+            <div class="flex-grow-1">
+                <input type="text" class="form-control form-control-sm" name="phone_number"
+                       value="{{ log.phone_number|default_if_none:'' }}" placeholder="Customer's contact number">
+            </div>
         </div>
-        <div class="mb-3">
-            <label class="form-label">Phone Number</label>
-            <input type="text" class="form-control" name="phone_number" value="{{ log.phone_number|default_if_none:'' }}" placeholder="Customer's contact number">
-        </div>
+    </div><!-- /card-body -->
+</div><!-- /card -->
+
 
         <div class="mb-3">
             <label class="form-label">Complaint Type</label>
@@ -818,32 +848,13 @@ function stopRecording() {
 }
 
 // Updated function to show customer details in modal
+// Updated function to redirect to customer details page
 function showCustomerDetails(customerData) {
-    currentCustomerData = customerData;
-    const modal = new bootstrap.Modal(document.getElementById('customerDetailsModal'));
-    const content = document.getElementById('customerDetailsContent');
-    const customerName = document.getElementById('modalCustomerName');
-    const customerCode = document.getElementById('modalCustomerCode');
-    const customerMobile = document.getElementById('modalCustomerMobile');
-    const directDealingBadge = document.getElementById('modalDirectDealing');
-
-    // Update customer header information
-    customerName.textContent = customerData.name || 'N/A';
-    customerCode.textContent = customerData.code || 'N/A';
-    customerMobile.textContent = customerData.mobile || 'N/A';
+    // Encode customer data for URL
+    const encodedData = encodeURIComponent(JSON.stringify(customerData));
     
-    // Update Direct Dealing badge
-    if (customerData.directdealing && customerData.directdealing !== 'N/A') {
-        directDealingBadge.style.display = 'inline-flex';
-        directDealingBadge.innerHTML = `<i class="fas fa-handshake"></i> ${customerData.directdealing}`;
-    } else {
-        directDealingBadge.style.display = 'none';
-    }
-
-    // Load customer details in the details tab
-    loadCustomerDetails(customerData);
-    
-    modal.show();
+    // Redirect to customer details page
+    window.location.href = `/customer-details/?data=${encodedData}`;
 }
 
 // Function to load customer details in the details tab
@@ -1020,16 +1031,22 @@ function loadServiceHistory() {
         </div>
     `;
 
+    // Get the base customer name (before any dash/address)
+    const customerName = currentCustomerData.name.split('-')[0].trim();
+    
     // Fetch service history from your Django backend
-    fetch(`/api/service-history/?customer_name=${encodeURIComponent(currentCustomerData.name)}`)
+    fetch(`/api/service-history/?customer_name=${encodeURIComponent(customerName)}`)
         .then(response => {
+            console.log('Response status:', response.status);
             if (!response.ok) {
-                throw new Error('Network response was not ok');
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
             return response.json();
         })
         .then(serviceHistory => {
-            if (serviceHistory.length === 0) {
+            console.log('Service history received:', serviceHistory);
+            
+            if (!Array.isArray(serviceHistory) || serviceHistory.length === 0) {
                 serviceHistoryTab.innerHTML = `
                     <div class="no-service-history">
                         <i class="fas fa-history"></i>
@@ -1070,6 +1087,7 @@ function loadServiceHistory() {
                                     return `<span class="service-history-complaint">
                                         ${complaint.description}
                                         <span class="complaint-status ${complaintStatusClass}">${complaint.status || 'Pending'}</span>
+                                        ${complaint.note ? `<br><small class="text-muted">Note: ${complaint.note}</small>` : ''}
                                     </span>`;
                                 }).join('')}
                             </div>
@@ -1099,7 +1117,9 @@ function loadServiceHistory() {
                 <div class="no-service-history">
                     <i class="fas fa-exclamation-triangle"></i>
                     <p>Failed to load service history</p>
-                    <small class="text-muted">Please try again later</small>
+                    <small class="text-muted">Error: ${error.message}</small>
+                    <br>
+                    <small class="text-muted">Please check the console for more details</small>
                 </div>
             `;
         });
@@ -1397,6 +1417,46 @@ document.getElementById('customerDetailsModal').addEventListener('hidden.bs.moda
         padding: 15px;
     }
 }
+/* Larger dropdown for complaints */
+.larger-dropdown {
+    min-width: 400px !important;
+    max-width: 600px !important;
+    width: auto !important;
+}
+
+.larger-dropdown .select2-results__options {
+    max-height: 300px !important;
+    font-size: 14px;
+}
+
+.larger-dropdown .select2-results__option {
+    padding: 10px 12px !important;
+    line-height: 1.4 !important;
+    white-space: normal !important;
+    min-height: 40px !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+/* Make the select2 container itself larger */
+.complaint-block .select2-container {
+    width: 100% !important;
+}
+
+.complaint-block .select2-selection--single {
+    height: 45px !important;
+    padding: 8px 12px !important;
+    font-size: 14px !important;
+}
+
+.complaint-block .select2-selection__rendered {
+    line-height: 28px !important;
+    font-size: 14px !important;
+}
+
+.complaint-block .select2-selection__arrow {
+    height: 43px !important;
+}
 </style>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
@@ -1681,6 +1741,8 @@ function complaintMatchesType(complaintType) {
 }
 
 // Add a complaint block (vertical layout: complaint on top, note under)
+// Add a complaint block (vertical layout: complaint on top, note under)
+// Add a complaint block (horizontal layout: complaint and remove button side by side)
 function addComplaintBlock(selectedId = '', noteText = '') {
     const container = document.getElementById('complaint-blocks-container');
     const idx = complaintIndex++;
@@ -1698,25 +1760,18 @@ function addComplaintBlock(selectedId = '', noteText = '') {
         }
     {% endfor %}
 
-    // vertical stacked layout: complaint select on top, note underneath, remove button to the right-bottom
+    // Horizontal layout: complaint select and remove button side by side
     block.innerHTML = `
-        <div class="stack">
-            <div>
+        <div class="d-flex align-items-start gap-3">
+            <div class="flex-grow-1">
                 <label class="form-label">Complaint</label>
                 <select class="form-select complaint-select" name="" onchange="updateNoteFieldName(this)" required>
                     ${complaintOptions}
                 </select>
             </div>
-
-            <div>
-                <label class="form-label">Note</label>
-                <input type="text" class="form-control note-input" name="note_placeholder_${idx}"
-                       placeholder="Optional note" value="${noteText ? noteText.replace(/"/g,'&quot;') : ''}" disabled>
-            </div>
-
-            <div class="remove-wrap">
+            <div class="remove-wrap" style="margin-top: 28px;">
                 <button type="button" class="btn btn-danger btn-sm" onclick="removeComplaintBlock(this)" title="Remove complaint">
-                    <i class="bi bi-x"></i>
+                    <i class="fas fa-times"></i>
                 </button>
             </div>
         </div>
@@ -1724,14 +1779,15 @@ function addComplaintBlock(selectedId = '', noteText = '') {
 
     container.appendChild(block);
 
-    // Initialize select2 for the complaint select and increase its dropdown parent to avoid z-index issues
+    // Initialize select2 for the complaint select with larger dropdown
     const selEl = block.querySelector('.complaint-select');
     try { $(selEl).select2('destroy'); } catch (e) {}
     $(selEl).select2({
         placeholder: '-- Select Complaint --',
         allowClear: true,
         width: '100%',
-        dropdownParent: $(block)
+        dropdownParent: $(block),
+        dropdownCssClass: 'larger-dropdown' // Add custom CSS class for larger dropdown
     });
 
     // If selectedId provided (edit mode), programmatically set value and update note field name
