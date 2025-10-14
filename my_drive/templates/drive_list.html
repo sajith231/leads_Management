@@ -25,7 +25,6 @@
     margin-bottom: 24px;
   }
 
-  /* Button styling */
   .add-btn {
     background: #2563eb;
     border: none;
@@ -37,9 +36,7 @@
     border-radius: 6px;
     transition: background 0.2s;
   }
-  .add-btn:hover { 
-    background: #1d4ed8; 
-  }
+  .add-btn:hover { background: #1d4ed8; }
 
   /* Table styling */
   table {
@@ -59,7 +56,7 @@
     font-size: 14px;
   }
 
-  th { 
+  th {
     background: linear-gradient(135deg, #2563eb 0%, #0a2f94 100%);
     color: white;
     font-weight: 600;
@@ -67,7 +64,6 @@
     font-size: 11px;
     letter-spacing: 0.08em;
     border-bottom: 2px solid #1e40af;
-    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.1);
   }
 
   td {
@@ -77,43 +73,17 @@
     transition: all 0.2s ease;
   }
 
-  tbody tr {
-    transition: all 0.2s ease;
-  }
-
-  tbody tr:nth-child(even) td {
-    background: #f9fafb;
-  }
-
-  tbody tr:last-child td:first-child {
-    border-bottom-left-radius: 12px;
-  }
-
-  tbody tr:last-child td:last-child {
-    border-bottom-right-radius: 12px;
-  }
-
-  tbody tr:last-child td {
-    border-bottom: none;
-  }
-
-  tbody tr:hover td { 
+  tbody tr:nth-child(even) td { background: #f9fafb; }
+  tbody tr:hover td {
     background: white;
     transform: scale(1.01);
     box-shadow: 0 2px 8px rgba(37, 99, 235, 0.15);
   }
 
-  /* Center align specific columns */
-  th:first-child,
-  td:first-child,
-  th:nth-child(4),
-  td:nth-child(4),
-  th:nth-child(5),
-  td:nth-child(5),
-  th:nth-child(6),
-  td:nth-child(6) {
-    text-align: center;
-  }
+  th:first-child, td:first-child,
+  th:nth-child(4), td:nth-child(4),
+  th:nth-child(5), td:nth-child(5),
+  th:nth-child(6), td:nth-child(6) { text-align: center; }
 
   /* Action buttons */
   .action-btn {
@@ -129,19 +99,11 @@
     margin: 0 4px;
   }
 
-  .edit-btn { 
-    background: #10b981;
-  }
-  .edit-btn:hover { 
-    background: #059669;
-  }
+  .edit-btn { background: #10b981; }
+  .edit-btn:hover { background: #059669; }
 
-  .delete-btn { 
-    background: #ef4444;
-  }
-  .delete-btn:hover { 
-    background: #dc2626;
-  }
+  .delete-btn { background: #ef4444; }
+  .delete-btn:hover { background: #dc2626; }
 
   /* File icon + badge */
   .file-link {
@@ -157,9 +119,7 @@
     font-size: 20px;
     transition: background 0.2s;
   }
-  .file-link:hover { 
-    background: #dbeafe;
-  }
+  .file-link:hover { background: #dbeafe; }
 
   .badge {
     position: absolute;
@@ -224,11 +184,13 @@
           </a>
         </td>
         <td>
-          <a href="{% url 'drive_delete' folder.id %}" class="action-btn delete-btn"
-             onclick="return confirm('Are you sure you want to delete this folder?');"
-             title="Delete">
-            <i class="fa-solid fa-trash"></i>
-          </a>
+         <a href="{% url 'drive_delete' folder.id %}" 
+   class="action-btn delete-btn"
+   onclick="return handleFolderDelete({{ folder.files.count }}, {{ folder.subfolders.count }});"
+   title="Delete folder">
+  <i class="fa-solid fa-trash"></i>
+</a>
+
         </td>
       </tr>
       {% empty %}
@@ -239,5 +201,41 @@
     </tbody>
   </table>
 </div>
+
+<script>
+  function handleFolderDelete(fileCount) {
+    if (fileCount > 0) {
+      alert("🚫 This folder cannot be deleted because it contains files.\n\nPlease remove all files first.");
+      return false; // Prevent navigation
+    } else {
+      return confirm("Are you sure you want to delete this empty folder?");
+    }
+  }
+
+
+  function handleFolderDelete(fileCount, subfolderCount) {
+    // If there are subfolders, do not allow deletion — explain to user.
+    if (subfolderCount > 0) {
+      // Option 1: simple alert
+      alert("🚫 This folder cannot be deleted because it contains subfolders.\n\nPlease remove any subfolders first.");
+
+      // Optionally you could offer to navigate to the folder to manage subfolders:
+      // if (confirm("This folder contains subfolders. Open folder to manage them?")) {
+      //   // change location to folder detail page (requires folder id; you'd need data attribute)
+      // }
+
+      return false; // Prevent navigation to delete view
+    }
+
+    // If there are files (but no subfolders), explain and prevent deletion.
+    if (fileCount > 0) {
+      alert("🚫 This folder cannot be deleted because it contains files.\n\nPlease remove all files first.");
+      return false;
+    }
+
+    // If empty, ask for final confirmation.
+    return confirm("Are you sure you want to delete this empty folder?");
+  }
+</script>
 
 {% endblock %}

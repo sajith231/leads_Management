@@ -4,7 +4,8 @@ from django.views.decorators.http import require_http_methods
 from .models import DriveFolder, DriveFile
 import mimetypes
 import os
-
+from django.http import HttpResponse
+from django.contrib import messages
 
 # ---------- Helpers ----------
 def _breadcrumbs(folder):
@@ -32,12 +33,24 @@ def drive_add(request):
 
 
 def drive_delete(request, pk):
+    """
+    Prevent deletion of a folder if it contains any subfolders.
+    If no subfolders exist, delete and redirect to parent or drive_list.
+    """
     folder = get_object_or_404(DriveFolder, pk=pk)
     parent = folder.parent
+
+    # Server-side protection: don't allow delete if subfolders exist
+    if folder.subfolders.exists():
+        # Add a message so the user knows why it failed (if your templates show messages)
+        messages.error(request, "Cannot delete folder because it contains subfolders. Remove subfolders first.")
+        if parent:
+            return redirect("drive_detail", pk=parent.pk)
+        return redirect("drive_list")
+
+    # Safe to delete
     folder.delete()
-    if parent:
-        return redirect("drive_detail", pk=parent.pk)
-    return redirect("drive_list")
+    return redirect("drive_detail", pk=parent.pk) if parent else redirect("drive_list")
 
 
 @require_http_methods(["GET", "POST"])
@@ -144,3 +157,13 @@ def drive_edit(request, pk):
             return redirect("drive_list")
 
     return render(request, "drive_add.html", {"folder": folder, "mode": "edit"})
+
+
+def file_download(request, pk):
+    f = get_object_or_404(DriveFile, pk=pk)
+    file_path = f.file.path
+    file_handle = open(file_path, "rb")
+    response = FileResponse(file_handle, as_attachment=True)
+    filename = f.file_name if f.file_name else os.path.basename(f.file.name)
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+    return response
