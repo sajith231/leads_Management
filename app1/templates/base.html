@@ -560,15 +560,15 @@
    Fuel Management
 </a>
 
-<a href="{% url 'drive_list' %}">
-   <i class="fas fa-folder" style="margin-right: 5px;"></i>
-   My Drive
-</a>
+
 
 </div>
 {% endif %}
 
-
+<a href="{% url 'drive_list' %}">
+   <i class="fas fa-folder" style="margin-right: 5px;"></i>
+   My Drive
+</a>
 
 
 <div class="mainmenu" onclick="toggleSysmacMenu()">
@@ -900,16 +900,19 @@
         Fuel Management
     </a>
     
-    <a href="{% url 'drive_list' %}">
-        <i class="fas fa-folder" style="margin-right: 5px;"></i>
-        My Drive
-    </a> 
+    
    
 {% endif %}
 
+
 </div>
 {% endif %}
-
+{% if 'drive_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+<a href="{% url 'drive_list' %}">
+    <i class="fas fa-folder" style="margin-right: 5px;"></i>
+    My Drive
+</a>
+{% endif %}
 
 
 

@@ -5369,6 +5369,14 @@ def configure_user_menu(request, user_id):
     ]
 },
 {
+    'name': 'My Drive',
+    'icon': 'fas fa-folder',
+    'submenus': [
+        {'id': 'drive_list', 'name': 'My Drive', 'icon': 'fas fa-folder'}
+    ]
+},
+
+{
     'name': 'SYSMAC',
     'icon': 'fas fa-microchip',
     'submenus': [
