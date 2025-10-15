@@ -779,6 +779,53 @@
         color: #333;
     }
 
+    /* NEW: Warranty and Office Select Styles */
+    .warranty-select, .office-select {
+        width: 100%;
+        padding: 7px 8px;
+        font-size: 13px;
+        border: 2px solid #e1e8ed;
+        border-radius: 8px;
+        background: #fafafa;
+        outline: none;
+        transition: all 0.3s ease;
+        box-sizing: border-box;
+    }
+
+    .warranty-select:focus, .office-select:focus {
+        border-color: #28a745;
+        background: #fff;
+        box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.1);
+    }
+
+    /* Warranty Details Styles */
+    .warranty-details {
+        margin-top: 15px;
+        background: #fff8e1;
+        padding: 15px;
+        border-radius: 8px;
+        border: 2px solid #ffc107;
+        display: none;
+    }
+    
+    .warranty-details h4 {
+        color: #b8860b;
+        font-size: 16px;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .warranty-instructions {
+        margin-top: 10px;
+        padding: 8px;
+        background: #fff3cd;
+        border-radius: 4px;
+        font-size: 11px;
+        color: #856404;
+    }
+
     @media (max-width: 768px) {
         .form-row,
         .serial-config-row,
@@ -854,6 +901,15 @@
         .btn-no-assign {
             width: 100%;
         }
+
+        /* Mobile adjustments for new form fields */
+        .form-inline .form-group {
+            min-width: unset;
+        }
+        
+        .warranty-details {
+            padding: 10px;
+        }
     }
 </style>
 </head>
@@ -919,13 +975,12 @@
                     <div class="form-inline">
                         <div class="form-group">
                             <label>Select Item *</label>
-                            <select name="items[]" onchange="toggleItemFields(this, 0)" required>
+                            <select name="items[]" onchange="toggleItemFields(this, 0); updateWarrantyItemName(this, 0)" required>
     <option value="">Select Item</option>
     {% for item in items %}
         <option value="{{ item.name }}">{{ item.name }}</option>
     {% endfor %}
 </select>
-
                         </div>
 
                         <div class="form-group">
@@ -938,7 +993,27 @@
                             <label>Configuration</label>
                             <input type="text" name="configs[]">
                         </div>
+
+                        <!-- NEW: Warranty Item Question -->
+                        <div class="form-group">
+                            <label>Warranty Item?</label>
+                            <select name="warranty[]" class="warranty-select">
+                                <option value="no">No</option>
+                                <option value="yes">Yes</option>
+                            </select>
+                        </div>
+
+                        <!-- NEW: Take to Office Question -->
+                        <div class="form-group">
+                            <label>Take to Office?</label>
+                            <select name="take_to_office[]" class="office-select">
+                                <option value="no">No</option>
+                                <option value="yes">Yes</option>
+                            </select>
+                        </div>
                     </div>
+
+                    
 
                     <div class="hidden-section" id="item-fields-0" style="display:none;">
                         <div class="complaint-section">
@@ -1080,6 +1155,9 @@ function selectCustomer(customer) {
 
     display.style.display = "block";
     document.getElementById("customer-results").style.display = "none";
+    
+    // Update customer name in all warranty sections
+    updateAllWarrantyCustomerNames();
 }
 
 // Close dropdown when clicking outside
@@ -1221,7 +1299,7 @@ document.addEventListener("click", function(e) {
                     <div class="form-inline">
                         <div class="form-group">
                             <label>Select Item *</label>
-                            <select name="items[]" onchange="toggleItemFields(this, ${index})" required>
+                            <select name="items[]" onchange="toggleItemFields(this, ${index}); updateWarrantyItemName(this, ${index})" required>
                                 <option value="">Select Item</option>
                                 {% for item in items %}
                                     <option value="{{ item }}">{{ item }}</option>
@@ -1238,6 +1316,63 @@ document.addEventListener("click", function(e) {
                         <div class="form-group">
                             <label>Configuration</label>
                             <input type="text" name="configs[]">
+                        </div>
+
+                        <!-- NEW: Warranty Item Question -->
+                        <div class="form-group">
+                            <label>Warranty Item?</label>
+                            <select name="warranty[]" class="warranty-select">
+                                <option value="no">No</option>
+                                <option value="yes">Yes</option>
+                            </select>
+                        </div>
+
+                        <!-- NEW: Take to Office Question -->
+                        <div class="form-group">
+                            <label>Take to Office?</label>
+                            <select name="take_to_office[]" class="office-select">
+                                <option value="no">No</option>
+                                <option value="yes">Yes</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Warranty details (hidden by default) -->
+                    <div class="warranty-details">
+                        <h4>
+                            <i class="fas fa-file-contract"></i>
+                            Warranty Item Details
+                        </h4>
+
+                        <div class="form-inline">
+                            <div class="form-group">
+                                <label>Supplier *</label>
+                                <select name="supplier[]" class="supplier-select">
+                                    <option value="">Select Supplier</option>
+                                    {% for supplier in suppliers %}
+                                        <option value="{{ supplier.id }}">{{ supplier.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Ticket No *</label>
+                                <input type="text" name="warranty_ticket_no[]" placeholder="Enter Ticket No">
+                            </div>
+
+                            <div class="form-group">
+                                <label>Customer Name</label>
+                                <input type="text" name="warranty_customer_name[]" readonly style="background:#f5f5f5;">
+                            </div>
+
+                            <div class="form-group">
+                                <label>Item Name</label>
+                                <input type="text" name="warranty_item_name[]" readonly style="background:#f5f5f5;">
+                            </div>
+                        </div>
+                        
+                        <div class="warranty-instructions">
+                            <strong>Note:</strong> Warranty items require supplier information and ticket number for processing.
                         </div>
                     </div>
 
@@ -1282,6 +1417,17 @@ document.addEventListener("click", function(e) {
             `;
 
             container.insertAdjacentHTML('beforeend', html);
+            
+            // Initialize warranty handler for the new item
+            const newWarrantySelect = document.querySelector(`#item-${index} .warranty-select`);
+            if (newWarrantySelect) {
+                newWarrantySelect.addEventListener('change', function() {
+                    toggleWarrantyDetails(this, index);
+                });
+                // Initialize warranty details
+                toggleWarrantyDetails(newWarrantySelect, index);
+            }
+            
             // Initialize complaint data for new item
             complaintData[index] = [{number: 1, text: ''}];
             itemCount++;
@@ -1461,6 +1607,14 @@ document.addEventListener("click", function(e) {
 
         // Initialize complaint data for first item
         complaintData[0] = [{number: 1, text: ''}];
+        
+        // Initialize warranty handlers when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeWarrantyHandlers();
+            
+            // Also update customer name in warranty sections when page loads
+            updateAllWarrantyCustomerNames();
+        });
     </script>
 </body>
 </html>

@@ -55,17 +55,15 @@ def jobcard_create(request):
         customer = request.POST.get('customer', '').strip()
         address = request.POST.get('address', '').strip()
         phone = request.POST.get('phone', '').strip()
-        status = request.POST.get('status', 'logged')
         
-        # NEW: Check if self-assigned
+        # Check if self-assigned
         self_assigned = request.POST.get('self_assigned') == 'true'
-        technician = None  # Initialize technician
-        assigned_date = None  # Initialize assigned_date
-        
-        # Get the current user as creator
+        technician = None
+        assigned_date = None
+
+        # Creator
         creator = None
         creator_name = "Unknown"
-        
         if request.session.get('custom_user_id'):
             try:
                 creator = User.objects.get(id=request.session['custom_user_id'])
@@ -74,14 +72,11 @@ def jobcard_create(request):
                 pass
         
         if self_assigned:
-            status = 'sent_technician'  # Change status if self-assigned
-            assigned_date = timezone.now()  # Set assigned date to current time
-            
-            # Set technician to current user's name
-            if creator:
-                technician = creator_name
-            else:
-                technician = "Self-Assigned User"  # Fallback
+            status = 'sent_technician'
+            assigned_date = timezone.now()
+            technician = creator_name if creator else "Self-Assigned User"
+        else:
+            status = 'logged'
 
         if not customer or not address or not phone:
             messages.error(request, "Customer name, address, and phone are required fields.")
@@ -90,24 +85,49 @@ def jobcard_create(request):
         items = request.POST.getlist('items[]')
         serials = request.POST.getlist('serials[]')
         configs = request.POST.getlist('configs[]')
+        warranties = request.POST.getlist('warranty[]')
+        take_to_offices = request.POST.getlist('take_to_office[]')
+        suppliers = request.POST.getlist('supplier[]')
+        ticket_nos = request.POST.getlist('warranty_ticket_no[]')
+        warranty_customers = request.POST.getlist('warranty_customer_name[]')
+        warranty_items = request.POST.getlist('warranty_item_name[]')
+
         items_data = []
 
-        # Build items_data structure with proper serial and config
         for idx, item_name in enumerate(items):
             if not item_name:
                 continue
+
+            # ✅ CORRECT: Get warranty and take_to_office values for each item
+            warranty_value = warranties[idx] if idx < len(warranties) else "no"
+            take_to_office_value = take_to_offices[idx] if idx < len(take_to_offices) else "no"
 
             item_entry = {
                 "item": item_name,
                 "serial": serials[idx] if idx < len(serials) else "",
                 "config": configs[idx] if idx < len(configs) else "",
-                "status": status,  # Add status for each item
-                "complaints": []
+                "status": status,
+                "complaints": [],
+                # ✅ STORE WARRANTY AND TAKE TO OFFICE FOR EACH ITEM
+                "warranty": warranty_value,
+                "take_to_office": take_to_office_value,
             }
 
+            # ✅ Add warranty details if enabled
+            if warranty_value == 'yes':
+                item_entry["warranty_details"] = {
+                    "supplier": suppliers[idx] if idx < len(suppliers) else "",
+                    "ticket_no": ticket_nos[idx] if idx < len(ticket_nos) else "",
+                    "customer_name": warranty_customers[idx] if idx < len(warranty_customers) else customer,
+                    "item_name": warranty_items[idx] if idx < len(warranty_items) else item_name,
+                }
+            else:
+                item_entry["warranty_details"] = None
+
+            # Complaints for this item
             complaint_descriptions = request.POST.getlist(f'complaints-{idx}[]')
             complaint_notes = request.POST.getlist(f'complaint_notes-{idx}[]')
-
+            
             for complaint_idx, description in enumerate(complaint_descriptions):
                 if not description.strip():
                     continue
@@ -117,9 +137,9 @@ def jobcard_create(request):
                     "images": []
                 })
 
-            items_data.append(item_entry) 
+            items_data.append(item_entry)
 
-        # Create job card - UPDATED with self_assigned field
+        # Create Job Card
         job_card = JobCard.objects.create(
             customer=customer,
             address=address,
@@ -127,12 +147,12 @@ def jobcard_create(request):
             status=status,
             items_data=items_data,
             created_by=creator,
-            technician=technician,  # Set technician for self-assigned jobs
-            assigned_date=assigned_date,  # Set assigned_date for self-assigned jobs
-            self_assigned=self_assigned  # NEW: Add the self_assigned flag
+            technician=technician,
+            assigned_date=assigned_date,
+            self_assigned=self_assigned
         )
 
-        # Save uploaded images and update items_data image names
+        # Save complaint images
         for idx, item_name in enumerate(items):
             complaint_descriptions = request.POST.getlist(f'complaints-{idx}[]')
             for complaint_idx, description in enumerate(complaint_descriptions):
@@ -146,77 +166,70 @@ def jobcard_create(request):
                         item_index=idx,
                         complaint_index=complaint_idx
                     )
+                    # Update items_data with image info
                     try:
-                        items_data[idx]["complaints"][complaint_idx]["images"].append(image.name)
-                    except Exception:
-                        logger.debug("Index mismatch while attaching image name to items_data")
+                        if idx < len(items_data) and complaint_idx < len(items_data[idx]["complaints"]):
+                            items_data[idx]["complaints"][complaint_idx]["images"].append(image.name)
+                    except Exception as e:
+                        logger.debug(f"Error attaching image: {e}")
 
+        # Update job card with final items_data (including images)
         job_card.items_data = items_data
         job_card.save()
 
-        # WhatsApp message details - UPDATED to include self-assignment info
-        created_date = job_card.created_at.strftime("%d-%m-%Y") if hasattr(job_card, "created_at") else datetime.now().strftime("%d-%m-%Y")
-
-        if hasattr(job_card, "ticket_no") and job_card.ticket_no:
-            ticket_no = str(job_card.ticket_no)
-        else:
-            ticket_no = f"JC{job_card.id:06d}"
-
-        # NEW: Add self-assignment info to WhatsApp message
-        assignment_info = ""
-        if self_assigned and technician:
-            assignment_info = f"*Assigned To:* {technician} (Self-Assigned)\n"
-
-        # ITEMS: only item names (no serial/config/complaints)
+        # WhatsApp Notification
+        created_date = job_card.created_at.strftime("%d-%m-%Y") if job_card.created_at else datetime.now().strftime("%d-%m-%Y")
+        ticket_no = job_card.ticket_no
+        
+        # Build items list with warranty and office info
         items_lines = []
-        for idx, item in enumerate(items_data):
-            items_lines.append(f"{idx+1}. {item.get('item','')}")
+        for item in items_data:
+            line = f"• {item['item']}"
+            if item.get('warranty') == 'yes':
+                line += " 📋(Warranty)"
+            if item.get('take_to_office') == 'yes':
+                line += " 🏢(Office)"
+            items_lines.append(line)
+        
+        items_block = "\n".join(items_lines)
 
-        items_block = "\n".join(items_lines) if items_lines else "No items listed."
-
-        # Build final message - UPDATED with assignment info
         message_text = (
-            f"📋 *Job Card Created* \n\n"
-            f"*Created Date:* {created_date}\n"
+            f"📋 *New Job Card Created*\n\n"
             f"*Ticket No:* {ticket_no}\n"
-            f"{assignment_info}"
+            f"*Date:* {created_date}\n"
             f"*Customer:* {customer}\n"
-            f"*Address:* {address}\n"
-            f"*Phone:* {phone}\n\n"
-            f"*Items:*\n{items_block}\n"
+            f"*Place:* {address}\n"
+            f"*Phone:* {phone}\n"
+            f"*Items ({len(items_data)}):*\n{items_block}\n"
         )
 
-        # WhatsApp API
-        whatsapp_api_base = "https://app.dxing.in/api/send/whatsapp"
-        params_base = {
-            "secret": "7b8ae820ecb39f8d173d57b51e1fce4c023e359e",
-            "account": "1756959119812b4ba287f5ee0bc9d43bbf5bbe87fb68b9118fcf1af",
-            "type": "text",
-            "priority": 1
-        }
+        # Send WhatsApp (optional)
+        try:
+            whatsapp_api_base = "https://app.dxing.in/api/send/whatsapp"
+            params = {
+                "secret": "7b8ae820ecb39f8d173d57b51e1fce4c023e359e",
+                "account": "1756959119812b4ba287f5ee0bc9d43bbf5bbe87fb68b9118fcf1af",
+                "type": "text",
+                "priority": 1,
+                "recipient": "9946545535",
+                "message": message_text
+            }
+            requests.get(whatsapp_api_base, params=params, timeout=5)
+        except Exception as e:
+            logger.debug(f"WhatsApp sending failed: {e}")
 
-        recipients = ["9946545535"]
-
-        for recipient in recipients:
-            params = params_base.copy()
-            params["recipient"] = recipient
-            params["message"] = message_text
-            try:
-                resp = requests.get(whatsapp_api_base, params=params, timeout=10)
-                if resp.status_code != 200:
-                    logger.error("WhatsApp API returned non-200 for %s: %s", recipient, resp.status_code)
-            except Exception as e:
-                logger.exception("Failed to send WhatsApp message to %s: %s", recipient, e)
-
-        success_message = "Job card created successfully."
+        success_message = f"Job card #{ticket_no} created successfully with {len(items_data)} item(s)."
         if self_assigned:
             success_message += f" Self-assigned to {technician}."
         
         messages.success(request, success_message)
         return redirect('app5:jobcard_list')
 
-    # GET: fetch items + customers (existing code remains the same)
+    # GET Request - Show form
     items = Item.objects.all().order_by("name")
+    suppliers = Supplier.objects.all().order_by("name")
+
+    # Fetch customer data from API
     customer_data = []
     try:
         api_url = "https://accmaster.imcbs.com/api/sync/rrc-clients/"
@@ -229,12 +242,13 @@ def jobcard_create(request):
                 customer['branch'] = customer.get('branch', '')
     except Exception as e:
         logger.warning("Error fetching customer data: %s", e)
-        customer_data = []
 
     return render(request, 'jobcard_form.html', {
         'items': items,
-        'customer_data': customer_data
+        'customer_data': customer_data,
+        'suppliers': suppliers,
     })
+
 
 
 
@@ -1511,3 +1525,446 @@ def standby_issuance_return(request, jobcard_id):
     return render(request, 'return_standby_items.html', context)
 
 
+# Add these warranty views to your existing views.py
+
+# views.py - Complete with proper imports
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST, require_http_methods
+from django.views.decorators.csrf import csrf_exempt
+from django.core.paginator import Paginator
+from django.utils import timezone
+from django.db import models
+from django.db.models import Q
+
+# Import your models
+from .models import JobCard, JobCardImage, Item, Supplier
+from .models import WarrantyTicket, WarrantyItemLog, StandbyIssuance
+
+# Import from other apps
+from app1.models import User
+from app2.models import StandbyItem, StandbyImage
+
+import os
+import json
+import logging
+import requests
+from collections import defaultdict
+from datetime import datetime
+
+logger = logging.getLogger(__name__)
+
+# Your existing job card views here...
+# ... [all your existing job card views] ...
+
+# Warranty Management Views
+def warranty_item_management(request):
+    """
+    Display warranty item management page with supplier selection
+    """
+    suppliers = Supplier.objects.all()
+    
+    context = {
+        'suppliers': suppliers,
+    }
+    return render(request, 'warranty_item.html', context)
+
+# Alias for backwards compatibility
+warranty_item = warranty_item_management
+
+@require_http_methods(["GET"])
+def api_all_warranty_tickets(request):
+    """
+    API endpoint to get all job cards with warranty items
+    Returns tickets that have at least one warranty item
+    """
+    try:
+        # Get all job cards - assuming items_data contains warranty info
+        jobcards = JobCard.objects.all()
+        
+        tickets_data = []
+        for jobcard in jobcards:
+            # Check if jobcard has warranty items
+            warranty_items = []
+            if hasattr(jobcard, 'items_data') and jobcard.items_data:
+                warranty_items = [item for item in jobcard.items_data if item.get('warranty') == 'yes']
+            
+            if warranty_items:
+                tickets_data.append({
+                    'ticket_no': jobcard.ticket_no,
+                    'customer': jobcard.customer,
+                    'phone': jobcard.phone,
+                    'items_count': len(warranty_items),
+                    'created_at': jobcard.created_at.isoformat(),
+                })
+        
+        return JsonResponse({
+            'success': True,
+            'tickets': tickets_data
+        })
+    
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+@require_http_methods(["GET"])
+def api_ticket_details(request):
+    """
+    API endpoint to get detailed information about a specific ticket
+    Including customer info and all warranty items
+    """
+    ticket_no = request.GET.get('ticket_no')
+    
+    if not ticket_no:
+        return JsonResponse({
+            'success': False,
+            'error': 'Ticket number is required'
+        }, status=400)
+    
+    try:
+        jobcard = get_object_or_404(JobCard, ticket_no=ticket_no)
+        
+        # Get items data from the jobcard's items_data property
+        items_data = jobcard.items_data if hasattr(jobcard, 'items_data') else []
+        
+        jobcard_data = {
+            'ticket_no': jobcard.ticket_no,
+            'customer': jobcard.customer,
+            'phone': jobcard.phone,
+            'address': jobcard.address,
+            'status': getattr(jobcard, 'status', 'pending'),
+            'created_at': jobcard.created_at.isoformat(),
+            'items_data': items_data,
+        }
+        
+        return JsonResponse({
+            'success': True,
+            'jobcard': jobcard_data
+        })
+    
+    except JobCard.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'error': 'Ticket not found'
+        }, status=404)
+    
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def process_warranty_tickets(request):
+    """
+    Process multiple warranty items submission
+    Creates warranty tickets for all selected items
+    """
+    try:
+        supplier_id = request.POST.get('supplier')
+        ticket_no = request.POST.get('ticket_no')
+        selected_items = request.POST.getlist('selected_items')
+        item_serials = request.POST.getlist('item_serials[]')  # Get serial numbers
+        
+        # Validate required fields
+        if not all([supplier_id, ticket_no]) or not selected_items:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Supplier, ticket number, and at least one item must be selected'
+                })
+            messages.error(request, 'Supplier, ticket number, and at least one item must be selected')
+            return redirect('app5:warranty_item')
+        
+        # Get related objects
+        supplier = get_object_or_404(Supplier, id=supplier_id)
+        jobcard = get_object_or_404(JobCard, ticket_no=ticket_no)
+        
+        created_tickets = []
+        processed_items = []
+        duplicate_items = []
+        
+        # Process each selected item
+        for idx, selected_item in enumerate(selected_items):
+            # Find the selected item details from items_data
+            selected_item_data = None
+            item_serial = item_serials[idx] if idx < len(item_serials) else ''
+            item_index = None
+            
+            if hasattr(jobcard, 'items_data') and jobcard.items_data:
+                for item_idx, item in enumerate(jobcard.items_data):
+                    if item.get('item') == selected_item:
+                        selected_item_data = item
+                        item_serial = item.get('serial', '') or item_serial
+                        item_index = item_idx
+                        break
+            
+            if not selected_item_data:
+                continue
+            
+            # Check if item has warranty
+            if selected_item_data.get('warranty') != 'yes':
+                continue
+            
+            # ✅ DUPLICATE DETECTION: Check if this item already has an active warranty ticket
+            existing_tickets = WarrantyTicket.objects.filter(
+                selected_item=selected_item,
+                status__in=['pending', 'submitted', 'approved']  # Active statuses
+            )
+            
+            # If serial number is available, use it for more precise duplicate detection
+            if item_serial:
+                existing_tickets = existing_tickets.filter(
+                    models.Q(item_serial=item_serial) | models.Q(selected_item=selected_item)
+                )
+            
+            if existing_tickets.exists():
+                duplicate_tickets = list(existing_tickets.values_list('ticket_no', flat=True))
+                duplicate_items.append({
+                    'item': selected_item,
+                    'serial': item_serial,
+                    'existing_tickets': duplicate_tickets
+                })
+                continue  # Skip creating duplicate warranty ticket
+            
+            # Generate warranty ticket number for each item
+            last_warranty = WarrantyTicket.objects.order_by('-id').first()
+            if last_warranty:
+                try:
+                    last_num = int(last_warranty.ticket_no.split('-')[-1])
+                    new_ticket_no = f"WT-{last_num + 1:06d}"
+                except:
+                    new_ticket_no = f"WT-{WarrantyTicket.objects.count() + 1:06d}"
+            else:
+                new_ticket_no = "WT-000001"
+            
+            # ✅ UPDATE WARRANTY STATUS IN ITEMS_DATA for each item
+            if item_index is not None and jobcard.items_data:
+                jobcard.items_data[item_index]['warranty_status'] = 'sent_to_supplier'
+                jobcard.items_data[item_index]['warranty_sent_date'] = timezone.now().isoformat()
+                jobcard.items_data[item_index]['warranty_supplier'] = supplier.name
+                jobcard.items_data[item_index]['warranty_ticket_no'] = new_ticket_no
+            
+            # Create warranty ticket for each item
+            warranty_ticket = WarrantyTicket.objects.create(
+                ticket_no=new_ticket_no,
+                jobcard=jobcard,
+                supplier=supplier,
+                selected_item=selected_item,
+                item_serial=item_serial,
+                status='submitted',
+                issue_description=f"Warranty claim for {selected_item}",
+                submitted_at=timezone.now()
+            )
+            
+            # Create log entry for each item
+            WarrantyItemLog.objects.create(
+                warranty_ticket=warranty_ticket,
+                action='Created and Sent to Supplier',
+                description=f'Warranty ticket created for {selected_item} and sent to {supplier.name}',
+                performed_by=request.user.username if request.user.is_authenticated else 'System'
+            )
+            
+            created_tickets.append(new_ticket_no)
+            processed_items.append({
+                'name': selected_item,
+                'ticket_no': new_ticket_no,
+                'serial': item_serial
+            })
+        
+        # Save jobcard with updated warranty status for all items
+        jobcard.save()
+        
+        # Handle response with duplicate information
+        response_data = {
+            'success': True,
+            'items_processed': len(processed_items),
+            'processed_items': processed_items,
+            'supplier': supplier.name,
+            'jobcard_ticket': jobcard.ticket_no
+        }
+        
+        # Add duplicate information if any duplicates were found
+        if duplicate_items:
+            response_data['duplicate_items'] = duplicate_items
+            response_data['has_duplicates'] = True
+        
+        # ✅ Send WhatsApp notification for all processed items
+        if created_tickets:
+            try:
+                items_list = "\n".join([f"• {item['name']}" for item in processed_items])
+                message_text = (
+                    f"🔧 *Warranty Items Sent to Supplier*\n\n"
+                    f"*Job Card:* {jobcard.ticket_no}\n"
+                    f"*Supplier:* {supplier.name}\n"
+                    f"*Customer:* {jobcard.customer}\n"
+                    f"*Items ({len(processed_items)}):*\n{items_list}\n"
+                    f"*Warranty Tickets:* {', '.join(created_tickets)}\n"
+                    f"*Date:* {timezone.now().strftime('%d-%m-%Y')}"
+                )
+                
+                # Add duplicate warning to WhatsApp if applicable
+                if duplicate_items:
+                    duplicate_list = "\n".join([f"• {item['item']} (Existing: {', '.join(item['existing_tickets'])})" 
+                                              for item in duplicate_items])
+                    message_text += f"\n\n⚠️ *Duplicates Skipped:*\n{duplicate_list}"
+                
+                whatsapp_api_base = "https://app.dxing.in/api/send/whatsapp"
+                params = {
+                    "secret": "7b8ae820ecb39f8d173d57b51e1fce4c023e359e",
+                    "account": "1756959119812b4ba287f5ee0bc9d43bbf5bbe87fb68b9118fcf1af",
+                    "type": "text",
+                    "priority": 1,
+                    "recipient": "9946545535",
+                    "message": message_text
+                }
+                requests.get(whatsapp_api_base, params=params, timeout=5)
+            except Exception as e:
+                logger.debug(f"WhatsApp notification failed: {e}")
+        
+        # Return JSON response for AJAX requests
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse(response_data)
+        
+        # Handle non-AJAX requests
+        if duplicate_items:
+            duplicate_message = "Some items were skipped due to existing warranty tickets: " + \
+                              ", ".join([f"{item['item']} (Ticket: {', '.join(item['existing_tickets'])})" 
+                                       for item in duplicate_items])
+            messages.warning(request, duplicate_message)
+        
+        if processed_items:
+            messages.success(
+                request, 
+                f'✅ Created {len(created_tickets)} warranty ticket(s) and sent to {supplier.name}'
+            )
+        
+        return redirect('app5:warranty_ticket_list')
+    
+    except Exception as e:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            })
+        messages.error(request, f'Error processing warranty items: {str(e)}')
+        return redirect('app5:warranty_item')
+
+def warranty_ticket_list(request):
+    """
+    Display list of all warranty tickets with filtering
+    """
+    status_filter = request.GET.get('status', '')
+    supplier_filter = request.GET.get('supplier', '')
+    
+    warranty_tickets = WarrantyTicket.objects.select_related(
+        'jobcard', 'supplier'
+    ).all().order_by('-created_at')
+    
+    if status_filter:
+        warranty_tickets = warranty_tickets.filter(status=status_filter)
+    
+    if supplier_filter:
+        warranty_tickets = warranty_tickets.filter(supplier_id=supplier_filter)
+    
+    # Calculate status counts
+    total_count = warranty_tickets.count()
+    pending_count = warranty_tickets.filter(status='pending').count()
+    submitted_count = warranty_tickets.filter(status='submitted').count()
+    approved_count = warranty_tickets.filter(status='approved').count()
+    rejected_count = warranty_tickets.filter(status='rejected').count()
+    completed_count = warranty_tickets.filter(status='completed').count()
+    
+    # Get filter options
+    suppliers = Supplier.objects.all()
+    status_choices = WarrantyTicket.STATUS_CHOICES
+    
+    context = {
+        'warranty_tickets': warranty_tickets,
+        'suppliers': suppliers,
+        'status_choices': status_choices,
+        'current_status': status_filter,
+        'current_supplier': supplier_filter,
+        'total_count': total_count,
+        'pending_count': pending_count,
+        'submitted_count': submitted_count,
+        'approved_count': approved_count,
+        'rejected_count': rejected_count,
+        'completed_count': completed_count,
+    }
+    
+    return render(request, 'warranty_ticket_list.html', context)
+
+def warranty_ticket_detail(request, ticket_id):
+    """
+    Display detailed view of a warranty ticket with logs
+    """
+    warranty_ticket = get_object_or_404(
+        WarrantyTicket.objects.select_related('jobcard', 'supplier'),
+        id=ticket_id
+    )
+    
+    logs = warranty_ticket.logs.all().order_by('-created_at')
+    
+    context = {
+        'warranty_ticket': warranty_ticket,
+        'logs': logs,
+    }
+    
+    return render(request, 'warranty_ticket_detail.html', context)
+
+@require_http_methods(["POST"])
+def update_warranty_item_status(request, ticket_id):
+    """
+    Update warranty item status when returned from supplier
+    """
+    try:
+        warranty_ticket = get_object_or_404(WarrantyTicket, id=ticket_id)
+        new_status = request.POST.get('status')
+        resolution_notes = request.POST.get('resolution_notes', '')
+        
+        if not new_status:
+            messages.error(request, 'Status is required')
+            return redirect('app5:warranty_ticket_detail', ticket_id=ticket_id)
+        
+        old_status = warranty_ticket.status
+        warranty_ticket.status = new_status
+        
+        if new_status in ['completed', 'approved']:
+            warranty_ticket.resolved_at = timezone.now()
+            
+            # ✅ UPDATE WARRANTY STATUS IN JOBCARD
+            jobcard = warranty_ticket.jobcard
+            item_name = warranty_ticket.selected_item
+            
+            if hasattr(jobcard, 'items_data') and jobcard.items_data:
+                for idx, item in enumerate(jobcard.items_data):
+                    if item.get('item') == item_name:
+                        jobcard.items_data[idx]['warranty_status'] = 'returned_from_supplier'
+                        jobcard.items_data[idx]['warranty_return_date'] = timezone.now().isoformat()
+                        jobcard.items_data[idx]['warranty_resolution'] = resolution_notes
+                        break
+            
+            jobcard.save()
+        
+        warranty_ticket.resolution_notes = resolution_notes
+        warranty_ticket.save()
+        
+        # Create log entry
+        WarrantyItemLog.objects.create(
+            warranty_ticket=warranty_ticket,
+            action=f'Status changed from {old_status} to {new_status}',
+            description=resolution_notes or f'Status updated to {new_status}',
+            performed_by=request.user.username if request.user.is_authenticated else 'System'
+        )
+        
+        messages.success(request, f'Warranty ticket status updated to {new_status}')
+        return redirect('app5:warranty_ticket_detail', ticket_id=ticket_id)
+    
+    except Exception as e:
+        messages.error(request, f'Error updating status: {str(e)}')
+        return redirect('app5:warranty_ticket_detail', ticket_id=ticket_id)

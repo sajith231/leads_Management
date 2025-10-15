@@ -267,5 +267,72 @@ class Supplier(models.Model):
     class Meta:
         ordering = ['name']
 
+class WarrantyTicket(models.Model):
+    """Warranty claim tickets"""
+    ticket_no = models.CharField(max_length=50, unique=True)
+    jobcard = models.ForeignKey(JobCard, on_delete=models.CASCADE, related_name='warranty_tickets')
+    supplier = models.ForeignKey(Supplier, on_delete=models.SET_NULL, null=True, related_name='warranty_tickets')
+    
+    # Selected warranty item
+    selected_item = models.CharField(max_length=200)
+    item_serial = models.CharField(max_length=100, blank=True, null=True)
+    
+    # Status
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('submitted', 'Submitted to Supplier'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+        ('completed', 'Completed'),
+    ]
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    
+    # Dates
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    submitted_at = models.DateTimeField(blank=True, null=True)
+    resolved_at = models.DateTimeField(blank=True, null=True)
+    
+    # Additional information
+    issue_description = models.TextField(blank=True, null=True)
+    supplier_response = models.TextField(blank=True, null=True)
+    resolution_notes = models.TextField(blank=True, null=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['selected_item', 'item_serial', 'status'],
+                condition=models.Q(status__in=['pending', 'submitted', 'approved']),
+                name='unique_active_warranty_per_item'
+            )
+        ]
 
-        
+    def __str__(self):
+        return f"WT-{self.ticket_no} - {self.selected_item}"
+
+    @property
+    def customer_name(self):
+        return self.jobcard.customer if self.jobcard else ''
+
+    @property
+    def customer_phone(self):
+        return self.jobcard.phone if self.jobcard else ''
+
+
+class WarrantyItemLog(models.Model):
+    """Log of warranty item processing history"""
+    warranty_ticket = models.ForeignKey(WarrantyTicket, on_delete=models.CASCADE, related_name='logs')
+    action = models.CharField(max_length=100)
+    description = models.TextField()
+    performed_by = models.CharField(max_length=100, blank=True, null=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.warranty_ticket.ticket_no} - {self.action}"
+
+
+

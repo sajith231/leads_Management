@@ -1,0 +1,783 @@
+{% extends "base.html" %}
+{% block title %}Warranty Item Management{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<style>
+    .warranty-container {
+        max-width: 1400px;
+        margin: 30px auto;
+        padding: 30px;
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+
+    .page-header {
+        text-align: center;
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 3px solid #061262;
+    }
+
+    .page-header h2 {
+        font-size: 2rem;
+        color: #061262;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+    }
+
+    .form-section {
+        background: #f0cbcb;
+        padding: 25px;
+        border-radius: 12px;
+        margin-bottom: 25px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    }
+
+    .form-section h3 {
+        color: #061262;
+        font-size: 1.3rem;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        border-bottom: 2px solid #e0e0e0;
+        padding-bottom: 8px;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        gap: 25px 30px;
+        align-items: end;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        color: #333;
+        font-weight: 600;
+    }
+
+    .form-group select,
+    .form-group input {
+        width: 100%;
+        padding: 12px 15px;
+        border: 2px solid #ddd;
+        border-radius: 8px;
+        font-size: 1rem;
+        background: white;
+        transition: all 0.3s ease;
+    }
+
+    .info-card {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 10px;
+        border-left: 4px solid #061262;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 15px 30px;
+    }
+
+    .info-row {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .info-label {
+        font-weight: 600;
+        color: #555;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 5px;
+    }
+
+    .info-value {
+        color: #333;
+        font-weight: 500;
+    }
+
+    .items-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+        gap: 20px;
+    }
+
+    .item-card {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 10px;
+        border-left: 4px solid #061262;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        transition: all 0.3s ease;
+    }
+
+    .item-card:hover {
+        transform: translateY(-3px);
+        background: #eef1f7;
+    }
+
+    .item-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+
+    .item-name {
+        font-weight: 700;
+        color: #061262;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    /* Changed from radio to checkbox styling */
+    .item-name input[type="checkbox"] {
+        accent-color: #061262;
+        transform: scale(1.2);
+        cursor: pointer;
+    }
+
+    .warranty-badge {
+        background: #28a745;
+        color: white;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+    }
+
+    .item-details {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 8px;
+        font-size: 0.95rem;
+        color: #555;
+    }
+
+    .btn-submit {
+        background: linear-gradient(135deg, #061262 0%, #0a1b7a 100%);
+        color: white;
+        padding: 14px 40px;
+        border: none;
+        border-radius: 8px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 30px auto 0;
+        box-shadow: 0 4px 15px rgba(6, 18, 98, 0.3);
+        transition: all 0.3s ease;
+    }
+
+    .btn-submit:hover {
+        transform: translateY(-2px);
+    }
+
+    .btn-back {
+        background: #6c757d;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 6px;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 20px;
+    }
+
+    .btn-back:hover {
+        background: #5a6268;
+    }
+
+    .loading {
+        text-align: center;
+        padding: 40px;
+        color: #666;
+    }
+
+    .spinner {
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #061262;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 15px;
+    }
+
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+
+    .no-items {
+        text-align: center;
+        padding: 40px;
+        color: #999;
+        font-style: italic;
+    }
+
+    /* New styles for checkbox selection */
+    .selection-info {
+        background: #e7f3ff;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        border-left: 4px solid #007bff;
+        display: none;
+    }
+
+    .select-all-container {
+        margin-bottom: 15px;
+        padding: 10px;
+        background: #f8f9fa;
+        border-radius: 6px;
+        border: 1px solid #dee2e6;
+    }
+
+    .select-all-checkbox {
+        accent-color: #061262;
+        transform: scale(1.1);
+        margin-right: 8px;
+    }
+
+    /* Success Popup Styles */
+    .popup-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+
+    .popup-content {
+        background: white;
+        padding: 40px;
+        border-radius: 15px;
+        text-align: center;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        max-width: 500px;
+        width: 90%;
+        animation: popupAppear 0.3s ease-out;
+    }
+
+    @keyframes popupAppear {
+        from {
+            opacity: 0;
+            transform: scale(0.8);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+
+    .popup-icon {
+        font-size: 4rem;
+        color: #28a745;
+        margin-bottom: 20px;
+    }
+
+    .popup-title {
+        font-size: 1.8rem;
+        color: #28a745;
+        margin-bottom: 15px;
+        font-weight: 700;
+    }
+
+    .popup-message {
+        font-size: 1.1rem;
+        color: #333;
+        margin-bottom: 25px;
+        line-height: 1.5;
+    }
+
+    .popup-details {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 25px;
+        text-align: left;
+    }
+
+    .popup-details h4 {
+        margin-bottom: 10px;
+        color: #061262;
+        font-size: 1.1rem;
+    }
+
+    .popup-details ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .popup-details li {
+        padding: 5px 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .popup-details li i {
+        color: #28a745;
+    }
+
+    .popup-button {
+        background: linear-gradient(135deg, #061262 0%, #0a1b7a 100%);
+        color: white;
+        border: none;
+        padding: 12px 30px;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .popup-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(6, 18, 98, 0.3);
+    }
+</style>
+
+<div class="warranty-container">
+    <a href="javascript:history.back()" class="btn-back">
+        <i class="fas fa-arrow-left"></i> Back
+    </a>
+
+    <div class="page-header">
+        <h2><i class="fas fa-shield-alt"></i> Warranty Item Management</h2>
+    </div>
+
+    <!-- Success Popup -->
+    <div class="popup-overlay" id="successPopup">
+        <div class="popup-content">
+            <div class="popup-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="popup-title">Success!</div>
+            <div class="popup-message" id="popupMessage">
+                Warranty items have been successfully sent to the supplier.
+            </div>
+            <div class="popup-details" id="popupDetails" style="display: none;">
+                <h4><i class="fas fa-list"></i> Processed Items:</h4>
+                <ul id="processedItemsList"></ul>
+            </div>
+            <button class="popup-button" onclick="closeSuccessPopup()">
+                <i class="fas fa-check"></i> OK
+            </button>
+        </div>
+    </div>
+
+    <form id="warrantyForm" method="POST" action="{% url 'app5:process_warranty_tickets' %}">
+        {% csrf_token %}
+
+        <!-- Supplier + Ticket in same row -->
+        <div class="form-section">
+            <h3><i class="fas fa-industry"></i> Supplier & Ticket</h3>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label><i class="fas fa-building"></i> Supplier *</label>
+                    <select id="supplier" name="supplier" required>
+                        <option value="">-- Select Supplier --</option>
+                        {% for supplier in suppliers %}
+                            <option value="{{ supplier.id }}">{{ supplier.name }} - {{ supplier.place }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group" id="ticketSection" style="display:none;">
+                    <label><i class="fas fa-ticket-alt"></i> Warranty Ticket *</label>
+                    <select id="ticket" name="ticket_no" required>
+                        <option value="">-- Select Ticket --</option>
+                    </select>
+                </div>
+            </div>
+            <div id="ticketLoading" class="loading" style="display:none;">
+                <div class="spinner"></div>
+                <p>Loading warranty tickets...</p>
+            </div>
+        </div>
+
+        <div id="detailsSection" style="display:none;">
+            <!-- Customer Info -->
+            <div class="form-section">
+                <h3><i class="fas fa-user"></i> Customer Information</h3>
+                <div class="info-card" id="customerInfo"></div>
+            </div>
+
+            <!-- Warranty Items -->
+            <div class="form-section">
+                <h3><i class="fas fa-tools"></i> Warranty Items</h3>
+                
+                <!-- Select All Checkbox -->
+                <div class="select-all-container" id="selectAllContainer" style="display:none;">
+                    <label style="font-weight: 600; color: #061262; cursor: pointer;">
+                        <input type="checkbox" class="select-all-checkbox" id="selectAll">
+                        <i class="fas fa-check-double"></i> Select All Items
+                    </label>
+                </div>
+
+                <!-- Selection Info -->
+                <div class="selection-info" id="selectionInfo">
+                    <i class="fas fa-info-circle"></i>
+                    <span id="selectedCount">0</span> item(s) selected for warranty processing
+                </div>
+
+                <div id="itemsContainer" class="items-list"></div>
+            </div>
+
+            <button type="submit" class="btn-submit" id="submitButton" disabled>
+                <i class="fas fa-paper-plane"></i> Process Selected Warranty Items
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+    const supplierSelect = document.getElementById('supplier');
+    const ticketSection = document.getElementById('ticketSection');
+    const ticketSelect = document.getElementById('ticket');
+    const ticketLoading = document.getElementById('ticketLoading');
+    const detailsSection = document.getElementById('detailsSection');
+    const customerInfo = document.getElementById('customerInfo');
+    const itemsContainer = document.getElementById('itemsContainer');
+    const selectAllContainer = document.getElementById('selectAllContainer');
+    const selectAllCheckbox = document.getElementById('selectAll');
+    const selectionInfo = document.getElementById('selectionInfo');
+    const selectedCount = document.getElementById('selectedCount');
+    const submitButton = document.getElementById('submitButton');
+    
+    // Popup elements
+    const successPopup = document.getElementById('successPopup');
+    const popupMessage = document.getElementById('popupMessage');
+    const popupDetails = document.getElementById('popupDetails');
+    const processedItemsList = document.getElementById('processedItemsList');
+
+    // Track selected items
+    let selectedItems = [];
+
+    supplierSelect.addEventListener('change', async function() {
+        const supplierId = this.value;
+        ticketSelect.innerHTML = '<option value="">-- Select Ticket --</option>';
+        detailsSection.style.display = 'none';
+        customerInfo.innerHTML = '';
+        itemsContainer.innerHTML = '';
+        selectAllContainer.style.display = 'none';
+        selectionInfo.style.display = 'none';
+        selectedItems = [];
+        updateSelectionInfo();
+
+        if (!supplierId) {
+            ticketSection.style.display = 'none';
+            return;
+        }
+
+        ticketSection.style.display = 'block';
+        ticketLoading.style.display = 'block';
+
+        try {
+            const response = await fetch(`{% url 'app5:api_all_warranty_tickets' %}`);
+            const data = await response.json();
+            ticketLoading.style.display = 'none';
+
+            if (data.success && data.tickets.length > 0) {
+                data.tickets.forEach(ticket => {
+                    const option = document.createElement('option');
+                    option.value = ticket.ticket_no;
+                    option.textContent = `${ticket.ticket_no} - ${ticket.customer} (${ticket.items_count} warranty items)`;
+                    ticketSelect.appendChild(option);
+                });
+            } else {
+                ticketSelect.innerHTML = '<option>No warranty tickets found</option>';
+            }
+        } catch {
+            ticketLoading.style.display = 'none';
+            ticketSelect.innerHTML = '<option>Error loading tickets</option>';
+        }
+    });
+
+    ticketSelect.addEventListener('change', async function() {
+        const ticketNo = this.value;
+        if (!ticketNo) { 
+            detailsSection.style.display = 'none';
+            selectAllContainer.style.display = 'none';
+            selectionInfo.style.display = 'none';
+            selectedItems = [];
+            updateSelectionInfo();
+            return; 
+        }
+
+        try {
+            const response = await fetch(`{% url 'app5:api_ticket_details' %}?ticket_no=${ticketNo}`);
+            const data = await response.json();
+
+            if (data.success) {
+                const jobcard = data.jobcard;
+                customerInfo.innerHTML = `
+                    <div class="info-row"><span class="info-label"><i class="fas fa-user"></i> Customer</span><span class="info-value">${jobcard.customer}</span></div>
+                    <div class="info-row"><span class="info-label"><i class="fas fa-phone"></i> Phone</span><span class="info-value">${jobcard.phone}</span></div>
+                    <div class="info-row"><span class="info-label"><i class="fas fa-map-marker-alt"></i> Address</span><span class="info-value">${jobcard.address}</span></div>
+                    <div class="info-row"><span class="info-label"><i class="fas fa-calendar"></i> Date</span><span class="info-value">${new Date(jobcard.created_at).toLocaleDateString()}</span></div>
+                `;
+
+                const warrantyItems = jobcard.items_data.filter(item => item.warranty === 'yes');
+                if (warrantyItems.length > 0) {
+                    itemsContainer.innerHTML = warrantyItems.map((item, index) => `
+                        <div class="item-card">
+                            <div class="item-header">
+                                <label class="item-name">
+                                    <input type="checkbox" name="selected_items" value="${item.item}" 
+                                           data-serial="${item.serial || ''}" 
+                                           data-index="${index}"
+                                           class="item-checkbox">
+                                    <i class="fas fa-cog"></i> ${item.item}
+                                </label>
+                                <span class="warranty-badge"><i class="fas fa-shield-alt"></i> Warranty</span>
+                            </div>
+
+                            <div class="item-details">
+                                ${item.serial ? `<div><i class="fas fa-barcode"></i> Serial: ${item.serial}</div>` : ''}
+                                ${item.config ? `<div><i class="fas fa-wrench"></i> Config: ${item.config}</div>` : ''}
+                            </div>
+
+                            <input type="hidden" name="items[]" value="${item.item}">
+                            <input type="hidden" name="item_serials[]" value="${item.serial || ''}">
+                            <input type="hidden" name="item_indexes[]" value="${index}">
+                        </div>
+                    `).join('');
+
+                    // Show select all option if multiple items
+                    if (warrantyItems.length > 1) {
+                        selectAllContainer.style.display = 'block';
+                    }
+
+                    // Add event listeners to checkboxes
+                    document.querySelectorAll('.item-checkbox').forEach(checkbox => {
+                        checkbox.addEventListener('change', function() {
+                            updateSelectedItems();
+                        });
+                    });
+
+                } else {
+                    itemsContainer.innerHTML = `<div class="no-items"><i class="fas fa-inbox"></i><p>No warranty items found</p></div>`;
+                    selectAllContainer.style.display = 'none';
+                }
+
+                detailsSection.style.display = 'block';
+                selectedItems = [];
+                updateSelectionInfo();
+            }
+        } catch {
+            alert('Error loading ticket details.');
+        }
+    });
+
+    // Select All functionality
+    selectAllCheckbox.addEventListener('change', function() {
+        const checkboxes = document.querySelectorAll('.item-checkbox');
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = this.checked;
+        });
+        updateSelectedItems();
+    });
+
+    // Update selected items array and UI
+    function updateSelectedItems() {
+        selectedItems = [];
+        const checkboxes = document.querySelectorAll('.item-checkbox:checked');
+        
+        checkboxes.forEach(checkbox => {
+            selectedItems.push({
+                item: checkbox.value,
+                serial: checkbox.getAttribute('data-serial'),
+                index: checkbox.getAttribute('data-index')
+            });
+        });
+
+        // Update select all checkbox state
+        const totalCheckboxes = document.querySelectorAll('.item-checkbox').length;
+        const checkedCount = checkboxes.length;
+        selectAllCheckbox.checked = checkedCount > 0 && checkedCount === totalCheckboxes;
+        selectAllCheckbox.indeterminate = checkedCount > 0 && checkedCount < totalCheckboxes;
+
+        updateSelectionInfo();
+    }
+
+    // Update selection info and submit button
+    function updateSelectionInfo() {
+        if (selectedItems.length > 0) {
+            selectionInfo.style.display = 'block';
+            selectedCount.textContent = selectedItems.length;
+            submitButton.disabled = false;
+            submitButton.innerHTML = `<i class="fas fa-paper-plane"></i> Process ${selectedItems.length} Selected Item(s)`;
+        } else {
+            selectionInfo.style.display = 'none';
+            submitButton.disabled = true;
+            submitButton.innerHTML = `<i class="fas fa-paper-plane"></i> Process Warranty Items`;
+        }
+    }
+
+    // Form submission - validate at least one item is selected
+    document.getElementById('warrantyForm').addEventListener('submit', function(e) {
+        if (selectedItems.length === 0) {
+            e.preventDefault();
+            alert('Please select at least one warranty item to process.');
+            return false;
+        }
+
+        // Add hidden fields for all selected items
+        selectedItems.forEach((item, index) => {
+            const hiddenInput = document.createElement('input');
+            hiddenInput.type = 'hidden';
+            hiddenInput.name = 'selected_items';
+            hiddenInput.value = item.item;
+            this.appendChild(hiddenInput);
+        });
+
+        // Show loading state
+        submitButton.disabled = true;
+        submitButton.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Processing...`;
+
+        // Submit form via AJAX to show success popup
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        
+        fetch(this.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showSuccessPopup(data);
+            } else {
+                alert('Error: ' + (data.error || 'Unknown error occurred'));
+                resetSubmitButton();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while processing warranty items.');
+            resetSubmitButton();
+        });
+    });
+
+    // Function to show success popup
+    // Function to show success popup with duplicate handling
+function showSuccessPopup(data) {
+    const supplierName = document.getElementById('supplier').selectedOptions[0].text;
+    const ticketNo = document.getElementById('ticket').value;
+    
+    // Update popup message
+    let messageHtml = '';
+    
+    if (data.has_duplicates) {
+        messageHtml = `
+            <div style="text-align: left;">
+                <p><strong>${data.items_processed}</strong> warranty item(s) have been successfully sent to <strong>${supplierName}</strong>.</p>
+                <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #ffc107;">
+                    <h4 style="color: #856404; margin-bottom: 10px;"><i class="fas fa-exclamation-triangle"></i> Duplicate Items Skipped</h4>
+                    <ul style="margin: 0; padding-left: 20px;">
+                        ${data.duplicate_items.map(item => 
+                            `<li><strong>${item.item}</strong> ${item.serial ? `(Serial: ${item.serial})` : ''} - Already exists in tickets: ${item.existing_tickets.join(', ')}</li>`
+                        ).join('')}
+                    </ul>
+                </div>
+            </div>
+        `;
+    } else {
+        messageHtml = `
+            <strong>${data.items_processed}</strong> warranty item(s) have been successfully sent to <strong>${supplierName}</strong>.
+        `;
+    }
+    
+    popupMessage.innerHTML = messageHtml;
+    
+    // Show processed items details
+    if (data.processed_items && data.processed_items.length > 0) {
+        popupDetails.style.display = 'block';
+        processedItemsList.innerHTML = '';
+        
+        data.processed_items.forEach(item => {
+            const li = document.createElement('li');
+            li.innerHTML = `<i class="fas fa-check"></i> ${item.name} ${item.serial ? `(Serial: ${item.serial})` : ''} - Ticket: ${item.ticket_no}`;
+            processedItemsList.appendChild(li);
+        });
+    } else {
+        popupDetails.style.display = 'none';
+    }
+    
+    // Show the popup
+    successPopup.style.display = 'flex';
+    
+    // Reset form after successful submission
+    if (data.items_processed > 0) {
+        resetForm();
+    }
+}
+
+    // Function to close success popup
+    function closeSuccessPopup() {
+        successPopup.style.display = 'none';
+        // Redirect to warranty ticket list or stay on page
+        window.location.href = "{% url 'app5:warranty_ticket_list' %}";
+    }
+
+    // Function to reset submit button
+    function resetSubmitButton() {
+        submitButton.disabled = false;
+        submitButton.innerHTML = `<i class="fas fa-paper-plane"></i> Process ${selectedItems.length} Selected Item(s)`;
+    }
+
+    // Function to reset form after successful submission
+    function resetForm() {
+        // Clear form
+        document.getElementById('supplier').value = '';
+        document.getElementById('ticket').innerHTML = '<option value="">-- Select Ticket --</option>';
+        detailsSection.style.display = 'none';
+        customerInfo.innerHTML = '';
+        itemsContainer.innerHTML = '';
+        selectAllContainer.style.display = 'none';
+        selectionInfo.style.display = 'none';
+        selectedItems = [];
+        updateSelectionInfo();
+        ticketSection.style.display = 'none';
+        
+        // Reset submit button
+        resetSubmitButton();
+    }
+
+    // Close popup when clicking outside
+    successPopup.addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeSuccessPopup();
+        }
+    });
+
+    // Close popup with Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && successPopup.style.display === 'flex') {
+            closeSuccessPopup();
+        }
+    });
+</script>
+
+{% endblock %}

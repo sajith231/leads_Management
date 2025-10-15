@@ -47,7 +47,22 @@ urlpatterns = [
       path('jobcard/<int:jobcard_id>/standby-return/', views.standby_issuance_return, name='standby_return_item'),
     path('jobcard/<int:jobcard_id>/standby-details/', views.view_standby_issuance_details, name='view_standby_issuance_details'),
    
+    
 
+  
+ 
+   # Warranty URLs
+    path('warranty-item/', views.warranty_item_management, name='warranty_item'),
+    path('warranty-tickets/', views.warranty_ticket_list, name='warranty_ticket_list'),
+    path('warranty-ticket/<int:ticket_id>/', views.warranty_ticket_detail, name='warranty_ticket_detail'),
+    path('warranty-ticket/<int:ticket_id>/update-status/', views.update_warranty_item_status, name='update_warranty_item_status'),
+    path('process-warranty-tickets/', views.process_warranty_tickets, name='process_warranty_tickets'),
+    
+    # API endpoints for warranty
+    path('api/all-warranty-tickets/', views.api_all_warranty_tickets, name='api_all_warranty_tickets'),
+    path('api/ticket-details/', views.api_ticket_details, name='api_ticket_details'),
+   
 ]
+
 
 
