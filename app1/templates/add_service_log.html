@@ -486,6 +486,576 @@
     }
 }
 </style>
+<style>
+/* Complaints Selection Container */
+.complaints-selection-wrapper {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 12px;
+    padding: 24px;
+    border: 2px solid #dee2e6;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    margin-bottom: 24px;
+}
+
+/* Header with label and buttons */
+.complaints-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.complaints-label {
+    font-size: 16px;
+    font-weight: 600;
+    color: #495057;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.complaints-label i {
+    color: #0d6efd;
+    font-size: 18px;
+}
+
+.complaints-actions {
+    display: flex;
+    gap: 10px;
+}
+
+/* Complaint Blocks Container */
+#complaint-blocks-container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* Individual Complaint Block */
+.complaint-block {
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    border: 2px solid #e9ecef;
+    transition: all 0.3s ease;
+    position: relative;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+.complaint-block:hover {
+    border-color: #0d6efd;
+    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.15);
+    transform: translateY(-2px);
+}
+
+.complaint-block-content {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.complaint-number {
+    font-size: 14px;
+    font-weight: 700;
+    color: white;
+    background: linear-gradient(135deg, #0d6efd 0%, #0056b3 100%);
+    padding: 10px 18px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+    min-width: 140px;
+    justify-content: center;
+    box-shadow: 0 2px 6px rgba(13, 110, 253, 0.3);
+}
+
+.complaint-number i {
+    font-size: 16px;
+}
+
+/* Select2 Customization */
+.complaint-select-wrapper {
+    position: relative;
+    flex: 1;
+}
+
+.complaint-block .select2-container {
+    width: 100% !important;
+}
+
+.complaint-block .select2-selection--single {
+    height: 48px !important;
+    padding: 10px 16px !important;
+    font-size: 15px !important;
+    border: 2px solid #dee2e6 !important;
+    border-radius: 8px !important;
+    transition: all 0.3s ease !important;
+}
+
+.complaint-block .select2-selection--single:hover {
+    border-color: #0d6efd !important;
+}
+
+.complaint-block .select2-selection--single:focus,
+.complaint-block .select2-container--open .select2-selection--single {
+    border-color: #0d6efd !important;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25) !important;
+}
+
+.complaint-block .select2-selection__rendered {
+    line-height: 28px !important;
+    font-size: 15px !important;
+    color: #495057 !important;
+    font-weight: 500 !important;
+}
+
+.complaint-block .select2-selection__arrow {
+    height: 46px !important;
+    right: 10px !important;
+}
+
+/* Larger Dropdown */
+.larger-dropdown {
+    border: 2px solid #0d6efd !important;
+    border-radius: 8px !important;
+    box-shadow: 0 8px 24px rgba(13, 110, 253, 0.2) !important;
+    margin-top: 4px !important;
+}
+
+.larger-dropdown .select2-results__options {
+    max-height: 320px !important;
+    font-size: 15px !important;
+    padding: 8px 0 !important;
+}
+
+.larger-dropdown .select2-results__option {
+    padding: 14px 18px !important;
+    line-height: 1.5 !important;
+    white-space: normal !important;
+    min-height: 48px !important;
+    display: flex !important;
+    align-items: center !important;
+    transition: all 0.2s ease !important;
+    border-bottom: 1px solid #f8f9fa !important;
+}
+
+.larger-dropdown .select2-results__option:last-child {
+    border-bottom: none !important;
+}
+
+.larger-dropdown .select2-results__option--highlighted {
+    background: linear-gradient(135deg, #0d6efd 0%, #0056b3 100%) !important;
+    color: white !important;
+}
+
+/* Complaint Summary (after selection) */
+.complaint-summary {
+    display: none;
+    background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
+    border: 2px solid #0dcaf0;
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin-top: 12px;
+    font-weight: 600;
+    color: #055160;
+    font-size: 15px;
+    box-shadow: 0 2px 6px rgba(13, 202, 240, 0.15);
+}
+
+.complaint-summary .badge-type {
+    background: rgba(255, 255, 255, 0.9);
+    color: #0c5460;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 700;
+    margin-left: 10px;
+    border: 1px solid #0dcaf0;
+}
+
+/* Action Buttons */
+.btn-add-complaint {
+    background: linear-gradient(135deg, #198754 0%, #157347 100%);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 6px rgba(25, 135, 84, 0.3);
+}
+
+.btn-add-complaint:hover {
+    background: linear-gradient(135deg, #157347 0%, #0f5132 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(25, 135, 84, 0.4);
+}
+
+.btn-remove-complaint {
+    background: linear-gradient(135deg, #dc3545 0%, #bb2d3b 100%);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 6px rgba(220, 53, 69, 0.3);
+}
+
+.btn-remove-complaint:hover {
+    background: linear-gradient(135deg, #bb2d3b 0%, #a02430 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
+}
+
+.btn-remove-complaint:disabled {
+    background: #6c757d;
+    cursor: not-allowed;
+    opacity: 0.5;
+    box-shadow: none;
+}
+
+.btn-remove-complaint:disabled:hover {
+    transform: none;
+}
+
+/* Alert Box */
+#no-complaints-selected {
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+    border: 2px solid #ffc107;
+    border-radius: 10px;
+    padding: 16px 20px;
+    color: #664d03;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 16px;
+    box-shadow: 0 2px 6px rgba(255, 193, 7, 0.2);
+}
+
+#no-complaints-selected i {
+    font-size: 20px;
+    color: #ffc107;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .complaints-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    
+    .complaints-actions {
+        width: 100%;
+        justify-content: flex-start;
+    }
+    
+    .btn-add-complaint,
+    .btn-remove-complaint {
+        flex: 1;
+        justify-content: center;
+    }
+    
+    .complaint-block {
+        padding: 16px;
+    }
+    
+    .complaint-block-content {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+    
+    .complaint-number {
+        width: 100%;
+        min-width: auto;
+    }
+    
+    .complaint-block .select2-selection--single {
+        height: 44px !important;
+        padding: 8px 14px !important;
+    }
+}
+
+/* Animation */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.complaint-block {
+    animation: slideIn 0.3s ease;
+}
+</style>
+<style>
+/* Customer Info Box Styling */
+.customer-info-box {
+    margin-left: 10%;
+    position: fixed;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 320px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    color: white;
+    display: none;
+    z-index: 1000;
+    max-height: 80vh;
+    overflow-y: auto;
+    animation: slideInLeft 0.4s ease-out;
+}
+
+@keyframes slideInLeft {
+    from {
+        opacity: 0;
+        transform: translateY(-50%) translateX(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(-50%) translateX(0);
+    }
+}
+
+.customer-info-box.show {
+    display: block;
+}
+
+.customer-info-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.customer-info-title {
+    font-size: 18px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.customer-info-title i {
+    font-size: 24px;
+}
+
+.close-info-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.close-info-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: rotate(90deg);
+}
+
+.customer-info-item {
+    margin-bottom: 16px;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+}
+
+.customer-info-item:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateX(5px);
+}
+
+.info-label-small {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    opacity: 0.8;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.info-label-small i {
+    font-size: 12px;
+}
+
+.info-value-large {
+    font-size: 16px;
+    font-weight: 700;
+    word-break: break-word;
+}
+
+.info-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 600;
+    background: rgba(255, 255, 255, 0.9);
+    color: #667eea;
+}
+
+.customer-name-display {
+    font-size: 20px;
+    font-weight: 800;
+    margin-bottom: 20px;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 12px;
+    text-align: center;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+/* Scrollbar styling for info box */
+.customer-info-box::-webkit-scrollbar {
+    width: 6px;
+}
+
+.customer-info-box::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+}
+
+.customer-info-box::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 10px;
+}
+
+.customer-info-box::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+/* Responsive adjustments */
+@media (max-width: 1400px) {
+    .customer-info-box {
+        width: 280px;
+        left: 10px;
+    }
+}
+
+@media (max-width: 1200px) {
+    .customer-info-box {
+        position: relative;
+        left: 0;
+        top: 0;
+        transform: none;
+        width: 100%;
+        margin-bottom: 20px;
+    }
+}
+</style>
+
+<div class="customer-info-box" id="customerInfoBox">
+    <div class="customer-info-header">
+        <div class="customer-info-title">
+            <i class="fas fa-user-circle"></i>
+            <span>Customer Info</span>
+        </div>
+        <button type="button" class="close-info-btn" onclick="closeCustomerInfoBox()">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+
+    <div class="customer-name-display" id="infoCustomerName">
+        Select a customer
+    </div>
+
+    <div class="customer-info-item">
+        <div class="info-label-small">
+            <i class="fas fa-desktop"></i>
+            Software
+        </div>
+        <div class="info-value-large" id="infoSoftware">N/A</div>
+    </div>
+
+    <div class="customer-info-item">
+        <div class="info-label-small">
+            <i class="fas fa-calendar-alt"></i>
+            Age
+        </div>
+        <div class="info-value-large" id="infoAge">N/A</div>
+    </div>
+
+    <div class="customer-info-item">
+        <div class="info-label-small">
+            <i class="fas fa-key"></i>
+            License Type
+        </div>
+        <div class="info-value-large">
+            <span class="info-badge" id="infoLicenseType">N/A</span>
+        </div>
+    </div>
+
+    <div class="customer-info-item">
+        <div class="info-label-small">
+            <i class="fas fa-users"></i>
+            Clients
+        </div>
+        <div class="info-value-large" id="infoClients">N/A</div>
+    </div>
+
+    <div class="customer-info-item">
+        <div class="info-label-small">
+            <i class="fas fa-headset"></i>
+            SP
+        </div>
+        <div class="info-value-large" id="infoSP">N/A</div>
+    </div>
+
+    <div class="customer-info-item">
+        <div class="info-label-small">
+            <i class="fas fa-file-contract"></i>
+            AMC
+        </div>
+        <div class="info-value-large">
+            <span class="info-badge" id="infoAMC">N/A</span>
+        </div>
+    </div>
+
+    <div class="customer-info-item">
+        <div class="info-label-small">
+            <i class="fas fa-code-branch"></i>
+            Branch
+        </div>
+        <div class="info-value-large" id="infoBranch">N/A</div>
+    </div>
+
+    <div class="customer-info-item">
+        <div class="info-label-small">
+            <i class="fas fa-briefcase"></i>
+            Nature
+        </div>
+        <div class="info-value-large" id="infoNature">N/A</div>
+    </div>
+</div>
 <div class="container mt-5" style="max-width: 800px;">
     <h2 class="mb-4 text-center">{% if log %}Edit{% else %}Add{% endif %} Service Log</h2>
 
@@ -550,35 +1120,53 @@
 </div><!-- /card -->
 
 
-        <div class="mb-3">
+<div class="mb-3 software-select-wrapper">
+            <label class="form-label">Software</label>
+            <select id="software_select" name="software" class="form-select">
+                <option value="">-- All Softwares (or select to filter) --</option>
+                {% for s in softwares %}
+                    <option value="{{ s.id }}">{{ s.name }}</option>
+                {% endfor %}
+            </select>
+            <small class="text-muted">Choose a software to show only complaints related to it.</small>
+        </div>
+
+
+        <div class="mb-3" style="display: none;">
             <label class="form-label">Complaint Type</label>
             <select class="form-select" name="complaint_type" id="complaint_type" required>
-                <option value="">-- Select Type --</option>
-                <option value="software" 
-                    {% if log and log.complaint_type == 'software' %}selected{% elif not log %}selected{% endif %}>
-                    Software
-                </option>
-                <!-- keep other types here if required -->
-                {% comment %} add more options like <option value="hardware">Hardware</option> {% endcomment %}
+                <option value="software" selected>Software</option>
             </select>
         </div>
 
         <!-- ---------- Complaints Container (shown automatically when complaint_type exists) ---------- -->
         <div class="mb-4" id="complaints-container" style="display: none;">
-            <label class="form-label mb-3">Select Complaints</label>
-            
-            <div id="complaint-blocks-container">
-                <!-- Dynamic complaint blocks will be added here -->
-            </div>
-
-            <button type="button" class="btn btn-outline-secondary btn-sm mt-2" onclick="addComplaintBlock()">
-                <i class="bi bi-plus-circle"></i> Add Another Complaint
-            </button>
-
-            <div id="no-complaints-selected" class="alert alert-info mt-3" style="display: none;">
-                <i class="bi bi-info-circle"></i> Please select at least one complaint to proceed.
+    <div class="complaints-selection-wrapper">
+        <div class="complaints-header">
+            <label class="complaints-label">
+                <i class="fas fa-list-check"></i>
+                Select Complaints
+            </label>
+            <div class="complaints-actions">
+                <button type="button" class="btn btn-add-complaint" onclick="addComplaintBlock()" title="Add another complaint">
+                    <i class="fas fa-plus-circle"></i> Add Complaint
+                </button>
+                <button type="button" class="btn btn-remove-complaint" id="removeComplaintBtn" onclick="removeSelectedComplaint()" title="Remove selected complaint" disabled>
+                    <i class="fas fa-trash-alt"></i> Remove
+                </button>
             </div>
         </div>
+
+        <div id="complaint-blocks-container">
+            <!-- Dynamic complaint blocks will be added here -->
+        </div>
+
+        <div id="no-complaints-selected" class="alert alert-info" style="display: none;">
+            <i class="fas fa-info-circle"></i>
+            <span>Please select at least one complaint to proceed.</span>
+        </div>
+    </div>
+</div>
 
         <div class="mb-3">
             <label class="form-label">Remarks</label>
@@ -1590,19 +2178,32 @@ document.addEventListener("DOMContentLoaded", function () {
                 const option = document.createElement("div");
                 option.classList.add("dropdown-item");
                 const branchVal = customer.branch || customer.branch_name || '';
-                option.textContent = `${customer.name}${branchVal ? ' — ' + branchVal : ''}${customer.address ? ', ' + customer.address : ''}`;
+                // OLD: option.textContent = `${customer.name}${branchVal ? ' — ' + branchVal : ''}${customer.address ? ', ' + customer.address : ''}`;
+                
+                // NEW: Show branch at the end in brackets
+                let displayText = customer.name;
+                if (customer.address) {
+                    displayText += ', ' + customer.address;
+                }
+                if (branchVal) {
+                    displayText += ' [' + branchVal + ']';
+                }
+                option.textContent = displayText;
+                
                 option.setAttribute("data-address", customer.address);
                 option.setAttribute("data-customer-code", customer.code);
+                
                 option.addEventListener("click", function () {
                     customerInput.value = customer.name;
                     placeInput.value = option.getAttribute("data-address");
                     customerDropdown.style.display = "none";
                     
-                    // Store selected customer data and enable eye button
                     selectedCustomerData = customer;
                     viewCustomerBtn.disabled = false;
+                    showCustomerInfoBox(customer);
                 });
                 customerDropdown.appendChild(option);
+            });
             });
 
             if (data.length === 0) {
@@ -1781,11 +2382,18 @@ document.addEventListener("DOMContentLoaded", function () {
 <script>
 let complaintIndex = 0;
 let currentComplaintType = '';
+let selectedComplaintBlock = null;
+let selectedSoftware = ''; // <-- new: currently selected software id ('' = all)
 
 // Build all complaints array from server for sorting/filtering
 const allComplaints = [
     {% for c in complaints %}
-    { id: '{{ c.id }}', description: '{{ c.description|escapejs }}', type: '{{ c.complaint_type }}' },
+    {
+        id: '{{ c.id }}',
+        description: '{{ c.description|escapejs }}',
+        type: '{{ c.complaint_type }}',
+        software: '{% if c.software %}{{ c.software.id }}{% endif %}'
+    }{% if not forloop.last %},{% endif %}
     {% endfor %}
 ];
 
@@ -1794,48 +2402,59 @@ function complaintMatchesType(complaintType) {
     return currentComplaintType === 'both' || currentComplaintType === complaintType;
 }
 
-// Add a complaint block (vertical layout: complaint on top, note under)
-// Add a complaint block (vertical layout: complaint on top, note under)
-// Add a complaint block (horizontal layout: complaint and remove button side by side)
+// Helper: returns whether a complaint (object) matches both type & software filters
+function complaintMatchesFilters(complaint) {
+    // Type must match
+    if (!complaintMatchesType(complaint.type)) return false;
+    // Software filter: if no software selected, allow all; otherwise only complaints with matching software id
+    if (selectedSoftware && selectedSoftware !== '') {
+        if (!complaint.software) return false;
+        return complaint.software.toString() === selectedSoftware.toString();
+    }
+    return true;
+}
+
+// Add a complaint block
 function addComplaintBlock(selectedId = '', noteText = '') {
     const container = document.getElementById('complaint-blocks-container');
     const idx = complaintIndex++;
 
     const block = document.createElement('div');
-    block.className = 'complaint-block p-3 border rounded mb-3';
+    block.className = 'complaint-block';
     block.dataset.index = idx;
 
-    // Build complaint options from preloaded array, filter by type and sort alphabetically
+    // Build complaint options from preloaded array, filter by type+software and sort alphabetically
     let complaintOptions = '<option value="">-- Select Complaint --</option>';
     const filteredSorted = allComplaints
-        .filter(c => complaintMatchesType(c.type))
+        .filter(c => complaintMatchesFilters(c))
         .sort((a, b) => a.description.localeCompare(b.description));
     filteredSorted.forEach(c => {
-        const selAttr = selectedId && selectedId.toString() === c.id ? 'selected' : '';
+        const selAttr = selectedId && selectedId.toString() === c.id.toString() ? 'selected' : '';
         complaintOptions += `<option value="${c.id}" ${selAttr}>${c.description} (${c.type.charAt(0).toUpperCase() + c.type.slice(1)})</option>`;
     });
 
-    // Vertical layout: numbered label, full-width select, and actions
     const complaintNumber = container.children.length + 1;
     block.innerHTML = `
-        <div class="mb-2 d-flex justify-content-between align-items-center">
-            <label class="form-label mb-0">${complaintNumber}</label>
-            <div class="complaint-actions">
-                <button type="button" class="btn btn-danger btn-sm" onclick="removeComplaintBlock(this)" title="Remove complaint">
-                    <i class="fas fa-times"></i>
-                </button>
+        <div class="complaint-block-content">
+            <div class="complaint-number">
+                <i class="fas fa-clipboard-list"></i>
+                Complaint ${complaintNumber}
+            </div>
+            <div class="complaint-select-wrapper">
+                <select class="form-select complaint-select" name="complaints" onchange="updateNoteFieldName(this)" required>
+                    ${complaintOptions}
+                </select>
+                <div class="complaint-summary" style="display:none;"></div>
             </div>
         </div>
-        <div class="mb-2">
-            <select class="form-select complaint-select" name="complaints" onchange="updateNoteFieldName(this)" required>
-                ${complaintOptions}
-            </select>
-            <div class="complaint-summary mt-2"></div>
-        </div>
-        
     `;
 
     container.appendChild(block);
+
+    // Add click event to select this block
+    block.addEventListener('click', function() {
+        selectComplaintBlock(block);
+    });
 
     // Initialize select2 for the complaint select with larger dropdown
     const selEl = block.querySelector('.complaint-select');
@@ -1845,7 +2464,7 @@ function addComplaintBlock(selectedId = '', noteText = '') {
         allowClear: true,
         width: '100%',
         dropdownParent: $(block),
-        dropdownCssClass: 'larger-dropdown', // Add custom CSS class for larger dropdown
+        dropdownCssClass: 'larger-dropdown',
         templateResult: function(data) {
             if (!data.id) return data.text;
             const $result = $('<span><strong>' + data.text + '</strong></span>');
@@ -1857,37 +2476,79 @@ function addComplaintBlock(selectedId = '', noteText = '') {
         }
     });
 
-    // If selectedId provided (edit mode), programmatically set value and update note field name
+    // If selectedId provided (edit mode), programmatically set value and update summary
     if (selectedId) {
-        selEl.value = selectedId;
-        try { $(selEl).trigger('change.select2'); } catch (e) { /* ignore */ }
-        updateNoteFieldName(selEl);
+        setTimeout(() => {
+            try {
+                $(selEl).val(selectedId.toString()).trigger('change.select2');
+            } catch (e) {
+                selEl.value = selectedId;
+                try { $(selEl).trigger('change'); } catch(e) {}
+            }
+            updateNoteFieldName(selEl);
+        }, 50);
     }
 
     updateComplaintSelectionStatus();
+    updateComplaintNumbers();
 }
 
-// Called when a complaint select changes; updates the corresponding note input's name and enabled state
+// Select a complaint block
+function selectComplaintBlock(block) {
+    // Remove selection from all blocks
+    document.querySelectorAll('.complaint-block').forEach(b => {
+        b.style.border = '2px solid #e9ecef';
+    });
+    
+    // Highlight selected block
+    block.style.border = '2px solid #0d6efd';
+    selectedComplaintBlock = block;
+    
+    // Enable remove button
+    const remBtn = document.getElementById('removeComplaintBtn');
+    if (remBtn) remBtn.disabled = false;
+}
+
+// Remove the selected complaint block
+function removeSelectedComplaint() {
+    if (selectedComplaintBlock) {
+        selectedComplaintBlock.remove();
+        selectedComplaintBlock = null;
+        const remBtn = document.getElementById('removeComplaintBtn');
+        if (remBtn) remBtn.disabled = true;
+        updateComplaintSelectionStatus();
+        updateComplaintNumbers();
+    }
+}
+
+// Update complaint numbers after add/remove
+function updateComplaintNumbers() {
+    const blocks = document.querySelectorAll('.complaint-block');
+    blocks.forEach((block, index) => {
+        const numberLabel = block.querySelector('.complaint-number');
+        if (numberLabel) {
+            numberLabel.innerHTML = `<i class="fas fa-clipboard-list"></i> Complaint ${index + 1}`;
+        }
+    });
+}
+
+// Called when a complaint select changes
 function updateNoteFieldName(selectEl) {
     const block = selectEl.closest('.complaint-block');
     const selectedComplaintId = selectEl.value;
-    const idx = block.dataset.index || 'placeholder';
 
     if (selectedComplaintId) {
-        // Hide the dropdown and show bold summary with type
         const selectedText = $(selectEl).find('option:selected').text();
         const [namePart, typePartRaw] = selectedText.split(' (');
         const typePart = typePartRaw ? typePartRaw.replace(')', '') : '';
         const summaryEl = block.querySelector('.complaint-summary');
         summaryEl.innerHTML = `<strong>${namePart}</strong>${typePart ? ' <span class="badge-type">' + typePart + '</span>' : ''}`;
         summaryEl.style.display = 'block';
-        $(selectEl).select2('close');
-        $(selectEl).next('.select2').hide();
+        try { $(selectEl).select2('close'); } catch(e) {}
+        try { $(selectEl).next('.select2').hide(); } catch(e) {}
     } else {
-        // clear select2 visible value
         try { $(selectEl).val(null).trigger('change.select2'); } catch(e) {}
-        // Show back the select if previously hidden
-        $(selectEl).next('.select2').show();
+        try { $(selectEl).next('.select2').show(); } catch(e) {}
         const summaryEl = block.querySelector('.complaint-summary');
         if (summaryEl) {
             summaryEl.style.display = 'none';
@@ -1896,61 +2557,59 @@ function updateNoteFieldName(selectEl) {
     }
 }
 
-// Remove a complaint block
-function removeComplaintBlock(button) {
-    const block = button.closest('.complaint-block');
-    if (block) block.remove();
-    updateComplaintSelectionStatus();
-}
-
 // Show/hide the "no complaints selected" alert
 function updateComplaintSelectionStatus() {
     const blocks = document.querySelectorAll('.complaint-block');
     const alertBox = document.getElementById('no-complaints-selected');
     if (!blocks || blocks.length === 0) {
-        alertBox.style.display = 'block';
+        if (alertBox) alertBox.style.display = 'flex';
+        const remBtn = document.getElementById('removeComplaintBtn');
+        if (remBtn) remBtn.disabled = true;
     } else {
-        alertBox.style.display = 'none';
+        if (alertBox) alertBox.style.display = 'none';
     }
 }
 
-// Refresh options for all complaint selects when complaint type changes
+// Refresh options for all complaint selects when complaint type or software changes
 function updateComplaintOptions() {
     const selects = document.querySelectorAll('.complaint-select');
     selects.forEach(sel => {
         const currentValue = sel.value;
         let newOptions = '<option value="">-- Select Complaint --</option>';
         const filteredSorted = allComplaints
-            .filter(c => complaintMatchesType(c.type))
+            .filter(c => complaintMatchesFilters(c))
             .sort((a, b) => a.description.localeCompare(b.description));
         filteredSorted.forEach(c => {
-            const selAttr = currentValue && currentValue.toString() === c.id ? 'selected' : '';
+            const selAttr = currentValue && currentValue.toString() === c.id.toString() ? 'selected' : '';
             newOptions += `<option value="${c.id}" ${selAttr}>${c.description} (${c.type.charAt(0).toUpperCase() + c.type.slice(1)})</option>`;
         });
 
         try { $(sel).select2('destroy'); } catch(e) {}
         sel.innerHTML = newOptions;
-        $(sel).select2({
-            placeholder: '-- Select Complaint --',
-            allowClear: true,
-            width: '100%',
-            dropdownParent: $(sel).closest('.complaint-block'),
-            templateResult: function(data) {
-                if (!data.id) return data.text;
-                const $result = $('<span><strong>' + data.text + '</strong></span>');
-                return $result;
-            },
-            templateSelection: function(data) {
-                if (!data.id) return data.text;
-                return $('<span><strong>' + data.text + '</strong></span>');
-            }
-        });
+        try {
+            $(sel).select2({
+                placeholder: '-- Select Complaint --',
+                allowClear: true,
+                width: '100%',
+                dropdownParent: $(sel).closest('.complaint-block'),
+                dropdownCssClass: 'larger-dropdown',
+                templateResult: function(data) {
+                    if (!data.id) return data.text;
+                    const $result = $('<span><strong>' + data.text + '</strong></span>');
+                    return $result;
+                },
+                templateSelection: function(data) {
+                    if (!data.id) return data.text;
+                    return $('<span><strong>' + data.text + '</strong></span>');
+                }
+            });
+        } catch(e) { /* ignore select2 init errors */ }
 
-        // If previously selected value no longer matches type, clear it
+        // If currentValue is present but no longer matches filters, clear it
         if (currentValue) {
             let foundMatch = false;
             allComplaints.forEach(c => {
-                if (c.id === currentValue && c.type === currentComplaintType) {
+                if (c.id.toString() === currentValue.toString() && complaintMatchesFilters(c)) {
                     foundMatch = true;
                 }
             });
@@ -1969,47 +2628,92 @@ document.addEventListener('DOMContentLoaded', function() {
     const complaintTypeSelect = document.getElementById('complaint_type');
     const complaintsContainer = document.getElementById('complaints-container');
     const blocksContainer = document.getElementById('complaint-blocks-container');
+    const softwareSelect = document.getElementById('software_select'); // new software select
 
-    // Initial complaint type (template may have set default)
-    currentComplaintType = (complaintTypeSelect.value && complaintTypeSelect.value !== '') ? complaintTypeSelect.value : 'software';
-    complaintTypeSelect.value = currentComplaintType;
+    // Initialize currentComplaintType
+    currentComplaintType = (complaintTypeSelect && complaintTypeSelect.value && complaintTypeSelect.value !== '') ? complaintTypeSelect.value : 'software';
+    if (complaintTypeSelect) complaintTypeSelect.value = currentComplaintType;
 
-    // Show container if a type exists initially
-    if (currentComplaintType) {
-        complaintsContainer.style.display = 'block';
+    // Initialize selectedSoftware from select (or from existing log if you set it server-side in the select element)
+    if (softwareSelect) {
+        selectedSoftware = softwareSelect.value ? softwareSelect.value : '';
     }
 
-    // When complaint type changes
-    complaintTypeSelect.addEventListener('change', function() {
-        currentComplaintType = this.value;
-        if (currentComplaintType) {
-            complaintsContainer.style.display = 'block';
-            updateComplaintOptions();
-            if (blocksContainer.children.length === 0) {
-                addComplaintBlock();
-            }
-        } else {
-            complaintsContainer.style.display = 'none';
-            blocksContainer.innerHTML = '';
-            complaintIndex = 0;
-            currentComplaintType = '';
-        }
-        updateComplaintSelectionStatus();
-    });
+    if (currentComplaintType) {
+        if (complaintsContainer) complaintsContainer.style.display = 'block';
+    }
 
-    // If editing an existing log, build its complaint blocks from server-side data
+    // Hook software select change to filter complaint options
+    if (softwareSelect) {
+        softwareSelect.addEventListener('change', function() {
+            selectedSoftware = this.value ? this.value : '';
+            // Rebuild options for existing complaint selects
+            updateComplaintOptions();
+            // If there are no matching complaints at all, show the "no complaints" message and disable add button
+            updateComplaintSelectionStatus();
+            const hasAnyOptions = allComplaints.some(c => complaintMatchesFilters(c));
+            const addBtn = document.querySelector('.btn-add-complaint');
+            if (addBtn) addBtn.disabled = !hasAnyOptions;
+            const noComplaintsEl = document.getElementById('no-complaints-selected');
+            if (!hasAnyOptions) {
+                if (noComplaintsEl) noComplaintsEl.style.display = 'block';
+            } else {
+                if (noComplaintsEl) noComplaintsEl.style.display = 'none';
+            }
+        });
+    }
+
+    // complaint type change handling
+    if (complaintTypeSelect) {
+        complaintTypeSelect.addEventListener('change', function() {
+            currentComplaintType = this.value;
+            if (currentComplaintType) {
+                if (complaintsContainer) complaintsContainer.style.display = 'block';
+                updateComplaintOptions();
+                if (blocksContainer.children.length === 0) {
+                    addComplaintBlock();
+                }
+            } else {
+                if (complaintsContainer) complaintsContainer.style.display = 'none';
+                if (blocksContainer) blocksContainer.innerHTML = '';
+                complaintIndex = 0;
+                currentComplaintType = '';
+                selectedComplaintBlock = null;
+            }
+            updateComplaintSelectionStatus();
+        });
+    }
+
+    // If editing an existing log, prefill values (server should provide selected_complaints)
     {% if log and log.complaint_type %}
         currentComplaintType = '{{ log.complaint_type }}';
-        complaintTypeSelect.value = currentComplaintType;
-        document.getElementById('complaints-container').style.display = 'block';
+        if (complaintTypeSelect) complaintTypeSelect.value = currentComplaintType;
+        if (document.getElementById('complaints-container')) document.getElementById('complaints-container').style.display = 'block';
+        // If server can provide the currently selected software on the log, set it (optional)
+        {% if log.software %}
+            // set software select value on load if element exists
+            if (softwareSelect) {
+                softwareSelect.value = '{{ log.software.id }}';
+                selectedSoftware = '{{ log.software.id }}';
+            }
+        {% endif %}
 
         {% for sc in selected_complaints %}
             addComplaintBlock('{{ sc.complaint.id }}', `{{ sc.note|escapejs }}`);
         {% endfor %}
     {% else %}
-        // Not editing: if container visible and no blocks, add an initial block
-        if (complaintsContainer.style.display !== 'none' && blocksContainer.children.length === 0) {
-            addComplaintBlock();
+        // default: add one block if none exist and complaints container is shown
+        if (complaintsContainer && complaintsContainer.style.display !== 'none' && blocksContainer && blocksContainer.children.length === 0) {
+            // but only if there is at least one complaint matching current filters
+            const hasAnyOptions = allComplaints.some(c => complaintMatchesFilters(c));
+            if (hasAnyOptions) addComplaintBlock();
+            else {
+                // show the no-complaints message
+                const noComplaintsEl = document.getElementById('no-complaints-selected');
+                if (noComplaintsEl) noComplaintsEl.style.display = 'block';
+                const addBtn = document.querySelector('.btn-add-complaint');
+                if (addBtn) addBtn.disabled = true;
+            }
         }
     {% endif %}
 
@@ -2017,42 +2721,328 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const complaintTypeSelect = document.getElementById('complaint_type');
-    const complaintSelect = document.getElementById('complaint');
-
-    // Complaint data from Django template
-    const complaintsData = {
-        {% for c in complaints %}
-        {{ c.id }}: {
-            "description": "{{ c.description|escapejs }}",
-            "type": "{{ c.complaint_type }}"
-        },
-        {% endfor %}
-    };
-
-    function updateComplaintOptions() {
-        const selectedType = complaintTypeSelect.value;
-        const options = complaintSelect.options;
-        let optionCount = 0;
-
-        for (const complaintId in complaintsData) {
-            const complaint = complaintsData[complaintId];
-            const option = options[optionCount + 1]; // +1 to skip the default option
-
-            if (selectedType === 'both' || complaint.type === selectedType) {
-                option.value = complaintId;
-                option.text = `${complaint.description} (${complaint.type})`;
-                option.hidden = false;
-            } else {
-                option.hidden = true;
-            }
-            optionCount++;
+// Function to show customer info box with data
+function showCustomerInfoBox(customerData) {
+    const infoBox = document.getElementById('customerInfoBox');
+    
+    // Calculate age from installation date
+    let ageText = 'N/A';
+    if (customerData.installationdate) {
+        const installDate = new Date(customerData.installationdate);
+        const today = new Date();
+        
+        let years = today.getFullYear() - installDate.getFullYear();
+        let months = today.getMonth() - installDate.getMonth();
+        
+        if (months < 0) {
+            years--;
+            months += 12;
         }
+        
+        if (today.getDate() < installDate.getDate()) {
+            months--;
+            if (months < 0) {
+                years--;
+                months += 12;
+            }
+        }
+        
+        ageText = `${years} yr${years !== 1 ? 's' : ''} ${months} month${months !== 1 ? 's' : ''}`;
     }
+    
+    // Update all fields
+    document.getElementById('infoCustomerName').textContent = customerData.name || 'N/A';
+    document.getElementById('infoSoftware').textContent = customerData.software || 'N/A';
+    document.getElementById('infoAge').textContent = ageText;
+    document.getElementById('infoLicenseType').textContent = customerData.lictype || 'N/A';
+    document.getElementById('infoClients').textContent = customerData.clients || 'N/A';
+    document.getElementById('infoSP').textContent = customerData.sp || 'N/A';
+    document.getElementById('infoAMC').textContent = customerData.amc || 'N/A';
+    document.getElementById('infoBranch').textContent = customerData.branch || 'N/A';
+    document.getElementById('infoNature').textContent = customerData.nature || 'N/A';
+    
+    // Show the box with animation
+    infoBox.classList.add('show');
+}
 
-    complaintTypeSelect.addEventListener('change', updateComplaintOptions);
-    updateComplaintOptions(); // Initial call to populate the dropdown
+// Function to close customer info box
+function closeCustomerInfoBox() {
+    const infoBox = document.getElementById('customerInfoBox');
+    infoBox.classList.remove('show');
+}
+document.addEventListener("DOMContentLoaded", function () {
+    const customerInput = document.getElementById("customer");
+    const customerDropdown = document.getElementById("customerDropdown");
+    const placeInput = document.getElementById("place");
+    const newCustomerBtn = document.getElementById("newCustomerBtn");
+    const newCustomerFields = document.getElementById("newCustomerFields");
+    const newCustomerName = document.getElementById("new_customer_name");
+    const newCustomerAddress = document.getElementById("new_customer_address");
+    const viewCustomerBtn = document.getElementById("viewCustomerBtn");
+
+    let isNewCustomer = false;
+    let allCustomers = [];
+    let selectedCustomerData = null;
+
+    // Toggle between new customer and existing customer
+    newCustomerBtn.addEventListener("click", function() {
+        isNewCustomer = !isNewCustomer;
+        
+        if (isNewCustomer) {
+            newCustomerBtn.textContent = "Select Existing";
+            newCustomerBtn.classList.remove("btn-outline-secondary");
+            newCustomerBtn.classList.add("btn-outline-primary");
+            newCustomerFields.style.display = "block";
+            customerDropdown.style.display = "none";
+            customerInput.value = "";
+            customerInput.placeholder = "Will use new customer details below";
+            customerInput.readOnly = true;
+            customerInput.required = false;
+            newCustomerName.required = true;
+            newCustomerAddress.required = true;
+            viewCustomerBtn.disabled = true;
+            
+            // Show the "Customer Name (Manual Entry)" section
+            document.querySelector('.new-customer-section').style.display = 'block';
+            
+            // Add event listener to auto-fill place when new customer address changes
+            newCustomerAddress.addEventListener("input", function() {
+                placeInput.value = newCustomerAddress.value;
+            });
+        } else {
+            newCustomerBtn.textContent = "New Customer";
+            newCustomerBtn.classList.remove("btn-outline-primary");
+            newCustomerBtn.classList.add("btn-outline-secondary");
+            newCustomerFields.style.display = "none";
+            customerInput.placeholder = "Search or type new customer";
+            customerInput.readOnly = false;
+            customerInput.required = true;
+            newCustomerName.required = false;
+            newCustomerAddress.required = false;
+            
+            // Hide the "Customer Name (Manual Entry)" section
+            document.querySelector('.new-customer-section').style.display = 'none';
+            
+            // Remove the event listener when switching back to existing customer
+            newCustomerAddress.removeEventListener("input", function() {
+                placeInput.value = newCustomerAddress.value;
+            });
+        }
+    });
+
+    // View Customer Details Button Click Handler
+    viewCustomerBtn.addEventListener("click", function() {
+        if (selectedCustomerData) {
+            showCustomerDetails(selectedCustomerData);
+        }
+    });
+
+    // Fetch customers when the page loads
+    fetch('/proxy/customers/')
+        .then(response => response.json())
+        .then(data => {
+            allCustomers = data; // Store all customers data
+            customerDropdown.innerHTML = ""; // Clear existing options
+
+            // Add customer options with address data - BRANCH AT THE END IN BRACKETS
+            data.forEach(customer => {
+                const option = document.createElement("div");
+                option.classList.add("dropdown-item");
+                const branchVal = customer.branch || customer.branch_name || '';
+                
+                // Build display text: Name, Address [Branch]
+                let displayText = customer.name;
+                if (customer.address) {
+                    displayText += ', ' + customer.address;
+                }
+                if (branchVal) {
+                    displayText += ' [' + branchVal + ']';
+                }
+                option.textContent = displayText;
+                
+                option.setAttribute("data-address", customer.address);
+                option.setAttribute("data-customer-code", customer.code);
+                option.addEventListener("click", function () {
+                    customerInput.value = customer.name;
+                    placeInput.value = option.getAttribute("data-address");
+                    customerDropdown.style.display = "none";
+                    
+                    // Store selected customer data and enable eye button
+                    selectedCustomerData = customer;
+                    viewCustomerBtn.disabled = false;
+                });
+                customerDropdown.appendChild(option);
+            });
+
+            if (data.length === 0) {
+                customerDropdown.innerHTML = '<p style="padding: 10px; margin: 0;">No customers found</p>';
+            }
+        })
+        .catch(error => {
+            console.error("Error loading customers:", error);
+            customerDropdown.innerHTML = '<p style="padding: 10px; margin: 0;">Failed to load customers. You can add a new customer.</p>';
+        });
+
+    // Show dropdown on focus
+    customerInput.addEventListener("focus", function () {
+        if (!isNewCustomer) {
+            customerDropdown.style.display = "block";
+        }
+    });
+
+    // Hide dropdown when clicking outside
+    document.addEventListener("click", function (e) {
+        if (!customerInput.contains(e.target) && !customerDropdown.contains(e.target)) {
+            customerDropdown.style.display = "none";
+        }
+    });
+
+    // Filter customers as the user types
+    customerInput.addEventListener("input", function () {
+        if (isNewCustomer) return;
+        
+        const filter = customerInput.value.toLowerCase();
+        const options = customerDropdown.querySelectorAll(".dropdown-item");
+        let hasVisibleItem = false;
+
+        // Reset selected customer data if input is cleared or changed
+        if (selectedCustomerData && customerInput.value !== selectedCustomerData.name) {
+            selectedCustomerData = null;
+            viewCustomerBtn.disabled = true;
+        }
+
+        options.forEach(option => {
+            if (option.textContent.toLowerCase().includes(filter)) {
+                option.style.display = "block";
+                hasVisibleItem = true;
+            } else {
+                option.style.display = "none";
+            }
+        });
+
+        customerDropdown.style.display = hasVisibleItem ? "block" : "none";
+    });
+
+    // Auto-fill place when selecting from dropdown
+    customerDropdown.addEventListener("click", function(e) {
+        if (e.target.classList.contains("dropdown-item")) {
+            placeInput.value = e.target.getAttribute("data-address");
+        }
+    });
+});
+
+// Second instance - Customer info box integration
+document.addEventListener("DOMContentLoaded", function () {
+    const customerInput = document.getElementById("customer");
+    const customerDropdown = document.getElementById("customerDropdown");
+    const placeInput = document.getElementById("place");
+    const newCustomerBtn = document.getElementById("newCustomerBtn");
+    const newCustomerFields = document.getElementById("newCustomerFields");
+    const viewCustomerBtn = document.getElementById("viewCustomerBtn");
+
+    let isNewCustomer = false;
+    let allCustomers = [];
+    let selectedCustomerData = null;
+
+    // Fetch customers
+    fetch('/proxy/customers/')
+        .then(response => response.json())
+        .then(data => {
+            allCustomers = data;
+            customerDropdown.innerHTML = "";
+
+            data.forEach(customer => {
+                const option = document.createElement("div");
+                option.classList.add("dropdown-item");
+                const branchVal = customer.branch || customer.branch_name || '';
+                
+                // Build display text: Name, Address [Branch]
+                let displayText = customer.name;
+                if (customer.address) {
+                    displayText += ', ' + customer.address;
+                }
+                if (branchVal) {
+                    displayText += ' [' + branchVal + ']';
+                }
+                option.textContent = displayText;
+                
+                option.setAttribute("data-address", customer.address);
+                option.setAttribute("data-customer-code", customer.code);
+                
+                option.addEventListener("click", function () {
+                    customerInput.value = customer.name;
+                    placeInput.value = option.getAttribute("data-address");
+                    customerDropdown.style.display = "none";
+                    
+                    // Store selected customer data
+                    selectedCustomerData = customer;
+                    viewCustomerBtn.disabled = false;
+                    
+                    // Show customer info box
+                    showCustomerInfoBox(customer);
+                });
+                customerDropdown.appendChild(option);
+            });
+
+            if (data.length === 0) {
+                customerDropdown.innerHTML = '<p style="padding: 10px; margin: 0;">No customers found</p>';
+            }
+        })
+        .catch(error => {
+            console.error("Error loading customers:", error);
+            customerDropdown.innerHTML = '<p style="padding: 10px; margin: 0;">Failed to load customers.</p>';
+        });
+
+    // Show dropdown on focus
+    customerInput.addEventListener("focus", function () {
+        if (!isNewCustomer) {
+            customerDropdown.style.display = "block";
+        }
+    });
+
+    // Hide dropdown when clicking outside
+    document.addEventListener("click", function (e) {
+        if (!customerInput.contains(e.target) && !customerDropdown.contains(e.target)) {
+            customerDropdown.style.display = "none";
+        }
+    });
+
+    // Filter customers as user types
+    customerInput.addEventListener("input", function () {
+        if (isNewCustomer) return;
+        
+        const filter = customerInput.value.toLowerCase();
+        const options = customerDropdown.querySelectorAll(".dropdown-item");
+        let hasVisibleItem = false;
+
+        if (selectedCustomerData && customerInput.value !== selectedCustomerData.name) {
+            selectedCustomerData = null;
+            viewCustomerBtn.disabled = true;
+            closeCustomerInfoBox();
+        }
+
+        options.forEach(option => {
+            if (option.textContent.toLowerCase().includes(filter)) {
+                option.style.display = "block";
+                hasVisibleItem = true;
+            } else {
+                option.style.display = "none";
+            }
+        });
+
+        customerDropdown.style.display = hasVisibleItem ? "block" : "none";
+    });
+
+    // New customer button toggle
+    newCustomerBtn.addEventListener("click", function() {
+        isNewCustomer = !isNewCustomer;
+        
+        if (isNewCustomer) {
+            closeCustomerInfoBox();
+            viewCustomerBtn.disabled = true;
+        }
+    });
 });
 </script>
+
 {% endblock %}
