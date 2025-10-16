@@ -1231,10 +1231,14 @@ def delete_hardware(request, hardware_id):
 
 
 # app1/views.py (complaint-related functions)
+# views.py (snippet)
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from .models import Complaint
+from .models import Complaint, User
 from .forms import ComplaintForm
+from software_master.models import Software
+
+# views.py (complaint-related functions)
 
 @login_required
 def add_complaint(request):
@@ -1242,7 +1246,7 @@ def add_complaint(request):
         form = ComplaintForm(request.POST)
         if form.is_valid():
             complaint = form.save(commit=False)
-            # attach created_by if available in session (preserve your existing logic)
+            # attach created_by if available in session (preserve existing logic)
             if 'user_id' in request.session:
                 try:
                     from .models import User
@@ -1253,21 +1257,51 @@ def add_complaint(request):
             else:
                 complaint.created_by = None
             complaint.save()
-            # form.save_m2m() not needed here (no M2M) but harmless
+            # Save M2M if available; fallback to manual set
+            if hasattr(form, 'save_m2m'):
+                form.save_m2m()
+            else:
+                # fallback: set software from cleaned_data
+                sw = form.cleaned_data.get('software')
+                if sw is not None:
+                    # ensure sequence
+                    complaint.software.set(sw if hasattr(sw, '__iter__') else [sw])
             return redirect('all_complaints')
-        # if not valid, render with errors
     else:
         form = ComplaintForm()
     return render(request, 'add_complaints.html', {'form': form})
+
+
+@login_required
+def edit_complaint(request, complaint_id):
+    complaint = get_object_or_404(Complaint, id=complaint_id)
+    if request.method == 'POST':
+        form = ComplaintForm(request.POST, instance=complaint)
+        if form.is_valid():
+            complaint = form.save(commit=False)
+            complaint.save()
+            if hasattr(form, 'save_m2m'):
+                form.save_m2m()
+            else:
+                sw = form.cleaned_data.get('software')
+                if sw is not None:
+                    complaint.software.set(sw if hasattr(sw, '__iter__') else [sw])
+            return redirect('all_complaints')
+    else:
+        form = ComplaintForm(instance=complaint)
+    return render(request, 'edit_complaint.html', {'form': form})
+
+
 
 @login_required
 def all_complaints(request):
     selected_type = request.GET.get('type', 'all')
 
+    # for M2M, use prefetch_related
     if selected_type == 'all':
-        complaints = Complaint.objects.select_related('software').all().order_by('description')
+        complaints = Complaint.objects.prefetch_related('software').all().order_by('description')
     else:
-        complaints = Complaint.objects.select_related('software').filter(complaint_type=selected_type).order_by('description')
+        complaints = Complaint.objects.prefetch_related('software').filter(complaint_type=selected_type).order_by('description')
 
     from django.core.paginator import Paginator
     paginator = Paginator(complaints, 10)
@@ -1282,18 +1316,6 @@ def all_complaints(request):
     }
     return render(request, 'all_complaints.html', context)
 
-
-@login_required
-def edit_complaint(request, complaint_id):
-    complaint = get_object_or_404(Complaint, id=complaint_id)
-    if request.method == 'POST':
-        form = ComplaintForm(request.POST, instance=complaint)
-        if form.is_valid():
-            form.save()
-            return redirect('all_complaints')
-    else:
-        form = ComplaintForm(instance=complaint)
-    return render(request, 'edit_complaint.html', {'form': form})
 
 
 # Delete complaint view

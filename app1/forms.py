@@ -368,35 +368,35 @@ class HardwareForm(forms.ModelForm):
 
 
 
+# forms.py (snippet)
+# forms.py (ComplaintForm)
 from django import forms
 from .models import Complaint
 from software_master.models import Software
 
 class ComplaintForm(forms.ModelForm):
-    software = forms.ModelChoiceField(
+    software = forms.ModelMultipleChoiceField(
         queryset=Software.objects.all(),
-        required=False,  # default to False; we'll override it in __init__
-        empty_label="-- Select Software --",
-        widget=forms.Select(attrs={'class': 'form-select'})
+        required=False,
+        widget=forms.SelectMultiple(attrs={'class': 'form-select', 'size': 6})
     )
 
     class Meta:
         model = Complaint
         fields = ['description', 'complaint_type', 'software']
         widgets = {
-            'description': forms.TextInput(attrs={'rows': 3, 'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
             'complaint_type': forms.Select(attrs={'class': 'form-select'}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
-        # If creating a new complaint (no instance yet), make software required
+        # Make software required on create if you want:
         if not self.instance or not self.instance.pk:
-            self.fields['software'].required = True
-        else:
-            # When editing, software can be optional
             self.fields['software'].required = False
+
+
+
 
 
 

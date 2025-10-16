@@ -2383,16 +2383,17 @@ document.addEventListener("DOMContentLoaded", function () {
 let complaintIndex = 0;
 let currentComplaintType = '';
 let selectedComplaintBlock = null;
-let selectedSoftware = ''; // <-- new: currently selected software id ('' = all)
+let selectedSoftware = '';
 
-// Build all complaints array from server for sorting/filtering
+// Build all complaints array from server for sorting/filtering - FIXED DATA STRUCTURE
 const allComplaints = [
     {% for c in complaints %}
     {
         id: '{{ c.id }}',
         description: '{{ c.description|escapejs }}',
         type: '{{ c.complaint_type }}',
-        software: '{% if c.software %}{{ c.software.id }}{% endif %}'
+        // FIX: Store all software IDs as an array for M2M relationship
+        software_ids: [{% for sw in c.software.all %}'{{ sw.id }}'{% if not forloop.last %},{% endif %}{% endfor %}]
     }{% if not forloop.last %},{% endif %}
     {% endfor %}
 ];
@@ -2402,14 +2403,15 @@ function complaintMatchesType(complaintType) {
     return currentComplaintType === 'both' || currentComplaintType === complaintType;
 }
 
-// Helper: returns whether a complaint (object) matches both type & software filters
+// Helper: returns whether a complaint (object) matches both type & software filters - FIXED LOGIC
 function complaintMatchesFilters(complaint) {
     // Type must match
     if (!complaintMatchesType(complaint.type)) return false;
-    // Software filter: if no software selected, allow all; otherwise only complaints with matching software id
+    
+    // Software filter: if no software selected, allow all; otherwise only complaints with matching software
     if (selectedSoftware && selectedSoftware !== '') {
-        if (!complaint.software) return false;
-        return complaint.software.toString() === selectedSoftware.toString();
+        // Check if this complaint has the selected software in its software_ids array
+        return complaint.software_ids.includes(selectedSoftware.toString());
     }
     return true;
 }
@@ -2428,6 +2430,7 @@ function addComplaintBlock(selectedId = '', noteText = '') {
     const filteredSorted = allComplaints
         .filter(c => complaintMatchesFilters(c))
         .sort((a, b) => a.description.localeCompare(b.description));
+    
     filteredSorted.forEach(c => {
         const selAttr = selectedId && selectedId.toString() === c.id.toString() ? 'selected' : '';
         complaintOptions += `<option value="${c.id}" ${selAttr}>${c.description} (${c.type.charAt(0).toUpperCase() + c.type.slice(1)})</option>`;
@@ -2441,7 +2444,7 @@ function addComplaintBlock(selectedId = '', noteText = '') {
                 Complaint ${complaintNumber}
             </div>
             <div class="complaint-select-wrapper">
-                <select class="form-select complaint-select" name="complaints" onchange="updateNoteFieldName(this)" required>
+                <select class="form-select complaint-select" name="complaints" onchange="updateComplaintSelection(this)" required>
                     ${complaintOptions}
                 </select>
                 <div class="complaint-summary" style="display:none;"></div>
@@ -2464,16 +2467,7 @@ function addComplaintBlock(selectedId = '', noteText = '') {
         allowClear: true,
         width: '100%',
         dropdownParent: $(block),
-        dropdownCssClass: 'larger-dropdown',
-        templateResult: function(data) {
-            if (!data.id) return data.text;
-            const $result = $('<span><strong>' + data.text + '</strong></span>');
-            return $result;
-        },
-        templateSelection: function(data) {
-            if (!data.id) return data.text;
-            return $('<span><strong>' + data.text + '</strong></span>');
-        }
+        dropdownCssClass: 'larger-dropdown'
     });
 
     // If selectedId provided (edit mode), programmatically set value and update summary
@@ -2485,7 +2479,7 @@ function addComplaintBlock(selectedId = '', noteText = '') {
                 selEl.value = selectedId;
                 try { $(selEl).trigger('change'); } catch(e) {}
             }
-            updateNoteFieldName(selEl);
+            updateComplaintSelection(selEl);
         }, 50);
     }
 
@@ -2532,8 +2526,8 @@ function updateComplaintNumbers() {
     });
 }
 
-// Called when a complaint select changes
-function updateNoteFieldName(selectEl) {
+// Called when a complaint select changes - FIXED FUNCTION NAME
+function updateComplaintSelection(selectEl) {
     const block = selectEl.closest('.complaint-block');
     const selectedComplaintId = selectEl.value;
 
@@ -2579,6 +2573,7 @@ function updateComplaintOptions() {
         const filteredSorted = allComplaints
             .filter(c => complaintMatchesFilters(c))
             .sort((a, b) => a.description.localeCompare(b.description));
+        
         filteredSorted.forEach(c => {
             const selAttr = currentValue && currentValue.toString() === c.id.toString() ? 'selected' : '';
             newOptions += `<option value="${c.id}" ${selAttr}>${c.description} (${c.type.charAt(0).toUpperCase() + c.type.slice(1)})</option>`;
@@ -2592,16 +2587,7 @@ function updateComplaintOptions() {
                 allowClear: true,
                 width: '100%',
                 dropdownParent: $(sel).closest('.complaint-block'),
-                dropdownCssClass: 'larger-dropdown',
-                templateResult: function(data) {
-                    if (!data.id) return data.text;
-                    const $result = $('<span><strong>' + data.text + '</strong></span>');
-                    return $result;
-                },
-                templateSelection: function(data) {
-                    if (!data.id) return data.text;
-                    return $('<span><strong>' + data.text + '</strong></span>');
-                }
+                dropdownCssClass: 'larger-dropdown'
             });
         } catch(e) { /* ignore select2 init errors */ }
 
@@ -2616,10 +2602,9 @@ function updateComplaintOptions() {
             if (!foundMatch) {
                 sel.value = '';
                 try { $(sel).val(null).trigger('change.select2'); } catch(e) {}
+                updateComplaintSelection(sel);
             }
         }
-
-        updateNoteFieldName(sel);
     });
 }
 
@@ -2628,13 +2613,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const complaintTypeSelect = document.getElementById('complaint_type');
     const complaintsContainer = document.getElementById('complaints-container');
     const blocksContainer = document.getElementById('complaint-blocks-container');
-    const softwareSelect = document.getElementById('software_select'); // new software select
+    const softwareSelect = document.getElementById('software_select');
 
     // Initialize currentComplaintType
     currentComplaintType = (complaintTypeSelect && complaintTypeSelect.value && complaintTypeSelect.value !== '') ? complaintTypeSelect.value : 'software';
     if (complaintTypeSelect) complaintTypeSelect.value = currentComplaintType;
 
-    // Initialize selectedSoftware from select (or from existing log if you set it server-side in the select element)
+    // Initialize selectedSoftware from select
     if (softwareSelect) {
         selectedSoftware = softwareSelect.value ? softwareSelect.value : '';
     }
@@ -2647,18 +2632,24 @@ document.addEventListener('DOMContentLoaded', function() {
     if (softwareSelect) {
         softwareSelect.addEventListener('change', function() {
             selectedSoftware = this.value ? this.value : '';
+            console.log('Software changed to:', selectedSoftware, 'Filtered complaints:', allComplaints.filter(c => complaintMatchesFilters(c)).length);
+            
             // Rebuild options for existing complaint selects
             updateComplaintOptions();
-            // If there are no matching complaints at all, show the "no complaints" message and disable add button
-            updateComplaintSelectionStatus();
+            
+            // Check if there are any matching complaints
             const hasAnyOptions = allComplaints.some(c => complaintMatchesFilters(c));
             const addBtn = document.querySelector('.btn-add-complaint');
+            
             if (addBtn) addBtn.disabled = !hasAnyOptions;
+            
             const noComplaintsEl = document.getElementById('no-complaints-selected');
             if (!hasAnyOptions) {
                 if (noComplaintsEl) noComplaintsEl.style.display = 'block';
+                if (addBtn) addBtn.disabled = true;
             } else {
                 if (noComplaintsEl) noComplaintsEl.style.display = 'none';
+                if (addBtn) addBtn.disabled = false;
             }
         });
     }
@@ -2671,7 +2662,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (complaintsContainer) complaintsContainer.style.display = 'block';
                 updateComplaintOptions();
                 if (blocksContainer.children.length === 0) {
-                    addComplaintBlock();
+                    // Check if there are matching complaints before adding a block
+                    const hasAnyOptions = allComplaints.some(c => complaintMatchesFilters(c));
+                    if (hasAnyOptions) {
+                        addComplaintBlock();
+                    }
                 }
             } else {
                 if (complaintsContainer) complaintsContainer.style.display = 'none';
@@ -2684,14 +2679,14 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // If editing an existing log, prefill values (server should provide selected_complaints)
+    // If editing an existing log, prefill values
     {% if log and log.complaint_type %}
         currentComplaintType = '{{ log.complaint_type }}';
         if (complaintTypeSelect) complaintTypeSelect.value = currentComplaintType;
         if (document.getElementById('complaints-container')) document.getElementById('complaints-container').style.display = 'block';
-        // If server can provide the currently selected software on the log, set it (optional)
+        
+        // Set software select value on load if element exists
         {% if log.software %}
-            // set software select value on load if element exists
             if (softwareSelect) {
                 softwareSelect.value = '{{ log.software.id }}';
                 selectedSoftware = '{{ log.software.id }}';
@@ -2706,8 +2701,9 @@ document.addEventListener('DOMContentLoaded', function() {
         if (complaintsContainer && complaintsContainer.style.display !== 'none' && blocksContainer && blocksContainer.children.length === 0) {
             // but only if there is at least one complaint matching current filters
             const hasAnyOptions = allComplaints.some(c => complaintMatchesFilters(c));
-            if (hasAnyOptions) addComplaintBlock();
-            else {
+            if (hasAnyOptions) {
+                addComplaintBlock();
+            } else {
                 // show the no-complaints message
                 const noComplaintsEl = document.getElementById('no-complaints-selected');
                 if (noComplaintsEl) noComplaintsEl.style.display = 'block';

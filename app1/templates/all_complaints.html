@@ -79,11 +79,16 @@
                 <td>{{ complaint.description|capfirst }}</td>
                 <td>{{ complaint.get_complaint_type_display|capfirst }}</td>
                 <td>
-                    {% if complaint.software %}
-                        {{ complaint.software.name }}
-                    {% else %}
-                        --
-                    {% endif %}
+                    {% with sws=complaint.software.all %}
+                        {% if sws %}
+                            {# join names by comma #}
+                            {% for s in sws %}
+                                {{ s.name }}{% if not forloop.last %}, {% endif %}
+                            {% endfor %}
+                        {% else %}
+                            --
+                        {% endif %}
+                    {% endwith %}
                 </td>
                 <td>
                     <a href="{% url 'edit_complaint' complaint.id %}" class="btn btn-warning btn-sm">Edit</a>
