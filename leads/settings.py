@@ -64,6 +64,7 @@ INSTALLED_APPS = [
     'django.contrib.humanize',
     "wfh_Request",
     "punchout_reminder",
+    "software_master",
     
 ]
 

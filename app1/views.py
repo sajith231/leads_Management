@@ -1230,6 +1230,9 @@ def delete_hardware(request, hardware_id):
 
 
 
+# app1/views.py (complaint-related functions)
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
 from .models import Complaint
 from .forms import ComplaintForm
 
@@ -1239,10 +1242,10 @@ def add_complaint(request):
         form = ComplaintForm(request.POST)
         if form.is_valid():
             complaint = form.save(commit=False)
-            # Get the custom User instance from session or however you store it
-            # Option 1: If you store user_id in session
+            # attach created_by if available in session (preserve your existing logic)
             if 'user_id' in request.session:
                 try:
+                    from .models import User
                     custom_user = User.objects.get(id=request.session['user_id'])
                     complaint.created_by = custom_user
                 except User.DoesNotExist:
@@ -1250,40 +1253,28 @@ def add_complaint(request):
             else:
                 complaint.created_by = None
             complaint.save()
+            # form.save_m2m() not needed here (no M2M) but harmless
             return redirect('all_complaints')
+        # if not valid, render with errors
     else:
         form = ComplaintForm()
     return render(request, 'add_complaints.html', {'form': form})
 
-
-from django.core.paginator import Paginator
-from django.shortcuts import render
-from .models import Complaint
-
-
-from django.core.paginator import Paginator
-
-from django.contrib.auth.decorators import login_required
-from django.core.paginator import Paginator
-from django.shortcuts import render
-from .models import Complaint
-
 @login_required
 def all_complaints(request):
     selected_type = request.GET.get('type', 'all')
-    
+
     if selected_type == 'all':
-        complaints = Complaint.objects.all().order_by('description')  # Alphabetic order
+        complaints = Complaint.objects.select_related('software').all().order_by('description')
     else:
-        complaints = Complaint.objects.filter(complaint_type=selected_type).order_by('description')  # Alphabetic order
-    
-    paginator = Paginator(complaints, 10)  # Show 10 complaints per page
+        complaints = Complaint.objects.select_related('software').filter(complaint_type=selected_type).order_by('description')
+
+    from django.core.paginator import Paginator
+    paginator = Paginator(complaints, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    
-    # Calculate start index for pagination
     start_index = (page_obj.number - 1) * paginator.per_page
-    
+
     context = {
         'page_obj': page_obj,
         'selected_type': selected_type,
@@ -1292,7 +1283,7 @@ def all_complaints(request):
     return render(request, 'all_complaints.html', context)
 
 
-# Edit complaint view
+@login_required
 def edit_complaint(request, complaint_id):
     complaint = get_object_or_404(Complaint, id=complaint_id)
     if request.method == 'POST':
@@ -1303,6 +1294,7 @@ def edit_complaint(request, complaint_id):
     else:
         form = ComplaintForm(instance=complaint)
     return render(request, 'edit_complaint.html', {'form': form})
+
 
 # Delete complaint view
 def delete_complaint(request, complaint_id):

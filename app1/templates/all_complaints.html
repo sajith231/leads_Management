@@ -64,6 +64,7 @@
                 <!-- <th>Created By</th> -->
                 <th>Complaint</th>
                 <th>Type</th>
+                <th>Software</th> <!-- NEW -->
                 <th>Edit</th>
                 <th>Delete</th>
             </tr>
@@ -77,6 +78,13 @@
 
                 <td>{{ complaint.description|capfirst }}</td>
                 <td>{{ complaint.get_complaint_type_display|capfirst }}</td>
+                <td>
+                    {% if complaint.software %}
+                        {{ complaint.software.name }}
+                    {% else %}
+                        --
+                    {% endif %}
+                </td>
                 <td>
                     <a href="{% url 'edit_complaint' complaint.id %}" class="btn btn-warning btn-sm">Edit</a>
                 </td>

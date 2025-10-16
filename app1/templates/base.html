@@ -567,7 +567,7 @@
 
 <a href="{% url 'drive_list' %}">
    <i class="fas fa-folder" style="margin-right: 5px;"></i>
-   My Drive
+   IMC Drive
 </a>
 
 
@@ -682,6 +682,7 @@
                 <a href="{% url 'business_type_list' %}"><i class="fas fa-binoculars"></i> Business Type</a>
                 <a href="{% url 'job_titles' %}"><i class="fas fa-search"></i> Job Title</a>
                 <a href="{% url 'all_hardwares' %}"><i class="fas fa-desktop"></i> Hardware</a>
+                <a href="{% url 'software_table' %}"><i class="fas fa-puzzle-piece"></i> Software</a>
                 <a href="{% url 'all_complaints' %}"><i class="fas fa-bug"></i> Complaints</a>
                 <a href="{% url 'all_branches' %}"><i class="fas fa-code-branch"></i> Branch</a>
                 <a href="{% url 'users_table' %}"><i class="fas fa-users"></i> Users</a>
@@ -910,7 +911,7 @@
 {% if 'drive_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
 <a href="{% url 'drive_list' %}">
     <i class="fas fa-folder" style="margin-right: 5px;"></i>
-    My Drive
+    IMC Drive
 </a>
 {% endif %}
 
@@ -1070,6 +1071,7 @@
                 {% if 'all_hardwares' in allowed_menus %}
                 <a href="{% url 'all_hardwares' %}"><i class="fas fa-desktop"></i> Hardware</a>
                 {% endif %}
+                <a href="{% url 'software_table' %}"><i class="fas fa-puzzle-piece"></i> Software</a>
                 {% if 'all_complaints' in allowed_menus %}
                 <a href="{% url 'all_complaints' %}"><i class="fas fa-bug"></i> Complaints</a>
                 {% endif %}
