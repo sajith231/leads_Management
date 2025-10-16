@@ -1565,8 +1565,30 @@ def warranty_item_management(request):
     """
     suppliers = Supplier.objects.all()
     
+    # Get pre-selected values from URL parameters
+    ticket_no = request.GET.get('ticket_no', '')
+    supplier_id = request.GET.get('supplier_id', '')
+    item_name = request.GET.get('item_name', '')
+    serial_no = request.GET.get('serial_no', '')
+    
+    # Try to find supplier by ID or name
+    pre_selected_supplier = None
+    if supplier_id:
+        try:
+            # First try by ID
+            pre_selected_supplier = Supplier.objects.filter(id=supplier_id).first()
+            if not pre_selected_supplier:
+                # Try by name
+                pre_selected_supplier = Supplier.objects.filter(name__icontains=supplier_id).first()
+        except:
+            pass
+    
     context = {
         'suppliers': suppliers,
+        'pre_selected_ticket': ticket_no,
+        'pre_selected_supplier': pre_selected_supplier,
+        'pre_selected_item': item_name,
+        'pre_selected_serial': serial_no,
     }
     return render(request, 'warranty_item.html', context)
 
@@ -1577,25 +1599,30 @@ warranty_item = warranty_item_management
 def api_all_warranty_tickets(request):
     """
     API endpoint to get all job cards with warranty items
-    Returns tickets that have at least one warranty item
+    Returns tickets that have at least one warranty item with status 'yes' AND not sent to supplier
     """
     try:
-        # Get all job cards - assuming items_data contains warranty info
+        # Get all job cards
         jobcards = JobCard.objects.all()
         
         tickets_data = []
         for jobcard in jobcards:
-            # Check if jobcard has warranty items
-            warranty_items = []
+            # Check if jobcard has warranty items with warranty='yes' AND not processed/sent to supplier
+            pending_warranty_items = []
             if hasattr(jobcard, 'items_data') and jobcard.items_data:
-                warranty_items = [item for item in jobcard.items_data if item.get('warranty') == 'yes']
+                pending_warranty_items = [
+                    item for item in jobcard.items_data 
+                    if (item.get('warranty') == 'yes' and 
+                        not item.get('warranty_status') in ['sent_to_supplier', 'returned_from_supplier'])
+                ]
             
-            if warranty_items:
+            # Only include tickets that have pending warranty items (not sent to supplier)
+            if pending_warranty_items:
                 tickets_data.append({
                     'ticket_no': jobcard.ticket_no,
                     'customer': jobcard.customer,
                     'phone': jobcard.phone,
-                    'items_count': len(warranty_items),
+                    'items_count': len(pending_warranty_items),
                     'created_at': jobcard.created_at.isoformat(),
                 })
         
@@ -1630,6 +1657,18 @@ def api_ticket_details(request):
         # Get items data from the jobcard's items_data property
         items_data = jobcard.items_data if hasattr(jobcard, 'items_data') else []
         
+        # ✅ FILTER: Only include items with warranty='yes' AND not sent to supplier
+        filtered_items = []
+        for item in items_data:
+            warranty_status = item.get('warranty_status')
+            warranty_value = item.get('warranty')
+            
+            # Include only items with warranty='yes' AND not sent to supplier
+            if (warranty_value == 'yes' and 
+                warranty_status != 'sent_to_supplier' and 
+                warranty_status != 'returned_from_supplier'):
+                filtered_items.append(item)
+        
         jobcard_data = {
             'ticket_no': jobcard.ticket_no,
             'customer': jobcard.customer,
@@ -1637,7 +1676,7 @@ def api_ticket_details(request):
             'address': jobcard.address,
             'status': getattr(jobcard, 'status', 'pending'),
             'created_at': jobcard.created_at.isoformat(),
-            'items_data': items_data,
+            'items_data': filtered_items,  # ✅ Use filtered items
         }
         
         return JsonResponse({
@@ -1668,7 +1707,7 @@ def process_warranty_tickets(request):
         supplier_id = request.POST.get('supplier')
         ticket_no = request.POST.get('ticket_no')
         selected_items = request.POST.getlist('selected_items')
-        item_serials = request.POST.getlist('item_serials[]')  # Get serial numbers
+        item_serials = request.POST.getlist('item_serials[]')
         
         # Validate required fields
         if not all([supplier_id, ticket_no]) or not selected_items:
@@ -1744,10 +1783,12 @@ def process_warranty_tickets(request):
             
             # ✅ UPDATE WARRANTY STATUS IN ITEMS_DATA for each item
             if item_index is not None and jobcard.items_data:
+                # Update the warranty status to show it's been sent to supplier
                 jobcard.items_data[item_index]['warranty_status'] = 'sent_to_supplier'
                 jobcard.items_data[item_index]['warranty_sent_date'] = timezone.now().isoformat()
                 jobcard.items_data[item_index]['warranty_supplier'] = supplier.name
                 jobcard.items_data[item_index]['warranty_ticket_no'] = new_ticket_no
+                jobcard.items_data[item_index]['warranty_processed'] = True
             
             # Create warranty ticket for each item
             warranty_ticket = WarrantyTicket.objects.create(
@@ -1934,7 +1975,7 @@ def update_warranty_item_status(request, ticket_id):
         old_status = warranty_ticket.status
         warranty_ticket.status = new_status
         
-        if new_status in ['completed', 'approved']:
+        if new_status in ['completed', 'approved', 'returned']:
             warranty_ticket.resolved_at = timezone.now()
             
             # ✅ UPDATE WARRANTY STATUS IN JOBCARD
@@ -1968,3 +2009,65 @@ def update_warranty_item_status(request, ticket_id):
     except Exception as e:
         messages.error(request, f'Error updating status: {str(e)}')
         return redirect('app5:warranty_ticket_detail', ticket_id=ticket_id)
+    
+
+@require_http_methods(["GET"])
+def api_warranty_details(request):
+    """
+    API endpoint to get warranty details for a specific item
+    """
+    ticket_no = request.GET.get('ticket_no')
+    item_name = request.GET.get('item_name')
+    
+    if not ticket_no or not item_name:
+        return JsonResponse({
+            'success': False,
+            'error': 'Ticket number and item name are required'
+        }, status=400)
+    
+    try:
+        # Get the job card
+        jobcard = JobCard.objects.get(ticket_no=ticket_no)
+        
+        # Find warranty ticket for this specific item
+        warranty_ticket = WarrantyTicket.objects.filter(
+            jobcard=jobcard,
+            selected_item=item_name
+        ).select_related('supplier').first()
+        
+        if not warranty_ticket:
+            return JsonResponse({
+                'success': False,
+                'error': 'No warranty ticket found for this item'
+            })
+        
+        # Prepare warranty information
+        warranty_info = {
+            'id': warranty_ticket.id,
+            'ticket_no': warranty_ticket.ticket_no,
+            'status': warranty_ticket.status,
+            'supplier': warranty_ticket.supplier.name if warranty_ticket.supplier else 'N/A',
+            'customer': jobcard.customer,
+            'phone': jobcard.phone,
+            'submitted_date': warranty_ticket.submitted_at.strftime('%d %b %Y') if warranty_ticket.submitted_at else 'N/A',
+            'resolved_date': warranty_ticket.resolved_at.strftime('%d %b %Y') if warranty_ticket.resolved_at else None,
+            'issue_description': warranty_ticket.issue_description or '',
+            'resolution_notes': warranty_ticket.resolution_notes or '',
+        }
+        
+        return JsonResponse({
+            'success': True,
+            'warranty_info': warranty_info
+        })
+    
+    except JobCard.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'error': 'Job card not found'
+        }, status=404)
+    
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)

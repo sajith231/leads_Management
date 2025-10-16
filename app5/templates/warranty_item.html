@@ -511,80 +511,89 @@
     });
 
     ticketSelect.addEventListener('change', async function() {
-        const ticketNo = this.value;
-        if (!ticketNo) { 
-            detailsSection.style.display = 'none';
-            selectAllContainer.style.display = 'none';
-            selectionInfo.style.display = 'none';
-            selectedItems = [];
-            updateSelectionInfo();
-            return; 
-        }
+    const ticketNo = this.value;
+    if (!ticketNo) { 
+        detailsSection.style.display = 'none';
+        selectAllContainer.style.display = 'none';
+        selectionInfo.style.display = 'none';
+        selectedItems = [];
+        updateSelectionInfo();
+        return; 
+    }
 
-        try {
-            const response = await fetch(`{% url 'app5:api_ticket_details' %}?ticket_no=${ticketNo}`);
-            const data = await response.json();
+    try {
+        const response = await fetch(`{% url 'app5:api_ticket_details' %}?ticket_no=${ticketNo}`);
+        const data = await response.json();
 
-            if (data.success) {
-                const jobcard = data.jobcard;
-                customerInfo.innerHTML = `
-                    <div class="info-row"><span class="info-label"><i class="fas fa-user"></i> Customer</span><span class="info-value">${jobcard.customer}</span></div>
-                    <div class="info-row"><span class="info-label"><i class="fas fa-phone"></i> Phone</span><span class="info-value">${jobcard.phone}</span></div>
-                    <div class="info-row"><span class="info-label"><i class="fas fa-map-marker-alt"></i> Address</span><span class="info-value">${jobcard.address}</span></div>
-                    <div class="info-row"><span class="info-label"><i class="fas fa-calendar"></i> Date</span><span class="info-value">${new Date(jobcard.created_at).toLocaleDateString()}</span></div>
-                `;
+        if (data.success) {
+            const jobcard = data.jobcard;
+            customerInfo.innerHTML = `
+                <div class="info-row"><span class="info-label"><i class="fas fa-user"></i> Customer</span><span class="info-value">${jobcard.customer}</span></div>
+                <div class="info-row"><span class="info-label"><i class="fas fa-phone"></i> Phone</span><span class="info-value">${jobcard.phone}</span></div>
+                <div class="info-row"><span class="info-label"><i class="fas fa-map-marker-alt"></i> Address</span><span class="info-value">${jobcard.address}</span></div>
+                <div class="info-row"><span class="info-label"><i class="fas fa-calendar"></i> Date</span><span class="info-value">${new Date(jobcard.created_at).toLocaleDateString()}</span></div>
+            `;
 
-                const warrantyItems = jobcard.items_data.filter(item => item.warranty === 'yes');
-                if (warrantyItems.length > 0) {
-                    itemsContainer.innerHTML = warrantyItems.map((item, index) => `
-                        <div class="item-card">
-                            <div class="item-header">
-                                <label class="item-name">
-                                    <input type="checkbox" name="selected_items" value="${item.item}" 
-                                           data-serial="${item.serial || ''}" 
-                                           data-index="${index}"
-                                           class="item-checkbox">
-                                    <i class="fas fa-cog"></i> ${item.item}
-                                </label>
-                                <span class="warranty-badge"><i class="fas fa-shield-alt"></i> Warranty</span>
-                            </div>
-
-                            <div class="item-details">
-                                ${item.serial ? `<div><i class="fas fa-barcode"></i> Serial: ${item.serial}</div>` : ''}
-                                ${item.config ? `<div><i class="fas fa-wrench"></i> Config: ${item.config}</div>` : ''}
-                            </div>
-
-                            <input type="hidden" name="items[]" value="${item.item}">
-                            <input type="hidden" name="item_serials[]" value="${item.serial || ''}">
-                            <input type="hidden" name="item_indexes[]" value="${index}">
+            // ✅ Now items_data only contains warranty='yes' items not sent to supplier
+            const warrantyItems = jobcard.items_data || [];
+            
+            if (warrantyItems.length > 0) {
+                itemsContainer.innerHTML = warrantyItems.map((item, index) => `
+                    <div class="item-card">
+                        <div class="item-header">
+                            <label class="item-name">
+                                <input type="checkbox" name="selected_items" value="${item.item}" 
+                                       data-serial="${item.serial || ''}" 
+                                       data-index="${index}"
+                                       class="item-checkbox">
+                                <i class="fas fa-cog"></i> ${item.item}
+                            </label>
+                            <span class="warranty-badge"><i class="fas fa-shield-alt"></i> Warranty</span>
                         </div>
-                    `).join('');
 
-                    // Show select all option if multiple items
-                    if (warrantyItems.length > 1) {
-                        selectAllContainer.style.display = 'block';
-                    }
+                        <div class="item-details">
+                            ${item.serial ? `<div><i class="fas fa-barcode"></i> Serial: ${item.serial}</div>` : ''}
+                            ${item.config ? `<div><i class="fas fa-wrench"></i> Config: ${item.config}</div>` : ''}
+                        </div>
 
-                    // Add event listeners to checkboxes
-                    document.querySelectorAll('.item-checkbox').forEach(checkbox => {
-                        checkbox.addEventListener('change', function() {
-                            updateSelectedItems();
-                        });
-                    });
+                        <input type="hidden" name="items[]" value="${item.item}">
+                        <input type="hidden" name="item_serials[]" value="${item.serial || ''}">
+                        <input type="hidden" name="item_indexes[]" value="${index}">
+                    </div>
+                `).join('');
 
-                } else {
-                    itemsContainer.innerHTML = `<div class="no-items"><i class="fas fa-inbox"></i><p>No warranty items found</p></div>`;
-                    selectAllContainer.style.display = 'none';
+                // Show select all option if multiple items
+                if (warrantyItems.length > 1) {
+                    selectAllContainer.style.display = 'block';
                 }
 
-                detailsSection.style.display = 'block';
-                selectedItems = [];
-                updateSelectionInfo();
+                // Add event listeners to checkboxes
+                document.querySelectorAll('.item-checkbox').forEach(checkbox => {
+                    checkbox.addEventListener('change', function() {
+                        updateSelectedItems();
+                    });
+                });
+
+            } else {
+                itemsContainer.innerHTML = `
+                    <div class="no-items">
+                        <i class="fas fa-check-circle" style="color: #28a745; font-size: 2rem; margin-bottom: 10px;"></i>
+                        <p>No pending warranty items found</p>
+                        <p style="font-size: 0.9rem; color: #666; margin-top: 10px;">
+                            All warranty items for this ticket have already been sent to suppliers.
+                        </p>
+                    </div>`;
+                selectAllContainer.style.display = 'none';
             }
-        } catch {
-            alert('Error loading ticket details.');
+
+            detailsSection.style.display = 'block';
+            selectedItems = [];
+            updateSelectionInfo();
         }
-    });
+    } catch {
+        alert('Error loading ticket details.');
+    }
+});
 
     // Select All functionality
     selectAllCheckbox.addEventListener('change', function() {

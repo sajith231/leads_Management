@@ -721,6 +721,21 @@
         color: #555;
         margin-top: 2px;
     }
+    
+    /* Warranty status badges */
+    .warranty-status-badge {
+        display: inline-block;
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-size: 9px;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-top: 2px;
+    }
+    .warranty-sent { background: #007bff; color: white; }
+    .warranty-returned { background: #28a745; color: white; }
+    .warranty-pending { background: #ffc107; color: black; }
 </style>
 
 {% csrf_token %}
@@ -785,6 +800,9 @@
                 <a href="{% url 'item_list' %}">
                     <i class="fas fa-clock"></i> StandBy Item
                 </a>
+                <!-- <a href="{% url 'app5:warranty_ticket_list' %}">
+                    <i class="fas fa-file-contract"></i> Warranty Tickets
+                </a> -->
             </div>
         </div>
     </div>
@@ -894,35 +912,75 @@
                         {% endfor %}
                     </td>
 
-                    <!-- UPDATED: Warranty Column - Shows status for each item -->
-                    <td>
-                        {% for item_data in jobcard.items_data %}
-                            <div class="warranty-item {% if item_data.warranty == 'yes' %}warranty-yes{% else %}warranty-no{% endif %}">
-                                <div class="item-name">{{ item_data.item }}:</div>
-                                {% if item_data.warranty == 'yes' %}
-                                    <span class="status-badge" style="background-color: #28a745; color: white; padding: 3px 8px; border-radius: 12px; font-size: 10px; font-weight: bold; display: inline-block;">
-                                        <i class="fas fa-file-contract"></i> Yes
-                                    </span>
-                                    {% if item_data.warranty_details and item_data.warranty_details.supplier %}
-                                        <div class="warranty-details">
-                                            <strong>Supplier:</strong> {{ item_data.warranty_details.supplier }}
-                                        </div>
-                                    {% endif %}
-                                    {% if item_data.warranty_details and item_data.warranty_details.ticket_no %}
-                                        <div class="warranty-details">
-                                            <strong>Ticket:</strong> {{ item_data.warranty_details.ticket_no }}
-                                        </div>
-                                    {% endif %}
-                                {% else %}
-                                    <span class="status-badge" style="background-color: #f48245; color: white; padding: 3px 8px; border-radius: 12px; font-size: 10px; font-weight: bold; display: inline-block;">
-                                        No
-                                    </span>
-                                {% endif %}
-                            </div>
-                        {% empty %}
-                            <span style="color: #999; font-style: italic;">-</span>
-                        {% endfor %}
-                    </td>
+                    <!-- UPDATED: Warranty Column - Shows status for each item with clickable icon -->
+<td>
+    {% for item_data in jobcard.items_data %}
+        <div class="warranty-item {% if item_data.warranty == 'yes' %}warranty-yes{% else %}warranty-no{% endif %}">
+            <div class="item-name">{{ item_data.item }}:</div>
+            {% if item_data.warranty == 'yes' %}
+                <!-- Show warranty status if available -->
+                {% if item_data.warranty_status %}
+                    <div class="warranty-status-badge 
+                        {% if item_data.warranty_status == 'sent_to_supplier' %}warranty-sent
+                        {% elif item_data.warranty_status == 'returned_from_supplier' %}warranty-returned
+                        {% else %}warranty-pending{% endif %}">
+                        <i class="fas fa-file-contract"></i> 
+                        {% if item_data.warranty_status == 'sent_to_supplier' %}Sent to Supplier
+                        {% elif item_data.warranty_status == 'returned_from_supplier' %}Returned
+                        {% else %}{{ item_data.warranty_status|title }}{% endif %}
+                    </div>
+                {% else %}
+                    <span class="status-badge" style="background-color: #28a745; color: white; padding: 3px 8px; border-radius: 12px; font-size: 10px; font-weight: bold; display: inline-block;">
+                        <i class="fas fa-file-contract"></i> Yes
+                    </span>
+                {% endif %}
+                
+                <!-- ✅ NEW: Clickable warranty icon to show details -->
+                <button class="btn-warranty-details" 
+                        onclick="showWarrantyDetails('{{ jobcard.ticket_no }}', '{{ item_data.item|escapejs }}', '{{ item_data.serial|escapejs }}')"
+                        title="View Warranty Details"
+                        style="background: #007bff; color: #fff; padding: 4px 8px; border-radius: 4px; margin-top: 4px; font-size: 11px; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
+                    <i class="fas fa-info-circle"></i>
+                </button>
+                
+                <!-- Show warranty ticket info if processed -->
+           
+                {% if item_data.warranty_return_date %}
+                    <div class="warranty-details">
+                        <strong>Returned:</strong> {{ item_data.warranty_return_date|slice:":10" }}
+                    </div>
+                {% endif %}
+            {% else %}
+                <span class="status-badge" style="background-color: #f48245; color: white; padding: 3px 8px; border-radius: 12px; font-size: 10px; font-weight: bold; display: inline-block;">
+                    No
+                </span>
+            {% endif %}
+        </div>
+    {% empty %}
+        <span style="color: #999; font-style: italic;">-</span>
+    {% endfor %}
+</td>
+
+<!-- ✅ NEW: Add Warranty Details Modal (place before closing </div> of table-container) -->
+<div id="warrantyDetailsModal" class="modal">
+    <div class="modal-content" style="max-width: 700px;">
+        <div class="modal-header">
+            <h3 class="modal-title">
+                <i class="fas fa-file-contract"></i>
+                Warranty Details
+            </h3>
+            <button class="close-btn" onclick="closeWarrantyDetailsModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div id="warrantyDetailsContent">
+                <div style="text-align: center; padding: 20px;">
+                    <i class="fas fa-spinner fa-spin" style="font-size: 32px; color: #64a2e4;"></i>
+                    <p style="margin-top: 15px; color: #666;">Loading warranty details...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
                     <!-- UPDATED: Take to Office Column - Shows status for each item -->
                     <td>
@@ -1083,7 +1141,7 @@
         {% for num in page_obj.paginator.page_range %}
             {% if page_obj.number == num %}
                 <span class="current">{{ num }}</span>
-            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+            {% elif num > page_obj.number|add:'-3' and num < page_card.number|add:'3' %}
                 <a href="?page={{ num }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}">{{ num }}</a>
             {% endif %}
         {% endfor %}
@@ -1118,6 +1176,23 @@
         </div>
     </div>
 </div>
+
+<!-- Warranty Details Modal -->
+
+<div id="warrantyModal" class="modal" style="display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; overflow:auto; background-color:rgba(0,0,0,0.5);">
+    <div class="modal-content" style="background:#fff; margin:10% auto; padding:20px; border-radius:8px; width:400px; position:relative;">
+        <span class="close" style="position:absolute; top:10px; right:15px; color:#aaa; font-size:24px; cursor:pointer;">&times;</span>
+        <h3 style="margin-bottom:15px; color:#28a745; border-bottom:2px solid #28a745; padding-bottom:5px;">
+            Warranty Details
+        </h3>
+        <p><strong>Warranty Ticket No:</strong> <span id="modalTicket"></span></p>
+        <p><strong>Supplier:</strong> <span id="modalSupplier"></span></p>
+        <p><strong>Item:</strong> <span id="modalItem"></span></p>
+        <p><strong>Date:</strong> <span id="modalDate"></span></p>
+    </div>
+</div>
+
+
 
 <!-- Images Modal -->
 <div id="imagesModal" class="modal">
@@ -1204,6 +1279,46 @@
         
         return true;
     }
+
+
+    document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('warrantyModal');
+    const closeBtn = document.querySelector('.close');
+
+    document.querySelectorAll('.warranty-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+
+            // Get data attributes
+            const ticket = this.dataset.ticket;
+            const supplier = this.dataset.supplier;
+            const item = this.dataset.item;
+            const date = this.dataset.date;
+
+            // Fill modal
+            document.getElementById('modalTicket').textContent = ticket;
+            document.getElementById('modalSupplier').textContent = supplier;
+            document.getElementById('modalItem').textContent = item;
+            document.getElementById('modalDate').textContent = date;
+
+            // Show modal
+            modal.style.display = 'block';
+        });
+    });
+
+    // Close button
+    closeBtn.onclick = function() {
+        modal.style.display = 'none';
+    }
+
+    // Click outside modal
+    window.onclick = function(event) {
+        if (event.target == modal) {
+            modal.style.display = 'none';
+        }
+    }
+});
+
 
     // Enhanced search functionality with date filtering
     function performSearch() {
@@ -1712,6 +1827,109 @@
             });
         }, 5000);
     });
+
+
+    // Function to show warranty details modal
+function showWarrantyDetails(ticketNo, itemName, serialNo) {
+    const modal = document.getElementById('warrantyDetailsModal');
+    const content = document.getElementById('warrantyDetailsContent');
+    
+    // Show modal with loading state
+    modal.style.display = 'block';
+    content.innerHTML = `
+        <div style="text-align: center; padding: 40px;">
+            <i class="fas fa-spinner fa-spin" style="font-size: 32px; color: #007bff;"></i>
+            <p style="margin-top: 15px; color: #666;">Loading warranty details...</p>
+        </div>
+    `;
+    
+    // Fetch warranty details
+    fetch(`/app5/api/warranty-details/?ticket_no=${encodeURIComponent(ticketNo)}&item_name=${encodeURIComponent(itemName)}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displayWarrantyDetails(data.warranty_info, itemName, serialNo);
+            } else {
+                content.innerHTML = `
+                    <div class="no-content-message">
+                        <i class="fas fa-exclamation-circle" style="font-size: 48px; color: #ffc107; margin-bottom: 15px;"></i>
+                        <h4 style="color: #666; margin-bottom: 10px;">No Warranty Information Found</h4>
+                        <p style="color: #999;">No warranty ticket has been created for this item yet.</p>
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching warranty details:', error);
+            content.innerHTML = `
+                <div class="no-content-message">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 48px; color: #dc3545; margin-bottom: 15px;"></i>
+                    <h4 style="color: #666; margin-bottom: 10px;">Error Loading Details</h4>
+                    <p style="color: #999;">Failed to load warranty information. Please try again.</p>
+                </div>
+            `;
+        });
+}
+
+// Function to display warranty details in modal
+function displayWarrantyDetails(warranty, itemName, serialNo) {
+    const content = document.getElementById('warrantyDetailsContent');
+    
+    let html = `
+        <div style="background:black; padding: 30px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);">
+            <div style="text-align: center; margin-bottom: 25px;">
+                <i class="fas fa-file-contract" style="font-size: 48px; color: white; margin-bottom: 15px;"></i>
+                <h2 style="color: white; margin: 0; font-size: 24px; text-shadow: 0 2px 4px rgba(0,0,0,0.2);">Warranty Information</h2>
+            </div>
+            
+            <div style="background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                <div style="margin-bottom: 20px; padding-bottom: 20px; border-bottom: 2px solid #f0f0f0;">
+                    <label style="font-weight: bold; color:black; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 8px;">
+                        <i class="fas fa-ticket-alt"></i> Warranty Ticket Number
+                    </label>
+                    <p style="font-size: 10px; color:blue; margin: 0; font-weight: 600;">${warranty.ticket_no}</p>
+                </div>
+                
+                <div style="margin-bottom: 20px; padding-bottom: 20px; border-bottom: 2px solid #f0f0f0;">
+                    <label style="font-weight: bold; color:black; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 8px;">
+                        <i class="fas fa-industry"></i> Supplier Name
+                    </label>
+                    <p style="font-size: 10px; color:blue; margin: 0; font-weight: 500;">${warranty.supplier}</p>
+                </div>
+                
+                <div style="margin-bottom: 0;">
+                    <label style="font-weight: bold; color:black; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 8px;">
+                        <i class="fas fa-calendar-plus"></i> Submitted Date
+                    </label>
+                    <p style="font-size: 10px; color:blue; margin: 0; font-weight: 500;">${warranty.submitted_date}</p>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    content.innerHTML = html;
+}
+
+// Function to close warranty details modal
+function closeWarrantyDetailsModal() {
+    document.getElementById('warrantyDetailsModal').style.display = 'none';
+}
+
+// Close modal when clicking outside
+window.addEventListener('click', function(event) {
+    const modal = document.getElementById('warrantyDetailsModal');
+    if (event.target === modal) {
+        closeWarrantyDetailsModal();
+    }
+});
+
+// Close modal when clicking outside
+window.addEventListener('click', function(event) {
+    const modal = document.getElementById('warrantyDetailsModal');
+    if (event.target === modal) {
+        closeWarrantyDetailsModal();
+    }
+});
 
     // Handle form submission errors
     window.addEventListener('unhandledrejection', function(event) {

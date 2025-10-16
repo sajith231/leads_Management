@@ -61,7 +61,7 @@ urlpatterns = [
     # API endpoints for warranty
     path('api/all-warranty-tickets/', views.api_all_warranty_tickets, name='api_all_warranty_tickets'),
     path('api/ticket-details/', views.api_ticket_details, name='api_ticket_details'),
-   
+    path('api/warranty-details/', views.api_warranty_details, name='api_warranty_details'),
 ]
 
 

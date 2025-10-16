@@ -280,7 +280,7 @@ class WarrantyTicket(models.Model):
     # Status
     STATUS_CHOICES = [
         ('pending', 'Pending'),
-        ('submitted', 'Submitted to Supplier'),
+        ('submitted', 'Sent to Supplier'),
         ('approved', 'Approved'),
         ('rejected', 'Rejected'),
         ('completed', 'Completed'),
