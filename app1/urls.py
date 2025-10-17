@@ -316,7 +316,11 @@ urlpatterns = [
 
 
     
- path('api/service-history/', views.get_service_history, name='get_service_history'),
+path('api/service-history/', views.get_service_history, name='get_service_history'),
+path('customer-details/', views.customer_details, name='customer_details'),
+
+
+    
 
 
 

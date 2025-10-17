@@ -222,7 +222,7 @@ class LeadHardwarePrice(models.Model):
 
 
 
-
+from software_master.models import Software
 
 class Complaint(models.Model):
     COMPLAINT_TYPES = [
@@ -233,11 +233,21 @@ class Complaint(models.Model):
     description = models.TextField()
     complaint_type = models.CharField(max_length=10, choices=COMPLAINT_TYPES, default='software')
     created_at = models.DateTimeField(auto_now_add=True)
-    created_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)  # Add this field
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
 
+    # <-- replace the old ForeignKey with this ManyToManyField:
+    software = models.ManyToManyField(
+        Software,
+        blank=True,
+        related_name='complaints'
+    )
 
     def __str__(self):
-        return f"Complaint #{self.id}"
+        # helpful display
+        sw_names = ", ".join([s.name for s in self.software.all()]) if self.pk else ""
+        if sw_names:
+            return f"Complaint #{self.id} - {self.get_complaint_type_display()} ({sw_names})"
+        return f"Complaint #{self.id} - {self.get_complaint_type_display()}"
     
 
 

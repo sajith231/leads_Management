@@ -12,57 +12,59 @@
     margin-bottom: 15px;
     margin-top: 3%;
   }
-/* Customer Modal Styles */
-#customerModal {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.7);
-  justify-content: center;
-  align-items: center;
-  z-index: 9999;
-}
 
-#customerModal .modal-content {
-  background: #fff;
-  border-radius: 12px;
-  position: relative;
-  max-width: 500px;
-  width: 90%;
-  padding: 25px;
-  text-align: center;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-}
+  /* Customer Modal Styles */
+  #customerModal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.7);
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+  }
 
-.return-btn {
-  color: #17a2b8;
-}
-.return-btn:hover {
-  color: #138496;
-}
+  #customerModal .modal-content {
+    background: #fff;
+    border-radius: 12px;
+    position: relative;
+    max-width: 500px;
+    width: 90%;
+    padding: 25px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  }
 
-#customerDetails strong {
-  color: #2c3e50;
-  display: inline-block;
-  min-width: 140px;
-  text-align: right;
-  margin-right: 10px;
-}
+  .return-btn {
+    font-weight: bold;
+    color: #1e06f5;
+  }
+  .return-btn:hover {
+    color: #8270d4;
+  }
 
-#customerDetails div {
-  margin-bottom: 10px;
-  padding: 8px;
-  background: #f8f9fa;
-  border-radius: 6px;
-}
+  #customerDetails strong {
+    color: #146fca;
+    display: inline-block;
+    min-width: 140px;
+    text-align: right;
+    margin-right: 10px;
+  }
+
+  #customerDetails div {
+    margin-bottom: 10px;
+    padding: 8px;
+    background: #f8f9fa;
+    border-radius: 6px;
+  }
 
   .header-container h2 {
     margin: 0;
     font-size: 28px;
-    color: #333;
+    color: #060606;
     font-weight: bold;
     width: 100%;
     text-align: center;
@@ -122,6 +124,8 @@
     border-radius: 8px;
     overflow: hidden;
     box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    max-height: 70vh;
+    overflow-y: auto;
   }
   
   table {
@@ -141,6 +145,9 @@
     color: #fff;
     font-weight: bold;
     text-transform: uppercase;
+    position: sticky;
+    top: 0;
+    z-index: 10;
   }
   
   tbody tr:nth-child(even) {
@@ -194,6 +201,8 @@
     border-radius: 6px;
     z-index: 1000;
     border: 1px solid #ddd;
+    max-height: 200px;
+    overflow-y: auto;
   }
   
   .status-dropdown-content a {
@@ -266,6 +275,7 @@
     padding: 25px;
     text-align: center;
     box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    overflow: hidden;
   }
 
   .close-btn {
@@ -284,8 +294,11 @@
 
   /* Notes Modal Styling */
   .notes-modal-content {
-    max-width: 600px;
+    max-width: 300px;
     text-align: left;
+    display: flex;
+    flex-direction: column;
+    height: 30%;
   }
   
   .modal-header {
@@ -294,6 +307,7 @@
     margin-bottom: 20px;
     padding-bottom: 15px;
     border-bottom: 2px solid #eee;
+    flex-shrink: 0;
   }
   
   .modal-header h3 {
@@ -323,6 +337,34 @@
     line-height: 1.6;
     color: #333;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    flex-grow: 1;
+  }
+
+  /* Scrollbar Styling */
+  .table-container::-webkit-scrollbar,
+  #modalText::-webkit-scrollbar,
+  .status-dropdown-content::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .table-container::-webkit-scrollbar-track,
+  #modalText::-webkit-scrollbar-track,
+  .status-dropdown-content::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+  }
+
+  .table-container::-webkit-scrollbar-thumb,
+  #modalText::-webkit-scrollbar-thumb,
+  .status-dropdown-content::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+  }
+
+  .table-container::-webkit-scrollbar-thumb:hover,
+  #modalText::-webkit-scrollbar-thumb:hover,
+  .status-dropdown-content::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
   }
 
   /* Empty state */
@@ -395,6 +437,7 @@
   @media (max-width: 768px) {
     .table-container {
       overflow-x: auto;
+      max-height: 60vh;
     }
     
     table {
@@ -404,6 +447,7 @@
     .modal-content {
       margin: 10px;
       max-width: calc(100% - 20px);
+      max-height: calc(100% - 20px);
     }
     
     .filter-row {
@@ -415,9 +459,12 @@
       min-width: auto;
       width: 100%;
     }
+
+    #modalText {
+      max-height: 300px;
+    }
   }
 </style>
-
 
 <!-- Header -->
 <div class="header-container">
@@ -492,27 +539,31 @@
   {% endif %}
 </td>
 
+    <!-- Notes Column - Only show original standby item notes -->
     <td>
-        {% if item.notes and item.notes|length > 0 %}
+        {% if item.standby_notes and item.standby_notes|length > 0 %}
             <i class="fa-solid fa-note-sticky icon-btn notes-icon" 
                title="View Notes" 
-               onclick="openNotesModal('{{ item.name|escapejs }}', `{{ item.notes|escapejs }}`)"></i>
+               onclick="openNotesModal('{{ item.name|escapejs }}', `{{ item.standby_notes|escapejs }}`)"></i>
         {% else %}
             <span style="color:#888;">—</span>
         {% endif %}
     </td>
+
+    <!-- Images Column - Only show original standby item images -->
     <td>
-        {% if item.images.all %}
+        {% if item.standby_images %}
             <i class="fas fa-images icon-btn images-icon" 
-               title="View Images ({{ item.images.count }} image{{ item.images.count|pluralize }})"
+               title="View Images ({{ item.standby_images.count }} image{{ item.standby_images.count|pluralize }})"
                onclick="openImageModal({{ item.id }})"></i>
-            {% for img in item.images.all %}
+            {% for img in item.standby_images %}
                 <input type="hidden" class="image-url" data-item="{{ item.id }}" value="{{ img.image.url }}">
             {% endfor %}
         {% else %}
             <span style="color:#888;">—</span>
         {% endif %}
     </td>
+    
     <td><strong>{{ item.stock }}</strong></td>
     <td>
         <a href="{% url 'item_edit' item.id %}" class="action-btn edit-btn" title="Edit Item">

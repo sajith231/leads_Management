@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+{% block content %}
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<style>
+  .page-wrap{max-width:1100px;margin:28px auto 60px;}
+  .page-title{text-align:center;font-weight:700;letter-spacing:.4px;margin-bottom:18px;}
+
+  .panel{background:#fff;border:1px solid #e7e8ef;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,.04);padding:18px 20px;margin-bottom:18px;}
+  .meta{color:#374151;font-size:15px;margin:6px 0;}
+.upload-box{
+  background:#f6f7fb;
+  border:1px dashed #b9c0ce;
+  border-radius:8px;
+  padding:14px;
+  display:grid;
+  gap:10px;
+  grid-template-columns:1fr 1fr auto; /* file | custom name | button */
+  align-items:center;
+}
+.upload-box label{
+  grid-column:1 / -1; /* label spans across all columns */
+  font-weight:600;
+  color:#374151;
+}
+.upload-box input[type="file"], 
+.upload-box input[type="text"] {
+  padding:8px;
+  border:1px solid #d1d5db;
+  border-radius:6px;
+  font-size:14px;
+}
+.upload-box button{
+  padding:8px 14px;
+  border:0;
+  border-radius:8px;
+  background:#0d6efd;
+  color:#fff;
+  font-weight:600;
+  cursor:pointer;
+  width:auto;
+}
+.upload-box button:hover{background:#0b5ed7;}
+
+
+  .table-wrap{background:#fff;border:1px solid #e7e8ef;border-radius:10px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.04);}
+  table{width:100%;border-collapse:collapse;}
+  thead th {
+  background: linear-gradient(135deg, #2563eb 0%, #0a2f94 100%);
+  color:#fff;
+  padding:12px;
+  font-size:14px;
+  font-weight:600;
+  text-align:left;
+}
+
+  tbody td{padding:14px 12px;border-top:1px solid #edf0f5;color:#2b2f36;font-size:14px;}
+  tbody tr:nth-child(even) td{background:#f6f7fb;}
+
+  .text-center{text-align:center;}
+  .icon-eye{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:6px;color:#0d6efd;background:#eef4ff;text-decoration:none;}
+  .btn-download{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:6px;color:#198754;background:#e8f5ee;text-decoration:none;font-size:14px;}
+  .btn-download:hover{background:#d1e7dd;}
+  .btn-delete{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:6px;background:#dc3545;color:#fff;text-decoration:none;font-size:14px;}
+  .btn-delete:hover{background:#bb2d3b;}
+
+  .back-link{display:inline-block;margin-bottom:14px;padding:8px 14px;background:#271cbf;color:#fff;border-radius:8px;text-decoration:none;}
+
+  /* Fix for long file names */
+  .file-name-cell {
+    max-width: 300px;
+    word-wrap: break-word;
+    word-break: break-word;
+    white-space: normal;
+    line-height: 1.4;
+  }
+
+  @media (max-width:720px){
+    thead{display:none;}
+    table,tbody,tr,td{display:block;width:100%}
+    tbody td{padding:10px 12px}
+    tbody td::before{content:attr(data-label);display:block;font-weight:700;color:#6b7280;margin-bottom:4px}
+    
+    .file-name-cell {
+      max-width: 100%;
+    }
+  }
+
+  .top-bar{display:flex;justify-content:flex-start;margin-bottom:10px;}
+</style>
+
+<div class="page-wrap">
+  <div class="top-bar">
+    <a href="{% url 'drive_detail' folder.parent.id %}" class="back-link">← Back to {{ folder.parent.name }}</a>
+  </div>
+  <h1 class="page-title">Subfolder: {{ folder.name }}</h1>
+
+  <div class="panel">
+    <div class="meta"><strong>Parent:</strong>
+      <a href="{% url 'drive_detail' folder.parent.id %}">{{ folder.parent.name }}</a>
+    </div>
+    <div class="meta"><strong>Created:</strong> {{ folder.created_at|date:"Y-m-d" }}</div>
+
+    <!-- Upload -->
+    <form class="upload-box" method="POST" enctype="multipart/form-data">
+      {% csrf_token %}
+      <label for="fileUpload">Upload File (PDF, DOCX, TXT, XLSX, PPTX):</label>
+      <input type="file" id="fileUpload" name="fileUpload" accept=".pdf,.doc,.docx,.txt,.xls,.xlsx,.ppt,.pptx" required>
+
+      <!-- Custom name input -->
+      <input type="text" name="file_name" placeholder="Enter custom file name (optional)">
+
+      <button type="submit">Upload</button>
+    </form>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>SL No</th>
+          <th>Date</th>
+          <th>File Name</th>
+          <th class="text-center">View</th>
+          <th class="text-center">Download</th>
+          <th class="text-center">Delete</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for f in files %}
+        <tr>
+          <td data-label="SL No">{{ forloop.counter }}</td>
+          <td data-label="Date">{{ f.uploaded_at|date:"Y-m-d" }}</td>
+          <td data-label="File Name" class="file-name-cell">
+            {% if f.file_name %}
+              {{ f.file_name }}
+            {% else %}
+              {{ f.file.name|slice:"7:" }}
+            {% endif %}
+          </td>
+          <td data-label="View" class="text-center">
+            <a class="icon-eye" href="{% url 'file_preview' f.id %}" target="_blank" title="Open file">
+              <i class="fa-solid fa-eye"></i>
+            </a>
+          </td>
+          <td data-label="Download" class="text-center">
+            <a class="btn-download" href="{% url 'file_download' f.id %}" title="Download">
+              <i class="fa-solid fa-download"></i>
+            </a>
+          </td>
+          <td data-label="Delete" class="text-center">
+            <a class="btn-delete" href="{% url 'file_delete' f.id %}"
+               onclick="return confirm('Delete this file?');" title="Delete">
+              <i class="fa-solid fa-trash"></i>
+            </a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="6" class="text-center" style="color:#6b7280;padding:18px;">
+            No files yet. Upload one above.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

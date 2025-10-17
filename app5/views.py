@@ -1009,11 +1009,18 @@ def standby_issue_form(request, jobcard_id):
         messages.error(request, "You are not assigned to this job card.")
         return redirect('app5:job_technician_accept')
     
-    # ✅ FIXED: Get only "in_stock" standby items with their images
+    # ✅ FIXED: Get only "in_stock" standby items with only ORIGINAL images
     available_items = StandbyItem.objects.filter(
         status='in_stock', 
         stock__gt=0
-    ).prefetch_related('images').order_by('name')
+    ).prefetch_related(
+        models.Prefetch(
+            'images',
+            queryset=StandbyImage.objects.filter(
+                models.Q(image_type='original') | models.Q(image_type__isnull=True)
+            )
+        )
+    ).order_by('name')
     
     context = {
         'jobcard': jobcard,
@@ -1124,18 +1131,176 @@ def standby_return_item(request, jobcard_id):
     }
     return render(request, 'return_standby_item.html', context)
 
+# app5/views.py - Replace view_standby_issuance_details with this fixed version
+
 def view_standby_issuance_details(request, jobcard_id):
     """View to display standby item issuance details for a specific job card"""
     jobcard = get_object_or_404(JobCard, id=jobcard_id)
     
     # Get standby issuance records for this job card
-    standby_issuances = StandbyIssuance.objects.filter(job_card=jobcard).order_by('-issued_date')
+    standby_issuances = StandbyIssuance.objects.filter(job_card=jobcard)\
+        .select_related('standby_item')\
+        .prefetch_related('standby_item__images')\
+        .order_by('-issued_date')
+    
+    # Process each issuance to include return details
+    processed_issuances = []
+    for issuance in standby_issuances:
+        # ✅ Get return condition images - FIXED query
+        return_images = []
+        
+        if issuance.status == 'returned':
+            # Get images that are linked to return records OR have return_condition type
+            return_images = issuance.standby_item.images.filter(
+                models.Q(image_type='return_condition') |
+                models.Q(standby_return__isnull=False)
+            ).distinct().order_by('-uploaded_at')
+            
+            # Also check for images uploaded around the return date
+            if not return_images.exists() and issuance.actual_return_date:
+                # Look for images uploaded on or after the return date
+                potential_return_images = issuance.standby_item.images.filter(
+                    uploaded_at__date__gte=issuance.actual_return_date
+                ).order_by('-uploaded_at')
+                return_images = potential_return_images
+        
+        # Attach return details to issuance
+        issuance.return_images = list(return_images)
+        issuance.return_images_count = len(issuance.return_images)
+        issuance.has_return_details = issuance.status == 'returned'
+        issuance.effective_return_date = issuance.actual_return_date
+        issuance.return_condition_notes = issuance.condition_on_return or ""
+        
+        processed_issuances.append(issuance)
+        
+        logger.info(f"Issuance {issuance.id}: status={issuance.status}, "
+                   f"return_images_count={issuance.return_images_count}, "
+                   f"return_date={issuance.actual_return_date}")
+    
+    # Also check for direct returns (items returned via return_standby_items)
+    direct_return_details = []
+    try:
+        from app2.models import StandbyReturn
+        
+        # Get StandbyReturn records that might be related to this job card
+        standby_returns = StandbyReturn.objects.filter(
+            models.Q(customer_name_at_return__icontains=jobcard.customer) |
+            models.Q(customer_phone_at_return__icontains=jobcard.phone)
+        ).select_related('item').prefetch_related('return_images')
+        
+        for standby_return in standby_returns:
+            # Get return images linked to this specific return
+            return_imgs = standby_return.return_images.all()
+            
+            direct_return_details.append({
+                'item_name': standby_return.item.name,
+                'serial_number': standby_return.item.serial_number,
+                'return_date': standby_return.return_date,
+                'return_notes': standby_return.return_notes or '',
+                'return_images': list(return_imgs),
+                'stock_after_return': standby_return.stock_on_return,
+                'is_direct_return': True,
+                'customer_at_return': standby_return.customer_name_at_return,
+            })
+            
+            logger.info(f"Direct return found: {standby_return.item.name}, "
+                       f"images={return_imgs.count()}, date={standby_return.return_date}")
+                
+    except Exception as e:
+        logger.error(f"Error processing direct return details: {e}")
     
     context = {
         'jobcard': jobcard,
-        'standby_issuances': standby_issuances,
+        'standby_issuances': processed_issuances,
+        'direct_return_details': direct_return_details,
     }
     return render(request, 'standby_issuance_details.html', context)
+
+def extract_return_details(standby_item):
+    """Extract return details from standby item for direct returns"""
+    if not standby_item.notes:
+        return None
+    
+    # Look for return section in notes using more flexible pattern
+    import re
+    return_pattern = r'--- RETURNED ON (.+?) ---\s*(.*?)(?=---|$)'
+    matches = re.findall(return_pattern, standby_item.notes, re.DOTALL)
+    
+    if not matches:
+        return None
+    
+    # Get the most recent return
+    return_date_str, return_notes = matches[-1]
+    
+    # Get return condition images
+    return_images = standby_item.images.filter(image_type='return_condition')
+    
+    # Try to parse return date
+    from datetime import datetime
+    return_date = None
+    try:
+        return_date = datetime.strptime(return_date_str.strip(), '%d-%m-%Y').date()
+    except:
+        # If parsing fails, use the item's update date
+        return_date = standby_item.updated_at.date()
+    
+    return {
+        'item_name': standby_item.name,
+        'serial_number': standby_item.serial_number,
+        'return_date': return_date,
+        'return_notes': return_notes.strip(),
+        'return_images': return_images,
+        'stock_after_return': standby_item.stock,
+        'is_direct_return': True,
+    }
+
+def extract_return_details(standby_item):
+    """Extract return details from standby item notes and images"""
+    if not standby_item.notes:
+        return None
+    
+    # Look for return section in notes using more flexible pattern
+    import re
+    return_pattern = r'--- RETURNED ON (.+?) ---\s*(.*?)(?=---|$)'
+    matches = re.findall(return_pattern, standby_item.notes, re.DOTALL | re.IGNORECASE)
+    
+    if not matches:
+        return None
+    
+    # Get the most recent return
+    return_date_str, return_notes = matches[-1]
+    
+    # Get return condition images
+    return_images = standby_item.images.filter(image_type='return_condition')
+    
+    # If no specific return images, get all images as fallback
+    if not return_images:
+        return_images = standby_item.images.all()
+    
+    # Try to parse return date
+    from datetime import datetime
+    return_date = None
+    try:
+        # Try different date formats
+        for fmt in ('%d-%m-%Y', '%d/%m/%Y', '%Y-%m-%d', '%d %b %Y'):
+            try:
+                return_date = datetime.strptime(return_date_str.strip(), fmt).date()
+                break
+            except ValueError:
+                continue
+    except:
+        # If parsing fails, use the item's update date
+        return_date = standby_item.updated_at.date()
+    
+    return {
+        'item_name': standby_item.name,
+        'serial_number': standby_item.serial_number,
+        'return_date': return_date,
+        'return_notes': return_notes.strip(),
+        'return_images': return_images,
+        'stock_after_return': standby_item.stock,
+        'is_direct_return': True,
+    }
 
 def get_standby_item_details(request, item_id):
     """API endpoint to get standby item details"""
@@ -1203,61 +1368,146 @@ def update_standby_issued_status(request, jobcard_id):
 
 @csrf_exempt
 def standby_issuance_return(request, jobcard_id):
-    """Handle returning standby items issued through job card"""
-    jobcard = get_object_or_404(JobCard, id=jobcard_id)
+    """Handle returning standby item to stock with images, notes, and date"""
+    item = get_object_or_404(StandbyItem, id=item_id)
     
-    # Get all active (issued) standby issuances for this job card
-    active_issuances = StandbyIssuance.objects.filter(
-        job_card=jobcard, 
-        status='issued'
-    ).select_related('standby_item')
+    # Check if item is actually with customer
+    if item.status != 'with_customer':
+        messages.error(request, f'Item "{item.name}" is not currently with a customer.')
+        return redirect('item_list')
     
     if request.method == 'POST':
-        # Get form data
-        return_date = request.POST.get('return_date')
-        condition_on_return = request.POST.get('condition_on_return', '').strip()
-        notes = request.POST.get('notes', '').strip()
+        # ✅ Get form data
+        return_date_str = request.POST.get('return_date')
+        return_notes = request.POST.get('return_notes', '').strip()
+        stock = request.POST.get('stock', item.stock)
+        return_images = request.FILES.getlist('return_images')
         
-        # Process each active issuance
-        for issuance in active_issuances:
-            # Update issuance status
-            issuance.actual_return_date = return_date
-            issuance.status = 'returned'
-            issuance.condition_on_return = condition_on_return
-            
-            # Append return notes to existing notes
-            if notes:
-                if issuance.notes:
-                    issuance.notes += f"\n\n--- RETURNED ON {return_date} ---\n{notes}"
-                else:
-                    issuance.notes = f"--- RETURNED ON {return_date} ---\n{notes}"
-            
-            issuance.save()
-            
-            # ✅ UPDATE STANDBY ITEM: RESTORE STOCK AND CLEAR CUSTOMER INFO
-            standby_item = issuance.standby_item
-            standby_item.stock += 1
-            standby_item.status = 'in_stock'
-            
-            # Clear customer information from standby item
-            standby_item.customer_name = None
-            standby_item.customer_place = None
-            standby_item.customer_phone = None
-            standby_item.issued_date = None
-            
-            standby_item.save()
+        # Parse return date
+        try:
+            from django.utils.dateparse import parse_date
+            return_date = parse_date(return_date_str)
+            if not return_date:
+                return_date = timezone.now().date()
+        except:
+            return_date = timezone.now().date()
         
-        # Update job card standby status
-        jobcard.standby_issued = False
-        jobcard.save()
+        logger.info(f"Processing return for item {item.id} - {item.name}")
+        logger.info(f"Return date: {return_date}, Notes: {return_notes[:50] if return_notes else 'None'}")
         
-        messages.success(request, f'All standby items returned successfully for job card {jobcard.ticket_no}!')
-        return redirect('app5:standby_issuance_details', jobcard_id=jobcard.id)
+        try:
+            # ✅ Create StandbyReturn record FIRST
+            standby_return = StandbyReturn.objects.create(
+                item=item,
+                return_date=return_date,
+                return_notes=return_notes,
+                returned_by=request.user if request.user.is_authenticated else None,
+                stock_on_return=stock,
+                # Store original customer info at time of return
+                customer_name_at_return=item.customer_name,
+                customer_place_at_return=item.customer_place,
+                customer_phone_at_return=item.customer_phone,
+                issued_date_at_return=item.issued_date
+            )
+            
+            logger.info(f"Created StandbyReturn record: {standby_return.id}")
+            
+            # ✅ Save return images linked to the StandbyReturn record
+            images_saved = 0
+            for image in return_images:
+                try:
+                    StandbyImage.objects.create(
+                        item=item, 
+                        image=image,
+                        image_type='return_condition',
+                        standby_return=standby_return  # Link to the return record
+                    )
+                    images_saved += 1
+                except Exception as e:
+                    logger.error(f"Error saving return image: {e}")
+            
+            logger.info(f"Saved {images_saved} return condition images linked to return record {standby_return.id}")
+            
+            # ✅ Update item status and details AFTER creating return record
+            item.status = 'in_stock'
+            item.stock = stock
+            
+            # Add return notes to item's notes with clear separation
+            if return_notes:
+                current_notes = item.notes or ''
+                return_info = f"\n\n--- RETURNED ON {return_date.strftime('%d-%m-%Y')} ---\n{return_notes}"
+                item.notes = current_notes + return_info
+            
+            # Clear customer information
+            item.customer_name = None
+            item.customer_place = None
+            item.customer_phone = None
+            item.issued_date = None
+            
+            item.save()
+            logger.info(f"Item {item.id} updated - status: {item.status}, stock: {item.stock}")
+            
+            # ✅ Try to find and update related issuance (if exists)
+            try:
+                from .models import StandbyIssuance  # Import if exists in your models
+                related_issuance = StandbyIssuance.objects.filter(
+                    standby_item=item,
+                    issued_to=item.customer_name,  # Use the original customer name before clearing
+                    status='issued'
+                ).first()
+                
+                if related_issuance:
+                    # Set return date
+                    related_issuance.actual_return_date = return_date
+                    related_issuance.status = 'returned'
+                    
+                    # Store return notes
+                    if return_notes:
+                        related_issuance.condition_on_return = return_notes
+                    
+                    # Append to general notes for backup
+                    existing_notes = related_issuance.notes or ''
+                    timestamp = timezone.now().strftime('%d-%m-%Y %H:%M')
+                    additional_info = f"\n\n--- RETURNED VIA DIRECT RETURN ON {timestamp} ---"
+                    additional_info += f"\nReturn Date: {return_date.strftime('%d-%m-%Y')}"
+                    additional_info += f"\nCustomer: {standby_return.customer_name_at_return}"
+                    if return_notes:
+                        additional_info += f"\nCondition Notes: {return_notes}"
+                    if images_saved > 0:
+                        additional_info += f"\n{images_saved} return condition image(s) uploaded"
+                    
+                    related_issuance.notes = (existing_notes + additional_info).strip()
+                    related_issuance.save()
+                    
+                    logger.info(f"Updated issuance {related_issuance.id} with return details")
+                    
+                    # Update job card standby status if exists
+                    if hasattr(related_issuance, 'job_card') and related_issuance.job_card:
+                        related_issuance.job_card.standby_issued = False
+                        related_issuance.job_card.save()
+                        logger.info(f"Updated job card {related_issuance.job_card.id} - standby_issued: False")
+                        
+            except Exception as e:
+                logger.warning(f"No related issuance found or error updating issuance: {e}")
+            
+            # Success message
+            success_msg = f'Item "{item.name}" has been returned to stock successfully!'
+            if images_saved > 0:
+                success_msg += f' {images_saved} image(s) uploaded.'
+            messages.success(request, success_msg)
+            
+            return redirect('item_list')
+            
+        except Exception as e:
+            logger.error(f"Error creating standby return record: {e}")
+            messages.error(request, f"Error processing return: {str(e)}")
+            return redirect('standby_return_item', item_id=item_id)
     
-    # For GET request, show the return form
+    # For GET request, show the return form with current customer info
     context = {
-        'jobcard': jobcard,
-        'active_issuances': active_issuances,
+        'item': item,
         'today': date.today(),
     }
-    return render(request, 'return_standby_issuance.html', context)
+    return render(request, 'return_standby_items.html', context)
+
+

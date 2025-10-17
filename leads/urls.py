@@ -32,11 +32,13 @@ urlpatterns = [
     path('app5/', include('app5.urls')),
     path('sim_card/', include('sim_card.urls')),
     path('fuel_management/', include('fuel_management.urls')),
+    path('my_drive/', include('my_drive.urls')),
     path('edit-field/<int:field_id>/', views.edit_field, name='edit_field'),
     path('feeder/', include('app2.urls')), 
     path('feeder/<int:feeder_id>/status-update/', app2_views.feeder_status_update, name='feeder_status_update'),
     path('wfh_request/', include('wfh_Request.urls')),
-    path('', include('punchout_reminder.urls')),
+    path('software/', include('software_master.urls')),
+    # path('punchout_reminder/', include('punchout_reminder.urls')),
 
 
 

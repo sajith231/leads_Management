@@ -1025,47 +1025,67 @@ def delete_department(request, id):
 
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import JobRole, Department
+# views.py - replace your existing job_roles function with this
+from django.apps import apps
+from django.contrib import messages
+from django.shortcuts import redirect
 
 @login_required
 def job_roles(request):
-    # Get the custom user ID from session
+    AppUser = apps.get_model('app1', 'User')   # always the custom user model
+    JobRole = apps.get_model('app2', 'JobRole')
+    Department = apps.get_model('app2', 'Department')
+
+    # prefer explicit custom_user id stored in session (your code uses this in places)
+    custom_user = None
     custom_user_id = request.session.get('custom_user_id')
-    
-    # If no custom_user_id in session, try to get from request.user
-    if not custom_user_id:
-        # Fallback: try to find user by username if using Django's built-in auth
+
+    if custom_user_id:
         try:
-            # Assuming you have a way to map Django user to your custom User model
-            # You might need to adjust this based on your authentication setup
-            custom_user = User.objects.get(userid=request.user.username)
-        except User.DoesNotExist:
-            # If still no user found, redirect to login or show error
-            from django.contrib import messages
-            messages.error(request, "User session not found. Please login again.")
-            return redirect('login')
+            custom_user = AppUser.objects.get(id=custom_user_id)
+        except AppUser.DoesNotExist:
+            custom_user = None
+
+    # If we still don't have custom_user, try several sensible fallbacks.
+    if not custom_user:
+        # 1) try by custom userid field (app1.User.userid)
+        custom_user = AppUser.objects.filter(userid=request.user.username).first()
+
+    if not custom_user:
+        # 2) try by username field (in case you have username column on app1.User)
+        custom_user = AppUser.objects.filter(username=getattr(request.user, 'username', None)).first()
+
+    if not custom_user:
+        # 3) try by id matching request.user.id
+        custom_user = AppUser.objects.filter(id=getattr(request.user, 'id', None)).first()
+
+    # If still None, create a safe shim object so templates won't crash.
+    if not custom_user:
+        class _Shim:
+            pass
+        custom_user = _Shim()
+        # if request.user is a Django superuser, give the shim admin privileges so page shows all roles
+        if getattr(request.user, 'is_superuser', False):
+            custom_user.user_level = 'admin_level'
+            # also indicate superuser in template via 'is_superuser' property if useful:
+            custom_user.is_superuser = True
+        else:
+            custom_user.user_level = 'normal'
+            custom_user.is_superuser = False
+
+    # Now determine which roles to show
+    if getattr(custom_user, 'user_level', None) in ['admin_level', '4level'] or getattr(request.user, 'is_superuser', False):
+        # show all roles to admins / superusers
+        roles = JobRole.objects.select_related('department').all().order_by('department__name', 'title')
     else:
-        # Fetch the user object using session ID
-        try:
-            custom_user = User.objects.get(id=custom_user_id)
-        except User.DoesNotExist:
-            from django.contrib import messages
-            messages.error(request, "User not found. Please login again.")
-            return redirect('login')
-    
-    # Check if user is superuser (admin_level or 4level)
-    if custom_user.user_level in ['admin_level', '4level']:
-        # Superuser can see all job roles
-        roles = JobRole.objects.select_related('department').all()
-    else:
-        # Regular users can only see their assigned job role
-        if custom_user.job_role:
+        # regular users see only their assigned job role (if any)
+        if getattr(custom_user, 'job_role', None):
             roles = JobRole.objects.select_related('department').filter(id=custom_user.job_role.id)
         else:
-            # If user has no job role assigned, show empty queryset
             roles = JobRole.objects.none()
-    
-    # Pass custom_user instead of user to avoid overriding request.user
+
     return render(request, 'job_roles.html', {'roles': roles, 'custom_user': custom_user})
+
 
 # views.py
 
@@ -2246,12 +2266,28 @@ from .models import StandbyItem, StandbyImage
 def Standby_item_list(request):
     search_query = request.GET.get('search', '').strip()
     status_filter = request.GET.get('status', '').strip()
-    items = StandbyItem.objects.prefetch_related('images').all().order_by('-created_at')
+    items = StandbyItem.objects.prefetch_related('images', 'returns').all().order_by('-created_at')
 
     if search_query:
         items = items.filter(Q(name__icontains=search_query) | Q(serial_number__icontains=search_query))
     if status_filter:
         items = items.filter(status=status_filter)
+
+    # Add standby_notes, standby_images, and return history to each item
+    for item in items:
+        # Extract original notes (before return section)
+        notes = item.notes or ''
+        return_section = notes.find('--- RETURNED ON')
+        if return_section != -1:
+            item.standby_notes = notes[:return_section].strip()
+        else:
+            item.standby_notes = notes
+        
+        # Filter only original standby images (not return images)
+        item.standby_images = item.images.filter(image_type='original')
+        
+        # Get return history
+        item.return_history = item.returns.all().order_by('-return_date')
 
     return render(request, 'standby_table.html', {
         'items': items,
@@ -2309,10 +2345,31 @@ def Standby_add_item(request):
 
 def Standby_item_edit(request, item_id):
     item = get_object_or_404(StandbyItem, id=item_id)
+    
+    # Filter only original images (exclude return images)
+    original_images = item.images.filter(image_type='original')
+    
+    # Extract original notes (before any return sections)
+    notes = item.notes or ''
+    return_section = notes.find('--- RETURNED ON')
+    if return_section != -1:
+        original_notes = notes[:return_section].strip()
+    else:
+        original_notes = notes
+    
     if request.method == "POST":
         item.name = request.POST.get('itemname', '').upper()
         item.serial_number = request.POST.get('serialnumber', '').upper()
-        item.notes = request.POST.get('notes', '')
+        
+        # Only update the original notes part
+        new_notes = request.POST.get('notes', '')
+        if return_section != -1:
+            # Keep the return history and append new notes
+            return_history = notes[return_section:]
+            item.notes = f"{new_notes}\n\n{return_history}"
+        else:
+            item.notes = new_notes
+            
         item.stock = request.POST.get('stock', 0)
         item.status = request.POST.get('status', item.status)
 
@@ -2332,9 +2389,13 @@ def Standby_item_edit(request, item_id):
             delete_ids = request.POST.get('delete_images', '')
             if delete_ids:
                 ids = [id.strip() for id in delete_ids.split(',') if id.strip()]
-                StandbyImage.objects.filter(id__in=ids, item=item).delete()
+                # Only delete from original images
+                StandbyImage.objects.filter(id__in=ids, item=item, image_type='original').delete()
+            
+            # Add new images as original type
             for image in request.FILES.getlist('images'):
-                StandbyImage.objects.create(item=item, image=image)
+                StandbyImage.objects.create(item=item, image=image, image_type='original')
+                
             messages.success(request, "Item updated successfully!")
             return redirect('item_list')
         except IntegrityError:
@@ -2344,7 +2405,13 @@ def Standby_item_edit(request, item_id):
 
         return redirect("item_edit", item_id=item.id)
 
-    return render(request, 'edit_standby.html', {'item': item})
+    # Pass only original images and notes to template
+    context = {
+        'item': item,
+        'original_images': original_images,
+        'original_notes': original_notes,
+    }
+    return render(request, 'edit_standby.html', context)
 
 
 def Standby_item_delete(request, item_id):
@@ -2423,10 +2490,15 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.utils import timezone
 from datetime import date
+from .models import StandbyReturn
+# Add this import at the top of your views.py file:
+# from .models import StandbyItem, StandbyImage, StandbyReturn
+
+# app2/views.py - Replace the standby_return_item function with this fixed version
 
 @login_required
 def standby_return_item(request, item_id):
-    """Handle returning standby item to stock with images"""
+    """Handle returning standby item to stock with proper database storage"""
     item = get_object_or_404(StandbyItem, id=item_id)
     
     # Check if item is actually with customer
@@ -2436,46 +2508,138 @@ def standby_return_item(request, item_id):
     
     if request.method == 'POST':
         # Get form data
-        return_date = request.POST.get('return_date')
-        return_notes = request.POST.get('return_notes', '')
+        return_date_str = request.POST.get('return_date')
+        return_notes = request.POST.get('return_notes', '').strip()
         stock = request.POST.get('stock', item.stock)
         return_images = request.FILES.getlist('return_images')
         
-        # Update item status and details
+        # Parse return date
+        try:
+            from django.utils.dateparse import parse_date
+            return_date = parse_date(return_date_str)
+            if not return_date:
+                return_date = timezone.now().date()
+        except:
+            return_date = timezone.now().date()
+        
+        logger.info(f"Processing return for item {item.id} - {item.name}")
+        
+        # ✅ CRITICAL: Save customer info BEFORE clearing from item
+        customer_name_at_return = item.customer_name
+        customer_place_at_return = item.customer_place
+        customer_phone_at_return = item.customer_phone
+        issued_date_at_return = item.issued_date
+        
+        # ✅ CREATE StandbyReturn record to preserve history
+        standby_return = StandbyReturn.objects.create(
+            item=item,
+            return_date=return_date,
+            return_notes=return_notes,
+            returned_by=request.user,
+            stock_on_return=stock,
+            customer_name_at_return=customer_name_at_return,
+            customer_place_at_return=customer_place_at_return,
+            customer_phone_at_return=customer_phone_at_return,
+            issued_date_at_return=issued_date_at_return
+        )
+        logger.info(f"Created StandbyReturn record: {standby_return.id}")
+        
+        # ✅ Save return images and LINK to StandbyReturn record
+        images_saved = 0
+        for image in return_images:
+            try:
+                StandbyImage.objects.create(
+                    item=item,
+                    image=image,
+                    image_type='return_condition',
+                    standby_return=standby_return  # ✅ Link to return record
+                )
+                images_saved += 1
+            except Exception as e:
+                logger.error(f"Error saving return image: {e}")
+        
+        logger.info(f"Saved {images_saved} return images linked to return {standby_return.id}")
+        
+        # ✅ Update item status and clear customer info
         item.status = 'in_stock'
         item.stock = stock
-        
-        # Add return notes to existing notes
-        if return_notes:
-            current_notes = item.notes or ''
-            return_info = f"\n\n--- RETURNED ON {return_date} ---\n{return_notes}"
-            item.notes = current_notes + return_info
-        
-        # Clear customer information
         item.customer_name = None
         item.customer_place = None
         item.customer_phone = None
         item.issued_date = None
         
+        # Optional: Add return summary to item notes
+        if return_notes:
+            return_summary = f"\n\n--- RETURNED ON {return_date.strftime('%d-%m-%Y')} ---\n"
+            return_summary += f"Customer: {customer_name_at_return}\n"
+            return_summary += f"Notes: {return_notes}"
+            item.notes = (item.notes or '') + return_summary
+        
         item.save()
+        logger.info(f"Item {item.id} updated - status: {item.status}, stock: {item.stock}")
         
-        # Handle return images - REMOVE the image_type parameter
-        for image in return_images:
-            StandbyImage.objects.create(
-                item=item, 
-                image=image
-                # Remove: image_type='return_condition' - this field doesn't exist
-            )
+        # ✅ CRITICAL FIX: Find and update related StandbyIssuance
+        try:
+            from app5.models import StandbyIssuance
+            
+            # Find the active issuance for this item and customer
+            related_issuance = StandbyIssuance.objects.filter(
+                standby_item=item,
+                issued_to=customer_name_at_return,
+                status='issued'
+            ).first()
+            
+            if related_issuance:
+                # ✅ Update the issuance with return details
+                related_issuance.actual_return_date = return_date
+                related_issuance.status = 'returned'
+                related_issuance.condition_on_return = return_notes
+                
+                # Add reference to StandbyReturn record in notes
+                timestamp = timezone.now().strftime('%d-%m-%Y %H:%M')
+                additional_info = f"\n\n--- RETURNED ON {timestamp} ---"
+                additional_info += f"\nReturn Record ID: {standby_return.id}"
+                additional_info += f"\nReturn Date: {return_date.strftime('%d-%m-%Y')}"
+                additional_info += f"\nReturned By: {request.user.get_full_name() or request.user.username}"
+                if return_notes:
+                    additional_info += f"\nCondition: {return_notes}"
+                if images_saved > 0:
+                    additional_info += f"\n{images_saved} return image(s) uploaded"
+                
+                related_issuance.notes = (related_issuance.notes or '') + additional_info
+                related_issuance.save()
+                logger.info(f"Updated issuance {related_issuance.id}")
+                
+                # Update job card
+                if related_issuance.job_card:
+                    related_issuance.job_card.standby_issued = False
+                    related_issuance.job_card.save()
+                    logger.info(f"Updated job card {related_issuance.job_card.id}")
+            else:
+                logger.warning(f"No active issuance found for item {item.id}")
+                
+        except Exception as e:
+            logger.error(f"Error updating issuance: {e}")
+            messages.warning(request, f"Item returned but couldn't update issuance: {str(e)}")
         
-        messages.success(request, f'Item "{item.name}" has been returned to stock successfully!')
+        # Success message
+        success_msg = f'Item "{item.name}" returned to stock successfully!'
+        success_msg += f' Return record #{standby_return.id} created.'
+        if images_saved > 0:
+            success_msg += f' {images_saved} image(s) uploaded.'
+        messages.success(request, success_msg)
+        
         return redirect('item_list')
     
-    # For GET request, show the return form with current customer info
+    # GET request - show return form
     context = {
         'item': item,
         'today': date.today(),
     }
     return render(request, 'return_standby_items.html', context)
+
+
+
 
     
 

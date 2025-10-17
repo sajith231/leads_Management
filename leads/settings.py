@@ -59,10 +59,12 @@ INSTALLED_APPS = [
     'flutter',
     'app5',
     'sim_card',
+    'my_drive',
     'fuel_management',
     'django.contrib.humanize',
     "wfh_Request",
     "punchout_reminder",
+    "software_master",
     
 ]
 

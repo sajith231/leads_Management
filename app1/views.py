@@ -1230,8 +1230,15 @@ def delete_hardware(request, hardware_id):
 
 
 
-from .models import Complaint
+# app1/views.py (complaint-related functions)
+# views.py (snippet)
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from .models import Complaint, User
 from .forms import ComplaintForm
+from software_master.models import Software
+
+# views.py (complaint-related functions)
 
 @login_required
 def add_complaint(request):
@@ -1239,10 +1246,10 @@ def add_complaint(request):
         form = ComplaintForm(request.POST)
         if form.is_valid():
             complaint = form.save(commit=False)
-            # Get the custom User instance from session or however you store it
-            # Option 1: If you store user_id in session
+            # attach created_by if available in session (preserve existing logic)
             if 'user_id' in request.session:
                 try:
+                    from .models import User
                     custom_user = User.objects.get(id=request.session['user_id'])
                     complaint.created_by = custom_user
                 except User.DoesNotExist:
@@ -1250,40 +1257,58 @@ def add_complaint(request):
             else:
                 complaint.created_by = None
             complaint.save()
+            # Save M2M if available; fallback to manual set
+            if hasattr(form, 'save_m2m'):
+                form.save_m2m()
+            else:
+                # fallback: set software from cleaned_data
+                sw = form.cleaned_data.get('software')
+                if sw is not None:
+                    # ensure sequence
+                    complaint.software.set(sw if hasattr(sw, '__iter__') else [sw])
             return redirect('all_complaints')
     else:
         form = ComplaintForm()
     return render(request, 'add_complaints.html', {'form': form})
 
 
-from django.core.paginator import Paginator
-from django.shortcuts import render
-from .models import Complaint
+@login_required
+def edit_complaint(request, complaint_id):
+    complaint = get_object_or_404(Complaint, id=complaint_id)
+    if request.method == 'POST':
+        form = ComplaintForm(request.POST, instance=complaint)
+        if form.is_valid():
+            complaint = form.save(commit=False)
+            complaint.save()
+            if hasattr(form, 'save_m2m'):
+                form.save_m2m()
+            else:
+                sw = form.cleaned_data.get('software')
+                if sw is not None:
+                    complaint.software.set(sw if hasattr(sw, '__iter__') else [sw])
+            return redirect('all_complaints')
+    else:
+        form = ComplaintForm(instance=complaint)
+    return render(request, 'edit_complaint.html', {'form': form})
 
 
-from django.core.paginator import Paginator
-
-from django.contrib.auth.decorators import login_required
-from django.core.paginator import Paginator
-from django.shortcuts import render
-from .models import Complaint
 
 @login_required
 def all_complaints(request):
     selected_type = request.GET.get('type', 'all')
-    
+
+    # for M2M, use prefetch_related
     if selected_type == 'all':
-        complaints = Complaint.objects.all().order_by('description')  # Alphabetic order
+        complaints = Complaint.objects.prefetch_related('software').all().order_by('description')
     else:
-        complaints = Complaint.objects.filter(complaint_type=selected_type).order_by('description')  # Alphabetic order
-    
-    paginator = Paginator(complaints, 10)  # Show 10 complaints per page
+        complaints = Complaint.objects.prefetch_related('software').filter(complaint_type=selected_type).order_by('description')
+
+    from django.core.paginator import Paginator
+    paginator = Paginator(complaints, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    
-    # Calculate start index for pagination
     start_index = (page_obj.number - 1) * paginator.per_page
-    
+
     context = {
         'page_obj': page_obj,
         'selected_type': selected_type,
@@ -1292,17 +1317,6 @@ def all_complaints(request):
     return render(request, 'all_complaints.html', context)
 
 
-# Edit complaint view
-def edit_complaint(request, complaint_id):
-    complaint = get_object_or_404(Complaint, id=complaint_id)
-    if request.method == 'POST':
-        form = ComplaintForm(request.POST, instance=complaint)
-        if form.is_valid():
-            form.save()
-            return redirect('all_complaints')
-    else:
-        form = ComplaintForm(instance=complaint)
-    return render(request, 'edit_complaint.html', {'form': form})
 
 # Delete complaint view
 def delete_complaint(request, complaint_id):
@@ -5369,6 +5383,14 @@ def configure_user_menu(request, user_id):
     ]
 },
 {
+    'name': 'My Drive',
+    'icon': 'fas fa-folder',
+    'submenus': [
+        {'id': 'drive_list', 'name': 'My Drive', 'icon': 'fas fa-folder'}
+    ]
+},
+
+{
     'name': 'SYSMAC',
     'icon': 'fas fa-microchip',
     'submenus': [
@@ -6228,11 +6250,23 @@ from .models import ServiceLog, Complaint, ServiceLogComplaint, User,ComplaintIm
 from django.utils import timezone
 from django.core.files.base import ContentFile
 import base64
+import requests
+from django.contrib import messages
+from django.shortcuts import render, redirect
+from .models import ServiceLog, Complaint, ServiceLogComplaint, User, ComplaintImage
+from django.utils import timezone
+from django.core.files.base import ContentFile
+import base64
+
+# new import for software model
+from software_master.models import Software
 
 @login_required
 def add_service_log(request):
     complaints = Complaint.objects.all()
     customers = fetch_customers()
+    # load all softwares to populate the software dropdown in the template
+    softwares = Software.objects.all()
 
     if request.method == 'POST':
         customer_input = request.POST.get('customer')  # dropdown search input
@@ -6243,10 +6277,14 @@ def add_service_log(request):
         phone_number = request.POST.get('phone_number')
         voice_blob = request.POST.get('voice_blob')
 
+        # read selected software id (may be empty)
+        software_id = request.POST.get('software', '')
+
         if not customer_input and not customer_name:
             return render(request, 'add_service_log.html', {
                 'complaints': complaints,
                 'customers': customers,
+                'softwares': softwares,
                 'error_message': 'Please select a customer from the dropdown or enter a customer name manually.'
             })
 
@@ -6264,6 +6302,7 @@ def add_service_log(request):
             if not matched:
                 customer_name = customer_input  # fallback
 
+        # Create the ServiceLog without software (assign after create to be safe)
         log = ServiceLog.objects.create(
             customer_name=customer_name,
             place=place,
@@ -6273,6 +6312,26 @@ def add_service_log(request):
             added_by=custom_user,
             assigned_person=custom_user,  # Set the added_by user as the default assigned person
         )
+
+        # try to attach software if provided and if Software exists and model supports it
+        if software_id:
+            try:
+                selected_software = Software.objects.get(id=software_id)
+                try:
+                    # Prefer assigning the relation object; will work if ServiceLog has FK 'software'
+                    log.software = selected_software
+                    log.save()
+                except Exception:
+                    # as a fallback, try setting software_id (if field exists)
+                    try:
+                        setattr(log, 'software_id', selected_software.id)
+                        log.save()
+                    except Exception:
+                        # If ServiceLog doesn't have a software field, skip attaching
+                        pass
+            except Software.DoesNotExist:
+                # ignore if software id invalid
+                pass
 
         complaint_ids = request.POST.getlist('complaints')
         for cid in complaint_ids:
@@ -6284,7 +6343,7 @@ def add_service_log(request):
                 assigned_person=custom_user
             )
 
-            # Handle multiple images per complaint - this is the key change
+            # Handle multiple images per complaint
             images = request.FILES.getlist(f'images_{cid}')
             for image in images:
                 ComplaintImage.objects.create(complaint_log=complaint_log, image=image)
@@ -6319,7 +6378,11 @@ def add_service_log(request):
         else:
             return redirect('user_service_log')
 
-    return render(request, 'add_service_log.html', {'complaints': complaints, 'customers': customers})
+    return render(request, 'add_service_log.html', {
+        'complaints': complaints,
+        'customers': customers,
+        'softwares': softwares
+    })
 
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
@@ -6373,18 +6436,36 @@ def get_service_history(request):
         })
     
     return JsonResponse(service_history, safe=False)
+from django.shortcuts import render, redirect
+import json
+
+@login_required
+def customer_details(request):
+    """Render customer details page"""
+    customer_data_json = request.GET.get('data', '{}')
+    try:
+        customer_data = json.loads(customer_data_json)
+    except json.JSONDecodeError:
+        customer_data = {}
+    
+    return render(request, 'customer_details.html', {
+        'customer_data': customer_data
+    })
+
 
 from django.shortcuts import render, redirect
 from .models import ServiceLog, Complaint, ServiceLogComplaint, ComplaintImage, User
 from django.core.files.base import ContentFile
 from django.utils import timezone
 import base64
-
+@login_required
 def edit_service_log(request, log_id):
     log = ServiceLog.objects.get(id=log_id)
     complaints = Complaint.objects.all()
     selected_complaints = ServiceLogComplaint.objects.filter(service_log=log)
     customers = fetch_customers()
+    # load all softwares to populate the software dropdown in the template
+    softwares = Software.objects.all()
 
     if request.method == 'POST':
         customer_input = request.POST.get('customer')  # dropdown search input
@@ -6395,12 +6476,16 @@ def edit_service_log(request, log_id):
         phone_number = request.POST.get('phone_number')
         voice_blob = request.POST.get('voice_blob')
 
+        # read selected software id (may be empty)
+        software_id = request.POST.get('software', '')
+
         if not customer_input and not customer_name:
             return render(request, 'add_service_log.html', {
                 'log': log,
                 'complaints': complaints,
                 'selected_complaints': selected_complaints,
                 'customers': customers,
+                'softwares': softwares,
                 'error_message': 'Please select a customer from the dropdown or enter a customer name manually.'
             })
 
@@ -6428,6 +6513,31 @@ def edit_service_log(request, log_id):
             audio_file = ContentFile(base64.b64decode(audio_str), name=f"voice_{log.id}.webm")
             log.voice_note.save(audio_file.name, audio_file)
 
+        # try to attach/update software if provided
+        if software_id:
+            try:
+                selected_software = Software.objects.get(id=software_id)
+                try:
+                    log.software = selected_software
+                except Exception:
+                    try:
+                        setattr(log, 'software_id', selected_software.id)
+                    except Exception:
+                        # if ServiceLog model has no software field, ignore
+                        pass
+            except Software.DoesNotExist:
+                # ignore invalid software id
+                pass
+        else:
+            # If empty software selected and model has field, clear it
+            try:
+                if hasattr(log, 'software'):
+                    log.software = None
+                elif hasattr(log, 'software_id'):
+                    setattr(log, 'software_id', None)
+            except Exception:
+                pass
+
         log.save()
 
         # Clear old complaints and images
@@ -6453,7 +6563,8 @@ def edit_service_log(request, log_id):
         'log': log,
         'complaints': complaints,
         'selected_complaints': selected_complaints,
-        'customers': customers
+        'customers': customers,
+        'softwares': softwares
     })
 
 
