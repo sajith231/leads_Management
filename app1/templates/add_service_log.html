@@ -2935,116 +2935,144 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 // Second instance - Customer info box integration
-document.addEventListener("DOMContentLoaded", function () {
-    const customerInput = document.getElementById("customer");
-    const customerDropdown = document.getElementById("customerDropdown");
-    const placeInput = document.getElementById("place");
-    const newCustomerBtn = document.getElementById("newCustomerBtn");
-    const newCustomerFields = document.getElementById("newCustomerFields");
-    const viewCustomerBtn = document.getElementById("viewCustomerBtn");
+document.addEventListener('DOMContentLoaded', function () {
+    const customerInput = document.getElementById('customer');
+    const customerDropdown = document.getElementById('customerDropdown');
+    const placeInput = document.getElementById('place');
+    const newCustomerBtn = document.getElementById('newCustomerBtn');
+    const viewCustomerBtn = document.getElementById('viewCustomerBtn');
+    const newCustomerSection = document.querySelector('.new-customer-section');
+
+    if (!customerInput || !customerDropdown) {
+        // Required DOM elements are missing — do nothing (fail-safe)
+        console.warn('Customer input or dropdown not found in DOM.');
+        return;
+    }
 
     let isNewCustomer = false;
-    let allCustomers = [];
     let selectedCustomerData = null;
 
-    // Fetch customers
+    // Fetch customers once
     fetch('/proxy/customers/')
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) throw new Error('Network response not ok');
+            return response.json();
+        })
         .then(data => {
-            allCustomers = data;
-            customerDropdown.innerHTML = "";
+            customerDropdown.innerHTML = ''; // clear existing
+            if (!Array.isArray(data) || data.length === 0) {
+                customerDropdown.innerHTML = '<div class="dropdown-item">No customers found</div>';
+                return;
+            }
 
             data.forEach(customer => {
-                const option = document.createElement("div");
-                option.classList.add("dropdown-item");
+                const option = document.createElement('div');
+                option.className = 'dropdown-item';
                 const branchVal = customer.branch || customer.branch_name || '';
-                
-                // Build display text: Name, Address [Branch]
-                let displayText = customer.name;
-                if (customer.address) {
-                    displayText += ', ' + customer.address;
-                }
-                if (branchVal) {
-                    displayText += ' [' + branchVal + ']';
-                }
+                let displayText = customer.name || '';
+                if (customer.address) displayText += ', ' + customer.address;
+                if (branchVal) displayText += ' [' + branchVal + ']';
                 option.textContent = displayText;
-                
-                option.setAttribute("data-address", customer.address);
-                option.setAttribute("data-customer-code", customer.code);
-                
-                option.addEventListener("click", function () {
-                    customerInput.value = customer.name;
-                    placeInput.value = option.getAttribute("data-address");
-                    customerDropdown.style.display = "none";
-                    
-                    // Store selected customer data
+
+                option.dataset.address = customer.address || '';
+                option.dataset.code = customer.code || '';
+
+                option.addEventListener('click', function () {
+                    // set input & place
+                    customerInput.value = customer.name || '';
+                    placeInput && (placeInput.value = option.dataset.address || '');
+                    customerDropdown.style.display = 'none';
+
+                    // set selected data and enable eye button
                     selectedCustomerData = customer;
-                    viewCustomerBtn.disabled = false;
-                    
-                    // Show customer info box
-                    showCustomerInfoBox(customer);
+                    if (viewCustomerBtn) viewCustomerBtn.disabled = false;
+
+                    // show side info box if function exists
+                    try { if (typeof showCustomerInfoBox === 'function') showCustomerInfoBox(customer); } catch(e) {}
                 });
+
                 customerDropdown.appendChild(option);
             });
-
-            if (data.length === 0) {
-                customerDropdown.innerHTML = '<p style="padding: 10px; margin: 0;">No customers found</p>';
-            }
         })
-        .catch(error => {
-            console.error("Error loading customers:", error);
-            customerDropdown.innerHTML = '<p style="padding: 10px; margin: 0;">Failed to load customers.</p>';
+        .catch(err => {
+            console.error('Failed to load customers:', err);
+            customerDropdown.innerHTML = '<div class="dropdown-item">Failed to load customers</div>';
         });
 
-    // Show dropdown on focus
-    customerInput.addEventListener("focus", function () {
-        if (!isNewCustomer) {
-            customerDropdown.style.display = "block";
-        }
+    // Show dropdown on focus (if not creating a new customer)
+    customerInput.addEventListener('focus', function () {
+        if (!isNewCustomer) customerDropdown.style.display = 'block';
     });
 
     // Hide dropdown when clicking outside
-    document.addEventListener("click", function (e) {
+    document.addEventListener('click', function (e) {
         if (!customerInput.contains(e.target) && !customerDropdown.contains(e.target)) {
-            customerDropdown.style.display = "none";
+            customerDropdown.style.display = 'none';
         }
     });
 
-    // Filter customers as user types
-    customerInput.addEventListener("input", function () {
+    // Filter dropdown items as the user types
+    customerInput.addEventListener('input', function () {
         if (isNewCustomer) return;
-        
-        const filter = customerInput.value.toLowerCase();
-        const options = customerDropdown.querySelectorAll(".dropdown-item");
-        let hasVisibleItem = false;
 
-        if (selectedCustomerData && customerInput.value !== selectedCustomerData.name) {
+        const filter = customerInput.value.toLowerCase();
+        const items = customerDropdown.querySelectorAll('.dropdown-item');
+        let anyVisible = false;
+
+        // if user changed text, reset selection
+        if (selectedCustomerData && customerInput.value !== (selectedCustomerData.name || '')) {
             selectedCustomerData = null;
-            viewCustomerBtn.disabled = true;
-            closeCustomerInfoBox();
+            if (viewCustomerBtn) viewCustomerBtn.disabled = true;
+            try { if (typeof closeCustomerInfoBox === 'function') closeCustomerInfoBox(); } catch(e) {}
         }
 
-        options.forEach(option => {
-            if (option.textContent.toLowerCase().includes(filter)) {
-                option.style.display = "block";
-                hasVisibleItem = true;
+        items.forEach(it => {
+            const show = it.textContent.toLowerCase().includes(filter);
+            it.style.display = show ? 'block' : 'none';
+            if (show) anyVisible = true;
+        });
+        customerDropdown.style.display = anyVisible ? 'block' : 'none';
+    });
+
+    // New Customer toggle
+    if (newCustomerBtn) {
+        newCustomerBtn.addEventListener('click', function () {
+            isNewCustomer = !isNewCustomer;
+            if (isNewCustomer) {
+                newCustomerBtn.textContent = 'Select Existing';
+                customerInput.placeholder = 'Will use new customer details below';
+                customerInput.readOnly = true;
+                customerDropdown.style.display = 'none';
+                if (newCustomerSection) newCustomerSection.style.display = 'block';
+                // disable view button for new entries
+                if (viewCustomerBtn) viewCustomerBtn.disabled = true;
             } else {
-                option.style.display = "none";
+                newCustomerBtn.textContent = 'New Customer';
+                customerInput.placeholder = 'Search or type new customer';
+                customerInput.readOnly = false;
+                if (newCustomerSection) newCustomerSection.style.display = 'none';
             }
         });
+    }
 
-        customerDropdown.style.display = hasVisibleItem ? "block" : "none";
-    });
-
-    // New customer button toggle
-    newCustomerBtn.addEventListener("click", function() {
-        isNewCustomer = !isNewCustomer;
-        
-        if (isNewCustomer) {
-            closeCustomerInfoBox();
-            viewCustomerBtn.disabled = true;
-        }
-    });
+    // Eye (view) button: redirect to customer_details view with encoded JSON
+    if (viewCustomerBtn) {
+        viewCustomerBtn.addEventListener('click', function () {
+            if (!selectedCustomerData) {
+                alert('Please select a customer first.');
+                return;
+            }
+            try {
+                const json = JSON.stringify(selectedCustomerData);
+                const encoded = encodeURIComponent(json);
+                // backend view expects GET param 'data' with JSON string
+                window.location.href = '/customer-details/?data=' + encoded;
+            } catch (err) {
+                console.error('Failed to encode customer data', err);
+                alert('Unable to open customer details (check console).');
+            }
+        });
+    }
 });
 </script>
 
