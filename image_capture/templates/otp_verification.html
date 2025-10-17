@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OTP Verification</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding: 20px;
+    }
+
+    .container {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 50px 40px;
+      max-width: 500px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      animation: slideUp 0.5s ease-out;
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .icon-wrapper {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 25px;
+      background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 10px 30px rgba(72, 187, 120, 0.4);
+    }
+
+    .icon-wrapper svg {
+      width: 40px;
+      height: 40px;
+      fill: white;
+    }
+
+    h4 {
+      color: #2d3748;
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 15px;
+    }
+
+    .subtitle {
+      color: #718096;
+      font-size: 16px;
+      margin-bottom: 30px;
+    }
+
+    .alert-danger {
+      background: #fee;
+      color: #c53030;
+      border: 1px solid #fc8181;
+      border-radius: 12px;
+      padding: 15px 20px;
+      margin-bottom: 25px;
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    .alert-info {
+      background: #e6fffa;
+      color: #234e52;
+      border: 1px solid #81e6d9;
+      border-radius: 12px;
+      padding: 15px 20px;
+      margin-bottom: 25px;
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .form-control {
+      padding: 15px 20px;
+      border: 2px solid #e2e8f0;
+      border-radius: 12px;
+      font-size: 16px;
+      transition: all 0.3s ease;
+      background: #f7fafc;
+      text-align: center;
+      letter-spacing: 0.5em;
+      font-weight: 600;
+    }
+
+    .form-control:focus {
+      border-color: #48bb78;
+      background: white;
+      box-shadow: 0 0 0 3px rgba(72, 187, 120, 0.1);
+    }
+
+    .form-control::placeholder {
+      color: #a0aec0;
+      letter-spacing: normal;
+      font-weight: normal;
+    }
+
+    .btn-success {
+      width: 100%;
+      padding: 15px;
+      background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      color: white;
+      box-shadow: 0 4px 15px rgba(72, 187, 120, 0.4);
+      transition: all 0.3s ease;
+    }
+
+    .btn-success:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(72, 187, 120, 0.5);
+      background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+    }
+
+    .btn-success:active {
+      transform: translateY(0);
+    }
+
+    .timer-note {
+      margin-top: 25px;
+      padding: 15px;
+      background: #f7fafc;
+      border-radius: 10px;
+      font-size: 13px;
+      color: #718096;
+      text-align: center;
+      border: 1px dashed #cbd5e0;
+    }
+
+    .timer-note svg {
+      width: 16px;
+      height: 16px;
+      margin-right: 5px;
+      vertical-align: middle;
+      fill: #718096;
+    }
+
+    .resend-link {
+      margin-top: 20px;
+      text-align: center;
+    }
+
+    .resend-link a {
+      color: #667eea;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 600;
+      transition: color 0.3s ease;
+    }
+
+    .resend-link a:hover {
+      color: #764ba2;
+      text-decoration: underline;
+    }
+
+    @media (max-width: 576px) {
+      .container {
+        padding: 40px 25px;
+      }
+
+      h4 {
+        font-size: 24px;
+      }
+
+      .subtitle {
+        font-size: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container mt-5 text-center">
+    <div class="icon-wrapper">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM9 6c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9V6zm9 14H6V10h12v10zm-6-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/>
+      </svg>
+    </div>
+
+    <h4>OTP Verification</h4>
+    <p class="subtitle">Enter the verification code sent to your phone</p>
+
+    {% if error %}
+    <div class="alert alert-danger">{{ error }}</div>
+    {% elif sent_otp %}
+    <div class="alert alert-info">OTP has been sent! (Check console)</div>
+    {% endif %}
+
+    <form method="POST" action="{% url 'verify_otp' data.unique_id %}">
+      {% csrf_token %}
+      <input type="text" name="otp" class="form-control mb-3" placeholder="Enter OTP" required maxlength="6">
+      <button type="submit" class="btn btn-success">Verify OTP</button>
+    </form>
+
+    <div class="timer-note">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/>
+      </svg>
+      OTP expires in 5 minutes
+    </div>
+
+    <div class="resend-link">
+      <a href="#">Didn't receive the code? Resend OTP</a>
+    </div>
+  </div>
+</body>
+</html>

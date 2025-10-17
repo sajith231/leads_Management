@@ -37,7 +37,7 @@ urlpatterns = [
     path('feeder/<int:feeder_id>/status-update/', app2_views.feeder_status_update, name='feeder_status_update'),
     path('wfh_request/', include('wfh_Request.urls')),
     path('', include('punchout_reminder.urls')),
-
+    path('image_capture/', include('image_capture.urls')),
 
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

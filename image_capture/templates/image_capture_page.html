@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Image Capture</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .capture-container {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 24px;
+      padding: 40px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      max-width: 500px;
+      width: 90%;
+      animation: fadeIn 0.6s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    h4 {
+      color: #667eea;
+      font-weight: 700;
+      margin-bottom: 10px;
+      font-size: 28px;
+    }
+
+    .subtitle {
+      color: #666;
+      font-size: 14px;
+      margin-bottom: 30px;
+    }
+
+    .video-wrapper {
+      position: relative;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+      margin: 20px 0;
+      background: #000;
+    }
+
+    #camera {
+      width: 100%;
+      height: auto;
+      display: block;
+      border-radius: 16px;
+    }
+
+    .camera-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      border: 3px dashed rgba(255, 255, 255, 0.5);
+      border-radius: 16px;
+      pointer-events: none;
+      margin: 12px;
+    }
+
+    .btn-custom {
+      border: none;
+      border-radius: 50px;
+      padding: 14px 40px;
+      font-weight: 600;
+      font-size: 16px;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .btn-capture {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .btn-capture:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-submit {
+      background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+      color: white;
+      margin-top: 15px;
+    }
+
+    .btn-submit:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(56, 239, 125, 0.4);
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 8px 20px;
+      border-radius: 50px;
+      font-size: 13px;
+      font-weight: 600;
+      margin-top: 15px;
+      animation: pulse 2s infinite;
+    }
+
+    .badge-success {
+      background: rgba(56, 239, 125, 0.2);
+      color: #11998e;
+    }
+
+    .badge-info {
+      background: rgba(102, 126, 234, 0.2);
+      color: #667eea;
+    }
+
+    @keyframes pulse {
+      0%, 100% {
+        opacity: 1;
+      }
+      50% {
+        opacity: 0.7;
+      }
+    }
+
+    .icon {
+      width: 60px;
+      height: 60px;
+      margin: 0 auto 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 28px;
+    }
+
+    canvas {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="capture-container text-center">
+    <div class="icon">📸</div>
+    <h4>Capture Your Image</h4>
+    <p class="subtitle">Please allow camera and location access for the best experience</p>
+
+    <div class="video-wrapper">
+      <video id="camera" autoplay playsinline></video>
+      <div class="camera-overlay"></div>
+    </div>
+    
+    <canvas id="snapshot" width="640" height="480"></canvas>
+
+    <button id="captureBtn" class="btn-custom btn-capture">
+      📷 Capture Photo
+    </button>
+
+    <div id="statusMessage"></div>
+
+        <form method="POST" action="{% url 'submit_image' data.unique_id %}" id="submitForm">
+      {% csrf_token %}
+      <input type="hidden" name="image_data" id="image_data">
+      <input type="hidden" name="latitude" id="latitude">
+      <input type="hidden" name="longitude" id="longitude">
+      <button type="submit" class="btn-custom btn-submit" style="display:none;" id="submitBtn">
+        ✓ Submit Image
+      </button>
+    </form>
+  </div>
+
+  <script>
+    let video = document.getElementById('camera');
+    let canvas = document.getElementById('snapshot');
+    let captureBtn = document.getElementById('captureBtn');
+    let submitBtn = document.getElementById('submitBtn');
+    let imageDataInput = document.getElementById('image_data');
+    let statusMessage = document.getElementById('statusMessage');
+
+    // Camera access
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } })
+      .then(stream => { 
+        video.srcObject = stream;
+        showStatus('Camera ready!', 'info');
+      })
+      .catch(err => {
+        alert('Camera access denied! Please enable camera permissions.');
+        showStatus('Camera access denied', 'danger');
+      });
+
+    // Location access
+    navigator.geolocation.getCurrentPosition(
+      function(position) {
+        document.getElementById('latitude').value = position.coords.latitude;
+        document.getElementById('longitude').value = position.coords.longitude;
+        showStatus('Location detected ✓', 'success');
+      },
+      function(error) {
+        showStatus('Location access denied', 'warning');
+      }
+    );
+
+    // Capture button
+    captureBtn.addEventListener('click', function() {
+      let ctx = canvas.getContext('2d');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      
+      let imageData = canvas.toDataURL('image/jpeg', 0.9);
+      imageDataInput.value = imageData;
+      
+      submitBtn.style.display = 'inline-block';
+      captureBtn.textContent = '📷 Retake Photo';
+      showStatus('Photo captured! Ready to submit ✓', 'success');
+    });
+
+    function showStatus(message, type) {
+      let badgeClass = type === 'success' ? 'badge-success' : 'badge-info';
+      statusMessage.innerHTML = `<div class="status-badge ${badgeClass}">${message}</div>`;
+    }
+  </script>
+</body>
+</html>

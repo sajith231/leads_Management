@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verification Complete</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 24px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      max-width: 500px;
+      width: 100%;
+      padding: 48px 32px;
+      text-align: center;
+      animation: slideUp 0.6s ease-out;
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .success-icon {
+      width: 80px;
+      height: 80px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 24px;
+      animation: scaleIn 0.5s ease-out 0.2s backwards;
+    }
+
+    @keyframes scaleIn {
+      from {
+        transform: scale(0);
+      }
+      to {
+        transform: scale(1);
+      }
+    }
+
+    .checkmark {
+      width: 40px;
+      height: 40px;
+      border: 4px solid white;
+      border-left: none;
+      border-top: none;
+      transform: rotate(45deg);
+      margin-top: -8px;
+    }
+
+    h1 {
+      color: #2d3748;
+      font-size: 32px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      animation: fadeIn 0.6s ease-out 0.3s backwards;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+
+    .subtitle {
+      color: #718096;
+      font-size: 16px;
+      margin-bottom: 32px;
+      animation: fadeIn 0.6s ease-out 0.4s backwards;
+    }
+
+    .customer-name {
+      color: #667eea;
+      font-weight: 600;
+    }
+
+    .image-wrapper {
+      position: relative;
+      width: 280px;
+      height: 280px;
+      margin: 0 auto 24px;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      animation: fadeIn 0.6s ease-out 0.5s backwards;
+    }
+
+    .image-wrapper img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .info-card {
+      background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+      border-radius: 12px;
+      padding: 20px;
+      margin-top: 24px;
+      animation: fadeIn 0.6s ease-out 0.6s backwards;
+    }
+
+    .location-label {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #a0aec0;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .location-text {
+      color: #4a5568;
+      font-size: 16px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .location-icon {
+      color: #667eea;
+    }
+
+    @media (max-width: 480px) {
+      .container {
+        padding: 32px 24px;
+      }
+
+      h1 {
+        font-size: 26px;
+      }
+
+      .image-wrapper {
+        width: 240px;
+        height: 240px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="success-icon">
+      <div class="checkmark"></div>
+    </div>
+    
+    <h1>Verification Complete!</h1>
+    
+    <p class="subtitle">
+      <span class="customer-name">{{ data.customer_name }}</span> has successfully submitted their verification details.
+    </p>
+    
+    <div class="image-wrapper">
+      <img src="{{ data.image.url }}" alt="Verification photo">
+    </div>
+    
+    <div class="info-card">
+      <div class="location-label">Location Verified</div>
+      <div class="location-text">
+        <span class="location-icon">📍</span>
+        <span>
+          {% if location_name %}
+            {{ location_name }}
+          {% else %}
+            {{ data.latitude }}, {{ data.longitude }}
+          {% endif %}
+        </span>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
