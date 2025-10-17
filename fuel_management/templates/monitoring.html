@@ -2,387 +2,174 @@
 
 {% block content %}
 <style>
-    * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-    }
-
-    .monitoring-container {
-        font-family: Arial, sans-serif;
-        background-color: #f5f5f5;
-        padding: 20px;
-        min-height: 100vh;
-    }
-
-    .container {
-        max-width: 1200px;
-        margin: 0 auto;
-    }
-
-    .header {
-        background-color: #2c3e50;
-        color: white;
-        padding: 20px 30px;
-        border-radius: 4px;
-        margin-bottom: 20px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .header h1 {
-        font-size: 1.5em;
-        font-weight: normal;
-    }
-
-    .back-btn {
-        padding: 8px 16px;
-        background-color: #34495e;
-        color: white;
-        text-decoration: none;
-        border-radius: 3px;
-        font-size: 0.9em;
-        transition: background-color 0.3s;
-    }
-
-    .back-btn:hover {
-        background-color: #415a77;
-    }
-
-    .content-box {
-        background: white;
-        border-radius: 4px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        padding: 20px;
-        margin-bottom: 20px;
-    }
-
-    .section-title {
-        font-size: 1.2em;
-        color: #2c3e50;
-        margin-bottom: 20px;
-        padding-bottom: 10px;
-        border-bottom: 2px solid #3498db;
-    }
-
-    .staff-list {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-        gap: 15px;
-        margin-bottom: 20px;
-    }
-
-    .staff-item {
-        background: #f8f9fa;
-        border: 2px solid #e0e0e0;
-        border-radius: 4px;
-        padding: 15px;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-
-    .staff-item:hover {
-        border-color: #3498db;
-        background: #fff;
-    }
-
-    .staff-item.active {
-        border-color: #3498db;
-        background: #e3f2fd;
-    }
-
-    .staff-name {
-        font-size: 1.1em;
-        font-weight: 600;
-        color: #2c3e50;
-        margin-bottom: 10px;
-    }
-
-    .staff-summary {
-        font-size: 0.85em;
-        color: #7f8c8d;
-        line-height: 1.6;
-    }
-
-    .detail-section {
-        display: none;
-    }
-
-    .detail-section.active {
-        display: block;
-    }
-
-    .metrics {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-        gap: 15px;
-        margin-bottom: 30px;
-    }
-
-    .metric-box {
-        background: #f8f9fa;
-        border-left: 4px solid #3498db;
-        padding: 15px;
-        border-radius: 3px;
-    }
-
-    .metric-box.primary {
-        border-left-color: #3498db;
-    }
-
-    .metric-box.success {
-        border-left-color: #27ae60;
-    }
-
-    .metric-box.warning {
-        border-left-color: #f39c12;
-    }
-
-    .metric-box.danger {
-        border-left-color: #e74c3c;
-    }
-
-    .metric-label {
-        font-size: 0.75em;
-        color: #7f8c8d;
-        text-transform: uppercase;
-        margin-bottom: 8px;
-        letter-spacing: 0.5px;
-    }
-
-    .metric-value {
-        font-size: 1.8em;
-        font-weight: 600;
-        color: #2c3e50;
-    }
-
-    .metric-unit {
-        font-size: 0.5em;
-        color: #7f8c8d;
-        margin-left: 3px;
-    }
-
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 20px;
-    }
-
-    thead {
-        background-color: #34495e;
-        color: white;
-    }
-
-    th {
-        padding: 12px;
-        text-align: left;
-        font-weight: 600;
-        font-size: 0.85em;
-        text-transform: uppercase;
-    }
-
-    td {
-        padding: 12px;
-        border-bottom: 1px solid #e0e0e0;
-    }
-
-    tbody tr:hover {
-        background-color: #f8f9fa;
-    }
-
-    tbody tr:last-child td {
-        border-bottom: none;
-    }
-
-    .no-data {
-        text-align: center;
-        padding: 40px;
-        color: #7f8c8d;
-    }
-
-    .badge {
-        padding: 4px 8px;
-        border-radius: 3px;
-        font-size: 0.8em;
-        font-weight: 500;
-        text-transform: capitalize;
-    }
-
-    .badge-two { background-color: #e3f2fd; color: #1565c0; }
-    .badge-four { background-color: #fff3e0; color: #e65100; }
-
-    @media (max-width: 768px) {
-        .header {
-            flex-direction: column;
-            gap: 10px;
-            align-items: flex-start;
-        }
-
-        .staff-list {
-            grid-template-columns: 1fr;
-        }
-
-        .metrics {
-            grid-template-columns: 1fr;
-        }
-
-        table {
-            font-size: 0.85em;
-        }
-
-        th, td {
-            padding: 8px;
-        }
+    *{margin:0;padding:0;box-sizing:border-box}
+    .monitoring-container{font-family:Arial,sans-serif;background:#f5f5f5;padding:20px;min-height:100vh}
+    .container{max-width:1200px;margin:0 auto}
+    .header{background:#2c3e50;color:#fff;padding:20px 30px;border-radius:4px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center}
+    .header h1{font-size:1.5em;font-weight:normal}
+    .back-btn{padding:8px 16px;background:#34495e;color:#fff;text-decoration:none;border-radius:3px;font-size:.9em;transition:.3s}
+    .back-btn:hover{background:#415a77}
+    .content-box{background:#fff;border-radius:4px;box-shadow:0 2px 4px rgba(0,0,0,.1);padding:20px;margin-bottom:20px}
+    .section-title{font-size:1.2em;color:#2c3e50;margin-bottom:20px;padding-bottom:10px;border-bottom:2px solid #3498db}
+    .vehicle-picker{display:flex;gap:10px;align-items:center;margin-bottom:25px;flex-wrap:wrap}
+    .vehicle-picker select,.vehicle-picker input{padding:8px 12px;font-size:1em;border:1px solid #ccc;border-radius:3px}
+    .vehicle-picker button{padding:8px 16px;background:#27ae60;color:#fff;border:none;border-radius:3px;cursor:pointer}
+    .vehicle-picker button:hover{background:#229954}
+    .metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:15px;margin-bottom:30px}
+    .metric-box{background:#f8f9fa;border-left:4px solid #3498db;padding:20px;border-radius:5px;text-align:center}
+    .metric-box.success{border-left-color:#27ae60}
+    .metric-box.warning{border-left-color:#f39c12}
+    .metric-box.danger{border-left-color:#e74c3c}
+    .metric-label{font-size:.85em;color:#7f8c8d;text-transform:uppercase;margin-bottom:10px;letter-spacing:.5px}
+    .metric-value{font-size:2em;font-weight:600;color:#2c3e50}
+    .metric-unit{font-size:.6em;color:#7f8c8d;margin-left:3px}
+    table{width:100%;border-collapse:collapse;margin-top:20px}
+    thead{background:#34495e;color:#fff}
+    th{padding:12px;text-align:left;font-weight:600;font-size:.85em;text-transform:uppercase}
+    td{padding:12px;border-bottom:1px solid #e0e0e0}
+    tbody tr:hover{background:#f8f9fa}
+    tbody tr:last-child td{border-bottom:none}
+    .positive{color:#27ae60}
+    .negative{color:#e74c3c}
+    .no-data{text-align:center;padding:40px;color:#7f8c8d}
+    .traveller-list{margin-top:15px;font-size:.95em;color:#2c3e50}
+    .traveller-list strong{color:#2c3e50}
+    @media(max-width:768px){
+        .header{flex-direction:column;gap:10px;align-items:flex-start}
+        .metrics{grid-template-columns:1fr}
+        table{font-size:.85em}
+        th,td{padding:8px}
     }
 </style>
 
 <div class="monitoring-container">
-    <div class="container">
-        <div class="header">
-            <h1>Fuel Monitoring Dashboard</h1>
-            <a href="{% url 'fuel_management' %}" class="back-btn">← Back</a>
-        </div>
+  <div class="container">
 
-        <div class="content-box">
-            <h2 class="section-title">Staff Members</h2>
-            
-            {% if staff_analytics %}
-            <div class="staff-list">
-                {% for staff in staff_analytics %}
-                <div class="staff-item" onclick="showStaffDetails('{{ staff.staff_name|escapejs }}')">
-                    <div class="staff-name">{{ staff.staff_name }}</div>
-                    <div class="staff-summary">
-                        {{ staff.total_trips }} trips • {{ staff.total_distance|floatformat:0 }} km<br>
-                        Avg: {{ staff.avg_mileage|floatformat:1 }} km/L • ₹{{ staff.total_cost|floatformat:0 }}
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-            {% else %}
-            <div class="no-data">
-                <p>No fuel entries available for monitoring.</p>
-            </div>
-            {% endif %}
-        </div>
-
-        <!-- Detailed Analytics for Each Staff -->
-        {% for staff in staff_analytics %}
-        <div class="detail-section" id="detail-{{ staff.staff_name|slugify }}">
-            <div class="content-box">
-                <h2 class="section-title">{{ staff.staff_name }} - Performance Metrics</h2>
-
-                <div class="metrics">
-                    <div class="metric-box primary">
-                        <div class="metric-label">Average Mileage</div>
-                        <div class="metric-value">
-                            {{ staff.avg_mileage|floatformat:2 }}
-                            <span class="metric-unit">km/L</span>
-                        </div>
-                    </div>
-
-                    <div class="metric-box success">
-                        <div class="metric-label">Total Distance</div>
-                        <div class="metric-value">
-                            {{ staff.total_distance|floatformat:0 }}
-                            <span class="metric-unit">km</span>
-                        </div>
-                    </div>
-
-                    <div class="metric-box warning">
-                        <div class="metric-label">Total Fuel Cost</div>
-                        <div class="metric-value">
-                            ₹{{ staff.total_cost|floatformat:0 }}
-                        </div>
-                    </div>
-
-                    <div class="metric-box danger">
-                        <div class="metric-label">Cost per KM</div>
-                        <div class="metric-value">
-                            ₹{{ staff.cost_per_km|floatformat:2 }}
-                            <span class="metric-unit">/km</span>
-                        </div>
-                    </div>
-
-                    <div class="metric-box primary">
-                        <div class="metric-label">Fuel Consumed</div>
-                        <div class="metric-value">
-                            {{ staff.estimated_fuel|floatformat:1 }}
-                            <span class="metric-unit">L</span>
-                        </div>
-                    </div>
-
-                    <div class="metric-box success">
-                        <div class="metric-label">Total Trips</div>
-                        <div class="metric-value">
-                            {{ staff.total_trips }}
-                        </div>
-                    </div>
-                </div>
-
-                <h3 class="section-title">Trip Details</h3>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Vehicle</th>
-                            <th>Route</th>
-                            <th>Distance (km)</th>
-                            <th>Cost (₹)</th>
-                            <th>Mileage (km/L)</th>
-                            <th>Fuel Used (L)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for trip in staff.trips %}
-                        <tr>
-                            <td>{{ trip.date|date:"d-M-Y" }}</td>
-                            <td>
-                                <span class="badge badge-{{ trip.vehicle_type|cut:' ' }}">
-                                    {{ trip.get_vehicle_type_display }}
-                                </span>
-                            </td>
-                            <td>{{ trip.trip_from }} → {{ trip.trip_to }}</td>
-                            <td>{{ trip.distance_traveled|floatformat:1 }}</td>
-                            <td>₹{{ trip.fuel_cost }}</td>
-                            <td>{{ trip.mileage|floatformat:2 }}</td>
-                            <td>{{ trip.fuel_used|floatformat:2 }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        {% endfor %}
+    <div class="header">
+      <h1>Vehicle Monitoring</h1>
+      <a href="{% url 'fuel_management' %}" class="back-btn">← Back</a>
     </div>
+
+    <!-- vehicle and user picker -->
+    <div class="content-box">
+      <form method="get" class="vehicle-picker">
+        <label><strong>Select vehicle:</strong></label>
+        <select name="vid" required>
+          <option value="">-- choose --</option>
+          {% for v in vehicles %}
+            <option value="{{ v.id }}" {% if v.id == selected_id %}selected{% endif %}>{{ v.vehicle_number }}</option>
+          {% endfor %}
+        </select>
+        
+        <label><strong>Select user:</strong></label>
+        <select name="user_id">
+          <option value="">-- All Users --</option>
+          {% for u in users %}
+            <option value="{{ u.id }}" {% if u.id == selected_user_id %}selected{% endif %}>
+              {{ u.get_full_name|default:u.username }}
+            </option>
+          {% endfor %}
+        </select>
+
+        
+
+        <button type="submit">Show</button>
+      </form>
+
+      {% if selected_vehicle %}
+        <div class="traveller-list">
+          <strong>Users who have travelled {{ selected_vehicle.vehicle_number }}:</strong><br>
+          {% if vehicle_travelers %}
+            {% for u in vehicle_travelers %}
+              {{ u.get_full_name|default:u.username }}{% if not forloop.last %}, {% endif %}
+            {% endfor %}
+          {% else %}
+            <span style="color:#7f8c8d">No travellers recorded yet.</span>
+          {% endif %}
+        </div>
+      {% endif %}
+    </div>
+
+    {% if selected_vehicle %}
+      <!-- summary card -->
+      <div class="content-box">
+        <h2 class="section-title">Summary for {{ selected_vehicle.vehicle_number }}</h2>
+        <div class="metrics">
+          <div class="metric-box primary">
+            <div class="metric-label">Trips</div>
+            <div class="metric-value">{{ summary.trips }}</div>
+          </div>
+          <div class="metric-box success">
+            <div class="metric-label">Total Distance</div>
+            <div class="metric-value">{{ summary.distance|floatformat:0 }}<span class="metric-unit">km</span></div>
+          </div>
+          <div class="metric-box warning">
+            <div class="metric-label">Total Fuel Cost (actual)</div>
+            <div class="metric-value">₹{{ summary.cost|floatformat:0 }}</div>
+          </div>
+          <div class="metric-box danger">
+            <div class="metric-label">Avg Cost / km</div>
+            <div class="metric-value">₹{{ summary.cost_per_km|floatformat:2 }}</div>
+          </div>
+
+          <!-- vehicle rated mileage -->
+          <div class="metric-box" style="border-left-color:#17a2b8">
+            <div class="metric-label">Mileage Of Selected Vehicle</div>
+            <div class="metric-value">{{ selected_vehicle.avg_mileage|floatformat:2 }}<span class="metric-unit">km/l</span></div>
+          </div>
+
+          <!-- NEW: expected totals using today's rate -->
+          
+          
+          </div>
+        </div>
+      </div>
+
+      <!-- trip table -->
+      <div class="content-box">
+        <h2 class="section-title">Trip Details</h2>
+        {% if trips %}
+          <div style="overflow-x:auto">
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Start</th>
+                  <th>End</th>
+                  <th>Distance (km)</th>
+                  <th>Fuel Cost (₹)</th>
+                  <th>Cost/km</th>
+                  <th>Fuel used (l)</th>
+                  <th>Allowance (₹)</th>
+                  <th>Saving / Extra</th>
+                  <th>Travelled By</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for t in trips %}
+                  <tr>
+                    <td>{% if t.date %}{{ t.date|date:"d-M-Y" }}{% else %}—{% endif %}</td>
+                    <td>{% if t.start_time %}{{ t.start_time|time:"h:i A" }}{% else %}—{% endif %}</td>
+                    <td>{% if t.end_time %}{{ t.end_time|time:"h:i A" }}{% else %}—{% endif %}</td>
+                    <td>{{ t.distance|floatformat:0 }}</td>
+                    <td>₹{{ t.cost|floatformat:0 }}</td>
+                    <td>₹{{ t.cost_per_km|floatformat:2 }}</td>
+                    <td>{{ t.fuel_used|floatformat:2 }}</td>
+                    <td>₹{{ t.allowance|floatformat:0 }}</td>
+                    <td class="{% if t.saving >= 0 %}positive{% else %}negative{% endif %}">
+                      ₹{{ t.saving|floatformat:0 }} {% if t.saving >= 0 %}saved{% else %}extra{% endif %}
+                    </td>
+                    <td>{{ t.travelled_by }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <div class="no-data">No trips for this vehicle yet.</div>
+        {% endif %}
+      </div>
+    {% endif %}
+  </div>
 </div>
-
-<script>
-function showStaffDetails(staffName) {
-    // Remove active class from all staff items
-    document.querySelectorAll('.staff-item').forEach(item => {
-        item.classList.remove('active');
-    });
-    
-    // Hide all detail sections
-    document.querySelectorAll('.detail-section').forEach(section => {
-        section.classList.remove('active');
-    });
-    
-    // Add active class to clicked item
-    event.currentTarget.classList.add('active');
-    
-    // Show selected staff details
-    const staffSlug = staffName.toLowerCase().replace(/\s+/g, '-');
-    const detailSection = document.getElementById('detail-' + staffSlug);
-    if (detailSection) {
-        detailSection.classList.add('active');
-        // Smooth scroll to the detail section
-        setTimeout(() => {
-            detailSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }, 100);
-    }
-}
-</script>
-
-{% endblock %}  
+{% endblock %}
