@@ -804,22 +804,22 @@
 <style>
 /* Customer Info Box Styling */
 .customer-info-box {
-    margin-left: 10%;
+    /* default: hidden off-canvas for small screens */
     position: fixed;
-    left: 20px;
+    right: 20px;     /* default on right */
     top: 50%;
     transform: translateY(-50%);
     width: 320px;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     border-radius: 16px;
     padding: 20px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.3);
     color: white;
     display: none;
     z-index: 1000;
     max-height: 80vh;
     overflow-y: auto;
-    animation: slideInLeft 0.4s ease-out;
+    animation: slideInRight 0.4s ease-out;
 }
 
 @keyframes slideInLeft {
@@ -835,6 +835,13 @@
 
 .customer-info-box.show {
     display: block;
+}
+.customer-info-box.stable {
+    display: block !important;
+    right: 20px;
+    left: auto;
+    top: 50%;
+    transform: translateY(-50%);
 }
 
 .customer-info-header {
@@ -973,7 +980,7 @@
 }
 </style>
 
-<div class="customer-info-box" id="customerInfoBox">
+<div class="customer-info-box stable show" id="customerInfoBox">
     <div class="customer-info-header">
         <div class="customer-info-title">
             <i class="fas fa-user-circle"></i>
@@ -1056,7 +1063,7 @@
         <div class="info-value-large" id="infoNature">N/A</div>
     </div>
 </div>
-<div class="container mt-5" style="max-width: 800px;">
+<div class="" style="max-width: 800px;">
     <h2 class="mb-4 text-center">{% if log %}Edit{% else %}Add{% endif %} Service Log</h2>
 
     <form method="post" enctype="multipart/form-data" class="card p-4 shadow-sm">
