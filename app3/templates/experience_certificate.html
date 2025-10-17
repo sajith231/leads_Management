@@ -6,87 +6,98 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Experience Certificate</title>
 
-  <!-- FontAwesome & HTML2PDF -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
   <style>
-    body {
+    html, body {
       margin: 0;
-      padding: 40px 0;
-      background-color: #f4f4f4;
+      padding: 0;
+      background: #f4f4f4;
       font-family: Arial, sans-serif;
     }
 
     .wrapper {
       display: flex;
       justify-content: center;
+      align-items: center;
+      padding: 20px 0;
     }
 
+    /* Adjusted padding for perfect centering */
     .certificate-container {
-      width: 794px; /* A4 width */
-      height: auto;
+      width: 210mm;
+      min-height: 297mm;
       background-color: #fff;
-      padding: 2cm;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      padding: 22mm 25mm 22mm 18mm; /* More right padding than left */
       box-sizing: border-box;
+      box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
+      position: relative;
     }
 
     .header {
       display: flex;
-      align-items: center;
       justify-content: space-between;
-      border-bottom: 3px solid rgba(0, 0, 0, 0.559);
-      padding-bottom: 10px;
-      margin-bottom: 2cm;
-    }
-
-    .logo img {
-      max-width: 110px;
-      object-fit: contain;
+      align-items: flex-start;
+      border-bottom: 1px solid rgba(0,0,0,0.3);
+      padding-bottom: 6px;
+      margin-bottom: 18mm;
     }
 
     .company-info h1 {
-      font-size: 18px;
-      margin: 0;
-      text-align: left;
+      font-size: 15px;
+      margin: 0 0 6px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
     }
 
     .company-info p {
-      font-size: 14px;
-      margin: 4% 0 0;
-      color: #333;
-      text-align: left;
+      margin: 2px 0;
+      font-size: 11px;
+      color: #222;
     }
 
     .date {
       text-align: right;
-      font-size: 14px;
-      margin-bottom: 1cm;
+      font-size: 11px;
+      margin-top: 4px;
+      min-width: 60mm;
     }
 
     h1.title {
-      font-size: 20px;
+      font-size: 14px;
       text-align: center;
-      margin-bottom: 1cm;
       text-decoration: underline;
+      font-weight: bold;
+      margin-bottom: 10mm;
     }
 
     .main-text {
-      font-size: 18px;
-      line-height: 25px;
-      margin-bottom: 1cm;
+      font-size: 12.5px;
+      line-height: 1.6;
       text-align: justify;
+      color: #111;
+      margin-bottom: 6mm;
+    }
+
+    .main-text strong {
+      font-weight: bold;
     }
 
     .signature {
       text-align: right;
-      margin-top: 2cm;
+      margin-top: 20mm;
+      font-size: 12px;
+      padding-right: 2mm; /* slight left shift for signature block */
     }
 
     .signature p {
-      margin: 5px 0;
-      font-size: 14px;
+      margin: 3px 0;
+    }
+
+    .signature .sign-name {
+      font-weight: bold;
+      margin-top: 5mm;
     }
 
     .download-button {
@@ -95,86 +106,87 @@
       right: 20px;
       padding: 10px 20px;
       background-color: #007bff;
-      color: #fff;
+      color: white;
       border: none;
-      border-radius: 5px;
+      border-radius: 6px;
       cursor: pointer;
-      font-size: 16px;
+      font-size: 15px;
     }
 
     .download-button:hover {
       background-color: #0056b3;
+    }
+
+    @media print {
+      .download-button { display: none; }
+      body { background: #fff; }
     }
   </style>
 </head>
 <body>
   <div class="wrapper">
     <div class="certificate-container" id="certificate">
-      <!-- Header -->
       <div class="header">
-        <!-- <div class="logo">
-          <img src="{% static 'images/imclogo2.png' %}" alt="Logo" class="img-fluid">
-        </div> -->
         <div class="company-info">
           <h1>IMCB SOLUTIONS LLP</h1>
           <p><i class="fa fa-map-marker"></i> Palakkunnummal Building, Kalpetta, Wayanad-673121</p>
           <p><i class="fa fa-phone"></i> 7593820007, 7593820005, 7306197537</p>
-          <p>
-            <i class="fa fa-globe"></i> www.imcbs.com
-            <span style="margin-left: 2%;"><i class="fa fa-envelope"></i> info@imcbs.com</span><br>
-           <div style="margin-top: 4%;"><div>GST NO : 32AALFI5227N1Z4</div>
-           <div>TAN NO : CHN104318G</div></div>
+          <p><i class="fa fa-globe"></i> www.imcbs.com 
+            <span style="margin-left:6px;">
+              <i class="fa fa-envelope"></i> info@imcbs.com
+            </span>
           </p>
+          <div style="margin-top:5px; font-size:10.5px;">
+            <div>GST NO : 32AALFI5227N1Z4</div>
+            <div>TAN NO : CHN104318G</div>
+          </div>
+        </div>
+        <div class="date">
+          Date: {{ certificate_date }}
         </div>
       </div>
 
-      <!-- Body -->
-      <div class="content">
-        <p class="date">Date: {{ certificate_date }}</p>
-        <h1 class="title">TO WHOMSOEVER IT MAY CONCERN</h1>
+      <h1 class="title">TO WHOMSOEVER IT MAY CONCERN</h1>
 
-        <p class="main-text">
-          This is to certify that Mr/Ms. {{ employee.name }}, {{ employee.address }}, worked as a {{ employee.job_title }} at IMCB SOLUTIONS LLP from {{ experience_certificate.start_date|date:"d-m-Y" }} to {{ experience_certificate.end_date|date:"d-m-Y" }}.
-        </p>
+      <p class="main-text">
+        This is to certify that Mr/Ms. <strong>{{ employee.name }}</strong>, {{ employee.address }}, worked as a {{ employee.job_title }}
+        at IMCB SOLUTIONS LLP from {{ experience_certificate.start_date|date:"d-m-Y" }} to {{ experience_certificate.end_date|date:"d-m-Y" }}.
+      </p>
 
-        <p class="main-text">
-          It was noted that Mr/Ms. {{ employee.name }} is capable of taking up any level of responsibility with the right sense of attitude and seriousness required for the job. His/Her level of dedication and sincerity towards his/her work were found to be good.
-        </p>
+      <p class="main-text">
+        It was noted that Mr/Ms. <strong>{{ employee.name }}</strong> is capable of taking up any level of responsibility with the right
+        sense of attitude and seriousness required for the job. His/Her level of dedication and sincerity towards his/her work were found
+        to be good.
+      </p>
 
-        <p class="main-text">
-          He/She is leaving our organization on his/her own account. We wish all success in his/her future career.
-        </p>
+      <p class="main-text">
+        He/She is leaving our organization on his/her own account. We wish all success in his/her future career.
+      </p>
 
-        <!-- Signature -->
-        <div class="signature">
-          <p>For IMCB SOLUTIONS LLP</p>
-          <p style="margin-top: 25px;">Arun Kumar KN</p>
-          <p>Chief executive officer</p>
-    
-        </div>
+      <div class="signature">
+        <p>For IMCB SOLUTIONS LLP</p>
+        <p class="sign-name">Arun Kumar KN</p>
+        <p>Chief executive officer</p>
       </div>
     </div>
   </div>
 
-  <!-- Download Button -->
   <button class="download-button" onclick="downloadAsPDF()">Download as PDF</button>
 
   <script>
     function downloadAsPDF() {
       const element = document.getElementById('certificate');
-
       const options = {
-        margin: [0, 0, 0, 0],
+        margin: [10, 10, 10, 10],
         filename: 'Experience_Certificate.pdf',
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 3, useCORS: true, letterRendering: true },
+        image: { type: 'jpeg', quality: 1 },
+        html2canvas: { scale: 2, useCORS: true },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
         pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
       };
 
-      html2pdf().from(element).set(options).toPdf().get('pdf').then(function (pdf) {
-        pdf.setPage(1);
-        pdf.save('Experience_Certificate.pdf');
+      document.fonts.ready.then(() => {
+        html2pdf().set(options).from(element).save();
       });
     }
   </script>
