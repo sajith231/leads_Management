@@ -802,45 +802,57 @@
 }
 </style>
 <style>
-/* ====== Customer Info Box — updated: wider + 2-column layout ====== */
-
-/* Container */
+/* Customer Info Box Styling */
 .customer-info-box {
+    /* default: hidden off-canvas for small screens */
     position: fixed;
-    right: 20px;
+    right: 20px;     /* default on right */
     top: 50%;
     transform: translateY(-50%);
-    width: 560px;                       /* doubled width (was ~280px previously) */
+    width: 320px;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     border-radius: 16px;
-    padding: 22px;
-    box-shadow: 0 12px 48px rgba(0,0,0,0.32);
+    padding: 20px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.3);
     color: white;
     display: none;
     z-index: 1000;
-    max-height: 86vh;
+    max-height: 80vh;
     overflow-y: auto;
-    animation: slideInRight 0.36s ease-out;
-    /* Grid layout: header spans both columns, body items in two columns */
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    grid-auto-rows: auto;
-    gap: 14px;
-    align-items: start;
+    animation: slideInRight 0.4s ease-out;
 }
 
-/* Header should span full width (both columns) */
+@keyframes slideInLeft {
+    from {
+        opacity: 0;
+        transform: translateY(-50%) translateX(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(-50%) translateX(0);
+    }
+}
+
+.customer-info-box.show {
+    display: block;
+}
+.customer-info-box.stable {
+    display: block !important;
+    right: 20px;
+    left: auto;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
 .customer-info-header {
-    grid-column: 1 / -1;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 4px;
-    padding-bottom: 8px;
-    border-bottom: 2px solid rgba(255, 255, 255, 0.12);
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.3);
 }
 
-/* Title */
 .customer-info-title {
     font-size: 18px;
     font-weight: 700;
@@ -848,133 +860,114 @@
     align-items: center;
     gap: 10px;
 }
-.customer-info-title i { font-size: 22px; }
 
-/* Close button */
+.customer-info-title i {
+    font-size: 24px;
+}
+
 .close-info-btn {
-    background: rgba(255,255,255,0.12);
+    background: rgba(255, 255, 255, 0.2);
     border: none;
     color: white;
-    width: 34px;
-    height: 34px;
+    width: 30px;
+    height: 30px;
     border-radius: 50%;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: transform .25s ease, background .25s ease;
+    transition: all 0.3s ease;
 }
+
 .close-info-btn:hover {
-    background: rgba(255,255,255,0.18);
+    background: rgba(255, 255, 255, 0.3);
     transform: rotate(90deg);
 }
 
-/* Show state */
-.customer-info-box.show { display: grid; }
-/* Stable state for pinned view */
-.customer-info-box.stable {
-    display: grid !important;
-    right: 20px;
-    left: auto;
-    top: 50%;
-    transform: translateY(-50%);
-}
-
-/* Individual info items — now fit nicely in grid columns */
 .customer-info-item {
-    margin-bottom: 0;                 /* spacing controlled by grid gap */
+    margin-bottom: 16px;
     padding: 12px;
-    background: rgba(255,255,255,0.06);
+    background: rgba(255, 255, 255, 0.1);
     border-radius: 10px;
-    backdrop-filter: blur(6px);
-    transition: transform .18s ease, background .18s ease;
-    min-height: 62px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-}
-.customer-info-item:hover {
-    background: rgba(255,255,255,0.09);
-    transform: translateX(6px);
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
 }
 
-/* Label & icon */
+.customer-info-item:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateX(5px);
+}
+
 .info-label-small {
     font-size: 11px;
-    font-weight: 700;
+    font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.6px;
-    opacity: 0.9;
-    margin-bottom: 6px;
+    letter-spacing: 0.5px;
+    opacity: 0.8;
+    margin-bottom: 4px;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
 }
-.info-label-small i { font-size: 13px; }
 
-/* Value styling */
+.info-label-small i {
+    font-size: 12px;
+}
+
 .info-value-large {
-    font-size: 15px;
-    font-weight: 800;
+    font-size: 16px;
+    font-weight: 700;
     word-break: break-word;
-    line-height: 1.1;
 }
 
-/* Small badge used previously */
 .info-badge {
     display: inline-block;
-    padding: 6px 12px;
-    border-radius: 14px;
+    padding: 4px 10px;
+    border-radius: 12px;
     font-size: 13px;
-    font-weight: 700;
-    background: rgba(255,255,255,0.9);
+    font-weight: 600;
+    background: rgba(255, 255, 255, 0.9);
     color: #667eea;
 }
 
-/* Code mapped badge (visible & colored) */
-.info-code-badge {
-    display:inline-block;
-    padding:6px 10px;
-    font-weight:700;
-    border-radius:12px;
-    background:#ffffff22;
-    color:#fff;
-    font-size:0.9rem;
-}
-
-/* color variants for code */
-.badge-suc { background: rgba(43,123,233,0.95); color:white; }
-.badge-free { background: rgba(40,167,69,0.95); color:white; }
-.badge-service { background: rgba(255,140,0,0.95); color:white; }
-.badge-default { background: rgba(108,117,125,0.95); color:white; }
-
-/* Customer name prominent block: span full width */
 .customer-name-display {
-    grid-column: 1 / -1;
     font-size: 20px;
-    font-weight: 900;
-    margin-bottom: 6px;
-    padding: 12px;
-    background: rgba(255,255,255,0.06);
-    border-radius: 10px;
+    font-weight: 800;
+    margin-bottom: 20px;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 12px;
     text-align: center;
-    border: 1px solid rgba(255,255,255,0.08);
+    border: 2px solid rgba(255, 255, 255, 0.3);
 }
 
-/* Scrollbar styling */
-.customer-info-box::-webkit-scrollbar { width: 8px; }
-.customer-info-box::-webkit-scrollbar-track { background: rgba(255,255,255,0.04); border-radius: 8px; }
-.customer-info-box::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 8px; }
-.customer-info-box::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.18); }
-
-/* Animations */
-@keyframes slideInRight {
-    from { opacity: 0; transform: translateY(-50%) translateX(30px); }
-    to   { opacity: 1; transform: translateY(-50%) translateX(0); }
+/* Scrollbar styling for info box */
+.customer-info-box::-webkit-scrollbar {
+    width: 6px;
 }
 
-/* Responsive behavior */
-/* At medium widths collapse to single column and make container full width */
+.customer-info-box::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+}
+
+.customer-info-box::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 10px;
+}
+
+.customer-info-box::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+/* Responsive adjustments */
+@media (max-width: 1400px) {
+    .customer-info-box {
+        width: 280px;
+        left: 10px;
+    }
+}
+
 @media (max-width: 1200px) {
     .customer-info-box {
         position: relative;
@@ -983,22 +976,7 @@
         transform: none;
         width: 100%;
         margin-bottom: 20px;
-        grid-template-columns: 1fr;   /* single column on smaller screens */
-        padding: 16px;
-        max-height: none;
     }
-    .customer-info-title { font-size: 16px; }
-    .info-value-large { font-size: 14px; }
-}
-
-/* Slightly tighter layout for mid-large screens */
-@media (min-width: 1201px) and (max-width: 1600px) {
-    .customer-info-box { width: 520px; gap: 12px; }
-}
-
-/* very large screens keep the doubled width */
-@media (min-width: 1601px) {
-    .customer-info-box { width: 560px; }
 }
 </style>
 
