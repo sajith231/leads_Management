@@ -142,7 +142,7 @@
                                         {% elif complaint_log.status == 'Completed' and complaint_log.started_time and complaint_log.completed_time %}
                                             <!-- show final duration for completed complaints -->
                                             <small class="text-muted">
-                                                Duration: {{ complaint_log.completed_time|timesince:complaint_log.started_time }}
+                                                Duration: {{ complaint_log.started_time|timesince:complaint_log.completed_time }}
                                                 <span class="text-muted"> (Completed: {{ complaint_log.completed_time|date:"d-m-Y H:i" }})</span>
                                             </small>
                                         {% elif complaint_log.status == 'Completed' and complaint_log.completed_time %}
