@@ -38,6 +38,7 @@ urlpatterns = [
     path('wfh_request/', include('wfh_Request.urls')),
     path('', include('punchout_reminder.urls')),
     path('image_capture/', include('image_capture.urls')),
+    
 
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

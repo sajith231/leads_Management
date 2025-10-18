@@ -10,7 +10,20 @@ from django.urls import reverse
 from django.core.files.base import ContentFile
 from .models import ImageCapture
 
-
+def index(request):
+    # Get all verified image captures, ordered by most recent first
+    verified_captures = ImageCapture.objects.filter(verified=True).order_by('-created_at')
+    
+    # Add location names for each capture
+    for capture in verified_captures:
+        if capture.latitude and capture.longitude:
+            capture.location_name = _get_location_name(capture.latitude, capture.longitude)
+        else:
+            capture.location_name = "Location not available"
+    
+    return render(request, 'index.html', {
+        'verified_captures': verified_captures
+    })
 # ------------------------------------------------------------------
 # Helper: Reverse geocoding to get location name
 # ------------------------------------------------------------------
@@ -95,17 +108,51 @@ def _send_otp_via_whatsapp(phone: str, otp: str) -> bool:
 # ------------------------------------------------------------------
 # 1.  Agent-facing link-generator page
 # ------------------------------------------------------------------
+import requests
+from django.shortcuts import render, redirect
+from django.urls import reverse
+from urllib.parse import quote
+from .models import ImageCapture
+import re, random, logging, base64
+from django.core.files.base import ContentFile
+from django.shortcuts import get_object_or_404
+
+# existing functions remain unchanged ...
+
 def image_capture_form(request):
     generated_link = None
     whatsapp_url = None
     error = None
+    customers = []  # list for dropdown
 
+    # ✅ Fetch customer data from API
+    try:
+        api_url = "https://accmaster.imcbs.com/api/sync/rrc-clients/"
+        response = requests.get(api_url, timeout=10)
+        if response.status_code == 200:
+            customers = response.json()
+        else:
+            logging.error(f"Failed to fetch clients: {response.status_code}")
+    except Exception as e:
+        logging.error(f"API fetch error: {e}")
+
+    # ✅ Handle form submission
     if request.method == "POST":
-        customer_name = request.POST.get("customer_name", "").strip()
+        # Get customer name from either dropdown or manual input
+        customer_name_dropdown = request.POST.get("customer_name", "").strip()
+        customer_name_manual = request.POST.get("customer_name_manual", "").strip()
+        
+        # Use manual input if provided, otherwise use dropdown selection
+        if customer_name_manual:
+            customer_name = customer_name_manual
+        else:
+            customer_name = customer_name_dropdown
+            
         phone_number = request.POST.get("phone_number", "").strip()
 
-        # --- accept only 10 digits ---
-        if not re.fullmatch(r"\d{10}", phone_number):
+        if not customer_name:
+            error = "Please enter or select a customer name"
+        elif not re.fullmatch(r"\d{10}", phone_number):
             error = "Enter 10-digit mobile number only (no country code, no +, no 0)"
         else:
             obj = ImageCapture.objects.create(
@@ -115,14 +162,18 @@ def image_capture_form(request):
             generated_link = request.build_absolute_uri(
                 reverse("capture_link", args=[obj.unique_id])
             )
-            # pre-build agent share-url
             msg = f"Hi {customer_name}, please verify your identity by clicking this link: {generated_link}"
             whatsapp_url = f"https://wa.me/91{phone_number}?text={quote(msg)}"
 
     return render(
         request,
         "image_capture_form.html",
-        {"generated_link": generated_link, "whatsapp_url": whatsapp_url, "error": error},
+        {
+            "generated_link": generated_link,
+            "whatsapp_url": whatsapp_url,
+            "error": error,
+            "customers": customers,  # pass to template
+        },
     )
 
 
@@ -246,3 +297,25 @@ def submit_image(request, unique_id):
             })
     
     return redirect("capture_link", unique_id=unique_id)
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from .models import ImageCapture  # Use ImageCapture instead of CustomerCapture
+
+def delete_customer(request):
+    if request.method == 'POST':
+        customer_id = request.POST.get('customer_id')
+        try:
+            customer = ImageCapture.objects.get(id=customer_id)
+            customer_name = customer.customer_name
+            customer.delete()
+            messages.success(request, f'Customer "{customer_name}" deleted successfully.')
+        except ImageCapture.DoesNotExist:
+            messages.error(request, 'Customer not found.')
+        except Exception as e:
+            messages.error(request, f'Error deleting customer: {str(e)}')
+    
+    # Redirect back to the current page (verified customers list)
+    return redirect('index')  # or the actual name of your list page
+
+

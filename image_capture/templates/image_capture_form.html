@@ -260,6 +260,56 @@
     font-size: 28px;
   }
 
+  /* New styles for customer name section */
+  .customer-name-container {
+    position: relative;
+  }
+
+  .customer-toggle {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+  }
+
+  .toggle-btn {
+    flex: 1;
+    padding: 12px;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    background: white;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+  }
+
+  .toggle-btn.active {
+    background: #667eea;
+    color: white;
+    border-color: #667eea;
+  }
+
+  .toggle-btn:not(.active):hover {
+    background: #f7fafc;
+    border-color: #667eea;
+  }
+
+  .customer-input-section {
+    display: none;
+  }
+
+  .customer-input-section.active {
+    display: block;
+    animation: fadeIn 0.3s ease-out;
+  }
+
+  .manual-input-note {
+    font-size: 12px;
+    color: #718096;
+    margin-top: 5px;
+    font-style: italic;
+  }
+
   @media (max-width: 576px) {
     .link-generator-wrapper {
       padding: 40px 15px;
@@ -283,31 +333,72 @@
       width: 100%;
       justify-content: center;
     }
+
+    .customer-toggle {
+      flex-direction: column;
+    }
   }
+  
 </style>
 
 <div class="link-generator-wrapper">
   <div class="generator-container">
-    <div class="page-header">
-      <h3>
-        <span class="icon-badge">
-          <i class="fas fa-camera"></i>
-        </span>
-        Image Capture Link Generator
-      </h3>
-      <p>Create secure verification links for your customers</p>
-    </div>
+    <!-- Add this in the page-header section of image_capture_form.html -->
+<div class="page-header">
+  <div class="d-flex justify-content-between align-items-center flex-wrap mb-3">
+    <div></div> <!-- Empty div for spacing -->
+    <a href="{% url 'index' %}" class="btn btn-outline-light">
+      <i class="fas fa-arrow-left"></i> Back to Dashboard
+    </a>
+  </div>
+  <h3>
+    <span class="icon-badge">
+      <i class="fas fa-camera"></i>
+    </span>
+    Image Capture Link Generator
+  </h3>
+  <p>Create secure verification links for your customers</p>
+</div>
 
     <form method="POST" class="card p-4 shadow-sm">
       {% csrf_token %}
+      
       <div class="mb-3">
         <label><i class="fas fa-user"></i> Customer Name:</label>
-        <input type="text" name="customer_name" class="form-control" placeholder="Enter customer name" required>
+        
+        <div class="customer-toggle">
+          <div class="toggle-btn active" data-target="dropdown-section">
+            Select from List
+          </div>
+          <div class="toggle-btn" data-target="manual-section">
+            Enter Manually
+          </div>
+        </div>
+
+        <!-- Dropdown Section -->
+        <div id="dropdown-section" class="customer-input-section active">
+          <select name="customer_name" id="customer_dropdown" class="form-control" required>
+            <option value="">-- Select Customer --</option>
+            {% for c in customers %}
+              <option value="{{ c.name }}">{{ c.name }} - {{ c.address }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Manual Input Section -->
+        <div id="manual-section" class="customer-input-section">
+          <input type="text" name="customer_name_manual" id="customer_manual" class="form-control" placeholder="Enter customer name">
+          <div class="manual-input-note">
+            Enter the customer name manually if not found in the list
+          </div>
+        </div>
       </div>
+
       <div class="mb-3">
         <label><i class="fas fa-phone"></i> Phone Number:</label>
         <input type="text" name="phone_number" class="form-control" placeholder="Enter phone number" required>
       </div>
+
       <button type="submit" class="btn btn-primary">
         <i class="fas fa-link"></i> Generate Link
       </button>
@@ -380,6 +471,65 @@ function copyToClipboard(text) {
     alert('Link copied to clipboard!');
   });
 }
+
+// Customer name toggle functionality
+document.addEventListener('DOMContentLoaded', function() {
+  const toggleButtons = document.querySelectorAll('.toggle-btn');
+  const form = document.querySelector('form');
+  
+  toggleButtons.forEach(btn => {
+    btn.addEventListener('click', function() {
+      const targetId = this.getAttribute('data-target');
+      
+      // Update active button
+      toggleButtons.forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+      
+      // Show/hide sections
+      document.querySelectorAll('.customer-input-section').forEach(section => {
+        section.classList.remove('active');
+      });
+      document.getElementById(targetId).classList.add('active');
+      
+      // Update required attribute based on active section
+      if (targetId === 'dropdown-section') {
+        document.getElementById('customer_dropdown').required = true;
+        document.getElementById('customer_manual').required = false;
+      } else {
+        document.getElementById('customer_dropdown').required = false;
+        document.getElementById('customer_manual').required = true;
+      }
+    });
+  });
+  
+  // Form submission handler to combine both inputs
+  form.addEventListener('submit', function(e) {
+    const dropdownSection = document.getElementById('dropdown-section');
+    const manualSection = document.getElementById('manual-section');
+    
+    if (dropdownSection.classList.contains('active')) {
+      // Using dropdown selection
+      const dropdown = document.getElementById('customer_dropdown');
+      if (dropdown.value === '') {
+        e.preventDefault();
+        alert('Please select a customer from the list');
+        return;
+      }
+      // Remove manual input value to avoid conflict
+      document.getElementById('customer_manual').value = '';
+    } else {
+      // Using manual input
+      const manualInput = document.getElementById('customer_manual');
+      if (!manualInput.value.trim()) {
+        e.preventDefault();
+        alert('Please enter a customer name');
+        return;
+      }
+      // Set the dropdown to empty to avoid conflict
+      document.getElementById('customer_dropdown').value = '';
+    }
+  });
+});
 
 // Add animation keyframes
 const style = document.createElement('style');
