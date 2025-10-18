@@ -6263,16 +6263,20 @@ from software_master.models import Software
 
 @login_required
 def add_service_log(request):
+    """
+    Add a new ServiceLog.
+    - Accepts optional `next` in GET or POST to redirect back to calling page after save.
+    - Security: only allows relative-path `next` (starts with '/') or same-site absolute URL.
+    """
     complaints = Complaint.objects.all()
     customers = fetch_customers()
-    # load all softwares to populate the software dropdown in the template
     softwares = Software.objects.all()
 
     if request.method == 'POST':
         customer_input = request.POST.get('customer')  # dropdown search input
         customer_name = request.POST.get('customer_name')  # manual entry
         place = request.POST.get('place')
-        complaint_type = request.POST['complaint_type']
+        complaint_type = request.POST.get('complaint_type', 'software')
         remarks = request.POST.get('remarks')
         phone_number = request.POST.get('phone_number')
         voice_blob = request.POST.get('voice_blob')
@@ -6280,6 +6284,7 @@ def add_service_log(request):
         # read selected software id (may be empty)
         software_id = request.POST.get('software', '')
 
+        # Basic validation: require dropdown or manual name
         if not customer_input and not customer_name:
             return render(request, 'add_service_log.html', {
                 'complaints': complaints,
@@ -6288,21 +6293,26 @@ def add_service_log(request):
                 'error_message': 'Please select a customer from the dropdown or enter a customer name manually.'
             })
 
-        custom_user = User.objects.get(userid=request.user.username)
+        # Get the custom user record (this project maps request.user.username -> User.userid)
+        try:
+            custom_user = User.objects.get(userid=request.user.username)
+        except User.DoesNotExist:
+            messages.error(request, "Authenticated user not found in custom User model.")
+            return redirect('login')
 
-        # Check and format customer name from fetched data
+        # If customer_input matches one of the fetched customers, append address like earlier logic
         if customer_input:
             matched = False
             for code, data in customers.items():
-                if data['name'].strip().lower() == customer_input.strip().lower():
+                if data.get('name', '').strip().lower() == customer_input.strip().lower():
                     address = data.get('address', '')
-                    customer_name = f"{data['name']} - {address}" if address else data['name']
+                    customer_name = f"{data.get('name')} - {address}" if address else data.get('name')
                     matched = True
                     break
             if not matched:
-                customer_name = customer_input  # fallback
+                customer_name = customer_input  # fallback to raw typed text
 
-        # Create the ServiceLog without software (assign after create to be safe)
+        # Create the ServiceLog (set assigned_person to the creator by default)
         log = ServiceLog.objects.create(
             customer_name=customer_name,
             place=place,
@@ -6310,59 +6320,85 @@ def add_service_log(request):
             remarks=remarks,
             phone_number=phone_number,
             added_by=custom_user,
-            assigned_person=custom_user,  # Set the added_by user as the default assigned person
+            assigned_person=custom_user,
         )
 
-        # try to attach software if provided and if Software exists and model supports it
+        # Attach software if provided and if model supports it (defensive)
         if software_id:
             try:
                 selected_software = Software.objects.get(id=software_id)
                 try:
-                    # Prefer assigning the relation object; will work if ServiceLog has FK 'software'
                     log.software = selected_software
                     log.save()
                 except Exception:
-                    # as a fallback, try setting software_id (if field exists)
                     try:
                         setattr(log, 'software_id', selected_software.id)
                         log.save()
                     except Exception:
-                        # If ServiceLog doesn't have a software field, skip attaching
+                        # model does not support software field; ignore
                         pass
             except Software.DoesNotExist:
-                # ignore if software id invalid
+                # invalid id provided -> ignore
+                pass
+        else:
+            # If empty selection and model supports it, ensure field is cleared
+            try:
+                if hasattr(log, 'software'):
+                    log.software = None
+                    log.save()
+                elif hasattr(log, 'software_id'):
+                    setattr(log, 'software_id', None)
+                    log.save()
+            except Exception:
                 pass
 
+        # Create ServiceLogComplaint rows and attach images
         complaint_ids = request.POST.getlist('complaints')
         for cid in complaint_ids:
-            note = request.POST.get(f'note_{cid}', '')
+            # safe: some browsers may send empty strings
+            if not cid:
+                continue
+            try:
+                int_cid = int(cid)
+            except (ValueError, TypeError):
+                continue
+            note = request.POST.get(f'note_{cid}', '') or ''
             complaint_log = ServiceLogComplaint.objects.create(
                 service_log=log,
-                complaint_id=cid,
+                complaint_id=int_cid,
                 note=note,
                 assigned_person=custom_user
             )
 
-            # Handle multiple images per complaint
+            # Handle multiple images for each complaint
             images = request.FILES.getlist(f'images_{cid}')
             for image in images:
                 ComplaintImage.objects.create(complaint_log=complaint_log, image=image)
 
+        # Save voice blob if provided
         if voice_blob:
-            format, audio_str = voice_blob.split(';base64,')
-            audio_file = ContentFile(base64.b64decode(audio_str), name=f"voice_{log.id}.webm")
-            log.voice_note.save(audio_file.name, audio_file)
-            log.save()
+            try:
+                format_part, audio_str = voice_blob.split(';base64,')
+                audio_file = ContentFile(base64.b64decode(audio_str), name=f"voice_{log.id}.webm")
+                log.voice_note.save(audio_file.name, audio_file)
+                log.save()
+            except Exception:
+                # If anything goes wrong with voice blob handling, continue without failing save
+                pass
 
-        # Prepare the WhatsApp message
-        complaint_list = ', '.join([c.description for c in Complaint.objects.filter(id__in=complaint_ids)])
-        registered_person_name = custom_user.name
-        registered_person_phone = custom_user.phone_number  # Assuming the phone number is stored in the User model
+        # Prepare and send WhatsApp message (keep your original message format)
+        try:
+            complaint_list = ', '.join([c.description for c in Complaint.objects.filter(id__in=complaint_ids)])
+        except Exception:
+            complaint_list = ''
+
+        registered_person_name = getattr(custom_user, 'name', '')
+        registered_person_phone = getattr(custom_user, 'phone_number', '')
 
         message = (
             f"Dear {customer_name.split('-')[0].strip()},\n\n"
             f"Your complaint has been added successfully.\n"
-            f"Ticket Number: {log.ticket_number}\n"
+            f"Ticket Number: {getattr(log, 'ticket_number', '')}\n"
             f"Registered by: {registered_person_name}\n"
             f"Registered Person's Phone: {registered_person_phone}\n"
             f"Thank you for choosing our services.\n"
@@ -6370,19 +6406,30 @@ def add_service_log(request):
             f"IMC Business Solutions"
         )
 
-        # Send WhatsApp message
-        send_whatsapp_message_for_service_log(phone_number, message)
+        try:
+            send_whatsapp_message_for_service_log(phone_number, message)
+        except Exception:
+            # Log/send silently — don't break the user flow if messaging fails
+            pass
 
+        # Redirect: respect `next` param if present (GET or POST). Only allow relative paths for safety.
+        next_url = request.POST.get('next') or request.GET.get('next') or ''
+        if next_url and (next_url.startswith('/') or next_url.startswith(request.build_absolute_uri('/'))):
+            return redirect(next_url)
+
+        # Fallback by user level (existing behavior)
         if custom_user.user_level == 'admin_level':
             return redirect('servicelog_list')
         else:
             return redirect('user_service_log')
 
+    # GET -> render form
     return render(request, 'add_service_log.html', {
         'complaints': complaints,
         'customers': customers,
         'softwares': softwares
     })
+
 
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
