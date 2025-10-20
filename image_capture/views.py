@@ -4,26 +4,32 @@ import logging
 import re
 import requests
 from urllib.parse import quote
-
+from django.core.paginator import Paginator
+from django.contrib import messages
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.core.files.base import ContentFile
 from .models import ImageCapture
 
+# ------------------------------------------------------------------
+# ✅ OPTIMIZED: index view - NO MORE SLOW API CALLS
+# ------------------------------------------------------------------
 def index(request):
     # Get all verified image captures, ordered by most recent first
     verified_captures = ImageCapture.objects.filter(verified=True).order_by('-created_at')
     
-    # Add location names for each capture
-    for capture in verified_captures:
-        if capture.latitude and capture.longitude:
-            capture.location_name = _get_location_name(capture.latitude, capture.longitude)
-        else:
-            capture.location_name = "Location not available"
+    # Add pagination (20 customers per page)
+    paginator = Paginator(verified_captures, 20)
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
     
     return render(request, 'index.html', {
-        'verified_captures': verified_captures
+        'verified_captures': page_obj,
+        'page_obj': page_obj,
+        'total_count': verified_captures.count()  # For stats
     })
+
+
 # ------------------------------------------------------------------
 # Helper: Reverse geocoding to get location name
 # ------------------------------------------------------------------
@@ -45,7 +51,7 @@ def _get_location_name(latitude, longitude):
         }
         
         headers = {
-            'User-Agent': 'YourApp/1.0 (your@email.com)'  # Required by Nominatim
+            'User-Agent': 'YourApp/1.0 (your@email.com)'
         }
         
         response = requests.get(url, params=params, headers=headers, timeout=10)
@@ -73,11 +79,11 @@ def _get_location_name(latitude, longitude):
             else:
                 return data.get('display_name', 'Location details not available')
         else:
-            return f"{latitude}, {longitude}"  # Fallback to coordinates
+            return f"{latitude}, {longitude}"
     
     except Exception as e:
         logging.error(f"Reverse geocoding error: {e}")
-        return f"{latitude}, {longitude}"  # Fallback to coordinates
+        return f"{latitude}, {longitude}"
 
 
 # ------------------------------------------------------------------
@@ -106,26 +112,15 @@ def _send_otp_via_whatsapp(phone: str, otp: str) -> bool:
 
 
 # ------------------------------------------------------------------
-# 1.  Agent-facing link-generator page
+# 1. Agent-facing link-generator page
 # ------------------------------------------------------------------
-import requests
-from django.shortcuts import render, redirect
-from django.urls import reverse
-from urllib.parse import quote
-from .models import ImageCapture
-import re, random, logging, base64
-from django.core.files.base import ContentFile
-from django.shortcuts import get_object_or_404
-
-# existing functions remain unchanged ...
-
 def image_capture_form(request):
     generated_link = None
     whatsapp_url = None
     error = None
-    customers = []  # list for dropdown
+    customers = []
 
-    # ✅ Fetch customer data from API
+    # Fetch customer data from API
     try:
         api_url = "https://accmaster.imcbs.com/api/sync/rrc-clients/"
         response = requests.get(api_url, timeout=10)
@@ -136,9 +131,8 @@ def image_capture_form(request):
     except Exception as e:
         logging.error(f"API fetch error: {e}")
 
-    # ✅ Handle form submission
+    # Handle form submission
     if request.method == "POST":
-        # Get customer name from either dropdown or manual input
         customer_name_dropdown = request.POST.get("customer_name", "").strip()
         customer_name_manual = request.POST.get("customer_name_manual", "").strip()
         
@@ -172,13 +166,13 @@ def image_capture_form(request):
             "generated_link": generated_link,
             "whatsapp_url": whatsapp_url,
             "error": error,
-            "customers": customers,  # pass to template
+            "customers": customers,
         },
     )
 
 
 # ------------------------------------------------------------------
-# 2.  Customer landing page (asks phone number)
+# 2. Customer landing page (asks phone number)
 # ------------------------------------------------------------------
 def capture_link_view(request, unique_id):
     data = get_object_or_404(ImageCapture, unique_id=unique_id)
@@ -186,8 +180,8 @@ def capture_link_view(request, unique_id):
     if request.method == "POST":
         entered_number = request.POST.get("phone_number", "").strip()
 
-        # --- normalise to 10 digits for comparison ---
-        entered_ten = entered_number.lstrip("0")[-10:]  # drop any leading zero
+        # Normalize to 10 digits for comparison
+        entered_ten = entered_number.lstrip("0")[-10:]
         stored_ten = data.phone_number[-10:]
 
         if entered_ten == stored_ten:
@@ -195,7 +189,7 @@ def capture_link_view(request, unique_id):
             request.session["otp"] = otp
             request.session["unique_id"] = str(unique_id)
 
-            # send via WhatsApp (always 91-prefixed)
+            # Send via WhatsApp (always 91-prefixed)
             ok = _send_otp_via_whatsapp(f"91{stored_ten}", otp)
             if not ok:
                 logging.error("OTP WhatsApp failed for 91%s", stored_ten)
@@ -214,7 +208,7 @@ def capture_link_view(request, unique_id):
 
 
 # ------------------------------------------------------------------
-# 3.  OTP verification page
+# 3. OTP verification page
 # ------------------------------------------------------------------
 def verify_otp(request, unique_id):
     data = get_object_or_404(ImageCapture, unique_id=unique_id)
@@ -238,7 +232,7 @@ def verify_otp(request, unique_id):
 
 
 # ------------------------------------------------------------------
-# 4.  Image + location submit handler
+# ✅ OPTIMIZED: 4. Image + location submit handler
 # ------------------------------------------------------------------
 def submit_image(request, unique_id):
     data = get_object_or_404(ImageCapture, unique_id=unique_id)
@@ -274,14 +268,18 @@ def submit_image(request, unique_id):
                 data.image = image_file
                 data.latitude = latitude
                 data.longitude = longitude
-                data.save()
                 
-                # Get location name for display
-                location_name = _get_location_name(latitude, longitude)
+                # ✅ Get location name ONCE and store in database
+                if latitude and longitude:
+                    data.location_name = _get_location_name(latitude, longitude)
+                else:
+                    data.location_name = "Location not available"
+                
+                data.save()
                 
                 return render(request, "success_page.html", {
                     "data": data,
-                    "location_name": location_name
+                    "location_name": data.location_name
                 })
                 
             except Exception as e:
@@ -298,10 +296,10 @@ def submit_image(request, unique_id):
     
     return redirect("capture_link", unique_id=unique_id)
 
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib import messages
-from .models import ImageCapture  # Use ImageCapture instead of CustomerCapture
 
+# ------------------------------------------------------------------
+# 5. Delete customer
+# ------------------------------------------------------------------
 def delete_customer(request):
     if request.method == 'POST':
         customer_id = request.POST.get('customer_id')
@@ -315,7 +313,4 @@ def delete_customer(request):
         except Exception as e:
             messages.error(request, f'Error deleting customer: {str(e)}')
     
-    # Redirect back to the current page (verified customers list)
-    return redirect('index')  # or the actual name of your list page
-
-
+    return redirect('index')
