@@ -237,60 +237,81 @@
     {% endif %}
 
     <div class="info-card">
-      <div class="info-row">
-        <div class="info-icon">
-          <i class="fas fa-user"></i>
-        </div>
-        <div class="info-content">
-          <div class="info-label">Customer Name</div>
-          <div class="info-value">{{ data.customer_name }}</div>
-        </div>
-      </div>
+  <div class="info-row">
+    <div class="info-icon">
+      <i class="fas fa-user"></i>
+    </div>
+    <div class="info-content">
+      <div class="info-label">Customer Name</div>
+      <div class="info-value">{{ data.customer_name }}</div>
+    </div>
+  </div>
 
-      <div class="info-row">
-        <div class="info-icon">
-          <i class="fas fa-phone"></i>
-        </div>
-        <div class="info-content">
-          <div class="info-label">Phone Number</div>
-          <div class="info-value">+91 {{ data.phone_number }}</div>
-        </div>
-      </div>
+  <div class="info-row">
+    <div class="info-icon">
+      <i class="fas fa-phone"></i>
+    </div>
+    <div class="info-content">
+      <div class="info-label">Phone Number</div>
+      <div class="info-value">+91 {{ data.phone_number }}</div>
+    </div>
+  </div>
 
-      <div class="info-row">
-        <div class="info-icon">
-          <i class="fas fa-map-marker-alt"></i>
-        </div>
-        <div class="info-content">
-          <div class="info-label">Location</div>
-          <div class="location-map">
-            <div class="location-text">
-              {% if data.location_name %}
-                <i class="fas fa-location-dot"></i>
-                <span>{{ data.location_name }}</span>
-              {% elif data.latitude and data.longitude %}
-                <i class="fas fa-globe"></i>
-                <span>{{ data.latitude }}, {{ data.longitude }}</span>
-              {% else %}
-                <i class="fas fa-map-marker-alt"></i>
-                <span>Location not available</span>
-              {% endif %}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="info-row">
-        <div class="info-icon">
-          <i class="fas fa-clock"></i>
-        </div>
-        <div class="info-content">
-          <div class="info-label">Verified At</div>
-          <div class="info-value">{{ data.created_at|date:"M d, Y - H:i" }}</div>
+  <div class="info-row">
+    <div class="info-icon">
+      <i class="fas fa-map-marker-alt"></i>
+    </div>
+    <div class="info-content">
+      <div class="info-label">Location</div>
+      <div class="location-map">
+        <div class="location-text">
+          {% if data.location_name %}
+            <i class="fas fa-location-dot"></i>
+            <span>{{ data.location_name }}</span>
+          {% elif data.latitude and data.longitude %}
+            <i class="fas fa-globe"></i>
+            <span>{{ data.latitude }}, {{ data.longitude }}</span>
+          {% else %}
+            <i class="fas fa-map-marker-alt"></i>
+            <span>Location not available</span>
+          {% endif %}
         </div>
       </div>
     </div>
   </div>
+
+  <!-- NEW: Latitude -->
+  <div class="info-row">
+    <div class="info-icon">
+      <i class="fas fa-globe"></i>
+    </div>
+    <div class="info-content">
+      <div class="info-label">Latitude</div>
+      <div class="info-value">{{ data.latitude|default:"—" }}</div>
+    </div>
+  </div>
+
+  <!-- NEW: Longitude -->
+  <div class="info-row">
+    <div class="info-icon">
+      <i class="fas fa-globe"></i>
+    </div>
+    <div class="info-content">
+      <div class="info-label">Longitude</div>
+      <div class="info-value">{{ data.longitude|default:"—" }}</div>
+    </div>
+  </div>
+
+  <div class="info-row">
+    <div class="info-icon">
+      <i class="fas fa-clock"></i>
+    </div>
+    <div class="info-content">
+      <div class="info-label">Verified At</div>
+      <div class="info-value">{{ data.created_at|date:"M d, Y - H:i" }}</div>
+    </div>
+  </div>
+</div>
 
   <script>
     // Create confetti effect
