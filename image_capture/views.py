@@ -89,26 +89,31 @@ def _get_location_name(latitude, longitude):
 # ------------------------------------------------------------------
 # Helper: send OTP through DxIng WhatsApp gateway
 # ------------------------------------------------------------------
-def _send_otp_via_whatsapp(phone: str, otp: str) -> bool:
+import threading
+
+def _send_otp_via_whatsapp(phone: str, otp: str) -> None:
     """
-    phone : E.164 without '+',  e.g. 9198xxxxxxxxx
-    otp   : 4-digit string
+    Send OTP via DxIng WhatsApp in background thread (non-blocking)
+    phone: E.164 without '+', e.g. 9198xxxxxxxxx
     """
-    url = (
-        "https://app.dxing.in/api/send/whatsapp"
-        "?secret=7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
-        "&account=1756959119812b4ba287f5ee0bc9d43bbf5bbe87fb68b9118fcf1af"
-        f"&recipient={phone}"
-        "&type=text"
-        f"&message=Your verification code is {otp}. Valid for 5 minutes."
-        "&priority=1"
-    )
-    try:
-        r = requests.get(url, timeout=10)
-        return r.status_code == 200 and r.json().get("status") == "success"
-    except Exception as exc:
-        logging.exception("WhatsApp gateway error: %s", exc)
-        return False
+    def send():
+        url = (
+            "https://app.dxing.in/api/send/whatsapp"
+            "?secret=7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
+            "&account=1756959119812b4ba287f5ee0bc9d43bbf5bbe87fb68b9118fcf1af"
+            f"&recipient={phone}"
+            "&type=text"
+            f"&message=Your verification code is {otp}. Valid for 5 minutes."
+            "&priority=0"  # ⚡️ Use highest priority for faster delivery
+        )
+        try:
+            requests.get(url, timeout=5)
+        except Exception as e:
+            logging.error(f"WhatsApp send failed for {phone}: {e}")
+
+    # Start async thread
+    threading.Thread(target=send, daemon=True).start()
+
 
 
 # ------------------------------------------------------------------
@@ -116,9 +121,10 @@ def _send_otp_via_whatsapp(phone: str, otp: str) -> bool:
 # ------------------------------------------------------------------
 def image_capture_form(request):
     generated_link = None
-    whatsapp_url = None
     error = None
     customers = []
+    customer_name = None
+    phone_number = None
 
     # Fetch customer data from API
     try:
@@ -156,15 +162,14 @@ def image_capture_form(request):
             generated_link = request.build_absolute_uri(
                 reverse("capture_link", args=[obj.unique_id])
             )
-            msg = f"Hi {customer_name}, please verify your identity by clicking this link: {generated_link}"
-            whatsapp_url = f"https://wa.me/91{phone_number}?text={quote(msg)}"
 
     return render(
         request,
         "image_capture_form.html",
         {
             "generated_link": generated_link,
-            "whatsapp_url": whatsapp_url,
+            "customer_name": customer_name,
+            "phone_number": phone_number,
             "error": error,
             "customers": customers,
         },
