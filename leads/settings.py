@@ -64,7 +64,8 @@ INSTALLED_APPS = [
     'django.contrib.humanize',
     "wfh_Request",
     "punchout_reminder",
-    "software_master",
+    "image_capture",
+    'software_master'
     
 ]
 
@@ -220,4 +221,5 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 
-
+DATA_UPLOAD_MAX_MEMORY_SIZE = 52428800  
+FILE_UPLOAD_MAX_MEMORY_SIZE = 52428800 

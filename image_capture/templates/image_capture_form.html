@@ -1,0 +1,560 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+  .link-generator-wrapper {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: calc(100vh - 56px);
+    padding: 60px 20px;
+  }
+
+  .generator-container {
+    max-width: 650px;
+    margin: 0 auto;
+  }
+
+  .page-header {
+    text-align: center;
+    color: white;
+    margin-bottom: 40px;
+    animation: fadeInDown 0.6s ease-out;
+  }
+
+  .page-header h3 {
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+  }
+
+  .page-header .icon-badge {
+    width: 50px;
+    height: 50px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+  }
+
+  .page-header p {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 16px;
+    margin: 0;
+  }
+
+  @keyframes fadeInDown {
+    from {
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .card {
+    border: none;
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: slideUp 0.6s ease-out;
+    background: rgba(255, 255, 255, 0.98);
+  }
+
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .card .p-4 {
+    padding: 40px !important;
+  }
+
+  .mb-3 label {
+    color: #2d3748;
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 8px;
+    display: block;
+  }
+
+  .form-control {
+    padding: 14px 18px;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    font-size: 15px;
+    transition: all 0.3s ease;
+    background: #f7fafc;
+  }
+
+  .form-control:focus {
+    border-color: #667eea;
+    background: white;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    outline: none;
+  }
+
+  .btn-primary {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    color: white;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    transition: all 0.3s ease;
+    margin-top: 10px;
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+  }
+
+  .btn-primary:active {
+    transform: translateY(0);
+  }
+
+  .result-card {
+    background: white;
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    margin-top: 30px;
+    animation: slideUp 0.6s ease-out;
+  }
+
+  .alert-success {
+    background: linear-gradient(135deg, #d4fc79 0%, #96e6a1 100%);
+    border: none;
+    border-radius: 15px;
+    padding: 20px;
+    margin-bottom: 25px;
+    animation: fadeIn 0.5s ease-out;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .alert-success strong {
+    color: #22543d;
+    font-size: 16px;
+    display: block;
+    margin-bottom: 10px;
+  }
+
+  .alert-success a {
+    color: #2f855a;
+    text-decoration: none;
+    word-break: break-all;
+    font-size: 14px;
+    font-weight: 500;
+    display: inline-block;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 8px;
+    margin-top: 5px;
+    transition: all 0.3s ease;
+  }
+
+  .alert-success a:hover {
+    background: white;
+    transform: translateX(5px);
+  }
+
+  .share-section {
+    margin-top: 25px;
+  }
+
+  .share-section .text-muted {
+    color: #718096 !important;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 15px;
+  }
+
+  .action-buttons {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .btn-success {
+    background: linear-gradient(135deg, #25d366 0%, #128c7e 100%);
+    border: none;
+    border-radius: 12px;
+    padding: 12px 24px;
+    font-size: 15px;
+    font-weight: 600;
+    color: white;
+    box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3);
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .btn-success:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(37, 211, 102, 0.4);
+  }
+
+  .btn-outline-primary {
+    background: white;
+    border: 2px solid #667eea;
+    border-radius: 12px;
+    padding: 12px 24px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #667eea;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .btn-outline-primary:hover {
+    background: #667eea;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
+  }
+
+  .success-icon {
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    animation: scaleIn 0.5s ease-out;
+  }
+
+  @keyframes scaleIn {
+    from {
+      transform: scale(0);
+    }
+    to {
+      transform: scale(1);
+    }
+  }
+
+  .success-icon i {
+    color: white;
+    font-size: 28px;
+  }
+
+  /* New styles for customer name section */
+  .customer-name-container {
+    position: relative;
+  }
+
+  .customer-toggle {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+  }
+
+  .toggle-btn {
+    flex: 1;
+    padding: 12px;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    background: white;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+  }
+
+  .toggle-btn.active {
+    background: #667eea;
+    color: white;
+    border-color: #667eea;
+  }
+
+  .toggle-btn:not(.active):hover {
+    background: #f7fafc;
+    border-color: #667eea;
+  }
+
+  .customer-input-section {
+    display: none;
+  }
+
+  .customer-input-section.active {
+    display: block;
+    animation: fadeIn 0.3s ease-out;
+  }
+
+  .manual-input-note {
+    font-size: 12px;
+    color: #718096;
+    margin-top: 5px;
+    font-style: italic;
+  }
+
+  @media (max-width: 576px) {
+    .link-generator-wrapper {
+      padding: 40px 15px;
+    }
+
+    .page-header h3 {
+      font-size: 24px;
+      flex-direction: column;
+    }
+
+    .card .p-4 {
+      padding: 30px 25px !important;
+    }
+
+    .action-buttons {
+      flex-direction: column;
+    }
+
+    .btn-success,
+    .btn-outline-primary {
+      width: 100%;
+      justify-content: center;
+    }
+
+    .customer-toggle {
+      flex-direction: column;
+    }
+  }
+  
+</style>
+
+<div class="link-generator-wrapper">
+  <div class="generator-container">
+    <!-- Add this in the page-header section of image_capture_form.html -->
+<div class="page-header">
+  <div class="d-flex justify-content-between align-items-center flex-wrap mb-3">
+    <div></div> <!-- Empty div for spacing -->
+    <a href="{% url 'index' %}" class="btn btn-outline-light">
+      <i class="fas fa-arrow-left"></i> Back to Dashboard
+    </a>
+  </div>
+  <h3>
+    <span class="icon-badge">
+      <i class="fas fa-camera"></i>
+    </span>
+    Image Capture Link Generator
+  </h3>
+  <p>Create secure verification links for your customers</p>
+</div>
+
+    <form method="POST" class="card p-4 shadow-sm">
+      {% csrf_token %}
+      
+      <div class="mb-3">
+        <label><i class="fas fa-user"></i> Customer Name:</label>
+        
+        <div class="customer-toggle">
+          <div class="toggle-btn active" data-target="dropdown-section">
+            Select from List
+          </div>
+          <div class="toggle-btn" data-target="manual-section">
+            Enter Manually
+          </div>
+        </div>
+
+        <!-- Dropdown Section -->
+        <div id="dropdown-section" class="customer-input-section active">
+          <select name="customer_name" id="customer_dropdown" class="form-control" required>
+            <option value="">-- Select Customer --</option>
+            {% for c in customers %}
+              <option value="{{ c.name }}">{{ c.name }} - {{ c.address }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Manual Input Section -->
+        <div id="manual-section" class="customer-input-section">
+          <input type="text" name="customer_name_manual" id="customer_manual" class="form-control" placeholder="Enter customer name">
+          <div class="manual-input-note">
+            Enter the customer name manually if not found in the list
+          </div>
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label><i class="fas fa-phone"></i> Phone Number:</label>
+        <input type="text" name="phone_number" class="form-control" placeholder="Enter phone number" required>
+      </div>
+
+      <button type="submit" class="btn btn-primary">
+        <i class="fas fa-link"></i> Generate Link
+      </button>
+    </form>
+
+    {% if generated_link %}
+    <div class="result-card">
+      <div class="success-icon">
+        <i class="fas fa-check"></i>
+      </div>
+
+      <div class="alert-success">
+        <strong><i class="fas fa-check-circle"></i> Link Generated Successfully!</strong>
+        <a href="{{ generated_link }}" target="_blank">{{ generated_link }}</a>
+      </div>
+
+      <div class="share-section">
+        <p class="text-muted"><i class="fas fa-share-alt"></i> Share with customer:</p>
+        <div class="action-buttons">
+          <a href="{{ whatsapp_url }}" target="_blank" class="btn btn-success">
+            <i class="fab fa-whatsapp"></i> Send via WhatsApp
+          </a>
+          
+          <button onclick="copyToClipboard('{{ generated_link }}')" class="btn btn-outline-primary">
+            <i class="fas fa-copy"></i> Copy Link
+          </button>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text).then(function() {
+    // Create a beautiful toast notification
+    const toast = document.createElement('div');
+    toast.innerHTML = '<i class="fas fa-check-circle"></i> Link copied to clipboard!';
+    toast.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+      color: white;
+      padding: 15px 25px;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(72, 187, 120, 0.4);
+      font-weight: 600;
+      z-index: 9999;
+      animation: slideInRight 0.3s ease-out;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    `;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+      toast.style.animation = 'slideOutRight 0.3s ease-out';
+      setTimeout(() => toast.remove(), 300);
+    }, 2500);
+  }, function(err) {
+    // Fallback for older browsers
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    document.body.appendChild(textArea);
+    textArea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textArea);
+    alert('Link copied to clipboard!');
+  });
+}
+
+// Customer name toggle functionality
+document.addEventListener('DOMContentLoaded', function() {
+  const toggleButtons = document.querySelectorAll('.toggle-btn');
+  const form = document.querySelector('form');
+  
+  toggleButtons.forEach(btn => {
+    btn.addEventListener('click', function() {
+      const targetId = this.getAttribute('data-target');
+      
+      // Update active button
+      toggleButtons.forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+      
+      // Show/hide sections
+      document.querySelectorAll('.customer-input-section').forEach(section => {
+        section.classList.remove('active');
+      });
+      document.getElementById(targetId).classList.add('active');
+      
+      // Update required attribute based on active section
+      if (targetId === 'dropdown-section') {
+        document.getElementById('customer_dropdown').required = true;
+        document.getElementById('customer_manual').required = false;
+      } else {
+        document.getElementById('customer_dropdown').required = false;
+        document.getElementById('customer_manual').required = true;
+      }
+    });
+  });
+  
+  // Form submission handler to combine both inputs
+  form.addEventListener('submit', function(e) {
+    const dropdownSection = document.getElementById('dropdown-section');
+    const manualSection = document.getElementById('manual-section');
+    
+    if (dropdownSection.classList.contains('active')) {
+      // Using dropdown selection
+      const dropdown = document.getElementById('customer_dropdown');
+      if (dropdown.value === '') {
+        e.preventDefault();
+        alert('Please select a customer from the list');
+        return;
+      }
+      // Remove manual input value to avoid conflict
+      document.getElementById('customer_manual').value = '';
+    } else {
+      // Using manual input
+      const manualInput = document.getElementById('customer_manual');
+      if (!manualInput.value.trim()) {
+        e.preventDefault();
+        alert('Please enter a customer name');
+        return;
+      }
+      // Set the dropdown to empty to avoid conflict
+      document.getElementById('customer_dropdown').value = '';
+    }
+  });
+});
+
+// Add animation keyframes
+const style = document.createElement('style');
+style.textContent = `
+  @keyframes slideInRight {
+    from {
+      transform: translateX(400px);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+  @keyframes slideOutRight {
+    from {
+      transform: translateX(0);
+      opacity: 1;
+    }
+    to {
+      transform: translateX(400px);
+      opacity: 0;
+    }
+  }
+`;
+document.head.appendChild(style);
+</script>
+{% endblock %}
