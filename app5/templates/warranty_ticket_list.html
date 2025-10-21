@@ -18,6 +18,28 @@
         border-bottom: 3px solid #061262;
     }
 
+    .btn-return {
+        background: #007bff;
+        color: white;
+    }
+
+    .btn-return:hover {
+        background: #0069d9;
+        transform: translateY(-1px);
+    }
+
+    .btn-return.disabled {
+        background: #6c757d;
+        cursor: not-allowed;
+        opacity: 0.6;
+        pointer-events: none;
+    }
+
+    .btn-return.disabled:hover {
+        background: #6c757d;
+        transform: none;
+    }
+
     .page-header h1 {
         font-size: 2.2rem;
         color: #061262;
@@ -37,7 +59,7 @@
     .filters-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 20px;
+        gap: 15px;
         align-items: end;
     }
 
@@ -55,70 +77,41 @@
         border-radius: 6px;
         font-size: 1rem;
         background: white;
+        transition: all 0.3s ease;
+        cursor: pointer;
     }
 
-    .btn-apply {
-        background: #061262;
-        color: white;
-        border: none;
-        padding: 10px 20px;
-        border-radius: 6px;
+    .form-group select:focus {
+        border-color: #061262;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(6, 18, 98, 0.1);
+    }
+
+    .search-group {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .search-group label {
+        display: block;
+        margin-bottom: 8px;
+        color: #333;
         font-weight: 600;
-        cursor: pointer;
+    }
+
+    .search-input {
+        width: 100%;
+        padding: 10px 15px;
+        border: 2px solid #ddd;
+        border-radius: 6px;
+        font-size: 1rem;
         transition: all 0.3s ease;
     }
 
-    .btn-apply:hover {
-        background: #0a1b7a;
-        transform: translateY(-2px);
-    }
-
-    .btn-reset {
-        background: #6c757d;
-        color: white;
-        border: none;
-        padding: 10px 20px;
-        border-radius: 6px;
-        font-weight: 600;
-        cursor: pointer;
-        text-decoration: none;
-        display: inline-block;
-        transition: all 0.3s ease;
-    }
-
-    .btn-reset:hover {
-        background: #5a6268;
-        transform: translateY(-2px);
-    }
-
-    .stats-cards {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 20px;
-        margin-bottom: 30px;
-    }
-
-    .stat-card {
-        background: white;
-        padding: 20px;
-        border-radius: 10px;
-        text-align: center;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        border-top: 4px solid #061262;
-    }
-
-    .stat-number {
-        font-size: 2rem;
-        font-weight: 700;
-        color: #061262;
-        margin-bottom: 5px;
-    }
-
-    .stat-label {
-        color: #666;
-        font-size: 0.9rem;
-        text-transform: uppercase;
-        letter-spacing: 1px;
+    .search-input:focus {
+        border-color: #061262;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(6, 18, 98, 0.1);
     }
 
     .table-container {
@@ -126,16 +119,14 @@
         border-radius: 10px;
         overflow: hidden;
         box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        /* Add horizontal scrolling */
         overflow-x: auto;
-        -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+        -webkit-overflow-scrolling: touch;
     }
 
     .table {
         width: 100%;
         border-collapse: collapse;
-        /* Ensure table doesn't shrink below content width */
-        min-width: 1000px; /* Adjust this value based on your content */
+        min-width: 1000px;
     }
 
     .table th {
@@ -145,37 +136,24 @@
         text-align: left;
         font-weight: 600;
         text-transform: uppercase;
+        border-right: 1px solid #bca3a3;
+        border-bottom: 1px solid #bca3a3;
         letter-spacing: 1px;
         font-size: 0.9rem;
-        /* Prevent text wrapping in headers */
         white-space: nowrap;
     }
 
     .table td {
         padding: 15px;
         border-bottom: 1px solid #eee;
-        /* Prevent text wrapping in cells */
+        border-right: 1px solid #bca3a3;
+        border-bottom: 1px solid #bca3a3;
         white-space: nowrap;
     }
 
     .table tr:hover {
         background: #f8f9fa;
     }
-
-    .status-badge {
-        padding: 6px 12px;
-        border-radius: 20px;
-        font-size: 0.8rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    .status-pending { background: #fff3cd; color: #856404; }
-    .status-submitted { background: #cce7ff; color: #004085; }
-    .status-approved { background: #d4edda; color: #155724; }
-    .status-rejected { background: #f8d7da; color: #721c24; }
-    .status-completed { background: #d1ecf1; color: #0c5460; }
 
     .btn-action {
         padding: 6px 12px;
@@ -187,20 +165,31 @@
         text-decoration: none;
         display: inline-block;
         transition: all 0.3s ease;
+        margin: 2px;
     }
 
-    .btn-view {
-        background: #17a2b8;
+    .btn-edit {
+        background: #28a745;
         color: white;
     }
 
-    .btn-view:hover {
-        background: #138496;
+    .btn-edit:hover {
+        background: #218838;
+        transform: translateY(-1px);
+    }
+
+    .btn-delete {
+        background: #dc3545;
+        color: white;
+    }
+
+    .btn-delete:hover {
+        background: #c82333;
         transform: translateY(-1px);
     }
 
     .btn-back {
-        background: #6c757d;
+        background: #060606;
         color: white;
         padding: 10px 20px;
         border: none;
@@ -226,9 +215,6 @@
         color: #666;
         font-style: italic;
     }
-
-    .text-center { text-align: center; }
-    .text-right { text-align: right; }
 
     .pagination {
         display: flex;
@@ -256,32 +242,58 @@
         color: white;
         border-color: #061262;
     }
-    
-    /* New styles for warranty status */
-    .warranty-status-info {
-        background: #e7f3ff;
-        border: 1px solid #b3d9ff;
-        border-radius: 6px;
-        padding: 15px;
-        margin-bottom: 20px;
-    }
-    
-    .warranty-status-item {
+
+    .action-buttons {
         display: flex;
-        align-items: center;
-        gap: 10px;
-        margin-bottom: 8px;
+        gap: 5px;
+        flex-wrap: nowrap;
     }
     
-    .warranty-status-dot {
-        width: 10px;
-        height: 10px;
-        border-radius: 50%;
+    .filter-status {
+        text-align: center;
+        padding: 10px;
+        color: #061262;
+        font-style: italic;
+        min-height: 20px;
     }
     
-    .warranty-sent { background: #007bff; }
-    .warranty-returned { background: #28a745; }
-    .warranty-pending { background: #ffc107; }
+    .highlight {
+        background-color: #fffacd !important;
+        transition: background-color 0.3s ease;
+    }
+    
+    .filter-match {
+        animation: pulse 0.5s ease;
+    }
+    
+    @keyframes pulse {
+        0% { background-color: transparent; }
+        50% { background-color: #fffacd; }
+        100% { background-color: transparent; }
+    }
+
+    .status-badge {
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: bold;
+        text-transform: uppercase;
+    }
+
+    .status-returned {
+        background: #28a745;
+        color: white;
+    }
+
+    .status-pending {
+        background: #ffc107;
+        color: black;
+    }
+
+    .status-submitted {
+        background: #17a2b8;
+        color: white;
+    }
 </style>
 
 <div class="container">
@@ -292,32 +304,32 @@
     <div class="page-header">
         <h1><i class="fas fa-list-alt"></i> Warranty Tickets List</h1>
     </div>
-<!-- Filters Section -->
+    
+    <!-- Filters Section -->
     <div class="filters-section">
-        <form method="GET" action="{% url 'app5:warranty_ticket_list' %}">
-            <div class="filters-grid">
-              
-                <div class="form-group">
-                    <label><i class="fas fa-building"></i> Supplier</label>
-                    <select name="supplier">
-                        <option value="">All Suppliers</option>
-                        {% for supplier in suppliers %}
-                            <option value="{{ supplier.id }}" {% if current_supplier == supplier.id|stringformat:"s" %}selected{% endif %}>
-                                {{ supplier.name }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="form-group">
-                    <button type="submit" class="btn-apply">
-                        <i class="fas fa-search"></i> Apply Filters
-                    </button>
-                    <a href="{% url 'app5:warranty_ticket_list' %}" class="btn-reset">
-                        <i class="fas fa-redo"></i> Reset
-                    </a>
-                </div>
+        <div class="filters-grid">
+            <div class="form-group">
+                <label><i class="fas fa-building"></i> Supplier</label>
+                <select name="supplier" id="supplier-filter">
+                    <option value="">All Suppliers</option>
+                    {% for supplier in suppliers %}
+                        <option value="{{ supplier.id }}" {% if current_supplier == supplier.id|stringformat:"s" %}selected{% endif %}>
+                            {{ supplier.name }}
+                        </option>
+                    {% endfor %}
+                </select>
             </div>
-        </form>
+            
+            <div class="search-group">
+                <label><i class="fas fa-search"></i> Search</label>
+                <input type="text" class="search-input" id="search-input" placeholder="Search tickets...">
+            </div>
+        </div>
+    </div>
+    
+    <!-- Filter Status -->
+    <div class="filter-status" id="filter-status">
+        Showing all tickets
     </div>
 
     <!-- Tickets Table -->
@@ -327,57 +339,79 @@
                 <thead>
                     <tr>
                         <th>Warranty Ticket No</th>
-                       
-                        <th>Customer</th>
-                        <th>Item</th>
-                        <th>Supplier</th>
-                       
+                        <th>Customer Name</th>
+                        <th>Item Name</th>
+                        <th>Supplier Name</th>
+                        <th>Status</th>
                         <th>Submitted Date</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="tickets-table-body">
                     {% for ticket in warranty_tickets %}
-                    <tr>
+                    <tr data-supplier="{{ ticket.supplier.id }}" data-search="{{ ticket.ticket_no|lower }} {{ ticket.jobcard.customer|lower }} {{ ticket.selected_item|lower }} {{ ticket.supplier.name|lower }} {{ ticket.item_serial|default:''|lower }} {{ ticket.status|lower }}">
                         <td>
                             <strong>{{ ticket.ticket_no }}</strong>
                             {% if ticket.item_serial %}
-                                <br><small style="color: #666;">Serial: {{ ticket.item_serial }}</small>
+                                <br><small style="color: #050505;">SerialNo.: {{ ticket.item_serial }}</small>
                             {% endif %}
                         </td>
                        
                         <td>
-                            {{ ticket.jobcard.customer }}
-                            <br><small style="color: #666;">{{ ticket.jobcard.phone }}</small>
+                             <strong>{{ ticket.jobcard.customer }}</strong>
+                            <br><small style="color: #030303;">PhoneNo: {{ ticket.jobcard.phone }}</small>
                         </td>
                         <td>
-                            {{ ticket.selected_item }}
+                            <strong>{{ ticket.selected_item }}</strong>
                         </td>
                         <td>
-                            {{ ticket.supplier.name }}
+                            <strong>{{ ticket.supplier.name }}</strong>
                             {% if ticket.supplier.place %}
-                                <br><small style="color: #666;">{{ ticket.supplier.place }}</small>
+                                <br><small style="color: #060606;">Place: {{ ticket.supplier.place }}</small>
                             {% endif %}
+                        </td>
+
+                        <td>
+                            <span class="status-badge status-{{ ticket.status }}">
+                                {{ ticket.status|title }}
+                            </span>
                         </td>
                     
                         <td>
-                            {{ ticket.submitted_at|date:"d M Y" }}
+                            <strong>{{ ticket.submitted_at|date:"d M Y" }}</strong>
                             {% if ticket.submitted_at %}
-                                <br><small style="color: #666;">{{ ticket.submitted_at|date:"H:i" }}</small>
+                                <br><small style="color: #050505;">{{ ticket.submitted_at|date:"H:i" }}</small>
                             {% endif %}
                             {% if ticket.resolved_at %}
-                                <br><small style="color: #28a745;">Resolved: {{ ticket.resolved_at|date:"d M Y" }}</small>
+                                <br><small style="color: #28a745;font-weight:bold ;">Returned: {{ ticket.resolved_at|date:"d M Y" }}</small>
                             {% endif %}
                         </td>
-                        <td>
-                            <a href="{% url 'app5:warranty_ticket_detail' ticket.id %}" class="btn-action btn-view">
-                                <i class="fas fa-eye"></i> View Details
-                            </a>
-                            <!-- {% if ticket.status == 'submitted' %}
-                                <a href="{% url 'app5:jobcard_list' %}" class="btn-action" style="background: #28a745; color: white; margin-top: 5px; display: block;">
-                                    <i class="fas fa-external-link-alt"></i> View in Job Cards
+                       
+                       <td>
+                            <div class="action-buttons">
+                                <a href="{% url 'app5:warranty_ticket_edit' ticket.id %}" class="btn-action btn-edit" title="Edit Ticket">
+                                    <i class="fas fa-edit"></i>
                                 </a>
-                            {% endif %} -->
+                                
+                                {# Only show return button if item is NOT already returned #}
+                                {% if ticket.status != 'completed' and ticket.status != 'returned' %}
+                                    <a href="{% url 'app5:return_warranty_item' ticket.id %}" class="btn-action btn-return" title="Return Item">
+                                        <i class="fas fa-undo-alt"></i>
+                                    </a>
+                                {% else %}
+                                    {# Show disabled return button for already returned items #}
+                                    <span class="btn-action btn-return disabled" title="Item Already Returned">
+                                        <i class="fas fa-undo-alt"></i>
+                                    </span>
+                                {% endif %}
+
+                                <form method="post" action="{% url 'app5:warranty_ticket_delete' ticket.id %}" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete warranty ticket {{ ticket.ticket_no }}?')">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn-action btn-delete" title="Delete Ticket">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                     {% endfor %}
@@ -420,56 +454,232 @@
 </div>
 
 <script>
-    // Add some interactive functionality
     document.addEventListener('DOMContentLoaded', function() {
-        // Add click handlers for status badges
-        const statusBadges = document.querySelectorAll('.status-badge');
-        statusBadges.forEach(badge => {
-            badge.addEventListener('click', function() {
-                const status = this.classList[1].replace('status-', '');
-                window.location.href = `?status=${status}`;
-            });
+        const supplierFilter = document.getElementById('supplier-filter');
+        const searchInput = document.getElementById('search-input');
+        const filterStatus = document.getElementById('filter-status');
+        const tableBody = document.getElementById('tickets-table-body');
+        let filterTimeout;
+
+        // Create a mapping of supplier IDs to names for the status message
+        const supplierMap = {};
+        const supplierOptions = document.querySelectorAll('#supplier-filter option');
+        supplierOptions.forEach(option => {
+            if (option.value) {
+                supplierMap[option.value] = option.textContent;
+            }
         });
 
-        // Add search functionality
-        const searchInput = document.createElement('input');
-        searchInput.type = 'text';
-        searchInput.placeholder = 'Search tickets...';
-        searchInput.style.cssText = `
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 20px;
-            border: 2px solid #ddd;
-            border-radius: 6px;
-            font-size: 1rem;
-        `;
-
-        searchInput.addEventListener('input', function(e) {
-            const searchTerm = e.target.value.toLowerCase();
-            const rows = document.querySelectorAll('.table tbody tr');
+        // Function to update filter status message
+        function updateFilterStatus(supplierValue, searchValue) {
+            let statusText = '';
             
-            rows.forEach(row => {
-                const text = row.textContent.toLowerCase();
-                if (text.includes(searchTerm)) {
+            if (supplierValue && searchValue) {
+                statusText = `Showing tickets for: ${supplierMap[supplierValue]} matching "${searchValue}"`;
+            } else if (supplierValue) {
+                statusText = `Showing tickets for: ${supplierMap[supplierValue]}`;
+            } else if (searchValue) {
+                statusText = `Showing tickets matching: "${searchValue}"`;
+            } else {
+                statusText = 'Showing all tickets';
+            }
+            
+            filterStatus.textContent = statusText;
+        }
+
+        // Function to apply filters automatically
+        function applyFilters() {
+            const supplierValue = supplierFilter.value;
+            const searchValue = searchInput.value.toLowerCase().trim();
+            
+            // Update the status message
+            updateFilterStatus(supplierValue, searchValue);
+            
+            // Get all table rows
+            const rows = tableBody.getElementsByTagName('tr');
+            let visibleCount = 0;
+            
+            // Filter rows
+            for (let row of rows) {
+                const rowSupplier = row.getAttribute('data-supplier');
+                const rowSearchData = row.getAttribute('data-search');
+                
+                let showRow = true;
+                
+                // Apply supplier filter
+                if (supplierValue && rowSupplier !== supplierValue) {
+                    showRow = false;
+                }
+                
+                // Apply search filter
+                if (showRow && searchValue && !rowSearchData.includes(searchValue)) {
+                    showRow = false;
+                }
+                
+                // Show/hide row
+                if (showRow) {
                     row.style.display = '';
+                    visibleCount++;
+                    
+                    // Add highlight animation for search matches
+                    if (searchValue) {
+                        row.classList.add('filter-match');
+                        setTimeout(() => {
+                            row.classList.remove('filter-match');
+                        }, 1000);
+                    }
                 } else {
                     row.style.display = 'none';
                 }
-            });
+            }
+            
+            // Show/hide no data message
+            const noDataDiv = document.querySelector('.no-data');
+            const table = document.querySelector('.table');
+            
+            if (visibleCount === 0 && rows.length > 0) {
+                if (!noDataDiv) {
+                    const tableContainer = document.querySelector('.table-container');
+                    const noDataHTML = `
+                        <div class="no-data">
+                            <i class="fas fa-inbox fa-3x" style="color: #ccc; margin-bottom: 20px;"></i>
+                            <h3>No Warranty Tickets Found</h3>
+                            <p>No warranty tickets match your current filters.</p>
+                            <a href="{% url 'app5:warranty_item' %}" class="btn-apply" style="margin-top: 15px;">
+                                <i class="fas fa-plus"></i> Create New Warranty Ticket
+                            </a>
+                        </div>
+                    `;
+                    // Create a temporary container to parse the HTML
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = noDataHTML;
+                    tableContainer.appendChild(tempDiv.firstElementChild);
+                }
+                if (table) table.style.display = 'none';
+            } else {
+                if (noDataDiv) noDataDiv.remove();
+                if (table) table.style.display = '';
+            }
+            
+            // Update URL without reloading (optional - for bookmarking/sharing)
+            updateURL(supplierValue, searchValue);
+        }
+
+        // Update URL with current filters (optional)
+        function updateURL(supplierValue, searchValue) {
+            const params = new URLSearchParams(window.location.search);
+            
+            if (supplierValue) {
+                params.set('supplier', supplierValue);
+            } else {
+                params.delete('supplier');
+            }
+            
+            if (searchValue) {
+                params.set('search', searchValue);
+            } else {
+                params.delete('search');
+            }
+            
+            const newURL = `${window.location.pathname}?${params.toString()}`;
+            window.history.replaceState({}, '', newURL);
+        }
+
+        // Initialize from URL parameters
+        function initializeFromURL() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const urlSupplier = urlParams.get('supplier');
+            const urlSearch = urlParams.get('search');
+            
+            if (urlSupplier) {
+                supplierFilter.value = urlSupplier;
+            }
+            
+            if (urlSearch) {
+                searchInput.value = urlSearch;
+            }
+            
+            applyFilters();
+        }
+
+        // Event listeners for automatic filtering
+        supplierFilter.addEventListener('change', function() {
+            applyFilters();
         });
 
-        // Insert search input after filters
-        const filtersSection = document.querySelector('.filters-section');
-        filtersSection.parentNode.insertBefore(searchInput, filtersSection.nextSibling);
-        
-        // Auto-refresh page every 30 seconds to get latest status updates
+        searchInput.addEventListener('input', function() {
+            // Clear previous timeout
+            clearTimeout(filterTimeout);
+            
+            // Set new timeout for search (debouncing)
+            filterTimeout = setTimeout(() => {
+                applyFilters();
+            }, 300);
+        });
+
+        // Initialize filters on page load
+        initializeFromURL();
+
+        // Auto-refresh page every 30 seconds to get latest data
         setInterval(function() {
-            const currentUrl = window.location.href;
-            if (!currentUrl.includes('page=')) {
-                window.location.reload();
-            }
-        }, 30000); // 30 seconds
+            window.location.reload();
+        }, 30000);
     });
+
+    // Edit warranty ticket function
+    function editWarrantyTicket(ticketId) {
+        window.location.href = `/warranty/tickets/${ticketId}/edit/`;
+    }
+
+    // Delete warranty ticket function
+    function deleteWarrantyTicket(ticketId, ticketNo) {
+        if (confirm(`Are you sure you want to delete warranty ticket ${ticketNo}? This action cannot be undone.`)) {
+            const deleteUrl = `{% url 'app5:warranty_ticket_delete' 0 %}`.replace('0', ticketId);
+            
+            fetch(deleteUrl, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => {
+                if (response.status === 204) {
+                    return { success: true };
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    alert('Warranty ticket deleted successfully!');
+                    location.reload();
+                } else {
+                    alert('Error deleting ticket: ' + (data.error || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error deleting warranty ticket: ' + error.message);
+            });
+        }
+        return false;
+    }
+
+    // Helper function to get CSRF token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
 </script>
 
 {% endblock %}

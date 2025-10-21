@@ -62,6 +62,11 @@ urlpatterns = [
     path('api/all-warranty-tickets/', views.api_all_warranty_tickets, name='api_all_warranty_tickets'),
     path('api/ticket-details/', views.api_ticket_details, name='api_ticket_details'),
     path('api/warranty-details/', views.api_warranty_details, name='api_warranty_details'),
+    path('warranty/tickets/<int:ticket_id>/edit/', views.warranty_ticket_edit, name='warranty_ticket_edit'),
+    path('warranty/tickets/<int:ticket_id>/delete/', views.warranty_ticket_delete, name='warranty_ticket_delete'),
+    path('warranty/tickets/<int:ticket_id>/return/', views.return_warranty_item, name='return_warranty_item'),
+    path('returns/<int:return_id>/', views.return_item_detail, name='return_item_detail'),
+    path('returns/<int:return_id>/delete/', views.return_item_delete, name='return_item_delete'),
 ]
 
 

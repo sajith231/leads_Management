@@ -333,6 +333,71 @@ class WarrantyItemLog(models.Model):
 
     def __str__(self):
         return f"{self.warranty_ticket.ticket_no} - {self.action}"
+    
+
+
+    # ADD TO YOUR EXISTING models.py FILE
+
+from django.db import models
+from django.contrib.auth.models import User
+import os
+
+class ReturnItem(models.Model):
+    """
+    Model to track returned warranty items
+    """
+    warranty_ticket = models.OneToOneField(
+        'WarrantyTicket', 
+        on_delete=models.CASCADE,
+        related_name='return_item'
+    )
+    return_date = models.DateField()
+    notes = models.TextField(blank=True, null=True)
+    returned_by = models.ForeignKey(
+        User, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"Return for {self.warranty_ticket.ticket_no}"
+    
+    class Meta:
+        verbose_name = "Return Item"
+        verbose_name_plural = "Return Items"
+        ordering = ['-return_date', '-created_at']
+
+
+def return_image_upload_path(instance, filename):
+    """Generate upload path for return images"""
+    ticket_no = instance.return_item.warranty_ticket.ticket_no
+    return f'returns/{ticket_no}/{filename}'
+
+
+class ReturnImage(models.Model):
+    """
+    Model to store multiple images for return items
+    """
+    return_item = models.ForeignKey(
+        ReturnItem, 
+        on_delete=models.CASCADE, 
+        related_name='images'
+    )
+    image = models.ImageField(upload_to=return_image_upload_path)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"Image for {self.return_item.warranty_ticket.ticket_no}"
+    
+    def delete(self, *args, **kwargs):
+        # Delete the image file when the model is deleted
+        if self.image:
+            if os.path.isfile(self.image.path):
+                os.remove(self.image.path)
+        super().delete(*args, **kwargs)
 
 
 
