@@ -20,6 +20,7 @@
     .delete:hover{background:#c82333}
     .actions{display:flex;gap:5px;flex-wrap:wrap}
     .mileage{font-weight:600;color:#2c5aa0}
+    .fuel-rate{font-weight:600;color:#e74c3c}
     .delete-form{display:inline}
     .no-data{text-align:center;padding:40px;color:#6c757d}
     .file-status{color:#6c757d;font-style:italic}
@@ -28,7 +29,7 @@
 <div class="container-fluid">
     <div class="card">
         <div class="head">
-            <h1>Vehicle List</h1>
+            <h1>Vehicle Master List</h1>
             <a class="add" href="{% url 'vehicle' %}">
                 <i class="fas fa-plus"></i> Add New Vehicle
             </a>
@@ -42,6 +43,8 @@
                         <th>#</th>
                         <th>Vehicle Number</th>
                         <th>Owner Name</th>
+                        <th>Fuel Type</th>
+                        <th>Fuel Rate</th>
                         <th>Avg Mileage</th>
                         <th>RC</th>
                         <th>Insurance</th>
@@ -55,6 +58,8 @@
                         <td>{{ forloop.counter }}</td>
                         <td><strong>{{ v.vehicle_number }}</strong></td>
                         <td>{{ v.owner_name }}</td>
+                        <td>{{ v.get_fuel_type_display }}</td>
+                        <td class="fuel-rate">₹{{ v.fuel_rate }}</td>
                         <td class="mileage">{{ v.avg_mileage }} km/l</td>
                         <td>
                             {% if v.rc_copy %}

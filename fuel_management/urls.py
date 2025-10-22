@@ -15,4 +15,5 @@ urlpatterns = [
     path('fuel_edit/<int:entry_id>/', views.fuel_edit, name='fuel_edit'),
     path('fuel_delete/<int:entry_id>/', views.fuel_delete, name='fuel_delete'),
     path('fuel_monitoring/', views.fuel_monitoring, name='fuel_monitoring'),
+    path('total_summary/', views.total_summary, name='total_summary'),
 ]
