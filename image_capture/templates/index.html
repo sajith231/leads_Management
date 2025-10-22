@@ -449,6 +449,12 @@
                                 title="View Image">
                           <i class="fas fa-eye"></i>
                         </button>
+                        <a class="btn btn-sm btn-outline-success"
+       href="{{ capture.image.url }}"
+       download="{{ capture.image.name|cut:'captures/' }}"
+       title="Download Image">
+      <i class="fas fa-download"></i>
+    </a>
                       {% endif %}
                       <button class="btn btn-sm btn-outline-danger" 
                               onclick="confirmDelete('{{ capture.id }}', '{{ capture.customer_name }}')"
