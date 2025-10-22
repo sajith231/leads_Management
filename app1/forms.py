@@ -368,20 +368,35 @@ class HardwareForm(forms.ModelForm):
 
 
 
+# forms.py (snippet)
+# forms.py (ComplaintForm)
+from django import forms
+from .models import Complaint
+from software_master.models import Software
+
 class ComplaintForm(forms.ModelForm):
+    software = forms.ModelMultipleChoiceField(
+        queryset=Software.objects.all(),
+        required=False,
+        widget=forms.SelectMultiple(attrs={'class': 'form-select', 'size': 6})
+    )
+
     class Meta:
         model = Complaint
-        fields = ['description', 'complaint_type']
+        fields = ['description', 'complaint_type', 'software']
         widgets = {
-            'description': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Enter complaint',
-                'rows': 3,
-            }),
-            'complaint_type': forms.Select(attrs={
-                'class': 'form-control',
-            }),
+            'description': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
+            'complaint_type': forms.Select(attrs={'class': 'form-select'}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Make software required on create if you want:
+        if not self.instance or not self.instance.pk:
+            self.fields['software'].required = False
+
+
+
 
 
 
