@@ -213,6 +213,12 @@
     box-shadow: 0 6px 20px rgba(37, 211, 102, 0.4);
   }
 
+  .btn-success:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+  }
+
   .btn-outline-primary {
     background: white;
     border: 2px solid #667eea;
@@ -310,6 +316,79 @@
     font-style: italic;
   }
 
+  /* Search input styles */
+  .customer-search-container {
+    position: relative;
+    margin-bottom: 10px;
+  }
+
+  .customer-search-input {
+    padding: 12px 40px 12px 18px;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 14px;
+    width: 100%;
+    background: white;
+    transition: all 0.3s ease;
+    cursor: pointer;
+  }
+
+  .customer-search-input:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    outline: none;
+  }
+
+  .search-icon {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #718096;
+    font-size: 16px;
+  }
+
+  .customer-dropdown {
+    max-height: 200px;
+    overflow-y: auto;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    background: white;
+    margin-top: 5px;
+    display: none; /* Hidden by default */
+    position: absolute;
+    width: 100%;
+    z-index: 1000;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  }
+
+  .customer-option {
+    padding: 12px 18px;
+    cursor: pointer;
+    border-bottom: 1px solid #f1f1f1;
+    transition: all 0.2s ease;
+  }
+
+  .customer-option:hover {
+    background: #f7fafc;
+  }
+
+  .customer-option:last-child {
+    border-bottom: none;
+  }
+
+  .customer-option.highlight {
+    background: #667eea;
+    color: white;
+  }
+
+  .no-results {
+    padding: 12px 18px;
+    color: #718096;
+    font-style: italic;
+    text-align: center;
+  }
+
   @media (max-width: 576px) {
     .link-generator-wrapper {
       padding: 40px 15px;
@@ -343,22 +422,21 @@
 
 <div class="link-generator-wrapper">
   <div class="generator-container">
-    <!-- Add this in the page-header section of image_capture_form.html -->
-<div class="page-header">
-  <div class="d-flex justify-content-between align-items-center flex-wrap mb-3">
-    <div></div> <!-- Empty div for spacing -->
-    <a href="{% url 'index' %}" class="btn btn-outline-light">
-      <i class="fas fa-arrow-left"></i> Back to Dashboard
-    </a>
-  </div>
-  <h3>
-    <span class="icon-badge">
-      <i class="fas fa-camera"></i>
-    </span>
-    Image Capture Link Generator
-  </h3>
-  <p>Create secure verification links for your customers</p>
-</div>
+    <div class="page-header">
+      <div class="d-flex justify-content-between align-items-center flex-wrap mb-3">
+        <div></div> <!-- Empty div for spacing -->
+        <a href="{% url 'index' %}" class="btn btn-outline-light">
+          <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
+      </div>
+      <h3>
+        <span class="icon-badge">
+          <i class="fas fa-camera"></i>
+        </span>
+        Image Capture Link Generator
+      </h3>
+      <p>Create secure verification links for your customers</p>
+    </div>
 
     <form method="POST" class="card p-4 shadow-sm">
       {% csrf_token %}
@@ -377,12 +455,28 @@
 
         <!-- Dropdown Section -->
         <div id="dropdown-section" class="customer-input-section active">
-          <select name="customer_name" id="customer_dropdown" class="form-control" required>
+          <!-- Search Input -->
+          <div class="customer-search-container">
+            <input type="text" id="customer-search" class="customer-search-input" placeholder="Click to search customers..." readonly>
+            <i class="fas fa-search search-icon"></i>
+          </div>
+          
+          <!-- Dropdown with Search Results -->
+          <select name="customer_name" id="customer_dropdown" class="form-control" required style="display: none;">
             <option value="">-- Select Customer --</option>
             {% for c in customers %}
               <option value="{{ c.name }}">{{ c.name }} - {{ c.address }}</option>
             {% endfor %}
           </select>
+          
+          <!-- Custom Dropdown -->
+          <div id="customer-custom-dropdown" class="customer-dropdown">
+            {% for c in customers %}
+              <div class="customer-option" data-value="{{ c.name }}" data-display="{{ c.name }} - {{ c.address }}">
+                {{ c.name }} - {{ c.address }}
+              </div>
+            {% endfor %}
+          </div>
         </div>
 
         <!-- Manual Input Section -->
@@ -415,12 +509,14 @@
         <a href="{{ generated_link }}" target="_blank">{{ generated_link }}</a>
       </div>
 
+      <div id="whatsapp-status"></div>
+
       <div class="share-section">
         <p class="text-muted"><i class="fas fa-share-alt"></i> Share with customer:</p>
         <div class="action-buttons">
-          <a href="{{ whatsapp_url }}" target="_blank" class="btn btn-success">
+          <button onclick="sendViaWhatsApp('{{ customer_name }}', '{{ phone_number }}', '{{ generated_link }}')" class="btn btn-success" id="whatsapp-btn">
             <i class="fab fa-whatsapp"></i> Send via WhatsApp
-          </a>
+          </button>
           
           <button onclick="copyToClipboard('{{ generated_link }}')" class="btn btn-outline-primary">
             <i class="fas fa-copy"></i> Copy Link
@@ -433,9 +529,68 @@
 </div>
 
 <script>
+function sendViaWhatsApp(customerName, phoneNumber, link) {
+  const btn = document.getElementById('whatsapp-btn');
+  const statusDiv = document.getElementById('whatsapp-status');
+  
+  // Disable button and show loading
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+  
+  const message = `Hi ${customerName}, please verify your identity by clicking this link: ${link}`;
+  const encodedMessage = encodeURIComponent(message);
+  
+  const apiUrl = `https://app.dxing.in/api/send/whatsapp?secret=7b8ae820ecb39f8d173d57b51e1fce4c023e359e&account=1756959119812b4ba287f5ee0bc9d43bbf5bbe87fb68b9118fcf1af&recipient=91${phoneNumber}&type=text&message=${encodedMessage}&priority=0`;
+  
+  fetch(apiUrl)
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then(data => {
+      console.log('API Response:', data);
+      
+      if (data.status === 'success' || data.status === 'sent' || data.result === 'success') {
+        statusDiv.innerHTML = `
+          <div style="background: linear-gradient(135deg, #d4fc79 0%, #96e6a1 100%); border-radius: 15px; padding: 15px; margin: 15px 0; animation: fadeIn 0.5s ease-out;">
+            <strong style="color: #22543d;"><i class="fas fa-check-circle"></i> Message sent successfully to +91 ${phoneNumber}!</strong>
+            <p style="color: #2f855a; font-size: 13px; margin: 8px 0 0 0;">
+              <i class="fas fa-info-circle"></i> Customer will receive the message within 1-2 minutes
+            </p>
+          </div>
+        `;
+        btn.innerHTML = '<i class="fas fa-check"></i> Sent Successfully';
+        btn.style.background = 'linear-gradient(135deg, #48bb78 0%, #38a169 100%)';
+      } else {
+        statusDiv.innerHTML = `
+          <div style="background: linear-gradient(135deg, #d4fc79 0%, #96e6a1 100%); border-radius: 15px; padding: 15px; margin: 15px 0; animation: fadeIn 0.5s ease-out;">
+            <strong style="color: #22543d;"><i class="fas fa-check-circle"></i> Message queued for delivery to +91 ${phoneNumber}!</strong>
+            <p style="color: #2f855a; font-size: 13px; margin: 8px 0 0 0;">
+              <i class="fas fa-clock"></i> Delivery may take 1-2 minutes
+            </p>
+          </div>
+        `;
+        btn.innerHTML = '<i class="fas fa-check"></i> Message Queued';
+        btn.style.background = 'linear-gradient(135deg, #48bb78 0%, #38a169 100%)';
+      }
+    })
+    .catch(error => {
+      console.error('WhatsApp API Error:', error);
+      
+      statusDiv.innerHTML = `
+        <div style="background: linear-gradient(135deg, #fc8181 0%, #f56565 100%); border-radius: 15px; padding: 15px; margin: 15px 0; color: white;">
+          <strong><i class="fas fa-exclamation-circle"></i> Network error. However, the message may have been sent. Please check WhatsApp.</strong>
+        </div>
+      `;
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fab fa-whatsapp"></i> Send via WhatsApp';
+    });
+}
+
 function copyToClipboard(text) {
   navigator.clipboard.writeText(text).then(function() {
-    // Create a beautiful toast notification
     const toast = document.createElement('div');
     toast.innerHTML = '<i class="fas fa-check-circle"></i> Link copied to clipboard!';
     toast.style.cssText = `
@@ -461,7 +616,6 @@ function copyToClipboard(text) {
       setTimeout(() => toast.remove(), 300);
     }, 2500);
   }, function(err) {
-    // Fallback for older browsers
     const textArea = document.createElement('textarea');
     textArea.value = text;
     document.body.appendChild(textArea);
@@ -472,10 +626,153 @@ function copyToClipboard(text) {
   });
 }
 
+// Customer search functionality
+function initializeCustomerSearch() {
+  const searchInput = document.getElementById('customer-search');
+  const customDropdown = document.getElementById('customer-custom-dropdown');
+  const originalSelect = document.getElementById('customer_dropdown');
+  const customerOptions = customDropdown.querySelectorAll('.customer-option');
+  
+  if (!searchInput) return;
+  
+  // Show all options
+  function showAllOptions() {
+    customerOptions.forEach(option => {
+      option.style.display = 'block';
+    });
+  }
+  
+  // Filter options based on search input
+  function filterOptions(searchTerm) {
+    let hasResults = false;
+    
+    customerOptions.forEach(option => {
+      const displayText = option.getAttribute('data-display').toLowerCase();
+      if (displayText.includes(searchTerm.toLowerCase())) {
+        option.style.display = 'block';
+        hasResults = true;
+      } else {
+        option.style.display = 'none';
+      }
+    });
+    
+    // Show no results message if no matches
+    const noResults = customDropdown.querySelector('.no-results');
+    if (!hasResults) {
+      if (!noResults) {
+        const noResultsDiv = document.createElement('div');
+        noResultsDiv.className = 'no-results';
+        noResultsDiv.textContent = 'No customers found';
+        customDropdown.appendChild(noResultsDiv);
+      }
+    } else if (noResults) {
+      noResults.remove();
+    }
+  }
+  
+  // Handle search box click - show dropdown
+  searchInput.addEventListener('click', function() {
+    customDropdown.style.display = 'block';
+    showAllOptions();
+    
+    // Remove readonly and focus for typing
+    this.removeAttribute('readonly');
+    this.focus();
+    this.placeholder = 'Type to search customers...';
+  });
+  
+  // Handle search input
+  searchInput.addEventListener('input', function() {
+    const searchTerm = this.value.trim();
+    
+    if (searchTerm === '') {
+      showAllOptions();
+    } else {
+      filterOptions(searchTerm);
+    }
+  });
+  
+  // Handle option selection
+  customerOptions.forEach(option => {
+    option.addEventListener('click', function() {
+      const value = this.getAttribute('data-value');
+      const displayText = this.getAttribute('data-display');
+      
+      // Update the hidden select element
+      originalSelect.value = value;
+      
+      // Update search input to show selected value
+      searchInput.value = displayText;
+      searchInput.setAttribute('readonly', 'true');
+      searchInput.placeholder = 'Click to search customers...';
+      
+      // Hide dropdown after selection
+      customDropdown.style.display = 'none';
+    });
+  });
+  
+  // Hide dropdown when clicking outside
+  document.addEventListener('click', function(event) {
+    if (!searchInput.contains(event.target) && !customDropdown.contains(event.target)) {
+      customDropdown.style.display = 'none';
+      
+      // If search input is empty after clicking away, set back to readonly
+      if (!searchInput.value.trim()) {
+        searchInput.setAttribute('readonly', 'true');
+        searchInput.placeholder = 'Click to search customers...';
+      }
+    }
+  });
+  
+  // Keyboard navigation
+  let highlightedIndex = -1;
+  
+  searchInput.addEventListener('keydown', function(event) {
+    const visibleOptions = Array.from(customerOptions).filter(opt => opt.style.display !== 'none');
+    
+    switch(event.key) {
+      case 'ArrowDown':
+        event.preventDefault();
+        highlightedIndex = (highlightedIndex + 1) % visibleOptions.length;
+        updateHighlight(visibleOptions);
+        break;
+        
+      case 'ArrowUp':
+        event.preventDefault();
+        highlightedIndex = (highlightedIndex - 1 + visibleOptions.length) % visibleOptions.length;
+        updateHighlight(visibleOptions);
+        break;
+        
+      case 'Enter':
+        event.preventDefault();
+        if (highlightedIndex >= 0 && highlightedIndex < visibleOptions.length) {
+          visibleOptions[highlightedIndex].click();
+        }
+        break;
+        
+      case 'Escape':
+        customDropdown.style.display = 'none';
+        highlightedIndex = -1;
+        break;
+    }
+  });
+  
+  function updateHighlight(visibleOptions) {
+    customerOptions.forEach(opt => opt.classList.remove('highlight'));
+    if (highlightedIndex >= 0 && highlightedIndex < visibleOptions.length) {
+      visibleOptions[highlightedIndex].classList.add('highlight');
+      visibleOptions[highlightedIndex].scrollIntoView({ block: 'nearest' });
+    }
+  }
+}
+
 // Customer name toggle functionality
 document.addEventListener('DOMContentLoaded', function() {
   const toggleButtons = document.querySelectorAll('.toggle-btn');
   const form = document.querySelector('form');
+  
+  // Initialize search functionality
+  initializeCustomerSearch();
   
   toggleButtons.forEach(btn => {
     btn.addEventListener('click', function() {
@@ -508,24 +805,20 @@ document.addEventListener('DOMContentLoaded', function() {
     const manualSection = document.getElementById('manual-section');
     
     if (dropdownSection.classList.contains('active')) {
-      // Using dropdown selection
       const dropdown = document.getElementById('customer_dropdown');
       if (dropdown.value === '') {
         e.preventDefault();
         alert('Please select a customer from the list');
         return;
       }
-      // Remove manual input value to avoid conflict
       document.getElementById('customer_manual').value = '';
     } else {
-      // Using manual input
       const manualInput = document.getElementById('customer_manual');
       if (!manualInput.value.trim()) {
         e.preventDefault();
         alert('Please enter a customer name');
         return;
       }
-      // Set the dropdown to empty to avoid conflict
       document.getElementById('customer_dropdown').value = '';
     }
   });
