@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Upload Image</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/exif-js/2.3.0/exif.min.js"></script>
+  <style>
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .upload-container {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 24px;
+      padding: 40px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      max-width: 500px;
+      width: 90%;
+      text-align: center;
+    }
+    .btn-submit {
+      background: linear-gradient(135deg, #f7971e 0%, #ffd200 100%);
+      color: white;
+      border: none;
+      border-radius: 50px;
+      padding: 14px 40px;
+      font-weight: 600;
+      margin-top: 15px;
+      font-size: 16px;
+      transition: all 0.3s ease;
+    }
+    .preview-image {
+      width: 100%;
+      border-radius: 16px;
+      margin-top: 20px;
+      display: none;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    }
+    .status {
+      margin-top: 15px;
+      font-weight: 600;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+  <div class="upload-container">
+    <h3>Upload Your Image</h3>
+    <p>Select an image from your gallery. We’ll automatically detect its location (if available).</p>
+
+    <form method="POST" action="{% url 'submit_image' data.unique_id %}" id="uploadForm">
+      {% csrf_token %}
+      <input type="file" id="galleryUpload" accept="image/*" class="form-control mb-3" required>
+      <input type="hidden" name="image_data" id="image_data">
+      <input type="hidden" name="latitude" id="latitude">
+      <input type="hidden" name="longitude" id="longitude">
+
+      <img id="previewImage" class="preview-image" alt="Preview">
+
+      <button type="submit" class="btn-submit">Submit</button>
+    </form>
+
+    <div class="status" id="statusMessage"></div>
+  </div>
+
+  <script>
+    const galleryUpload = document.getElementById('galleryUpload');
+    const previewImage = document.getElementById('previewImage');
+    const imageDataInput = document.getElementById('image_data');
+    const statusMessage = document.getElementById('statusMessage');
+
+    // Convert EXIF GPS coordinates to decimal
+    function convertDMSToDD(dms, ref) {
+      const [deg, min, sec] = dms;
+      let dd = deg + min / 60 + sec / 3600;
+      if (ref === "S" || ref === "W") dd = dd * -1;
+      return dd;
+    }
+
+    // Preview and extract GPS data
+    galleryUpload.addEventListener('change', function(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+
+      // 1️⃣ Read the image for preview
+      reader.onload = function(e) {
+        previewImage.src = e.target.result;
+        previewImage.style.display = 'block';
+        imageDataInput.value = e.target.result;
+        statusMessage.textContent = "Image loaded, reading location metadata...";
+      };
+      reader.readAsDataURL(file);
+
+      // 2️⃣ Read EXIF metadata for GPS
+      EXIF.getData(file, function() {
+        const lat = EXIF.getTag(this, "GPSLatitude");
+        const lon = EXIF.getTag(this, "GPSLongitude");
+        const latRef = EXIF.getTag(this, "GPSLatitudeRef");
+        const lonRef = EXIF.getTag(this, "GPSLongitudeRef");
+
+        if (lat && lon && latRef && lonRef) {
+          const latitude = convertDMSToDD(lat, latRef);
+          const longitude = convertDMSToDD(lon, lonRef);
+
+          document.getElementById('latitude').value = latitude;
+          document.getElementById('longitude').value = longitude;
+
+          statusMessage.textContent = `📍 Location detected: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+        } else {
+          statusMessage.textContent = "⚠️ No GPS data found in this image.";
+        }
+      });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,252 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Delete Department{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+    <div class="delete-container">
+        <div class="delete-header">
+            <i class="fas fa-exclamation-triangle"></i>
+            <h1>Confirm Delete</h1>
+        </div>
+
+        <div class="delete-body">
+            <p class="delete-message">
+                Are you sure you want to delete the department <strong>{{ department.name }}</strong>?
+            </p>
+
+            <div class="department-details">
+                <h3><i class="fas fa-info-circle"></i> Department Details</h3>
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <span class="detail-label">Name:</span>
+                        <span class="detail-value">{{ department.name }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Location:</span>
+                        <span class="detail-value">{{ department.city }}, {{ department.state }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Contact:</span>
+                        <span class="detail-value">{{ department.contact_number }}</span>
+                    </div>
+                    {% if department.gst_number %}
+                    <div class="detail-item">
+                        <span class="detail-label">GST Number:</span>
+                        <span class="detail-value">{{ department.gst_number }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="warning-box">
+                <i class="fas fa-exclamation-circle"></i>
+                <div>
+                    <strong>Warning:</strong>
+                    <p>This action cannot be undone. If this department has existing purchase orders, it will be deactivated instead of being deleted.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="delete-actions">
+            <form method="POST" style="display: inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger btn-lg">
+                    <i class="fas fa-trash-alt"></i> Yes, Delete Department
+                </button>
+            </form>
+            <a href="{% url 'purchase_order:department_list' %}" class="btn btn-secondary btn-lg">
+                <i class="fas fa-times"></i> Cancel
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+.content-wrapper {
+    padding: 20px;
+    max-width: 700px;
+    margin: 0 auto;
+    min-height: calc(100vh - 100px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.delete-container {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+    width: 100%;
+}
+
+.delete-header {
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    color: white;
+    padding: 30px;
+    text-align: center;
+}
+
+.delete-header i {
+    font-size: 64px;
+    margin-bottom: 15px;
+    display: block;
+}
+
+.delete-header h1 {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 600;
+}
+
+.delete-body {
+    padding: 30px;
+}
+
+.delete-message {
+    font-size: 18px;
+    color: #2c3e50;
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.delete-message strong {
+    color: #e74c3c;
+    font-weight: 700;
+}
+
+.department-details {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 25px;
+}
+
+.department-details h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #2c3e50;
+    margin: 0 0 15px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.department-details h3 i {
+    color: #3498db;
+}
+
+.detail-grid {
+    display: grid;
+    gap: 12px;
+}
+
+.detail-item {
+    display: flex;
+    gap: 10px;
+}
+
+.detail-label {
+    font-weight: 600;
+    color: #7f8c8d;
+    min-width: 120px;
+}
+
+.detail-value {
+    color: #2c3e50;
+}
+
+.warning-box {
+    background: #fff3cd;
+    border-left: 4px solid #ffc107;
+    padding: 15px;
+    border-radius: 6px;
+    display: flex;
+    gap: 15px;
+    align-items: flex-start;
+}
+
+.warning-box i {
+    color: #ff9800;
+    font-size: 24px;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.warning-box strong {
+    color: #f57c00;
+    display: block;
+    margin-bottom: 5px;
+}
+
+.warning-box p {
+    margin: 0;
+    color: #6c5a00;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.delete-actions {
+    padding: 20px 30px;
+    background: #f8f9fa;
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+
+.btn {
+    padding: 10px 20px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-danger {
+    background: #e74c3c;
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #c0392b;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
+}
+
+.btn-secondary {
+    background: #95a5a6;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #7f8c8d;
+}
+
+.btn-lg {
+    padding: 12px 30px;
+    font-size: 16px;
+}
+
+@media (max-width: 768px) {
+    .content-wrapper {
+        padding: 10px;
+    }
+    
+    .delete-actions {
+        flex-direction: column;
+    }
+    
+    .btn-lg {
+        width: 100%;
+        justify-content: center;
+    }
+}
+</style>
+{% endblock %}

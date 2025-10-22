@@ -1,0 +1,1057 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Purchase Orders{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+    <div class="page-header">
+        <h1 class="page-title">Purchase Orders</h1>
+        <a href="{% url 'purchase_order:po_create' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Create Purchase Order
+        </a>
+    </div>
+
+    <!-- Search and Filter Bar -->
+    <div class="filter-section">
+        <div class="filter-group">
+            <div class="search-wrapper">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input 
+                        type="text" 
+                        id="searchInput" 
+                        placeholder="Search by PO number, supplier, reference..." 
+                        class="search-input"
+                        autocomplete="off"
+                    >
+                </div>
+            </div>
+            
+            <select id="statusFilter" class="status-filter">
+                <option value="">All Status</option>
+                {% for value, label in status_choices %}
+                <option value="{{ value }}">{{ label }}</option>
+                {% endfor %}
+            </select>
+
+            <select id="adminStatusFilter" class="status-filter">
+                <option value="">All Admin Status</option>
+                <option value="PENDING">Pending</option>
+                <option value="APPROVED">Approved</option>
+                <option value="REJECTED">Rejected</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Purchase Orders Table -->
+    <div class="table-container">
+        {% if purchase_orders %}
+        <div class="table-scroll">
+            <table class="data-table" id="poTable">
+                <thead>
+                    <tr>
+                        <th>PO Number</th>
+                        <th>PO Date</th>
+                        <th>Supplier</th>
+                        <th>Delivery Date</th>
+                        <th>Grand Total</th>
+                        <th>Payment Terms</th>
+                        <th>Status</th>
+                        <th>Admin Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for po in purchase_orders %}
+                    <tr data-status="{{ po.status }}" data-admin-status="{{ po.admin_status }}">
+                        <td>
+                            <a href="{% url 'purchase_order:po_detail' po.pk %}" class="po-number">
+                                {{ po.po_number }}
+                            </a>
+                            {% if po.reference_number %}
+                            <div class="po-ref">Ref: {{ po.reference_number }}</div>
+                            {% endif %}
+                        </td>
+                        <td>{{ po.po_date|date:"d M, Y" }}</td>
+                        <td>
+                            <div class="supplier-info">
+                                <strong>{{ po.supplier.name }}</strong>
+                                <div class="supplier-location">
+                                    {{ po.supplier.city }}, {{ po.supplier.state }}
+                                </div>
+                            </div>
+                        </td>
+                        <td>{{ po.delivery_date|date:"d M, Y" }}</td>
+                        <td class="amount">₹{{ po.grand_total|floatformat:2 }}</td>
+                        <td>
+                            <span class="payment-badge">{{ po.get_payment_terms_display }}</span>
+                        </td>
+                        <td>
+                            <span class="status-badge status-{{ po.status|lower }}">
+                                {{ po.get_status_display }}
+                            </span>
+                        </td>
+
+                        <!-- Admin Status Column - Display Only (No Inline Editing) -->
+                        <td>
+                            <span class="status-badge admin-status-{{ po.admin_status|lower }}">
+                                {% if not request.user.is_superuser %}
+                                    <i class="fas fa-lock" style="font-size: 10px; opacity: 0.7; margin-right: 4px;"></i>
+                                {% endif %}
+                                {{ po.get_admin_status_display }}
+                            </span>
+                            {% if po.admin_status == 'REJECTED' and po.admin_rejection_reason %}
+                                <div class="rejection-reason-hint" title="{{ po.admin_rejection_reason }}">
+                                    <i class="fas fa-exclamation-circle" style="color: #e74c3c; font-size: 12px; margin-left: 5px;"></i>
+                                </div>
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            <div class="action-buttons">
+                                <a href="{% url 'purchase_order:po_detail' po.pk %}" 
+                                   class="btn-icon btn-view" title="View">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{% url 'purchase_order:po_update' po.pk %}" 
+                                   class="btn-icon btn-edit" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <button type="button"
+                                        class="btn-icon btn-delete" 
+                                        title="Delete"
+                                        onclick="confirmDelete('{{ po.pk }}', '{{ po.po_number }}')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="no-data">
+            <i class="fas fa-file-invoice"></i>
+            <p>No purchase orders found</p>
+            <a href="{% url 'purchase_order:po_create' %}" class="btn btn-primary">Create First Purchase Order</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <i class="fas fa-exclamation-triangle"></i>
+            <h2>Confirm Delete</h2>
+        </div>
+        <div class="modal-body">
+            <p>Are you sure you want to delete Purchase Order <strong id="poNumber"></strong>?</p>
+            <p class="warning-text">This action cannot be undone and will delete all associated items.</p>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+            <form id="deleteForm" method="POST" style="display: inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger">
+                    <i class="fas fa-trash-alt"></i> Delete
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Reset and Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background: #f5f7fa;
+    color: #2c3e50;
+    line-height: 1.6;
+}
+
+/* Layout Container */
+.content-wrapper {
+    padding: 20px;
+    max-width: 1600px;
+    margin: 0 auto;
+}
+
+/* Page Header */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.page-title {
+    font-size: 28px;
+    font-weight: 600;
+    color: #2c3e50;
+    margin: 0;
+}
+
+/* Button Styles */
+.btn {
+    padding: 10px 20px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+}
+
+.btn-primary {
+    background: #3498db;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #2980b9;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+}
+
+.btn-secondary {
+    background: #95a5a6;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #7f8c8d;
+    transform: translateY(-2px);
+}
+
+.btn-danger {
+    background: #e74c3c;
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #c0392b;
+    transform: translateY(-2px);
+}
+
+.btn-success {
+    background: #27ae60;
+    color: white;
+}
+
+.btn-success:hover {
+    background: #229954;
+    transform: translateY(-2px);
+}
+
+/* Filter Section */
+.filter-section {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+.filter-group {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.search-wrapper {
+    flex: 1;
+    min-width: 300px;
+}
+
+.search-box {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #f8f9fa;
+    padding: 12px 20px;
+    border-radius: 8px;
+    border: 2px solid #e9ecef;
+    transition: border-color 0.3s ease;
+}
+
+.search-box:focus-within {
+    border-color: #3498db;
+}
+
+.search-box i {
+    color: #7f8c8d;
+    font-size: 16px;
+}
+
+.search-input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-size: 15px;
+    outline: none;
+    color: #2c3e50;
+}
+
+.search-input::placeholder {
+    color: #95a5a6;
+}
+
+.status-filter {
+    padding: 12px 20px;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    font-size: 15px;
+    background: white;
+    color: #2c3e50;
+    cursor: pointer;
+    min-width: 180px;
+    outline: none;
+    transition: border-color 0.3s ease;
+}
+
+.status-filter:focus {
+    border-color: #3498db;
+}
+
+/* Table Container */
+.table-container {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.table-scroll {
+    overflow-x: auto;
+}
+
+/* Data Table */
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 1200px;
+}
+
+.data-table thead {
+    background: #34495e;
+    color: white;
+}
+
+.data-table th {
+    padding: 16px 20px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+}
+
+/* Specific column alignments */
+.data-table th:nth-child(1) { width: 5%; text-align: center; } /* Checkbox/ID */
+.data-table th:nth-child(2) { width: 15%; } /* PO Number */
+.data-table th:nth-child(3) { width: 20%; } /* Supplier */
+.data-table th:nth-child(4) { width: 12%; } /* Date */
+.data-table th:nth-child(5) { width: 15%; text-align: right; padding-right: 20px; } /* Amount */
+.data-table th:nth-child(6) { width: 12%; text-align: center; } /* Payment */
+.data-table th:nth-child(7) { width: 12%; text-align: center; } /* Status */
+.data-table th:nth-child(8) { width: 8%; text-align: right; } /* Actions */
+
+.data-table tbody tr {
+    border-bottom: 1px solid #ecf0f1;
+    transition: all 0.3s ease;
+}
+
+.data-table tbody tr:hover {
+    background: #f8f9fa;
+    transform: scale(1.001);
+}
+
+.data-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.data-table td {
+    padding: 16px 20px;
+    color: #2c3e50;
+    vertical-align: middle;
+}
+
+/* Column-specific styles */
+.data-table td:nth-child(1) {
+    text-align: center;
+}
+
+.data-table td:nth-child(5) { 
+      text-align: right;
+    padding-right: 20px;
+}
+
+.data-table td:nth-child(6),
+.data-table td:nth-child(7),
+.data-table td:nth-child(8) {
+    text-align: center;
+}
+
+/* PO Number */
+.po-number {
+    color: #3498db;
+    font-weight: 600;
+    text-decoration: none;
+    font-size: 15px;
+    display: block;
+    transition: color 0.3s ease;
+}
+
+.po-number:hover {
+    color: #2980b9;
+    text-decoration: underline;
+}
+
+.po-ref {
+    font-size: 12px;
+    color: #7f8c8d;
+    margin-top: 4px;
+    display: block;
+}
+
+/* Supplier Info */
+.supplier-info {
+    line-height: 1.5;
+}
+
+.supplier-info strong {
+    display: block;
+    color: #2c3e50;
+    font-size: 14px;
+    margin-bottom: 2px;
+}
+
+.supplier-location {
+    font-size: 12px;
+    color: #7f8c8d;
+    display: block;
+}
+
+/* Amount Styling */
+.amount {
+    font-weight: 600;
+    color: #27ae60;
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+/* Payment Badge */
+.payment-badge {
+    background: #e8f5e9;
+    color: #2e7d32;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    display: inline-block;
+    text-transform: capitalize;
+}
+
+.payment-badge.partial {
+    background: #fff3e0;
+    color: #f57c00;
+}
+
+.payment-badge.unpaid {
+    background: #ffebee;
+    color: #c62828;
+}
+
+/* Status Badges */
+.status-badge {
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    display: inline-block;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.status-draft {
+    background: #e3f2fd;
+    color: #1976d2;
+}
+
+.status-pending {
+    background: #fff3e0;
+    color: #f57c00;
+}
+
+.status-approved {
+    background: #e8f5e9;
+    color: #388e3c;
+}
+
+.status-delivered {
+    background: #f3e5f5;
+    color: #7b1fa2;
+}
+
+.status-completed {
+    background: #e0f2f1;
+    color: #00796b;
+}
+
+.status-cancelled {
+    background: #ffebee;
+    color: #c62828;
+}
+
+.status-rejected {
+    background: #ffebee;
+    color: #c62828;
+}
+
+/* Admin Status Badges */
+.admin-status-pending {
+    background: #fff3e0;
+    color: #f57c00;
+}
+
+.admin-status-approved {
+    background: #d4edda;
+    color: #155724;
+}
+
+.admin-status-rejected {
+    background: #ffebee;
+    color: #c62828;
+}
+
+/* Rejection Reason */
+.rejection-reason-hint {
+    display: inline-block;
+    cursor: help;
+    margin-left: 5px;
+    color: #e74c3c;
+    font-size: 14px;
+}
+
+.rejection-reason-hint:hover {
+    color: #c0392b;
+}
+
+/* Action Buttons */
+.action-buttons {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    align-items: center;
+}
+
+.btn-icon {
+    width: 35px;
+    height: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.btn-view {
+    background: #9b59b6;
+    color: white;
+}
+
+.btn-view:hover {
+    background: #8e44ad;
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(155, 89, 182, 0.3);
+}
+
+.btn-edit {
+    background: #3498db;
+    color: white;
+}
+
+.btn-edit:hover {
+    background: #2980b9;
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+}
+
+.btn-delete {
+    background: #e74c3c;
+    color: white;
+}
+
+.btn-delete:hover {
+    background: #c0392b;
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
+}
+
+.btn-approve {
+    background: #27ae60;
+    color: white;
+}
+
+.btn-approve:hover {
+    background: #229954;
+    transform: scale(1.1);
+}
+
+.btn-reject {
+    background: #e67e22;
+    color: white;
+}
+
+.btn-reject:hover {
+    background: #d35400;
+    transform: scale(1.1);
+}
+
+/* No Data State */
+.no-data {
+    text-align: center;
+    padding: 60px 20px;
+    color: #7f8c8d;
+}
+
+.no-data i {
+    font-size: 64px;
+    margin-bottom: 20px;
+    opacity: 0.3;
+    display: block;
+}
+
+.no-data p {
+    font-size: 18px;
+    margin-bottom: 20px;
+}
+
+.no-data .btn {
+    margin-top: 10px;
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    animation: fadeIn 0.3s ease;
+    overflow: auto;
+}
+
+.modal.active {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background-color: white;
+    margin: 20px;
+    padding: 0;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    animation: slideIn 0.3s ease;
+}
+
+.modal-header {
+    padding: 25px 30px;
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    color: white;
+    border-radius: 12px 12px 0 0;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.modal-header.success {
+    background: linear-gradient(135deg, #27ae60, #229954);
+}
+
+.modal-header.warning {
+    background: linear-gradient(135deg, #f39c12, #e67e22);
+}
+
+.modal-header i {
+    font-size: 28px;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 600;
+}
+
+.modal-body {
+    padding: 30px;
+}
+
+.modal-body p {
+    margin: 0 0 15px 0;
+    font-size: 16px;
+    color: #2c3e50;
+    line-height: 1.6;
+}
+
+.modal-body p:last-child {
+    margin-bottom: 0;
+}
+
+.modal-body strong {
+    color: #e74c3c;
+    font-weight: 600;
+}
+
+.warning-text {
+    color: #7f8c8d;
+    font-size: 14px;
+    font-style: italic;
+    margin-top: 10px;
+}
+
+.modal-footer {
+    padding: 20px 30px;
+    background: #f8f9fa;
+    border-radius: 0 0 12px 12px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+/* Form Elements in Modals */
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 14px;
+}
+
+.form-control {
+    width: 100%;
+    padding: 12px 15px;
+    border: 2px solid #e9ecef;
+    border-radius: 6px;
+    font-size: 15px;
+    transition: border-color 0.3s ease;
+    font-family: inherit;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #3498db;
+}
+
+textarea.form-control {
+    resize: vertical;
+    min-height: 100px;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { 
+        opacity: 0; 
+    }
+    to { 
+        opacity: 1; 
+    }
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateY(-50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOut {
+    from {
+        transform: translateY(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateY(-50px);
+        opacity: 0;
+    }
+}
+
+/* Loading State */
+.loading {
+    text-align: center;
+    padding: 40px;
+    color: #7f8c8d;
+}
+
+.loading i {
+    font-size: 48px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Tooltip */
+.tooltip {
+    position: relative;
+    display: inline-block;
+}
+
+.tooltip .tooltiptext {
+    visibility: hidden;
+    width: 200px;
+    background-color: #2c3e50;
+    color: white;
+    text-align: center;
+    border-radius: 6px;
+    padding: 8px 12px;
+    position: absolute;
+    z-index: 1;
+    bottom: 125%;
+    left: 50%;
+    margin-left: -100px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    font-size: 12px;
+}
+
+.tooltip:hover .tooltiptext {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* Checkbox Styling */
+input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: #3498db;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+    .content-wrapper {
+        padding: 15px;
+    }
+    
+    .data-table {
+        min-width: 1000px;
+    }
+}
+
+@media (max-width: 768px) {
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+    
+    .page-title {
+        font-size: 24px;
+    }
+
+    .filter-section {
+        padding: 15px;
+    }
+
+    .filter-group {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+    
+    .search-wrapper {
+        min-width: 100%;
+    }
+    
+    .status-filter {
+        width: 100%;
+        min-width: 100%;
+    }
+
+    .modal-content {
+        width: 95%;
+        margin: 10px;
+    }
+    
+    .modal-header {
+        padding: 20px;
+    }
+    
+    .modal-header h2 {
+        font-size: 18px;
+    }
+    
+    .modal-body {
+        padding: 20px;
+    }
+    
+    .modal-footer {
+        padding: 15px 20px;
+        flex-wrap: wrap;
+    }
+    
+    .btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .action-buttons {
+        flex-wrap: wrap;
+    }
+}
+
+@media (max-width: 480px) {
+    .page-title {
+        font-size: 20px;
+    }
+    
+    .btn {
+        padding: 8px 16px;
+        font-size: 13px;
+    }
+    
+    .btn-icon {
+        width: 32px;
+        height: 32px;
+        font-size: 12px;
+    }
+    
+    .data-table th,
+    .data-table td {
+        padding: 12px 10px;
+        font-size: 13px;
+    }
+}
+
+/* Print Styles */
+@media print {
+    .btn,
+    .action-buttons,
+    .filter-section,
+    .modal {
+        display: none !important;
+    }
+    
+    .content-wrapper {
+        padding: 0;
+        max-width: 100%;
+    }
+    
+    .table-container {
+        box-shadow: none;
+    }
+    
+    .data-table tbody tr:hover {
+        background: transparent;
+    }
+}
+</style>
+
+<script>
+// Real-time search and filter functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('searchInput');
+    const statusFilter = document.getElementById('statusFilter');
+    const adminStatusFilter = document.getElementById('adminStatusFilter');
+    const table = document.getElementById('poTable');
+    const rows = table ? table.querySelectorAll('tbody tr') : [];
+
+    function filterTable() {
+        const searchValue = searchInput.value.toLowerCase();
+        const statusValue = statusFilter.value.toLowerCase();
+        const adminStatusValue = adminStatusFilter.value.toLowerCase();
+
+        rows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            const rowStatus = row.dataset.status ? row.dataset.status.toLowerCase() : '';
+            const rowAdminStatus = row.dataset.adminStatus ? row.dataset.adminStatus.toLowerCase() : '';
+            
+            const matchesSearch = text.includes(searchValue);
+            const matchesStatus = !statusValue || rowStatus === statusValue;
+            const matchesAdminStatus = !adminStatusValue || rowAdminStatus === adminStatusValue;
+
+            row.style.display = (matchesSearch && matchesStatus && matchesAdminStatus) ? '' : 'none';
+        });
+    }
+
+    if (searchInput) {
+        searchInput.addEventListener('keyup', filterTable);
+    }
+
+    if (statusFilter) {
+        statusFilter.addEventListener('change', filterTable);
+    }
+
+    if (adminStatusFilter) {
+        adminStatusFilter.addEventListener('change', filterTable);
+    }
+});
+
+// Delete confirmation modal
+function confirmDelete(poId, poNumber) {
+    const modal = document.getElementById('deleteModal');
+    const deleteForm = document.getElementById('deleteForm');
+    const poNumberElement = document.getElementById('poNumber');
+    
+    poNumberElement.textContent = poNumber;
+    deleteForm.action = "{% url 'purchase_order:po_delete' 0 %}".replace('0', poId);
+    modal.style.display = 'block';
+}
+
+function closeModal() {
+    const modal = document.getElementById('deleteModal');
+    modal.style.display = 'none';
+}
+
+window.onclick = function(event) {
+    const modal = document.getElementById('deleteModal');
+    if (event.target === modal) {
+        closeModal();
+    }
+}
+
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        closeModal();
+    }
+});
+</script>
+{% endblock %}

@@ -18,4 +18,6 @@ urlpatterns = [
     
     # Subfolder route
     path("subfolder/<int:pk>/delete/", views.subfolder_delete, name="subfolder_delete"),
+    path("files/<int:pk>/edit_name/", views.file_edit_page, name="file_edit_page"),
+
 ]

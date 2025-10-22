@@ -24,12 +24,14 @@
     }
 
     .certificate-container {
-      width: 794px; /* A4 width */
-      height: auto;
+      width: 210mm;
+      min-height: 297mm;
       background-color: #fff;
-      padding: 2cm;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      padding: 25mm;
+      margin: 0 auto;
+      box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
       box-sizing: border-box;
+      position: relative;
     }
 
     .header {
@@ -160,23 +162,42 @@
   <button class="download-button" onclick="downloadAsPDF()">Download as PDF</button>
 
   <script>
-    function downloadAsPDF() {
-      const element = document.getElementById('certificate');
+  function downloadAsPDF() {
+    const element = document.getElementById("certificate");
 
-      const options = {
-        margin: [0, 0, 0, 0],
-        filename: 'Experience_Certificate.pdf',
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 3, useCORS: true, letterRendering: true },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-      };
+    const opt = {
+      margin: 0,
+      filename: "Experience_Certificate.pdf",
+      image: { type: "jpeg", quality: 1 },
+      html2canvas: {
+        scale: 2,
+        useCORS: true,
+        scrollX: 0,
+        scrollY: 0,
+      },
+      jsPDF: {
+        unit: "mm",
+        format: "a4",
+        orientation: "portrait",
+      },
+    };
 
-      html2pdf().from(element).set(options).toPdf().get('pdf').then(function (pdf) {
-        pdf.setPage(1);
-        pdf.save('Experience_Certificate.pdf');
+    html2pdf()
+      .set(opt)
+      .from(element)
+      .toPdf()
+      .get("pdf")
+      .then(function (pdf) {
+        const totalPages = pdf.internal.getNumberOfPages();
+        for (let i = 1; i <= totalPages; i++) {
+          pdf.setPage(i);
+          pdf.internal.pageSize.width = 210; // fit exactly A4 width
+          pdf.internal.pageSize.height = 297; // fit exactly A4 height
+        }
+        pdf.save("Experience_Certificate.pdf");
       });
-    }
-  </script>
+  }
+</script>
+
 </body>
 </html>

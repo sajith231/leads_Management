@@ -980,6 +980,7 @@
 }
 </style>
 
+
 <div class="customer-info-box stable show" id="customerInfoBox">
     <div class="customer-info-header">
         <div class="customer-info-title">
@@ -1063,7 +1064,7 @@
         <div class="info-value-large" id="infoNature">N/A</div>
     </div>
 </div>
-<div class="" style="max-width: 800px;">
+<div class="" style="max-width: 700px;">
     <h2 class="mb-4 text-center">{% if log %}Edit{% else %}Add{% endif %} Service Log</h2>
 
     <form method="post" enctype="multipart/form-data" class="card p-4 shadow-sm">
@@ -2727,45 +2728,83 @@ document.addEventListener('DOMContentLoaded', function() {
 // Function to show customer info box with data
 function showCustomerInfoBox(customerData) {
     const infoBox = document.getElementById('customerInfoBox');
-    
-    // Calculate age from installation date
+
+    // Calculate age from installation date (existing logic)
     let ageText = 'N/A';
     if (customerData.installationdate) {
         const installDate = new Date(customerData.installationdate);
         const today = new Date();
-        
         let years = today.getFullYear() - installDate.getFullYear();
         let months = today.getMonth() - installDate.getMonth();
-        
-        if (months < 0) {
-            years--;
-            months += 12;
-        }
-        
+        if (months < 0) { years--; months += 12; }
         if (today.getDate() < installDate.getDate()) {
             months--;
-            if (months < 0) {
-                years--;
-                months += 12;
-            }
+            if (months < 0) { years--; months += 12; }
         }
-        
         ageText = `${years} yr${years !== 1 ? 's' : ''} ${months} month${months !== 1 ? 's' : ''}`;
     }
-    
-    // Update all fields
-    document.getElementById('infoCustomerName').textContent = customerData.name || 'N/A';
-    document.getElementById('infoSoftware').textContent = customerData.software || 'N/A';
-    document.getElementById('infoAge').textContent = ageText;
-    document.getElementById('infoLicenseType').textContent = customerData.lictype || 'N/A';
-    document.getElementById('infoClients').textContent = customerData.clients || 'N/A';
-    document.getElementById('infoSP').textContent = customerData.sp || 'N/A';
-    document.getElementById('infoAMC').textContent = customerData.amc || 'N/A';
-    document.getElementById('infoBranch').textContent = customerData.branch || 'N/A';
-    document.getElementById('infoNature').textContent = customerData.nature || 'N/A';
-    
-    // Show the box with animation
-    infoBox.classList.add('show');
+
+    // Helper to set text safely
+    function setText(id, text) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.textContent = text;
+    }
+    // Helper to set HTML (for badges), safe-guarding missing element
+    function setHTML(id, html) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.innerHTML = html;
+    }
+
+    // Basic fields
+    setText('infoCustomerName', customerData.name || 'N/A');
+    setText('infoSoftware', customerData.software || 'N/A');
+    setText('infoAge', ageText);
+    // License type will be replaced below with mapped label
+    // AMC will be replaced below with mapped label
+    setText('infoClients', customerData.clients || 'N/A');
+    setText('infoSP', customerData.sp || 'N/A');
+    setText('infoBranch', customerData.branch || 'N/A');
+    setText('infoNature', customerData.nature || 'N/A');
+
+    // ----- AMC mapping -----
+    // customerData.amc may be 'A', 'F', 'S' or other
+    const amcRaw = (customerData.amc || '').toString().trim().toUpperCase();
+    let amcLabel = 'N/A';
+    if (amcRaw === 'A') amcLabel = 'SUC';
+    else if (amcRaw === 'F') amcLabel = 'FREE';
+    else if (amcRaw === 'S') amcLabel = 'SERVICE CHARGE';
+    else if (amcRaw) amcLabel = amcRaw;
+
+    // Show as a badge-like element (uses your existing .info-badge style)
+    setHTML('infoAMC', `<span class="info-badge">${amcLabel}</span>`);
+
+    // ----- License type mapping -----
+    const licRaw = (customerData.lictype || '').toString().trim().toUpperCase();
+    let licLabel = 'N/A';
+    if (licRaw === 'E') licLabel = 'Enterprises';
+    else if (licRaw === 'P') licLabel = 'Professional';
+    else if (licRaw) licLabel = licRaw;
+
+    // Set license display (keeps previous style used for license)
+    setHTML('infoLicenseType', `<span class="info-badge">${licLabel}</span>`);
+
+    // Optionally update a dedicated "code" field or other UI elements if you use them:
+    // e.g. setText('infoCode', (customerData.code || 'N/A'));
+
+    // Also update any modal code display if present
+    const modalCode = document.getElementById('modalCustomerCode');
+    if (modalCode) {
+        const rawCode = customerData.code || 'N/A';
+        modalCode.textContent = `${rawCode} — AMC: ${amcLabel} — License: ${licLabel}`;
+    }
+
+    // Finally show the info box
+    if (infoBox) infoBox.classList.add('show');
+
+    // debug: uncomment to log
+    // console.log('Customer Info shown:', { code: customerData.code, amc: amcRaw, amcLabel, licRaw, licLabel });
 }
 
 // Function to close customer info box
