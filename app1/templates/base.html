@@ -320,6 +320,7 @@
         .information_center span {
             font-weight: 500;
         }
+        
     </style>
 </head>
 
@@ -564,6 +565,13 @@
   <i class="fas fa-camera" style="margin-right: 5px;"></i>
   Image Capture
 </a>
+</a>
+
+<!-- ➜ NEW ENTRY -->
+    <a href="{% url 'purchase_order:po_list' %}">
+        <i class="fas fa-file-invoice" style="margin-right: 5px;"></i>
+        Purchase Order
+    </a>
 
 </div>
 {% endif %}
@@ -690,8 +698,9 @@
                 <a href="{% url 'all_branches' %}"><i class="fas fa-code-branch"></i> Branch</a>
                 <a href="{% url 'users_table' %}"><i class="fas fa-users"></i> Users</a>
                 <a href="{% url 'reminder_type' %}"><i class="fas fa-bell"></i> Reminder Types</a>
-                
-
+                <a href="{% url 'purchase_order:supplier_list' %}"><i class="fas fa-truck"></i> Supplier</a>
+                <a href="{% url 'purchase_order:item_list' %}"><i class="fas fa-boxes-stacked"></i> Items</a>
+                <a href="{% url 'purchase_order:department_list' %}"><i class="fas fa-sitemap"></i> Planet Branch</a>
 
             </div>
             
@@ -1090,6 +1099,17 @@
                 {% if 'reminder_type' in allowed_menus %}
                 <a href="{% url 'reminder_type' %}"><i class="fas fa-bell"></i> Reminder Types</a>
                 {% endif %}
+
+                {% if 'supplier_list' in allowed_menus %}
+                <a href="{% url 'purchase_order:supplier_list' %}"><i class="fas fa-truck"></i> Supplier</a>
+                {% endif %}
+                {% if 'item_list' in allowed_menus %}
+                <a href="{% url 'purchase_order:item-list' %}"><i class="fas fa-box"></i> Items</a>
+                {% endif %}
+                {% if 'department_list' in allowed_menus %}
+                <a href="{% url 'purchase_order:department_list' %}"><i class="fas fa-sitemap"></i> Planet Branch</a>
+                {% endif %}  
+
             </div>
             {% endif %}
         {% endif %}
