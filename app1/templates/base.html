@@ -481,11 +481,6 @@
                 {% if 'service_entry' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
                 <a href="{% url 'service_entry' %}"><i class="fas fa-plus-circle"></i> Logs</a>
                 {% endif %}
-                
-
-                
-
-                
             </div>
             {% endif %}
 
@@ -513,10 +508,7 @@
             </div>
             {% endif %}
 
-
             <!-- Planet Menu -->
-
-
 {% if 'feeder_list' in allowed_menus or 'show_clients' in allowed_menus or 'key_request_list' in allowed_menus or 'collections_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
 <div class="mainmenu" onclick="togglePlanetMenu()">
     <span>
@@ -576,11 +568,45 @@
 </div>
 {% endif %}
 
-<a href="{% url 'drive_list' %}">
-   <i class="fas fa-folder" style="margin-right: 5px;"></i>
-   IMC Drive
-</a>
+<!-- Vehicle Management - Standalone Main Menu with Submenu -->
+{% if 'fuel_management' in allowed_menus or 'vehicle_list' in allowed_menus or 'fuel_monitoring' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+<div class="mainmenu" onclick="toggleVehicleMenu()">
+    <span>
+        <i class="fas fa-car"></i>
+        <span>Vehicle Management</span>
+    </span>
+</div>
 
+<div id="vehicle-menu" class="submenu">
+    {% if 'vehicle_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+    <a href="{% url 'vehicle_list' %}">
+        <i class="fas fa-list-alt"></i> Vehicle Master
+    </a>
+    {% endif %}
+    
+    {% if 'fuel_management' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+    <a href="{% url 'fuel_management' %}">
+        <i class="fas fa-gas-pump"></i> Fuel Management
+    </a>
+    {% endif %}
+    
+    {% if 'fuel_monitoring' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+    <a href="{% url 'fuel_monitoring' %}">
+        <i class="fas fa-chart-line"></i> Vehicle Ledger
+    </a>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- IMC Drive - Standalone Main Menu -->
+{% if 'drive_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+<div class="information_center">
+    <a href="{% url 'drive_list' %}">
+        <i class="fas fa-folder"></i>
+        <span>IMC Drive</span>
+    </a>
+</div>
+{% endif %}
 
 <div class="mainmenu" onclick="toggleSysmacMenu()">
     <span>
@@ -590,10 +616,7 @@
 </div>
 
 <div id="sysmac-menu" class="submenu">
-        <!-- <a href="{% url 'item_list' %}">
-            <i class="fas fa-users"></i> Stand By
-        </a> -->
-        <a href="{% url 'app5:jobcard_list' %}">
+<a href="{% url 'app5:jobcard_list' %}">
     <i class="fas fa-id-card"></i> Job Card
 </a>
 <a href="{% url 'app5:jobcard_assign_table' %}">
@@ -602,13 +625,7 @@
 <a href="{% url 'app5:job_technician_accept' %}">
     <i class="fas fa-id-card-alt"></i> My Job
 </a>
-
-
 </div>
-
-
-
-
 
 {% if 'all_customers' in allowed_menus or 'socialmedia_all_projects' in allowed_menus or 'socialmedia_project_assignments' in allowed_menus or 'socialmedia_all_tasks' in allowed_menus or 'user_socialmedia_project_assignments' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
 <div class="mainmenu" onclick="toggleSocialMediaMenu()">
@@ -639,7 +656,6 @@
     {% endif %}
 </div>
 {% endif %}
-
 
 <!-- Debters Menu -->
 {% if 'debtors1_list' in allowed_menus or 'imc1_list' in allowed_menus or 'imc2_list' in allowed_menus or 'sysmac_info_list' in allowed_menus or 'dq_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
@@ -923,11 +939,45 @@
 
 </div>
 {% endif %}
-{% if 'drive_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
-<a href="{% url 'drive_list' %}">
-    <i class="fas fa-folder" style="margin-right: 5px;"></i>
-    IMC Drive
-</a>
+
+<!-- Vehicle Management - Standalone Main Menu for Regular Users with Submenu -->
+{% if 'fuel_management' in allowed_menus or 'vehicle_list' in allowed_menus or 'fuel_monitoring' in allowed_menus %}
+<div class="mainmenu" onclick="toggleVehicleMenu()">
+    <span>
+        <i class="fas fa-car"></i>
+        <span>Vehicle Management</span>
+    </span>
+</div>
+
+<div id="vehicle-menu" class="submenu">
+    {% if 'vehicle_list' in allowed_menus %}
+    <a href="{% url 'vehicle_list' %}">
+        <i class="fas fa-list-alt"></i> Vehicle Master
+    </a>
+    {% endif %}
+    
+    {% if 'fuel_management' in allowed_menus %}
+    <a href="{% url 'fuel_management' %}">
+        <i class="fas fa-gas-pump"></i> Fuel Management
+    </a>
+    {% endif %}
+    
+    {% if 'fuel_monitoring' in allowed_menus %}
+    <a href="{% url 'fuel_monitoring' %}">
+        <i class="fas fa-chart-line"></i> Vehicle Ledger
+    </a>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- IMC Drive - Standalone Main Menu for Regular Users -->
+{% if 'drive_list' in allowed_menus %}
+<div class="information_center">
+    <a href="{% url 'drive_list' %}">
+        <i class="fas fa-folder"></i>
+        <span>IMC Drive</span>
+    </a>
+</div>
 {% endif %}
 
 
@@ -1191,6 +1241,10 @@
             toggleMenu('master-menu');
         }
 
+        function toggleVehicleMenu() {
+            toggleMenu('vehicle-menu');
+        }
+
         function toggleMenu(menuId) {
             const menu = document.getElementById(menuId);
             if (menu.style.display === 'block') {
@@ -1244,8 +1298,6 @@
                 }
             }
         });
-
-
 
         
 function toggleDebtersMenu() {
