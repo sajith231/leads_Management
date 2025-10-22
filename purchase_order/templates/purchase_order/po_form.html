@@ -1,0 +1,1483 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ action }} Purchase Order{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+    <div class="page-header">
+        <h1 class="page-title">{{ action }} Purchase Order</h1>
+        <a href="{% url 'purchase_order:po_list' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to List
+        </a>
+    </div>
+
+    <div class="form-container">
+        <form method="POST" id="poForm">
+            {% csrf_token %}
+
+            <!-- PO Header Section -->
+            <div class="form-section">
+                <h3 class="section-title">
+                    <i class="fas fa-file-invoice"></i> Purchase Order Information
+                </h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="po_number">PO Number</label>
+                        <input 
+                            type="text" 
+                            id="po_number" 
+                            name="po_number" 
+                            value="{{ po.po_number|default:auto_po_number }}"
+                            readonly
+                            class="form-control"
+                            style="background: #f8f9fa; font-weight: 600;"
+                        >
+                        <small class="help-text">Auto-generated</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="po_date">PO Date <span class="required">*</span></label>
+                        <input 
+                            type="date" 
+                            id="po_date" 
+                            name="po_date" 
+                            value="{{ po.po_date|date:'Y-m-d'|default:today }}"
+                            required
+                            class="form-control"
+                        >
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="department">Buyer Department <span class="required">*</span></label>
+                        <select id="department" name="department" required class="form-control" onchange="loadDepartmentInfo()">
+                            <option value="">Select Department</option>
+                            {% for d in departments %}
+                            <option value="{{ d.id }}" 
+                                data-address="{{ d.address|escapejs }}"
+                                data-city="{{ d.city|escapejs }}"
+                                data-state="{{ d.state|escapejs }}"
+                                data-pincode="{{ d.pincode|escapejs }}"
+                                data-gst="{{ d.gst_number|escapejs }}"
+                                {% if po.department.id == d.id %}selected{% endif %}>
+                                {{ d.name }} - {{ d.city }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="reference_number">Reference Number</label>
+                        <input 
+                            type="text" 
+                            id="reference_number" 
+                            name="reference_number" 
+                            value="{{ po.reference_number|default:'' }}"
+                            class="form-control"
+                            placeholder="Quotation/Reference"
+                        >
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="supplier">Supplier <span class="required">*</span></label>
+                        <select id="supplier" name="supplier" required class="form-control">
+                            <option value="">Select Supplier</option>
+                            {% for s in suppliers %}
+                            <option value="{{ s.id }}" 
+                                {% if po.supplier.id == s.id %}selected{% endif %}>
+                                {{ s.name }} - {{ s.city }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="delivery_date">Delivery Date <span class="required">*</span></label>
+                        <input 
+                            type="date" 
+                            id="delivery_date" 
+                            name="delivery_date" 
+                            value="{{ po.delivery_date|date:'Y-m-d'|default:'' }}"
+                            required
+                            class="form-control"
+                        >
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="payment_terms">Payment Terms <span class="required">*</span></label>
+                        <select id="payment_terms" name="payment_terms" required class="form-control">
+                            {% for value, label in payment_terms %}
+                            <option value="{{ value }}" {% if po.payment_terms == value %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="status">Status <span class="required">*</span></label>
+                        <select id="status" name="status" required class="form-control">
+                            {% for value, label in status_choices %}
+                            <option value="{{ value }}" {% if po.status == value %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <!-- ✅ REPLACE THE ENTIRE ADMIN STATUS ROW WITH THIS -->
+                <div class="form-row">
+                    {% if is_superuser %}
+                    <!-- Superadmin: Can change admin status -->
+                    <div class="form-group">
+                        <label for="admin_status">
+                            <i class=""></i> Admin Approval Status <span class="required">*</span>
+                        </label>
+                        <select id="admin_status" name="admin_status" required class="form-control">
+                            {% for value, label in admin_status_choices %}
+                            <option value="{{ value }}" 
+                                {% if po.admin_status == value %}selected{% elif not po and value == 'PENDING' %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Rejection Reason (shows when REJECTED is selected) -->
+                    <div class="form-group" id="rejectionReasonGroup" style="display: none;">
+                        <label for="rejection_reason">
+                            <i class="fas fa-exclamation-triangle"></i> Rejection Reason
+                        </label>
+                        <textarea 
+                            id="rejection_reason" 
+                            name="rejection_reason" 
+                            class="form-control"
+                            rows="3"
+                            placeholder="Enter reason for rejection..."
+                        >{{ po.admin_rejection_reason|default:'' }}</textarea>
+                        <small class="help-text">
+                            <i class="fas fa-info-circle"></i>
+                            Required when rejecting a purchase order
+                        </small>
+                    </div>
+                    {% else %}
+                    <!-- Non-Superadmin: Read-only display -->
+                    <div class="form-group">
+                        <label>
+                            <i class=""></i> Admin Approval Status
+                        </label>
+                        <div class="readonly-status-display">
+                            <span class="status-badge admin-status-{{ po.admin_status|lower|default:'pending' }}">
+                                {% if po %}
+                                    {{ po.get_admin_status_display }}
+                                {% else %}
+                                    Pending
+                                {% endif %}
+                            </span>
+                        </div>
+                        <small class="help-text">
+                            <i class="fas fa-lock"></i>
+                            Only superadmin can change approval status
+                        </small>
+                        <!-- Hidden input to preserve value on submit -->
+                        <input type="hidden" name="admin_status" value="{{ po.admin_status|default:'PENDING' }}">
+                    </div>
+
+                    <!-- Show rejection reason if rejected -->
+                    {% if po.admin_status == 'REJECTED' and po.admin_rejection_reason %}
+                    <div class="form-group">
+                        <label>
+                            <i class="fas fa-exclamation-triangle"></i> Rejection Reason
+                        </label>
+                        <div class="readonly-rejection-reason">
+                            {{ po.admin_rejection_reason }}
+                        </div>
+                    </div>
+                    {% else %}
+                    <!-- Empty div for grid alignment -->
+                    <div class="form-group"></div>
+                    {% endif %}
+                    {% endif %}
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group full-width">
+                        <label for="client_search_input">Client Details <span class="required">*</span></label>
+                        
+                        <!-- Custom Searchable Dropdown Container -->
+                        <div class="searchable-dropdown">
+                            <!-- Search Input (visible) -->
+                            <input 
+                                type="text" 
+                                id="client_search_input"
+                                class="form-control searchable-input"
+                                placeholder="Type to search or click to select..."
+                                autocomplete="off"
+                                onclick="toggleClientDropdown()"
+                                oninput="filterClients(this.value)"
+                            >
+                            
+                            <!-- Hidden input to store selected client name for form submission -->
+                            <input 
+                                type="hidden" 
+                                id="client_details" 
+                                name="client_details"
+                                required
+                            >
+                            
+                            <!-- Dropdown icon -->
+                            <span class="dropdown-arrow" onclick="toggleClientDropdown()">
+                                <i class="fas fa-chevron-down"></i>
+                            </span>
+                            
+                            <!-- Dropdown list (hidden by default) -->
+                            <div id="client_dropdown_list" class="dropdown-list" style="display: none;">
+                                <div class="dropdown-item" data-value="">-- Select Client --</div>
+                            </div>
+                        </div>
+                        
+                        <small class="help-text" id="clientLoadingText" style="color: #3498db; display: none;">
+                            <i class="fas fa-spinner fa-spin"></i> Loading clients...
+                        </small>
+                        <small class="help-text" id="clientErrorText" style="color: #e74c3c; display: none;"></small>
+                        <small class="help-text" id="clientSelectedText" style="color: #27ae60; display: none;">
+                            <i class="fas fa-check-circle"></i> <span id="selectedClientName"></span>
+                        </small>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group full-width">
+                        <label for="notes">Notes</label>
+                        <input 
+                            type="text" 
+                            id="notes" 
+                            name="notes" 
+                            value="{{ po.notes|default:'' }}"
+                            class="form-control"
+                            placeholder="Additional notes"
+                        >
+                    </div>
+                </div>
+            </div>
+
+            <!-- Line Items Section -->
+            <div class="form-section">
+                <div class="section-header">
+                    <h3 class="section-title">
+                        <i class="fas fa-list"></i> Order Items
+                    </h3>
+                    <button type="button" class="btn btn-success" onclick="addItemRow()">
+                        <i class="fas fa-plus"></i> Add Item
+                    </button>
+                </div>
+
+                <div class="table-wrapper">
+                    <table class="line-items-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 25%;">Item</th>
+                                <th style="width: 10%;">Qty</th>
+                                <th style="width: 12%;">Unit Price</th>
+                                <th style="width: 10%;">Discount</th>
+                                <th style="width: 10%;">Tax %</th>
+                                <th style="width: 15%;">Entry Total</th>
+                                <th style="width: 8%;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="itemsTableBody">
+                            {% if po.po_items.all %}
+                                {% for po_item in po.po_items.all %}
+                                <tr id="row_{{ forloop.counter }}">
+                                    <td>
+                                        <select name="item_id[]" class="item-select" onchange="updateItemPrice(this, {{ forloop.counter }})" required>
+                                            <option value="">Select Item</option>
+                                            {% for item in items %}
+                                            <option value="{{ item.id }}" 
+                                                data-price="{{ item.purchase_price }}"
+                                                data-tax="{{ item.tax_percentage }}"
+                                                data-unit="{{ item.unit_of_measure }}"
+                                                {% if po_item.item.id == item.id %}selected{% endif %}>
+                                                {{ item.name }} ({{ item.unit_of_measure }})
+                                            </option>
+                                            {% endfor %}
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <input type="number" name="quantity[]" class="quantity" step="1" min="1" 
+                                            value="{{ po_item.quantity|floatformat:0 }}" onchange="calculateLineTotal({{ forloop.counter }})" required>
+                                    </td>
+                                    <td>
+                                        <input type="number" name="unit_price[]" class="unit-price readonly-field" step="0.01" min="0" 
+                                            value="{{ po_item.unit_price }}" onchange="calculateLineTotal({{ forloop.counter }})" 
+                                            readonly required
+                                            title="Price is auto-filled from Item Master">
+                                    </td>
+                                    <td>
+                                        <input type="number" name="discount[]" class="discount" step="0.01" min="0" 
+                                            value="{{ po_item.discount }}" onchange="calculateLineTotal({{ forloop.counter }})">
+                                    </td>
+                                    <td>
+                                        <input type="number" name="tax_percent[]" class="tax-percent readonly-field" step="0.01" min="0" max="100" 
+                                            value="{{ po_item.tax_percent }}" onchange="calculateLineTotal({{ forloop.counter }})" 
+                                            readonly
+                                            title="Tax rate is auto-filled from Item Master">
+                                    </td>
+                                    <td>
+                                        <input type="text" class="line-total" value="₹{{ po_item.line_total }}" readonly>
+                                    </td>
+                                    <td>
+                                        <button type="button" class="btn-remove" onclick="removeRow({{ forloop.counter }})">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="items-help">
+                    <i class="fas fa-info-circle"></i>
+                    <span>Add multiple items to this purchase order. Prices and tax will be auto-filled from item master.</span>
+                </div>
+            </div>
+
+            <!-- Totals Section -->
+            <div class="totals-section">
+                <div class="totals-container">
+                    <div class="total-row">
+                        <span class="total-label">Subtotal:</span>
+                        <span class="total-value" id="subtotalDisplay">₹0.00</span>
+                    </div>
+                    <div class="total-row">
+                        <span class="total-label">Total Tax:</span>
+                        <span class="total-value" id="taxDisplay">₹0.00</span>
+                    </div>
+                    <div class="total-row grand-total">
+                        <span class="total-label">Grand Total:</span>
+                        <span class="total-value" id="grandTotalDisplay">₹0.00</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submit Buttons -->
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="fas fa-save"></i> {{ action }} Purchase Order
+                </button>
+                <a href="{% url 'purchase_order:po_list' %}" class="btn btn-secondary btn-lg">
+                    <i class="fas fa-times"></i> Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.content-wrapper {
+    padding: 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.page-title {
+    font-size: 28px;
+    font-weight: 600;
+    color: #2c3e50;
+    margin: 0;
+}
+
+.btn {
+    padding: 10px 20px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-primary {
+    background: #3498db;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #2980b9;
+}
+
+.btn-secondary {
+    background: #95a5a6;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #7f8c8d;
+}
+
+.btn-success {
+    background: #27ae60;
+    color: white;
+}
+
+.btn-success:hover {
+    background: #229954;
+}
+
+.btn-lg {
+    padding: 12px 30px;
+    font-size: 16px;
+}
+
+.form-container {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    padding: 30px;
+}
+
+.form-section {
+    margin-bottom: 30px;
+    padding-bottom: 30px;
+    border-bottom: 2px solid #ecf0f1;
+}
+
+.form-section:last-of-type {
+    border-bottom: none;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.section-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #2c3e50;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.section-title i {
+    color: #3498db;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.form-row:last-child {
+    margin-bottom: 0;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group.full-width {
+    grid-column: 1 / -1;
+}
+
+label {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+
+.required {
+    color: #e74c3c;
+}
+
+.form-control {
+    padding: 12px 15px;
+    border: 2px solid #e9ecef;
+    border-radius: 6px;
+    font-size: 15px;
+    transition: all 0.3s ease;
+    font-family: inherit;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+select.form-control {
+    cursor: pointer;
+}
+
+textarea.form-control {
+    resize: vertical;
+    min-height: 80px;
+}
+
+.help-text {
+    font-size: 12px;
+    color: #7f8c8d;
+    margin-top: 5px;
+}
+
+.table-wrapper {
+    overflow-x: auto;
+    margin-bottom: 15px;
+}
+
+.line-items-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.line-items-table thead {
+    background: #34495e;
+    color: white;
+}
+
+.line-items-table th {
+    padding: 12px 10px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 13px;
+    text-transform: uppercase;
+}
+
+.line-items-table td {
+    padding: 10px;
+    border-bottom: 1px solid #ecf0f1;
+}
+
+.line-items-table tbody tr:hover {
+    background: #f8f9fa;
+}
+
+.line-items-table input,
+.line-items-table select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 13px;
+}
+
+.line-items-table input:focus,
+.line-items-table select:focus {
+    outline: none;
+    border-color: #3498db;
+}
+
+.line-items-table input[readonly] {
+    background: #f8f9fa;
+    font-weight: 600;
+    color: #27ae60;
+}
+
+/* Column-specific alignments */
+.line-items-table th:nth-child(1),
+.line-items-table td:nth-child(1) {
+    text-align: left;
+}
+
+.line-items-table th:nth-child(2),
+.line-items-table th:nth-child(3),
+.line-items-table th:nth-child(4),
+.line-items-table th:nth-child(5),
+.line-items-table th:nth-child(6) {
+    text-align: right;
+}
+
+.line-items-table td:nth-child(2) input,
+.line-items-table td:nth-child(3) input,
+.line-items-table td:nth-child(4) input,
+.line-items-table td:nth-child(5) input,
+.line-items-table td:nth-child(6) input {
+    text-align: right;
+}
+
+.line-items-table th:nth-child(7),
+.line-items-table td:nth-child(7) {
+    text-align: center;
+}
+
+.btn-remove {
+    background: #e74c3c;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: background 0.3s;
+}
+
+.btn-remove:hover {
+    background: #c0392b;
+}
+
+.items-help {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    background: #e3f2fd;
+    border-left: 4px solid #2196f3;
+    border-radius: 4px;
+    font-size: 14px;
+    color: #1976d2;
+}
+
+.totals-section {
+    background: linear-gradient(135deg, #E3F2FD 100%);
+    border-radius: 8px;
+    padding: 25px;
+    margin-bottom: 30px;
+}
+
+.totals-container {
+    max-width: 400px;
+    margin-left: auto;
+}
+
+.total-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0;
+    font-size: 16px;
+    color: black;
+}
+
+.total-row.grand-total {
+    border-top: 2px solid rgba(255, 255, 255, 0.37);
+    margin-top: 10px;
+    padding-top: 15px;
+    font-size: 18px;
+}
+
+.total-label {
+    font-weight: 600;
+}
+
+.total-value {
+    font-weight: 700;
+}
+
+.grand-total .total-value {
+    font-size: 22px;
+}
+
+.form-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: flex-start;
+    padding-top: 20px;
+}
+
+@media (max-width: 768px) {
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+    
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .btn-lg {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* Client Details Styling */
+#client_select {
+    cursor: pointer;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 20px;
+    padding-right: 35px;
+}
+
+#client_select:disabled {
+    background-color: #f0f0f0;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+#clientLoadingText,
+#clientErrorText {
+    display: block;
+    margin-top: 8px;
+    font-size: 13px;
+}
+
+/* Enhanced Client Dropdown Styling */
+.client-dropdown-item {
+    padding: 5px 0;
+}
+
+.client-name {
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 14px;
+    margin-bottom: 4px;
+}
+
+.client-location {
+    font-size: 12px;
+    color: #7f8c8d;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.client-location i {
+    font-size: 11px;
+    color: #3498db;
+}
+
+/* Highlight matching search terms */
+.dropdown-item:hover .client-name {
+    color: #3498db;
+}
+
+.dropdown-item.selected {
+    background: #e3f2fd !important;
+    border-left: 3px solid #3498db;
+}
+
+.dropdown-item.selected .client-name {
+    color: #1976d2;
+    font-weight: 700;
+}
+
+/* No results styling */
+.dropdown-item.no-results {
+    pointer-events: none;
+}
+
+.dropdown-item.no-results:hover {
+    background: white;
+}
+
+/* Loading skeleton */
+.client-dropdown-loading {
+    padding: 15px;
+    text-align: center;
+    color: #7f8c8d;
+}
+
+.client-dropdown-loading i {
+    font-size: 24px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.retry-btn {
+    background: #e74c3c;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 8px;
+    font-size: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: background 0.3s;
+}
+
+.retry-btn:hover {
+    background: #c0392b;
+}
+
+.retry-btn i {
+    font-size: 11px;
+}
+
+/* Searchable Dropdown Styles */
+.searchable-dropdown {
+    position: relative;
+    width: 100%;
+}
+
+.searchable-input {
+    padding-right: 40px !important;
+    cursor: text;
+}
+
+.dropdown-arrow {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #7f8c8d;
+    pointer-events: auto;
+    z-index: 2;
+    padding: 5px;
+}
+
+.dropdown-arrow:hover {
+    color: #3498db;
+}
+
+.dropdown-list {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    max-height: 300px;
+    overflow-y: auto;
+    background: white;
+    border: 2px solid #3498db;
+    border-top: none;
+    border-radius: 0 0 6px 6px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 1000;
+    margin-top: -2px;
+}
+
+.dropdown-item {
+    padding: 12px 15px;
+    cursor: pointer;
+    transition: background 0.2s;
+    font-size: 14px;
+    color: #2c3e50;
+}
+
+.dropdown-item:hover {
+    background: #ecf0f1;
+}
+
+.dropdown-item.selected {
+    background: #3498db;
+    color: white;
+}
+
+.dropdown-item.hidden {
+    display: none;
+}
+
+.dropdown-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.dropdown-list::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.dropdown-list::-webkit-scrollbar-thumb {
+    background: #3498db;
+    border-radius: 4px;
+}
+
+.dropdown-list::-webkit-scrollbar-thumb:hover {
+    background: #2980b9;
+}
+
+/* Loading state for searchable input */
+.searchable-input:disabled {
+    background-color: #f0f0f0;
+    cursor: not-allowed;
+}
+
+/* Readonly Status Display (Non-Superadmin) */
+.readonly-status-display {
+    padding: 12px 15px;
+    background: #f8f9fa;
+    border: 2px solid #e9ecef;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+}
+
+.readonly-rejection-reason {
+    padding: 12px 15px;
+    background: #fff3cd;
+    border: 2px solid #ffc107;
+    border-radius: 6px;
+    color: #856404;
+    font-style: italic;
+    white-space: pre-wrap;
+}
+
+/* Rejection Reason Textarea */
+#rejection_reason {
+    resize: vertical;
+    min-height: 80px;
+}
+
+/* Admin Status Badges in Form */
+.form-control[readonly] {
+    background-color: #e9ecef;
+    cursor: not-allowed;
+}
+
+</style>
+
+<script>
+// Items data from Django
+const items = [
+    {% for item in items %}
+    {
+        id: {{ item.id }},
+        name: "{{ item.name|escapejs }}",
+        unit: "{{ item.unit_of_measure|escapejs }}",
+        price: {{ item.purchase_price }},
+        tax: {{ item.tax_percentage }}
+    }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+];
+
+let rowCounter = {% if po.po_items.all %}{{ po.po_items.count }}{% else %}0{% endif %};
+let allClients = []; // Store all clients globally
+let dropdownVisible = false;
+
+// Get pre-filled value for edit mode
+const PREFILLED_CLIENT = "{{ po.client_details|escapejs|default:'' }}"; 
+
+// ==================== INITIALIZATION ====================
+
+document.addEventListener('DOMContentLoaded', function() {
+    {% if action == 'Create' %}
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('po_date').value = today;
+    
+    // Add first row automatically for new PO
+    if (rowCounter === 0) {
+        addItemRow();
+    }
+    {% endif %}
+    
+    const deptSelect = document.getElementById('department');
+    if (deptSelect.value) {
+        loadDepartmentInfo();
+    }
+    
+    // ✅ Load clients from API on page load
+    loadClientsFromAPI();
+    
+    // Calculate totals on page load (for edit mode)
+    updateTotals();
+});
+
+// ==================== CLIENT API FUNCTIONS ====================
+
+/**
+ * Fetch clients from Django API proxy endpoint
+ */
+function loadClientsFromAPI() {
+    const searchInput = document.getElementById('client_search_input');
+    const loadingText = document.getElementById('clientLoadingText');
+    const errorText = document.getElementById('clientErrorText');
+    
+    // Show loading state
+    loadingText.style.display = 'block';
+    searchInput.disabled = true;
+    searchInput.placeholder = 'Loading clients...';
+    errorText.style.display = 'none';
+    
+    const apiUrl = '/po/api/clients/';
+    
+    console.log('🔄 Fetching clients from:', apiUrl);
+    
+    fetch(apiUrl)
+        .then(response => {
+            console.log('📡 Response status:', response.status);
+            if (!response.ok) {
+                throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('📦 Received data:', data);
+            
+            // Clear loading state
+            loadingText.style.display = 'none';
+            searchInput.disabled = false;
+            searchInput.placeholder = 'Type to search or click to select...';
+            
+            // Handle different API response formats
+            let clients = [];
+            if (Array.isArray(data)) {
+                clients = data;
+            } else if (data.results && Array.isArray(data.results)) {
+                clients = data.results;
+            } else if (data.data && Array.isArray(data.data)) {
+                clients = data.data;
+            } else {
+                console.warn('⚠️ Unexpected API format:', data);
+                throw new Error('Unexpected API response format');
+            }
+            
+            if (clients.length === 0) {
+                console.warn('⚠️ No clients returned from API');
+                errorText.innerHTML = '⚠️ No clients found in the system';
+                errorText.style.display = 'block';
+                return;
+            }
+            
+            // Store clients globally
+            allClients = clients;
+            
+            // Populate dropdown
+            populateClientDropdown(allClients);
+            
+            console.log(`✅ Successfully loaded ${allClients.length} clients`);
+            
+            // If editing, pre-select the client
+            if (PREFILLED_CLIENT) {
+                console.log('🔍 Pre-filling client:', PREFILLED_CLIENT);
+                
+                // Find matching client from loaded data
+                const matchingClient = allClients.find(c => 
+                    c.display_name === PREFILLED_CLIENT || 
+                    c.name === PREFILLED_CLIENT
+                );
+                
+                if (matchingClient) {
+                    selectClient(matchingClient.display_name, matchingClient.name);
+                } else {
+                    // Fallback: just set the value
+                    document.getElementById('client_search_input').value = PREFILLED_CLIENT;
+                    document.getElementById('client_details').value = PREFILLED_CLIENT;
+                }
+            }
+        })
+        .catch(error => {
+            console.error('❌ Error loading clients:', error);
+            searchInput.disabled = false;
+            searchInput.placeholder = 'Error loading clients';
+            loadingText.style.display = 'none';
+            
+            errorText.innerHTML = `
+                ❌ Error: ${error.message}<br>
+                <button type="button" onclick="retryLoadClients()" class="retry-btn">
+                    <i class="fas fa-redo"></i> Retry
+                </button>
+            `;
+            errorText.style.display = 'block';
+        });
+}
+
+/**
+ * Populate the dropdown list with clients (with place/city)
+ */
+function populateClientDropdown(clients) {
+    const dropdownList = document.getElementById('client_dropdown_list');
+    dropdownList.innerHTML = '';
+    
+    clients.forEach(client => {
+        const item = document.createElement('div');
+        item.className = 'dropdown-item';
+        
+        // ✅ USE DISPLAY NAME (includes place/city)
+        const displayName = client.display_name || client.name;
+        const originalName = client.name;
+        
+        // Create styled dropdown item with location info
+        item.innerHTML = `
+            <div class="client-dropdown-item">
+                <div class="client-name">${originalName}</div>
+                ${client.place || client.city ? `
+                    <div class="client-location">
+                        <i class="fas fa-map-marker-alt"></i> 
+                        ${client.place || client.city}
+                        ${client.state && (client.place || client.city) !== client.state ? ', ' + client.state : ''}
+                    </div>
+                ` : ''}
+            </div>
+        `;
+        
+        // Store both display name and original name
+        item.setAttribute('data-value', displayName);
+        item.setAttribute('data-original-name', originalName);
+        item.setAttribute('data-id', client.id || '');
+        item.setAttribute('data-place', client.place || '');
+        item.setAttribute('data-city', client.city || '');
+        item.setAttribute('data-state', client.state || '');
+        
+        item.onclick = function() {
+            selectClient(displayName, originalName);
+        };
+        
+        dropdownList.appendChild(item);
+    });
+}
+
+/**
+ * Filter clients based on search input (searches name AND place)
+ */
+function filterClients(searchTerm) {
+    const dropdownList = document.getElementById('client_dropdown_list');
+    const items = dropdownList.getElementsByClassName('dropdown-item');
+    
+    // Show dropdown when typing
+    if (!dropdownVisible) {
+        dropdownList.style.display = 'block';
+        dropdownVisible = true;
+    }
+    
+    const searchLower = searchTerm.toLowerCase();
+    let visibleCount = 0;
+    
+    Array.from(items).forEach(item => {
+        // ✅ SEARCH: Match against both name AND place/city
+        const displayValue = item.getAttribute('data-value')?.toLowerCase() || '';
+        const originalName = item.getAttribute('data-original-name')?.toLowerCase() || '';
+        const place = item.getAttribute('data-place')?.toLowerCase() || '';
+        const city = item.getAttribute('data-city')?.toLowerCase() || '';
+        const state = item.getAttribute('data-state')?.toLowerCase() || '';
+        
+        // Match if search term found in name, place, city, or state
+        const matches = displayValue.includes(searchLower) || 
+                       originalName.includes(searchLower) ||
+                       place.includes(searchLower) ||
+                       city.includes(searchLower) ||
+                       state.includes(searchLower);
+        
+        if (matches) {
+            item.classList.remove('hidden');
+            visibleCount++;
+        } else {
+            item.classList.add('hidden');
+        }
+    });
+    
+    // Show "No results" if nothing matches
+    if (visibleCount === 0 && searchTerm.length > 0) {
+        dropdownList.innerHTML = `
+            <div class="dropdown-item no-results" style="text-align: center; padding: 20px; color: #7f8c8d; cursor: default;">
+                <i class="fas fa-search" style="font-size: 32px; opacity: 0.3; margin-bottom: 10px;"></i>
+                <p>No clients found matching "${searchTerm}"</p>
+            </div>
+        `;
+    } else if (visibleCount === 0 && searchTerm.length === 0) {
+        // Repopulate if search cleared
+        populateClientDropdown(allClients);
+    }
+}
+
+/**
+ * Select a client from the dropdown
+ */
+function selectClient(displayName, originalName) {
+    const searchInput = document.getElementById('client_search_input');
+    const hiddenInput = document.getElementById('client_details');
+    const dropdownList = document.getElementById('client_dropdown_list');
+    const selectedText = document.getElementById('clientSelectedText');
+    const selectedNameSpan = document.getElementById('selectedClientName');
+    
+    // ✅ SHOW: Display name with place in search box (visual)
+    searchInput.value = displayName;
+    
+    // ✅ STORE: Display name in hidden input (for database - includes place)
+    hiddenInput.value = displayName;
+    
+    // Close dropdown
+    dropdownList.style.display = 'none';
+    dropdownVisible = false;
+    
+    // Show success message
+    if (selectedText && selectedNameSpan) {
+        selectedNameSpan.textContent = displayName;
+        selectedText.style.display = 'block';
+        
+        setTimeout(() => {
+            selectedText.style.display = 'none';
+        }, 3000);
+    }
+    
+    // Highlight selected item
+    const items = dropdownList.getElementsByClassName('dropdown-item');
+    Array.from(items).forEach(item => {
+        if (item.getAttribute('data-value') === displayName) {
+            item.classList.add('selected');
+        } else {
+            item.classList.remove('selected');
+        }
+    });
+    
+    console.log('✅ Selected client:', displayName);
+}
+
+/**
+ * Toggle dropdown visibility
+ */
+function toggleClientDropdown() {
+    const dropdownList = document.getElementById('client_dropdown_list');
+    const searchInput = document.getElementById('client_search_input');
+    
+    if (dropdownVisible) {
+        dropdownList.style.display = 'none';
+        dropdownVisible = false;
+    } else {
+        dropdownList.style.display = 'block';
+        dropdownVisible = true;
+        searchInput.focus();
+    }
+}
+
+/**
+ * Retry loading clients
+ */
+function retryLoadClients() {
+    const errorText = document.getElementById('clientErrorText');
+    errorText.style.display = 'none';
+    loadClientsFromAPI();
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(event) {
+    const dropdown = document.querySelector('.searchable-dropdown');
+    const dropdownList = document.getElementById('client_dropdown_list');
+    
+    if (dropdown && !dropdown.contains(event.target)) {
+        dropdownList.style.display = 'none';
+        dropdownVisible = false;
+    }
+});
+
+// ==================== DEPARTMENT FUNCTIONS ====================
+
+function loadDepartmentInfo() {
+    const deptSelect = document.getElementById('department');
+    const selectedOption = deptSelect.options[deptSelect.selectedIndex];
+    
+    if (selectedOption.value) {
+        const address = selectedOption.getAttribute('data-address') || '';
+        const city = selectedOption.getAttribute('data-city') || '';
+        const state = selectedOption.getAttribute('data-state') || '';
+        const pincode = selectedOption.getAttribute('data-pincode') || '';
+        
+        console.log('📍 Department selected:', {
+            name: selectedOption.text,
+            address: address,
+            city: city,
+            state: state,
+            pincode: pincode
+        });
+    }
+}
+
+// ==================== LINE ITEM FUNCTIONS ====================
+
+function addItemRow() {
+    rowCounter++;
+    const tbody = document.getElementById('itemsTableBody');
+    const row = document.createElement('tr');
+    row.id = `row_${rowCounter}`;
+    
+    row.innerHTML = `
+        <td>
+            <select name="item_id[]" class="item-select" onchange="updateItemPrice(this, ${rowCounter})" required>
+                <option value="">Select Item</option>
+                ${items.map(item => `<option value="${item.id}" data-price="${item.price}" data-tax="${item.tax}" data-unit="${item.unit}">${item.name} (${item.unit})</option>`).join('')}
+            </select>
+        </td>
+        <td>
+            <input type="number" name="quantity[]" class="quantity" step="1" min="0" value="1" onchange="calculateLineTotal(${rowCounter})" required>
+        </td>
+        <td>
+            <input type="number" name="unit_price[]" class="unit-price readonly-field" step="0.01" min="0" value="0" 
+                onchange="calculateLineTotal(${rowCounter})" readonly required 
+                title="Select an item to auto-fill price">
+        </td>
+        <td>
+            <input type="number" name="discount[]" class="discount" step="0.01" min="0" value="0" onchange="calculateLineTotal(${rowCounter})">
+        </td>
+        <td>
+            <input type="number" name="tax_percent[]" class="tax-percent readonly-field" step="0.01" min="0" max="100" value="0" 
+                onchange="calculateLineTotal(${rowCounter})" readonly 
+                title="Select an item to auto-fill tax rate">
+        </td>
+        <td>
+            <input type="text" class="line-total" value="₹0.00" readonly>
+        </td>
+        <td>
+            <button type="button" class="btn-remove" onclick="removeRow(${rowCounter})">
+                <i class="fas fa-trash"></i>
+            </button>
+        </td>
+    `;
+    
+    tbody.appendChild(row);
+}
+
+function updateItemPrice(selectElement, rowId) {
+    const selectedOption = selectElement.options[selectElement.selectedIndex];
+    const price = selectedOption.getAttribute('data-price') || 0;
+    const tax = selectedOption.getAttribute('data-tax') || 18;
+    
+    const row = document.getElementById(`row_${rowId}`);
+    const priceInput = row.querySelector('.unit-price');
+    const taxInput = row.querySelector('.tax-percent');
+    
+    priceInput.value = parseFloat(price).toFixed(2);
+    taxInput.value = parseFloat(tax).toFixed(2);
+    
+    // ✅ Ensure readonly attribute is set
+    priceInput.setAttribute('readonly', true);
+    taxInput.setAttribute('readonly', true);
+    
+    // Add visual feedback
+    priceInput.classList.add('readonly-field');
+    taxInput.classList.add('readonly-field');
+    
+    // Update tooltips
+    priceInput.title = `Price from Item Master: ₹${parseFloat(price).toFixed(2)}`;
+    taxInput.title = `Tax rate from Item Master: ${parseFloat(tax).toFixed(2)}%`;
+    
+    calculateLineTotal(rowId);
+}
+
+function calculateLineTotal(rowId) {
+    const row = document.getElementById(`row_${rowId}`);
+    if (!row) return;
+
+    const qty = parseFloat(row.querySelector('.quantity').value) || 0;
+    const price = parseFloat(row.querySelector('.unit-price').value) || 0;
+    const discount = parseFloat(row.querySelector('.discount').value) || 0;
+    const taxPercent = parseFloat(row.querySelector('.tax-percent').value) || 0;
+
+    const subtotal = (qty * price) - discount;
+    const taxAmount = subtotal * (taxPercent / 100);
+    const lineTotal = subtotal + taxAmount;
+
+    row.querySelector('.line-total').value = `₹${lineTotal.toFixed(2)}`;
+    
+    updateTotals();
+}
+
+function updateTotals() {
+    let subtotal = 0;
+    let taxTotal = 0;
+
+    const rows = document.querySelectorAll('#itemsTableBody tr');
+    rows.forEach(row => {
+        const qty = parseFloat(row.querySelector('.quantity').value) || 0;
+        const price = parseFloat(row.querySelector('.unit-price').value) || 0;
+        const discount = parseFloat(row.querySelector('.discount').value) || 0;
+        const taxPercent = parseFloat(row.querySelector('.tax-percent').value) || 0;
+
+        const rowSubtotal = (qty * price) - discount;
+        const rowTax = rowSubtotal * (taxPercent / 100);
+
+        subtotal += rowSubtotal;
+        taxTotal += rowTax;
+    });
+
+    const grandTotal = subtotal + taxTotal;
+
+    document.getElementById('subtotalDisplay').textContent = `₹${subtotal.toFixed(2)}`;
+    document.getElementById('taxDisplay').textContent = `₹${taxTotal.toFixed(2)}`;
+    document.getElementById('grandTotalDisplay').textContent = `₹${grandTotal.toFixed(2)}`;
+}
+
+function removeRow(rowId) {
+    const row = document.getElementById(`row_${rowId}`);
+    if (row) {
+        row.remove();
+        updateTotals();
+    }
+}
+
+// ==================== FORM VALIDATION ====================
+
+document.getElementById('poForm').addEventListener('submit', function(e) {
+    const rows = document.querySelectorAll('#itemsTableBody tr');
+    if (rows.length === 0) {
+        e.preventDefault();
+        alert('Please add at least one item to the purchase order!');
+        return false;
+    }
+
+    // Check if all items are selected
+    let allItemsSelected = true;
+    rows.forEach(row => {
+        const itemSelect = row.querySelector('.item-select');
+        if (!itemSelect.value) {
+            allItemsSelected = false;
+        }
+    });
+
+    if (!allItemsSelected) {
+        e.preventDefault();
+        alert('Please select an item for all rows!');
+        return false;
+    }
+    
+    // Check if client is selected
+    const clientDetails = document.getElementById('client_details');
+    if (!clientDetails.value) {
+        e.preventDefault();
+        alert('Please select a client!');
+        document.getElementById('client_search_input').focus();
+        return false;
+    }
+});
+
+// Delivery date validation
+document.getElementById('delivery_date').addEventListener('change', function() {
+    const poDate = document.getElementById('po_date').value;
+    const deliveryDate = this.value;
+    
+    if (poDate && deliveryDate) {
+        if (new Date(deliveryDate) < new Date(poDate)) {
+            alert('Delivery date cannot be before PO date');
+            this.value = '';
+        }
+    }
+});
+</script>
+{% endblock %}
+
