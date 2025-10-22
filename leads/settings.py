@@ -59,10 +59,13 @@ INSTALLED_APPS = [
     'flutter',
     'app5',
     'sim_card',
+    'my_drive',
     'fuel_management',
     'django.contrib.humanize',
     "wfh_Request",
     "punchout_reminder",
+    "image_capture",
+    'software_master',
     'purchase_order'
     
 ]
@@ -145,6 +148,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'leading_management',
         'USER': 'postgres',
+        'PASSWORD': 'sajith@2003',
         'PASSWORD': '12345',
         'HOST': 'localhost',
         'PORT': '5432',
@@ -219,4 +223,5 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 
-
+DATA_UPLOAD_MAX_MEMORY_SIZE = 52428800  
+FILE_UPLOAD_MAX_MEMORY_SIZE = 52428800 

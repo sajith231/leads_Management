@@ -778,28 +778,26 @@
 
 <!-- Add this script section to your standby_item_issued.html template -->
 <script>
-    // Convert Django data to JavaScript - UPDATED
-    const standbyItems = [
-        {% for item in available_items %}
-        {
-            id: {{ item.id }},
-            name: "{{ item.name|escapejs }}",
-            serial_number: "{{ item.serial_number|escapejs }}",
-            stock: {{ item.stock }},
-            status: "{{ item.status }}",
-            status_display: "{{ item.get_status_display|escapejs }}",
-            images: [
-                {% for image in item.images.all %}
-                {
-                    url: "{{ image.image.url }}",
-                    description: "{{ image.description|escapejs }}"
-                }{% if not forloop.last %},{% endif %}
-                {% endfor %}
-            ]
-        }{% if not forloop.last %},{% endif %}
-        {% endfor %}
-    ];
-
+  const standbyItems = [
+    {% for item in available_items %}
+    {
+        id: {{ item.id }},
+        name: "{{ item.name|escapejs }}",
+        serial_number: "{{ item.serial_number|escapejs }}",
+        stock: {{ item.stock }},
+        status: "{{ item.status }}",
+        status_display: "{{ item.get_status_display|escapejs }}",
+        images: [
+            {% for img in item.images.all %}
+            {
+                url: "{{ img.image.url }}",
+                description: "{{ img.description|escapejs }}"
+            }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ]
+    }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+];
     let selectedItem = null;
     let filteredItems = [...standbyItems]; // Create a copy of the original array
 

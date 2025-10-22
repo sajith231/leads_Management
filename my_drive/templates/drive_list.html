@@ -1,0 +1,338 @@
+{% extends "base.html" %}
+{% block content %}
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<style>
+ .drive-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+  font-family: 'Inter', sans-serif;
+  font-weight: bold;
+}
+
+
+
+  h1 {
+    font-size: 28px;
+    font-weight: 600;
+    color: #111827;
+    margin-bottom: 24px;
+  }
+
+  .header-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+  }
+
+  .add-btn {
+    background: #2563eb;
+    border: none;
+    color: white;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: background 0.2s;
+  }
+  .add-btn:hover { background: #1d4ed8; }
+
+  table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    background: white;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #e5e7eb;
+  }
+
+  th, td {
+    padding: 16px 20px;
+    text-align: left;
+    font-size: 14px;
+  }
+
+  th {
+    background: linear-gradient(135deg, #2563eb 0%, #0a2f94 100%);
+    color: white;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    border-bottom: 2px solid #1e40af;
+  }
+
+  td {
+    border-bottom: 1px solid #f3f4f6;
+    color: #374151;
+    background: white;
+    transition: all 0.2s ease;
+  }
+
+  tbody tr:nth-child(even) td { background: #f9fafb; }
+  tbody tr:hover td {
+    background: white;
+    transform: scale(1.01);
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.15);
+  }
+
+  th:first-child, td:first-child,
+  th:nth-child(4), td:nth-child(4),
+  th:nth-child(5), td:nth-child(5),
+  th:nth-child(6), td:nth-child(6) { text-align: center; }
+
+  .action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    text-decoration: none;
+    color: white;
+    transition: all 0.2s;
+    margin: 0 4px;
+  }
+
+  .edit-btn { background: #10b981; }
+  .edit-btn:hover { background: #059669; }
+  .delete-btn { background: #ef4444; }
+  .delete-btn:hover { background: #dc2626; }
+
+  .file-link {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    background: #eff6ff;
+    text-decoration: none;
+    font-size: 20px;
+    transition: background 0.2s;
+  }
+  .file-link:hover { background: #dbeafe; }
+
+  .badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 10px;
+    background: #ef4444;
+    color: #fff;
+    font-size: 11px;
+    line-height: 20px;
+    text-align: center;
+    font-weight: 600;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: #6b7280;
+  }
+ /* Make all table text bold */
+table, th, td {
+  font-weight: 700 !important;
+}
+
+
+</style>
+
+<div class="header-section"
+     style="
+       display:flex;
+       justify-content:space-between;
+       align-items:center;
+       margin-bottom:20px;
+       flex-wrap:wrap;
+     ">
+
+  <!-- Title -->
+  <h1 style="margin:0;">IMC Drive</h1>
+
+  <!-- Centered Search and Add Button -->
+  <div style="
+       display:flex;
+       align-items:center;
+       justify-content:center;
+       flex:1;
+       gap:160px;
+       max-width:650px;
+       margin:10px auto 0 auto;
+     ">
+
+    <!-- 🔍 Search Form -->
+    <form method="get" action="{% url 'drive_list' %}"
+          style="display:flex; align-items:center; gap:8px;">
+      <input type="text"
+             name="q"
+             placeholder="Search folders..."
+             value="{{ query }}"
+             style="
+               padding:8px 14px;
+               border:1px solid #cbd5e1;
+               border-radius:8px;
+               font-size:14px;
+               width:240px;
+               transition:border-color .2s, box-shadow .2s;
+             "
+             onfocus="this.style.borderColor='#3f8efc'; this.style.boxShadow='0 0 0 3px rgba(63,142,252,0.2)'"
+             onblur="this.style.borderColor='#cbd5e1'; this.style.boxShadow='none'">
+
+      <button type="submit"
+              style="
+                background:#3f8efc;
+                color:#fff;
+                border:none;
+                padding:8px 12px;
+                border-radius:8px;
+                cursor:pointer;
+                font-weight:500;
+                display:flex;
+                align-items:center;
+                justify-content:center;
+                transition:background .2s;">
+        <i class="fa-solid fa-magnifying-glass"></i>
+      </button>
+
+      {% if query %}
+      <a href="{% url 'drive_list' %}"
+         style="
+           background:#f3f4f6;
+           color:#374151;
+           padding:8px 12px;
+           border-radius:8px;
+           font-weight:500;
+           text-decoration:none;
+           transition:background .2s;
+         "
+         onmouseover="this.style.background='#e5e7eb'"
+         onmouseout="this.style.background='#f3f4f6'">
+        Clear
+      </a>
+      {% endif %}
+    </form>
+
+    <!-- ➕ Add New Button -->
+    <a href="{% url 'drive_add' %}" style="text-decoration:none; color:inherit;">
+      <button class="add-btn"
+              style="
+                background:linear-gradient(135deg, #0b57c3, #0b3882);
+                color:#fff;
+                border:none;
+                padding:9px 16px;
+                border-radius:8px;
+                font-weight:600;
+                box-shadow:0 3px 10px rgba(63,142,252,0.2); 
+                cursor:pointer;
+                display:flex;
+                align-items:center;
+                gap:15px;
+                transition:background .2s, transform .1s;
+              ">
+        <i class="fa-solid fa-plus"></i> Add New
+      </button>
+    </a>
+  </div>
+</div>
+
+<!-- 🔹 Pagination Section -->
+{% if paginator.num_pages > 1 %}
+  <div style="display:flex; justify-content:center; align-items:center; margin-bottom:25px; gap:14px;">
+    {% if page_obj.has_previous %}
+      <a href="?{% if query %}q={{ query|urlencode }}&{% endif %}page={{ page_obj.previous_page_number }}"
+         style="text-decoration:none; color:#2563eb; padding:8px 12px; border-radius:6px; border:1px solid #e6eefb;">
+        Previous
+      </a>
+    {% else %}
+      <span style="padding:8px 12px; color:#94a3b8; border-radius:6px; border:1px solid #f1f5f9;">Previous</span>
+    {% endif %}
+
+    <span style="padding:8px 12px; border-radius:6px; background:#f8fafc; border:1px solid #e6eefb; font-weight:600;">
+      Page {{ page_obj.number }} of {{ paginator.num_pages }}
+    </span>
+
+    {% if page_obj.has_next %}
+      <a href="?{% if query %}q={{ query|urlencode }}&{% endif %}page={{ page_obj.next_page_number }}"
+         style="text-decoration:none; color:#2563eb; padding:8px 12px; border-radius:6px; border:1px solid #e6eefb;">
+        Next
+      </a>
+    {% else %}
+      <span style="padding:8px 12px; color:#94a3b8; border-radius:6px; border:1px solid #f1f5f9;">Next</span>
+    {% endif %}
+  </div>
+{% endif %}
+
+<table>
+  <thead>
+    <tr>
+      <th>No.</th>
+      <th>Date</th>
+      <th>Folder Name</th>
+      <th>Files</th>
+      <th>Edit</th>
+      <th>Delete</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for folder in folders %}
+    <tr>
+      <td>{{ forloop.counter }}</td>
+      <td>{{ folder.created_at|date:"M d, Y" }}</td>
+      <td><strong>{{ folder.name }}</strong></td>
+
+      <td>
+        <a class="file-link" href="{% url 'drive_detail' folder.id %}" title="Open folder">
+          📁
+          <span class="badge">{{ folder.files.count }}</span>
+        </a>
+      </td>
+      <td>
+        <a href="{% url 'drive_edit' folder.id %}" class="action-btn edit-btn" title="Edit">
+          <i class="fa-solid fa-pen-to-square"></i>
+        </a>
+      </td>
+      <td>
+        <a href="{% url 'drive_delete' folder.id %}" 
+           class="action-btn delete-btn"
+           onclick="return handleFolderDelete({{ folder.files.count }}, {{ folder.subfolders.count }});"
+           title="Delete folder">
+          <i class="fa-solid fa-trash"></i>
+        </a>
+      </td>
+    </tr>
+    {% empty %}
+    <tr>
+      <td colspan="6" class="empty-state">No folders created yet.</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<script>
+  function handleFolderDelete(fileCount, subfolderCount) {
+    if (subfolderCount > 0) {
+      alert("🚫 This folder cannot be deleted because it contains subfolders.\n\nPlease remove any subfolders first.");
+      return false;
+    }
+    if (fileCount > 0) {
+      alert("🚫 This folder cannot be deleted because it contains files.\n\nPlease remove all files first.");
+      return false;
+    }
+    return confirm("Are you sure you want to delete this empty folder?");
+  }
+</script>
+
+{% endblock %}

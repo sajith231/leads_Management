@@ -159,17 +159,17 @@ button:disabled {
       <div class="error" id="serial-error">Serial number already exists!</div>
     </div>
 
-    <!-- Notes -->
+    <!-- Notes (Only original notes without return history) -->
     <div class="form-group">
       <label for="notes">Notes</label>
-      <textarea id="notes" name="notes" placeholder="Enter any notes about this item...">{{ item.notes|default_if_none:"" }}</textarea>
+      <textarea id="notes" name="notes" placeholder="Enter any notes about this item...">{{ original_notes|default_if_none:"" }}</textarea>
     </div>
 
-    <!-- Existing Images -->
+    <!-- Existing Images (Only original images) -->
     <div class="form-group">
       <label>Existing Images</label>
       <div class="existing-images">
-        {% for img in item.images.all %}
+        {% for img in original_images %}
         <div class="image-container" id="img-{{ img.id }}">
           <img src="{{ img.image.url }}" alt="Existing Image" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0zMCAzMEw3MCA3ME0zMCA3MEw3MCAzMCIgc3Ryb2tlPSIjOUNBNEE4IiBzdHJva2Utd2lkdGg9IjIiLz4KPC9zdmc+'">
           <button type="button" class="remove-btn" onclick="markForDeletion('{{ img.id }}')" title="Delete this image">&times;</button>
@@ -193,6 +193,40 @@ button:disabled {
       <input type="number" id="stock" name="stock" value="{{ item.stock }}" min="0" required>
     </div>
 
+    <!-- Status -->
+    <div class="form-group">
+      <label for="status">Status</label>
+      <select id="status" name="status" class="form-control" onchange="toggleCustomerFields()">
+        <option value="in_stock" {% if item.status == 'in_stock' %}selected{% endif %}>In Stock</option>
+        <option value="with_customer" {% if item.status == 'with_customer' %}selected{% endif %}>With Customer</option>
+        <option value="damaged" {% if item.status == 'damaged' %}selected{% endif %}>Damaged</option>
+        <option value="disposed" {% if item.status == 'disposed' %}selected{% endif %}>Disposed</option>
+      </select>
+    </div>
+
+    <!-- Customer Fields (Only show when status is 'with_customer') -->
+    <div id="customer-fields" style="display: {% if item.status == 'with_customer' %}block{% else %}none{% endif %};">
+      <div class="form-group">
+        <label for="customer_name">Customer Name</label>
+        <input type="text" id="customer_name" name="customer_name" value="{{ item.customer_name|default_if_none:'' }}" placeholder="Enter customer name">
+      </div>
+
+      <div class="form-group">
+        <label for="customer_place">Customer Place</label>
+        <input type="text" id="customer_place" name="customer_place" value="{{ item.customer_place|default_if_none:'' }}" placeholder="Enter customer place">
+      </div>
+
+      <div class="form-group">
+        <label for="customer_phone">Customer Phone</label>
+        <input type="text" id="customer_phone" name="customer_phone" value="{{ item.customer_phone|default_if_none:'' }}" placeholder="Enter customer phone">
+      </div>
+
+      <div class="form-group">
+        <label for="issued_date">Issued Date</label>
+        <input type="date" id="issued_date" name="issued_date" value="{{ item.issued_date|date:'Y-m-d' }}">
+      </div>
+    </div>
+
     <input type="hidden" id="deleteImages" name="delete_images" value="">
 
     <div class="button-container">
@@ -211,6 +245,22 @@ document.getElementById('itemname').addEventListener('input', function() {
 document.getElementById('serialnumber').addEventListener('input', function() {
   this.value = this.value.toUpperCase();
 });
+
+// ✅ Toggle Customer Fields based on Status
+function toggleCustomerFields() {
+  const status = document.getElementById('status').value;
+  const customerFields = document.getElementById('customer-fields');
+  
+  if (status === 'with_customer') {
+    customerFields.style.display = 'block';
+    // Make customer name required when with customer
+    document.getElementById('customer_name').required = true;
+  } else {
+    customerFields.style.display = 'none';
+    // Remove required when not with customer
+    document.getElementById('customer_name').required = false;
+  }
+}
 
 // ✅ Handle Adding Multiple Images in Single Browse
 const input = document.getElementById('images');
@@ -326,6 +376,8 @@ document.querySelector('form').addEventListener('submit', function(e) {
   const itemName = document.getElementById('itemname').value.trim();
   const serialNumber = document.getElementById('serialnumber').value.trim();
   const stock = document.getElementById('stock').value;
+  const status = document.getElementById('status').value;
+  const customerName = document.getElementById('customer_name').value.trim();
   
   if (!itemName) {
     alert('Please enter an item name');
@@ -345,9 +397,20 @@ document.querySelector('form').addEventListener('submit', function(e) {
     return;
   }
   
+  if (status === 'with_customer' && !customerName) {
+    alert('Please enter customer name when status is "With Customer"');
+    e.preventDefault();
+    return;
+  }
+  
   // Show loading state
   submitBtn.disabled = true;
   submitBtn.textContent = 'Updating...';
+});
+
+// Initialize customer fields on page load
+document.addEventListener('DOMContentLoaded', function() {
+  toggleCustomerFields();
 });
 
 console.log('Edit StandBy Item Form Loaded Successfully! ✏️');

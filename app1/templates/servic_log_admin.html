@@ -133,13 +133,38 @@
                     <td>{{ log.get_complaint_type_display }}</td>
                     <td>
     {% for complaint_log in log.servicelogcomplaint_set.all %}
-        <div class="complaint-item mb-2 p-2 border-start border-3 border-info">
-            <strong>{{ complaint_log.complaint.description }}</strong>
-            {% if complaint_log.note %}
-                <div class="text-muted small mt-1">
-                    <em>Note: {{ complaint_log.note }}</em>
+        <div class="complaint-item mb-2 p-2 border-start border-3 border-info d-flex flex-column">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <strong>{{ complaint_log.complaint.description }}</strong>
+                    {% if complaint_log.note %}
+                        <div class="text-muted small mt-1"><em>Note: {{ complaint_log.note }}</em></div>
+                    {% endif %}
                 </div>
-            {% endif %}
+
+                <div class="text-end assignment-info">
+                    {# Assigned person badge or 'Unassigned' #}
+                    {% if complaint_log.assigned_person %}
+                        <span class="badge bg-info text-dark assigned-person" title="{{ complaint_log.assigned_person.name }}">
+                            {{ complaint_log.assigned_person.name }}
+                        </span>
+                    {% else %}
+                        <span class="badge bg-secondary assigned-person">Unassigned</span>
+                    {% endif %}
+
+                    {# Complaint status badge #}
+                    <div class="complaint-status mt-1">
+                        <span class="badge 
+                            {% if complaint_log.status == 'Completed' %}bg-success
+                            {% elif complaint_log.status == 'In Progress' %}bg-warning text-dark
+                            {% elif complaint_log.status == 'Pending' %}bg-secondary
+                            {% else %}bg-info
+                            {% endif %}">{{ complaint_log.status }}</span>
+                    </div>
+                </div>
+            </div>
+
+            {# Images (if any) #}
             {% if complaint_log.images.all %}
                 <div class="mt-2 d-flex flex-wrap gap-2">
                     {% for img in complaint_log.images.all %}
@@ -149,34 +174,27 @@
                     {% endfor %}
                 </div>
             {% endif %}
+
+            {# Timing info (started/completed/duration) #}
+            <div class="complaint-timing mt-2 small text-muted">
+                {% if complaint_log.started_time %}
+                    Started: {{ complaint_log.started_time|date:"d-m-Y h:i A" }}<br>
+                {% endif %}
+
+                {% if complaint_log.completed_time and complaint_log.started_time %}
+                    Completed: {{ complaint_log.completed_time|date:"d-m-Y h:i A" }}<br>
+                    {# Correct timesince usage: earlier first (started_time) then later (completed_time) #}
+                    Duration: {{ complaint_log.started_time|timesince:complaint_log.completed_time }}
+                {% elif complaint_log.completed_time %}
+                    Completed: {{ complaint_log.completed_time|date:"d-m-Y h:i A" }}
+                {% endif %}
+            </div>
         </div>
     {% empty %}
         <span class="text-muted">No complaints assigned</span>
     {% endfor %}
-
-    <!-- Show remarks icon only if remarks are available -->
-    {% if log.remarks %}
-        <!-- Icon to trigger the modal -->
-        <a href="#" data-bs-toggle="modal" data-bs-target="#remarksModal{{ log.id }}">
-            <i class="fas fa-comment-dots text-info" style="display: flex;justify-content: center;"></i>
-        </a>
-
-        <!-- Modal -->
-        <div class="modal fade" id="remarksModal{{ log.id }}" tabindex="-1" aria-labelledby="remarksModalLabel{{ log.id }}" aria-hidden="true">
-          <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-              <div class="modal-header">
-                <h5 class="modal-title" id="remarksModalLabel{{ log.id }}">Remarks</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-              </div>
-              <div class="modal-body">
-                {{ log.remarks|default:"No remarks available" }}
-              </div>
-            </div>
-          </div>
-        </div>
-    {% endif %}
 </td>
+
                     <td>
                         {% for user in users %}
                             {% if user.id == log.added_by.id %}
