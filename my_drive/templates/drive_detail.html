@@ -295,6 +295,52 @@
   .btn-cancel { background: #e5e7eb; color: #111827; }
   .btn-create { background: #2563eb; color: #fff; }
   .btn-create:hover { background: #1d4ed8; }
+
+  .folder-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: 1;
+}
+
+.item-count {
+  background: #e5e7eb;
+  color: #374151;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+  min-width: 20px;
+  text-align: center;
+}
+
+.subfolder-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #fafafa;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.subfolder-item a {
+  color: #111827;
+  text-decoration: none;
+  font-weight: 600;
+  margin-right: 8px;
+}
+
+.subfolder-item button {
+  border: 0;
+  background: none;
+  cursor: pointer;
+  color: #ef4444;
+  font-size: 16px;
+  margin-left: 8px;
+}
+
+
 </style>
 
 <div class="page-wrap">
@@ -304,29 +350,36 @@
 
   <div class="main-grid">
     <!-- LEFT: Subfolders -->
-    <aside class="subfolder-panel">
-      <div class="subfolder-header">
-        <h3>Subfolders</h3>
-        <button id="openCreateSubfolder"><i class="fa-solid fa-folder"></i></button>
-      </div>
+  <aside class="subfolder-panel">
+  <div class="subfolder-header">
+    <h3>Subfolders</h3>
+    <button id="openCreateSubfolder"><i class="fa-solid fa-folder"></i></button>
+  </div>
 
-      <div class="subfolder-list">
-        {% if subfolders %}
-          {% for sub in subfolders %}
-            <div class="subfolder-item">
-              <a href="{% url 'drive_detail' sub.id %}">📁 {{ sub.name }}</a>
-              <form method="POST" action="{% url 'subfolder_delete' sub.id %}" 
-                    onsubmit="return handleSubfolderDelete({{ sub.files.count }});">
-                {% csrf_token %}
-                <button type="submit" title="Delete {{ sub.name }}">🗑️</button>
-              </form>
-            </div>
-          {% endfor %}
-        {% else %}
-          <div class="no-subfolders">No subfolders yet.<br>Create one using the button above.</div>
-        {% endif %}
+  <div class="subfolder-list">
+    {% if subfolders %}
+      {% for sub in subfolders %}
+        <div class="subfolder-item">
+          <div class="folder-content">
+            <a href="{% url 'drive_detail' sub.id %}">📁 {{ sub.name }}</a>
+            <span class="item-count">{{ sub.file_count }}</span>
+          </div>
+
+          <form method="POST" action="{% url 'subfolder_delete' sub.id %}"
+                onsubmit="return handleSubfolderDelete({{ sub.file_count }});">
+            {% csrf_token %}
+            <button type="submit" title="Delete {{ sub.name }}">🗑️</button>
+          </form>
+        </div>
+      {% endfor %}
+    {% else %}
+      <div class="no-subfolders">
+        No subfolders yet.<br>Create one using the button above.
       </div>
-    </aside>
+    {% endif %}
+  </div>
+</aside>
+
 
     <!-- RIGHT: Main Content -->
     <div>
@@ -346,6 +399,85 @@
           </div>
         </form>
       </div>
+
+
+  <!-- Small loader above the table -->
+<div id="uploadLoader" style="display:none; text-align:center; margin-bottom:12px;">
+  <div style="
+    display:inline-block;
+    width:24px;
+    height:24px;
+    border:3px solid #cbd5e1;
+    border-top-color:#2563eb;
+    border-radius:50%;
+    animation:spin 1s linear infinite;
+    vertical-align:middle;
+  "></div>
+  <span style="margin-left:8px; color:#374151; font-size:14px; font-weight:500;">
+    Uploading file...
+  </span>
+</div>
+
+
+
+<!-- Search bar above the table -->
+<div style="margin-bottom: 12px; display: flex; justify-content: flex-end; gap: 8px; align-items: center;">
+  <input
+    type="text"
+    id="fileSearch"
+    placeholder="🔍 Search files..."
+    style="
+      padding: 8px 12px;
+      border: 1px solid #0d3f8a;
+      border-radius: 8px;
+      font-size: 14px;
+      width: 260px;
+    "
+  >
+  <button
+    id="clearSearch"
+    style="
+      padding: 8px 14px;
+      background: #e5e7eb;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      color: #374151;
+      transition: 0.2s;
+    "
+  >
+    Clear
+  </button>
+</div>
+
+
+{% if paginator.num_pages > 1 %}
+  <div style="display:flex; justify-content:center; align-items:center; margin:15px 0 20px; gap:14px;">
+    {% if page_obj.has_previous %}
+      <a href="?page={{ page_obj.previous_page_number }}"
+         style="text-decoration:none; color:#2563eb; padding:8px 12px; border-radius:6px; border:1px solid #e6eefb;">
+        Previous
+      </a>
+    {% else %}
+      <span style="padding:8px 12px; color:#94a3b8; border-radius:6px; border:1px solid #f1f5f9;">Previous</span>
+    {% endif %}
+
+    <span style="padding:8px 12px; border-radius:6px; background:#f8fafc; border:1px solid #e6eefb; font-weight:600;">
+      Page {{ page_obj.number }} of {{ paginator.num_pages }}
+    </span>
+
+    {% if page_obj.has_next %}
+      <a href="?page={{ page_obj.next_page_number }}"
+         style="text-decoration:none; color:#2563eb; padding:8px 12px; border-radius:6px; border:1px solid #e6eefb;">
+        Next
+      </a>
+    {% else %}
+      <span style="padding:8px 12px; color:#94a3b8; border-radius:6px; border:1px solid #f1f5f9;">Next</span>
+    {% endif %}
+  </div>
+{% endif %}
+
 
       <div class="table-wrap">
         <table>
@@ -387,7 +519,12 @@
 
               <td class="text-center"><a class="icon-btn icon-view" href="{% url 'file_download' f.id %}"><i class="fa-solid fa-download"></i></a></td>
               <td class="text-center"><a class="icon-btn icon-view" href="{% url 'file_preview' f.id %}" target="_blank"><i class="fa-solid fa-eye"></i></a></td>
-              <td class="text-center"><a href="javascript:void(0);" class="icon-btn icon-edit" onclick="openRenameModal({{ f.id }}, '{{ f.file_name|default:f.file.name|escapejs }}')"><i class="fa-solid fa-pen-to-square"></i></a></td>
+              <td class="text-center">
+  <a href="{% url 'file_edit_page' f.id %}" class="icon-btn icon-edit" title="Edit file name">
+    <i class="fa-solid fa-pen-to-square"></i>
+  </a>
+</td>
+
               <td class="text-center"><a class="icon-btn icon-delete" href="{% url 'file_delete' f.id %}" onclick="return confirm('Delete this file?');"><i class="fa-solid fa-trash"></i></a></td>
             </tr>
             {% empty %}
@@ -416,21 +553,7 @@
   </div>
 </div>
 
-<!-- Rename (Edit) Modal -->
-<div id="renameModal">
-  <div class="modal-card">
-    <h3>Rename File</h3>
-    <p id="currentFileLabel" style="margin-bottom:8px;color:#6b7280;"></p>
-    <form id="renameForm" method="POST" action="">
-      {% csrf_token %}
-      <input type="text" id="newFileName" name="file_name" placeholder="Enter new name" required>
-      <div class="actions">
-        <button type="button" class="btn-cancel" onclick="closeRenameModal()">Cancel</button>
-        <button type="submit" class="btn-create">Save</button>
-      </div>
-    </form>
-  </div>
-</div>
+
 
 <script>
   // Subfolder modal logic
@@ -439,28 +562,7 @@
   document.getElementById('cancelCreateSubfolder').onclick = () => subModal.style.display = 'none';
   subModal.onclick = e => { if(e.target===subModal) subModal.style.display='none'; };
 
-  // Rename modal logic
-  const renameModal = document.getElementById('renameModal');
-  const renameForm = document.getElementById('renameForm');
-  const currentLabel = document.getElementById('currentFileLabel');
-  const newNameInput = document.getElementById('newFileName');
-  const FILE_EDIT_BASE = "{% url 'file_edit' 0 %}";
 
-  function openRenameModal(fileId, currentName) {
-    renameForm.action = FILE_EDIT_BASE.replace(/0\/?$/, fileId + "/");
-    currentLabel.textContent = "Current name: " + currentName;
-    newNameInput.value = currentName;
-    renameModal.style.display = 'flex';
-    setTimeout(() => newNameInput.focus(), 50);
-  }
-
-  function closeRenameModal() {
-    renameModal.style.display = 'none';
-  }
-
-  renameModal.addEventListener('click', e => {
-    if (e.target === renameModal) closeRenameModal();
-  });
 
   // Subfolder deletion logic (keeps your previous behavior)
   function handleSubfolderDelete(fileCount) {
@@ -476,6 +578,42 @@
   document.addEventListener('DOMContentLoaded', function() {
     // nothing required here for file names
   });
+
+
+
+  
+// Small inline loader logic
+document.querySelector('.upload-box').addEventListener('submit', function(e) {
+  const fileInput = document.getElementById('fileUpload');
+  if (fileInput.files.length > 0) {
+    document.getElementById('uploadLoader').style.display = 'block';
+  }
+});
+
+
+// ---- File search filter with clear button ----
+const searchInput = document.getElementById("fileSearch");
+const clearButton = document.getElementById("clearSearch");
+const rows = document.querySelectorAll("tbody tr");
+
+searchInput.addEventListener("input", function () {
+  const query = this.value.toLowerCase().trim();
+
+  rows.forEach(row => {
+    const fileNameCell = row.querySelector(".file-name");
+    if (!fileNameCell) return; // skip empty rows
+    const text = fileNameCell.textContent.toLowerCase();
+    row.style.display = text.includes(query) ? "" : "none";
+  });
+});
+
+clearButton.addEventListener("click", function () {
+  searchInput.value = "";
+  rows.forEach(row => row.style.display = "");
+  searchInput.focus();
+});
+
+
 </script>
 
 {% endblock %}

@@ -6,6 +6,10 @@ import mimetypes
 import os
 from django.http import HttpResponse
 from django.contrib import messages
+from django.db.models import Count  
+from django.contrib import messages
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+
 
 # ---------- Helpers ----------
 def _breadcrumbs(folder):
@@ -19,17 +23,54 @@ def _breadcrumbs(folder):
 
 # ---------- Folder Views ----------
 def drive_list(request):
-    folders = DriveFolder.objects.filter(parent__isnull=True)
-    return render(request, "drive_list.html", {"folders": folders})
+    query = request.GET.get("q", "").strip()
+    page_num = request.GET.get("page", 1)
 
+    folders_qs = DriveFolder.objects.filter(parent__isnull=True)
+    if query:
+        folders_qs = folders_qs.filter(name__icontains=query)
+
+    # paginate: change 10 to however many rows per page you want
+    paginator = Paginator(folders_qs, 10)
+    try:
+        page_obj = paginator.page(page_num)
+    except PageNotAnInteger:
+        page_obj = paginator.page(1)
+    except EmptyPage:
+        page_obj = paginator.page(paginator.num_pages)
+
+    return render(request, "drive_list.html", {
+        "folders": page_obj.object_list,
+        "page_obj": page_obj,
+        "paginator": paginator,
+        "query": query,
+    })
+
+
+  # (you already have this import)
 
 def drive_add(request):
     if request.method == "POST":
         folder_name = (request.POST.get("folderName") or "").strip()
+
         if folder_name:
+            # ✅ Check if a folder with this name already exists (case-insensitive)
+            if DriveFolder.objects.filter(name__iexact=folder_name, parent__isnull=True).exists():
+                messages.error(request, f'A folder named "{folder_name}" already exists. Please choose another name.')
+                # Return to same page with the folder_name preserved
+                return render(request, "drive_add.html", {"folder_name": folder_name})
+
+            # ✅ Create folder if unique
             DriveFolder.objects.create(name=folder_name)
+            messages.success(request, f'Folder "{folder_name}" created successfully!')
             return redirect("drive_list")
+
+        else:
+            # Optional — handle empty name submission (just in case)
+            messages.error(request, "Folder name cannot be empty.")
+
     return render(request, "drive_add.html")
+
 
 
 def drive_delete(request, pk):
@@ -69,8 +110,23 @@ def drive_detail(request, pk):
         )
         return redirect("drive_detail", pk=folder.pk)
 
-    subfolders = folder.subfolders.all()
-    files = folder.files.all()
+    # ✅ Annotate subfolders with file count
+    subfolders = folder.subfolders.annotate(file_count=Count("files"))
+
+    # ✅ Add pagination for files
+    from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+    files_qs = folder.files.all().order_by('-uploaded_at')  # most recent first
+
+    paginator = Paginator(files_qs, 10)  # Show 10 files per page
+    page_number = request.GET.get("page")
+
+    try:
+        page_obj = paginator.page(page_number)
+    except PageNotAnInteger:
+        page_obj = paginator.page(1)
+    except EmptyPage:
+        page_obj = paginator.page(paginator.num_pages)
+
     crumbs = _breadcrumbs(folder)
 
     template_name = "subfolder_detail.html" if folder.parent else "drive_detail.html"
@@ -81,7 +137,9 @@ def drive_detail(request, pk):
         {
             "folder": folder,
             "subfolders": subfolders,
-            "files": files,
+            "files": page_obj.object_list,  # Only files for current page
+            "page_obj": page_obj,
+            "paginator": paginator,
             "breadcrumbs": crumbs,
         },
     )
@@ -131,6 +189,18 @@ def file_edit(request, pk):
             f.save()
     return redirect("drive_detail", pk=f.folder.id)
 
+def file_edit_page(request, pk):
+    """Standalone page for renaming a file (edit_thename.html)."""
+    f = get_object_or_404(DriveFile, pk=pk)
+
+    if request.method == "POST":
+        new_name = (request.POST.get("file_name") or "").strip()
+        if new_name:
+            f.file_name = new_name
+            f.save()
+            return redirect("drive_detail", pk=f.folder.id)
+
+    return render(request, "edit_thename.html", {"file": f})
 
 def file_preview(request, pk):
     f = get_object_or_404(DriveFile, pk=pk)
