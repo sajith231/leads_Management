@@ -968,7 +968,7 @@
 {% endif %}
 
 <!-- IMC Drive - Standalone Main Menu for Regular Users -->
-{% if 'drive_list' in allowed_menus %}
+{% if 'drive_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
 <div class="information_center">
     <a href="{% url 'drive_list' %}">
         <i class="fas fa-folder"></i>
@@ -976,6 +976,7 @@
     </a>
 </div>
 {% endif %}
+
 
 
 

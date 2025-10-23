@@ -5383,12 +5383,16 @@ def configure_user_menu(request, user_id):
     ]
 },
 {
-    'name': 'My Drive',
+    'name': 'IMC Drive',
     'icon': 'fas fa-folder',
     'submenus': [
-        {'id': 'drive_list', 'name': 'My Drive', 'icon': 'fas fa-folder'}
+        {'id': 'drive_list',   'name': 'IMC Drive',    'icon': 'fas fa-folder'},
+        {'id': 'drive_add',    'name': 'Add Folder',   'icon': 'fas fa-plus-circle'},
+        {'id': 'drive_edit',   'name': 'Edit Folder',  'icon': 'fas fa-pen-to-square'},
+        {'id': 'drive_delete', 'name': 'Delete Folder','icon': 'fas fa-trash'}
     ]
 },
+
 
 {
     'name': 'SYSMAC',
