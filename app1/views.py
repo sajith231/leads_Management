@@ -5333,25 +5333,7 @@ def configure_user_menu(request, user_id):
                 },
             ]
         },   
-        {
-            'name': 'Master',
-            'icon': 'fas fa-cog',
-            'submenus': [
-                {'id': 'all_districts', 'name': 'District', 'icon': 'fas fa-map'},
-                {'id': 'all_areas', 'name': 'Area', 'icon': 'fas fa-map-marker-alt'},
-                {'id': 'all_locations', 'name': 'Location', 'icon': 'fas fa-chart-area'},
-                {'id': 'all_requirements', 'name': 'Requirements', 'icon': 'fas fa-tasks'},
-                {'id': 'all_department', 'name': 'Department', 'icon': 'fas fa-building'},
-                {'id': 'job_roles', 'name': 'Job Role', 'icon': 'fas fa-briefcase'},
-                {'id': 'business_type_list', 'name': 'Business Type', 'icon': 'fas fa-binoculars'},
-                {'id': 'job_titles', 'name': 'Job Title', 'icon': 'fas fa-search'},
-                {'id': 'all_hardwares', 'name': 'Hardware', 'icon': 'fas fa-desktop'},
-                {'id': 'all_complaints', 'name': 'Complaints', 'icon': 'fas fa-bug'},
-                {'id': 'all_branches', 'name': 'Branch', 'icon': 'fas fa-code-branch'},
-                {'id': 'users_table', 'name': 'Users', 'icon': 'fas fa-users'},
-                {'id': 'reminder_type', 'name': 'Reminder Types', 'icon': 'fas fa-bell'}
-            ]
-        },
+        
        {
     'name': 'Information Centre',
     'icon': 'fas fa-photo-video',
@@ -5423,6 +5405,44 @@ def configure_user_menu(request, user_id):
                 {'id': 'imc2_list',           'name': 'IMC',                'icon': 'fas fa-hand-holding-usd'},
                 {'id': 'sysmac_info_list',    'name': 'SYSMAC-INFO',        'icon': 'fas fa-money-check'},
                 {'id': 'dq_list',             'name': 'DQ',                 'icon': 'fas fa-credit-card'},
+            ]
+        },
+        {
+            'name': 'Company',
+            'icon': 'fas fa-building',
+            'submenus': [
+                {'id': 'all_districts', 'name': 'District', 'icon': 'fas fa-map'},
+                {'id': 'all_areas', 'name': 'Area', 'icon': 'fas fa-map-marker-alt'},
+                {'id': 'all_locations', 'name': 'Location', 'icon': 'fas fa-chart-area'},
+                {'id': 'all_branches', 'name': 'Offices\\Locations', 'icon': 'fas fa-code-branch'},
+                {'id': 'users_table', 'name': 'Users', 'icon': 'fas fa-users'},
+                {'id': 'department_list', 'name': 'Department', 'icon': 'fas fa-sitemap'},
+            ]
+        },
+
+        # ======== NEW: Business Menu ========
+        {
+            'name': 'Business',
+            'icon': 'fas fa-briefcase',
+            'submenus': [
+                {'id': 'reminder_type', 'name': 'Reminder Type', 'icon': 'fas fa-bell'},
+                {'id': 'job_titles', 'name': 'Job Title', 'icon': 'fas fa-id-card'},
+                {'id': 'all_department', 'name': 'Job Category', 'icon': 'fas fa-layer-group'},
+                {'id': 'business_type_list', 'name': 'Business Type', 'icon': 'fas fa-binoculars'},
+                {'id': 'all_requirements', 'name': 'Requirements', 'icon': 'fas fa-tasks'},
+            ]
+        },
+
+        # ======== NEW: Planet Menu (user-control representation) ========
+        {
+            'name': 'Planet (Extras)',
+            'icon': 'fas fa-globe',
+            'submenus': [
+                {'id': 'item_list', 'name': 'Item Master', 'icon': 'fas fa-boxes'},
+                {'id': 'supplier_list', 'name': 'Suppliers', 'icon': 'fas fa-truck'},
+                {'id': 'all_complaints', 'name': 'Complaints', 'icon': 'fas fa-bug'},
+                {'id': 'software_table', 'name': 'Softwares', 'icon': 'fas fa-puzzle-piece'},
+                {'id': 'all_hardwares', 'name': 'Hardware', 'icon': 'fas fa-desktop'},
             ]
         },
 
