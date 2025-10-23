@@ -67,6 +67,16 @@ urlpatterns = [
     path('warranty/tickets/<int:ticket_id>/return/', views.return_warranty_item, name='return_warranty_item'),
     path('returns/<int:return_id>/', views.return_item_detail, name='return_item_detail'),
     path('returns/<int:return_id>/delete/', views.return_item_delete, name='return_item_delete'),
+
+    path('service-billing/', views.service_billing_view, name='service_billing_view'),
+    path('get-jobcard-details/<str:ticket_no>/', views.get_jobcard_details, name='get_jobcard_details'),
+    path('service-billing/list/', views.service_billing_list, name='service_billing_list'),
+    # Add this to your urlpatterns in urls.py
+    path('service-billing/edit/<str:ticket_no>/', views.service_billing_edit, name='service_billing_edit'),
+    path('service-billing/view/<str:ticket_no>/', views.view_service_invoice, name='view_service_invoice'),
+    path('delete-service-invoice/<str:ticket_no>/', views.delete_service_invoice, name='delete_service_invoice'),
+    path('jobcard/update-status/<int:pk>/', views.update_jobcard_status, name='update_jobcard_status'),
+    path('jobcard/update-status-by-ticket/', views.update_jobcard_status_by_ticket, name='update_jobcard_status_by_ticket'),
 ]
 
 

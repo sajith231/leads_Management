@@ -63,7 +63,7 @@
         }
         .table {
             margin-bottom: 0;
-            min-width: 900px; /* Increased min-width to accommodate new column */
+            min-width: 1000px;
         }
         .table th {
             background-color: #f1f7ff;
@@ -96,6 +96,7 @@
         .status-returned { background-color: #fbe9e7; color: #d84315; }
         .status-rejected { background: #bd0214; color: #fff; }
         .status-accepted { background: #060bf4; color: #fff; }
+        .status-mixed { background: #ffc107; color: #212529; }
         
         .action-btn {
             padding: 2px 5px;
@@ -148,27 +149,27 @@
         }
 
         .back-button {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 14px;
-    background: white;
-    border-radius: 8px;
-    color: #0062cc;
-    text-decoration: none;
-    font-weight: 500;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    transition: all 0.3s;
-    margin-bottom: 12px;
-    border: none;
-    cursor: pointer;
-}
-.back-button:hover {
-    background: #0062cc;
-    color: white;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-}
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            background: white;
+            border-radius: 8px;
+            color: #0062cc;
+            text-decoration: none;
+            font-weight: 500;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+            margin-bottom: 12px;
+            border: none;
+            cursor: pointer;
+        }
+        .back-button:hover {
+            background: #0062cc;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
 
         .stat-card.accepted { border-left: 3px solid #20c997; }
 
@@ -190,7 +191,7 @@
             flex-wrap: nowrap;
         }
         .empty-state {
-            min-width: 900px; /* Increased min-width */
+            min-width: 1000px;
         }
         .filter-section {
             background-color: #f8f9fa;
@@ -262,6 +263,50 @@
             color: #6c757d;
         }
 
+        /* Item assignments styling */
+        .item-assignments {
+            max-width: 200px;
+        }
+        .item-assignment {
+            background: #f8f9fa;
+            border-radius: 4px;
+            padding: 3px 6px;
+            margin: 2px 0;
+            font-size: 0.7rem;
+        }
+        .item-assigned {
+            border-left: 3px solid #17a2b8;
+        }
+        .item-logged {
+            border-left: 3px solid #ffc107;
+        }
+        .item-name {
+            font-weight: 600;
+            color: #495057;
+        }
+        .item-technician {
+            color: #6c757d;
+            font-size: 0.65rem;
+        }
+        .item-status {
+            display: inline-block;
+            padding: 1px 4px;
+            border-radius: 8px;
+            font-size: 0.6rem;
+            font-weight: 600;
+            margin-top: 2px;
+        }
+        .no-assignments {
+            color: #6c757d;
+            font-style: italic;
+            font-size: 0.7rem;
+        }
+        .status-summary {
+            font-size: 0.65rem;
+            color: #6c757d;
+            margin-top: 4px;
+        }
+
         /* Modal for detailed notes */
         .modal-header {
             background-color: #f8f9fa;
@@ -286,24 +331,34 @@
             color: #6c757d;
             font-size: 0.9rem;
         }
+
+        /* Mixed status styling */
+        .mixed-status-info {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 4px;
+            padding: 4px 6px;
+            margin-top: 4px;
+            font-size: 0.65rem;
+            color: #856404;
+        }
     </style>
     
     <div class="container-fluid">
-    <div class="mb-2">
-       <div>
-    <button class="back-button" onclick="goBack()">
-        <i class="fas fa-arrow-left"></i> Back
-    </button>
-</div>
-    </div>
-
-    <div class="dashboard-header">
-        <div class="d-flex justify-content-between align-items-center">
-            <h2 class="h5 mb-0"><i class="fas fa-tasks me-1"></i> Job Card Assignment</h2>
+        <div class="mb-2">
+            <div>
+                <button class="back-button" onclick="goBack()">
+                    <i class="fas fa-arrow-left"></i> Back
+                </button>
+            </div>
         </div>
-        <p class="mb-0 mt-1 small">Manage and track all job card assignments to technicians</p>
-    </div>
 
+        <div class="dashboard-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2 class="h5 mb-0"><i class="fas fa-tasks me-1"></i> Job Card Assignment</h2>
+            </div>
+            <p class="mb-0 mt-1 small">Manage and track all job card assignments to technicians</p>
+        </div>
 
         <!-- Statistics Cards -->
         <div class="stats-container">
@@ -343,14 +398,15 @@
                 <div class="col-md-4">
                     <label for="statusFilterDropdown" class="filter-label mb-0">Filter by Status:</label>
                     <select class="form-select form-select-sm d-inline-block w-auto ms-2" id="statusFilterDropdown">
-    <option value="all">All Jobs</option>
-    <option value="logged">Logged</option>
-    <option value="sent_technician">Sent To Technician</option>
-    <option value="accepted">In Technician Hand</option>  <!-- Changed from 'In Progress' -->
-    <option value="completed">Completed</option>
-    <option value="returned">Returned</option>
-    <option value="rejected">Rejected</option>
-</select>
+                        <option value="all">All Jobs</option>
+                        <option value="logged">Logged</option>
+                        <option value="sent_technician">Sent To Technician</option>
+                        <option value="accepted">In Technician Hand</option>
+                        <option value="completed">Completed</option>
+                        <option value="returned">Returned</option>
+                        <option value="rejected">Rejected</option>
+                        <option value="mixed">Mixed Status</option>
+                    </select>
                 </div>
                 <div class="col-md-8">
                     <div class="input-group input-group-sm">
@@ -369,25 +425,83 @@
                             <th>Ticket No</th>
                             <th>Customer</th>
                             <th>Technician</th>
+                            <th>Assigned Items</th>
                             <th>Assigned Date & Time</th>
                             <th>Status</th>
-                            
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody id="jobcardsTableBody">
                         {% for jobcard in jobcards %}
-                        <tr class="jobcard-row" data-status="{{ jobcard.status }}">
+                        <tr class="jobcard-row" 
+    data-status="{{ jobcard.status }}" 
+    data-has-logged="{{ jobcard.has_logged_items|yesno:'true,false' }}" 
+    data-has-assigned="{{ jobcard.has_assigned_items|yesno:'true,false' }}"
+    data-has-sent-technician="{{ jobcard.has_sent_to_technician_items|yesno:'true,false' }}">
                             <td><strong>{{ jobcard.ticket_no }}</strong></td>
                             <td>{{ jobcard.customer }}</td>
                             
                             <td>
-    {% if jobcard.technician %}
-        <span class="technician-info">{{ jobcard.technician }}</span>
-    {% else %}
-        <span class="text-muted">Not assigned</span>
-    {% endif %}
-</td>
+                                {% if jobcard.technician %}
+                                    <span class="technician-info">{{ jobcard.technician }}</span>
+                                {% else %}
+                                    <span class="text-muted">Not assigned</span>
+                                {% endif %}
+                            </td>
+                            
+                            <!-- Assigned Items Column -->
+                            <td class="item-assignments">
+                                {% if jobcard.per_item_assignments %}
+                                    {% for assignment in jobcard.per_item_assignments %}
+                                        <div class="item-assignment item-assigned">
+                                            <div class="item-name">{{ assignment.item }}</div>
+                                            <div class="item-technician">→ {{ assignment.technician }}</div>
+                                            <div class="item-status status-badge status-{{ assignment.status }}">
+                                                {% if assignment.status == 'logged' %}Logged
+                                                {% elif assignment.status == 'sent_technician' %}Sent To Technician
+                                                {% elif assignment.status == 'accepted' %}In Technician Hand
+                                                {% elif assignment.status == 'completed' %}Completed
+                                                {% elif assignment.status == 'returned' %}Returned
+                                                {% elif assignment.status == 'rejected' %}Rejected
+                                                {% else %}{{ assignment.status|title }}
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                {% endif %}
+                                
+                                <!-- Show logged items that are not assigned -->
+                                {% if jobcard.items_data %}
+                                    {% for item in jobcard.items_data %}
+                                        {% if not item.technician and item.status == 'logged' or not item.status %}
+                                            <div class="item-assignment item-logged">
+                                                <div class="item-name">{{ item.item }}</div>
+                                                <div class="item-technician" style="color: #dc3545;">→ Not assigned</div>
+                                                <div class="item-status status-badge status-logged">
+                                                    Logged
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endif %}
+                                
+                                {% if not jobcard.per_item_assignments and not jobcard.has_logged_items %}
+                                    <span class="no-assignments">No items to assign</span>
+                                {% endif %}
+                                
+                                <!-- Status summary -->
+                                {% if jobcard.items_data %}
+                                    {% with total_items=jobcard.items_data|length %}
+                                    {% with assigned_items=jobcard.per_item_assignments|length %}
+                                    {% with logged_items=jobcard.has_logged_items %}
+                                        <div class="status-summary">
+                                            {{ assigned_items }}/{{ total_items }} items assigned
+                                        </div>
+                                    {% endwith %}
+                                    {% endwith %}
+                                    {% endwith %}
+                                {% endif %}
+                            </td>
                             
                             <!-- Assigned Date & Time Column -->
                             <td class="date-cell">
@@ -400,20 +514,46 @@
                             </td>
                             
                             <td>
-    <span class="status-badge status-{{ jobcard.status }}">
-        {% if jobcard.status == 'logged' %}Logged
-        {% elif jobcard.status == 'sent_technician' %}Sent To Technician
-        {% elif jobcard.status == 'accepted' %}In Technician Hand  <!-- Changed from 'In Progress' -->
-        {% elif jobcard.status == 'completed' %}Completed
-        {% elif jobcard.status == 'returned' %}Returned
-        {% elif jobcard.status == 'rejected' %}Rejected
-        {% else %}{{ jobcard.get_status_display }}
-        {% endif %}
-    </span>
+    {% if jobcard.has_logged_items and jobcard.has_assigned_items %}
+        <span class="status-badge status-mixed">
+            Mixed Status
+        </span>
+        <div class="mixed-status-info">
+            <i class="fas fa-info-circle"></i>
+            Some items still need assignment
+        </div>
+    {% elif jobcard.has_sent_to_technician_items %}
+        <span class="status-badge status-sent_technician">
+            Sent To Technician
+        </span>
+        <div class="mixed-status-info">
+            <i class="fas fa-info-circle"></i>
+            {{ jobcard.sent_to_technician_count }} item(s) assigned to technicians
+        </div>
+    {% elif jobcard.has_logged_items %}
+        <span class="status-badge status-logged">
+            Logged
+        </span>
+        <div class="mixed-status-info">
+            <i class="fas fa-info-circle"></i>
+            {{ jobcard.logged_items_count }} item(s) waiting for assignment
+        </div>
+    {% else %}
+        <span class="status-badge status-{{ jobcard.status }}">
+            {% if jobcard.status == 'logged' %}Logged
+            {% elif jobcard.status == 'sent_technician' %}Sent To Technician
+            {% elif jobcard.status == 'accepted' %}In Technician Hand
+            {% elif jobcard.status == 'completed' %}Completed
+            {% elif jobcard.status == 'returned' %}Returned
+            {% elif jobcard.status == 'rejected' %}Rejected
+            {% else %}{{ jobcard.get_status_display }}
+            {% endif %}
+        </span>
+    {% endif %}
 </td>
                             <td>
                                 <div class="btn-group">
-                                    {% if jobcard.status == 'logged' %}
+                                    {% if jobcard.has_logged_items %}
                                     <a href="{% url 'app5:assign_new_job' %}?ticket={{ jobcard.ticket_no }}" 
                                        class="btn btn-sm btn-assign action-btn" title="Assign">
                                         <i class="fas fa-user-plus"></i>
@@ -434,7 +574,7 @@
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="7" class="text-center py-3 empty-state"> <!-- Updated colspan to 7 -->
+                            <td colspan="7" class="text-center py-3 empty-state">
                                 <i class="fas fa-inbox fa-lg text-muted mb-1"></i>
                                 <p class="text-muted small mb-0">No job cards found</p>
                             </td>
@@ -471,21 +611,17 @@
         </div>
     </div>
 
-    
-
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        
-document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById('statusFilterDropdown').value = 'logged';  // ✅ select "Logged"
-    filterByStatus('logged');  // ✅ filter rows
-});
-
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set default filter to show logged items
+            document.getElementById('statusFilterDropdown').value = 'logged';
+            filterByStatus('logged');
+        });
 
         function goBack() {
-    window.history.back();
-}
-
+            window.history.back();
+        }
 
         // Status dropdown functionality
         document.getElementById('statusFilterDropdown').addEventListener('change', function() {
@@ -494,41 +630,68 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         function filterByStatus(status) {
-    const rows = document.querySelectorAll('.jobcard-row');
-    
-    rows.forEach(row => {
-        if (status === 'all') {
-            row.style.display = '';
-        } else {
-            if (row.dataset.status === status) {
-                row.style.display = '';
+            const rows = document.querySelectorAll('.jobcard-row');
+            let visibleCount = 0;
+            
+            rows.forEach(row => {
+                if (status === 'all') {
+                    row.style.display = '';
+                    visibleCount++;
+                } else if (status === 'mixed') {
+                    // Show rows with mixed status (both logged and assigned items)
+                    const hasLogged = row.getAttribute('data-has-logged') === 'true';
+                    const hasAssigned = row.getAttribute('data-has-assigned') === 'true';
+                    if (hasLogged && hasAssigned) {
+                        row.style.display = '';
+                        visibleCount++;
+                    } else {
+                        row.style.display = 'none';
+                    }
+                } else {
+                    const rowStatus = row.getAttribute('data-status');
+                    const hasLogged = row.getAttribute('data-has-logged') === 'true';
+                    
+                    if (status === 'logged') {
+                        // Show rows that have logged items
+                        if (hasLogged) {
+                            row.style.display = '';
+                            visibleCount++;
+                        } else {
+                            row.style.display = 'none';
+                        }
+                    } else if (rowStatus === status) {
+                        row.style.display = '';
+                        visibleCount++;
+                    } else {
+                        row.style.display = 'none';
+                    }
+                }
+            });
+            
+            // Show message if no rows are visible
+            const visibleRows = Array.from(rows).filter(row => row.style.display !== 'none');
+            if (visibleRows.length === 0) {
+                if (!document.querySelector('.no-results-message')) {
+                    const emptyRow = document.createElement('tr');
+                    emptyRow.className = 'no-results-message';
+                    emptyRow.innerHTML = `
+                        <td colspan="7" class="text-center py-3">
+                            <i class="fas fa-search fa-lg text-muted mb-1"></i>
+                            <p class="text-muted small mb-0">No job cards found with the selected status</p>
+                        </td>
+                    `;
+                    document.getElementById('jobcardsTableBody').appendChild(emptyRow);
+                }
             } else {
-                row.style.display = 'none';
+                const emptyMessage = document.querySelector('.no-results-message');
+                if (emptyMessage) {
+                    emptyMessage.remove();
+                }
             }
+            
+            // Update search results info
+            updateSearchResultsInfo(visibleCount, rows.length, status);
         }
-    });
-    
-    // Show message if no rows are visible
-    const visibleRows = Array.from(rows).filter(row => row.style.display !== 'none');
-    if (visibleRows.length === 0) {
-        if (!document.querySelector('.no-results-message')) {
-            const emptyRow = document.createElement('tr');
-            emptyRow.className = 'no-results-message';
-            emptyRow.innerHTML = `
-                <td colspan="7" class="text-center py-3">
-                    <i class="fas fa-search fa-lg text-muted mb-1"></i>
-                    <p class="text-muted small mb-0">No job cards found with the selected status</p>
-                </td>
-            `;
-            document.getElementById('jobcardsTableBody').appendChild(emptyRow);
-        }
-    } else {
-        const emptyMessage = document.querySelector('.no-results-message');
-        if (emptyMessage) {
-            emptyMessage.remove();
-        }
-    }
-}
 
         // Search functionality
         document.getElementById('searchInput').addEventListener('input', function() {
@@ -552,7 +715,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     const emptyRow = document.createElement('tr');
                     emptyRow.className = 'no-search-results';
                     emptyRow.innerHTML = `
-                        <td colspan="7" class="text-center py-3"> <!-- Updated colspan to 7 -->
+                        <td colspan="7" class="text-center py-3">
                             <i class="fas fa-search fa-lg text-muted mb-1"></i>
                             <p class="text-muted small mb-0">No job cards match your search</p>
                         </td>
@@ -565,7 +728,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     emptyMessage.remove();
                 }
             }
+            
+            updateSearchResultsInfo(visibleCount, rows.length, 'search');
         });
+
+        function updateSearchResultsInfo(visibleCount, totalCount, filterType) {
+            // You can implement this to show search results info similar to jobcard_list.html
+            console.log(`Showing ${visibleCount} of ${totalCount} job cards (filter: ${filterType})`);
+        }
 
         // Show notes modal
         function showNotesModal(jobId, ticketNo, workDone, partsUsed, timeSpent, notes, completedAt) {
@@ -626,5 +796,15 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             return cookieValue;
         }
+
+        // Auto-refresh functionality (optional)
+        function autoRefresh() {
+            setTimeout(function() {
+                location.reload();
+            }, 30000); // Refresh every 30 seconds
+        }
+
+        // Uncomment the line below to enable auto-refresh
+        // autoRefresh();
     </script>
 {% endblock %}

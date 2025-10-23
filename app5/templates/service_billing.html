@@ -1,0 +1,545 @@
+{% extends "base.html" %}
+
+{% block title %}Service Billing{% endblock %}
+
+{% block content %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Service Billing</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0062cc;
+            --secondary: #0095ff;
+            --success: #28a745;
+            --danger: #dc3545;
+            --warning: #ffc107;
+            --info: #17a2b8;
+            --light: #f8f9fa;
+            --dark: #343a40;
+            --gray: #6c757d;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 15px;
+        }
+        
+        .page-header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .form-section {
+            background:#fbf5df;
+             border: 2px solid #8b8d0c;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            margin-bottom: 25px;
+        }
+        
+        .form-label {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 8px;btn btn-sm btn-outline-primary
+        }
+        
+        .service-item {
+            background:#f3cfea;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border: 1px solid #94097f;
+        }
+        
+        .invoice-preview {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            padding: 25px;
+            margin-top: 25px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .invoice-header {
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .invoice-table th {
+            background-color: var(--primary);
+            color: white;
+        }
+        
+        .totals-section {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border: none;
+            padding: 10px 20px;
+            font-weight: 600;
+        }
+        
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #0056b3, #007bff);
+            transform: translateY(-2px);
+        }
+        
+        .back-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 15px;
+            background: white;
+            border-radius: 8px;
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+            margin-bottom: 20px;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .back-button:hover {
+            background: var(--primary);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            
+            .invoice-preview {
+                border: none;
+                box-shadow: none;
+                padding: 0;
+            }
+            
+            .container {
+                max-width: 100%;
+                padding: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <button class="back-button no-print" onclick="goBack()">
+            <i class="fas fa-arrow-left"></i> Back
+        </button>
+        
+        <div class="page-header">
+            <div class="header-content">
+                <div>
+                    <h2 class="mb-1"><i class="fas fa-file-invoice-dollar me-2"></i> Service Billing</h2>
+                    <p class="mb-0">Generate service invoices for completed jobs - Technician: {{ current_user_name }}</p>
+                </div>
+            </div>
+        </div>
+
+        {% if not show_invoice %}
+        <div class="form-section">
+            <h4 class="mb-4"><i class="fas fa-edit me-2"></i>Billing Information</h4>
+            
+            <form id="billingForm" method="POST">
+                {% csrf_token %}
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Select Job Ticket</label>
+                        <select class="form-select" id="ticketNo" name="ticketNo" required>
+                            <option value="">Select a job ticket</option>
+                            {% for jobcard in technician_jobcards %}
+                            <option value="{{ jobcard.ticket_no }}" 
+                                    data-customer="{{ jobcard.customer }}"
+                                    data-phone="{{ jobcard.phone }}"
+                                    data-address="{{ jobcard.address }}">
+                                {{ jobcard.ticket_no }} - {{ jobcard.customer }} ({{ jobcard.status|title }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Invoice Date</label>
+                        <input type="date" class="form-control" id="date" name="date" 
+                               value="{{ today|date:'Y-m-d' }}" required>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Customer Name</label>
+                        <input type="text" class="form-control" id="customerName" name="customerName" required readonly>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Customer Contact</label>
+                        <input type="text" class="form-control" id="customerContact" name="customerContact" required readonly>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Payment Status</label>
+                        <select class="form-select" name="paymentStatus" required>
+                            <option value="pending">Pending</option>
+                            <option value="paid">Paid</option>
+                            <option value="partial">Partial Payment</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <label class="form-label">Customer Address</label>
+                        <textarea class="form-control" id="customerAddress" name="customerAddress" rows="2" readonly></textarea>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="mb-0">Service Items & Charges</h5>
+                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="addServiceItem()">
+                                <i class="fas fa-plus"></i> Add Item
+                            </button>
+                        </div>
+                        
+                        <div id="serviceItemsContainer">
+                            <!-- Service items will be added here dynamically -->
+                            <div class="service-item">
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <label class="form-label">Item Name</label>
+                                        <input type="text" class="form-control" name="itemName[]" placeholder="e.g., Laptop, Printer" required>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label">Serial No</label>
+                                        <input type="text" class="form-control" name="itemSerial[]" placeholder="Serial number">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Service Description</label>
+                                        <input type="text" class="form-control" name="serviceDescription[]" 
+                                               placeholder="e.g., Screen replacement, Software installation" required>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label">Charge (₹)</label>
+                                        <input type="number" class="form-control service-charge" name="serviceCharge[]" 
+                                               min="0" step="0.01" placeholder="0.00" required>
+                                    </div>
+                                    <div class="col-md-1">
+                                        <label class="form-label">&nbsp;</label>
+                                        <button type="button" class="btn btn-sm btn-danger w-100" onclick="removeServiceItem(this)" 
+                                                style="margin-top: 8px;">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <label class="form-label">Additional Notes</label>
+                        <textarea class="form-control" name="notes" rows="3" 
+                                  placeholder="Any additional notes or terms..."></textarea>
+                    </div>
+                </div>
+                
+                <div class="totals-section mb-4">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <strong>Subtotal: ₹<span id="subtotal">0.00</span></strong>
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Tax (10%): ₹<span id="tax">0.00</span></strong>
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Total: ₹<span id="total">0.00</span></strong>
+                        </div>
+                        <div class="col-md-3 text-end">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-file-invoice me-2"></i>Generate Invoice
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+        {% endif %}
+
+        {% if show_invoice and billing_data %}
+        <div class="invoice-preview">
+            <div class="invoice-header">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h2 class="text-primary">SERVICE INVOICE</h2>
+                        <p class="mb-1"><strong>Invoice No:</strong> INV-{{ billing_data.ticket_no }}</p>
+                        <p class="mb-1"><strong>Date:</strong> {{ billing_data.date }}</p>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <h4 class="text-primary">Your Company Name</h4>
+                        <p class="mb-1">123 Business Street</p>
+                        <p class="mb-1">City, State 12345</p>
+                        <p class="mb-1">Phone: (123) 456-7890</p>
+                        <p class="mb-0">Email: info@company.com</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <h5>Bill To:</h5>
+                    <p class="mb-1"><strong>{{ billing_data.customer_name }}</strong></p>
+                    <p class="mb-1">{{ billing_data.customer_address }}</p>
+                    <p class="mb-1">Phone: {{ billing_data.customer_contact }}</p>
+                </div>
+                <div class="col-md-6 text-end">
+                    <h5>Job Details:</h5>
+                    <p class="mb-1"><strong>Ticket No:</strong> {{ billing_data.ticket_no }}</p>
+                    <p class="mb-1"><strong>Technician:</strong> {{ billing_data.technician }}</p>
+                    <p class="mb-1"><strong>Payment Status:</strong> 
+                        <span class="badge {% if billing_data.payment_status == 'paid' %}bg-success{% else %}bg-warning{% endif %}">
+                            {{ billing_data.payment_status|title }}
+                        </span>
+                    </p>
+                </div>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="table table-bordered invoice-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Item Name</th>
+                            <th>Serial No</th>
+                            <th>Service Description</th>
+                            <th class="text-end">Amount (₹)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in billing_data.services %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ item.0 }}</td>
+                            <td>{{ item.1 }}</td>
+                            <td>{{ item.2 }}</td>
+                            <td class="text-end">{{ item.3 }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="4" class="text-end"><strong>Subtotal:</strong></td>
+                            <td class="text-end"><strong>₹{{ billing_data.subtotal|floatformat:2 }}</strong></td>
+                        </tr>
+                        <tr>
+                            <td colspan="4" class="text-end"><strong>Tax (10%):</strong></td>
+                            <td class="text-end"><strong>₹{{ billing_data.tax|floatformat:2 }}</strong></td>
+                        </tr>
+                        <tr>
+                            <td colspan="4" class="text-end"><strong>Total:</strong></td>
+                            <td class="text-end"><strong>₹{{ billing_data.total|floatformat:2 }}</strong></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+            
+            {% if billing_data.notes %}
+            <div class="mt-4">
+                <h5>Notes:</h5>
+                <p>{{ billing_data.notes }}</p>
+            </div>
+            {% endif %}
+            
+            <div class="mt-5 pt-4 border-top">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Customer Signature</strong></p>
+                        <p class="mt-5">_________________________</p>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <p><strong>Authorized Signature</strong></p>
+                        <p class="mt-5">_________________________</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-4 text-center no-print">
+                <button class="btn btn-primary me-2" onclick="window.print()">
+                    <i class="fas fa-print me-2"></i>Print Invoice
+                </button>
+                <button class="btn btn-success me-2" onclick="downloadPDF()">
+                    <i class="fas fa-download me-2"></i>Download PDF
+                </button>
+                <a href="{% url 'app5:service_billing_view' %}" class="btn btn-secondary">
+                    <i class="fas fa-plus me-2"></i>Create New Invoice
+                </a>
+            </div>
+            
+            <div class="mt-3 text-muted text-center">
+                <small>Invoice generated on {{ billing_data.generated_at }}</small>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+        // Initialize when document is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set today's date as default
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('date').value = today;
+            
+            // Add event listener for ticket selection
+            document.getElementById('ticketNo').addEventListener('change', function() {
+                const selectedOption = this.options[this.selectedIndex];
+                if (selectedOption.value) {
+                    document.getElementById('customerName').value = selectedOption.dataset.customer;
+                    document.getElementById('customerContact').value = selectedOption.dataset.phone;
+                    document.getElementById('customerAddress').value = selectedOption.dataset.address;
+                    
+                    // Load job card details to pre-fill service items
+                    loadJobcardDetails(selectedOption.value);
+                }
+            });
+            
+            // Calculate totals when service charges change
+            document.addEventListener('input', function(e) {
+                if (e.target.classList.contains('service-charge')) {
+                    calculateTotals();
+                }
+            });
+            
+            calculateTotals();
+        });
+        
+        function loadJobcardDetails(ticketNo) {
+            fetch(`/app5/get-jobcard-details/${ticketNo}/`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Clear existing service items
+                        const container = document.getElementById('serviceItemsContainer');
+                        container.innerHTML = '';
+                        
+                        // Add service items based on job card items
+                        if (data.items && data.items.length > 0) {
+                            data.items.forEach((item, index) => {
+                                addServiceItemWithData(item.name, item.serial, 'Repair and service');
+                            });
+                        } else {
+                            // Add one empty service item if no items found
+                            addServiceItem();
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading job card details:', error);
+                });
+        }
+        
+        function addServiceItem() {
+            addServiceItemWithData('', '', '');
+        }
+        
+        function addServiceItemWithData(itemName, serial, description) {
+            const container = document.getElementById('serviceItemsContainer');
+            const itemCount = container.children.length + 1;
+            
+            const serviceItem = document.createElement('div');
+            serviceItem.className = 'service-item';
+            serviceItem.innerHTML = `
+                <div class="row">
+                    <div class="col-md-3">
+                        <label class="form-label">Item Name</label>
+                        <input type="text" class="form-control" name="itemName[]" 
+                               value="${itemName}" placeholder="e.g., Laptop, Printer" required>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Serial No</label>
+                        <input type="text" class="form-control" name="itemSerial[]" 
+                               value="${serial}" placeholder="Serial number">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Service Description</label>
+                        <input type="text" class="form-control" name="serviceDescription[]" 
+                               value="${description}" placeholder="e.g., Screen replacement, Software installation" required>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Charge (₹)</label>
+                        <input type="number" class="form-control service-charge" name="serviceCharge[]" 
+                               min="0" step="0.01" placeholder="0.00" required>
+                    </div>
+                    <div class="col-md-1">
+                        <label class="form-label">&nbsp;</label>
+                        <button type="button" class="btn btn-sm btn-danger w-100" onclick="removeServiceItem(this)" 
+                                style="margin-top: 8px;">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            container.appendChild(serviceItem);
+            calculateTotals();
+        }
+        
+        function removeServiceItem(button) {
+            const serviceItem = button.closest('.service-item');
+            if (document.querySelectorAll('.service-item').length > 1) {
+                serviceItem.remove();
+                calculateTotals();
+            } else {
+                alert('At least one service item is required.');
+            }
+        }
+        
+        function calculateTotals() {
+            let subtotal = 0;
+            const chargeInputs = document.querySelectorAll('.service-charge');
+            
+            chargeInputs.forEach(input => {
+                const value = parseFloat(input.value) || 0;
+                subtotal += value;
+            });
+            
+            const tax = subtotal * 0.1; // 10% tax
+            const total = subtotal + tax;
+            
+            document.getElementById('subtotal').textContent = subtotal.toFixed(2);
+            document.getElementById('tax').textContent = tax.toFixed(2);
+            document.getElementById('total').textContent = total.toFixed(2);
+        }
+        
+        function goBack() {
+            window.history.back();
+        }
+        
+        function downloadPDF() {
+            // This would typically generate a PDF using a library like jsPDF
+            alert('PDF download functionality would be implemented here with a PDF generation library.');
+        }
+    </script>
+</body>
+</html>
+{% endblock %}

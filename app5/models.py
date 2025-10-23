@@ -400,4 +400,63 @@ class ReturnImage(models.Model):
         super().delete(*args, **kwargs)
 
 
+# Alternative normalized approach
+class ServiceBilling(models.Model):
+    PAYMENT_STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('paid', 'Paid'),
+        ('partial', 'Partial Payment'),
+    ]
+    
+    # Basic information
+    ticket_no = models.CharField(max_length=20)
+    date = models.DateField(default=timezone.now)
+    customer_name = models.CharField(max_length=100)
+    customer_contact = models.CharField(max_length=15)
+    customer_address = models.TextField()
+    technician = models.CharField(max_length=100)
+    
+    # Financial information
+    subtotal = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    tax = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    
+    # Additional information
+    payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default='pending')
+    notes = models.TextField(blank=True, null=True)
+    
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Service Billing"
+        verbose_name_plural = "Service Billings"
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"INV-{self.ticket_no} - {self.customer_name} - ₹{self.total}"
+    
+    def calculate_totals(self):
+        """Calculate subtotal, tax, and total based on service items"""
+        items = self.service_items.all()
+        self.subtotal = sum(item.charge for item in items)
+        self.tax = self.subtotal * 0.1  # 10% tax
+        self.total = self.subtotal + self.tax
+        self.save()
+
+class ServiceItem(models.Model):
+    billing = models.ForeignKey(ServiceBilling, on_delete=models.CASCADE, related_name='service_items')
+    item_name = models.CharField(max_length=100)
+    serial_no = models.CharField(max_length=50, blank=True, null=True)
+    service_description = models.TextField()
+    charge = models.DecimalField(max_digits=10, decimal_places=2)
+    
+    def __str__(self):
+        return f"{self.item_name} - ₹{self.charge}"        
+
+
+        
+
+
 

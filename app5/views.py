@@ -1,11 +1,18 @@
 # views.py (updated)
+
+# At the top of views.py, add these imports
+from .models import (
+    JobCard, JobCardImage, Item, Supplier, 
+    WarrantyTicket, WarrantyItemLog, StandbyIssuance,
+    ServiceBilling, ServiceItem  # Add these
+)
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 from app2.models import StandbyItem, StandbyImage
-
+   
 import os
 import json
 from collections import defaultdict
@@ -554,19 +561,64 @@ def update_jobcard_status(request, pk):
 from django.shortcuts import render
 from .models import JobCard
 
-def jobcard_assign_table(request):
-    # Show all jobcards
-    jobcards_list = JobCard.objects.all().order_by('-created_at')  # adjust ordering if need
-    paginator = Paginator(jobcards_list, 10)  # Show 10 jobcards per page
+# views.py - Replace the jobcard_assign_table and assign_new_job functions with these fixed versions
 
+def jobcard_assign_table(request):
+    """
+    Display list of all job cards with assignment status
+    Shows tickets that have at least one item with 'logged' status
+    """
+    # Get all jobcards ordered by creation date
+    all_jobcards = JobCard.objects.all().order_by('-created_at')
+    
+    # Process each jobcard to determine if it has logged items
+    jobcards_to_display = []
+    for jobcard in all_jobcards:
+        jobcard.per_item_assignments = []
+        jobcard.has_logged_items = False
+        jobcard.has_assigned_items = False
+        jobcard.logged_items_count = 0
+        
+        if hasattr(jobcard, 'items_data') and jobcard.items_data:
+            for item in jobcard.items_data:
+                item_status = item.get('status', 'logged')
+                technician = item.get('technician')
+                
+                # Count logged items
+                if item_status == 'logged':
+                    jobcard.has_logged_items = True
+                    jobcard.logged_items_count += 1
+                
+                # Track assigned items
+                if technician and item_status in ['sent_technician', 'accepted']:
+                    jobcard.has_assigned_items = True
+                    jobcard.per_item_assignments.append({
+                        'item': item.get('item'),
+                        'technician': technician,
+                        'status': item_status
+                    })
+        
+        # Only include jobcards that have at least one logged item
+        if jobcard.has_logged_items:
+            jobcards_to_display.append(jobcard)
+    
+    # Pagination
+    paginator = Paginator(jobcards_to_display, 10)
     page_number = request.GET.get("page")
     jobcards = paginator.get_page(page_number)
-    # Get accurate counts for each status
+    
+    # Calculate statistics
     stats = {
         "total": JobCard.objects.count(),
-        "logged": JobCard.objects.filter(status="logged").count(),
-        "accepted": JobCard.objects.filter(status="accepted").count(),  # Added this line
-        "sent_technician": JobCard.objects.filter(status="sent_technician").count(),
+        "logged": sum(1 for jc in all_jobcards if any(
+            item.get('status') == 'logged' 
+            for item in (jc.items_data or [])
+        )),
+        "accepted": JobCard.objects.filter(status="accepted").count(),
+        "sent_technician": sum(1 for jc in all_jobcards if any(
+            item.get('status') == 'sent_technician' 
+            for item in (jc.items_data or [])
+        )),
         "pending": JobCard.objects.filter(status="pending").count(),
         "completed": JobCard.objects.filter(status="completed").count(),
         "returned": JobCard.objects.filter(status="returned").count(),
@@ -578,6 +630,9 @@ def jobcard_assign_table(request):
         "stats": stats
     }
     return render(request, "jobcard_assign_table.html", context)
+
+
+
  
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
@@ -602,55 +657,171 @@ def send_whatsapp_message(phone_number, message):
         print(f"Failed to send WhatsApp message to {phone_number}. Status code: {response.status_code}, Response: {response.text}")
 
 def assign_new_job(request):
+    """
+    Assign job items to technicians
+    Shows ONLY logged items (not already assigned items)
+    """
     if request.method == 'POST':
         ticket_number = request.POST.get('ticketNumber')
-        technician = request.POST.get('technician')
+        jobcard_id = request.POST.get('jobcard_id')
         status = request.POST.get('status', 'sent_technician')
         
         try:
-            jobcard = JobCard.objects.get(ticket_no=ticket_number)
-            jobcard.technician = technician
-            jobcard.status = status  # Update main status
+            # Use ID for more reliable lookup
+            if jobcard_id:
+                jobcard = JobCard.objects.get(id=jobcard_id)
+            else:
+                jobcard = JobCard.objects.get(ticket_no=ticket_number)
             
-            # ✅ SET THE ASSIGNED DATE WHEN ASSIGNING TO TECHNICIAN
-            if not jobcard.assigned_date:  # Only set if not already set
+            # Get all item assignments from the form
+            item_assignments = {}
+            assignments_made = 0
+            
+            for key, value in request.POST.items():
+                if key.startswith('item_technician_'):
+                    index = key.replace('item_technician_', '')
+                    technician_name = value
+                    if technician_name:  # Only process if technician is selected
+                        item_assignments[index] = technician_name
+                        assignments_made += 1
+            
+            if assignments_made == 0:
+                messages.error(request, "Please assign at least one technician to an item")
+                return redirect('app5:assign_new_job')
+            
+            # Update each item with its assigned technician
+            if jobcard.items_data and item_assignments:
+                for index, item in enumerate(jobcard.items_data):
+                    technician_key = str(index)
+                    if technician_key in item_assignments:
+                        # Only update if item is in 'logged' status
+                        if item.get('status', 'logged') == 'logged':
+                            item['technician'] = item_assignments[technician_key]
+                            item['status'] = 'sent_technician'
+                            item['assigned_at'] = timezone.now().isoformat()
+            
+            # Update main jobcard status based on all items
+            all_sent = all(
+                item.get('status') in ['sent_technician', 'accepted', 'completed', 'returned', 'rejected'] 
+                for item in jobcard.items_data
+            )
+            if all_sent:
+                jobcard.status = 'sent_technician'
+            else:
+                # Keep as logged if some items are still logged
+                jobcard.status = 'logged'
+            
+            # Set assigned date if not already set
+            if not jobcard.assigned_date:
                 jobcard.assigned_date = timezone.now()
             
-            # ✅ UPDATE INDIVIDUAL ITEM STATUSES TO 'sent_technician'
-            if jobcard.items_data:
-                for item in jobcard.items_data:
-                    item['status'] = 'sent_technician'  # Update each item's status
+            # Set main technician (use first assigned technician or keep existing)
+            if item_assignments and not jobcard.technician:
+                first_technician = next(iter(item_assignments.values()))
+                jobcard.technician = first_technician
             
             jobcard.save()
             
-            # Fetch the technician's phone number from the User model
+            # Send WhatsApp notifications
             try:
-                assigned_user = User.objects.get(name=technician)
-                if assigned_user.phone_number:
-                    # Prepare the WhatsApp message
-                    message = f"You have been assigned a new job. Ticket Number: {ticket_number}"
-                    send_whatsapp_message(assigned_user.phone_number, message)
-            except User.DoesNotExist:
-                pass  # Silently fail if user not found
+                unique_technicians = set(item_assignments.values())
+                for technician_name in unique_technicians:
+                    assigned_user = User.objects.filter(name=technician_name).first()
+                    if assigned_user and assigned_user.phone_number:
+                        # Get items assigned to this technician
+                        assigned_items = []
+                        for idx, tech in item_assignments.items():
+                            if tech == technician_name:
+                                item_index = int(idx)
+                                if item_index < len(jobcard.items_data):
+                                    assigned_items.append(jobcard.items_data[item_index]['item'])
+                        
+                        items_text = ", ".join(assigned_items)
+                        message = f"You have been assigned items from job ticket {ticket_number}: {items_text}"
+                        send_whatsapp_message(assigned_user.phone_number, message)
+            except Exception as e:
+                logger.warning(f"WhatsApp notification error: {e}")
             
-            messages.success(request, f"Job {ticket_number} assigned to {technician} successfully!")
+            # Create success message
+            assignment_summary = ", ".join([
+                f"{jobcard.items_data[int(idx)]['item']} → {tech}" 
+                for idx, tech in item_assignments.items()
+                if int(idx) < len(jobcard.items_data)
+            ])
+            
+            messages.success(request, f"✅ Job {ticket_number} assigned successfully! {assignments_made} item(s) assigned: {assignment_summary}")
             return redirect('app5:jobcard_assign_table')
+            
         except JobCard.DoesNotExist:
             messages.error(request, f"Job card with ticket number {ticket_number} not found")
         except User.DoesNotExist:
-            messages.error(request, f"User {technician} not found")
+            messages.error(request, "One or more technicians not found")
         except Exception as e:
             messages.error(request, f"Error assigning job: {str(e)}")
     
     # GET request - show the form
-    jobcards = JobCard.objects.filter(status='logged').order_by("-created_at")
+    # Get all jobcards
+    all_jobcards = JobCard.objects.all().order_by("-created_at")
+    
+    # Enhanced jobcards with ONLY logged items
+    enhanced_jobcards = []
+    for jobcard in all_jobcards:
+        # Filter to get ONLY logged items
+        logged_items_only = []
+        
+        if hasattr(jobcard, 'items_data') and jobcard.items_data:
+            for item in jobcard.items_data:
+                if isinstance(item, dict):
+                    item_status = item.get('status', 'logged')
+                    
+                    # ✅ ONLY include items with 'logged' status
+                    if item_status == 'logged':
+                        processed_item = {
+                            'item': item.get('item', 'Unknown Item'),
+                            'serial': item.get('serial', ''),
+                            'config': item.get('config', ''),
+                            'warranty': item.get('warranty', 'no'),
+                            'take_to_office': item.get('take_to_office', 'no'),
+                            'complaints': item.get('complaints', []),
+                            'status': item_status,
+                            'technician': ''  # Always empty for logged items
+                        }
+                        logged_items_only.append(processed_item)
+                elif isinstance(item, str):
+                    # Handle case where item is just a string (assume logged)
+                    logged_items_only.append({
+                        'item': item,
+                        'serial': '',
+                        'config': '',
+                        'warranty': 'no',
+                        'take_to_office': 'no',
+                        'complaints': [],
+                        'status': 'logged',
+                        'technician': ''
+                    })
+        
+        # ✅ Only include jobcards that have at least one logged item
+        if logged_items_only:
+            enhanced_jobcards.append({
+                'id': jobcard.id,
+                'ticket_no': jobcard.ticket_no,
+                'customer': jobcard.customer,
+                'phone': jobcard.phone,
+                'address': jobcard.address,
+                'items_data': logged_items_only,  # ✅ Only logged items
+                'items_count': len(logged_items_only)
+            })
+    
     technicians = User.objects.filter(status='active').order_by('name')
     
     context = {
-        "jobcards": jobcards,
+        "jobcards": enhanced_jobcards,
         "technicians": technicians,
     }
     return render(request, "jobcard_assign_form.html", context)
+
+
+
 
 def get_customer_by_ticket(request, ticket_no):
     """API endpoint to get customer details by ticket number"""
@@ -710,33 +881,76 @@ def jobcard_assign_edit(request, pk):
     return render(request, "jobcard_assign_edit.html", context)
 
 
+# In your view that renders jobcard_assign_form
+def your_assign_view(request):
+    # Get all jobcards
+    all_jobcards = JobCard.objects.all()
+    
+    jobcards_with_logged_items = []
+    
+    for jobcard in all_jobcards:
+        items_data = jobcard.items_data  # Your existing items data
+        logged_items_count = 0
+        
+        if items_data:
+            for item in items_data:
+                # Check if item has 'logged' status
+                item_status = item.get('status', 'logged')  # Default to logged if not specified
+                if item_status == 'logged':
+                    logged_items_count += 1
+        
+        # Only include jobcards that have at least one logged item
+        if logged_items_count > 0:
+            jobcard.logged_items_count = logged_items_count
+            jobcard.items_count = len(items_data) if items_data else 0
+            jobcards_with_logged_items.append(jobcard)
+    
+    context = {
+        'jobcards': jobcards_with_logged_items,  # Only tickets with logged items
+        'technicians': technicians,  # Your existing technicians
+    }
+    
+    return render(request, 'jobcard_assign_form.html', context)
+
+
 # In your views.py
+# In your assignment view
 def assign_job_to_technician(request):
     if request.method == 'POST':
-        ticket_number = request.POST.get('ticketNumber')
-        technician_name = request.POST.get('technician')
-        status = request.POST.get('status', 'sent_technician')
+        jobcard_id = request.POST.get('jobcard_id')
+        jobcard = JobCard.objects.get(id=jobcard_id)
         
-        try:
-            jobcard = JobCard.objects.get(ticket_no=ticket_number)
-            
-            # Update the job card with technician and status
-            jobcard.technician = technician_name
-            jobcard.status = status  # This should be 'sent_technician'
-            
-            # If you have per-item status, update that too
-            if hasattr(jobcard, 'items_data'):
-                for item in jobcard.items_data:
-                    item['status'] = 'sent_technician'
-            
-            jobcard.save()
-            
-            messages.success(request, f'Job assigned to {technician_name} successfully!')
-            return redirect('app5:jobcard_assign_table')
-            
-        except JobCard.DoesNotExist:
-            messages.error(request, 'Job card not found!')
-
+        # Get all selected items
+        selected_items = []
+        for key, value in request.POST.items():
+            if key.startswith('item_select_'):
+                item_index = int(key.replace('item_select_', ''))
+                technician_name = request.POST.get(f'item_technician_{item_index}')
+                item_name = request.POST.get(f'item_name_{item_index}')
+                
+                if technician_name:  # Only process if technician is assigned
+                    selected_items.append({
+                        'index': item_index,
+                        'name': item_name,
+                        'technician': technician_name
+                    })
+        
+        # Update only the selected items' status
+        items_data = jobcard.items_data
+        for assignment in selected_items:
+            item_index = assignment['index']
+            if item_index < len(items_data):
+                # Only update if the item is in 'logged' status
+                if items_data[item_index].get('status') == 'logged':
+                    items_data[item_index]['status'] = 'sent_technician'
+                    items_data[item_index]['technician'] = assignment['technician']
+                    items_data[item_index]['assigned_at'] = timezone.now().isoformat()
+        
+        jobcard.items_data = items_data
+        jobcard.save()
+        
+        messages.success(request, f'Successfully assigned {len(selected_items)} items to technicians')
+        return redirect('app5:jobcard_assign_table')
     
    
 
@@ -2267,3 +2481,532 @@ def return_item_delete(request, return_id):
             messages.error(request, f"Error deleting return record: {str(e)}")
     
     return redirect('app5:warranty_ticket_list')
+
+
+
+# Service Billing Views
+def service_billing_view(request):
+    """
+    Display service billing form and generate invoices
+    """
+    # Get current user
+    current_user_name = "Unknown"
+    if request.session.get('custom_user_id'):
+        try:
+            current_user = User.objects.get(id=request.session['custom_user_id'])
+            current_user_name = getattr(current_user, "name", current_user.username if hasattr(current_user, 'username') else str(current_user))
+        except User.DoesNotExist:
+            pass
+    
+    # Handle invoice generation
+    if request.method == 'POST':
+        try:
+            # Get form data
+            ticket_no = request.POST.get('ticketNo')
+            date = request.POST.get('date')
+            customer_name = request.POST.get('customerName')
+            customer_contact = request.POST.get('customerContact')
+            customer_address = request.POST.get('customerAddress')
+            payment_status = request.POST.get('paymentStatus')
+            notes = request.POST.get('notes', '')
+            
+            # Get service items data
+            item_names = request.POST.getlist('itemName[]')
+            item_serials = request.POST.getlist('itemSerial[]')
+            service_descriptions = request.POST.getlist('serviceDescription[]')
+            service_charges = request.POST.getlist('serviceCharge[]')
+            
+            # Validate required fields
+            if not all([ticket_no, date, customer_name, customer_contact]):
+                messages.error(request, "Please fill in all required fields.")
+                return redirect('app5:service_billing_view')
+            
+            # Get the job card
+            try:
+                jobcard = JobCard.objects.get(ticket_no=ticket_no, technician=current_user_name)
+            except JobCard.DoesNotExist:
+                messages.error(request, "Job card not found or you are not assigned to this job.")
+                return redirect('app5:service_billing_view')
+            
+            # Check if invoice already exists for this job card
+            existing_invoice = ServiceBilling.objects.filter(ticket_no=ticket_no).first()
+            if existing_invoice:
+                messages.warning(request, f"An invoice already exists for this job card: INV-{existing_invoice.ticket_no}")
+                return redirect('app5:service_billing_view')
+            
+            # Process service items and calculate totals
+            subtotal = 0
+            services_data = []
+            
+            for i in range(len(item_names)):
+                if item_names[i].strip():
+                    charge = float(service_charges[i]) if service_charges[i] else 0
+                    services_data.append({
+                        'item_name': item_names[i],
+                        'serial_no': item_serials[i] if i < len(item_serials) else '',
+                        'service_description': service_descriptions[i] if i < len(service_descriptions) else '',
+                        'charge': charge
+                    })
+                    subtotal += charge
+            
+            # Calculate totals
+            tax = subtotal * 0.1  # 10% tax
+            total = subtotal + tax
+            
+            # Create ServiceBilling record
+            service_billing = ServiceBilling.objects.create(
+                ticket_no=ticket_no,
+                date=date,
+                customer_name=customer_name,
+                customer_contact=customer_contact,
+                customer_address=customer_address,
+                technician=current_user_name,
+                subtotal=subtotal,
+                tax=tax,
+                total=total,
+                payment_status=payment_status,
+                notes=notes
+            )
+            
+            # Create ServiceItem records
+            for item_data in services_data:
+                ServiceItem.objects.create(
+                    billing=service_billing,
+                    item_name=item_data['item_name'],
+                    serial_no=item_data['serial_no'],
+                    service_description=item_data['service_description'],
+                    charge=item_data['charge']
+                )
+            
+            # Prepare billing data for display
+            billing_data = {
+                'invoice_no': service_billing.ticket_no,  # Using ticket_no as invoice_no
+                'ticket_no': ticket_no,
+                'date': date,
+                'customer_name': customer_name,
+                'customer_contact': customer_contact,
+                'customer_address': customer_address,
+                'payment_status': payment_status,
+                'technician': current_user_name,
+                'services': [[item['item_name'], item['serial_no'], item['service_description'], f"{item['charge']:.2f}"] for item in services_data],
+                'subtotal': subtotal,
+                'tax': tax,
+                'total': total,
+                'notes': notes,
+                'generated_at': timezone.now().strftime('%d %b %Y %I:%M %p')
+            }
+            
+            # Send WhatsApp notification
+            try:
+                items_list = "\n".join([f"• {service[0]}: ₹{service[3]}" for service in billing_data['services']])
+                message_text = (
+                    f"📋 *Service Invoice Generated*\n\n"
+                    f"*Invoice No:* INV-{billing_data['ticket_no']}\n"
+                    f"*Date:* {billing_data['date']}\n"
+                    f"*Customer:* {billing_data['customer_name']}\n"
+                    f"*Phone:* {billing_data['customer_contact']}\n"
+                    f"*Technician:* {billing_data['technician']}\n\n"
+                    f"*Services:*\n{items_list}\n\n"
+                    f"*Subtotal:* ₹{billing_data['subtotal']:.2f}\n"
+                    f"*Tax (10%):* ₹{billing_data['tax']:.2f}\n"
+                    f"*Total:* ₹{billing_data['total']:.2f}\n\n"
+                    f"*Payment Status:* {billing_data['payment_status'].title()}"
+                )
+                
+                whatsapp_api_base = "https://app.dxing.in/api/send/whatsapp"
+                params = {
+                    "secret": "7b8ae820ecb39f8d173d57b51e1fce4c023e359e",
+                    "account": "1756959119812b4ba287f5ee0bc9d43bbf5bbe87fb68b9118fcf1af",
+                    "type": "text",
+                    "priority": 1,
+                    "recipient": "9946545535",
+                    "message": message_text
+                }
+                requests.get(whatsapp_api_base, params=params, timeout=5)
+            except Exception as e:
+                logger.debug(f"WhatsApp notification failed: {e}")
+            
+            messages.success(request, f"Invoice created successfully for ticket {ticket_no}!")
+            context = {
+                'show_invoice': True,
+                'billing_data': billing_data,
+                'current_user_name': current_user_name,
+            }
+            
+            return render(request, 'service_billing.html', context)
+            
+        except Exception as e:
+            messages.error(request, f"Error generating invoice: {str(e)}")
+            return redirect('app5:service_billing_view')
+    
+    # GET request - show form
+    technician_jobcards = JobCard.objects.filter(
+        technician=current_user_name,
+        status='accepted'
+    ).order_by('-created_at')
+    
+    # Check for ticket_no parameter to pre-select a job card
+    ticket_no = request.GET.get('ticket_no')
+    pre_selected_jobcard = None
+    if ticket_no:
+        try:
+            pre_selected_jobcard = JobCard.objects.get(ticket_no=ticket_no, technician=current_user_name)
+        except JobCard.DoesNotExist:
+            pass
+    
+    context = {
+        'show_invoice': False,
+        'technician_jobcards': technician_jobcards,
+        'pre_selected_jobcard': pre_selected_jobcard,
+        'current_user_name': current_user_name,
+        'today': timezone.now().date(),
+    }
+    
+    return render(request, 'service_billing.html', context)
+
+
+@require_http_methods(["GET"])
+def get_jobcard_details(request, ticket_no):
+    """
+    API endpoint to get job card details for pre-filling billing form
+    """
+    try:
+        jobcard = get_object_or_404(JobCard, ticket_no=ticket_no)
+        
+        items = []
+        if hasattr(jobcard, 'items_data') and jobcard.items_data:
+            for item in jobcard.items_data:
+                items.append({
+                    'name': item.get('item', ''),
+                    'serial': item.get('serial', ''),
+                    'config': item.get('config', ''),
+                })
+        
+        return JsonResponse({
+            'success': True,
+            'items': items,
+            'customer': jobcard.customer,
+            'phone': jobcard.phone,
+            'address': jobcard.address,
+        })
+    
+    except JobCard.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'error': 'Job card not found'
+        }, status=404)
+    
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+    
+
+def service_billing_list(request):
+    """
+    Display list of job cards with their invoice status
+    """
+    # Get current user
+    current_user_name = "Unknown"
+    if request.session.get('custom_user_id'):
+        try:
+            current_user = User.objects.get(id=request.session['custom_user_id'])
+            current_user_name = getattr(current_user, "name", current_user.username if hasattr(current_user, 'username') else str(current_user))
+        except User.DoesNotExist:
+            pass
+
+    # Get job cards for the current technician
+    technician_jobcards = JobCard.objects.filter(
+        technician=current_user_name
+    ).order_by('-created_at')
+
+    # Get all invoices for these job cards
+    jobcard_tickets = [jobcard.ticket_no for jobcard in technician_jobcards]
+    existing_invoices = ServiceBilling.objects.filter(ticket_no__in=jobcard_tickets)
+    
+    # Create a mapping of ticket_no to invoice for easy lookup
+    invoice_map = {invoice.ticket_no: invoice for invoice in existing_invoices}
+
+    # Calculate statistics
+    total_jobcards = technician_jobcards.count()
+    accepted_count = technician_jobcards.filter(status='accepted').count()
+    completed_count = technician_jobcards.filter(status='completed').count()
+    returned_count = technician_jobcards.filter(status='returned').count()
+    invoiced_count = len(existing_invoices)
+
+    # Add invoice information to each jobcard object
+    for jobcard in technician_jobcards:
+        jobcard.has_invoice = jobcard.ticket_no in invoice_map
+        if jobcard.has_invoice:
+            jobcard.invoice = invoice_map[jobcard.ticket_no]
+
+    # Pagination
+    paginator = Paginator(technician_jobcards, 25)
+    page_number = request.GET.get('page')
+    jobcards_page = paginator.get_page(page_number)
+
+    context = {
+        'jobcards': jobcards_page,
+        'current_user_name': current_user_name,
+        'total_jobcards': total_jobcards,
+        'accepted_count': accepted_count,
+        'completed_count': completed_count,
+        'returned_count': returned_count,
+        'invoiced_count': invoiced_count,
+    }
+
+    return render(request, 'service_billing_list.html', context)
+
+
+def service_billing_edit(request, ticket_no):
+    """
+    Edit an existing service invoice
+    """
+    # Get current user
+    current_user_name = "Unknown"
+    if request.session.get('custom_user_id'):
+        try:
+            current_user = User.objects.get(id=request.session['custom_user_id'])
+            current_user_name = getattr(current_user, "name", current_user.username if hasattr(current_user, 'username') else str(current_user))
+        except User.DoesNotExist:
+            pass
+    
+    try:
+        # Get the existing invoice
+        service_billing = get_object_or_404(ServiceBilling, ticket_no=ticket_no)
+        
+        if request.method == 'POST':
+            # Update invoice data
+            service_billing.date = request.POST.get('date')
+            service_billing.customer_name = request.POST.get('customerName')
+            service_billing.customer_contact = request.POST.get('customerContact')
+            service_billing.customer_address = request.POST.get('customerAddress')
+            service_billing.payment_status = request.POST.get('paymentStatus')
+            service_billing.notes = request.POST.get('notes', '')
+            
+            # Get service items data
+            item_names = request.POST.getlist('itemName[]')
+            item_serials = request.POST.getlist('itemSerial[]')
+            service_descriptions = request.POST.getlist('serviceDescription[]')
+            service_charges = request.POST.getlist('serviceCharge[]')
+            
+            # Delete existing items
+            service_billing.service_items.all().delete()
+            
+            # Process service items and calculate totals
+            subtotal = 0
+            services_data = []
+            
+            for i in range(len(item_names)):
+                if item_names[i].strip():
+                    charge = float(service_charges[i]) if service_charges[i] else 0
+                    ServiceItem.objects.create(
+                        billing=service_billing,
+                        item_name=item_names[i],
+                        serial_no=item_serials[i] if i < len(item_serials) else '',
+                        service_description=service_descriptions[i] if i < len(service_descriptions) else '',
+                        charge=charge
+                    )
+                    services_data.append({
+                        'item_name': item_names[i],
+                        'serial_no': item_serials[i] if i < len(item_serials) else '',
+                        'service_description': service_descriptions[i] if i < len(service_descriptions) else '',
+                        'charge': charge
+                    })
+                    subtotal += charge
+            
+            # Calculate totals
+            tax = subtotal * 0.1  # 10% tax
+            total = subtotal + tax
+            
+            # Update billing totals
+            service_billing.subtotal = subtotal
+            service_billing.tax = tax
+            service_billing.total = total
+            service_billing.save()
+            
+            messages.success(request, f"Invoice updated successfully for ticket {ticket_no}!")
+            return redirect('app5:service_billing_list')
+        
+        # GET request - show edit form with existing data
+        invoice_items = service_billing.service_items.all()
+        
+        context = {
+            'service_billing': service_billing,
+            'invoice_items': invoice_items,
+            'current_user_name': current_user_name,
+            'is_edit': True,
+        }
+        
+        return render(request, 'service_billing_edit.html', context)
+        
+    except ServiceBilling.DoesNotExist:
+        messages.error(request, f"No invoice found for ticket {ticket_no}.")
+        return redirect('app5:service_billing_list')
+    except Exception as e:
+        messages.error(request, f"Error editing invoice: {str(e)}")
+        return redirect('app5:service_billing_list')
+
+
+def view_service_invoice(request, ticket_no):
+    """
+    View to display a generated service invoice for a specific ticket
+    """
+    # Get current user
+    current_user_name = "Unknown"
+    if request.session.get('custom_user_id'):
+        try:
+            current_user = User.objects.get(id=request.session['custom_user_id'])
+            current_user_name = getattr(current_user, "name", current_user.username if hasattr(current_user, 'username') else str(current_user))
+        except User.DoesNotExist:
+            pass
+    
+    try:
+        # Get the job card
+        jobcard = get_object_or_404(JobCard, ticket_no=ticket_no, technician=current_user_name)
+        
+        # Get the invoice for this job card
+        service_billing = get_object_or_404(ServiceBilling, ticket_no=ticket_no)
+        
+        # Get invoice items
+        invoice_items = service_billing.service_items.all()
+        
+        # Prepare billing data for template
+        services = []
+        for item in invoice_items:
+            services.append([
+                item.item_name,
+                item.serial_no or '',
+                item.service_description,
+                f"{item.charge:.2f}"
+            ])
+        
+        billing_data = {
+            'invoice_no': service_billing.ticket_no,
+            'ticket_no': ticket_no,
+            'date': service_billing.date.strftime('%Y-%m-%d'),
+            'customer_name': service_billing.customer_name,
+            'customer_contact': service_billing.customer_contact,
+            'customer_address': service_billing.customer_address,
+            'payment_status': service_billing.payment_status,
+            'technician': service_billing.technician,
+            'services': services,
+            'subtotal': float(service_billing.subtotal),
+            'tax': float(service_billing.tax),
+            'total': float(service_billing.total),
+            'notes': service_billing.notes or '',
+            'generated_at': service_billing.created_at.strftime('%d %b %Y %I:%M %p')
+        }
+        
+        context = {
+            'show_invoice': True,
+            'billing_data': billing_data,
+            'current_user_name': current_user_name,
+            'is_view_only': True,
+        }
+        
+        return render(request, 'service_billing.html', context)
+        
+    except JobCard.DoesNotExist:
+        messages.error(request, f"Job card with ticket number {ticket_no} not found or you don't have permission to view it.")
+        return redirect('app5:service_billing_list')
+    except ServiceBilling.DoesNotExist:
+        messages.error(request, f"No invoice found for job card {ticket_no}.")
+        return redirect('app5:service_billing_list')
+    except Exception as e:
+        messages.error(request, f"Error loading invoice: {str(e)}")
+        return redirect('app5:service_billing_list')
+    
+
+
+@require_http_methods(["DELETE", "POST"])
+def delete_service_invoice(request, ticket_no):
+    """
+    Delete service invoice and related job card
+    """
+    try:
+        jobcard = get_object_or_404(JobCard, ticket_no=ticket_no)
+        
+        # Get customer info for confirmation message
+        customer_name = jobcard.customer
+        customer_phone = jobcard.phone
+        
+        # Delete the job card (this will cascade to related records)
+        jobcard.delete()
+        
+        return JsonResponse({
+            "success": True,
+            "message": f"✅ Invoice for ticket {ticket_no} (Customer: {customer_name}, Phone: {customer_phone}) has been deleted successfully!"
+        })
+        
+    except JobCard.DoesNotExist:
+        return JsonResponse({
+            "success": False,
+            "error": f"Job card with ticket number {ticket_no} not found"
+        }, status=404)
+    except Exception as e:
+        return JsonResponse({
+            "success": False,
+            "error": f"Error deleting invoice: {str(e)}"
+        }, status=500)
+    
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def update_jobcard_status_by_ticket(request):
+    """
+    Update job card status by ticket number (for service billing list)
+    """
+    try:
+        data = json.loads(request.body)
+        ticket_no = data.get('ticket_no')
+        action = data.get('action')
+        
+        if not ticket_no or not action:
+            return JsonResponse({
+                "success": False, 
+                "error": "Ticket number and action are required"
+            })
+        
+        # Get the job card by ticket number
+        jobcard = get_object_or_404(JobCard, ticket_no=ticket_no)
+        
+        # Map actions to status values
+        status_mapping = {
+            "completed": "completed",
+            "returned": "returned"
+        }
+        
+        if action in status_mapping:
+            new_status = status_mapping[action]
+            jobcard.status = new_status
+            
+            # Update individual item statuses
+            if jobcard.items_data:
+                for item in jobcard.items_data:
+                    item['status'] = new_status
+            
+            jobcard.save()
+            
+            return JsonResponse({
+                "success": True, 
+                "status": new_status,
+                "message": f"Job card {ticket_no} status updated to {new_status}"
+            })
+        else:
+            return JsonResponse({
+                "success": False, 
+                "error": "Invalid action"
+            })
+            
+    except JobCard.DoesNotExist:
+        return JsonResponse({
+            "success": False, 
+            "error": f"Job card with ticket number {ticket_no} not found"
+        })
+    except Exception as e:
+        return JsonResponse({
+            "success": False, 
+            "error": str(e)
+        })

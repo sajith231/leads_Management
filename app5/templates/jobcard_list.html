@@ -323,10 +323,13 @@
         cursor: pointer;
         transition: all 0.3s ease;
         user-select: none;
+        position: relative;
+        min-width: 60px;
+        text-align: center;
     }
     .status-badge:hover {
-        transform: scale(1.1);
-        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        transform: scale(1.05);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
     }
     .status-logged { background: #ed5b2e; color: #fff; }
     .status-sent_technician { background: #ef06cc; color: #fff; }
@@ -334,6 +337,31 @@
     .status-accepted { background: #060bf4; color: #fff; }
     .status-returned { background: #915af6; color: #fff; }
     .status-rejected {  background: #bd0214; color: #fff; }
+    
+    /* Status updating animation */
+    .status-updating {
+        opacity: 0.7;
+        pointer-events: none;
+    }
+
+    .status-updating::after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 16px;
+        height: 16px;
+        border: 2px solid #fff;
+        border-top: 2px solid transparent;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% { transform: translate(-50%, -50%) rotate(0deg); }
+        100% { transform: translate(-50%, -50%) rotate(360deg); }
+    }
     
     /* Warranty Status Badges */
     .status-badge.status-completed {
@@ -633,26 +661,6 @@
         box-shadow: 0 4px 8px rgba(0,0,0,0.2);
     }
 
-    /* Loading state */
-    .status-updating {
-        opacity: 0.7;
-        pointer-events: none;
-        position: relative;
-    }
-    .status-updating::after {
-        content: "";
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 16px;
-        height: 16px;
-        border: 2px solid #fff;
-        border-top: 2px solid transparent;
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-    }
-
     /* Pagination Styles */
     .pagination {
         display: flex;
@@ -700,10 +708,6 @@
         color: #6c757d;
         font-size: 14px;
         font-weight: bold;
-    }
-    @keyframes spin {
-        0% { transform: translate(-50%, -50%) rotate(0deg); }
-        100% { transform: translate(-50%, -50%) rotate(360deg); }
     }
 
     /* Responsive design */
@@ -1607,7 +1611,7 @@
     // Clear all filters function
     function clearAllFilters() {
         document.getElementById('searchInput').value = '';
-        document.getElementById('statusFilter').value = 'logged';
+        document.getElementById('statusFilter').value = '';
         document.getElementById('dateFrom').value = '';
         document.getElementById('dateTo').value = '';
         
@@ -1619,6 +1623,87 @@
         
         performSearch();
         showAlert('✅ All filters cleared successfully!', 'success');
+    }
+
+    // ✅ ENHANCED: Status Update Function
+    function updateStatus(jobcardId, currentStatus, itemIndex, itemName) {
+        const statusOrder = ['logged', 'sent_technician', 'accepted', 'completed', 'returned', 'rejected'];
+        const currentIndex = statusOrder.indexOf(currentStatus);
+        const nextIndex = (currentIndex + 1) % statusOrder.length;
+        const nextStatus = statusOrder[nextIndex];
+        
+        const statusBadge = document.querySelector(`[data-jobcard-id="${jobcardId}"][data-item-index="${itemIndex}"]`);
+        
+        if (!statusBadge) {
+            showAlert('❌ Error: Could not find status badge to update', 'error');
+            return;
+        }
+        
+        // Show loading state
+        statusBadge.classList.add('status-updating');
+        const originalHTML = statusBadge.innerHTML;
+        statusBadge.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        
+        // Send update request
+        fetch(`/app5/update-status/${jobcardId}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken,
+            },
+            body: JSON.stringify({
+                status: nextStatus,
+                item_index: itemIndex,
+                item_name: itemName
+            })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                // Update the badge
+                statusBadge.setAttribute('data-status', nextStatus);
+                statusBadge.className = `status-badge status-${nextStatus}`;
+                
+                // Update display text
+                let displayText = nextStatus;
+                if (nextStatus === 'logged') displayText = 'Logged';
+                else if (nextStatus === 'sent_technician') displayText = 'Sent To Technician';
+                else if (nextStatus === 'accepted') displayText = 'In Technician Hand';
+                else if (nextStatus === 'completed') displayText = 'Completed';
+                else if (nextStatus === 'returned') displayText = 'Returned';
+                else if (nextStatus === 'rejected') displayText = 'Rejected';
+                
+                statusBadge.innerHTML = displayText;
+                statusBadge.title = `Click to change status for ${itemName} (Current: ${displayText})`;
+                
+                // Show success message
+                showAlert(`✅ Status updated to "${displayText}" for ${itemName}`, 'success');
+                
+                // Update the row's data attribute for filtering
+                const row = statusBadge.closest('tr');
+                if (row) {
+                    row.setAttribute('data-status', nextStatus);
+                }
+                
+                // Refresh search to update filtered results
+                setTimeout(performSearch, 300);
+            } else {
+                throw new Error(data.error || 'Failed to update status');
+            }
+        })
+        .catch(error => {
+            console.error('Status update error:', error);
+            statusBadge.innerHTML = originalHTML;
+            showAlert(`❌ Failed to update status: ${error.message}`, 'error');
+        })
+        .finally(() => {
+            statusBadge.classList.remove('status-updating');
+        });
     }
 
     // ✅ ENHANCED: Function to show warranty details modal
@@ -1972,7 +2057,7 @@
                 alert.style.opacity = '0';
                 setTimeout(() => alert.remove(), 100);
             }
-        }, 300);
+        }, 5000);
     }
 
     // Close modals when clicking outside
@@ -2023,16 +2108,14 @@
         
         if (status) {
             document.getElementById('statusFilter').value = status;
-        } else {
-            // ✅ Default to "logged"
-            document.getElementById('statusFilter').value = 'logged';
         }
+        // No default status filter - show all by default
 
         if (search) document.getElementById('searchInput').value = search;
         if (dateFrom) document.getElementById('dateFrom').value = dateFrom;
         if (dateTo) document.getElementById('dateTo').value = dateTo;
         
-        // ✅ Always perform initial search (so "logged" is applied by default)
+        // Perform initial search
         setTimeout(performSearch, 100);
 
         console.log('✅ Job Card List initialized successfully');
