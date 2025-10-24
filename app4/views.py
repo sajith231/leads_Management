@@ -698,7 +698,7 @@ logger = logging.getLogger(__name__)
 WHATSAPP_API_URL = "https://app.dxing.in/api/send/whatsapp"
 WHATSAPP_SECRET   = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
 WHATSAPP_ACCOUNT  = "1756959119812b4ba287f5ee0bc9d43bbf5bbe87fb68b9118fcf1af"
-COLLECTION_RECIPIENTS = ["9061947005", "9946545535","6282351770","7593820007","7593820005","9562477819"]   # hard-coded numbers
+COLLECTION_RECIPIENTS = ["9946545535","6282351770","7593820007","7593820005","9562477819","7593820733"]   # hard-coded numbers
 
 def send_collection_whatsapp(client_name, branch, created_by, amount, created_at: datetime):
     """

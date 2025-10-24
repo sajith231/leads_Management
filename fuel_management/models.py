@@ -3,12 +3,29 @@ from django.core.validators import MinValueValidator
 from django.db import models
 from django.urls import reverse
 from django.core.exceptions import ValidationError
-from django.conf import settings  # ✅ Use Django’s configured user model
-
+from django.conf import settings
 
 class Vehicle(models.Model):
+    FUEL_TYPES = [
+        ('petrol', 'Petrol'),
+        ('diesel', 'Diesel'),
+    ]
+    
     vehicle_number = models.CharField(max_length=20, unique=True)
     owner_name = models.CharField(max_length=100)
+    fuel_type = models.CharField(
+        max_length=10, 
+        choices=FUEL_TYPES, 
+        default='petrol',
+        help_text="Type of fuel used by the vehicle"
+    )
+    fuel_rate = models.DecimalField(
+        max_digits=6,
+        decimal_places=2,
+        default=Decimal('0.00'),
+        validators=[MinValueValidator(Decimal('0.00'))],
+        help_text="Current fuel rate in rupees per liter"
+    )
     rc_copy = models.FileField(upload_to='docs/rc/', blank=True, null=True)
     insurance_copy = models.FileField(upload_to='docs/ins/', blank=True, null=True)
     pollution_copy = models.FileField(upload_to='docs/pol/', blank=True, null=True)
@@ -26,6 +43,15 @@ class Vehicle(models.Model):
 
     def get_absolute_url(self):
         return reverse('vehicle_edit', kwargs={'vehicle_id': self.id})
+
+    def save(self, *args, **kwargs):
+        # Auto-set fuel rate based on fuel type if not explicitly set
+        if not self.fuel_rate or self.fuel_rate == Decimal('0.00'):
+            if self.fuel_type == 'diesel':
+                self.fuel_rate = Decimal('95.86')
+            else:  # petrol
+                self.fuel_rate = Decimal('106.93')
+        super().save(*args, **kwargs)
 
 
 class FuelEntry(models.Model):

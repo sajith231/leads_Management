@@ -149,13 +149,13 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'leading_management',
         'USER': 'postgres',
-        'PASSWORD': '1234',
+        'PASSWORD': 'info@imc',
         'HOST': 'localhost',
         'PORT': '5432',
     }
 }
 
-# h
+
 # DATABASES = {c
 #     'default': {
 #         'ENGINE': 'django.db.backends.postgresql',
