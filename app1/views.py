@@ -5216,6 +5216,7 @@ def update_task_status(request, task_id):
 
 
 
+
 @login_required
 def user_menu_control(request):
     users = User.objects.all()
@@ -5224,11 +5225,8 @@ def user_menu_control(request):
         user_id = request.POST.get('user_id')
         if user_id:
             return redirect('configure_user_menu', user_id=user_id)
-            
+    
     return render(request, 'user_menu_control.html', {'users': users})
-
-
-
 
 @login_required
 def configure_user_menu(request, user_id):
@@ -5409,6 +5407,14 @@ def configure_user_menu(request, user_id):
             ]
         },
         {
+            'name': 'User Management',
+            'icon': 'fas fa-user-cog',
+            'submenus': [
+                {'id': 'users_table', 'name': 'Users List', 'icon': 'fas fa-users'},
+                
+            ]
+        },
+        {
             'name': 'Company',
             'icon': 'fas fa-building',
             'submenus': [
@@ -5417,7 +5423,6 @@ def configure_user_menu(request, user_id):
                 {'id': 'all_areas', 'name': 'Area', 'icon': 'fas fa-map-marker-alt'},
                 {'id': 'all_locations', 'name': 'Location', 'icon': 'fas fa-chart-area'},
                 {'id': 'all_branches', 'name': 'Offices\\Locations', 'icon': 'fas fa-code-branch'},
-                {'id': 'users_table', 'name': 'Users', 'icon': 'fas fa-users'},
                 {'id': 'department_list', 'name': 'Department', 'icon': 'fas fa-sitemap'},
             ]
         },

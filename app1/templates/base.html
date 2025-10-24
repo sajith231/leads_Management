@@ -685,6 +685,39 @@
 
 </div>
 {% endif %}
+
+<div class="mainmenu" onclick="toggleUserMenu()">
+    <span>
+        <i class="fas fa-user-cog"></i>
+        <span style="font-size: 14px;">USER MANAGEMENT</span>
+    </span>
+</div>
+
+<!-- USER MANAGEMENT SUBMENU -->
+<div id="user-menu" class="submenu">
+
+    <!-- Superadmin Section -->
+    {% if request.user.is_superuser %}
+    <a href="{% url 'users_table' %}">
+        <i class="fas fa-user-plus"></i> Add User
+    </a>
+
+    <a href="{% url 'user_menu_control' %}">
+        <i class="fas fa-sliders-h"></i> User Control
+    </a>
+    {% endif %}
+
+    <!-- Normal User Section -->
+    {% if request.user.is_authenticated and not request.user.is_superuser %}
+    <a href="{% url 'users_table' %}">
+        <i class="fas fa-user-plus"></i> Add User
+    </a>
+
+    <a href="{% url 'user_menu_control' %}">
+        <i class="fas fa-user-shield"></i> User Control
+    </a>
+    {% endif %}
+</div>
 <div class="mainmenu" onclick="toggleMasterMenu()">
     <span>
         <i class="fas fa-cogs"></i>
@@ -706,7 +739,7 @@
         <a href="{% url 'all_areas' %}"><i class="fas fa-map-marker-alt"></i> Area</a>
         <a href="{% url 'all_locations' %}"><i class="fas fa-chart-area"></i> Location</a>
         <a href="{% url 'all_branches' %}"><i class="fas fa-code-branch"></i> Offices\Locations</a>
-        <a href="{% url 'users_table' %}"><i class="fas fa-users"></i> Users</a>
+        <!-- <a href="{% url 'users_table' %}"><i class="fas fa-users"></i> Users</a> -->
         <a href="{% url 'purchase_order:department_list' %}"><i class="fas fa-sitemap"></i> Department</a>
     </div>
 
@@ -1123,6 +1156,44 @@
         {% endif %}
     </div>
 {% endif %}
+
+<div class="mainmenu" onclick="toggleUserMenu()">
+    <span>
+        <i class="fas fa-user-cog"></i>
+        <span style="font-size: 14px;">USER MANAGEMENT</span>
+    </span>
+</div>
+
+<!-- USER MANAGEMENT SUBMENU -->
+<div id="user-menu" class="submenu">
+    <!-- Superadmin Section -->
+    {% if request.user.is_superuser %}
+    <a href="{% url 'users_table' %}">
+        <i class="fas fa-users"></i> Users List
+    </a>
+    <a href="{% url 'add_user' %}">
+        <i class="fas fa-user-plus"></i> Add User
+    </a>
+    <a href="{% url 'user_menu_control' %}">
+        <i class="fas fa-sliders-h"></i> User Control
+    </a>
+    {% endif %}
+
+    <!-- Normal User Section -->
+    {% if request.user.is_authenticated and not request.user.is_superuser %}
+        {% if 'users_table' in allowed_menus or request.session.user_level == 'admin' %}
+        <a href="{% url 'users_table' %}">
+            <i class="fas fa-users"></i> Users List
+        </a>
+        
+        
+        
+        <a href="{% url 'user_menu_control' %}">
+            <i class="fas fa-sliders-h"></i> User Control
+        </a>
+        {% endif %}
+    {% endif %}
+</div>
 {% if 'all_districts' in allowed_menus or 'all_areas' in allowed_menus or 'all_locations' in allowed_menus or 'all_branches' in allowed_menus or 'users_table' in allowed_menus or 'department_list' in allowed_menus or 'reminder_type' in allowed_menus or 'job_titles' in allowed_menus or 'all_department' in allowed_menus or 'business_type_list' in allowed_menus or 'all_requirements' in allowed_menus or 'item_list' in allowed_menus or 'supplier_list' in allowed_menus or 'all_complaints' in allowed_menus or 'software_table' in allowed_menus or 'all_hardwares' in allowed_menus %}
 
 <div class="mainmenu" onclick="toggleMasterMenu()">
@@ -1159,9 +1230,9 @@
         {% if 'all_branches' in allowed_menus %}
         <a href="{% url 'all_branches' %}"><i class="fas fa-code-branch"></i> Offices/Locations</a>
         {% endif %}
-        {% if 'users_table' in allowed_menus %}
+        <!-- {% if 'users_table' in allowed_menus %}
         <a href="{% url 'users_table' %}"><i class="fas fa-users"></i> Users</a>
-        {% endif %}
+        {% endif %} -->
         {% if 'department_list' in allowed_menus %}
         <a href="{% url 'purchase_order:department_list' %}"><i class="fas fa-sitemap"></i> Department</a>
         {% endif %}
@@ -1195,35 +1266,19 @@
     </div>
     {% endif %}
 
-    <!-- Planet Submenu -->
-    {% if 'item_list' in allowed_menus or 'supplier_list' in allowed_menus or 'all_complaints' in allowed_menus or 'software_table' in allowed_menus or 'all_hardwares' in allowed_menus %}
-    <div class="mainmenu" onclick="toggleNewPlanetMenu()" style="margin-left: 0; padding-left: 10px;">
-        <span style="font-size: 0.95em;">
-            <i class="fas fa-globe"></i>
-            <span>Planet</span>
-        </span>
-    </div>
-    <div id="new-planet-menu" class="submenu" style="margin-left: 20px;">
-        {% if 'item_list' in allowed_menus %}
-        <a href="{% url 'purchase_order:item_list' %}"><i class="fas fa-boxes"></i> Item Master</a>
+                {% if 'supplier_list' in allowed_menus %}
+                <a href="{% url 'purchase_order:supplier_list' %}"><i class="fas fa-truck"></i> Supplier</a>
+                {% endif %}
+                {% if 'item_list' in allowed_menus %}
+                <a href="{% url 'purchase_order:item_list' %}"><i class="fas fa-box"></i> Items</a>
+                {% endif %}
+                {% if 'department_list' in allowed_menus %}
+                <a href="{% url 'purchase_order:department_list' %}"><i class="fas fa-sitemap"></i> Planet Branch</a>
+                {% endif %}  
+
+            </div>
+            {% endif %}
         {% endif %}
-        {% if 'supplier_list' in allowed_menus %}
-        <a href="{% url 'purchase_order:supplier_list' %}"><i class="fas fa-truck"></i> Suppliers</a>
-        {% endif %}
-        {% if 'all_complaints' in allowed_menus %}
-        <a href="{% url 'all_complaints' %}"><i class="fas fa-bug"></i> Complaints</a>
-        {% endif %}
-        {% if 'software_table' in allowed_menus %}
-        <a href="{% url 'software_table' %}"><i class="fas fa-puzzle-piece"></i> Softwares</a>
-        {% endif %}
-        {% if 'all_hardwares' in allowed_menus %}
-        <a href="{% url 'all_hardwares' %}"><i class="fas fa-desktop"></i> Hardware</a>
-        {% endif %}
-    </div>
-    {% endif %}
-</div>
-{% endif %}
-{% endif %}
     </div>
 
     <!-- Main Content Area -->
@@ -1428,6 +1483,12 @@ function toggleNewPlanetMenu() {
     }
     event.stopPropagation();
 }
+</script>
+<script>
+function toggleUserMenu() {
+    toggleMenu('user-menu');
+}
+
 </script>
 </body>
 </html>
