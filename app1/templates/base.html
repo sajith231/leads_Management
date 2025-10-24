@@ -1189,7 +1189,7 @@
     {% endif %}
 </div>
 {% endif %}
-{# Master section — reworked to match admin sidebar structure and permission checks #}
+
 {% if 'all_districts' in allowed_menus or 'all_areas' in allowed_menus or 'all_locations' in allowed_menus or 'all_branches' in allowed_menus or 'users_table' in allowed_menus or 'department_list' in allowed_menus or 'reminder_type' in allowed_menus or 'job_titles' in allowed_menus or 'all_department' in allowed_menus or 'business_type_list' in allowed_menus or 'all_requirements' in allowed_menus or 'item_list' in allowed_menus or 'supplier_list' in allowed_menus or 'all_complaints' in allowed_menus or 'software_table' in allowed_menus or 'all_hardwares' in allowed_menus %}
 <div class="mainmenu" onclick="toggleMasterMenu()">
     <span>
@@ -1199,8 +1199,8 @@
 </div>
 
 <div id="master-menu" class="submenu">
-    {# Company Submenu (show only if any of these company-related perms exist) #}
-    {% if 'all_districts' in allowed_menus or 'all_areas' in allowed_menus or 'all_locations' in allowed_menus or 'all_branches' in allowed_menus or 'department_list' in allowed_menus or 'vehicle_list' in allowed_menus %}
+    <!-- Company Submenu -->
+    {% if 'all_districts' in allowed_menus or 'all_areas' in allowed_menus or 'all_locations' in allowed_menus or 'all_branches' in allowed_menus or 'department_list' in allowed_menus %}
     <div class="mainmenu" onclick="toggleCompanyMenu()" style="margin-left: 0; padding-left: 10px;">
         <span style="font-size: 0.95em;">
             <i class="fas fa-building"></i>
@@ -1229,7 +1229,7 @@
     </div>
     {% endif %}
 
-    {# Business Submenu #}
+    <!-- Business Submenu -->
     {% if 'reminder_type' in allowed_menus or 'job_titles' in allowed_menus or 'all_department' in allowed_menus or 'business_type_list' in allowed_menus or 'all_requirements' in allowed_menus %}
     <div class="mainmenu" onclick="toggleBusinessMenu()" style="margin-left: 0; padding-left: 10px;">
         <span style="font-size: 0.95em;">
@@ -1256,34 +1256,43 @@
     </div>
     {% endif %}
 
-    {# Suppliers / Items / Branch quick links (keep permission checks) #}
-    {% if 'supplier_list' in allowed_menus %}
-    <a href="{% url 'purchase_order:supplier_list' %}"><i class="fas fa-truck"></i> Supplier</a>
-    {% endif %}
+    <!-- Planet Submenu (Styled like your screenshot) -->
+    {% if 'item_list' in allowed_menus or 'supplier_list' in allowed_menus or 'all_complaints' in allowed_menus or 'software_table' in allowed_menus or 'all_hardwares' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+    <div class="mainmenu" onclick="toggleNewPlanetMenu()" style="margin-left: 0; padding-left: 10px;">
+        <span style="font-size: 0.95em;">
+            <i class="fas fa-globe"></i>
+            <span>Planet</span>
+        </span>
+    </div>
 
-    {% if 'item_list' in allowed_menus %}
-    <a href="{% url 'purchase_order:item_list' %}"><i class="fas fa-box"></i> Items</a>
-    {% endif %}
+    <div id="new-planet-menu" class="submenu" style="margin-left: 20px; border-left: 1px solid rgba(255,255,255,0.08); padding-left: 12px;">
+        {% if 'item_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+        <a href="{% url 'purchase_order:item_list' %}"><i class="fas fa-boxes"></i> Item Master</a>
+        {% endif %}
 
-    {% if 'department_list' in allowed_menus %}
-    <a href="{% url 'purchase_order:department_list' %}"><i class="fas fa-sitemap"></i> Planet Branch</a>
-    {% endif %}
+        {% if 'supplier_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+        <a href="{% url 'purchase_order:supplier_list' %}"><i class="fas fa-truck"></i> Suppliers</a>
+        {% endif %}
 
-    {# Complaints / Software / Hardware (preserve original allowed checks) #}
-    {% if 'all_complaints' in allowed_menus %}
-    <a href="{% url 'all_complaints' %}"><i class="fas fa-bug"></i> Complaints</a>
-    {% endif %}
+        {% if 'all_complaints' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+        <a href="{% url 'all_complaints' %}"><i class="fas fa-bug"></i> Complaints</a>
+        {% endif %}
 
-    {% if 'software_table' in allowed_menus %}
-    <a href="{% url 'software_table' %}"><i class="fas fa-puzzle-piece"></i> Softwares</a>
-    {% endif %}
+        {% if 'software_table' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+        <a href="{% url 'software_table' %}"><i class="fas fa-puzzle-piece"></i> Softwares</a>
+        {% endif %}
 
-    {% if 'all_hardwares' in allowed_menus %}
-    <a href="{% url 'all_hardwares' %}"><i class="fas fa-desktop"></i> Hardware</a>
+        {% if 'all_hardwares' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+        <a href="{% url 'all_hardwares' %}"><i class="fas fa-desktop"></i> Hardware</a>
+        {% endif %}
+    </div>
     {% endif %}
 </div>
 {% endif %}
 
+            {% endif %}
+        
+    </div>
 
     <!-- Main Content Area -->
     <div class="content">
