@@ -1157,36 +1157,30 @@
     </div>
 {% endif %}
 
+{% if request.user.is_superuser or 'users_table' in allowed_menus or 'add_user' in allowed_menus or 'user_menu_control' in allowed_menus %}
 <div class="mainmenu" onclick="toggleUserMenu()">
     <span>
         <i class="fas fa-user-cog"></i>
-        <span style="font-size: 14px;">USER MANAGEMENT</span>
+        <span>USER MANAGEMENT</span>
     </span>
 </div>
 
-<!-- USER MANAGEMENT SUBMENU -->
 <div id="user-menu" class="submenu">
-    <!-- Superadmin Section -->
     {% if request.user.is_superuser %}
-    <a href="{% url 'users_table' %}">
-        <i class="fas fa-users"></i> Users List
-    </a>
-    <a href="{% url 'add_user' %}">
-        <i class="fas fa-user-plus"></i> Add User
-    </a>
-    <a href="{% url 'user_menu_control' %}">
-        <i class="fas fa-sliders-h"></i> User Control
-    </a>
-    {% endif %}
-
-    <!-- Normal User Section -->
-    {% if request.user.is_authenticated and not request.user.is_superuser %}
-        {% if 'users_table' in allowed_menus or request.session.user_level == 'admin' %}
         <a href="{% url 'users_table' %}">
             <i class="fas fa-users"></i> Users List
         </a>
-        
-        
+        <a href="{% url 'add_user' %}">
+            <i class="fas fa-user-plus"></i> Add User
+        </a>
+        <a href="{% url 'user_menu_control' %}">
+            <i class="fas fa-sliders-h"></i> User Control
+        </a>
+    {% elif request.user.is_authenticated %}
+        {% if 'users_table' in allowed_menus %}
+        <a href="{% url 'users_table' %}">
+            <i class="fas fa-users"></i> Users List
+        </a>
         
         <a href="{% url 'user_menu_control' %}">
             <i class="fas fa-sliders-h"></i> User Control
@@ -1194,6 +1188,8 @@
         {% endif %}
     {% endif %}
 </div>
+{% endif %}
+
 {% if 'all_districts' in allowed_menus or 'all_areas' in allowed_menus or 'all_locations' in allowed_menus or 'all_branches' in allowed_menus or 'users_table' in allowed_menus or 'department_list' in allowed_menus or 'reminder_type' in allowed_menus or 'job_titles' in allowed_menus or 'all_department' in allowed_menus or 'business_type_list' in allowed_menus or 'all_requirements' in allowed_menus or 'item_list' in allowed_menus or 'supplier_list' in allowed_menus or 'all_complaints' in allowed_menus or 'software_table' in allowed_menus or 'all_hardwares' in allowed_menus %}
 
 <div class="mainmenu" onclick="toggleMasterMenu()">
