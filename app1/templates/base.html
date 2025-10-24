@@ -1189,9 +1189,8 @@
     {% endif %}
 </div>
 {% endif %}
-
+{# Master section — reworked to match admin sidebar structure and permission checks #}
 {% if 'all_districts' in allowed_menus or 'all_areas' in allowed_menus or 'all_locations' in allowed_menus or 'all_branches' in allowed_menus or 'users_table' in allowed_menus or 'department_list' in allowed_menus or 'reminder_type' in allowed_menus or 'job_titles' in allowed_menus or 'all_department' in allowed_menus or 'business_type_list' in allowed_menus or 'all_requirements' in allowed_menus or 'item_list' in allowed_menus or 'supplier_list' in allowed_menus or 'all_complaints' in allowed_menus or 'software_table' in allowed_menus or 'all_hardwares' in allowed_menus %}
-
 <div class="mainmenu" onclick="toggleMasterMenu()">
     <span>
         <i class="fas fa-cogs"></i>
@@ -1200,8 +1199,8 @@
 </div>
 
 <div id="master-menu" class="submenu">
-    <!-- Company Submenu -->
-    {% if 'all_districts' in allowed_menus or 'all_areas' in allowed_menus or 'all_locations' in allowed_menus or 'all_branches' in allowed_menus or 'department_list' in allowed_menus %}
+    {# Company Submenu (show only if any of these company-related perms exist) #}
+    {% if 'all_districts' in allowed_menus or 'all_areas' in allowed_menus or 'all_locations' in allowed_menus or 'all_branches' in allowed_menus or 'department_list' in allowed_menus or 'vehicle_list' in allowed_menus %}
     <div class="mainmenu" onclick="toggleCompanyMenu()" style="margin-left: 0; padding-left: 10px;">
         <span style="font-size: 0.95em;">
             <i class="fas fa-building"></i>
@@ -1210,9 +1209,7 @@
     </div>
     <div id="company-menu" class="submenu" style="margin-left: 20px;">
         {% if 'vehicle_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
-        <a href="{% url 'vehicle_list' %}">
-            <i class="fas fa-list-alt"></i> Vehicle Master
-        </a>
+        <a href="{% url 'vehicle_list' %}"><i class="fas fa-list-alt"></i> Vehicle Master</a>
         {% endif %}
         {% if 'all_districts' in allowed_menus %}
         <a href="{% url 'all_districts' %}"><i class="fas fa-map"></i> District</a>
@@ -1226,16 +1223,13 @@
         {% if 'all_branches' in allowed_menus %}
         <a href="{% url 'all_branches' %}"><i class="fas fa-code-branch"></i> Offices/Locations</a>
         {% endif %}
-        <!-- {% if 'users_table' in allowed_menus %}
-        <a href="{% url 'users_table' %}"><i class="fas fa-users"></i> Users</a>
-        {% endif %} -->
         {% if 'department_list' in allowed_menus %}
         <a href="{% url 'purchase_order:department_list' %}"><i class="fas fa-sitemap"></i> Department</a>
         {% endif %}
     </div>
     {% endif %}
 
-    <!-- Business Submenu -->
+    {# Business Submenu #}
     {% if 'reminder_type' in allowed_menus or 'job_titles' in allowed_menus or 'all_department' in allowed_menus or 'business_type_list' in allowed_menus or 'all_requirements' in allowed_menus %}
     <div class="mainmenu" onclick="toggleBusinessMenu()" style="margin-left: 0; padding-left: 10px;">
         <span style="font-size: 0.95em;">
@@ -1262,20 +1256,34 @@
     </div>
     {% endif %}
 
-                {% if 'supplier_list' in allowed_menus %}
-                <a href="{% url 'purchase_order:supplier_list' %}"><i class="fas fa-truck"></i> Supplier</a>
-                {% endif %}
-                {% if 'item_list' in allowed_menus %}
-                <a href="{% url 'purchase_order:item_list' %}"><i class="fas fa-box"></i> Items</a>
-                {% endif %}
-                {% if 'department_list' in allowed_menus %}
-                <a href="{% url 'purchase_order:department_list' %}"><i class="fas fa-sitemap"></i> Planet Branch</a>
-                {% endif %}  
+    {# Suppliers / Items / Branch quick links (keep permission checks) #}
+    {% if 'supplier_list' in allowed_menus %}
+    <a href="{% url 'purchase_order:supplier_list' %}"><i class="fas fa-truck"></i> Supplier</a>
+    {% endif %}
 
-            </div>
-            {% endif %}
-        {% endif %}
-    </div>
+    {% if 'item_list' in allowed_menus %}
+    <a href="{% url 'purchase_order:item_list' %}"><i class="fas fa-box"></i> Items</a>
+    {% endif %}
+
+    {% if 'department_list' in allowed_menus %}
+    <a href="{% url 'purchase_order:department_list' %}"><i class="fas fa-sitemap"></i> Planet Branch</a>
+    {% endif %}
+
+    {# Complaints / Software / Hardware (preserve original allowed checks) #}
+    {% if 'all_complaints' in allowed_menus %}
+    <a href="{% url 'all_complaints' %}"><i class="fas fa-bug"></i> Complaints</a>
+    {% endif %}
+
+    {% if 'software_table' in allowed_menus %}
+    <a href="{% url 'software_table' %}"><i class="fas fa-puzzle-piece"></i> Softwares</a>
+    {% endif %}
+
+    {% if 'all_hardwares' in allowed_menus %}
+    <a href="{% url 'all_hardwares' %}"><i class="fas fa-desktop"></i> Hardware</a>
+    {% endif %}
+</div>
+{% endif %}
+
 
     <!-- Main Content Area -->
     <div class="content">
