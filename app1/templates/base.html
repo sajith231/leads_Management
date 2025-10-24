@@ -415,7 +415,11 @@
             </div>
     
             <div id="hr-menu" class="submenu">
-                <a href="{% url 'job_roles' %}"><i class="fas fa-briefcase"></i> Duties and responsiblity</a>
+                 {% if 'job_roles' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+                <a href="{% url 'job_roles' %}">
+                    <i class="fas fa-briefcase"></i> Duties and Responsibility
+                </a>
+                {% endif %}
                 {% if 'cv_management' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
                 <a href="{% url 'cv_management' %}"><i class="fas fa-file-contract"></i> CV Management</a>
                 {% endif %}
@@ -789,7 +793,11 @@
             
     
             <div id="hr-menu" class="submenu">
-                <a href="{% url 'job_roles' %}"><i class="fas fa-briefcase"></i> Duties and responsiblity</a>
+                {% if 'job_roles' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+                <a href="{% url 'job_roles' %}">
+                    <i class="fas fa-briefcase"></i> Duties and Responsibility
+                </a>
+                {% endif %}
                 {% if 'cv_management' in allowed_menus %}
                 <a href="{% url 'cv_management' %}"><i class="fas fa-file-contract"></i> CV Management</a>
                 {% endif %}
@@ -1134,7 +1142,11 @@
         </span>
     </div>
     <div id="company-menu" class="submenu" style="margin-left: 20px;">
-        <a href="{% url 'vehicle_list' %}"><i class="fas fa-list-alt"></i> Vehicle Master</a>
+        {% if 'vehicle_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+        <a href="{% url 'vehicle_list' %}">
+            <i class="fas fa-list-alt"></i> Vehicle Master
+        </a>
+        {% endif %}
         {% if 'all_districts' in allowed_menus %}
         <a href="{% url 'all_districts' %}"><i class="fas fa-map"></i> District</a>
         {% endif %}

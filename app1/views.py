@@ -5253,6 +5253,7 @@ def configure_user_menu(request, user_id):
             'name': 'HR',
             'icon': 'fas fa-users-cog',
             'submenus': [
+                {'id': 'job_roles', 'name': 'Duties and responsiblity', 'icon': 'fas fa-briefcase'},
                 {'id': 'cv_management', 'name': 'CV Management', 'icon': 'fas fa-file-contract'},
                 {'id': 'interview_management', 'name': 'Interview Management', 'icon': 'fas fa-user-tie'},
                 {
@@ -5411,6 +5412,7 @@ def configure_user_menu(request, user_id):
             'name': 'Company',
             'icon': 'fas fa-building',
             'submenus': [
+                {'id': 'vehicle_list', 'name': 'Vehicle Master', 'icon': 'fas fa-list-alt'},
                 {'id': 'all_districts', 'name': 'District', 'icon': 'fas fa-map'},
                 {'id': 'all_areas', 'name': 'Area', 'icon': 'fas fa-map-marker-alt'},
                 {'id': 'all_locations', 'name': 'Location', 'icon': 'fas fa-chart-area'},
