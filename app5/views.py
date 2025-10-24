@@ -561,64 +561,19 @@ def update_jobcard_status(request, pk):
 from django.shortcuts import render
 from .models import JobCard
 
-# views.py - Replace the jobcard_assign_table and assign_new_job functions with these fixed versions
-
 def jobcard_assign_table(request):
-    """
-    Display list of all job cards with assignment status
-    Shows tickets that have at least one item with 'logged' status
-    """
-    # Get all jobcards ordered by creation date
-    all_jobcards = JobCard.objects.all().order_by('-created_at')
-    
-    # Process each jobcard to determine if it has logged items
-    jobcards_to_display = []
-    for jobcard in all_jobcards:
-        jobcard.per_item_assignments = []
-        jobcard.has_logged_items = False
-        jobcard.has_assigned_items = False
-        jobcard.logged_items_count = 0
-        
-        if hasattr(jobcard, 'items_data') and jobcard.items_data:
-            for item in jobcard.items_data:
-                item_status = item.get('status', 'logged')
-                technician = item.get('technician')
-                
-                # Count logged items
-                if item_status == 'logged':
-                    jobcard.has_logged_items = True
-                    jobcard.logged_items_count += 1
-                
-                # Track assigned items
-                if technician and item_status in ['sent_technician', 'accepted']:
-                    jobcard.has_assigned_items = True
-                    jobcard.per_item_assignments.append({
-                        'item': item.get('item'),
-                        'technician': technician,
-                        'status': item_status
-                    })
-        
-        # Only include jobcards that have at least one logged item
-        if jobcard.has_logged_items:
-            jobcards_to_display.append(jobcard)
-    
-    # Pagination
-    paginator = Paginator(jobcards_to_display, 10)
+    # Show all jobcards
+    jobcards_list = JobCard.objects.all().order_by('-created_at')  # adjust ordering if need
+    paginator = Paginator(jobcards_list, 10)  # Show 10 jobcards per page
+
     page_number = request.GET.get("page")
     jobcards = paginator.get_page(page_number)
-    
-    # Calculate statistics
+    # Get accurate counts for each status
     stats = {
         "total": JobCard.objects.count(),
-        "logged": sum(1 for jc in all_jobcards if any(
-            item.get('status') == 'logged' 
-            for item in (jc.items_data or [])
-        )),
-        "accepted": JobCard.objects.filter(status="accepted").count(),
-        "sent_technician": sum(1 for jc in all_jobcards if any(
-            item.get('status') == 'sent_technician' 
-            for item in (jc.items_data or [])
-        )),
+        "logged": JobCard.objects.filter(status="logged").count(),
+        "accepted": JobCard.objects.filter(status="accepted").count(),  # Added this line
+        "sent_technician": JobCard.objects.filter(status="sent_technician").count(),
         "pending": JobCard.objects.filter(status="pending").count(),
         "completed": JobCard.objects.filter(status="completed").count(),
         "returned": JobCard.objects.filter(status="returned").count(),
@@ -630,9 +585,6 @@ def jobcard_assign_table(request):
         "stats": stats
     }
     return render(request, "jobcard_assign_table.html", context)
-
-
-
  
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
@@ -657,171 +609,55 @@ def send_whatsapp_message(phone_number, message):
         print(f"Failed to send WhatsApp message to {phone_number}. Status code: {response.status_code}, Response: {response.text}")
 
 def assign_new_job(request):
-    """
-    Assign job items to technicians
-    Shows ONLY logged items (not already assigned items)
-    """
     if request.method == 'POST':
         ticket_number = request.POST.get('ticketNumber')
-        jobcard_id = request.POST.get('jobcard_id')
+        technician = request.POST.get('technician')
         status = request.POST.get('status', 'sent_technician')
         
         try:
-            # Use ID for more reliable lookup
-            if jobcard_id:
-                jobcard = JobCard.objects.get(id=jobcard_id)
-            else:
-                jobcard = JobCard.objects.get(ticket_no=ticket_number)
+            jobcard = JobCard.objects.get(ticket_no=ticket_number)
+            jobcard.technician = technician
+            jobcard.status = status  # Update main status
             
-            # Get all item assignments from the form
-            item_assignments = {}
-            assignments_made = 0
-            
-            for key, value in request.POST.items():
-                if key.startswith('item_technician_'):
-                    index = key.replace('item_technician_', '')
-                    technician_name = value
-                    if technician_name:  # Only process if technician is selected
-                        item_assignments[index] = technician_name
-                        assignments_made += 1
-            
-            if assignments_made == 0:
-                messages.error(request, "Please assign at least one technician to an item")
-                return redirect('app5:assign_new_job')
-            
-            # Update each item with its assigned technician
-            if jobcard.items_data and item_assignments:
-                for index, item in enumerate(jobcard.items_data):
-                    technician_key = str(index)
-                    if technician_key in item_assignments:
-                        # Only update if item is in 'logged' status
-                        if item.get('status', 'logged') == 'logged':
-                            item['technician'] = item_assignments[technician_key]
-                            item['status'] = 'sent_technician'
-                            item['assigned_at'] = timezone.now().isoformat()
-            
-            # Update main jobcard status based on all items
-            all_sent = all(
-                item.get('status') in ['sent_technician', 'accepted', 'completed', 'returned', 'rejected'] 
-                for item in jobcard.items_data
-            )
-            if all_sent:
-                jobcard.status = 'sent_technician'
-            else:
-                # Keep as logged if some items are still logged
-                jobcard.status = 'logged'
-            
-            # Set assigned date if not already set
-            if not jobcard.assigned_date:
+            # ✅ SET THE ASSIGNED DATE WHEN ASSIGNING TO TECHNICIAN
+            if not jobcard.assigned_date:  # Only set if not already set
                 jobcard.assigned_date = timezone.now()
             
-            # Set main technician (use first assigned technician or keep existing)
-            if item_assignments and not jobcard.technician:
-                first_technician = next(iter(item_assignments.values()))
-                jobcard.technician = first_technician
+            # ✅ UPDATE INDIVIDUAL ITEM STATUSES TO 'sent_technician'
+            if jobcard.items_data:
+                for item in jobcard.items_data:
+                    item['status'] = 'sent_technician'  # Update each item's status
             
             jobcard.save()
             
-            # Send WhatsApp notifications
+            # Fetch the technician's phone number from the User model
             try:
-                unique_technicians = set(item_assignments.values())
-                for technician_name in unique_technicians:
-                    assigned_user = User.objects.filter(name=technician_name).first()
-                    if assigned_user and assigned_user.phone_number:
-                        # Get items assigned to this technician
-                        assigned_items = []
-                        for idx, tech in item_assignments.items():
-                            if tech == technician_name:
-                                item_index = int(idx)
-                                if item_index < len(jobcard.items_data):
-                                    assigned_items.append(jobcard.items_data[item_index]['item'])
-                        
-                        items_text = ", ".join(assigned_items)
-                        message = f"You have been assigned items from job ticket {ticket_number}: {items_text}"
-                        send_whatsapp_message(assigned_user.phone_number, message)
-            except Exception as e:
-                logger.warning(f"WhatsApp notification error: {e}")
+                assigned_user = User.objects.get(name=technician)
+                if assigned_user.phone_number:
+                    # Prepare the WhatsApp message
+                    message = f"You have been assigned a new job. Ticket Number: {ticket_number}"
+                    send_whatsapp_message(assigned_user.phone_number, message)
+            except User.DoesNotExist:
+                pass  # Silently fail if user not found
             
-            # Create success message
-            assignment_summary = ", ".join([
-                f"{jobcard.items_data[int(idx)]['item']} → {tech}" 
-                for idx, tech in item_assignments.items()
-                if int(idx) < len(jobcard.items_data)
-            ])
-            
-            messages.success(request, f"✅ Job {ticket_number} assigned successfully! {assignments_made} item(s) assigned: {assignment_summary}")
+            messages.success(request, f"Job {ticket_number} assigned to {technician} successfully!")
             return redirect('app5:jobcard_assign_table')
-            
         except JobCard.DoesNotExist:
             messages.error(request, f"Job card with ticket number {ticket_number} not found")
         except User.DoesNotExist:
-            messages.error(request, "One or more technicians not found")
+            messages.error(request, f"User {technician} not found")
         except Exception as e:
             messages.error(request, f"Error assigning job: {str(e)}")
     
     # GET request - show the form
-    # Get all jobcards
-    all_jobcards = JobCard.objects.all().order_by("-created_at")
-    
-    # Enhanced jobcards with ONLY logged items
-    enhanced_jobcards = []
-    for jobcard in all_jobcards:
-        # Filter to get ONLY logged items
-        logged_items_only = []
-        
-        if hasattr(jobcard, 'items_data') and jobcard.items_data:
-            for item in jobcard.items_data:
-                if isinstance(item, dict):
-                    item_status = item.get('status', 'logged')
-                    
-                    # ✅ ONLY include items with 'logged' status
-                    if item_status == 'logged':
-                        processed_item = {
-                            'item': item.get('item', 'Unknown Item'),
-                            'serial': item.get('serial', ''),
-                            'config': item.get('config', ''),
-                            'warranty': item.get('warranty', 'no'),
-                            'take_to_office': item.get('take_to_office', 'no'),
-                            'complaints': item.get('complaints', []),
-                            'status': item_status,
-                            'technician': ''  # Always empty for logged items
-                        }
-                        logged_items_only.append(processed_item)
-                elif isinstance(item, str):
-                    # Handle case where item is just a string (assume logged)
-                    logged_items_only.append({
-                        'item': item,
-                        'serial': '',
-                        'config': '',
-                        'warranty': 'no',
-                        'take_to_office': 'no',
-                        'complaints': [],
-                        'status': 'logged',
-                        'technician': ''
-                    })
-        
-        # ✅ Only include jobcards that have at least one logged item
-        if logged_items_only:
-            enhanced_jobcards.append({
-                'id': jobcard.id,
-                'ticket_no': jobcard.ticket_no,
-                'customer': jobcard.customer,
-                'phone': jobcard.phone,
-                'address': jobcard.address,
-                'items_data': logged_items_only,  # ✅ Only logged items
-                'items_count': len(logged_items_only)
-            })
-    
+    jobcards = JobCard.objects.filter(status='logged').order_by("-created_at")
     technicians = User.objects.filter(status='active').order_by('name')
     
     context = {
-        "jobcards": enhanced_jobcards,
+        "jobcards": jobcards,
         "technicians": technicians,
     }
     return render(request, "jobcard_assign_form.html", context)
-
-
-
 
 def get_customer_by_ticket(request, ticket_no):
     """API endpoint to get customer details by ticket number"""
@@ -881,76 +717,33 @@ def jobcard_assign_edit(request, pk):
     return render(request, "jobcard_assign_edit.html", context)
 
 
-# In your view that renders jobcard_assign_form
-def your_assign_view(request):
-    # Get all jobcards
-    all_jobcards = JobCard.objects.all()
-    
-    jobcards_with_logged_items = []
-    
-    for jobcard in all_jobcards:
-        items_data = jobcard.items_data  # Your existing items data
-        logged_items_count = 0
-        
-        if items_data:
-            for item in items_data:
-                # Check if item has 'logged' status
-                item_status = item.get('status', 'logged')  # Default to logged if not specified
-                if item_status == 'logged':
-                    logged_items_count += 1
-        
-        # Only include jobcards that have at least one logged item
-        if logged_items_count > 0:
-            jobcard.logged_items_count = logged_items_count
-            jobcard.items_count = len(items_data) if items_data else 0
-            jobcards_with_logged_items.append(jobcard)
-    
-    context = {
-        'jobcards': jobcards_with_logged_items,  # Only tickets with logged items
-        'technicians': technicians,  # Your existing technicians
-    }
-    
-    return render(request, 'jobcard_assign_form.html', context)
-
-
 # In your views.py
-# In your assignment view
 def assign_job_to_technician(request):
     if request.method == 'POST':
-        jobcard_id = request.POST.get('jobcard_id')
-        jobcard = JobCard.objects.get(id=jobcard_id)
+        ticket_number = request.POST.get('ticketNumber')
+        technician_name = request.POST.get('technician')
+        status = request.POST.get('status', 'sent_technician')
         
-        # Get all selected items
-        selected_items = []
-        for key, value in request.POST.items():
-            if key.startswith('item_select_'):
-                item_index = int(key.replace('item_select_', ''))
-                technician_name = request.POST.get(f'item_technician_{item_index}')
-                item_name = request.POST.get(f'item_name_{item_index}')
-                
-                if technician_name:  # Only process if technician is assigned
-                    selected_items.append({
-                        'index': item_index,
-                        'name': item_name,
-                        'technician': technician_name
-                    })
-        
-        # Update only the selected items' status
-        items_data = jobcard.items_data
-        for assignment in selected_items:
-            item_index = assignment['index']
-            if item_index < len(items_data):
-                # Only update if the item is in 'logged' status
-                if items_data[item_index].get('status') == 'logged':
-                    items_data[item_index]['status'] = 'sent_technician'
-                    items_data[item_index]['technician'] = assignment['technician']
-                    items_data[item_index]['assigned_at'] = timezone.now().isoformat()
-        
-        jobcard.items_data = items_data
-        jobcard.save()
-        
-        messages.success(request, f'Successfully assigned {len(selected_items)} items to technicians')
-        return redirect('app5:jobcard_assign_table')
+        try:
+            jobcard = JobCard.objects.get(ticket_no=ticket_number)
+            
+            # Update the job card with technician and status
+            jobcard.technician = technician_name
+            jobcard.status = status  # This should be 'sent_technician'
+            
+            # If you have per-item status, update that too
+            if hasattr(jobcard, 'items_data'):
+                for item in jobcard.items_data:
+                    item['status'] = 'sent_technician'
+            
+            jobcard.save()
+            
+            messages.success(request, f'Job assigned to {technician_name} successfully!')
+            return redirect('app5:jobcard_assign_table')
+            
+        except JobCard.DoesNotExist:
+            messages.error(request, 'Job card not found!')
+
     
    
 

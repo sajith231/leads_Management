@@ -31,6 +31,8 @@ urlpatterns = [
 
     # Add this to your urlpatterns
     path('get-customer-by-ticket/<str:ticket_no>/', views.get_customer_by_ticket, name='get_customer_by_ticket'),
+     path('update-status/<int:pk>/', views.update_status, name='update_status'),
+    
 
    path('suppliermaster/', views.supplier_master, name='supplier_master'),
    path('suppliermaster/add/', views.supplier_master_add, name='supplier_master_add'),
