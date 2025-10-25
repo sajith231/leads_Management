@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.utils.dateparse import parse_date
 from django.contrib import messages
 from django.db.models import Q
 from django.db import transaction
@@ -7,26 +8,47 @@ from decimal import Decimal
 from datetime import date
 from django.utils import timezone  
 from .models import Supplier, PurchaseOrder, Item, PurchaseOrderItem, Department
+from django.core.paginator import Paginator
+from django.core.paginator import EmptyPage, PageNotAnInteger
 
 
-# ==================== SUPPLIER VIEWS ====================
+
+# ==================== SUPPLIER VIEWS (UPDATED) ====================
 
 def supplier_list(request):
     """Display all suppliers with search functionality"""
     search_query = request.GET.get('search', '')
-    suppliers = Supplier.objects.filter(is_active=True)
+    department_filter = request.GET.get('department', '')
+    
+    suppliers = Supplier.objects.select_related('department').filter(is_active=True)
     
     if search_query:
         suppliers = suppliers.filter(
             Q(name__icontains=search_query) |
             Q(city__icontains=search_query) |
             Q(state__icontains=search_query) |
-            Q(mobile_no__icontains=search_query)
+            Q(mobile_no__icontains=search_query) |
+            Q(gst_number__icontains=search_query) |
+            Q(contact_person_name__icontains=search_query)
         )
     
+    if department_filter:
+        suppliers = suppliers.filter(department_id=department_filter)
+
+    # 🧾 Apply pagination (30 per page)
+    paginator = Paginator(suppliers.order_by('-id'), 30)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    
+    departments = Department.objects.filter(is_active=True).order_by('name')
+    
     context = {
-        'suppliers': suppliers,
-        'search_query': search_query
+         'suppliers': page_obj, 
+        'page_obj': page_obj,   
+        'search_query': search_query,
+        'department_filter': department_filter,
+        'departments': departments,
     }
     return render(request, 'purchase_order/supplier_list.html', context)
 
@@ -35,7 +57,14 @@ def supplier_create(request):
     """Create a new supplier"""
     if request.method == 'POST':
         try:
-            Supplier.objects.create(
+            # Get department if provided
+            department_id = request.POST.get('department')
+            department = None
+            if department_id:
+                department = get_object_or_404(Department, pk=department_id)
+            
+            # Create supplier with new fields
+            supplier = Supplier.objects.create(
                 name=request.POST.get('name'),
                 address=request.POST.get('address'),
                 places=request.POST.get('places', ''),
@@ -43,6 +72,11 @@ def supplier_create(request):
                 state=request.POST.get('state'),
                 mobile_no=request.POST.get('mobile_no'),
                 alternate_number=request.POST.get('alternate_number', ''),
+                department=department,
+                gst_number=request.POST.get('gst_number', ''),
+                contact_person_name=request.POST.get('contact_person_name', ''),
+                created_by=request.user.username if request.user.is_authenticated else 'Admin',
+                updated_by=request.user.username if request.user.is_authenticated else 'Admin',
                 is_active=True
             )
             messages.success(request, 'Supplier created successfully!')
@@ -50,7 +84,13 @@ def supplier_create(request):
         except Exception as e:
             messages.error(request, f'Error creating supplier: {str(e)}')
     
-    return render(request, 'purchase_order/supplier_form.html', {'action': 'Create'})
+    departments = Department.objects.filter(is_active=True).order_by('name')
+    
+    context = {
+        'action': 'Create',
+        'departments': departments,
+    }
+    return render(request, 'purchase_order/supplier_form.html', context)
 
 
 def supplier_update(request, pk):
@@ -59,6 +99,12 @@ def supplier_update(request, pk):
     
     if request.method == 'POST':
         try:
+            # Get department if provided
+            department_id = request.POST.get('department')
+            department = None
+            if department_id:
+                department = get_object_or_404(Department, pk=department_id)
+            
             supplier.name = request.POST.get('name')
             supplier.address = request.POST.get('address')
             supplier.places = request.POST.get('places', '')
@@ -66,6 +112,11 @@ def supplier_update(request, pk):
             supplier.state = request.POST.get('state')
             supplier.mobile_no = request.POST.get('mobile_no')
             supplier.alternate_number = request.POST.get('alternate_number', '')
+            supplier.department = department
+            supplier.gst_number = request.POST.get('gst_number', '')
+            supplier.contact_person_name = request.POST.get('contact_person_name', '')
+            supplier.is_active = request.POST.get('is_active') == 'True'
+            supplier.updated_by = request.user.username if request.user.is_authenticated else 'Admin'
             supplier.save()
             
             messages.success(request, 'Supplier updated successfully!')
@@ -73,9 +124,12 @@ def supplier_update(request, pk):
         except Exception as e:
             messages.error(request, f'Error updating supplier: {str(e)}')
     
+    departments = Department.objects.filter(is_active=True).order_by('name')
+    
     context = {
         'supplier': supplier,
-        'action': 'Update'
+        'action': 'Update',
+        'departments': departments,
     }
     return render(request, 'purchase_order/supplier_form.html', context)
 
@@ -91,6 +145,7 @@ def supplier_delete(request, pk):
                 'Cannot delete supplier with existing purchase orders. Deactivating instead.'
             )
             supplier.is_active = False
+            supplier.updated_by = request.user.username if request.user.is_authenticated else 'Admin'
             supplier.save()
         else:
             supplier.delete()
@@ -145,13 +200,16 @@ def item_add(request):
             Item.objects.create(
                 name=request.POST.get('name'),
                 description=request.POST.get('description', ''),
-                department=department,  
+                department=department,
                 unit_of_measure=request.POST.get('unit_of_measure', 'pcs'),
                 tax_percentage=Decimal(request.POST.get('tax_percentage', '18.00')),
                 mrp=Decimal(request.POST.get('mrp', '0.00')),
                 purchase_price=Decimal(request.POST.get('purchase_price', '0.00')),
                 cost=Decimal(request.POST.get('cost', '0.00')),
-                hsn_code=request.POST.get('hsn_code', '')
+                hsn_code=request.POST.get('hsn_code', ''),
+                is_active=True,  # Default to active
+                created_by=request.user.username if request.user.is_authenticated else 'Admin',
+                updated_by=request.user.username if request.user.is_authenticated else 'Admin',
             )
             messages.success(request, "Item added successfully.")
             return redirect('purchase_order:item_list')
@@ -181,14 +239,17 @@ def item_edit(request, pk):
 
             item.name = request.POST.get('name')
             item.description = request.POST.get('description', '')
-            item.department = department  # ✅ ADDED
+            item.department = department
             item.unit_of_measure = request.POST.get('unit_of_measure', 'pcs')
             item.tax_percentage = Decimal(request.POST.get('tax_percentage', '18.00'))
             item.mrp = Decimal(request.POST.get('mrp', '0.00'))
             item.purchase_price = Decimal(request.POST.get('purchase_price', '0.00'))
             item.cost = Decimal(request.POST.get('cost', '0.00'))
             item.hsn_code = request.POST.get('hsn_code', '')
+            item.is_active = request.POST.get('status') == "True"  # ✅ Add status control
+            item.updated_by = request.user.username if request.user.is_authenticated else 'Admin'
             item.save()
+
             
             messages.success(request, "Item updated successfully.")
             return redirect('purchase_order:item_list')
@@ -224,58 +285,99 @@ def item_delete(request, pk):
 # ==================== PURCHASE ORDER VIEWS ====================
 
 def purchase_order_list(request):
-    """Display all purchase orders with search and filter"""
+    """Display all purchase orders with search and filters"""
+    # Get filter parameters
     search_query = request.GET.get('search', '')
     status_filter = request.GET.get('status', '')
     admin_status_filter = request.GET.get('admin_status', '')
+    department_filter = request.GET.get('department', '')
+    supplier_filter = request.GET.get('supplier', '')
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
     
-    purchase_orders = PurchaseOrder.objects.select_related('supplier').prefetch_related('po_items').all()
+    # Start with all purchase orders
+    purchase_orders = PurchaseOrder.objects.select_related(
+        'supplier', 
+        'supplier__department'
+    ).prefetch_related('po_items').all().order_by('-po_date', '-created_at')
     
+    # Apply search filter
     if search_query:
         purchase_orders = purchase_orders.filter(
             Q(po_number__icontains=search_query) |
             Q(supplier__name__icontains=search_query) |
-            Q(reference_number__icontains=search_query)
+            Q(reference_number__icontains=search_query) |
+            Q(supplier__city__icontains=search_query) |
+            Q(supplier__state__icontains=search_query)
         )
     
+    # Apply status filter
     if status_filter:
         purchase_orders = purchase_orders.filter(status=status_filter)
-
-    # ✅ ADD THIS
+    
+    # Apply admin status filter
     if admin_status_filter:
-        purchase_orders = purchase_orders.filter(admin_status=admin_status_filter)    
+        purchase_orders = purchase_orders.filter(admin_status=admin_status_filter)
+    
+    # Apply department filter (filter by supplier's department)
+    if department_filter:
+        purchase_orders = purchase_orders.filter(supplier__department_id=department_filter)
+    
+    # Apply supplier filter
+    if supplier_filter:
+        purchase_orders = purchase_orders.filter(supplier_id=supplier_filter)
+
+    if start_date:
+        purchase_orders = purchase_orders.filter(po_date__gte=parse_date(start_date))
+    if end_date:
+        purchase_orders = purchase_orders.filter(po_date__lte=parse_date(end_date))    
+    
+    # Pagination - 25 items per page
+    paginator = Paginator(purchase_orders, 25)
+    page = request.GET.get('page')
+    
+    try:
+        purchase_orders = paginator.page(page)
+    except PageNotAnInteger:
+        # If page is not an integer, deliver first page
+        purchase_orders = paginator.page(1)
+    except EmptyPage:
+        # If page is out of range, deliver last page
+        purchase_orders = paginator.page(paginator.num_pages)
+    
+    # Get all active departments and suppliers for filter dropdowns
+    departments = Department.objects.filter(is_active=True).order_by('name')
+    suppliers = Supplier.objects.filter(is_active=True).order_by('name')
     
     context = {
         'purchase_orders': purchase_orders,
         'search_query': search_query,
         'status_filter': status_filter,
         'admin_status_filter': admin_status_filter,
+        'department_filter': department_filter,
+        'supplier_filter': supplier_filter,
+        'start_date': start_date,
+        'end_date': end_date,
         'status_choices': PurchaseOrder.STATUS_CHOICES,
-        'admin_status_choices': PurchaseOrder.ADMIN_STATUS_CHOICES
+        'admin_status_choices': PurchaseOrder.ADMIN_STATUS_CHOICES,
+        'departments': departments,
+        'suppliers': suppliers,
     }
+    
     return render(request, 'purchase_order/po_list.html', context)
 
 
 # ==================== CREATE PURCHASE ORDER ====================
 @transaction.atomic
 def purchase_order_create(request):
-    """Create new purchase order with line items and departments"""
+    """Create new purchase order with line items including entry rate"""
     if request.method == 'POST':
         try:
-            # Supplier
             supplier = get_object_or_404(Supplier, pk=request.POST.get('supplier'))
-            
-            # Department (Buyer) - NEW
             department = get_object_or_404(Department, pk=request.POST.get('department'))
-
-            # Generate PO number if not provided
             po_number = request.POST.get('po_number') or PurchaseOrder.generate_po_number()
-            
-            # ✅ REPLACE WITH THIS
-            # Get client details from the searchable dropdown (loaded from API)
             client_details = request.POST.get('client_details', '').strip()
 
-            # Validate that client is selected
             if not client_details:
                 messages.error(request, 'Please select a client from the dropdown')
                 return redirect('purchase_order:po_create')
@@ -285,18 +387,22 @@ def purchase_order_create(request):
             else:
                 admin_status = 'PENDING'
 
+            # Get calculation method
+            calculation_method = request.POST.get('calculation_method', 'PLUS_TAX')
+
             # Create Purchase Order
             po = PurchaseOrder.objects.create(
                 po_number=po_number,
                 po_date=request.POST.get('po_date'),
                 supplier=supplier,
-                department=department,  # NEW - Add department to PO
+                department=department,
                 reference_number=request.POST.get('reference_number', ''),
                 delivery_date=request.POST.get('delivery_date'),
                 client_details=client_details,
                 payment_terms=request.POST.get('payment_terms', 'NET_30'),
                 status=request.POST.get('status', 'DRAFT'),
                 admin_status=admin_status,
+                calculation_method=calculation_method,
                 notes=request.POST.get('notes', ''),
                 created_by=request.user.username if request.user.is_authenticated else 'Admin'
             )
@@ -305,9 +411,9 @@ def purchase_order_create(request):
             item_ids = request.POST.getlist('item_id[]')
             quantities = request.POST.getlist('quantity[]')
             unit_prices = request.POST.getlist('unit_price[]')
+            entry_rates = request.POST.getlist('entry_rate[]')  # ✅ NEW
             discounts = request.POST.getlist('discount[]')
             tax_percents = request.POST.getlist('tax_percent[]')
-            line_department_ids = request.POST.getlist('line_department[]')  # Line-level departments
 
             total_amount = Decimal('0.00')
             total_tax = Decimal('0.00')
@@ -318,27 +424,36 @@ def purchase_order_create(request):
 
                 item = get_object_or_404(Item, pk=item_ids[i])
                 
-                # Use line-level department if provided, else use PO department
-                line_dept = None
-                if line_department_ids and i < len(line_department_ids) and line_department_ids[i]:
-                    line_dept = get_object_or_404(Department, pk=line_department_ids[i])
-                
                 qty = Decimal(quantities[i] or '0')
                 unit_price = Decimal(unit_prices[i] or '0')
                 discount = Decimal(discounts[i] or '0')
                 tax_percent = Decimal(tax_percents[i] or '0')
 
-                subtotal = (qty * unit_price) - discount
-                tax_amount = subtotal * (tax_percent / 100)
-                line_total = subtotal + tax_amount
+                # ✅ Calculate entry_rate and totals based on method
+                if calculation_method == 'PLUS_TAX':
+                    # Plus Tax: base price + tax
+                    entry_rate = unit_price  # Same as unit price
+                    subtotal = (qty * unit_price) - discount
+                    tax_amount = subtotal * (tax_percent / 100)
+                    line_total = subtotal + tax_amount
+                else:  # REVERSE_TAX
+                    # Reverse Tax: extract tax from inclusive price
+                    # Entry rate = base price after removing tax
+                    entry_rate = unit_price / (Decimal('1') + (tax_percent / Decimal('100')))
+                    
+                    gross_amount = (qty * unit_price) - discount
+                    subtotal = (qty * entry_rate) - (discount / (Decimal('1') + (tax_percent / Decimal('100'))))
+                    tax_amount = gross_amount - subtotal
+                    line_total = gross_amount
 
-                # Create PO Item
+                # Create PO Item with entry_rate
                 PurchaseOrderItem.objects.create(
                     purchase_order=po,
                     item=item,
-                    department=line_dept,  # Line-level department (optional)
+                    department=department,
                     quantity=qty,
                     unit_price=unit_price,
+                    entry_rate=entry_rate,  # ✅ NEW
                     discount=discount,
                     tax_percent=tax_percent,
                     line_total=line_total
@@ -360,10 +475,10 @@ def purchase_order_create(request):
             messages.error(request, f'Error creating purchase order: {str(e)}')
             return redirect('purchase_order:po_create')
 
-    # GET request - render form
+    # GET request
     suppliers = Supplier.objects.filter(is_active=True).order_by('name')
     items = Item.objects.all().order_by('name')
-    departments = Department.objects.filter(is_active=True).order_by('name')  # Only active departments
+    departments = Department.objects.filter(is_active=True).order_by('name')
 
     context = {
         'suppliers': suppliers,
@@ -371,17 +486,17 @@ def purchase_order_create(request):
         'departments': departments,
         'payment_terms': PurchaseOrder.PAYMENT_TERMS_CHOICES,
         'status_choices': PurchaseOrder.STATUS_CHOICES,
+        'calculation_methods': PurchaseOrder.CALCULATION_METHOD_CHOICES,
         'today': date.today(),
         'action': 'Create',
         'auto_po_number': PurchaseOrder.generate_po_number()
     }
     return render(request, 'purchase_order/po_form.html', context)
 
-
 # ==================== UPDATE PURCHASE ORDER ====================
 @transaction.atomic
 def purchase_order_update(request, pk):
-    """Update existing purchase order with line items and department"""
+    """Update existing purchase order with entry rate support"""
     po = get_object_or_404(PurchaseOrder, pk=pk)
 
     if request.method == 'POST':
@@ -399,12 +514,11 @@ def purchase_order_update(request, pk):
             po.client_details = request.POST.get('client_details')
             po.payment_terms = request.POST.get('payment_terms')
             po.status = request.POST.get('status')
+            po.calculation_method = request.POST.get('calculation_method', 'PLUS_TAX')
             
-            # ✅ UPDATED: Only superadmin can change admin_status
+            # Admin status handling
             if request.user.is_superuser:
                 new_admin_status = request.POST.get('admin_status', po.admin_status)
-                
-                # Track approval/rejection
                 if new_admin_status != po.admin_status:
                     if new_admin_status == 'APPROVED':
                         po.admin_approved_by = request.user.username
@@ -416,12 +530,7 @@ def purchase_order_update(request, pk):
                         po.admin_approved_at = timezone.now()
                         po.admin_rejection_reason = request.POST.get('rejection_reason', 'No reason provided')
                         messages.warning(request, f'❌ Purchase Order {po.po_number} REJECTED!')
-                
                 po.admin_status = new_admin_status
-            else:
-                # Non-superadmin cannot change admin_status
-                if request.POST.get('admin_status') and request.POST.get('admin_status') != po.admin_status:
-                    messages.warning(request, '⚠️ Only superadmin can change approval status.')
             
             po.notes = request.POST.get('notes', '')
             po.save()
@@ -429,10 +538,11 @@ def purchase_order_update(request, pk):
             # Remove existing line items
             po.po_items.all().delete()
 
-            # Line item data
+            # Recalculate with entry rate
             item_ids = request.POST.getlist('item_id[]')
             quantities = request.POST.getlist('quantity[]')
             unit_prices = request.POST.getlist('unit_price[]')
+            entry_rates = request.POST.getlist('entry_rate[]')  # ✅ NEW
             discounts = request.POST.getlist('discount[]')
             tax_percents = request.POST.getlist('tax_percent[]')
 
@@ -449,16 +559,26 @@ def purchase_order_update(request, pk):
                 discount = Decimal(discounts[i] or '0')
                 tax_percent = Decimal(tax_percents[i] or '0')
 
-                subtotal = (qty * unit_price) - discount
-                tax_amount = subtotal * (tax_percent / 100)
-                line_total = subtotal + tax_amount
+                # Calculate based on method
+                if po.calculation_method == 'PLUS_TAX':
+                    entry_rate = unit_price
+                    subtotal = (qty * unit_price) - discount
+                    tax_amount = subtotal * (tax_percent / 100)
+                    line_total = subtotal + tax_amount
+                else:  # REVERSE_TAX
+                    entry_rate = unit_price / (Decimal('1') + (tax_percent / Decimal('100')))
+                    gross_amount = (qty * unit_price) - discount
+                    subtotal = (qty * entry_rate) - (discount / (Decimal('1') + (tax_percent / Decimal('100'))))
+                    tax_amount = gross_amount - subtotal
+                    line_total = gross_amount
 
                 PurchaseOrderItem.objects.create(
                     purchase_order=po,
                     item=item,
-                    department=department,  # ✅ same as PO-level department
+                    department=department,
                     quantity=qty,
                     unit_price=unit_price,
+                    entry_rate=entry_rate,  # ✅ NEW
                     discount=discount,
                     tax_percent=tax_percent,
                     line_total=line_total
@@ -467,7 +587,6 @@ def purchase_order_update(request, pk):
                 total_amount += subtotal
                 total_tax += tax_amount
 
-            # Update totals
             po.total_amount = total_amount
             po.tax_amount = total_tax
             po.grand_total = total_amount + total_tax
@@ -479,7 +598,7 @@ def purchase_order_update(request, pk):
         except Exception as e:
             messages.error(request, f'Error updating purchase order: {str(e)}')
 
-    # GET request (render form)
+    # GET request
     suppliers = Supplier.objects.filter(is_active=True).order_by('name')
     items = Item.objects.all().order_by('name')
     departments = Department.objects.filter(is_active=True).order_by('name')
@@ -492,7 +611,8 @@ def purchase_order_update(request, pk):
         'payment_terms': PurchaseOrder.PAYMENT_TERMS_CHOICES,
         'status_choices': PurchaseOrder.STATUS_CHOICES,
         'admin_status_choices': PurchaseOrder.ADMIN_STATUS_CHOICES,
-        'is_superuser': request.user.is_superuser,  # ✅ ADD THIS
+        'calculation_methods': PurchaseOrder.CALCULATION_METHOD_CHOICES,
+        'is_superuser': request.user.is_superuser,
         'action': 'Update',
         'today': date.today(),
         'auto_po_number': po.po_number
@@ -809,29 +929,40 @@ from django.utils import timezone
 
 @login_required
 def approve_purchase_order(request, pk):
-    """Approve a purchase order (admin only)"""
+    """Update admin approval status (superadmin only)"""
     po = get_object_or_404(PurchaseOrder, pk=pk)
     
-    if request.method == 'POST':
-        action = request.POST.get('action')
-        
-        if action == 'approve':
-            po.admin_status = 'APPROVED'
-            po.admin_approved_by = request.user.username
-            po.admin_approved_at = timezone.now()
-            po.admin_rejection_reason = ''
-            messages.success(request, f'Purchase Order {po.po_number} approved successfully!')
-        
-        elif action == 'reject':
-            po.admin_status = 'REJECTED'
-            po.admin_approved_by = request.user.username
-            po.admin_approved_at = timezone.now()
-            po.admin_rejection_reason = request.POST.get('rejection_reason', 'No reason provided')
-            messages.warning(request, f'Purchase Order {po.po_number} rejected.')
-        
-        po.save()
+    # Check if user is superadmin
+    if not request.user.is_superuser:
+        messages.error(request, '⚠️ Only superadmin can change approval status.')
         return redirect('purchase_order:po_detail', pk=po.pk)
     
-    return render(request, 'purchase_order/po_approve.html', {'po': po})
+    if request.method == 'POST':
+        new_status = request.POST.get('admin_status')
+        
+        if new_status in ['PENDING', 'APPROVED', 'REJECTED']:
+            old_status = po.admin_status
+            po.admin_status = new_status
+            po.admin_approved_by = request.user.username
+            po.admin_approved_at = timezone.now()
+            
+            if new_status == 'REJECTED':
+                po.admin_rejection_reason = request.POST.get('rejection_reason', 'No reason provided')
+            else:
+                po.admin_rejection_reason = ''
+            
+            po.save()
+            
+            # Success messages
+            if new_status == 'APPROVED':
+                messages.success(request, f'✅ Purchase Order {po.po_number} has been APPROVED!')
+            elif new_status == 'REJECTED':
+                messages.warning(request, f'❌ Purchase Order {po.po_number} has been REJECTED!')
+            else:
+                messages.info(request, f'⏳ Purchase Order {po.po_number} status set to PENDING.')
+        else:
+            messages.error(request, 'Invalid approval status.')
+    
+    return redirect('purchase_order:po_detail', pk=po.pk)
     
     

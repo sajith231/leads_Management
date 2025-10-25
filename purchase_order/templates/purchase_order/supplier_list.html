@@ -12,16 +12,30 @@
         </a>
     </div>
 
-    <!-- Search Bar -->
+    <!-- Search & Filter Bar -->
     <div class="search-section">
         <div class="search-box">
             <i class="fas fa-search"></i>
             <input 
                 type="text" 
                 id="searchInput"
-                placeholder="Search by name, city, state or mobile..." 
+                placeholder="Search by name, city, state, mobile, GST or contact person..." 
                 class="search-input"
             >
+        </div>
+        
+        <!-- Department Filter -->
+        <div class="filter-box">
+            <label for="departmentFilter">
+            </label>
+            <select id="departmentFilter" class="filter-select">
+                <option value="">All Departments</option>
+                {% for dept in departments %}
+                <option value="{{ dept.id }}" {% if department_filter == dept.id|stringformat:"s" %}selected{% endif %}>
+                    {{ dept.name }}
+                </option>
+                {% endfor %}
+            </select>
         </div>
     </div>
 
@@ -34,10 +48,14 @@
                     <tr>
                         <th>ID</th>
                         <th>Supplier Name</th>
+                        <th>Contact Person</th>
                         <th>City</th>
                         <th>State</th>
                         <th>Mobile</th>
-                        <th>Alternate Number</th>
+                        <th>GST Number</th>
+                        <th>Department</th>
+                        {% comment %} <th>Created By</th>
+                        <th>Created Date</th> {% endcomment %}
                         <th>Status</th>
                         <th>Actions</th>
                     </tr>
@@ -52,10 +70,36 @@
                             <div class="supplier-place">{{ supplier.places }}</div>
                             {% endif %}
                         </td>
+                        <td>{{ supplier.contact_person_name|default:"-" }}</td>
                         <td>{{ supplier.city }}</td>
                         <td>{{ supplier.state }}</td>
                         <td>{{ supplier.mobile_no }}</td>
-                        <td>{{ supplier.alternate_number|default:"-" }}</td>
+                        <td>
+                            {% if supplier.gst_number %}
+                            <span class="gst-number">{{ supplier.gst_number }}</span>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if supplier.department %}
+                            <span class="dept-badge">{{ supplier.department.name }}</span>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        {% comment %} <td>
+                            <div class="user-info">
+                                <i class="fas fa-user"></i>
+                                {{ supplier.created_by|default:"Admin" }}
+                            </div>
+                        </td>
+                        <td>
+                            <div class="date-info">
+                                <i class="far fa-calendar"></i>
+                                {{ supplier.created_at|date:"d M Y" }}
+                            </div>
+                        </td> {% endcomment %}
                         <td>
                             {% if supplier.is_active %}
                             <span class="badge badge-success">Active</span>
@@ -87,13 +131,39 @@
             <a href="{% url 'purchase_order:supplier_create' %}" class="btn btn-primary">Add First Supplier</a>
         </div>
         {% endif %}
+
+        {% if suppliers.has_other_pages %}
+        <div class="pagination-container">
+            <ul class="pagination">
+                {% if suppliers.has_previous %}
+                <li><a href="?page={{ suppliers.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if department_filter %}&department={{ department_filter }}{% endif %}">&laquo; Prev</a></li>
+                {% else %}
+                <li class="disabled"><span>&laquo; Prev</span></li>
+                {% endif %}
+
+                {% for num in suppliers.paginator.page_range %}
+                    {% if suppliers.number == num %}
+                    <li class="active"><span>{{ num }}</span></li>
+                    {% elif num > suppliers.number|add:'-3' and num < suppliers.number|add:'3' %}
+                    <li><a href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if department_filter %}&department={{ department_filter }}{% endif %}">{{ num }}</a></li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if suppliers.has_next %}
+                <li><a href="?page={{ suppliers.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if department_filter %}&department={{ department_filter }}{% endif %}">Next &raquo;</a></li>
+                {% else %}
+                <li class="disabled"><span>Next &raquo;</span></li>
+                {% endif %}
+            </ul>
+        </div>
+        {% endif %}
     </div>
 </div>
 
 <style>
 .content-wrapper {
     padding: 20px;
-    max-width: 1600px;
+    max-width: 1800px;
     margin: 0 auto;
 }
 
@@ -135,24 +205,21 @@
     box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
 }
 
-.btn-secondary {
-    background: #95a5a6;
-    color: white;
-}
-
-.btn-secondary:hover {
-    background: #7f8c8d;
-}
-
 .search-section {
     background: white;
     padding: 20px;
     border-radius: 8px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     margin-bottom: 20px;
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    flex-wrap: wrap;
 }
 
 .search-box {
+    flex: 1;
+    min-width: 300px;
     display: flex;
     align-items: center;
     gap: 10px;
@@ -175,6 +242,36 @@
     color: #2c3e50;
 }
 
+.filter-box {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.filter-box label {
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.filter-select {
+    padding: 10px 15px;
+    border: 2px solid #e9ecef;
+    border-radius: 6px;
+    font-size: 14px;
+    background: white;
+    cursor: pointer;
+    min-width: 200px;
+}
+
+.filter-select:focus {
+    outline: none;
+    border-color: #3498db;
+}
+
 .table-container {
     background: white;
     border-radius: 8px;
@@ -189,7 +286,63 @@
 .data-table {
     width: 100%;
     border-collapse: collapse;
-    min-width: 1200px;
+    table-layout: fixed;   /* Ensures fixed column widths */
+    min-width: 1100px;
+}
+
+/* Define fixed widths for each column */
+.data-table th:nth-child(1),
+.data-table td:nth-child(1) {
+    width: 5%;  /* ID */
+    text-align: center;
+}
+
+.data-table th:nth-child(2),
+.data-table td:nth-child(2) {
+    width: 18%;  /* Supplier Name */
+}
+
+.data-table th:nth-child(3),
+.data-table td:nth-child(3) {
+    width: 13%;  /* Contact Person */
+}
+
+.data-table th:nth-child(4),
+.data-table td:nth-child(4) {
+    width: 10%;  /* City */
+}
+
+.data-table th:nth-child(5),
+.data-table td:nth-child(5) {
+    width: 6%;  /* State */
+}
+
+.data-table th:nth-child(6),
+.data-table td:nth-child(6) {
+    width: 14%;  /* Mobile */
+    text-align: center;
+}
+
+.data-table th:nth-child(7),
+.data-table td:nth-child(7) {
+    width: 12%;  /* GST Number */
+}
+
+.data-table th:nth-child(8),
+.data-table td:nth-child(8) {
+    width: 11%;  /* Department */
+}
+
+.data-table th:nth-child(9),
+.data-table td:nth-child(9) {
+    width: 10%;  /* Status */
+    text-align: center;
+}
+
+.data-table th:nth-child(10),
+.data-table td:nth-child(10) {
+    width: 8%;  /* Actions */
+    text-align: center;
 }
 
 .data-table thead {
@@ -239,6 +392,40 @@
     font-size: 12px;
     color: #7f8c8d;
     margin-top: 4px;
+}
+
+.dept-badge {
+    background: #e3f2fd;
+    color: #1976d2;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    display: inline-block;
+}
+
+.gst-number {
+    font-family: 'Courier New', monospace;
+    background: #f0f0f0;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+.user-info, .date-info {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: #555;
+}
+
+.user-info i, .date-info i {
+    color: #7f8c8d;
+}
+
+.text-muted {
+    color: #95a5a6;
 }
 
 .badge {
@@ -318,7 +505,74 @@
         align-items: flex-start;
         gap: 15px;
     }
+    
+    .search-section {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .search-box {
+        min-width: 100%;
+    }
+    
+    .filter-box {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .filter-select {
+        width: 100%;
+    }
 }
+
+.pagination-container {
+    text-align: center;
+    padding: 20px;
+    background: #fff;
+    border-top: 1px solid #ecf0f1;
+}
+
+.pagination {
+    list-style: none;
+    display: inline-flex;
+    gap: 6px;
+    padding: 0;
+    margin: 0;
+}
+
+.pagination li {
+    display: inline;
+}
+
+.pagination a, .pagination span {
+    display: block;
+    padding: 8px 14px;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+    text-decoration: none;
+    color: #2c3e50;
+    transition: all 0.3s;
+    font-weight: 500;
+}
+
+.pagination a:hover {
+    background: #3498db;
+    color: white;
+    border-color: #3498db;
+}
+
+.pagination .active span {
+    background: #3498db;
+    color: white;
+    border-color: #3498db;
+}
+
+.pagination .disabled span {
+    color: #aaa;
+    border-color: #eee;
+    cursor: not-allowed;
+}
+
 </style>
 
 <script>
@@ -333,6 +587,17 @@ document.getElementById('searchInput').addEventListener('keyup', function() {
         const text = row.textContent.toLowerCase();
         row.style.display = text.includes(searchValue) ? '' : 'none';
     }
+});
+
+// Department filter
+document.getElementById('departmentFilter').addEventListener('change', function() {
+    const url = new URL(window.location.href);
+    if (this.value) {
+        url.searchParams.set('department', this.value);
+    } else {
+        url.searchParams.delete('department');
+    }
+    window.location.href = url.toString();
 });
 </script>
 {% endblock %}
