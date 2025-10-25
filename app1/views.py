@@ -5364,6 +5364,16 @@ def configure_user_menu(request, user_id):
     ]
 },
 {
+    'name': 'Vehicle Management',
+    'icon': 'fas fa-car',
+    'submenus': [
+        # include only the ones you actually route; keep/remove vehicle_list as needed
+        {'id': 'fuel_management',  'name': 'Fuel Management', 'icon': 'fas fa-gas-pump'},
+        {'id': 'fuel_monitoring',  'name': 'Vehicle Ledger',  'icon': 'fas fa-chart-line'},
+        # {'id': 'vehicle_list',   'name': 'Vehicles',        'icon': 'fas fa-car-side'},  # optional
+    ]
+},
+{
     'name': 'IMC Drive',
     'icon': 'fas fa-folder',
     'submenus': [
