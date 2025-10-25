@@ -1,4 +1,3 @@
-
 {% extends "base.html" %}
 
 {% block title %}Service Billing List{% endblock %}
@@ -434,20 +433,24 @@
                 {% endif %}
                 
                 <!-- Complete Button -->
+                {% if jobcard.status != 'completed' %}
                 <button class="btn btn-success btn-sm complete-btn" 
                         title="Mark as Complete"
                         data-ticket-no="{{ jobcard.ticket_no }}"
                         data-customer="{{ jobcard.customer }}">
                     <i class="fas fa-check-circle"></i>
                 </button>
+                {% endif %}
                 
                 <!-- Return Button -->
+                {% if jobcard.status != 'returned' %}
                 <button class="btn btn-info btn-sm return-btn" 
                         title="Mark as Returned"
                         data-ticket-no="{{ jobcard.ticket_no }}"
                         data-customer="{{ jobcard.customer }}">
                     <i class="fas fa-undo"></i>
                 </button>
+                {% endif %}
                 
                 <button class="btn btn-danger btn-sm delete-btn" 
                         title="Delete Invoice"
@@ -527,6 +530,9 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Initialize button states based on invoice and status
+    initializeButtonStates();
+
     // Delete functionality
     const deleteButtons = document.querySelectorAll('.delete-btn');
     
@@ -580,20 +586,20 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Complete functionality
+    // Complete functionality - Update Invoice Status to Completed
     const completeButtons = document.querySelectorAll('.complete-btn');
     completeButtons.forEach(button => {
         button.addEventListener('click', function() {
             const ticketNo = this.getAttribute('data-ticket-no');
             const customer = this.getAttribute('data-customer');
             
-            if (confirm(`Are you sure you want to mark this job as complete?\n\nTicket: ${ticketNo}\nCustomer: ${customer}`)) {
+            if (confirm(`Are you sure you want to mark this INVOICE as completed?\n\nTicket: ${ticketNo}\nCustomer: ${customer}`)) {
                 // Show loading state
                 const originalHTML = this.innerHTML;
                 this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
                 this.disabled = true;
                 
-                // AJAX call to mark as complete
+                // AJAX call to update status to completed
                 fetch(`{% url 'app5:update_jobcard_status_by_ticket' %}`, {
                     method: 'POST',
                     headers: {
@@ -602,34 +608,50 @@ document.addEventListener('DOMContentLoaded', function() {
                     },
                     body: JSON.stringify({
                         ticket_no: ticketNo,
-                        action: 'completed'
+                        action: 'completed',
+                        update_type: 'invoice_status'  // Add this to distinguish from jobcard status
                     })
                 })
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        // Update the status badge in the table
+                        // Update the invoice status badge in the table
                         const row = this.closest('tr');
-                        const statusCell = row.querySelector('td:nth-child(7)');
-                        if (statusCell) {
-                            statusCell.innerHTML = '<span class="badge bg-success">Completed</span>';
+                        const invoiceStatusCell = row.querySelector('td:nth-child(7)');
+                        if (invoiceStatusCell) {
+                            invoiceStatusCell.innerHTML = `
+                                <span class="badge bg-success">Completed</span>
+                                <small class="text-muted d-block">INV-${ticketNo}</small>
+                            `;
                         }
                         
                         // Update row data attribute
                         row.setAttribute('data-status', 'completed');
                         
-                        showAlert(`Job ${ticketNo} marked as complete successfully!`, 'success');
+                        // Hide the complete button after successful action
+                        this.style.display = 'none';
+                        
+                        // Enable return button for completed invoices
+                        const returnBtn = row.querySelector('.return-btn');
+                        if (returnBtn) {
+                            returnBtn.disabled = false;
+                            returnBtn.style.opacity = '1';
+                            returnBtn.style.cursor = 'pointer';
+                            returnBtn.title = 'Mark Invoice as Returned';
+                        }
+                        
+                        showAlert(`Invoice ${ticketNo} marked as completed successfully!`, 'success');
                         updateStatistics();
                         
                     } else {
-                        showAlert(data.error || 'Error marking job as complete', 'danger');
+                        showAlert(data.error || 'Error marking invoice as completed', 'danger');
                         this.innerHTML = originalHTML;
                         this.disabled = false;
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    showAlert('Network error marking job as complete', 'danger');
+                    showAlert('Network error marking invoice as completed', 'danger');
                     this.innerHTML = originalHTML;
                     this.disabled = false;
                 });
@@ -637,20 +659,29 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Return functionality
+    // Return functionality - Update Invoice Status to Returned (ONLY for completed invoices)
     const returnButtons = document.querySelectorAll('.return-btn');
     returnButtons.forEach(button => {
         button.addEventListener('click', function() {
+            // Double check if invoice is completed
+            const row = this.closest('tr');
+            const status = row.getAttribute('data-status');
+            
+            if (status !== 'completed') {
+                showAlert('Return action is only available for completed invoices!', 'warning');
+                return;
+            }
+            
             const ticketNo = this.getAttribute('data-ticket-no');
             const customer = this.getAttribute('data-customer');
             
-            if (confirm(`Are you sure you want to mark this job as returned?\n\nTicket: ${ticketNo}\nCustomer: ${customer}`)) {
+            if (confirm(`Are you sure you want to mark this COMPLETED INVOICE as returned?\n\nTicket: ${ticketNo}\nCustomer: ${customer}`)) {
                 // Show loading state
                 const originalHTML = this.innerHTML;
                 this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
                 this.disabled = true;
                 
-                // AJAX call to mark as returned
+                // AJAX call to update status to returned
                 fetch(`{% url 'app5:update_jobcard_status_by_ticket' %}`, {
                     method: 'POST',
                     headers: {
@@ -659,34 +690,41 @@ document.addEventListener('DOMContentLoaded', function() {
                     },
                     body: JSON.stringify({
                         ticket_no: ticketNo,
-                        action: 'returned'
+                        action: 'returned',
+                        update_type: 'invoice_status'  // Add this to distinguish from jobcard status
                     })
                 })
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        // Update the status badge in the table
+                        // Update the invoice status badge in the table
                         const row = this.closest('tr');
-                        const statusCell = row.querySelector('td:nth-child(7)');
-                        if (statusCell) {
-                            statusCell.innerHTML = '<span class="badge bg-info">Returned</span>';
+                        const invoiceStatusCell = row.querySelector('td:nth-child(7)');
+                        if (invoiceStatusCell) {
+                            invoiceStatusCell.innerHTML = `
+                                <span class="badge bg-info">Returned</span>
+                                <small class="text-muted d-block">INV-${ticketNo}</small>
+                            `;
                         }
                         
                         // Update row data attribute
                         row.setAttribute('data-status', 'returned');
                         
-                        showAlert(`Job ${ticketNo} marked as returned successfully!`, 'success');
+                        // Hide the return button after successful action
+                        this.style.display = 'none';
+                        
+                        showAlert(`Invoice ${ticketNo} marked as returned successfully!`, 'success');
                         updateStatistics();
                         
                     } else {
-                        showAlert(data.error || 'Error marking job as returned', 'danger');
+                        showAlert(data.error || 'Error marking invoice as returned', 'danger');
                         this.innerHTML = originalHTML;
                         this.disabled = false;
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    showAlert('Network error marking job as returned', 'danger');
+                    showAlert('Network error marking invoice as returned', 'danger');
                     this.innerHTML = originalHTML;
                     this.disabled = false;
                 });
@@ -742,6 +780,43 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 5000);
 });
 
+// Initialize button states based on invoice status
+function initializeButtonStates() {
+    const rows = document.querySelectorAll('.jobcard-row');
+    
+    rows.forEach(row => {
+        const status = row.getAttribute('data-status');
+        const hasInvoice = row.querySelector('.badge.bg-success, .badge.bg-info') !== null; // Check if invoiced badge exists
+        
+        const completeBtn = row.querySelector('.complete-btn');
+        const returnBtn = row.querySelector('.return-btn');
+        
+        // Show complete button only if invoice exists and invoice is not completed/returned
+        if (completeBtn) {
+            if (hasInvoice && status !== 'completed' && status !== 'returned') {
+                completeBtn.style.display = '';
+            } else {
+                completeBtn.style.display = 'none';
+            }
+        }
+        
+        // Enable return button only if invoice is completed
+        if (returnBtn) {
+            if (status === 'completed') {
+                returnBtn.disabled = false;
+                returnBtn.style.opacity = '1';
+                returnBtn.style.cursor = 'pointer';
+                returnBtn.title = 'Mark Invoice as Returned';
+            } else {
+                returnBtn.disabled = true;
+                returnBtn.style.opacity = '0.5';
+                returnBtn.style.cursor = 'not-allowed';
+                returnBtn.title = 'Return only available for completed invoices';
+            }
+        }
+    });
+}
+
 // Helper function to get CSRF token
 function getCookie(name) {
     let cookieValue = null;
@@ -784,7 +859,7 @@ function showAlert(message, type) {
     }, 5000);
 }
 
-// Update statistics after deletion
+// Update statistics after status change
 function updateStatistics() {
     fetch(window.location.href)
         .then(response => response.text())

@@ -2803,3 +2803,38 @@ def update_jobcard_status_by_ticket(request):
             "success": False, 
             "error": str(e)
         })
+
+
+        # Add this function to your views.py
+
+@require_http_methods(["GET"])
+def api_jobcard_status(request, ticket_no):
+    """
+    API endpoint to get job card status by ticket number
+    """
+    try:
+        jobcard = get_object_or_404(JobCard, ticket_no=ticket_no)
+        
+        return JsonResponse({
+            'success': True,
+            'ticket_no': jobcard.ticket_no,
+            'status': jobcard.status,
+            'technician': jobcard.technician or '',
+            'customer': jobcard.customer,
+            'phone': jobcard.phone,
+            'address': jobcard.address,
+            'items_count': len(jobcard.items_data) if jobcard.items_data else 0,
+            'created_at': jobcard.created_at.isoformat() if jobcard.created_at else None
+        })
+    
+    except JobCard.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'error': f'Job card with ticket number {ticket_no} not found'
+        }, status=404)
+    
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
