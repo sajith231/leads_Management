@@ -24,31 +24,94 @@ from django.db import models
 from .models import Employee, Attendance, LeaveRequest, Holiday,LateRequest,DefaultSettings,EarlyRequest
 from .utils import is_holiday
 
+import requests
+
 def send_whatsapp_message(phone_number, message):
+    """
+    Send a WhatsApp message using the updated DxIng API.
+    Automatically encodes the message and logs response info.
+    """
+    # ✅ Updated credentials
     secret = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
-    account = "1748250982812b4ba287f5ee0bc9d43bbf5bbe87fb683431662a427"
-    url = f"https://app.dxing.in/api/send/whatsapp?secret={secret}&account={account}&recipient={phone_number}&type=text&message={message}&priority=1"
-    response = requests.get(url)
-    if response.status_code == 200:
-        print(f"WhatsApp message sent successfully to {phone_number}")
-    else:
-        print(f"Failed to send WhatsApp message to {phone_number}. Status code: {response.status_code}, Response: {response.text}")
+    account = "1761365422812b4ba287f5ee0bc9d43bbf5bbe87fb68fc4daea92d8"
+
+    # ✅ Encode message safely for URL
+    encoded_message = requests.utils.quote(message)
+
+    # ✅ Build the full API URL
+    url = (
+        f"https://app.dxing.in/api/send/whatsapp?"
+        f"secret={secret}"
+        f"&account={account}"
+        f"&recipient={phone_number}"
+        f"&type=text"
+        f"&message={encoded_message}"
+        f"&priority=1"
+    )
+
+    try:
+        response = requests.get(url, timeout=10)
+
+        if response.status_code == 200:
+            print(f"✅ WhatsApp message sent successfully to {phone_number}")
+            return True
+        else:
+            print(
+                f"❌ Failed to send WhatsApp message to {phone_number}. "
+                f"Status code: {response.status_code}, Response: {response.text}"
+            )
+            return False
+
+    except requests.exceptions.RequestException as e:
+        print(f"⚠️ Error sending WhatsApp message: {e}")
+        return False
+
 
 
 
 import requests
 
 def send_whatsapp_message_for_service_log(phone_number, message):
+    """
+    Send a WhatsApp message for service logs using the updated DxIng API.
+    Automatically encodes the message, handles errors, and logs the response.
+    """
+    # ✅ Updated API credentials
     secret = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
-    account = "1756959119812b4ba287f5ee0bc9d43bbf5bbe87fb68b9118fcf1af"  # ✅ new account
-    url = f"https://app.dxing.in/api/send/whatsapp?secret={secret}&account={account}&recipient={phone_number}&type=text&message={message}&priority=1"
-    
-    response = requests.get(url)
-    
-    if response.status_code == 200:
-        print(f"WhatsApp message sent successfully to {phone_number}")
-    else:
-        print(f"Failed to send WhatsApp message to {phone_number}. Status code: {response.status_code}, Response: {response.text}")
+    account = "1761365422812b4ba287f5ee0bc9d43bbf5bbe87fb68fc4daea92d8"  # ✅ new account
+
+    # ✅ Encode message safely
+    encoded_message = requests.utils.quote(message)
+
+    # ✅ Build API request URL
+    url = (
+        f"https://app.dxing.in/api/send/whatsapp?"
+        f"secret={secret}"
+        f"&account={account}"
+        f"&recipient={phone_number}"
+        f"&type=text"
+        f"&message={encoded_message}"
+        f"&priority=1"
+    )
+
+    try:
+        response = requests.get(url, timeout=10)
+
+        if response.status_code == 200:
+            print(f"✅ WhatsApp service log message sent successfully to {phone_number}")
+            return True
+        else:
+            print(
+                f"❌ Failed to send WhatsApp service log message to {phone_number}. "
+                f"Status: {response.status_code}, Response: {response.text}"
+            )
+            return False
+
+    except requests.exceptions.RequestException as e:
+        print(f"⚠️ Error sending WhatsApp service log message: {e}")
+        return False
+
+
 
 
 def login(request):
@@ -3831,18 +3894,28 @@ def create_leave_request(request):
 
 
 
-def send_whatsapp_message_new_request(phone_number, message):
-    secret = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
-    account = "1756959119812b4ba287f5ee0bc9d43bbf5bbe87fb68b9118fcf1af"  # ✅ updated account
+import requests
 
-    # Encode message for safe API call
+def send_whatsapp_message_new_request(phone_number, message):
+    """
+    Send a WhatsApp message using the updated DxIng API.
+    Automatically URL-encodes the message and handles connection errors.
+    """
+    secret = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
+    account = "1761365422812b4ba287f5ee0bc9d43bbf5bbe87fb68fc4daea92d8"  # ✅ updated account
+
+    # Encode message safely for URL
     encoded_message = requests.utils.quote(message)
 
+    # Build API URL
     url = (
         f"https://app.dxing.in/api/send/whatsapp?"
-        f"secret={secret}&account={account}"
+        f"secret={secret}"
+        f"&account={account}"
         f"&recipient={phone_number}"
-        f"&type=text&message={encoded_message}&priority=1"
+        f"&type=text"
+        f"&message={encoded_message}"
+        f"&priority=1"
     )
 
     try:
@@ -3857,6 +3930,7 @@ def send_whatsapp_message_new_request(phone_number, message):
                 f"Status code: {response.status_code}, Response: {response.text}"
             )
             return False
+
     except requests.exceptions.RequestException as e:
         print(f"⚠️ Error sending WhatsApp message: {e}")
         return False
@@ -5216,6 +5290,7 @@ def update_task_status(request, task_id):
 
 
 
+
 @login_required
 def user_menu_control(request):
     users = User.objects.all()
@@ -5224,11 +5299,8 @@ def user_menu_control(request):
         user_id = request.POST.get('user_id')
         if user_id:
             return redirect('configure_user_menu', user_id=user_id)
-            
+    
     return render(request, 'user_menu_control.html', {'users': users})
-
-
-
 
 @login_required
 def configure_user_menu(request, user_id):
@@ -5253,6 +5325,7 @@ def configure_user_menu(request, user_id):
             'name': 'HR',
             'icon': 'fas fa-users-cog',
             'submenus': [
+                {'id': 'job_roles', 'name': 'Duties and responsiblity', 'icon': 'fas fa-briefcase'},
                 {'id': 'cv_management', 'name': 'CV Management', 'icon': 'fas fa-file-contract'},
                 {'id': 'interview_management', 'name': 'Interview Management', 'icon': 'fas fa-user-tie'},
                 {
@@ -5333,25 +5406,7 @@ def configure_user_menu(request, user_id):
                 },
             ]
         },   
-        {
-            'name': 'Master',
-            'icon': 'fas fa-cog',
-            'submenus': [
-                {'id': 'all_districts', 'name': 'District', 'icon': 'fas fa-map'},
-                {'id': 'all_areas', 'name': 'Area', 'icon': 'fas fa-map-marker-alt'},
-                {'id': 'all_locations', 'name': 'Location', 'icon': 'fas fa-chart-area'},
-                {'id': 'all_requirements', 'name': 'Requirements', 'icon': 'fas fa-tasks'},
-                {'id': 'all_department', 'name': 'Department', 'icon': 'fas fa-building'},
-                {'id': 'job_roles', 'name': 'Job Role', 'icon': 'fas fa-briefcase'},
-                {'id': 'business_type_list', 'name': 'Business Type', 'icon': 'fas fa-binoculars'},
-                {'id': 'job_titles', 'name': 'Job Title', 'icon': 'fas fa-search'},
-                {'id': 'all_hardwares', 'name': 'Hardware', 'icon': 'fas fa-desktop'},
-                {'id': 'all_complaints', 'name': 'Complaints', 'icon': 'fas fa-bug'},
-                {'id': 'all_branches', 'name': 'Branch', 'icon': 'fas fa-code-branch'},
-                {'id': 'users_table', 'name': 'Users', 'icon': 'fas fa-users'},
-                {'id': 'reminder_type', 'name': 'Reminder Types', 'icon': 'fas fa-bell'}
-            ]
-        },
+        
        {
     'name': 'Information Centre',
     'icon': 'fas fa-photo-video',
@@ -5383,12 +5438,26 @@ def configure_user_menu(request, user_id):
     ]
 },
 {
-    'name': 'My Drive',
-    'icon': 'fas fa-folder',
+    'name': 'Vehicle Management',
+    'icon': 'fas fa-car',
     'submenus': [
-        {'id': 'drive_list', 'name': 'My Drive', 'icon': 'fas fa-folder'}
+        # include only the ones you actually route; keep/remove vehicle_list as needed
+        {'id': 'fuel_management',  'name': 'Fuel Management', 'icon': 'fas fa-gas-pump'},
+        {'id': 'fuel_monitoring',  'name': 'Vehicle Ledger',  'icon': 'fas fa-chart-line'},
+        # {'id': 'vehicle_list',   'name': 'Vehicles',        'icon': 'fas fa-car-side'},  # optional
     ]
 },
+{
+    'name': 'IMC Drive',
+    'icon': 'fas fa-folder',
+    'submenus': [
+        {'id': 'drive_list',   'name': 'IMC Drive',    'icon': 'fas fa-folder'},
+        {'id': 'drive_add',    'name': 'Add Folder',   'icon': 'fas fa-plus-circle'},
+        {'id': 'drive_edit',   'name': 'Edit Folder',  'icon': 'fas fa-pen-to-square'},
+        {'id': 'drive_delete', 'name': 'Delete Folder','icon': 'fas fa-trash'}
+    ]
+},
+
 
 {
     'name': 'SYSMAC',
@@ -5419,6 +5488,52 @@ def configure_user_menu(request, user_id):
                 {'id': 'imc2_list',           'name': 'IMC',                'icon': 'fas fa-hand-holding-usd'},
                 {'id': 'sysmac_info_list',    'name': 'SYSMAC-INFO',        'icon': 'fas fa-money-check'},
                 {'id': 'dq_list',             'name': 'DQ',                 'icon': 'fas fa-credit-card'},
+            ]
+        },
+        {
+            'name': 'User Management',
+            'icon': 'fas fa-user-cog',
+            'submenus': [
+                {'id': 'users_table', 'name': 'Users List', 'icon': 'fas fa-users'},
+                
+            ]
+        },
+        {
+            'name': 'Company',
+            'icon': 'fas fa-building',
+            'submenus': [
+                {'id': 'vehicle_list', 'name': 'Vehicle Master', 'icon': 'fas fa-list-alt'},
+                {'id': 'all_districts', 'name': 'District', 'icon': 'fas fa-map'},
+                {'id': 'all_areas', 'name': 'Area', 'icon': 'fas fa-map-marker-alt'},
+                {'id': 'all_locations', 'name': 'Location', 'icon': 'fas fa-chart-area'},
+                {'id': 'all_branches', 'name': 'Offices\\Locations', 'icon': 'fas fa-code-branch'},
+                {'id': 'department_list', 'name': 'Department', 'icon': 'fas fa-sitemap'},
+            ]
+        },
+
+        # ======== NEW: Business Menu ========
+        {
+            'name': 'Business',
+            'icon': 'fas fa-briefcase',
+            'submenus': [
+                {'id': 'reminder_type', 'name': 'Reminder Type', 'icon': 'fas fa-bell'},
+                {'id': 'job_titles', 'name': 'Job Title', 'icon': 'fas fa-id-card'},
+                {'id': 'all_department', 'name': 'Job Category', 'icon': 'fas fa-layer-group'},
+                {'id': 'business_type_list', 'name': 'Business Type', 'icon': 'fas fa-binoculars'},
+                {'id': 'all_requirements', 'name': 'Requirements', 'icon': 'fas fa-tasks'},
+            ]
+        },
+
+        # ======== NEW: Planet Menu (user-control representation) ========
+        {
+            'name': 'Planet (Extras)',
+            'icon': 'fas fa-globe',
+            'submenus': [
+                {'id': 'item_list', 'name': 'Item Master', 'icon': 'fas fa-boxes'},
+                {'id': 'supplier_list', 'name': 'Suppliers', 'icon': 'fas fa-truck'},
+                {'id': 'all_complaints', 'name': 'Complaints', 'icon': 'fas fa-bug'},
+                {'id': 'software_table', 'name': 'Softwares', 'icon': 'fas fa-puzzle-piece'},
+                {'id': 'all_hardwares', 'name': 'Hardware', 'icon': 'fas fa-desktop'},
             ]
         },
 

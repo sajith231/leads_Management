@@ -38,7 +38,6 @@ def jobcard_list(request):
         'status_counts': status_counts,
     }
     return render(request, 'jobcard_list.html', context)
-
 import logging
 from datetime import datetime
 import requests
@@ -46,8 +45,28 @@ import requests
 from django.shortcuts import render, redirect
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib import messages
+from django.utils import timezone
+from django.contrib.auth.models import User
+
+# Adjust the import path to match your app's models
+from .models import JobCard, JobCardImage, Item  # make sure these exist in your app
 
 logger = logging.getLogger(__name__)
+
+# ---- WhatsApp config (updated account) ----
+WHATSAPP_API_BASE = "https://app.dxing.in/api/send/whatsapp"
+WHATSAPP_SECRET   = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
+WHATSAPP_ACCOUNT  = "1761365422812b4ba287f5ee0bc9d43bbf5bbe87fb68fc4daea92d8"  # ← updated
+WHATSAPP_RECIPIENTS = ["9946545535"]  # keep/edit as needed
+
+
+def _normalize_phone(number: str) -> str:
+    """Keep digits and leading '+'. Remove spaces/dashes etc."""
+    s = str(number).strip()
+    if s.startswith("+"):
+        return "+" + "".join(ch for ch in s[1:] if ch.isdigit())
+    return "".join(ch for ch in s if ch.isdigit())
+
 
 @csrf_exempt
 def jobcard_create(request):
@@ -55,71 +74,71 @@ def jobcard_create(request):
         customer = request.POST.get('customer', '').strip()
         address = request.POST.get('address', '').strip()
         phone = request.POST.get('phone', '').strip()
-        status = request.POST.get('status', 'logged')
-        
-        # NEW: Check if self-assigned
-        self_assigned = request.POST.get('self_assigned') == 'true'
-        technician = None  # Initialize technician
-        assigned_date = None  # Initialize assigned_date
-        
-        # Get the current user as creator
+        status = request.POST.get('status', 'logged').strip() or 'logged'
+
+        # Self-assign handling (accept 'true', 'on', '1')
+        self_assigned_flag = (request.POST.get('self_assigned') or '').strip().lower()
+        self_assigned = self_assigned_flag in ('true', 'on', '1')
+
+        technician = None
+        assigned_date = None
+
+        # Creator (from session)
         creator = None
         creator_name = "Unknown"
-        
         if request.session.get('custom_user_id'):
             try:
                 creator = User.objects.get(id=request.session['custom_user_id'])
-                creator_name = getattr(creator, "name", creator.username if hasattr(creator, 'username') else str(creator))
+                creator_name = getattr(creator, "name", getattr(creator, "username", str(creator)))
             except User.DoesNotExist:
                 pass
-        
-        if self_assigned:
-            status = 'sent_technician'  # Change status if self-assigned
-            assigned_date = timezone.now()  # Set assigned date to current time
-            
-            # Set technician to current user's name
-            if creator:
-                technician = creator_name
-            else:
-                technician = "Self-Assigned User"  # Fallback
 
+        if self_assigned:
+            status = 'sent_technician'
+            assigned_date = timezone.now()
+            technician = creator_name if creator else "Self-Assigned User"
+
+        # Basic validations
         if not customer or not address or not phone:
             messages.error(request, "Customer name, address, and phone are required fields.")
             return redirect('app5:jobcard_create')
 
+        # Build items_data
         items = request.POST.getlist('items[]')
         serials = request.POST.getlist('serials[]')
         configs = request.POST.getlist('configs[]')
         items_data = []
 
-        # Build items_data structure with proper serial and config
         for idx, item_name in enumerate(items):
+            item_name = (item_name or "").strip()
             if not item_name:
                 continue
 
             item_entry = {
                 "item": item_name,
-                "serial": serials[idx] if idx < len(serials) else "",
-                "config": configs[idx] if idx < len(configs) else "",
-                "status": status,  # Add status for each item
-                "complaints": []
+                "serial": (serials[idx] if idx < len(serials) else "") or "",
+                "config": (configs[idx] if idx < len(configs) else "") or "",
+                "status": status,
+                "complaints": [],
             }
 
             complaint_descriptions = request.POST.getlist(f'complaints-{idx}[]')
             complaint_notes = request.POST.getlist(f'complaint_notes-{idx}[]')
 
-            for complaint_idx, description in enumerate(complaint_descriptions):
-                if not description.strip():
+            for c_i, description in enumerate(complaint_descriptions):
+                description = (description or "").strip()
+                if not description:
                     continue
+                note = complaint_notes[c_i] if c_i < len(complaint_notes) else ''
                 item_entry["complaints"].append({
                     "description": description,
-                    "notes": complaint_notes[complaint_idx] if complaint_idx < len(complaint_notes) else '',
+                    "notes": note,
                     "images": []
                 })
 
-            items_data.append(item_entry) 
+            items_data.append(item_entry)
 
-        # Create job card - UPDATED with self_assigned field
+        # Create JobCard
         job_card = JobCard.objects.create(
             customer=customer,
             address=address,
@@ -127,54 +146,45 @@ def jobcard_create(request):
             status=status,
             items_data=items_data,
             created_by=creator,
-            technician=technician,  # Set technician for self-assigned jobs
-            assigned_date=assigned_date,  # Set assigned_date for self-assigned jobs
-            self_assigned=self_assigned  # NEW: Add the self_assigned flag
+            technician=technician,
+            assigned_date=assigned_date,
+            self_assigned=self_assigned
         )
 
-        # Save uploaded images and update items_data image names
-        for idx, item_name in enumerate(items):
+        # Save uploaded images and attach names into items_data
+        for idx, _item_name in enumerate(items):
             complaint_descriptions = request.POST.getlist(f'complaints-{idx}[]')
-            for complaint_idx, description in enumerate(complaint_descriptions):
-                if not description.strip():
+            for c_i, description in enumerate(complaint_descriptions):
+                if not (description or "").strip():
                     continue
-                images = request.FILES.getlist(f'images-{idx}-{complaint_idx}[]')
+                images = request.FILES.getlist(f'images-{idx}-{c_i}[]')
                 for image in images:
                     JobCardImage.objects.create(
                         jobcard=job_card,
                         image=image,
                         item_index=idx,
-                        complaint_index=complaint_idx
+                        complaint_index=c_i
                     )
                     try:
-                        items_data[idx]["complaints"][complaint_idx]["images"].append(image.name)
+                        items_data[idx]["complaints"][c_i]["images"].append(image.name)
                     except Exception:
                         logger.debug("Index mismatch while attaching image name to items_data")
 
         job_card.items_data = items_data
         job_card.save()
 
-        # WhatsApp message details - UPDATED to include self-assignment info
+        # WhatsApp message
         created_date = job_card.created_at.strftime("%d-%m-%Y") if hasattr(job_card, "created_at") else datetime.now().strftime("%d-%m-%Y")
+        ticket_no = str(getattr(job_card, "ticket_no", "")) or f"JC{job_card.id:06d}"
 
-        if hasattr(job_card, "ticket_no") and job_card.ticket_no:
-            ticket_no = str(job_card.ticket_no)
-        else:
-            ticket_no = f"JC{job_card.id:06d}"
-
-        # NEW: Add self-assignment info to WhatsApp message
         assignment_info = ""
         if self_assigned and technician:
             assignment_info = f"*Assigned To:* {technician} (Self-Assigned)\n"
 
-        # ITEMS: only item names (no serial/config/complaints)
-        items_lines = []
-        for idx, item in enumerate(items_data):
-            items_lines.append(f"{idx+1}. {item.get('item','')}")
-
+        # Items list (names only)
+        items_lines = [f"{i+1}. {it.get('item','')}" for i, it in enumerate(items_data)]
         items_block = "\n".join(items_lines) if items_lines else "No items listed."
 
-        # Build final message - UPDATED with assignment info
         message_text = (
             f"📋 *Job Card Created* \n\n"
             f"*Created Date:* {created_date}\n"
@@ -186,47 +196,49 @@ def jobcard_create(request):
             f"*Items:*\n{items_block}\n"
         )
 
-        # WhatsApp API
-        whatsapp_api_base = "https://app.dxing.in/api/send/whatsapp"
-        params_base = {
-            "secret": "7b8ae820ecb39f8d173d57b51e1fce4c023e359e",
-            "account": "1756959119812b4ba287f5ee0bc9d43bbf5bbe87fb68b9118fcf1af",
-            "type": "text",
-            "priority": 1
-        }
-
-        recipients = ["9946545535"]
-
-        for recipient in recipients:
-            params = params_base.copy()
-            params["recipient"] = recipient
-            params["message"] = message_text
+        # Send WhatsApp
+        for raw_recipient in WHATSAPP_RECIPIENTS:
+            recipient = _normalize_phone(raw_recipient)
+            params = {
+                "secret": WHATSAPP_SECRET,
+                "account": WHATSAPP_ACCOUNT,  # ← updated account
+                "recipient": recipient,
+                "type": "text",
+                "message": message_text,  # requests will URL-encode params safely
+                "priority": 1,
+            }
             try:
-                resp = requests.get(whatsapp_api_base, params=params, timeout=10)
+                resp = requests.get(WHATSAPP_API_BASE, params=params, timeout=10)
                 if resp.status_code != 200:
-                    logger.error("WhatsApp API returned non-200 for %s: %s", recipient, resp.status_code)
-            except Exception as e:
+                    logger.error(
+                        "WhatsApp API non-200 for %s | Status: %s | Response: %s",
+                        recipient, resp.status_code, resp.text
+                    )
+                else:
+                    logger.info("WhatsApp sent to %s for job card %s", recipient, ticket_no)
+            except requests.exceptions.RequestException as e:
                 logger.exception("Failed to send WhatsApp message to %s: %s", recipient, e)
 
         success_message = "Job card created successfully."
-        if self_assigned:
+        if self_assigned and technician:
             success_message += f" Self-assigned to {technician}."
-        
         messages.success(request, success_message)
         return redirect('app5:jobcard_list')
 
-    # GET: fetch items + customers (existing code remains the same)
+    # GET: fetch items + customers
     items = Item.objects.all().order_by("name")
     customer_data = []
     try:
         api_url = "https://accmaster.imcbs.com/api/sync/rrc-clients/"
         response = requests.get(api_url, timeout=10)
         if response.status_code == 200:
-            customer_data = response.json()
-            for customer in customer_data:
-                customer['address'] = customer.get('address', '')
-                customer['phone_number'] = customer.get('mobile', '')
-                customer['branch'] = customer.get('branch', '')
+            customer_data = response.json() or []
+            for c in customer_data:
+                c['address'] = c.get('address', '')
+                c['phone_number'] = c.get('mobile', '')
+                c['branch'] = c.get('branch', '')
+        else:
+            logger.warning("Customers API returned %s", response.status_code)
     except Exception as e:
         logger.warning("Error fetching customer data: %s", e)
         customer_data = []
@@ -235,6 +247,7 @@ def jobcard_create(request):
         'items': items,
         'customer_data': customer_data
     })
+
 
 
 

@@ -143,19 +143,19 @@ CKEDITOR_CONFIGS = {
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'leading_management',
         'USER': 'postgres',
-        'PASSWORD': 'sajith@2003',
         'PASSWORD': '12345',
         'HOST': 'localhost',
         'PORT': '5432',
     }
 }
 
-# h
+
 # DATABASES = {c
 #     'default': {
 #         'ENGINE': 'django.db.backends.postgresql',
