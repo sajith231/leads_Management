@@ -12,7 +12,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        /* Use the same styles as service_billing.html */
         :root {
             --primary: #0062cc;
             --secondary: #0095ff;
@@ -24,13 +23,13 @@
             --dark: #343a40;
             --gray: #6c757d;
         }
-        
+
         .container {
             max-width: 1200px;
             margin: 0 auto;
             padding: 0 15px;
         }
-        
+
         .page-header {
             background: linear-gradient(135deg, var(--primary), var(--secondary));
             color: white;
@@ -39,7 +38,7 @@
             margin-bottom: 25px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
-        
+
         .form-section {
             background: #fbf5df;
             border: 2px solid #8b8d0c;
@@ -48,7 +47,7 @@
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
             margin-bottom: 25px;
         }
-        
+
         .service-item {
             background: #f3cfea;
             border-radius: 8px;
@@ -56,19 +55,26 @@
             margin-bottom: 15px;
             border: 1px solid #94097f;
         }
-        
-        .btn-primary {
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            border: none;
-            padding: 10px 20px;
-            font-weight: 600;
-        }
+
+.btn-back {
+    background:rgb(5, 110, 230);
+    color: white;
+    border: 2px solid #f5f5f7;
+    padding: 10px 20px;
+    font-weight: 600;
+}
+.btn-back:hover {
+    opacity: 0.9;
+}
     </style>
 </head>
 <body>
     <div class="container">
         <div class="page-header">
             <div class="header-content">
+ <button type="button" class="btn btn-back" onclick="history.back()">
+            <i class="fas fa-arrow-left me-2"></i>Back
+        </button>
                 <div>
                     <h2 class="mb-1"><i class="fas fa-edit me-2"></i> Edit Service Invoice</h2>
                     <p class="mb-0">Edit invoice for ticket: {{ service_billing.ticket_no }} - Technician: {{ current_user_name }}</p>
@@ -99,7 +105,7 @@
                     <div class="col-md-4">
                         <label class="form-label">Customer Name</label>
                         <input type="text" class="form-control" id="customerName" name="customerName" 
-                               value="{{ service_billing.customer_name }}"readonly required>
+                               value="{{ service_billing.customer_name }}" readonly required>
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">Customer Contact</label>
@@ -139,7 +145,7 @@
                                     <div class="col-md-3">
                                         <label class="form-label">Item Name</label>
                                         <input type="text" class="form-control" name="itemName[]" 
-                                               value="{{ item.item_name }} " placeholder="e.g., Laptop, Printer" readonly required>
+                                               value="{{ item.item_name }}" placeholder="e.g., Laptop, Printer" readonly required>
                                     </div>
                                     <div class="col-md-2">
                                         <label class="form-label">Serial No</label>
@@ -149,7 +155,7 @@
                                     <div class="col-md-4">
                                         <label class="form-label">Service Description</label>
                                         <input type="text" class="form-control" name="serviceDescription[]" 
-                                               value="{{ item.service_description }} " placeholder="e.g., Screen replacement, Software installation"  readonly required>
+                                               value="{{ item.service_description }}" placeholder="e.g., Screen replacement, Software installation" readonly required>
                                     </div>
                                     <div class="col-md-2">
                                         <label class="form-label">Charge (₹)</label>
@@ -193,9 +199,10 @@
                             <button type="submit" class="btn btn-primary">
                                 <i class="fas fa-save me-2"></i>Update Invoice
                             </button>
-                            <a href="{% url 'app5:service_billing_list' %}" class="btn btn-secondary">
+                            <!-- <a href="{% url 'app5:service_billing_list' %}" class="btn btn-secondary">
                                 <i class="fas fa-times me-2"></i>Cancel
-                            </a>
+                            </a> -->
+                            
                         </div>
                     </div>
                 </div>
@@ -204,9 +211,7 @@
     </div>
 
     <script>
-        // Use the same JavaScript functions as service_billing.html for dynamic item management
         document.addEventListener('DOMContentLoaded', function() {
-            // Add event listener for service charge changes
             document.addEventListener('input', function(e) {
                 if (e.target.classList.contains('service-charge')) {
                     calculateTotals();

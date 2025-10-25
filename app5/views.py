@@ -2838,3 +2838,7 @@ def api_jobcard_status(request, ticket_no):
             'success': False,
             'error': str(e)
         }, status=500)
+    
+
+
+    
