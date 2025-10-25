@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.utils import timezone 
 from .models import Supplier, PurchaseOrder, Item, PurchaseOrderItem, Department
 
-# ========== SUPPLIER ADMIN ==========
+# ========== SUPPLIER ADMIN (UPDATED) ==========
 @admin.register(Supplier)
 class SupplierAdmin(admin.ModelAdmin):
     """
@@ -11,35 +11,72 @@ class SupplierAdmin(admin.ModelAdmin):
     list_display = (
         'id',
         'name',
+        'department',
+        'contact_person_name',
         'city',
         'state',
         'mobile_no',
-        'is_active',
-        'created_at'
+        'gst_number',
+        'created_by',
+        'created_at',
+        'is_active'
     )
-    list_filter = ('is_active', 'state', 'city', 'created_at')
-    search_fields = ('name', 'city', 'mobile_no', 'places')
+    list_filter = ('is_active', 'department', 'state', 'city', 'created_at')
+    search_fields = (
+        'name', 
+        'city', 
+        'mobile_no', 
+        'places', 
+        'gst_number',
+        'contact_person_name',
+        'department__name'
+    )
     list_editable = ('is_active',)
     list_per_page = 25
+    autocomplete_fields = ['department']
 
     fieldsets = (
         ('Basic Information', {
-            'fields': ('name', 'is_active')
+            'fields': ('name', 'department', 'is_active')
         }),
         ('Address Details', {
             'fields': ('address', 'places', 'city', 'state')
         }),
         ('Contact Information', {
-            'fields': ('mobile_no', 'alternate_number')
+            'fields': (
+                'contact_person_name',
+                'mobile_no', 
+                'alternate_number'
+            )
         }),
-        ('Timestamps', {
-            'fields': ('created_at', 'updated_at'),
+        ('Business Details', {
+            'fields': ('gst_number',)
+        }),
+        ('Record Information', {
+            'fields': (
+                'created_by',
+                'updated_by',
+                'created_at', 
+                'updated_at'
+            ),
             'classes': ('collapse',)
         }),
     )
 
     readonly_fields = ('created_at', 'updated_at')
     date_hierarchy = 'created_at'
+    
+    def save_model(self, request, obj, form, change):
+        """
+        Auto-populate created_by and updated_by fields
+        """
+        if not change:  # Creating new object
+            obj.created_by = request.user.username
+            obj.updated_by = request.user.username
+        else:  # Updating existing object
+            obj.updated_by = request.user.username
+        
+        super().save_model(request, obj, form, change)
 
 
 # ========== DEPARTMENT ADMIN ==========
@@ -122,15 +159,25 @@ class ItemAdmin(admin.ModelAdmin):
 
 
 # ========== PURCHASE ORDER ITEM INLINE ==========
+# ========== PURCHASE ORDER ITEM INLINE ==========
 class PurchaseOrderItemInline(admin.TabularInline):
     """
     Inline admin for Purchase Order Items
-    Allows adding/editing items directly within PO admin
+    Now includes entry_rate for Reverse Tax calculations
     """
     model = PurchaseOrderItem
     extra = 1
-    fields = ('item', 'department', 'quantity', 'unit_price', 'discount', 'tax_percent', 'line_total')
-    readonly_fields = ('line_total',)
+    fields = (
+        'item', 
+        'department', 
+        'quantity', 
+        'unit_price', 
+        'entry_rate',      # ✅ NEW - Shows base price after tax extraction
+        'discount', 
+        'tax_percent', 
+        'line_total'
+    )
+    readonly_fields = ('line_total', 'entry_rate')  # ✅ UPDATED
 
 
 @admin.register(PurchaseOrder)
@@ -141,6 +188,7 @@ class PurchaseOrderAdmin(admin.ModelAdmin):
         'po_date',
         'supplier',
         'department',
+        'calculation_method',  # ✅ NEW
         'grand_total',
         'status',
         'admin_status',
@@ -150,6 +198,7 @@ class PurchaseOrderAdmin(admin.ModelAdmin):
     list_filter = (
         'status', 
         'admin_status',
+        'calculation_method',  # ✅ NEW
         'department', 
         'payment_terms', 
         'po_date', 
@@ -175,7 +224,13 @@ class PurchaseOrderAdmin(admin.ModelAdmin):
             'fields': ('delivery_date', 'client_details')
         }),
         ('Financial Details', {
-            'fields': ('total_amount', 'tax_amount', 'grand_total')
+            'fields': (
+                'calculation_method',  # ✅ NEW - Added here
+                'total_amount', 
+                'tax_amount', 
+                'grand_total'
+            ),
+            'description': '💡 Plus Tax: Adds tax on base | Reverse Tax: Extracts tax from total'
         }),
         ('Terms & Status', {
             'fields': ('payment_terms', 'status', 'notes')
@@ -205,14 +260,10 @@ class PurchaseOrderAdmin(admin.ModelAdmin):
     date_hierarchy = 'po_date'
     autocomplete_fields = ['supplier']
     
-    # ✅ ADD THIS METHOD - Override get_readonly_fields
     def get_readonly_fields(self, request, obj=None):
-        """
-        Make admin status fields readonly for non-superadmin
-        """
+        """Make admin status fields readonly for non-superadmin"""
         readonly = list(self.readonly_fields)
         
-        # If not superadmin, make admin approval fields readonly
         if not request.user.is_superuser:
             readonly.extend([
                 'admin_status',
@@ -222,11 +273,8 @@ class PurchaseOrderAdmin(admin.ModelAdmin):
         
         return readonly
     
-    # ✅ ADD THIS METHOD - Custom save behavior
     def save_model(self, request, obj, form, change):
-        """
-        Auto-populate approval fields when admin status changes
-        """
+        """Auto-populate approval fields when admin status changes"""
         if change and 'admin_status' in form.changed_data:
             if obj.admin_status in ['APPROVED', 'REJECTED']:
                 obj.admin_approved_by = request.user.username

@@ -314,6 +314,78 @@
             </div>
         </div>
 
+        <!-- Admin Approval Section (superadmin only) -->
+        {% if user.is_superuser %}
+        <div class="approval-section screen-only">
+            <h3 class="section-title">
+                <i class="fas fa-shield-alt"></i> Admin Approval
+            </h3>
+            <form method="POST" action="{% url 'purchase_order:po_approve' po.pk %}" class="approval-form">
+                {% csrf_token %}
+                <div class="approval-content">
+                    <div class="approval-field">
+                        <label for="admin_status" class="approval-label">Approval Status:</label>
+                        <select name="admin_status" id="admin_status" class="approval-select status-{{ po.admin_status|lower }}" onchange="toggleRejectionReason()">
+                            <option value="PENDING" {% if po.admin_status == 'PENDING' %}selected{% endif %}>⏳ Pending</option>
+                            <option value="APPROVED" {% if po.admin_status == 'APPROVED' %}selected{% endif %}>✅ Approved</option>
+                            <option value="REJECTED" {% if po.admin_status == 'REJECTED' %}selected{% endif %}>❌ Rejected</option>
+                        </select>
+                    </div>
+                    
+                    {% comment %} <div class="rejection-reason-field" id="rejectionReasonField" style="display: {% if po.admin_status == 'REJECTED' %}block{% else %}none{% endif %};">
+                        <label for="rejection_reason" class="approval-label">Rejection Reason:</label>
+                        <textarea name="rejection_reason" id="rejection_reason" class="rejection-textarea" rows="3" placeholder="Enter reason for rejection...">{{ po.admin_rejection_reason }}</textarea>
+                    </div> {% endcomment %}
+                    
+                    {% comment %} {% if po.admin_approved_by %}
+                    <div class="approval-info">
+                        <div class="approval-info-item">
+                            <i class="fas fa-user"></i>
+                            <span><strong>Last Action By:</strong> {{ po.admin_approved_by }}</span>
+                        </div>
+                        {% if po.admin_approved_at %}
+                        <div class="approval-info-item">
+                            <i class="fas fa-calendar"></i>
+                            <span><strong>Date:</strong> {{ po.admin_approved_at|date:"d M, Y H:i" }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %} {% endcomment %}
+                    
+                    <div class="approval-actions">
+                        <button type="submit" class="btn btn-success btn-approval">
+                            <i class="fas fa-check"></i> Update Approval Status
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+        {% elif po.admin_status != 'PENDING' %}
+        <!-- Show read-only status for non-superadmin -->
+        <div class="approval-section screen-only">
+            <h3 class="section-title">
+                <i class="fas fa-shield-alt"></i> Admin Approval Status
+            </h3>
+            <div class="approval-readonly">
+                <span class="status-badge admin-status-{{ po.admin_status|lower }}">
+                    {{ po.get_admin_status_display }}
+                </span>
+                {% comment %} {% if po.admin_approved_by %}
+                <div class="approval-info-readonly">
+                    <p><i class="fas fa-user"></i> <strong>By:</strong> {{ po.admin_approved_by }}</p>
+                    {% if po.admin_approved_at %}
+                    <p><i class="fas fa-calendar"></i> <strong>Date:</strong> {{ po.admin_approved_at|date:"d M, Y H:i" }}</p>
+                    {% endif %}
+                    {% if po.admin_rejection_reason %}
+                    <p><i class="fas fa-comment"></i> <strong>Reason:</strong> {{ po.admin_rejection_reason }}</p>
+                    {% endif %}
+                </div>
+                {% endif %} {% endcomment %}
+            </div>
+        </div>
+        {% endif %}
+        
+
         <!-- Additional Notes (screen only) -->
         {% if po.notes %}
         <div class="notes-section screen-only">
@@ -656,11 +728,10 @@
 }
 
 .notes-section {
-    background: #fff9e6;
+    background: #e6fff4ff;
     border-radius: 8px;
     padding: 20px;
     margin-bottom: 30px;
-    border-left: 4px solid #f39c12;
 }
 
 .notes-section .section-title {
@@ -1190,6 +1261,174 @@
     color: #c62828;
 }
 
+/* Admin Approval Section Styles */
+.approval-section {
+    background: linear-gradient(135deg, #E3F2FD 100%);
+    border-radius: 8px;
+    padding: 25px;
+    margin-bottom: 30px;
+    border-left: 4px solid #ffffffff;
+}
+
+.approval-section .section-title {
+    color: #000000ff;
+    margin-bottom: 20px;
+}
+
+.approval-section .section-title i {
+    color: #000000ff;
+}
+
+.approval-form {
+    width: 100%;
+}
+
+.approval-content {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.approval-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.approval-label {
+    font-weight: 600;
+    color: #000000ff;
+    font-size: 14px;
+}
+
+.approval-select {
+    padding: 12px 16px;
+    border-radius: 6px;
+    border: 2px solid #ffffffff;
+    font-size: 16px;
+    font-weight: 600;
+    background: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    max-width: 300px;
+}
+
+.approval-select:hover {
+    border-color: #ffffffff;
+}
+
+.approval-select:focus {
+    outline: none;
+    border-color: #ffffffff;
+    box-shadow: 0 0 0 3px rgba(255, 152, 0, 0.1);
+}
+
+/* Status-based colors for select */
+.approval-select.status-pending {
+    background: #FFF3E0;
+    color: #f57c00;
+}
+
+.approval-select.status-approved {
+    background: #E8F5E9;
+    color: #388e3c;
+}
+
+.approval-select.status-rejected {
+    background: #FFEBEE;
+    color: #c62828;
+}
+
+.approval-info {
+    background: rgba(255, 255, 255, 0.5);
+    padding: 15px;
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.approval-info-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #424242;
+    font-size: 14px;
+}
+
+.approval-info-item i {
+    color: #ffffffff;
+    width: 20px;
+}
+
+.approval-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-approval {
+    padding: 12px 24px;
+    font-size: 16px;
+    flex: 0 0 auto;
+}
+
+.btn-success {
+    background: #4CAF50;
+    color: white;
+}
+
+.btn-success:hover {
+    background: #45a049;
+}
+
+/* Read-only approval display */
+.approval-readonly {
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 6px;
+}
+
+.approval-info-readonly {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.approval-info-readonly p {
+    margin: 8px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #424242;
+}
+
+.approval-info-readonly i {
+    color: #ffffffff;
+    width: 20px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .approval-select {
+        max-width: 100%;
+    }
+}
 </style>
+
+<script>
+function toggleRejectionReason() {
+    const select = document.getElementById('admin_status');
+    const reasonField = document.getElementById('rejectionReasonField');
+    
+    if (select.value === 'REJECTED') {
+        reasonField.style.display = 'block';
+    } else {
+        reasonField.style.display = 'none';
+    }
+    
+    // Update select styling based on status
+    select.className = 'approval-select status-' + select.value.toLowerCase();
+}
+</script>
 {% endblock %}
 

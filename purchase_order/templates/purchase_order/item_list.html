@@ -12,9 +12,10 @@
         </a>
     </div>
 
-    <!-- Search Bar -->
-    <div class="search-section">
-        <div class="search-box">
+    <!-- Search & Department Filter Section -->
+    <div class="search-section" style="display:flex; gap:10px; flex-wrap:wrap;">
+        <!-- Search Box -->
+        <div class="search-box" style="flex:1;">
             <i class="fas fa-search"></i>
             <input 
                 type="text" 
@@ -23,19 +24,26 @@
                 class="search-input"
             >
         </div>
-    </div>
 
-    <!-- Messages -->
-    {% if messages %}
-    <div class="messages-container">
-        {% for message in messages %}
-        <div class="alert alert-{{ message.tags }}">
-            <i class="fas fa-check-circle"></i>
-            {{ message }}
+        <!-- Department Filter -->
+        <div class="filter-box">
+            <form method="get" id="departmentFilterForm">
+                <select 
+                    name="department" 
+                    id="departmentSelect" 
+                    class="filter-select"
+                    onchange="document.getElementById('departmentFilterForm').submit()"
+                >
+                    <option value="all">All Departments</option>
+                    {% for dept in departments %}
+                        <option value="{{ dept.id }}" {% if selected_department|default:'all' == dept.id|stringformat:"s" %}selected{% endif %}>
+                            {{ dept.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </form>
         </div>
-        {% endfor %}
     </div>
-    {% endif %}
 
     <!-- Items Table -->
     <div class="table-container">
@@ -47,11 +55,13 @@
                         <th>ID</th>
                         <th>Item Name</th>
                         <th>Tax %</th>
+                        <th>Department</th>
                         <th class="amount">MRP</th>
                         <th class="amount">Purchase Price</th>
                         <th class="amount">Cost</th>
                         <th class="hsn-code">HSN Code</th>
-                         <th class="actions">Actions</th>
+                        <th>Status</th>
+                        <th class="actions">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -67,11 +77,25 @@
                         <td>
                             <span class="tax-badge">{{ item.tax_percentage }}%</span>
                         </td>
+                        <td>
+                            {% if item.department %}
+                                <span class="dept-badge">{{ item.department.name }}</span>
+                            {% else %}
+                                <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
                         <td class="amount">₹{{ item.mrp|floatformat:2 }}</td>
                         <td class="amount">₹{{ item.purchase_price|floatformat:2 }}</td>
                         <td class="amount">₹{{ item.cost|floatformat:2 }}</td>
                         <td>
                             <span class="hsn-code">{{ item.hsn_code|default:"-" }}</span>
+                        </td>
+                        <td>
+                            {% if item.is_active %}
+                                <span class="badge badge-success">Active</span>
+                            {% else %}
+                                <span class="badge badge-danger">Inactive</span>
+                            {% endif %}
                         </td>
                         <td>
                             <div class="action-buttons">
@@ -100,6 +124,39 @@
         </div>
         {% endif %}
     </div>
+
+    <!-- Pagination -->
+    {% if items.has_other_pages %}
+    <div class="pagination-container">
+        <ul class="pagination">
+            {% if items.has_previous %}
+                <li>
+                    <a href="?page={{ items.previous_page_number }}{% if selected_department %}&department={{ selected_department }}{% endif %}">&laquo; Previous</a>
+                </li>
+            {% else %}
+                <li class="disabled"><span>&laquo; Previous</span></li>
+            {% endif %}
+
+            {% for num in items.paginator.page_range %}
+                {% if items.number == num %}
+                    <li class="active"><span>{{ num }}</span></li>
+                {% else %}
+                    <li>
+                        <a href="?page={{ num }}{% if selected_department %}&department={{ selected_department }}{% endif %}">{{ num }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+
+            {% if items.has_next %}
+                <li>
+                    <a href="?page={{ items.next_page_number }}{% if selected_department %}&department={{ selected_department }}{% endif %}">Next &raquo;</a>
+                </li>
+            {% else %}
+                <li class="disabled"><span>Next &raquo;</span></li>
+            {% endif %}
+        </ul>
+    </div>
+    {% endif %}
 </div>
 
 <!-- Delete Confirmation Modal -->
@@ -281,51 +338,76 @@
 /* ===== RESPONSIVE COLUMN WIDTHS (PERCENTAGE-BASED) ===== */
 .data-table th:nth-child(1), /* ID */
 .data-table td:nth-child(1) {
-    width: 7%;
+    width: 6%;
     text-align: center !important;
 }
 
 .data-table th:nth-child(2), /* ITEM NAME */
 .data-table td:nth-child(2) {
-    width: 18%;
+    width: 14   %;
     text-align: left !important;
 }
 
 .data-table th:nth-child(3), /* TAX % */
 .data-table td:nth-child(3) {
+    width: 8%;
+    text-align: center !important;
+}
+
+.data-table th:nth-child(4), /* DEPARTMENT */
+.data-table td:nth-child(4) {
+    width: 10%;
+    text-align: center !important;
+}
+
+.data-table th:nth-child(5), /* MRP */
+.data-table td:nth-child(5) {
+    width: 10%;
+    
+    
+}
+
+.data-table th:nth-child(6), /* PURCHASE PRICE */
+.data-table td:nth-child(6) {
+    width: 11%;
+    text-align: right !important;
+}
+
+.data-table th:nth-child(7), /* COST */
+.data-table td:nth-child(7) {
+    width: 10%;
+   
+}
+
+.data-table th:nth-child(8), /* HSN CODE */
+.data-table td:nth-child(8) {
+    width: 10%;
+    text-align: center !important;
+}
+
+.data-table th:nth-child(9), /* STATUS */
+.data-table td:nth-child(9) {
     width: 9%;
     text-align: center !important;
 }
 
-.data-table th:nth-child(4), /* MRP */
-.data-table td:nth-child(4) {
-    width: 13%;
-    text-align: right !important;
-}
-
-.data-table th:nth-child(5), /* PURCHASE PRICE */
-.data-table td:nth-child(5) {
-    width: 15%;
-    text-align: right !important;
-}
-
-.data-table th:nth-child(6), /* COST */
-.data-table td:nth-child(6) {
-    width: 13%;
-    text-align: right !important;
-}
-
-.data-table th:nth-child(7), /* HSN CODE */
-.data-table td:nth-child(7) {
-    width: 14%;
+.data-table th:nth-child(10), /* ACTIONS */
+.data-table td:nth-child(10) {
+    width: 10%;
     text-align: center !important;
 }
 
-.data-table th:nth-child(8), /* ACTIONS */
-.data-table td:nth-child(8) {
-    width: 11%;
-    text-align: center !important;
+/* ===== COLUMN WIDTHS AND ALIGNMENT ===== */
+.data-table th:nth-child(5), /* MRP Header */
+.data-table th:nth-child(7)  /* COST Header */ {
+    text-align: center !important; /* Header centered */
 }
+
+.data-table td:nth-child(5), /* MRP Values */
+.data-table td:nth-child(7)  /* COST Values */ {
+    text-align: right !important; /* Values right-aligned */
+}
+
 
 .data-table tbody tr {
     border-bottom: 1px solid #ecf0f1;
@@ -407,6 +489,16 @@ td .hsn-code {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+.badge-success {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.badge-danger {
+    background: #ffebee;
+    color: #c62828;
 }
 
 /* ===== ACTIONS COLUMN ===== */
@@ -596,6 +688,112 @@ td .action-buttons {
         width: 12%;
     }
 }
+
+.pagination-container {
+    text-align: center;
+    padding: 20px;
+    background: #fff;
+    border-top: 1px solid #ecf0f1;
+}
+
+.pagination {
+    list-style: none;
+    display: inline-flex;
+    gap: 6px;
+    padding: 0;
+    margin: 0;
+}
+
+.pagination li {
+    display: inline;
+}
+
+.pagination a, .pagination span {
+    display: block;
+    padding: 8px 14px;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+    text-decoration: none;
+    color: #2c3e50;
+    transition: all 0.3s;
+    font-weight: 500;
+}
+
+.pagination a:hover {
+    background: #3498db;
+    color: white;
+    border-color: #3498db;
+}
+
+.pagination .active span {
+    background: #3498db;
+    color: white;
+    border-color: #3498db;
+}
+
+.pagination .disabled span {
+    color: #aaa;
+    border-color: #eee;
+    cursor: not-allowed;
+}
+
+.filter-box {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.filter-box label {
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.filter-select {
+    padding: 10px 15px;
+    border: 2px solid #e9ecef;
+    border-radius: 6px;
+    font-size: 14px;
+    background: white;
+    cursor: pointer;
+    min-width: 200px;
+}
+
+.filter-select:focus {
+    outline: none;
+    border-color: #3498db;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+    
+    .search-section {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .search-box {
+        min-width: 100%;
+    }
+    
+    .filter-box {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .filter-select {
+        width: 100%;
+    }
+}
+
 </style>
 
 <script>
