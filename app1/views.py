@@ -24,31 +24,94 @@ from django.db import models
 from .models import Employee, Attendance, LeaveRequest, Holiday,LateRequest,DefaultSettings,EarlyRequest
 from .utils import is_holiday
 
+import requests
+
 def send_whatsapp_message(phone_number, message):
+    """
+    Send a WhatsApp message using the updated DxIng API.
+    Automatically encodes the message and logs response info.
+    """
+    # ✅ Updated credentials
     secret = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
-    account = "1748250982812b4ba287f5ee0bc9d43bbf5bbe87fb683431662a427"
-    url = f"https://app.dxing.in/api/send/whatsapp?secret={secret}&account={account}&recipient={phone_number}&type=text&message={message}&priority=1"
-    response = requests.get(url)
-    if response.status_code == 200:
-        print(f"WhatsApp message sent successfully to {phone_number}")
-    else:
-        print(f"Failed to send WhatsApp message to {phone_number}. Status code: {response.status_code}, Response: {response.text}")
+    account = "1761365422812b4ba287f5ee0bc9d43bbf5bbe87fb68fc4daea92d8"
+
+    # ✅ Encode message safely for URL
+    encoded_message = requests.utils.quote(message)
+
+    # ✅ Build the full API URL
+    url = (
+        f"https://app.dxing.in/api/send/whatsapp?"
+        f"secret={secret}"
+        f"&account={account}"
+        f"&recipient={phone_number}"
+        f"&type=text"
+        f"&message={encoded_message}"
+        f"&priority=1"
+    )
+
+    try:
+        response = requests.get(url, timeout=10)
+
+        if response.status_code == 200:
+            print(f"✅ WhatsApp message sent successfully to {phone_number}")
+            return True
+        else:
+            print(
+                f"❌ Failed to send WhatsApp message to {phone_number}. "
+                f"Status code: {response.status_code}, Response: {response.text}"
+            )
+            return False
+
+    except requests.exceptions.RequestException as e:
+        print(f"⚠️ Error sending WhatsApp message: {e}")
+        return False
+
 
 
 
 import requests
 
 def send_whatsapp_message_for_service_log(phone_number, message):
+    """
+    Send a WhatsApp message for service logs using the updated DxIng API.
+    Automatically encodes the message, handles errors, and logs the response.
+    """
+    # ✅ Updated API credentials
     secret = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
-    account = "1756959119812b4ba287f5ee0bc9d43bbf5bbe87fb68b9118fcf1af"  # ✅ new account
-    url = f"https://app.dxing.in/api/send/whatsapp?secret={secret}&account={account}&recipient={phone_number}&type=text&message={message}&priority=1"
-    
-    response = requests.get(url)
-    
-    if response.status_code == 200:
-        print(f"WhatsApp message sent successfully to {phone_number}")
-    else:
-        print(f"Failed to send WhatsApp message to {phone_number}. Status code: {response.status_code}, Response: {response.text}")
+    account = "1761365422812b4ba287f5ee0bc9d43bbf5bbe87fb68fc4daea92d8"  # ✅ new account
+
+    # ✅ Encode message safely
+    encoded_message = requests.utils.quote(message)
+
+    # ✅ Build API request URL
+    url = (
+        f"https://app.dxing.in/api/send/whatsapp?"
+        f"secret={secret}"
+        f"&account={account}"
+        f"&recipient={phone_number}"
+        f"&type=text"
+        f"&message={encoded_message}"
+        f"&priority=1"
+    )
+
+    try:
+        response = requests.get(url, timeout=10)
+
+        if response.status_code == 200:
+            print(f"✅ WhatsApp service log message sent successfully to {phone_number}")
+            return True
+        else:
+            print(
+                f"❌ Failed to send WhatsApp service log message to {phone_number}. "
+                f"Status: {response.status_code}, Response: {response.text}"
+            )
+            return False
+
+    except requests.exceptions.RequestException as e:
+        print(f"⚠️ Error sending WhatsApp service log message: {e}")
+        return False
+
+
 
 
 def login(request):
@@ -3831,18 +3894,28 @@ def create_leave_request(request):
 
 
 
-def send_whatsapp_message_new_request(phone_number, message):
-    secret = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
-    account = "1756959119812b4ba287f5ee0bc9d43bbf5bbe87fb68b9118fcf1af"  # ✅ updated account
+import requests
 
-    # Encode message for safe API call
+def send_whatsapp_message_new_request(phone_number, message):
+    """
+    Send a WhatsApp message using the updated DxIng API.
+    Automatically URL-encodes the message and handles connection errors.
+    """
+    secret = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
+    account = "1761365422812b4ba287f5ee0bc9d43bbf5bbe87fb68fc4daea92d8"  # ✅ updated account
+
+    # Encode message safely for URL
     encoded_message = requests.utils.quote(message)
 
+    # Build API URL
     url = (
         f"https://app.dxing.in/api/send/whatsapp?"
-        f"secret={secret}&account={account}"
+        f"secret={secret}"
+        f"&account={account}"
         f"&recipient={phone_number}"
-        f"&type=text&message={encoded_message}&priority=1"
+        f"&type=text"
+        f"&message={encoded_message}"
+        f"&priority=1"
     )
 
     try:
@@ -3857,6 +3930,7 @@ def send_whatsapp_message_new_request(phone_number, message):
                 f"Status code: {response.status_code}, Response: {response.text}"
             )
             return False
+
     except requests.exceptions.RequestException as e:
         print(f"⚠️ Error sending WhatsApp message: {e}")
         return False
