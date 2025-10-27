@@ -129,6 +129,26 @@
                                     {% else %}
                                         <span class="badge bg-danger">Not Assigned</span>
                                     {% endif %}
+
+                                    {# Timer / duration UI #}
+                                    <div class="complaint-timer mt-2">
+                                        {% if complaint_log.status == 'In Progress' and complaint_log.started_time %}
+                                            <!-- live timer: data-start has ISO timestamp, JS will update it live -->
+                                            <small class="text-muted">Elapsed: 
+                                                <span class="live-timer" 
+                                                    data-start="{{ complaint_log.started_time.isoformat }}" 
+                                                    data-complaint-id="{{ complaint_log.id }}">--:--:--</span>
+                                            </small>
+                                        {% elif complaint_log.status == 'Completed' and complaint_log.started_time and complaint_log.completed_time %}
+                                            <!-- show final duration for completed complaints -->
+                                            <small class="text-muted">
+                                                Duration: {{ complaint_log.started_time|timesince:complaint_log.completed_time }}
+                                                <span class="text-muted"> (Completed: {{ complaint_log.completed_time|date:"d-m-Y H:i" }})</span>
+                                            </small>
+                                        {% elif complaint_log.status == 'Completed' and complaint_log.completed_time %}
+                                            <small class="text-muted">Completed: {{ complaint_log.completed_time|date:"d-m-Y H:i" }}</small>
+                                        {% endif %}
+                                    </div>
                                 </div>
                             </div>
                         {% empty %}
@@ -242,4 +262,51 @@
     }
 }
 </style>
+
+<script>
+(function(){
+    // Format seconds -> HH:MM:SS
+    function fmtSeconds(totalSeconds) {
+        if (totalSeconds < 0) totalSeconds = 0;
+        var hours = Math.floor(totalSeconds / 3600);
+        var mins = Math.floor((totalSeconds % 3600) / 60);
+        var secs = Math.floor(totalSeconds % 60);
+        function pad(n){ return n < 10 ? '0' + n : '' + n; }
+        return pad(hours) + ':' + pad(mins) + ':' + pad(secs);
+    }
+
+    function parseISO(d) {
+        // Let the browser parse ISO string; fallback for older browsers could be added if needed
+        try {
+            return new Date(d);
+        } catch (e) {
+            return new Date(Date.parse(d));
+        }
+    }
+
+    function updateTimers() {
+        var timers = document.querySelectorAll('.live-timer');
+        if (!timers.length) return;
+
+        var now = new Date();
+        timers.forEach(function(el){
+            var startIso = el.getAttribute('data-start');
+            if (!startIso) return;
+            var startDate = parseISO(startIso);
+            if (isNaN(startDate.getTime())) {
+                el.textContent = '--:--:--';
+                return;
+            }
+            var diffSec = Math.floor((now - startDate) / 1000);
+            el.textContent = fmtSeconds(diffSec);
+        });
+    }
+
+    // initial update
+    updateTimers();
+    // update every second
+    setInterval(updateTimers, 1000);
+})();
+</script>
+
 {% endblock %}

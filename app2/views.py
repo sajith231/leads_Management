@@ -1757,7 +1757,12 @@ def get_display_name(user):
     if first.strip():
         return f"{first.strip()} {last.strip()}".strip()
     return getattr(user, 'username', 'System')
+import requests
+import urllib.parse
+import logging
+from datetime import datetime
 
+logger = logging.getLogger(__name__)
 
 def send_whatsapp_notification(name, installation_date, software_amount, created_by=None):
     """
@@ -1770,19 +1775,19 @@ def send_whatsapp_notification(name, installation_date, software_amount, created
     Returns:
         bool: True if message sent successfully, False otherwise
     """
-    # WhatsApp API configuration
+
+    # ✅ New WhatsApp API configuration
     WHATSAPP_API_URL = "https://app.dxing.in/api/send/whatsapp"
     SECRET = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
-    ACCOUNT = "1756959119812b4ba287f5ee0bc9d43bbf5bbe87fb68b9118fcf1af"
-    RECIPIENT = "9946545535"  # keep existing recipient(s) or parameterize as needed
+    ACCOUNT = "1761365422812b4ba287f5ee0bc9d43bbf5bbe87fb68fc4daea92d8"
+    RECIPIENT = "919946545535"  # include country code, e.g., 91XXXXXXXXXX
 
     try:
-        # Format the installation date to DD-MM-YYYY format
+        # Format installation date
         if installation_date:
             try:
                 formatted_date = installation_date.strftime("%d-%m-%Y")
             except Exception:
-                # fallback if installation_date is a string
                 try:
                     parsed = datetime.fromisoformat(str(installation_date))
                     formatted_date = parsed.strftime("%d-%m-%Y")
@@ -1791,7 +1796,7 @@ def send_whatsapp_notification(name, installation_date, software_amount, created
         else:
             formatted_date = "Not specified"
 
-        # Format software amount safely
+        # Format software amount
         try:
             amt_val = float(software_amount) if software_amount not in (None, '') else 0.0
             formatted_amount = f"₹{amt_val:,.2f}"
@@ -1800,7 +1805,7 @@ def send_whatsapp_notification(name, installation_date, software_amount, created
 
         created_by_text = f"\nCreated By: {created_by}" if created_by else "\nCreated By: -"
 
-        # Create the message (includes created_by)
+        # ✅ Message format
         message = (
             f"🏪 NEW FEEDER CREATED\n\n"
             f"Shop Name: {name}\n"
@@ -1813,25 +1818,33 @@ def send_whatsapp_notification(name, installation_date, software_amount, created
         # URL encode the message
         encoded_message = urllib.parse.quote(message)
 
-        # Prepare the API URL
-        api_url = f"{WHATSAPP_API_URL}?secret={SECRET}&account={ACCOUNT}&recipient={RECIPIENT}&type=text&message={encoded_message}&priority=1"
+        # ✅ Build the new API URL
+        api_url = (
+            f"{WHATSAPP_API_URL}?secret={SECRET}"
+            f"&account={ACCOUNT}"
+            f"&recipient={RECIPIENT}"
+            f"&type=text"
+            f"&message={encoded_message}"
+            f"&priority=1"
+        )
 
         # Send the request
         response = requests.get(api_url, timeout=10)
 
         if response.status_code == 200:
-            logger.info(f"WhatsApp notification sent successfully for feeder: {name}")
+            logger.info(f"✅ WhatsApp notification sent successfully for feeder: {name}")
             return True
         else:
-            logger.error(f"Failed to send WhatsApp notification. Status: {response.status_code}, Response: {response.text}")
+            logger.error(f"❌ Failed to send WhatsApp notification. Status: {response.status_code}, Response: {response.text}")
             return False
 
     except requests.exceptions.RequestException as e:
-        logger.error(f"Network error while sending WhatsApp notification: {str(e)}")
+        logger.error(f"🌐 Network error while sending WhatsApp notification: {str(e)}")
         return False
     except Exception as e:
-        logger.error(f"Unexpected error while sending WhatsApp notification: {str(e)}")
+        logger.error(f"⚠️ Unexpected error while sending WhatsApp notification: {str(e)}")
         return False
+
 
 # Modified feeder view with created_by included in message
 @csrf_exempt

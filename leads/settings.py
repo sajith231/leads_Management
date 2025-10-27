@@ -64,6 +64,9 @@ INSTALLED_APPS = [
     'django.contrib.humanize',
     "wfh_Request",
     "punchout_reminder",
+    "image_capture",
+    'software_master',
+    'purchase_order'
     
 ]
 
@@ -140,6 +143,7 @@ CKEDITOR_CONFIGS = {
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -151,7 +155,7 @@ DATABASES = {
     }
 }
 
-# h
+
 # DATABASES = {c
 #     'default': {
 #         'ENGINE': 'django.db.backends.postgresql',
@@ -209,7 +213,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / "static"]
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
@@ -219,4 +223,5 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 
-
+DATA_UPLOAD_MAX_MEMORY_SIZE = 52428800  
+FILE_UPLOAD_MAX_MEMORY_SIZE = 52428800 

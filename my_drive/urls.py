@@ -12,10 +12,12 @@ urlpatterns = [
 
     # File routes
     path("files/<int:pk>/delete/", views.file_delete, name="file_delete"),
-    path("files/<int:pk>/edit/", views.file_edit, name="file_edit"),
+    path("files/<int:pk>/edit/", views.file_edit, name="file_edit"),      # ✅ this is what the modal calls
     path("files/<int:pk>/preview/", views.file_preview, name="file_preview"),
-    path("file/edit/<int:pk>/", views.file_edit, name="file_edit"),
-    path('subfolder/<int:pk>/delete/', views.subfolder_delete, name='subfolder_delete'),
-
+    path("files/<int:pk>/download/", views.file_download, name="file_download"),
+    
+    # Subfolder route
+    path("subfolder/<int:pk>/delete/", views.subfolder_delete, name="subfolder_delete"),
+    path("files/<int:pk>/edit_name/", views.file_edit_page, name="file_edit_page"),
 
 ]

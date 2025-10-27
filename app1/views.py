@@ -24,31 +24,98 @@ from django.db import models
 from .models import Employee, Attendance, LeaveRequest, Holiday,LateRequest,DefaultSettings,EarlyRequest
 from .utils import is_holiday
 
+import requests
+
 def send_whatsapp_message(phone_number, message):
+    """
+    Send a WhatsApp message using the updated DxIng API.
+    Automatically encodes the message and logs response info.
+    """
+    # ✅ Updated credentials
     secret = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
-    account = "1748250982812b4ba287f5ee0bc9d43bbf5bbe87fb683431662a427"
-    url = f"https://app.dxing.in/api/send/whatsapp?secret={secret}&account={account}&recipient={phone_number}&type=text&message={message}&priority=1"
-    response = requests.get(url)
-    if response.status_code == 200:
-        print(f"WhatsApp message sent successfully to {phone_number}")
-    else:
-        print(f"Failed to send WhatsApp message to {phone_number}. Status code: {response.status_code}, Response: {response.text}")
+    account = "1761365422812b4ba287f5ee0bc9d43bbf5bbe87fb68fc4daea92d8"
+
+    # ✅ Encode message safely for URL
+    encoded_message = requests.utils.quote(message)
+
+    # ✅ Build the full API URL
+    url = (
+        f"https://app.dxing.in/api/send/whatsapp?"
+        f"secret={secret}"
+        f"&account={account}"
+        f"&recipient={phone_number}"
+        f"&type=text"
+        f"&message={encoded_message}"
+        f"&priority=1"
+    )
+
+    try:
+        response = requests.get(url, timeout=10)
+
+        if response.status_code == 200:
+            print(f"✅ WhatsApp message sent successfully to {phone_number}")
+            return True
+        else:
+            print(
+                f"❌ Failed to send WhatsApp message to {phone_number}. "
+                f"Status code: {response.status_code}, Response: {response.text}"
+            )
+            return False
+
+    except requests.exceptions.RequestException as e:
+        print(f"⚠️ Error sending WhatsApp message: {e}")
+        return False
+
 
 
 
 import requests
 
 def send_whatsapp_message_for_service_log(phone_number, message):
+    """
+    Send a WhatsApp message for service logs using the DxIng API.
+    Sends a clean, human-readable message (no URL encoding issues).
+    """
+    import requests
+
+    # ✅ API credentials
     secret = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
-    account = "1756959119812b4ba287f5ee0bc9d43bbf5bbe87fb68b9118fcf1af"  # ✅ new account
-    url = f"https://app.dxing.in/api/send/whatsapp?secret={secret}&account={account}&recipient={phone_number}&type=text&message={message}&priority=1"
-    
-    response = requests.get(url)
-    
-    if response.status_code == 200:
-        print(f"WhatsApp message sent successfully to {phone_number}")
-    else:
-        print(f"Failed to send WhatsApp message to {phone_number}. Status code: {response.status_code}, Response: {response.text}")
+    account = "1761365422812b4ba287f5ee0bc9d43bbf5bbe87fb68fc4daea92d8"
+
+    # ✅ Ensure message is properly formatted (convert newlines for WhatsApp)
+    # Replace double spaces/newlines for better readability
+    message = message.replace("\r\n", "\n").replace("\r", "\n")
+
+    # ✅ Construct the API URL (no manual encoding)
+    url = (
+        f"https://app.dxing.in/api/send/whatsapp?"
+        f"secret={secret}"
+        f"&account={account}"
+        f"&recipient={phone_number}"
+        f"&type=text"
+        f"&message={message}"
+        f"&priority=1"
+    )
+
+    try:
+        response = requests.get(url, timeout=10)
+
+        if response.status_code == 200:
+            print(f"✅ WhatsApp service log message sent successfully to {phone_number}")
+            return True
+        else:
+            print(
+                f"❌ Failed to send WhatsApp service log message to {phone_number}. "
+                f"Status code: {response.status_code}, Response: {response.text}"
+            )
+            return False
+
+    except requests.exceptions.RequestException as e:
+        print(f"⚠️ Error sending WhatsApp service log message: {e}")
+        return False
+
+
+
 
 
 def login(request):
@@ -1230,8 +1297,15 @@ def delete_hardware(request, hardware_id):
 
 
 
-from .models import Complaint
+# app1/views.py (complaint-related functions)
+# views.py (snippet)
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from .models import Complaint, User
 from .forms import ComplaintForm
+from software_master.models import Software
+
+# views.py (complaint-related functions)
 
 @login_required
 def add_complaint(request):
@@ -1239,10 +1313,10 @@ def add_complaint(request):
         form = ComplaintForm(request.POST)
         if form.is_valid():
             complaint = form.save(commit=False)
-            # Get the custom User instance from session or however you store it
-            # Option 1: If you store user_id in session
+            # attach created_by if available in session (preserve existing logic)
             if 'user_id' in request.session:
                 try:
+                    from .models import User
                     custom_user = User.objects.get(id=request.session['user_id'])
                     complaint.created_by = custom_user
                 except User.DoesNotExist:
@@ -1250,40 +1324,58 @@ def add_complaint(request):
             else:
                 complaint.created_by = None
             complaint.save()
+            # Save M2M if available; fallback to manual set
+            if hasattr(form, 'save_m2m'):
+                form.save_m2m()
+            else:
+                # fallback: set software from cleaned_data
+                sw = form.cleaned_data.get('software')
+                if sw is not None:
+                    # ensure sequence
+                    complaint.software.set(sw if hasattr(sw, '__iter__') else [sw])
             return redirect('all_complaints')
     else:
         form = ComplaintForm()
     return render(request, 'add_complaints.html', {'form': form})
 
 
-from django.core.paginator import Paginator
-from django.shortcuts import render
-from .models import Complaint
+@login_required
+def edit_complaint(request, complaint_id):
+    complaint = get_object_or_404(Complaint, id=complaint_id)
+    if request.method == 'POST':
+        form = ComplaintForm(request.POST, instance=complaint)
+        if form.is_valid():
+            complaint = form.save(commit=False)
+            complaint.save()
+            if hasattr(form, 'save_m2m'):
+                form.save_m2m()
+            else:
+                sw = form.cleaned_data.get('software')
+                if sw is not None:
+                    complaint.software.set(sw if hasattr(sw, '__iter__') else [sw])
+            return redirect('all_complaints')
+    else:
+        form = ComplaintForm(instance=complaint)
+    return render(request, 'edit_complaint.html', {'form': form})
 
 
-from django.core.paginator import Paginator
-
-from django.contrib.auth.decorators import login_required
-from django.core.paginator import Paginator
-from django.shortcuts import render
-from .models import Complaint
 
 @login_required
 def all_complaints(request):
     selected_type = request.GET.get('type', 'all')
-    
+
+    # for M2M, use prefetch_related
     if selected_type == 'all':
-        complaints = Complaint.objects.all().order_by('description')  # Alphabetic order
+        complaints = Complaint.objects.prefetch_related('software').all().order_by('description')
     else:
-        complaints = Complaint.objects.filter(complaint_type=selected_type).order_by('description')  # Alphabetic order
-    
-    paginator = Paginator(complaints, 10)  # Show 10 complaints per page
+        complaints = Complaint.objects.prefetch_related('software').filter(complaint_type=selected_type).order_by('description')
+
+    from django.core.paginator import Paginator
+    paginator = Paginator(complaints, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    
-    # Calculate start index for pagination
     start_index = (page_obj.number - 1) * paginator.per_page
-    
+
     context = {
         'page_obj': page_obj,
         'selected_type': selected_type,
@@ -1292,17 +1384,6 @@ def all_complaints(request):
     return render(request, 'all_complaints.html', context)
 
 
-# Edit complaint view
-def edit_complaint(request, complaint_id):
-    complaint = get_object_or_404(Complaint, id=complaint_id)
-    if request.method == 'POST':
-        form = ComplaintForm(request.POST, instance=complaint)
-        if form.is_valid():
-            form.save()
-            return redirect('all_complaints')
-    else:
-        form = ComplaintForm(instance=complaint)
-    return render(request, 'edit_complaint.html', {'form': form})
 
 # Delete complaint view
 def delete_complaint(request, complaint_id):
@@ -3817,18 +3898,28 @@ def create_leave_request(request):
 
 
 
-def send_whatsapp_message_new_request(phone_number, message):
-    secret = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
-    account = "1756959119812b4ba287f5ee0bc9d43bbf5bbe87fb68b9118fcf1af"  # ✅ updated account
+import requests
 
-    # Encode message for safe API call
+def send_whatsapp_message_new_request(phone_number, message):
+    """
+    Send a WhatsApp message using the updated DxIng API.
+    Automatically URL-encodes the message and handles connection errors.
+    """
+    secret = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
+    account = "1761365422812b4ba287f5ee0bc9d43bbf5bbe87fb68fc4daea92d8"  # ✅ updated account
+
+    # Encode message safely for URL
     encoded_message = requests.utils.quote(message)
 
+    # Build API URL
     url = (
         f"https://app.dxing.in/api/send/whatsapp?"
-        f"secret={secret}&account={account}"
+        f"secret={secret}"
+        f"&account={account}"
         f"&recipient={phone_number}"
-        f"&type=text&message={encoded_message}&priority=1"
+        f"&type=text"
+        f"&message={encoded_message}"
+        f"&priority=1"
     )
 
     try:
@@ -3843,6 +3934,7 @@ def send_whatsapp_message_new_request(phone_number, message):
                 f"Status code: {response.status_code}, Response: {response.text}"
             )
             return False
+
     except requests.exceptions.RequestException as e:
         print(f"⚠️ Error sending WhatsApp message: {e}")
         return False
@@ -5202,6 +5294,7 @@ def update_task_status(request, task_id):
 
 
 
+
 @login_required
 def user_menu_control(request):
     users = User.objects.all()
@@ -5210,11 +5303,8 @@ def user_menu_control(request):
         user_id = request.POST.get('user_id')
         if user_id:
             return redirect('configure_user_menu', user_id=user_id)
-            
+    
     return render(request, 'user_menu_control.html', {'users': users})
-
-
-
 
 @login_required
 def configure_user_menu(request, user_id):
@@ -5239,6 +5329,7 @@ def configure_user_menu(request, user_id):
             'name': 'HR',
             'icon': 'fas fa-users-cog',
             'submenus': [
+                {'id': 'job_roles', 'name': 'Duties and responsiblity', 'icon': 'fas fa-briefcase'},
                 {'id': 'cv_management', 'name': 'CV Management', 'icon': 'fas fa-file-contract'},
                 {'id': 'interview_management', 'name': 'Interview Management', 'icon': 'fas fa-user-tie'},
                 {
@@ -5319,25 +5410,7 @@ def configure_user_menu(request, user_id):
                 },
             ]
         },   
-        {
-            'name': 'Master',
-            'icon': 'fas fa-cog',
-            'submenus': [
-                {'id': 'all_districts', 'name': 'District', 'icon': 'fas fa-map'},
-                {'id': 'all_areas', 'name': 'Area', 'icon': 'fas fa-map-marker-alt'},
-                {'id': 'all_locations', 'name': 'Location', 'icon': 'fas fa-chart-area'},
-                {'id': 'all_requirements', 'name': 'Requirements', 'icon': 'fas fa-tasks'},
-                {'id': 'all_department', 'name': 'Department', 'icon': 'fas fa-building'},
-                {'id': 'job_roles', 'name': 'Job Role', 'icon': 'fas fa-briefcase'},
-                {'id': 'business_type_list', 'name': 'Business Type', 'icon': 'fas fa-binoculars'},
-                {'id': 'job_titles', 'name': 'Job Title', 'icon': 'fas fa-search'},
-                {'id': 'all_hardwares', 'name': 'Hardware', 'icon': 'fas fa-desktop'},
-                {'id': 'all_complaints', 'name': 'Complaints', 'icon': 'fas fa-bug'},
-                {'id': 'all_branches', 'name': 'Branch', 'icon': 'fas fa-code-branch'},
-                {'id': 'users_table', 'name': 'Users', 'icon': 'fas fa-users'},
-                {'id': 'reminder_type', 'name': 'Reminder Types', 'icon': 'fas fa-bell'}
-            ]
-        },
+        
        {
     'name': 'Information Centre',
     'icon': 'fas fa-photo-video',
@@ -5369,6 +5442,28 @@ def configure_user_menu(request, user_id):
     ]
 },
 {
+    'name': 'Vehicle Management',
+    'icon': 'fas fa-car',
+    'submenus': [
+        # include only the ones you actually route; keep/remove vehicle_list as needed
+        {'id': 'fuel_management',  'name': 'Fuel Management', 'icon': 'fas fa-gas-pump'},
+        {'id': 'fuel_monitoring',  'name': 'Vehicle Ledger',  'icon': 'fas fa-chart-line'},
+        # {'id': 'vehicle_list',   'name': 'Vehicles',        'icon': 'fas fa-car-side'},  # optional
+    ]
+},
+{
+    'name': 'IMC Drive',
+    'icon': 'fas fa-folder',
+    'submenus': [
+        {'id': 'drive_list',   'name': 'IMC Drive',    'icon': 'fas fa-folder'},
+        {'id': 'drive_add',    'name': 'Add Folder',   'icon': 'fas fa-plus-circle'},
+        {'id': 'drive_edit',   'name': 'Edit Folder',  'icon': 'fas fa-pen-to-square'},
+        {'id': 'drive_delete', 'name': 'Delete Folder','icon': 'fas fa-trash'}
+    ]
+},
+
+
+{
     'name': 'SYSMAC',
     'icon': 'fas fa-microchip',
     'submenus': [
@@ -5397,6 +5492,52 @@ def configure_user_menu(request, user_id):
                 {'id': 'imc2_list',           'name': 'IMC',                'icon': 'fas fa-hand-holding-usd'},
                 {'id': 'sysmac_info_list',    'name': 'SYSMAC-INFO',        'icon': 'fas fa-money-check'},
                 {'id': 'dq_list',             'name': 'DQ',                 'icon': 'fas fa-credit-card'},
+            ]
+        },
+        {
+            'name': 'User Management',
+            'icon': 'fas fa-user-cog',
+            'submenus': [
+                {'id': 'users_table', 'name': 'Users List', 'icon': 'fas fa-users'},
+                
+            ]
+        },
+        {
+            'name': 'Company',
+            'icon': 'fas fa-building',
+            'submenus': [
+                {'id': 'vehicle_list', 'name': 'Vehicle Master', 'icon': 'fas fa-list-alt'},
+                {'id': 'all_districts', 'name': 'District', 'icon': 'fas fa-map'},
+                {'id': 'all_areas', 'name': 'Area', 'icon': 'fas fa-map-marker-alt'},
+                {'id': 'all_locations', 'name': 'Location', 'icon': 'fas fa-chart-area'},
+                {'id': 'all_branches', 'name': 'Offices\\Locations', 'icon': 'fas fa-code-branch'},
+                {'id': 'department_list', 'name': 'Department', 'icon': 'fas fa-sitemap'},
+            ]
+        },
+
+        # ======== NEW: Business Menu ========
+        {
+            'name': 'Business',
+            'icon': 'fas fa-briefcase',
+            'submenus': [
+                {'id': 'reminder_type', 'name': 'Reminder Type', 'icon': 'fas fa-bell'},
+                {'id': 'job_titles', 'name': 'Job Title', 'icon': 'fas fa-id-card'},
+                {'id': 'all_department', 'name': 'Job Category', 'icon': 'fas fa-layer-group'},
+                {'id': 'business_type_list', 'name': 'Business Type', 'icon': 'fas fa-binoculars'},
+                {'id': 'all_requirements', 'name': 'Requirements', 'icon': 'fas fa-tasks'},
+            ]
+        },
+
+        # ======== NEW: Planet Menu (user-control representation) ========
+        {
+            'name': 'Planet (Extras)',
+            'icon': 'fas fa-globe',
+            'submenus': [
+                {'id': 'item_list', 'name': 'Item Master', 'icon': 'fas fa-boxes'},
+                {'id': 'supplier_list', 'name': 'Suppliers', 'icon': 'fas fa-truck'},
+                {'id': 'all_complaints', 'name': 'Complaints', 'icon': 'fas fa-bug'},
+                {'id': 'software_table', 'name': 'Softwares', 'icon': 'fas fa-puzzle-piece'},
+                {'id': 'all_hardwares', 'name': 'Hardware', 'icon': 'fas fa-desktop'},
             ]
         },
 
@@ -6228,42 +6369,69 @@ from .models import ServiceLog, Complaint, ServiceLogComplaint, User,ComplaintIm
 from django.utils import timezone
 from django.core.files.base import ContentFile
 import base64
+import requests
+from django.contrib import messages
+from django.shortcuts import render, redirect
+from .models import ServiceLog, Complaint, ServiceLogComplaint, User, ComplaintImage
+from django.utils import timezone
+from django.core.files.base import ContentFile
+import base64
+
+# new import for software model
+from software_master.models import Software
 
 @login_required
 def add_service_log(request):
+    """
+    Add a new ServiceLog.
+    - Accepts optional `next` in GET or POST to redirect back to calling page after save.
+    - Security: only allows relative-path `next` (starts with '/') or same-site absolute URL.
+    """
     complaints = Complaint.objects.all()
     customers = fetch_customers()
+    softwares = Software.objects.all()
 
     if request.method == 'POST':
         customer_input = request.POST.get('customer')  # dropdown search input
         customer_name = request.POST.get('customer_name')  # manual entry
         place = request.POST.get('place')
-        complaint_type = request.POST['complaint_type']
+        complaint_type = request.POST.get('complaint_type', 'software')
         remarks = request.POST.get('remarks')
         phone_number = request.POST.get('phone_number')
         voice_blob = request.POST.get('voice_blob')
 
+        # read selected software id (may be empty)
+        software_id = request.POST.get('software', '')
+
+        # Basic validation: require dropdown or manual name
         if not customer_input and not customer_name:
             return render(request, 'add_service_log.html', {
                 'complaints': complaints,
                 'customers': customers,
+                'softwares': softwares,
                 'error_message': 'Please select a customer from the dropdown or enter a customer name manually.'
             })
 
-        custom_user = User.objects.get(userid=request.user.username)
+        # Get the custom user record (this project maps request.user.username -> User.userid)
+        try:
+            custom_user = User.objects.get(userid=request.user.username)
+        except User.DoesNotExist:
+            messages.error(request, "Authenticated user not found in custom User model.")
+            return redirect('login')
 
-        # Check and format customer name from fetched data
+        # If customer_input matches one of the fetched customers, append address like earlier logic
         if customer_input:
             matched = False
             for code, data in customers.items():
-                if data['name'].strip().lower() == customer_input.strip().lower():
+                if data.get('name', '').strip().lower() == customer_input.strip().lower():
                     address = data.get('address', '')
-                    customer_name = f"{data['name']} - {address}" if address else data['name']
+                    customer_name = f"{data.get('name')} - {address}" if address else data.get('name')
                     matched = True
                     break
             if not matched:
-                customer_name = customer_input  # fallback
+                customer_name = customer_input  # fallback to raw typed text
 
+        # Create the ServiceLog (set assigned_person to the creator by default)
         log = ServiceLog.objects.create(
             customer_name=customer_name,
             place=place,
@@ -6271,39 +6439,85 @@ def add_service_log(request):
             remarks=remarks,
             phone_number=phone_number,
             added_by=custom_user,
-            assigned_person=custom_user,  # Set the added_by user as the default assigned person
+            assigned_person=custom_user,
         )
 
+        # Attach software if provided and if model supports it (defensive)
+        if software_id:
+            try:
+                selected_software = Software.objects.get(id=software_id)
+                try:
+                    log.software = selected_software
+                    log.save()
+                except Exception:
+                    try:
+                        setattr(log, 'software_id', selected_software.id)
+                        log.save()
+                    except Exception:
+                        # model does not support software field; ignore
+                        pass
+            except Software.DoesNotExist:
+                # invalid id provided -> ignore
+                pass
+        else:
+            # If empty selection and model supports it, ensure field is cleared
+            try:
+                if hasattr(log, 'software'):
+                    log.software = None
+                    log.save()
+                elif hasattr(log, 'software_id'):
+                    setattr(log, 'software_id', None)
+                    log.save()
+            except Exception:
+                pass
+
+        # Create ServiceLogComplaint rows and attach images
         complaint_ids = request.POST.getlist('complaints')
         for cid in complaint_ids:
-            note = request.POST.get(f'note_{cid}', '')
+            # safe: some browsers may send empty strings
+            if not cid:
+                continue
+            try:
+                int_cid = int(cid)
+            except (ValueError, TypeError):
+                continue
+            note = request.POST.get(f'note_{cid}', '') or ''
             complaint_log = ServiceLogComplaint.objects.create(
                 service_log=log,
-                complaint_id=cid,
+                complaint_id=int_cid,
                 note=note,
                 assigned_person=custom_user
             )
 
-            # Handle multiple images per complaint - this is the key change
+            # Handle multiple images for each complaint
             images = request.FILES.getlist(f'images_{cid}')
             for image in images:
                 ComplaintImage.objects.create(complaint_log=complaint_log, image=image)
 
+        # Save voice blob if provided
         if voice_blob:
-            format, audio_str = voice_blob.split(';base64,')
-            audio_file = ContentFile(base64.b64decode(audio_str), name=f"voice_{log.id}.webm")
-            log.voice_note.save(audio_file.name, audio_file)
-            log.save()
+            try:
+                format_part, audio_str = voice_blob.split(';base64,')
+                audio_file = ContentFile(base64.b64decode(audio_str), name=f"voice_{log.id}.webm")
+                log.voice_note.save(audio_file.name, audio_file)
+                log.save()
+            except Exception:
+                # If anything goes wrong with voice blob handling, continue without failing save
+                pass
 
-        # Prepare the WhatsApp message
-        complaint_list = ', '.join([c.description for c in Complaint.objects.filter(id__in=complaint_ids)])
-        registered_person_name = custom_user.name
-        registered_person_phone = custom_user.phone_number  # Assuming the phone number is stored in the User model
+        # Prepare and send WhatsApp message (keep your original message format)
+        try:
+            complaint_list = ', '.join([c.description for c in Complaint.objects.filter(id__in=complaint_ids)])
+        except Exception:
+            complaint_list = ''
+
+        registered_person_name = getattr(custom_user, 'name', '')
+        registered_person_phone = getattr(custom_user, 'phone_number', '')
 
         message = (
             f"Dear {customer_name.split('-')[0].strip()},\n\n"
             f"Your complaint has been added successfully.\n"
-            f"Ticket Number: {log.ticket_number}\n"
+            f"Ticket Number: {getattr(log, 'ticket_number', '')}\n"
             f"Registered by: {registered_person_name}\n"
             f"Registered Person's Phone: {registered_person_phone}\n"
             f"Thank you for choosing our services.\n"
@@ -6311,100 +6525,263 @@ def add_service_log(request):
             f"IMC Business Solutions"
         )
 
-        # Send WhatsApp message
-        send_whatsapp_message_for_service_log(phone_number, message)
+        try:
+            send_whatsapp_message_for_service_log(phone_number, message)
+        except Exception:
+            # Log/send silently — don't break the user flow if messaging fails
+            pass
 
+        # Redirect: respect `next` param if present (GET or POST). Only allow relative paths for safety.
+        next_url = request.POST.get('next') or request.GET.get('next') or ''
+        if next_url and (next_url.startswith('/') or next_url.startswith(request.build_absolute_uri('/'))):
+            return redirect(next_url)
+
+        # Fallback by user level (existing behavior)
         if custom_user.user_level == 'admin_level':
             return redirect('servicelog_list')
         else:
             return redirect('user_service_log')
 
-    return render(request, 'add_service_log.html', {'complaints': complaints, 'customers': customers})
+    # GET -> render form
+    return render(request, 'add_service_log.html', {
+        'complaints': complaints,
+        'customers': customers,
+        'softwares': softwares
+    })
 
 
+from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
+from .models import ServiceLog, ServiceLogComplaint
 
+@login_required
+def get_service_history(request):
+    customer_name = request.GET.get('customer_name', '')
+    
+    if not customer_name:
+        return JsonResponse([], safe=False)
+    
+    # Get service logs for this customer - using 'date' field for ordering
+    service_logs = ServiceLog.objects.filter(customer_name__icontains=customer_name).order_by('-date')
+    
+    service_history = []
+    for log in service_logs:
+        # Get complaints for this service log
+        complaints = ServiceLogComplaint.objects.filter(service_log=log).select_related('complaint')
+        complaint_data = [{
+            'description': sc.complaint.description,
+            'note': sc.note,
+            'status': sc.status  # Get status from ServiceLogComplaint
+        } for sc in complaints]
+        
+        # Format the customer name (remove address part if exists)
+        display_customer_name = log.customer_name
+        if '-' in log.customer_name:
+            display_customer_name = log.customer_name.split('-')[0].strip()
+        
+        # Determine overall status based on complaints
+        overall_status = 'Pending'
+        if complaints:
+            statuses = [sc.status for sc in complaints]
+            if all(status == 'Completed' for status in statuses):
+                overall_status = 'Completed'
+            elif any(status == 'In Progress' for status in statuses):
+                overall_status = 'In Progress'
+            elif any(status == 'Completed' for status in statuses):
+                overall_status = 'Partially Completed'
+        
+        service_history.append({
+            'ticket_number': log.ticket_number,
+            'service_date': log.date.isoformat() if log.date else '',
+            'complaints': complaint_data,
+            'remarks': log.remarks,
+            'complaint_type': log.complaint_type,  # Use the raw value
+            'status': overall_status,
+            'assigned_person': log.assigned_person.name if log.assigned_person else 'Not assigned',
+            'customer_name': display_customer_name
+        })
+    
+    return JsonResponse(service_history, safe=False)
+from django.shortcuts import render, redirect
+import json
+
+@login_required
+def customer_details(request):
+    """Render customer details page"""
+    customer_data_json = request.GET.get('data', '{}')
+    try:
+        customer_data = json.loads(customer_data_json)
+    except json.JSONDecodeError:
+        customer_data = {}
+    
+    return render(request, 'customer_details.html', {
+        'customer_data': customer_data
+    })
 
 from django.shortcuts import render, redirect
 from .models import ServiceLog, Complaint, ServiceLogComplaint, ComplaintImage, User
 from django.core.files.base import ContentFile
 from django.utils import timezone
 import base64
+from django.contrib.auth.decorators import login_required  # added import
 
+@login_required
 def edit_service_log(request, log_id):
-    log = ServiceLog.objects.get(id=log_id)
+    # Load the service log and reference data
+    log = get_object_or_404(ServiceLog, id=log_id)
     complaints = Complaint.objects.all()
     selected_complaints = ServiceLogComplaint.objects.filter(service_log=log)
     customers = fetch_customers()
+    softwares = Software.objects.all()
+
+    # Determine the "custom user" object for the logged-in user (same as in add_service_log)
+    try:
+        custom_user = User.objects.get(userid=request.user.username)
+    except User.DoesNotExist:
+        custom_user = None
 
     if request.method == 'POST':
-        customer_input = request.POST.get('customer')  # dropdown search input
-        customer_name = request.POST.get('customer_name')  # manual entry
+        # Basic service log fields
+        customer_input = request.POST.get('customer')
+        customer_name = request.POST.get('customer_name')
         place = request.POST.get('place')
-        complaint_type = request.POST['complaint_type']
+        complaint_type = request.POST.get('complaint_type', log.complaint_type)
         remarks = request.POST.get('remarks')
         phone_number = request.POST.get('phone_number')
         voice_blob = request.POST.get('voice_blob')
 
-        if not customer_input and not customer_name:
-            return render(request, 'add_service_log.html', {
-                'log': log,
-                'complaints': complaints,
-                'selected_complaints': selected_complaints,
-                'customers': customers,
-                'error_message': 'Please select a customer from the dropdown or enter a customer name manually.'
-            })
+        # software handling (if provided)
+        software_id = request.POST.get('software', '')
 
-        # Check and format customer name from fetched data
+        # Normalize customer name (same logic as add_service_log)
         if customer_input:
             matched = False
             for code, data in customers.items():
-                if data['name'].strip().lower() == customer_input.strip().lower():
+                if data.get('name', '').strip().lower() == customer_input.strip().lower():
                     address = data.get('address', '')
-                    customer_name = f"{data['name']} - {address}" if address else data['name']
+                    customer_name = f"{data.get('name')} - {address}" if address else data.get('name')
                     matched = True
                     break
             if not matched:
-                customer_name = customer_input  # fallback
+                customer_name = customer_input
+        elif not customer_name:
+            customer_name = log.customer_name
 
+        # Save main ServiceLog fields
         log.customer_name = customer_name
         log.place = place
         log.complaint_type = complaint_type
         log.remarks = remarks
         log.phone_number = phone_number
 
-        # Handle new voice recording (optional)
-        if voice_blob:
-            format, audio_str = voice_blob.split(';base64,')
-            audio_file = ContentFile(base64.b64decode(audio_str), name=f"voice_{log.id}.webm")
-            log.voice_note.save(audio_file.name, audio_file)
+        # attach software safely if present
+        if software_id:
+            try:
+                selected_software = Software.objects.get(id=software_id)
+                try:
+                    log.software = selected_software
+                except Exception:
+                    try:
+                        setattr(log, 'software_id', selected_software.id)
+                    except Exception:
+                        pass
+            except Software.DoesNotExist:
+                pass
+        else:
+            try:
+                if hasattr(log, 'software'):
+                    log.software = None
+                elif hasattr(log, 'software_id'):
+                    setattr(log, 'software_id', None)
+            except Exception:
+                pass
 
         log.save()
 
-        # Clear old complaints and images
-        ServiceLogComplaint.objects.filter(service_log=log).delete()
+        # --- Complaints sync logic (update/create/delete) ---
+        posted_complaint_ids = request.POST.getlist('complaints')
+        try:
+            posted_ids = [int(x) for x in posted_complaint_ids if x and str(x).strip() != '']
+        except ValueError:
+            posted_ids = []
 
-        complaint_ids = request.POST.getlist('complaints')
-        for cid in complaint_ids:
-            note = request.POST.get(f'note_{cid}', '')
-            complaint_log = ServiceLogComplaint.objects.create(
-                service_log=log,
-                complaint_id=cid,
-                note=note
-            )
+        # Map existing complaints by complaint_id
+        existing_qs = ServiceLogComplaint.objects.filter(service_log=log)
+        existing_map = {int(obj.complaint_id): obj for obj in existing_qs}
 
-            # Handle multiple images per complaint
-            images = request.FILES.getlist(f'images_{cid}')
-            for image in images:
-                ComplaintImage.objects.create(complaint_log=complaint_log, image=image)
+        processed_complaint_ids = set()
 
+        if posted_ids:
+            for cid in posted_ids:
+                note = request.POST.get(f'note_{cid}', '') or ''
+
+                # Determine default assigned_person for this new/updated complaint:
+                # 1) prefer a per-complaint assigned_person_<cid> posted value (if you include this in template)
+                # 2) else use the service log's assigned_person
+                # 3) else fallback to the current custom_user
+                assigned_person = None
+                posted_assignee = request.POST.get(f'assigned_person_{cid}')
+                if posted_assignee:
+                    # Try interpret as pk first, then as userid string
+                    try:
+                        assigned_person = User.objects.get(id=int(posted_assignee))
+                    except (ValueError, User.DoesNotExist):
+                        try:
+                            assigned_person = User.objects.get(userid=posted_assignee)
+                        except User.DoesNotExist:
+                            assigned_person = None
+
+                if not assigned_person:
+                    assigned_person = log.assigned_person or custom_user
+
+                if cid in existing_map:
+                    # Update existing ServiceLogComplaint
+                    complaint_log = existing_map[cid]
+                    complaint_log.note = note
+                    # If form explicitly supplied assigned_person_<cid> overwrite; otherwise preserve existing
+                    if request.POST.get(f'assigned_person_{cid}') or not complaint_log.assigned_person:
+                        complaint_log.assigned_person = assigned_person
+                    complaint_log.save()
+                else:
+                    # CREATE new ServiceLogComplaint and ensure assigned_person is set
+                    complaint_log = ServiceLogComplaint.objects.create(
+                        service_log=log,
+                        complaint_id=cid,
+                        note=note,
+                        assigned_person=assigned_person
+                    )
+
+                processed_complaint_ids.add(cid)
+
+                # Attach uploaded images for this complaint (works for new & existing complaints)
+                images = request.FILES.getlist(f'images_{cid}')
+                for image in images:
+                    ComplaintImage.objects.create(complaint_log=complaint_log, image=image)
+
+            # Remove any complaint rows that were unchecked/removed in the edit form
+            to_delete_ids = [cid for cid in existing_map.keys() if cid not in processed_complaint_ids]
+            if to_delete_ids:
+                ServiceLogComplaint.objects.filter(service_log=log, complaint_id__in=to_delete_ids).delete()
+        else:
+            # No complaints posted: preserve existing complaint rows but still attach any uploaded images for them
+            for cid, complaint_log in existing_map.items():
+                images = request.FILES.getlist(f'images_{cid}')
+                for image in images:
+                    ComplaintImage.objects.create(complaint_log=complaint_log, image=image)
+
+        # Redirect back to service log list (same behavior as before)
         return redirect('servicelog_list')
 
+    # GET -> render the same add/edit template with existing data
     return render(request, 'add_service_log.html', {
         'log': log,
         'complaints': complaints,
         'selected_complaints': selected_complaints,
-        'customers': customers
+        'customers': customers,
+        'softwares': softwares
     })
+
+
 
 
 

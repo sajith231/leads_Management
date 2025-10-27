@@ -14,7 +14,7 @@ import calendar, pytz, json, requests, urllib.parse
 # ---------- WHATSAPP HELPER ----------
 def send_whatsapp(phone, message):
     secret  = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
-    account = "1756959119812b4ba287f5ee0bc9d43bbf5bbe87fb68b9118fcf1af"
+    account = "1761365422812b4ba287f5ee0bc9d43bbf5bbe87fb68fc4daea92d8"
 
     # Ensure phone in international format (prepend 91 if 10-digit)
     if len(phone) == 10 and phone.isdigit():
@@ -30,6 +30,7 @@ def send_whatsapp(phone, message):
         print("WhatsApp API Response:", response.text)
     except Exception as e:
         print("WhatsApp API Error:", str(e))
+
 
 
 # ---------- LOGIN ----------
