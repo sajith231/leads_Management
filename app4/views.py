@@ -272,10 +272,11 @@ def send_key_request_whatsapp_notification(client_name, key_type, location, bran
     Send WhatsApp notification when a new key request is created.
     'created_by' should be the display name of the user who created the request.
     """
+    # ✅ Updated WhatsApp API credentials
     WHATSAPP_API_URL = "https://app.dxing.in/api/send/whatsapp"
     SECRET = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
-    ACCOUNT = "1756959119812b4ba287f5ee0bc9d43bbf5bbe87fb68b9118fcf1af"
-    RECIPIENT = "9946545535"  
+    ACCOUNT = "1761365422812b4ba287f5ee0bc9d43bbf5bbe87fb68fc4daea92d8"
+    RECIPIENT = "919946545535"  # include country code
 
     try:
         amount_text = f"\nAmount: ₹{amount}" if amount and str(amount).strip() else ""
@@ -309,6 +310,7 @@ def send_key_request_whatsapp_notification(client_name, key_type, location, bran
     except Exception as e:
         logger.error("Unexpected error sending WhatsApp for key request: %s", e)
         return False
+
 
 
 # Modified key_request view with WhatsApp notification
@@ -695,10 +697,11 @@ import requests
 import logging
 logger = logging.getLogger(__name__)
 
+# ✅ Updated WhatsApp API configuration
 WHATSAPP_API_URL = "https://app.dxing.in/api/send/whatsapp"
 WHATSAPP_SECRET   = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
-WHATSAPP_ACCOUNT  = "1756959119812b4ba287f5ee0bc9d43bbf5bbe87fb68b9118fcf1af"
-COLLECTION_RECIPIENTS = ["9946545535","6282351770","7593820007","7593820005","9562477819","7593820733"]   # hard-coded numbers
+WHATSAPP_ACCOUNT  = "1761365422812b4ba287f5ee0bc9d43bbf5bbe87fb68fc4daea92d8"
+COLLECTION_RECIPIENTS = ["919946545535","916282351770","917593820007","917593820005","919562477819","917593820733","919061947005"]  # include country code
 
 def send_collection_whatsapp(client_name, branch, created_by, amount, created_at: datetime):
     """
@@ -723,6 +726,7 @@ def send_collection_whatsapp(client_name, branch, created_by, amount, created_at
             logger.info("Collection WhatsApp sent to %s", recipient)
         except Exception as e:
             logger.error("WhatsApp failed for %s : %s", recipient, e)
+
 # -------------------------------------------------
 # -------------------------------------------------
 @login_required

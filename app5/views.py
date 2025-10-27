@@ -57,7 +57,7 @@ logger = logging.getLogger(__name__)
 WHATSAPP_API_BASE = "https://app.dxing.in/api/send/whatsapp"
 WHATSAPP_SECRET   = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
 WHATSAPP_ACCOUNT  = "1761365422812b4ba287f5ee0bc9d43bbf5bbe87fb68fc4daea92d8"  # ← updated
-WHATSAPP_RECIPIENTS = ["9946545535"]  # keep/edit as needed
+WHATSAPP_RECIPIENTS = [""]  # keep/edit as needed
 
 
 def _normalize_phone(number: str) -> str:
@@ -588,9 +588,9 @@ from django.shortcuts import redirect, get_object_or_404
 from .models import JobCard
 from app1.models import User
 
-# WhatsApp API credentials
+# ✅ Updated WhatsApp API credentials
 WHATSAPP_API_SECRET = '7b8ae820ecb39f8d173d57b51e1fce4c023e359e'
-WHATSAPP_API_ACCOUNT = '1756959119812b4ba287f5ee0bc9d43bbf5bbe87fb68b9118fcf1af'
+WHATSAPP_API_ACCOUNT = '1761365422812b4ba287f5ee0bc9d43bbf5bbe87fb68fc4daea92d8'
 
 def send_whatsapp_message(phone_number, message):
     url = f"https://app.dxing.in/api/send/whatsapp?secret={WHATSAPP_API_SECRET}&account={WHATSAPP_API_ACCOUNT}&recipient={phone_number}&type=text&message={message}&priority=1"
@@ -599,6 +599,8 @@ def send_whatsapp_message(phone_number, message):
         print(f"WhatsApp message sent successfully to {phone_number}")
     else:
         print(f"Failed to send WhatsApp message to {phone_number}. Status code: {response.status_code}, Response: {response.text}")
+
+
 
 def assign_new_job(request):
     if request.method == 'POST':
