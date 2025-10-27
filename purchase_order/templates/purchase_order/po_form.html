@@ -101,7 +101,7 @@
                             type="date" 
                             id="delivery_date" 
                             name="delivery_date" 
-                            value="{{ po.delivery_date|date:'Y-m-d'|default:'' }}"
+                            value="{{ po.delivery_date|date:'Y-m-d'|default:today }}"
                             required
                             class="form-control"
                         >
@@ -131,36 +131,11 @@
                         </select>
                     </div>
                 </div>
-
-                <!-- ✅ NEW: Calculation Method Row -->
-                <div class="form-row">
+             
+                <!-- ✅ UPDATED: Client Details + Calculation Method Side by Side -->
+                <div class="form-row client-calc-row">
+                    <!-- Client Details (Left Column) -->
                     <div class="form-group">
-                        <label for="calculation_method">
-                            Calculation Method <span class="required">*</span>
-                            <i class="fas fa-info-circle" 
-                               style="color: #3498db; cursor: help;" 
-                               title="Plus Tax: Add tax on base price | Reverse Tax: Extract tax from inclusive price"></i>
-                        </label>
-                        <select id="calculation_method" name="calculation_method" required class="form-control" onchange="handleCalculationMethodChange()">
-                            {% for value, label in calculation_methods %}
-                            <option value="{{ value }}" {% if po.calculation_method == value %}selected{% endif %}>
-                                {{ label }}
-                            </option>
-                            {% endfor %}
-                        </select>
-                        <small class="help-text" id="calculationMethodHelp">
-                            <i class="fas fa-calculator"></i> 
-                            <span id="methodDescription">Tax will be added on top of base price</span>
-                        </small>
-                    </div>
-
-                    <div class="form-group">
-                        <!-- Empty space -->
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group full-width">
                         <label for="client_search_input">
                             Client Details <span class="required">*</span>
                         </label>
@@ -237,6 +212,27 @@
                             required
                         >
                     </div>
+
+                    <!-- Calculation Method (Right Column) -->
+                    <div class="form-group">
+                        <label for="calculation_method">
+                            Calculation Method <span class="required">*</span>
+                            <i class="fas fa-info-circle" 
+                            style="color: #3498db; cursor: help;" 
+                            title="Plus Tax: Add tax on base price | Reverse Tax: Extract tax from inclusive price"></i>
+                        </label>
+                        <select id="calculation_method" name="calculation_method" required class="form-control" onchange="handleCalculationMethodChange()">
+                            {% for value, label in calculation_methods %}
+                            <option value="{{ value }}" {% if po.calculation_method == value %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <small class="help-text" id="calculationMethodHelp">
+                            <i class="fas fa-calculator"></i> 
+                            <span id="methodDescription">Tax will be added on top of base price</span>
+                        </small>
+                    </div>
                 </div>
 
                 <div class="form-row">
@@ -273,11 +269,11 @@
                                 <th style="width: 10%;">Qty</th>
                                 <th style="width: 12%;">Unit Price</th>
                                 <!-- ✅ Dynamic Entry Rate Column -->
-                                <th class="entry-rate-column" style="width: 12%; display: none;">
-                                    Entry Rate
+                                <th class="entry-rate-column" style="width: 12%;">
+                                    Entry Rate <span class="required">*</span>
                                     <i class="fas fa-info-circle" 
-                                       style="font-size: 11px; cursor: help;" 
-                                       title="Base price after tax extraction"></i>
+                                    style="font-size: 11px; cursor: help;" 
+                                    title="Base price (editable): Plus Tax = copied to Unit Price | Reverse Tax = calculates inclusive Unit Price"></i>
                                 </th>
                                 <th style="width: 10%;">Discount</th>
                                 <th style="width: 10%;">Tax %</th>
@@ -313,10 +309,11 @@
                                             readonly required>
                                     </td>
                                     <!-- ✅ Entry Rate Column (hidden by default) -->
-                                    <td class="entry-rate-column" style="display: none;">
-                                        <input type="number" name="entry_rate[]" class="entry-rate readonly-field" step="0.01" min="0" 
-                                            value="0.00" readonly
-                                            title="Base rate after tax extraction">
+                                    <td class="entry-rate-column">
+                                        <input type="number" name="entry_rate[]" class="entry-rate" step="0.01" min="0" 
+                                            value="{{ po_item.entry_rate }}" 
+                                            onchange="handleEntryRateChange({{ forloop.counter }})"
+                                            title="Base price (editable)" required>
                                     </td>
                                     <td>
                                         <input type="number" name="discount[]" class="discount" step="0.01" min="0" 
@@ -815,6 +812,7 @@ document.addEventListener('DOMContentLoaded', function() {
     {% if action == 'Create' %}
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('po_date').value = today;
+    document.getElementById('delivery_date').value = today; // ADD THIS LINE
     
     if (rowCounter === 0) {
         addItemRow();
@@ -840,23 +838,15 @@ function handleCalculationMethodChange() {
     const helpText = document.getElementById('itemsHelpText');
     
     if (method === 'PLUS_TAX') {
-        entryRateColumns.forEach(col => {
-            col.style.display = 'none';
-        });
-        
-        description.innerHTML = '<strong>Plus Tax:</strong> Tax will be added on top of base price';
+        description.innerHTML = '<strong>Plus Tax:</strong> Enter base price in Entry Rate (copies to Unit Price)';
         description.style.color = '#27ae60';
         
-        helpText.innerHTML = '<i class="fas fa-info-circle"></i> Tax will be calculated and added to the unit price.';
+        helpText.innerHTML = '<i class="fas fa-info-circle"></i> <strong>Entry Rate = Unit Price.</strong> Tax will be calculated and added on top.';
     } else {
-        entryRateColumns.forEach(col => {
-            col.style.display = '';
-        });
-        
-        description.innerHTML = '<strong>Reverse Tax:</strong> Tax will be extracted from inclusive price';
+        description.innerHTML = '<strong>Reverse Tax:</strong> Enter base price in Entry Rate (calculates inclusive Unit Price)';
         description.style.color = '#e67e22';
         
-        helpText.innerHTML = '<i class="fas fa-calculator"></i> <strong>Entry Rate</strong> shows the base price after extracting tax from the inclusive unit price.';
+        helpText.innerHTML = '<i class="fas fa-calculator"></i>  <strong>Unit Price = (Entry Rate / (100 + Tax%)) × 100</strong>.';
     }
     
     const rows = document.querySelectorAll('#itemsTableBody tr');
@@ -866,6 +856,31 @@ function handleCalculationMethodChange() {
             calculateLineTotal(parseInt(rowId));
         }
     });
+}
+
+// ==================== ENTRY RATE CHANGE HANDLER ====================
+
+function handleEntryRateChange(rowId) {
+    const row = document.getElementById(`row_${rowId}`);
+    if (!row) return;
+
+    const entryRate = parseFloat(row.querySelector('.entry-rate').value) || 0;
+    const taxPercent = parseFloat(row.querySelector('.tax-percent').value) || 0;
+    const unitPriceInput = row.querySelector('.unit-price');
+    
+    const method = document.getElementById('calculation_method').value;
+    
+    if (method === 'PLUS_TAX') {
+        // Plus Tax: Entry Rate = Unit Price (direct copy)
+        unitPriceInput.value = entryRate.toFixed(2);
+    } else {
+        // Reverse Tax: Unit Price = (Entry Rate / (100 + Tax%)) * 100
+        const exclusivePrice = (entryRate / (100 + taxPercent)) * 100;
+        unitPriceInput.value = exclusivePrice.toFixed(2);
+    }
+    
+    // Recalculate line total
+    calculateLineTotal(rowId);
 }
 
 // ==================== LINE ITEM FUNCTIONS ====================
@@ -893,9 +908,9 @@ function addItemRow() {
             <input type="number" name="unit_price[]" class="unit-price readonly-field" step="0.01" min="0" value="0" 
                 onchange="calculateLineTotal(${rowCounter})" readonly required>
         </td>
-        <td class="entry-rate-column" style="display: ${showEntryRate ? '' : 'none'};">
-            <input type="number" name="entry_rate[]" class="entry-rate readonly-field" step="0.01" min="0" 
-                value="0.00" readonly>
+        <td class="entry-rate-column">
+            <input type="number" name="entry_rate[]" class="entry-rate" step="0.01" min="0" 
+                value="0.00" onchange="handleEntryRateChange(${rowCounter})" required>
         </td>
         <td>
             <input type="number" name="discount[]" class="discount" step="0.01" min="0" value="0" onchange="calculateLineTotal(${rowCounter})">
@@ -925,9 +940,15 @@ function updateItemPrice(selectElement, rowId) {
     const row = document.getElementById(`row_${rowId}`);
     const priceInput = row.querySelector('.unit-price');
     const taxInput = row.querySelector('.tax-percent');
+    const entryRateInput = row.querySelector('.entry-rate'); // ADD THIS
     
     priceInput.value = parseFloat(price).toFixed(2);
     taxInput.value = parseFloat(tax).toFixed(2);
+    
+    // ADD THIS: Set entry rate to purchase price
+    if (entryRateInput) {
+        entryRateInput.value = parseFloat(price).toFixed(2);
+    }
     
     priceInput.setAttribute('readonly', true);
     taxInput.setAttribute('readonly', true);
@@ -941,61 +962,36 @@ function calculateLineTotal(rowId) {
 
     const qty = parseFloat(row.querySelector('.quantity').value) || 0;
     const unitPrice = parseFloat(row.querySelector('.unit-price').value) || 0;
-    const discount = parseFloat(row.querySelector('.discount').value) || 0;
     const taxPercent = parseFloat(row.querySelector('.tax-percent').value) || 0;
-    const entryRateInput = row.querySelector('.entry-rate');
-    
-    const method = document.getElementById('calculation_method').value;
-    
-    let subtotal, taxAmount, lineTotal, entryRate;
-    
-    if (method === 'PLUS_TAX') {
-        subtotal = (qty * unitPrice) - discount;
-        taxAmount = subtotal * (taxPercent / 100);
-        lineTotal = subtotal + taxAmount;
-        entryRate = unitPrice;
-    } else {
-        const grossAmount = (qty * unitPrice) - discount;
-        entryRate = unitPrice / (1 + (taxPercent / 100));
-        subtotal = (qty * entryRate) - (discount / (1 + (taxPercent / 100)));
-        taxAmount = grossAmount - subtotal;
-        lineTotal = grossAmount;
-        
-        if (entryRateInput) {
-            entryRateInput.value = entryRate.toFixed(2);
-        }
-    }
 
-    row.querySelector('.line-total').value = `₹${lineTotal.toFixed(2)}`;
-    
+    const discount = parseFloat(row.querySelector('.discount').value) || 0;
+    const taxableValue = (qty * unitPrice) - discount;
+    const taxAmount = taxableValue * (taxPercent / 100);
+
+    const entryTotal = taxableValue + taxAmount;
+
+    row.querySelector('.line-total').value = `₹${entryTotal.toFixed(2)}`;
+
     updateTotals();
 }
 
 function updateTotals() {
-    const method = document.getElementById('calculation_method').value;
     let subtotal = 0;
     let taxTotal = 0;
 
     const rows = document.querySelectorAll('#itemsTableBody tr');
+
     rows.forEach(row => {
         const qty = parseFloat(row.querySelector('.quantity').value) || 0;
         const unitPrice = parseFloat(row.querySelector('.unit-price').value) || 0;
         const discount = parseFloat(row.querySelector('.discount').value) || 0;
         const taxPercent = parseFloat(row.querySelector('.tax-percent').value) || 0;
 
-        if (method === 'PLUS_TAX') {
-            const rowSubtotal = (qty * unitPrice) - discount;
-            const rowTax = rowSubtotal * (taxPercent / 100);
-            subtotal += rowSubtotal;
-            taxTotal += rowTax;
-        } else {
-            const grossAmount = (qty * unitPrice) - discount;
-            const entryRate = unitPrice / (1 + (taxPercent / 100));
-            const rowSubtotal = (qty * entryRate) - (discount / (1 + (taxPercent / 100)));
-            const rowTax = grossAmount - rowSubtotal;
-            subtotal += rowSubtotal;
-            taxTotal += rowTax;
-        }
+        const taxableValue = (qty * unitPrice) - discount;
+        const taxAmount = taxableValue * (taxPercent / 100);
+
+        subtotal += taxableValue;
+        taxTotal += taxAmount;
     });
 
     const grandTotal = subtotal + taxTotal;
@@ -1273,5 +1269,64 @@ document.addEventListener('click', function(event) {
         dropdownVisible = false;
     }
 });
+
+// ==================== RESET FORM FUNCTION ====================
+
+document.getElementById('resetFormBtn').addEventListener('click', function() {
+    if (!confirm('Are you sure you want to reset the form? All entered data will be lost.')) {
+        return;
+    }
+    
+    // Reset all form fields
+    const form = document.getElementById('poForm');
+    form.reset();
+    
+    // Set today's date for date fields
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('po_date').value = today;
+    document.getElementById('delivery_date').value = today;
+    
+    // Clear all items from table
+    const tbody = document.getElementById('itemsTableBody');
+    tbody.innerHTML = '';
+    rowCounter = 0;
+    
+    // Add one empty row
+    addItemRow();
+    
+    // Reset client details
+    document.getElementById('client_search_input').value = '';
+    document.getElementById('client_manual_input').value = '';
+    document.getElementById('client_details').value = '';
+    document.getElementById('clientSelectedText').style.display = 'none';
+    
+    // Switch to select mode
+    switchClientMode('select');
+    
+    // Reset dropdown
+    document.getElementById('client_dropdown_list').style.display = 'none';
+    dropdownVisible = false;
+    
+    // Reset totals
+    updateTotals();
+    
+    // Reset calculation method help text
+    handleCalculationMethodChange();
+    
+    // Scroll to top
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+    // Show success message
+    const pageTitle = document.querySelector('.page-title');
+    const originalText = pageTitle.textContent;
+    pageTitle.textContent = '✓ Form Reset Successfully';
+    pageTitle.style.color = '#27ae60';
+    
+    setTimeout(() => {
+        pageTitle.textContent = originalText;
+        pageTitle.style.color = '#2c3e50';
+    }, 2000);
+});
+
 </script>
 {% endblock %}
