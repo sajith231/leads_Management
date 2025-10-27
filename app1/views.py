@@ -5538,6 +5538,8 @@ def configure_user_menu(request, user_id):
                 {'id': 'all_complaints', 'name': 'Complaints', 'icon': 'fas fa-bug'},
                 {'id': 'software_table', 'name': 'Softwares', 'icon': 'fas fa-puzzle-piece'},
                 {'id': 'all_hardwares', 'name': 'Hardware', 'icon': 'fas fa-desktop'},
+                {'id': 'image_capture', 'name': 'Image Capture', 'icon': 'fas fa-camera'},
+                {'id': 'purchase_order', 'name': 'Purchase Order', 'icon': 'fas fa-file-invoice'},
             ]
         },
 

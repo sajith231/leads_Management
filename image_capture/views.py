@@ -165,27 +165,39 @@ def _get_location_name(latitude, longitude):
 # Helper: send OTP through DxIng WhatsApp gateway
 # ------------------------------------------------------------------
 import threading
+import requests
+import logging
 
 def _send_otp_via_whatsapp(phone: str, otp: str) -> None:
     """
     Send OTP via DxIng WhatsApp in background thread (non-blocking)
     """
+
     def send():
+        # Ensure phone number is in international format (e.g. 91XXXXXXXXXX)
+        if len(phone) == 10:
+            phone_number = "91" + phone
+        else:
+            phone_number = phone
+
         url = (
             "https://app.dxing.in/api/send/whatsapp"
             "?secret=7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
-            "&account=1756959119812b4ba287f5ee0bc9d43bbf5bbe87fb68b9118fcf1af"
-            f"&recipient={phone}"
+            "&account=1761365422812b4ba287f5ee0bc9d43bbf5bbe87fb68fc4daea92d8"
+            f"&recipient={phone_number}"
             "&type=text"
             f"&message=Your verification code is {otp}. Valid for 5 minutes."
-            "&priority=0"
+            "&priority=1"
         )
+
         try:
-            requests.get(url, timeout=5)
+            response = requests.get(url, timeout=5)
+            logging.info(f"WhatsApp OTP sent to {phone_number}: {response.text}")
         except Exception as e:
-            logging.error(f"WhatsApp send failed for {phone}: {e}")
+            logging.error(f"WhatsApp send failed for {phone_number}: {e}")
 
     threading.Thread(target=send, daemon=True).start()
+
 
 
 # ------------------------------------------------------------------
