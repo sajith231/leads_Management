@@ -1007,10 +1007,19 @@
     
    
 {% endif %}
+{% if 'image_capture' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
 <a href="{% url 'index' %}">
   <i class="fas fa-camera" style="margin-right: 5px;"></i>
   Image Capture
 </a>
+{% endif %}
+
+{% if 'purchase_order' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+<a href="{% url 'purchase_order:po_list' %}">
+  <i class="fas fa-file-invoice" style="margin-right: 5px;"></i>
+  Purchase Order
+</a>
+{% endif %}
 
 </div>
 {% endif %}
