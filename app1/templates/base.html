@@ -988,10 +988,12 @@
         License Key
     </a>
     {% endif %}
-    <a href="{% url 'key_request_list' %}">
-        <i class="fas fa-file-signature" style="margin-right: 5px;"></i>
-        Key Request
-    </a> 
+    {% if 'key_request' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+    <a href="{% url 'key_request' %}">
+        <i class="fas fa-plus-circle" style="margin-right: 5px;"></i>
+        Add Key Request
+    </a>
+    {% endif %}
     {% if 'collections_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
     <a href="{% url 'collections_list' %}">
         <i class="fas fa-coins" style="margin-right: 5px;"></i>
