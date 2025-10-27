@@ -73,24 +73,27 @@ import requests
 
 def send_whatsapp_message_for_service_log(phone_number, message):
     """
-    Send a WhatsApp message for service logs using the updated DxIng API.
-    Automatically encodes the message, handles errors, and logs the response.
+    Send a WhatsApp message for service logs using the DxIng API.
+    Sends a clean, human-readable message (no URL encoding issues).
     """
-    # ✅ Updated API credentials
+    import requests
+
+    # ✅ API credentials
     secret = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
-    account = "1761365422812b4ba287f5ee0bc9d43bbf5bbe87fb68fc4daea92d8"  # ✅ new account
+    account = "1761365422812b4ba287f5ee0bc9d43bbf5bbe87fb68fc4daea92d8"
 
-    # ✅ Encode message safely
-    encoded_message = requests.utils.quote(message)
+    # ✅ Ensure message is properly formatted (convert newlines for WhatsApp)
+    # Replace double spaces/newlines for better readability
+    message = message.replace("\r\n", "\n").replace("\r", "\n")
 
-    # ✅ Build API request URL
+    # ✅ Construct the API URL (no manual encoding)
     url = (
         f"https://app.dxing.in/api/send/whatsapp?"
         f"secret={secret}"
         f"&account={account}"
         f"&recipient={phone_number}"
         f"&type=text"
-        f"&message={encoded_message}"
+        f"&message={message}"
         f"&priority=1"
     )
 
@@ -103,13 +106,14 @@ def send_whatsapp_message_for_service_log(phone_number, message):
         else:
             print(
                 f"❌ Failed to send WhatsApp service log message to {phone_number}. "
-                f"Status: {response.status_code}, Response: {response.text}"
+                f"Status code: {response.status_code}, Response: {response.text}"
             )
             return False
 
     except requests.exceptions.RequestException as e:
         print(f"⚠️ Error sending WhatsApp service log message: {e}")
         return False
+
 
 
 
