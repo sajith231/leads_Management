@@ -10,6 +10,7 @@ from django.utils import timezone
 from .models import Supplier, PurchaseOrder, Item, PurchaseOrderItem, Department
 from django.core.paginator import Paginator
 from django.core.paginator import EmptyPage, PageNotAnInteger
+from django.db.models import ProtectedError
 
 
 
@@ -752,27 +753,36 @@ def department_update(request, pk):
     }
     return render(request, 'purchase_order/department_form.html', context)
 
-
 def department_delete(request, pk):
-    """Soft delete department"""
+    """Soft delete department (handles linked suppliers, items, and purchase orders)"""
     department = get_object_or_404(Department, pk=pk)
     
     if request.method == 'POST':
-        if department.purchase_orders.exists():
-            messages.warning(
+        try:
+            # Check if department has linked records
+            has_po = department.purchase_orders.exists()
+            has_supplier = department.suppliers.exists()
+            has_item = department.items.exists()
+
+            if has_po or has_supplier or has_item:
+                messages.warning(
+                    request,
+                    'Cannot delete department with linked suppliers, items, or purchase orders. Deactivating instead.'
+                )
+                department.is_active = False
+                department.save()
+            else:
+                department.delete()
+                messages.success(request, 'Department deleted successfully!')
+        except ProtectedError:
+            messages.error(
                 request,
-                'Cannot delete department with existing purchase orders. Deactivating instead.'
+                'Cannot delete department — it is referenced by other records (Suppliers/Items).'
             )
-            department.is_active = False
-            department.save()
-        else:
-            department.delete()
-            messages.success(request, 'Department deleted successfully!')
-        
+
         return redirect('purchase_order:department_list')
     
     return render(request, 'purchase_order/department_confirm_delete.html', {'department': department})
-
 
 # ==================== AJAX API ENDPOINT FOR DEPARTMENT (ADD THIS) ====================
 

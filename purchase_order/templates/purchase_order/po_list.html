@@ -792,12 +792,24 @@ body {
     background-color: rgba(0, 0, 0, 0.5);
     animation: fadeIn 0.3s ease;
     overflow: auto;
+    align-items: center;
+    justify-content: center;
 }
 
 .modal.active {
     display: flex;
-    align-items: center;
-    justify-content: center;
+}
+
+.modal-content {
+    background-color: white;
+    margin: auto;
+    padding: 0;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    animation: slideIn 0.3s ease;
+    position: relative;
 }
 
 .modal-content {
@@ -1074,12 +1086,12 @@ function confirmDelete(poId, poNumber) {
     
     poNumberElement.textContent = poNumber;
     deleteForm.action = "{% url 'purchase_order:po_delete' 0 %}".replace('0', poId);
-    modal.style.display = 'block';
+    modal.classList.add('active');
 }
 
 function closeModal() {
     const modal = document.getElementById('deleteModal');
-    modal.style.display = 'none';
+    modal.classList.remove('active');
 }
 
 window.onclick = function(event) {
