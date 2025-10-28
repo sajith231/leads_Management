@@ -66,7 +66,8 @@ INSTALLED_APPS = [
     "punchout_reminder",
     "image_capture",
     'software_master',
-    'purchase_order'
+    'purchase_order',
+    'claims',
     
 ]
 

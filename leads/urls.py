@@ -44,6 +44,7 @@ urlpatterns = [
     # path('punchout_reminder/', include('punchout_reminder.urls')),
 
     path('po/', include('purchase_order.urls')),
+    path('claims/', include('claims.urls')),
 
 
 

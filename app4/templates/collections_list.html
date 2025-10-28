@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container mt-4">
+<div class="container-fluid px-3 mt-4">
     {% csrf_token %}
     <meta name="delete-url-pattern" content="{% url 'collections_delete' 0 %}">
     <meta name="status-update-url" content="{% url 'collection_update_status' 0 %}">
     
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
         <h2 class="mb-0">
             <i class="fas fa-money-check-alt me-2"></i>Collections
         </h2>
@@ -16,7 +16,7 @@
     </div>
 
     <!-- Search and Filter -->
-    <div class="filter-card mb-4">
+    <div class="filter-card mb-3">
         <div class="filter-header">
             <h6><i class="fas fa-filter me-2"></i>Search & Filter</h6>
         </div>
@@ -28,12 +28,13 @@
                 </div>
 
                 <div class="col-md-2">
-                    <label class="form-label">Branch 🏠︎</label>
+                    <label class="form-label">Branch 🏢</label>
                     <select id="branchFilter" class="form-select">
                         <option value="">All Branches</option>
                         <option value="IMC Mukkam">IMC Mukkam</option>
                         <option value="IMCB HO">IMCB HO</option>
                         <option value="IMCB DEV">IMCB DEV</option>
+                        <option value="IMC Merged">IMC Merged</option>
                         <option value="Sysmac Info System">Sysmac Info System</option>
                         <option value="Sysmac Computers">Sysmac Computers</option>
                         <option value="DQ Technologies">DQ Technologies</option>
@@ -70,12 +71,26 @@
         </div>
     </div>
 
+    <!-- Show Entries and Info Bar -->
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <div class="d-flex align-items-center gap-2">
+            <label class="mb-0 text-muted small">Show</label>
+            <select id="entriesPerPage" class="form-select form-select-sm" style="width: auto;">
+                <option value="25">25</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+            </select>
+            <label class="mb-0 text-muted small">entries</label>
+        </div>
+        <div id="tableInfo" class="text-muted small"></div>
+    </div>
+
     <!-- Collections Table -->
     <div class="table-card">
         {% if collections %}
-            <div class="table-responsive">
-                <table class="table">
-                    <thead>
+            <div class="table-responsive" style="max-height: calc(100vh - 340px); overflow-y: auto;">
+                <table class="table table-hover">
+                    <thead class="sticky-top">
                         <tr>
                             <th width="3%">#</th>
                             <th width="15%">Client Name</th>
@@ -106,7 +121,23 @@
                                 </td>
                                 <td><span class="badge bg-secondary">{{ collection.branch }}</span></td>
                                 <td>{{ collection.created_by|default:"—" }}</td>
-                                <td><strong class="text-success">₹{{ collection.amount|floatformat:2 }}</strong></td>
+                                <td>
+                                    <strong class="text-success">₹{{ collection.amount|floatformat:2 }}</strong>
+                                    <br>
+                                    <small class="collection-type-badge">
+                                        {% if collection.collection_type == 'cash' %}
+                                            <i class="fas fa-money-bill-wave"></i> Cash
+                                        {% elif collection.collection_type == 'upi' %}
+                                            <i class="fas fa-mobile-alt"></i> UPI
+                                        {% elif collection.collection_type == 'neft' %}
+                                            <i class="fas fa-university"></i> NEFT
+                                        {% elif collection.collection_type == 'cheque' %}
+                                            <i class="fas fa-money-check"></i> Cheque
+                                        {% else %}
+                                            <i class="fas fa-question-circle"></i> {{ collection.collection_type|default:"N/A" }}
+                                        {% endif %}
+                                    </small>
+                                </td>
                                 <td>{{ collection.paid_for|truncatechars:20 }}</td>
                                 <td>
                                     <div class="dropdown">
@@ -183,34 +214,10 @@
                 </table>
             </div>
 
-            <!-- Pagination -->
-            {% if is_paginated %}
-                <nav aria-label="Page navigation" class="mt-3" id="paginationContainer">
-                    <ul class="pagination justify-content-center">
-                        {% if page_obj.has_previous %}
-                            <li class="page-item">
-                                <a class="page-link" href="?page=1">First</a>
-                            </li>
-                            <li class="page-item">
-                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
-                            </li>
-                        {% endif %}
-
-                        <li class="page-item active">
-                            <span class="page-link">{{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
-                        </li>
-
-                        {% if page_obj.has_next %}
-                            <li class="page-item">
-                                <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
-                            </li>
-                            <li class="page-item">
-                                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Last</a>
-                            </li>
-                        {% endif %}
-                    </ul>
-                </nav>
-            {% endif %}
+            <!-- Enhanced Pagination -->
+            <nav aria-label="Page navigation" class="mt-3" id="paginationContainer">
+                <ul class="pagination justify-content-center mb-0" id="paginationList"></ul>
+            </nav>
         {% else %}
             <div class="empty-state">
                 <i class="fas fa-money-check-alt fa-3x text-muted mb-3"></i>
@@ -286,8 +293,11 @@ function getStatusUpdateUrl(collectionId) {
     return urlPattern.replace('0', collectionId);
 }
 
-// Store all rows data for filtering
+// Pagination variables
 let allRowsData = [];
+let filteredRows = [];
+let currentPage = 1;
+let entriesPerPage = 25;
 
 // Initialize rows data on page load
 function initializeRowsData() {
@@ -301,6 +311,7 @@ function initializeRowsData() {
         status: row.getAttribute('data-status') || '',
         date: row.getAttribute('data-date') || ''
     }));
+    filteredRows = [...allRowsData];
 }
 
 // Filter table
@@ -311,40 +322,51 @@ function filterTable() {
     const statusValue = document.getElementById('statusFilter').value;
     const dateValue = document.getElementById('dateFilter').value;
 
-    let visibleCount = 0;
-    const hasActiveFilter = searchValue || branchValue || userValue || statusValue || dateValue;
+    // Filter all rows
+    filteredRows = allRowsData.filter(rowData => {
+        let match = true;
 
-    // Hide pagination when filters active
-    const paginationContainer = document.getElementById('paginationContainer');
-    if (paginationContainer) {
-        paginationContainer.style.display = hasActiveFilter ? 'none' : 'block';
-    }
+        if (searchValue && !rowData.clientName.includes(searchValue)) match = false;
+        if (branchValue && rowData.branch !== branchValue) match = false;
+        if (userValue && !rowData.createdBy.includes(userValue)) match = false;
+        if (statusValue && rowData.status !== statusValue) match = false;
+        if (dateValue && rowData.date !== dateValue) match = false;
 
-    // Filter and display rows
-    allRowsData.forEach(rowData => {
-        let showRow = true;
-
-        if (searchValue && !rowData.clientName.includes(searchValue)) showRow = false;
-        if (branchValue && rowData.branch !== branchValue) showRow = false;
-        if (userValue && !rowData.createdBy.includes(userValue)) showRow = false;
-        if (statusValue && rowData.status !== statusValue) showRow = false;
-        if (dateValue && rowData.date !== dateValue) showRow = false;
-
-        if (showRow) {
-            rowData.element.style.display = '';
-            visibleCount++;
-            const firstCell = rowData.element.querySelector('td:first-child');
-            if (firstCell) firstCell.textContent = visibleCount;
-        } else {
-            rowData.element.style.display = 'none';
-        }
+        return match;
     });
 
-    // Show no results message
+    // Reset to first page when filtering
+    currentPage = 1;
+    displayPage();
+    updatePagination();
+}
+
+// Display current page
+function displayPage() {
+    const startIndex = (currentPage - 1) * entriesPerPage;
+    const endIndex = startIndex + entriesPerPage;
+    
+    // Hide all rows first
+    allRowsData.forEach(rowData => {
+        rowData.element.style.display = 'none';
+    });
+
+    // Show only rows for current page
+    const pageRows = filteredRows.slice(startIndex, endIndex);
+    pageRows.forEach((rowData, index) => {
+        rowData.element.style.display = '';
+        const firstCell = rowData.element.querySelector('td:first-child');
+        if (firstCell) firstCell.textContent = startIndex + index + 1;
+    });
+
+    // Update table info
+    updateTableInfo();
+
+    // Show no results message if needed
     const tbody = document.getElementById('collectionsTableBody');
     let existingMessage = document.getElementById('noResultsMessage');
     
-    if (visibleCount === 0 && !existingMessage) {
+    if (filteredRows.length === 0 && !existingMessage) {
         const messageRow = document.createElement('tr');
         messageRow.id = 'noResultsMessage';
         messageRow.innerHTML = `
@@ -354,15 +376,127 @@ function filterTable() {
             </td>
         `;
         tbody.appendChild(messageRow);
-    } else if (visibleCount > 0 && existingMessage) {
+    } else if (filteredRows.length > 0 && existingMessage) {
         existingMessage.remove();
     }
+}
+
+// Update table info
+function updateTableInfo() {
+    const startIndex = (currentPage - 1) * entriesPerPage + 1;
+    const endIndex = Math.min(currentPage * entriesPerPage, filteredRows.length);
+    const totalRows = filteredRows.length;
+    
+    const infoText = totalRows > 0 
+        ? `Showing ${startIndex} to ${endIndex} of ${totalRows} entries`
+        : 'No entries to display';
+    
+    document.getElementById('tableInfo').textContent = infoText;
+}
+
+// Update pagination
+function updatePagination() {
+    const totalPages = Math.ceil(filteredRows.length / entriesPerPage);
+    const paginationList = document.getElementById('paginationList');
+    
+    if (totalPages <= 1) {
+        paginationList.innerHTML = '';
+        return;
+    }
+
+    let paginationHTML = '';
+
+    // Previous button
+    paginationHTML += `
+        <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+            <a class="page-link" href="#" onclick="changePage(${currentPage - 1}); return false;">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+        </li>
+    `;
+
+    // Page numbers logic
+    const maxVisiblePages = 5;
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+    // Adjust start if we're near the end
+    if (endPage - startPage < maxVisiblePages - 1) {
+        startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+
+    // First page
+    if (startPage > 1) {
+        paginationHTML += `
+            <li class="page-item">
+                <a class="page-link" href="#" onclick="changePage(1); return false;">1</a>
+            </li>
+        `;
+        if (startPage > 2) {
+            paginationHTML += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+        }
+    }
+
+    // Page numbers
+    for (let i = startPage; i <= endPage; i++) {
+        paginationHTML += `
+            <li class="page-item ${i === currentPage ? 'active' : ''}">
+                <a class="page-link" href="#" onclick="changePage(${i}); return false;">${i}</a>
+            </li>
+        `;
+    }
+
+    // Last page
+    if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+            paginationHTML += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+        }
+        paginationHTML += `
+            <li class="page-item">
+                <a class="page-link" href="#" onclick="changePage(${totalPages}); return false;">${totalPages}</a>
+            </li>
+        `;
+    }
+
+    // Next button
+    paginationHTML += `
+        <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+            <a class="page-link" href="#" onclick="changePage(${currentPage + 1}); return false;">
+                <i class="fas fa-chevron-right"></i>
+            </a>
+        </li>
+    `;
+
+    paginationList.innerHTML = paginationHTML;
+}
+
+// Change page
+function changePage(page) {
+    const totalPages = Math.ceil(filteredRows.length / entriesPerPage);
+    if (page < 1 || page > totalPages) return;
+    
+    currentPage = page;
+    displayPage();
+    updatePagination();
+    
+    // Scroll to top of table
+    document.querySelector('.table-responsive').scrollTop = 0;
+}
+
+// Change entries per page
+function changeEntriesPerPage(value) {
+    entriesPerPage = parseInt(value);
+    currentPage = 1;
+    displayPage();
+    updatePagination();
 }
 
 // Event listeners
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize rows data
     initializeRowsData();
+    displayPage();
+    updatePagination();
     
     let searchTimeout;
 
@@ -383,6 +517,11 @@ document.addEventListener('DOMContentLoaded', function() {
         if (element) {
             element.addEventListener('change', filterTable);
         }
+    });
+
+    // Entries per page
+    document.getElementById('entriesPerPage').addEventListener('change', function() {
+        changeEntriesPerPage(this.value);
     });
 
     // Clear filters
@@ -596,6 +735,16 @@ function showAlert(type, message) {
 
 <style>
 /* Professional clean styles */
+body {
+    overflow-x: hidden;
+}
+
+.container-fluid {
+    max-width: 100%;
+    padding-left: 15px;
+    padding-right: 15px;
+}
+
 .filter-card {
     background: #ffffff;
     border: 1px solid #e0e0e0;
@@ -604,7 +753,7 @@ function showAlert(type, message) {
 }
 
 .filter-header {
-    padding: 14px 20px;
+    padding: 12px 16px;
     background: #f8f9fa;
     border-bottom: 1px solid #e0e0e0;
     border-radius: 6px 6px 0 0;
@@ -613,31 +762,32 @@ function showAlert(type, message) {
 .filter-header h6 {
     margin: 0;
     font-weight: 600;
-    font-size: 15px;
+    font-size: 14px;
     color: #2c3e50;
 }
 
 .filter-body {
-    padding: 20px;
+    padding: 16px;
 }
 
 .form-label {
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 500;
     color: #495057;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
 }
 
 .form-control, .form-select {
     border: 1px solid #ced4da;
     border-radius: 4px;
-    font-size: 14px;
-    padding: 8px 12px;
+    font-size: 13px;
+    padding: 6px 10px;
+    height: auto;
 }
 
 .form-control:focus, .form-select:focus {
     border-color: #0d6efd;
-    box-shadow: 0 0 0 0.2rem rgba(13,110,253,0.15);
+    box-shadow: 0 0 0 0.15rem rgba(13,110,253,0.15);
 }
 
 .table-card {
@@ -649,29 +799,38 @@ function showAlert(type, message) {
     overflow: hidden;
 }
 
+.table-responsive {
+    position: relative;
+}
+
 .table {
     margin-bottom: 0;
-    font-size: 14px;
+    font-size: 13px;
 }
 
 .table thead {
     background: #2c3e50;
     color: white;
+    position: sticky;
+    top: 0;
+    z-index: 10;
 }
 
 .table thead th {
     font-weight: 600;
-    font-size: 13px;
-    padding: 14px 12px;
+    font-size: 12px;
+    padding: 10px 8px;
     border: none;
     text-transform: uppercase;
     letter-spacing: 0.3px;
+    white-space: nowrap;
 }
 
 .table tbody td {
-    padding: 12px;
+    padding: 10px 8px;
     vertical-align: middle;
     border-bottom: 1px solid #f0f0f0;
+    font-size: 13px;
 }
 
 .table tbody tr {
@@ -686,11 +845,29 @@ function showAlert(type, message) {
     border-bottom: none;
 }
 
-.status-btn {
-    min-width: 130px;
-    font-size: 13px;
+/* Collection Type Badge Styling */
+.collection-type-badge {
+    display: inline-block;
+    font-size: 10px;
     font-weight: 500;
-    padding: 6px 12px;
+    color: #6c757d;
+    background-color: #f8f9fa;
+    padding: 2px 6px;
+    border-radius: 3px;
+    margin-top: 2px;
+    border: 1px solid #e9ecef;
+}
+
+.collection-type-badge i {
+    font-size: 9px;
+    margin-right: 2px;
+}
+
+.status-btn {
+    min-width: 120px;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 5px 10px;
 }
 
 .status-pending {
@@ -724,14 +901,14 @@ function showAlert(type, message) {
 }
 
 .btn-group .btn {
-    padding: 6px 10px;
-    font-size: 13px;
+    padding: 5px 8px;
+    font-size: 12px;
 }
 
 .badge {
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 500;
-    padding: 5px 10px;
+    padding: 4px 8px;
 }
 
 .empty-state {
@@ -740,17 +917,37 @@ function showAlert(type, message) {
 }
 
 .pagination {
-    margin: 20px 0;
+    margin: 15px 0;
+    flex-wrap: wrap;
 }
 
 .pagination .page-link {
     color: #2c3e50;
     border: 1px solid #dee2e6;
-    padding: 8px 14px;
-    font-size: 14px;
+    padding: 6px 12px;
+    font-size: 13px;
+    margin: 2px;
 }
 
 .pagination .page-item.active .page-link {
+    background-color: #2c3e50;
+    border-color: #2c3e50;
+    color: white;
+}
+
+.pagination .page-item.disabled .page-link {
+    color: #6c757d;
+    pointer-events: none;
+    background-color: #fff;
+    border-color: #dee2e6;
+}
+
+.pagination .page-link:hover {
+    background-color: #e9ecef;
+    border-color: #dee2e6;
+}
+
+.pagination .page-item.active .page-link:hover {
     background-color: #2c3e50;
     border-color: #2c3e50;
 }
@@ -797,6 +994,26 @@ function showAlert(type, message) {
     font-weight: 600;
     min-width: 50px;
     text-align: center;
+    font-size: 14px;
+}
+
+/* Scrollbar styling */
+.table-responsive::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb:hover {
+    background: #555;
 }
 
 @media (max-width: 768px) {
@@ -813,6 +1030,56 @@ function showAlert(type, message) {
     .filter-body .row {
         gap: 15px 0 !important;
     }
+
+    .table {
+        font-size: 11px;
+    }
+
+    .table thead th,
+    .table tbody td {
+        padding: 8px 6px;
+    }
+
+    .status-btn {
+        min-width: 100px;
+        font-size: 11px;
+        padding: 4px 8px;
+    }
+
+    .pagination .page-link {
+        padding: 5px 10px;
+        font-size: 12px;
+    }
+
+    .collection-type-badge {
+        font-size: 9px;
+        padding: 1px 4px;
+    }
+}
+
+@media (max-width: 576px) {
+    .container-fluid {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
+    h2 {
+        font-size: 1.5rem;
+    }
+
+    .table {
+        font-size: 10px;
+    }
+
+    .badge {
+        font-size: 10px;
+        padding: 3px 6px;
+    }
+
+    .collection-type-badge {
+        font-size: 8px;
+        padding: 1px 3px;
+    }
 }
 </style>
-{% endblock %}
+{% endblock %}                          

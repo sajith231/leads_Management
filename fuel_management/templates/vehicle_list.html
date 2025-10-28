@@ -3,7 +3,7 @@
 
 {% block content %}
 <style>
-    .card{max-width:1200px;margin:auto;background:#fff;padding:30px;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,.1)}
+    .card{max-width:1400px;margin:auto;background:#fff;padding:30px;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,.1)}
     .head{display:flex;justify-content:space-between;align-items:center;margin-bottom:25px}
     h1{color:#333}
     .add{background:#4caf50;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:600}
@@ -42,6 +42,9 @@
                     <tr>
                         <th>#</th>
                         <th>Vehicle Number</th>
+                        <th>Vehicle Name</th>
+                        <th>Model Number</th>
+                        <th>Manufacture Year</th>
                         <th>Owner Name</th>
                         <th>Fuel Type</th>
                         <th>Fuel Rate</th>
@@ -57,6 +60,9 @@
                     <tr>
                         <td>{{ forloop.counter }}</td>
                         <td><strong>{{ v.vehicle_number }}</strong></td>
+                        <td>{{ v.vehicle_name }}</td>
+                        <td>{{ v.model_number }}</td>
+                        <td>{{ v.manufacture_year }}</td>
                         <td>{{ v.owner_name }}</td>
                         <td>{{ v.get_fuel_type_display }}</td>
                         <td class="fuel-rate">₹{{ v.fuel_rate }}</td>
