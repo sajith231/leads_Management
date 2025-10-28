@@ -15,36 +15,37 @@
     }
 
     .dropdown {
-    position: relative;
-    display: inline-block;
-}
-.dropdown-toggle {
-    background: black;
-    color: #fff;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: bold;
-}
-.dropdown-menu {
-    display: none;
-    position: absolute;
-    background: white;
-    min-width: 220px;
-    box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
-    border-radius: 6px;
-    z-index: 1000;
-}
-.dropdown-menu a {
-    color: black;
-    padding: 12px 16px;
-    text-decoration: none;
-    display: block;
-    font-size: 14px;
-}
-.dropdown-menu a:hover {
-    background: #f1f1f1;
-}
+        position: relative;
+        display: inline-block;
+    }
+    .dropdown-toggle {
+        background: black;
+        color: #fff;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: bold;
+    }
+    .dropdown-menu {
+        display: none;
+        position: absolute;
+        background: white;
+        min-width: 220px;
+        box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
+        border-radius: 6px;
+        z-index: 1000;
+    }
+    .dropdown-menu a {
+        color: black;
+        padding: 12px 16px;
+        text-decoration: none;
+        display: block;
+        font-size: 14px;
+    }
+    .dropdown-menu a:hover {
+        background: #f1f1f1;
+    }
+
     .top-bar {
         display: flex;
         justify-content: space-between;
@@ -56,7 +57,7 @@
         flex-wrap: wrap;
         gap: 15px;
     }
-   
+
     /* Ticket number and creator styling */
     .ticket-info {
         display: flex;
@@ -87,7 +88,7 @@
     }
 
     /* Creator info styling */
-     .creator-info {
+    .creator-info {
         font-size: 12px;
         color: #ef0707;
         background: #fff;
@@ -104,22 +105,6 @@
     .creator-info i {
         font-size: 12px;
         color: #080808;
-    }
-
-    /* Highlight Important Fields */
-    .highlight-text {
-        font-weight: bold;
-        color: #000;
-        background: #f2dd99; /* light yellow highlight */
-        padding: 2px 4px;
-        border-radius: 4px;
-    }
-    .highlight-complaint {
-        font-weight: bold;
-        color: #b71c1c; /* dark red text for complaints */
-        background: #ffebee; /* light red background */
-        padding: 2px 6px;
-        border-radius: 4px;
     }
 
     /* Customer info combined styling */
@@ -152,7 +137,7 @@
         border-radius: 4px;
     }
     .customer-field.name i {
-        color: #f80303;   /* orange icon for user */
+        color: #f80303;
     }
 
     .customer-field.address {
@@ -162,7 +147,7 @@
         word-wrap: break-word;
     }
     .customer-field.address i {
-        color: #f68206;   /* green icon for location */
+        color: #f68206;
     }
 
     .customer-field.phone {
@@ -170,7 +155,7 @@
         font-size: 14px;
     }
     .customer-field.phone i {
-        color: #007bff;   /* red icon for phone */
+        color: #007bff;
     }
 
     .search-box {
@@ -338,10 +323,13 @@
         cursor: pointer;
         transition: all 0.3s ease;
         user-select: none;
+        position: relative;
+        min-width: 60px;
+        text-align: center;
     }
     .status-badge:hover {
-        transform: scale(1.1);
-        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        transform: scale(1.05);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
     }
     .status-logged { background: #ed5b2e; color: #fff; }
     .status-sent_technician { background: #ef06cc; color: #fff; }
@@ -349,6 +337,62 @@
     .status-accepted { background: #060bf4; color: #fff; }
     .status-returned { background: #915af6; color: #fff; }
     .status-rejected {  background: #bd0214; color: #fff; }
+    
+    /* Status updating animation */
+    .status-updating {
+        opacity: 0.7;
+        pointer-events: none;
+    }
+
+    .status-updating::after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 16px;
+        height: 16px;
+        border: 2px solid #fff;
+        border-top: 2px solid transparent;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% { transform: translate(-50%, -50%) rotate(0deg); }
+        100% { transform: translate(-50%, -50%) rotate(360deg); }
+    }
+    
+    /* Warranty Status Badges */
+    .status-badge.status-completed {
+        background-color: #28a745;
+        color: white;
+    }
+
+    .status-badge.status-returned {
+        background-color: #17a2b8;
+        color: white;
+    }
+
+    .status-badge.status-approved {
+        background-color: #28a745;
+        color: white;
+    }
+
+    .status-badge.status-submitted {
+        background-color: #ffc107;
+        color: black;
+    }
+
+    .status-badge.status-pending {
+        background-color: #6c757d;
+        color: white;
+    }
+
+    .status-badge.status-rejected {
+        background-color: #dc3545;
+        color: white;
+    }
     
     .btn-edit, .btn-delete {
         background: orange;
@@ -484,7 +528,7 @@
         margin: 5% auto;
         padding: 30px;
         width: 90%;
-        max-width: 600px;
+        max-width: 900px;
         border-radius: 10px;
         position: relative;
         max-height: 80vh;
@@ -617,26 +661,6 @@
         box-shadow: 0 4px 8px rgba(0,0,0,0.2);
     }
 
-    /* Loading state */
-    .status-updating {
-        opacity: 0.7;
-        pointer-events: none;
-        position: relative;
-    }
-    .status-updating::after {
-        content: "";
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 16px;
-        height: 16px;
-        border: 2px solid #fff;
-        border-top: 2px solid transparent;
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-    }
-
     /* Pagination Styles */
     .pagination {
         display: flex;
@@ -685,10 +709,6 @@
         font-size: 14px;
         font-weight: bold;
     }
-    @keyframes spin {
-        0% { transform: translate(-50%, -50%) rotate(0deg); }
-        100% { transform: translate(-50%, -50%) rotate(360deg); }
-    }
 
     /* Responsive design */
     @media (max-width: 768px) {
@@ -708,6 +728,259 @@
         }
         .date-inputs input[type="date"] {
             width: 100%;
+        }
+    }
+
+    /* NEW: Warranty and Take to Office item styles */
+    .warranty-item, .office-item {
+        margin-bottom: 8px;
+        padding: 4px;
+        border-radius: 4px;
+    }
+    .warranty-yes, .office-yes {
+        background: #d4edda;
+      
+    }
+    .warranty-no, .office-no {
+        background: #f9e7d7;
+       
+    }
+    .item-name {
+        font-size: 11px;
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 2px;
+    }
+    .warranty-details {
+        font-size: 9px;
+        color: #555;
+        margin-top: 2px;
+    }
+    
+    /* Warranty status badges */
+    .warranty-status-badge {
+        display: inline-block;
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-size: 9px;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-top: 2px;
+    }
+    .warranty-sent { background: #007bff; color: white; }
+    .warranty-returned { background: #28a745; color: white; }
+    .warranty-pending { background: #ffc107; color: black; }
+
+    /* Enhanced Warranty Details Button */
+    .btn-warranty-details {
+        background: #007bff !important;
+        color: #fff !important;
+        padding: 4px 8px !important;
+        border-radius: 4px !important;
+        margin-top: 4px !important;
+        font-size: 11px !important;
+        border: none !important;
+        cursor: pointer !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 4px !important;
+        text-decoration: none !important;
+        transition: all 0.3s ease !important;
+    }
+    .btn-warranty-details:hover {
+        background: #0056b3 !important;
+        transform: translateY(-1px) !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2) !important;
+    }
+
+    /* SIDE-BY-SIDE WARRANTY MODAL STYLES */
+    .warranty-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 25px;
+        margin-bottom: 25px;
+    }
+
+    .warranty-card {
+        background: rgb(254, 248, 205);
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        border: 2px solid #8a7b09;
+    }
+
+    .warranty-card h4 {
+        color: #d32d08;
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #f8f9fa;
+    }
+
+    .info-label {
+        font-weight: bold;
+        color: #090909;
+        font-size: 13px;
+    }
+
+    .info-value {
+        font-weight: 500;
+        color: #090909;
+        text-align: right;
+    }
+
+    .status-display {
+        display: inline-block;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: bold;
+        text-transform: uppercase;
+    }
+
+    .return-section {
+        background:rgb(223, 251, 196);
+        color: rgb(15, 15, 15);
+        padding: 20px;
+        border-radius: 10px;
+        margin-top: 20px;
+    }
+
+    .return-section h5 {
+        color: rgb(8, 122, 23);
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .return-details {
+        background: rgba(9, 9, 9, 0.1);
+        padding: 15px;
+        border: 2px solid #026d14;
+        border-radius: 8px;
+        margin-bottom: 15px;
+    }
+
+    .return-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+    }
+
+    .return-item {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .return-label {
+        font-size: 15px;
+        opacity: 0.9;
+        font-weight: 600;
+    }
+
+    .return-value {
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    .images-section {
+        margin-top: 15px;
+    }
+
+    .images-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 10px;
+        margin-top: 10px;
+    }
+
+    .image-container {
+        position: relative;
+        border-radius: 8px;
+        overflow: hidden;
+        cursor: pointer;
+        transition: transform 0.3s ease;
+    }
+
+    .image-container:hover {
+        transform: scale(1.05);
+    }
+
+    .return-image {
+        width: 50px;
+        height: 50px;
+        object-fit: cover;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .image-number {
+        position: absolute;
+        bottom: 5px;
+        right: 5px;
+        background: rgba(0, 0, 0, 0.7);
+        color: white;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10px;
+        font-weight: bold;
+    }
+
+    .no-return-section {
+        background: #f8f9fa;
+        border: 2px dashed #dee2e6;
+        border-radius: 10px;
+        padding: 30px;
+        text-align: center;
+        margin-top: 20px;
+    }
+
+    .no-return-section i {
+        font-size: 48px;
+        color: #6c757d;
+        margin-bottom: 15px;
+    }
+
+    .item-details-section {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        margin-top: 20px;
+        border-left: 4px solid #667eea;
+    }
+
+    @media (max-width: 768px) {
+        .warranty-grid {
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+        
+        .return-grid {
+            grid-template-columns: 1fr;
+            gap: 10px;
+        }
+        
+        .modal-content {
+            margin: 10% auto;
+            padding: 20px;
+            width: 95%;
         }
     }
 </style>
@@ -744,7 +1017,7 @@
             <option value="">All Status</option>
             <option value="logged">Logged</option>
             <option value="sent_technician">Sent To Technician</option>
-            <option value="pending">In Technician Hand</option>
+            <option value="accepted">In Technician Hand</option>
             <option value="completed">Completed</option>
             <option value="returned">Returned</option>
             <option value="rejected">Rejected</option>
@@ -757,27 +1030,30 @@
 
     <!-- Right side: action buttons -->
     <div class="action-buttons" style="display:flex; gap:15px;">
-    <div class="dropdown">
-        <button class="btn-add dropdown-toggle" style="padding: 12px 18px; font-size:16px;" onclick="toggleDropdown()">
-            <i class="fas fa-bars"></i> Jump List
-        </button>
-        <div id="menuDropdown" class="dropdown-menu">
-            <a href="{% url 'app5:jobcard_create' %}">
-                <i class="fas fa-plus"></i> Add New
-            </a>
-            <a href="{% url 'app5:item_master' %}">
-                <i class="fas fa-tools"></i> Service Items
-            </a>
-            <a href="{% url 'app5:supplier_master' %}">
-                <i class="fas fa-industry"></i> Supplier Master
-            </a>
-            <a href="{% url 'item_list' %}">
-                <i class="fas fa-clock"></i> StandBy Item
-            </a>
+        <div class="dropdown">
+            <button class="btn-add dropdown-toggle" style="padding: 12px 18px; font-size:16px;" onclick="toggleDropdown()">
+                <i class="fas fa-bars"></i> Jump List
+            </button>
+            <div id="menuDropdown" class="dropdown-menu">
+                <a href="{% url 'app5:jobcard_create' %}">
+                    <i class="fas fa-plus"></i> Add New
+                </a>
+                <a href="{% url 'app5:item_master' %}">
+                    <i class="fas fa-tools"></i> Service Items
+                </a>
+                <a href="{% url 'app5:supplier_master' %}">
+                    <i class="fas fa-industry"></i> Supplier Master
+                </a>
+                <a href="{% url 'item_list' %}">
+                    <i class="fas fa-clock"></i> StandBy Item
+                </a>
+            </div>
         </div>
     </div>
 </div>
-</div>
+
+<!-- Search Results Info -->
+<div id="searchResultsInfo" class="search-results-info"></div>
 
 <div class="table-container">
     <table id="jobTable">
@@ -785,9 +1061,11 @@
             <tr>
                 <th>Sl No</th>
                 <th>Created Date</th>
-                <th>Ticket No & Creator</th> <!-- Updated header -->
+                <th>Ticket No & Creator</th>
                 <th>Customer Details</th>
                 <th>Items & Details</th>
+                <th>Warranty Item</th>
+                <th>Take to Office</th>
                 <th>Complaints</th>
                 <th>Status</th>
                 <th>Notes</th>
@@ -799,58 +1077,53 @@
             {% for jobcard in page_obj %}
                 <tr class="customer-row" data-ticket="{{ jobcard.ticket_no }}" data-date="{{ jobcard.created_at|date:'Y-m-d' }}">
                     <td>{{ forloop.counter0|add:page_obj.start_index }}</td>
-                   <td>
-    {{ jobcard.created_at|date:"d/m/Y" }}
-    {% if jobcard.self_assigned %}
-        <div style="margin-top: 4px; color: #007bff; font-size: 10px;">
-            <span class="self-assigned-badge" title="Self-assigned by {{ jobcard.technician|default:'Technician' }}">
-                <i class="fas fa-user-check"></i> Self-Assigned
-            </span>
-        </div>
-    {% endif %}
-</td>
                     <td>
-    <div class="ticket-info">
-        <span class="ticket-number">{{ jobcard.ticket_no }}</span>
-        {% if jobcard.self_assigned %}
-            <span class="self-assigned-badge" title="Self-assigned by {{ jobcard.technician|default:'Technician' }}">
-                <!-- <i class="fas fa-user-check"></i> Self -->
-            </span>
-        {% endif %}
-        <div class="creator-info">
-            <i class="fas fa-user-edit"></i>
-            <span>
-                {% if jobcard.created_by %}
-                    {% if jobcard.created_by.name %}
-                        {{ jobcard.created_by.name }}
-                    {% elif jobcard.created_by.username %}
-                        {{ jobcard.created_by.username }}
-                    {% else %}
-                        User ID: {{ jobcard.created_by.id }}
-                    {% endif %}
-                {% elif jobcard.user %}
-                    {% if jobcard.user.name %}
-                        {{ jobcard.user.name }}
-                    {% elif jobcard.user.username %}
-                        {{ jobcard.user.username }}
-                    {% else %}
-                        User ID: {{ jobcard.user.id }}
-                    {% endif %}
-                {% elif jobcard.added_by %}
-                    {% if jobcard.added_by.name %}
-                        {{ jobcard.added_by.name }}
-                    {% elif jobcard.added_by.username %}
-                        {{ jobcard.added_by.username }}
-                    {% else %}
-                        User ID: {{ jobcard.added_by.id }}
-                    {% endif %}
-                {% else %}
-                    Unknown User
-                {% endif %}
-            </span>
-        </div>
-    </div>
-</td>
+                        {{ jobcard.created_at|date:"d/m/Y" }}
+                        {% if jobcard.self_assigned %}
+                            <div style="margin-top: 4px; color: #007bff; font-size: 10px;">
+                                <span class="self-assigned-badge" title="Self-assigned by {{ jobcard.technician|default:'Technician' }}">
+                                    <i class="fas fa-user-check"></i> Self-Assigned
+                                </span>
+                            </div>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="ticket-info">
+                            <span class="ticket-number">{{ jobcard.ticket_no }}</span>
+                            <div class="creator-info">
+                                <i class="fas fa-user-edit"></i>
+                                <span>
+                                    {% if jobcard.created_by %}
+                                        {% if jobcard.created_by.name %}
+                                            {{ jobcard.created_by.name }}
+                                        {% elif jobcard.created_by.username %}
+                                            {{ jobcard.created_by.username }}
+                                        {% else %}
+                                            User ID: {{ jobcard.created_by.id }}
+                                        {% endif %}
+                                    {% elif jobcard.user %}
+                                        {% if jobcard.user.name %}
+                                            {{ jobcard.user.name }}
+                                        {% elif jobcard.user.username %}
+                                            {{ jobcard.user.username }}
+                                        {% else %}
+                                            User ID: {{ jobcard.user.id }}
+                                        {% endif %}
+                                    {% elif jobcard.added_by %}
+                                        {% if jobcard.added_by.name %}
+                                            {{ jobcard.added_by.name }}
+                                        {% elif jobcard.added_by.username %}
+                                            {{ jobcard.added_by.username }}
+                                        {% else %}
+                                            User ID: {{ jobcard.added_by.id }}
+                                        {% endif %}
+                                    {% else %}
+                                        Unknown User
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                    </td>
                     <td>
                         <div class="customer-info">
                             <div class="customer-field name">
@@ -885,6 +1158,75 @@
                             <span style="color: #999; font-style: italic;">No items</span>
                         {% endfor %}
                     </td>
+
+                    <!-- UPDATED: Warranty Column - Shows status for each item with clickable icon -->
+                    <td>
+                        {% for item_data in jobcard.items_data %}
+                            <div class="warranty-item {% if item_data.warranty == 'yes' %}warranty-yes{% else %}warranty-no{% endif %}">
+                                <div class="item-name">{{ item_data.item }}:</div>
+                                {% if item_data.warranty == 'yes' %}
+                                    <!-- Show warranty status if available -->
+                                    <!-- In the warranty column section -->
+{% if item_data.warranty_status %}
+    <div class="warranty-status-badge 
+        {% if item_data.warranty_status == 'sent_to_supplier' %}warranty-sent
+        {% elif item_data.warranty_status == 'returned_from_supplier' %}warranty-returned
+        {% else %}warranty-pending{% endif %}">
+        <i class="fas fa-file-contract"></i> 
+        {% if item_data.warranty_status == 'sent_to_supplier' %}Sent to Supplier
+        {% elif item_data.warranty_status == 'returned_from_supplier' %}Returned
+        {% else %}{{ item_data.warranty_status|title }}{% endif %}
+    </div>
+{% else %}
+    <span class="status-badge" style="background-color: #28a745; color: white; padding: 3px 8px; border-radius: 12px; font-size: 10px; font-weight: bold; display: inline-block;">
+        <i class="fas fa-file-contract"></i> Yes
+    </span>
+{% endif %}
+                                    
+                                    <!-- ✅ ENHANCED: Clickable warranty icon to show details -->
+                                    <button class="btn-warranty-details" 
+                                            onclick="showWarrantyDetails('{{ jobcard.ticket_no }}', '{{ item_data.item|escapejs }}', '{{ item_data.serial|escapejs }}')"
+                                            title="View Warranty Details for {{ item_data.item }}">
+                                        <i class="fas fa-info-circle"></i> 
+                                    </button>
+                                    
+                                    <!-- Show warranty ticket info if processed -->
+                                    {% if item_data.warranty_return_date %}
+                                        <div class="warranty-details">
+                                            <!-- <strong>Returned:</strong> {{ item_data.warranty_return_date|slice:":10" }} -->
+                                        </div>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="status-badge" style="background-color: #f48245; color: white; padding: 3px 8px; border-radius: 12px; font-size: 10px; font-weight: bold; display: inline-block;">
+                                        No
+                                    </span>
+                                {% endif %}
+                            </div>
+                        {% empty %}
+                            <span style="color: #999; font-style: italic;">-</span>
+                        {% endfor %}
+                    </td>
+
+                    <!-- UPDATED: Take to Office Column - Shows status for each item -->
+                    <td>
+                        {% for item_data in jobcard.items_data %}
+                            <div class="office-item {% if item_data.take_to_office == 'yes' %}office-yes{% else %}office-no{% endif %}">
+                                <div class="item-name">{{ item_data.item }}:</div>
+                                {% if item_data.take_to_office == 'yes' %}
+                                    <span class="status-badge" style="background-color: #28a745; color: white; padding: 3px 8px; border-radius: 12px; font-size: 10px; font-weight: bold; display: inline-block;">
+                                        <i class="fas fa-building"></i> Yes
+                                    </span>
+                                {% else %}
+                                    <span class="status-badge" style="background-color: #f48245; color: white; padding: 3px 8px; border-radius: 12px; font-size: 10px; font-weight: bold; display: inline-block;">
+                                        No
+                                    </span>
+                                {% endif %}
+                            </div>
+                        {% empty %}
+                            <span style="color: #999; font-style: italic;">-</span>
+                        {% endfor %}
+                    </td>
+
                     <td>
                         {% for item_data in jobcard.items_data %}
                             <div class="item-section">
@@ -894,7 +1236,7 @@
                                         <div class="complaint-item">
                                             • {{ complaint.description }}
                                             {% if complaint.notes %}
-                                                
+                                                <!-- Notes will be shown in modal -->
                                             {% endif %}
                                         </div>
                                     {% empty %}
@@ -904,36 +1246,37 @@
                             </div>
                         {% endfor %}
                     </td>
-                   <td data-status-column>
-    {% for item_data in jobcard.items_data %}
-        <div style="margin-bottom: 8px;">
-            <div style="font-size: 12px; color: #070707;">{{ item_data.item }}:</div>
-            {% with status=item_data.status|default:jobcard.status %}
-            <span class="status-badge status-{{ status }}" 
-                  data-jobcard-id="{{ jobcard.pk }}"
-                  data-item-index="{{ forloop.counter0 }}"
-                  data-status="{{ status }}"
-                  onclick="updateStatus({{ jobcard.pk }}, '{{ status }}', {{ forloop.counter0 }}, '{{ item_data.item|escapejs }}')"
-                  title="Click to change status for {{ item_data.item }}{% if jobcard.technician %} - Assigned to: {{ jobcard.technician }}{% endif %}">
-                {% if status == 'logged' %}Logged
-                {% elif status == 'sent_technician' %}Sent To Technician
-                {% elif status == 'accepted' %}In Technician Hand
-                {% elif status == 'completed' %}Completed
-                {% elif status == 'returned' %}Returned
-                {% elif status == 'rejected' %}Rejected
-                {% else %}{{ status|capfirst }}
-                {% endif %}
-            </span>
-           {% if jobcard.technician and status == 'sent_technician' or jobcard.technician and status == 'accepted' %}
-    <div style="font-size: 10px; color: #007bff; margin-top: 2px;">
-        <i class="fas fa-user"></i> {{ jobcard.technician }}
-    </div>
-{% endif %}
 
-            {% endwith %}
-        </div>
-    {% endfor %}
-</td>      
+                    <td data-status-column>
+                        {% for item_data in jobcard.items_data %}
+                            <div style="margin-bottom: 8px;">
+                                <div style="font-size: 12px; color: #070707;">{{ item_data.item }}:</div>
+                                {% with status=item_data.status|default:jobcard.status %}
+                                <span class="status-badge status-{{ status }}" 
+                                      data-jobcard-id="{{ jobcard.pk }}"
+                                      data-item-index="{{ forloop.counter0 }}"
+                                      data-status="{{ status }}"
+                                      onclick="updateStatus({{ jobcard.pk }}, '{{ status }}', {{ forloop.counter0 }}, '{{ item_data.item|escapejs }}')"
+                                      title="Click to change status for {{ item_data.item }}{% if jobcard.technician %} - Assigned to: {{ jobcard.technician }}{% endif %}">
+                                    {% if status == 'logged' %}Logged
+                                    {% elif status == 'sent_technician' %}Sent To Technician
+                                    {% elif status == 'accepted' %}In Technician Hand
+                                    {% elif status == 'completed' %}Completed
+                                    {% elif status == 'returned' %}Returned
+                                    {% elif status == 'rejected' %}Rejected
+                                    {% else %}{{ status|capfirst }}
+                                    {% endif %}
+                                </span>
+                                {% if jobcard.technician and status == 'sent_technician' or jobcard.technician and status == 'accepted' %}
+                                    <div style="font-size: 10px; color: #007bff; margin-top: 2px;">
+                                        <i class="fas fa-user"></i> {{ jobcard.technician }}
+                                    </div>
+                                {% endif %}
+                                {% endwith %}
+                            </div>
+                        {% endfor %}
+                    </td>
+
                     <td style="text-align: center;">
                         {% for item_data in jobcard.items_data %}
                             {% for complaint in item_data.complaints %}
@@ -946,12 +1289,9 @@
                                     <br>
                                 {% endif %}
                             {% endfor %}
-                        {% empty %}
-                            <button class="icon-btn" disabled title="No notes available">
-                                <i class="fas fa-sticky-note"></i>
-                            </button>
                         {% endfor %}
                     </td>
+
                     <td style="text-align: center;">
                         {% with total_images=jobcard.images.all|length %}
                             {% if total_images > 0 %}
@@ -983,12 +1323,12 @@
                             <i class="fas fa-edit"></i>
                         </a>
 
-                         <a href="{% url 'app5:view_standby_issuance_details' jobcard.pk %}" 
-       class="btn-view" 
-       title="View Standby Item Details"
-       style="background: #17a2b8; color: #fff; padding: 6px 10px; border-radius: 4px; margin-right: 4px; margin-bottom: 4px; font-size: 12px; text-decoration: none; display: inline-block; cursor: pointer; border: none; transition: all 0.3s ease; font-weight: bold;">
-        <i class="fas fa-eye"></i>
-    </a>
+                        <a href="{% url 'app5:view_standby_issuance_details' jobcard.pk %}" 
+                           class="btn-view" 
+                           title="View Standby Item Details"
+                           style="background: #17a2b8; color: #fff; padding: 6px 10px; border-radius: 4px; margin-right: 4px; margin-bottom: 4px; font-size: 12px; text-decoration: none; display: inline-block; cursor: pointer; border: none; transition: all 0.3s ease; font-weight: bold;">
+                            <i class="fas fa-eye"></i>
+                        </a>
                         <button class="btn-delete" 
                                 onclick="confirmDelete('{{ jobcard.ticket_no }}', '{{ jobcard.customer|escapejs }}', '{{ jobcard.phone }}', '{{ jobcard.pk }}')" 
                                 title="Delete Job Card">
@@ -998,7 +1338,7 @@
                 </tr>
             {% empty %}
                 <tr>
-                    <td colspan="10" style="text-align:center; padding: 40px; color: #6c757d; font-style: italic;">
+                    <td colspan="12" style="text-align:center; padding: 40px; color: #6c757d; font-style: italic;">
                         <i class="fas fa-inbox" style="font-size: 48px; margin-bottom: 10px; display: block;"></i>
                         No Job Cards Found
                     </td>
@@ -1022,7 +1362,7 @@
         {% for num in page_obj.paginator.page_range %}
             {% if page_obj.number == num %}
                 <span class="current">{{ num }}</span>
-            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+            {% elif num > page_obj.number|add:'-3' and num < page_card.number|add:'3' %}
                 <a href="?page={{ num }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}">{{ num }}</a>
             {% endif %}
         {% endfor %}
@@ -1058,6 +1398,27 @@
     </div>
 </div>
 
+<!-- ✅ ENHANCED: Warranty Details Modal with Side-by-Side Layout -->
+<div id="warrantyDetailsModal" class="modal">
+    <div class="modal-content" style="max-width: 900px;">
+        <div class="modal-header">
+            <h3 class="modal-title">
+                <i class="fas fa-file-contract"></i>
+                Warranty Details
+            </h3>
+            <button class="close-btn" onclick="closeWarrantyDetailsModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div id="warrantyDetailsContent">
+                <div style="text-align: center; padding: 40px;">
+                    <i class="fas fa-spinner fa-spin" style="font-size: 32px; color: #667eea;"></i>
+                    <p style="margin-top: 15px; color: #666;">Loading warranty details...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Images Modal -->
 <div id="imagesModal" class="modal">
     <div class="modal-content">
@@ -1073,36 +1434,6 @@
         </div>
     </div>
 </div>
-
-<!-- Status Update Modal -->
-<!-- <div id="statusModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3 class="modal-title">
-                <i class="fas fa-edit"></i>
-                Update Status for <span id="statusItemName"></span>
-            </h3>
-            <button class="close-btn" onclick="closeStatusModal()">&times;</button>
-        </div>
-        <div class="modal-body">
-            <p>Select new status:</p>
-            <div style="margin: 20px 0;">
-                <select id="statusSelect" class="form-select" style="width: 100%; padding: 10px; font-size: 16px;">
-                    <option value="logged">Logged</option>
-                    <option value="sent_technician">Sent To Technician</option>
-                    <option value="pending">Pending</option>
-                    <option value="completed">Completed</option>
-                    <option value="returned">Returned</option>
-                    <option value="rejected">Rejected</option>
-                </select>
-            </div>
-            <div style="text-align: center; margin-top: 20px;">
-                <button class="btn-confirm" onclick="confirmStatusUpdate()">Update Status</button>
-                <button class="btn-cancel" onclick="closeStatusModal()">Cancel</button>
-            </div>
-        </div>
-    </div>
-</div> -->
 
 <!-- Delete Confirmation Modal -->
 <div id="deleteModal" class="modal">
@@ -1188,12 +1519,11 @@
         let filterCriteria = [];
         
         rows.forEach(row => {
-            // FIXED: Use correct selectors for customer info
             const customerName = row.querySelector('.customer-field.name span').textContent.toLowerCase();
             const ticketNo = row.querySelector('.ticket-number').textContent.toLowerCase();
             const phone = row.querySelector('.customer-field.phone span').textContent.toLowerCase();
             const itemsColumn = row.querySelector('td:nth-child(5)').textContent.toLowerCase();
-            const complaintsColumn = row.querySelector('td:nth-child(6)').textContent.toLowerCase();
+            const complaintsColumn = row.querySelector('td:nth-child(8)').textContent.toLowerCase();
             const dateString = row.getAttribute('data-date');
             
             // Get all status badges for this row
@@ -1281,7 +1611,7 @@
     // Clear all filters function
     function clearAllFilters() {
         document.getElementById('searchInput').value = '';
-        document.getElementById('statusFilter').value = 'logged';
+        document.getElementById('statusFilter').value = '';
         document.getElementById('dateFrom').value = '';
         document.getElementById('dateTo').value = '';
         
@@ -1295,125 +1625,239 @@
         showAlert('✅ All filters cleared successfully!', 'success');
     }
 
-    // Status update functionality
-    let currentJobId = null;
-    let currentStatus = null;
-    let currentItemIndex = null;
-    let currentItemName = null;
-
-    function updateStatus(jobId, status, itemIndex, itemName) {
-        currentJobId = jobId;
-        currentStatus = status;
-        currentItemIndex = itemIndex;
-        currentItemName = itemName;
+    // ✅ ENHANCED: Status Update Function
+    function updateStatus(jobcardId, currentStatus, itemIndex, itemName) {
+        const statusOrder = ['logged', 'sent_technician', 'accepted', 'completed', 'returned', 'rejected'];
+        const currentIndex = statusOrder.indexOf(currentStatus);
+        const nextIndex = (currentIndex + 1) % statusOrder.length;
+        const nextStatus = statusOrder[nextIndex];
         
-        document.getElementById('statusSelect').value = status;
-        document.getElementById('statusItemName').textContent = itemName;
-        document.getElementById('statusModal').style.display = 'block';
-    }
-
-    function closeStatusModal() {
-        document.getElementById('statusModal').style.display = 'none';
-        currentJobId = null;
-        currentStatus = null;
-        currentItemIndex = null;
-        currentItemName = null;
-    }
-
-    function confirmStatusUpdate() {
-        const newStatus = document.getElementById('statusSelect').value;
-
-        if (!csrftoken) {
-            showAlert('CSRF token not found. Please refresh the page.', 'error');
+        const statusBadge = document.querySelector(`[data-jobcard-id="${jobcardId}"][data-item-index="${itemIndex}"]`);
+        
+        if (!statusBadge) {
+            showAlert('❌ Error: Could not find status badge to update', 'error');
             return;
         }
-
-        if (!currentJobId) {
-            showAlert('No job card selected for status update.', 'error');
-            return;
-        }
-
+        
         // Show loading state
-        const statusBadge = document.querySelector(
-            `[data-jobcard-id="${currentJobId}"][data-item-index="${currentItemIndex}"]`
-        );
-        if (statusBadge) {
-            statusBadge.classList.add('status-updating');
-            statusBadge.style.pointerEvents = 'none';
-        }
-
-        fetch(`{% url 'app5:update_jobcard_status' 0 %}`.replace('0', currentJobId), {
+        statusBadge.classList.add('status-updating');
+        const originalHTML = statusBadge.innerHTML;
+        statusBadge.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        
+        // Send update request
+        fetch(`/app5/update-status/${jobcardId}/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRFToken': csrftoken,
-                'Accept': 'application/json',
             },
-            credentials: 'same-origin',
-            body: JSON.stringify({ 
-                status: newStatus,
-                item_index: parseInt(currentItemIndex)
+            body: JSON.stringify({
+                status: nextStatus,
+                item_index: itemIndex,
+                item_name: itemName
             })
         })
         .then(response => {
             if (!response.ok) {
-                return response.text().then(text => {
-                    throw new Error(`HTTP ${response.status}: ${text}`);
-                });
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
             return response.json();
         })
         .then(data => {
             if (data.success) {
-                // Update the badge with new status
-                if (statusBadge) {
-                    // Remove all status classes
-                    statusBadge.className = statusBadge.className.replace(/\bstatus-\w+\b/g, '');
-                    
-                    // Add new status classes
-                    statusBadge.classList.add('status-badge', `status-${newStatus}`);
-                    statusBadge.setAttribute('data-status', newStatus);
-                    
-                    // Update text based on status
-                    let displayText = '';
-                    switch (newStatus) {
-                        case 'logged': displayText = 'Logged'; break;
-                        case 'sent_technician': displayText = 'Sent To Technician'; break;
-                        case 'pending': displayText = 'Pending'; break;
-                        case 'completed': displayText = 'Completed'; break;
-                        case 'returned': displayText = 'Returned'; break;
-                        case 'rejected': displayText = 'Rejected'; break;
-                        default: displayText = newStatus.charAt(0).toUpperCase() + newStatus.slice(1);
-                    }
-                    statusBadge.textContent = displayText;
-                    
-                    // Update onclick with new status
-                    statusBadge.setAttribute(
-                        'onclick',
-                        `updateStatus(${currentJobId}, '${newStatus}', ${currentItemIndex}, '${currentItemName.replace(/'/g, "\\'")}')`
-                    );
-                    
-                    // Remove loading state
-                    statusBadge.classList.remove('status-updating');
-                    statusBadge.style.pointerEvents = '';
+                // Update the badge
+                statusBadge.setAttribute('data-status', nextStatus);
+                statusBadge.className = `status-badge status-${nextStatus}`;
+                
+                // Update display text
+                let displayText = nextStatus;
+                if (nextStatus === 'logged') displayText = 'Logged';
+                else if (nextStatus === 'sent_technician') displayText = 'Sent To Technician';
+                else if (nextStatus === 'accepted') displayText = 'In Technician Hand';
+                else if (nextStatus === 'completed') displayText = 'Completed';
+                else if (nextStatus === 'returned') displayText = 'Returned';
+                else if (nextStatus === 'rejected') displayText = 'Rejected';
+                
+                statusBadge.innerHTML = displayText;
+                statusBadge.title = `Click to change status for ${itemName} (Current: ${displayText})`;
+                
+                // Show success message
+                showAlert(`✅ Status updated to "${displayText}" for ${itemName}`, 'success');
+                
+                // Update the row's data attribute for filtering
+                const row = statusBadge.closest('tr');
+                if (row) {
+                    row.setAttribute('data-status', nextStatus);
                 }
-
-                closeStatusModal();
-                showAlert(`Status updated to "${displayText}" successfully!`, 'success');
-                performSearch();
+                
+                // Refresh search to update filtered results
+                setTimeout(performSearch, 300);
             } else {
-                throw new Error(data.error || 'Unknown error occurred');
+                throw new Error(data.error || 'Failed to update status');
             }
         })
         .catch(error => {
             console.error('Status update error:', error);
-            showAlert(`Failed to update status: ${error.message}`, 'error');
-            
-            if (statusBadge) {
-                statusBadge.classList.remove('status-updating');
-                statusBadge.style.pointerEvents = '';
-            }
+            statusBadge.innerHTML = originalHTML;
+            showAlert(`❌ Failed to update status: ${error.message}`, 'error');
+        })
+        .finally(() => {
+            statusBadge.classList.remove('status-updating');
         });
+    }
+
+    // ✅ ENHANCED: Function to show warranty details modal
+    function showWarrantyDetails(ticketNo, itemName, serialNo) {
+        const modal = document.getElementById('warrantyDetailsModal');
+        const content = document.getElementById('warrantyDetailsContent');
+        
+        // Show modal with loading state
+        modal.style.display = 'block';
+        content.innerHTML = `
+            <div style="text-align: center; padding: 40px;">
+                <i class="fas fa-spinner fa-spin" style="font-size: 32px; color: #667eea;"></i>
+                <p style="margin-top: 15px; color: #666;">Loading warranty details...</p>
+            </div>
+        `;
+        
+        // Fetch warranty details
+        fetch(`/app5/api/warranty-details/?ticket_no=${encodeURIComponent(ticketNo)}&item_name=${encodeURIComponent(itemName)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    displayWarrantyDetails(data.warranty_info, itemName, serialNo);
+                } else {
+                    content.innerHTML = `
+                        <div class="no-content-message">
+                            <i class="fas fa-exclamation-circle" style="font-size: 48px; color: #ffc107; margin-bottom: 15px;"></i>
+                            <h4 style="color: #666; margin-bottom: 10px;">No Warranty Information Found</h4>
+                            <p style="color: #999;">No warranty ticket has been created for this item yet.</p>
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching warranty details:', error);
+                content.innerHTML = `
+                    <div class="no-content-message">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 48px; color: #dc3545; margin-bottom: 15px;"></i>
+                        <h4 style="color: #666; margin-bottom: 10px;">Error Loading Details</h4>
+                        <p style="color: #999;">Failed to load warranty information. Please try again.</p>
+                    </div>
+                `;
+            });
+    }
+
+    // ✅ ENHANCED: Function to display warranty details in SIDE-BY-SIDE layout
+    function displayWarrantyDetails(warranty, itemName, serialNo) {
+        const content = document.getElementById('warrantyDetailsContent');
+        
+        let html = `
+            <div class="warranty-grid">
+                <!-- Left Column: Basic Warranty Information -->
+                <div class="warranty-card">
+                    <h4><i class="fas fa-info-circle"></i> Basic Information</h4>
+                    
+                    <div class="info-row">
+                        <span class="info-label">Warranty Ticket</span>
+                        <span class="info-value">${warranty.ticket_no}</span>
+                    </div>
+                    
+                    <div class="info-row">
+                        <span class="info-label">Supplier</span>
+                        <span class="info-value">${warranty.supplier}</span>
+                    </div>
+                    
+                    <div class="info-row">
+                        <span class="info-label">Submitted Date</span>
+                        <span class="info-value">${warranty.submitted_date}</span>
+                    </div>
+                    
+                    <div class="info-row">
+                        <span class="info-label">Status</span>
+                        <span class="status-display" style="background: ${
+                            warranty.status === 'completed' ? '#28a745' : 
+                            warranty.status === 'submitted' ? '#ffc107' : 
+                            warranty.status === 'pending' ? '#6c757d' : '#007bff'
+                        }; color: white;">
+                            ${warranty.status.charAt(0).toUpperCase() + warranty.status.slice(1).replace('_', ' ')}
+                        </span>
+                    </div>
+                
+                </div>
+
+                <!-- Right Column: Item Details -->
+                
+        `;
+        
+        // ✅ RETURN DETAILS SECTION - Show only if return details exist
+        if (warranty.return_details) {
+            html += `
+                <div class="return-section">
+                    <h5><i class="fas fa-undo-alt"></i> Return Information</h5>
+                    
+                    <div class="return-details">
+                        <div class="return-grid">
+                            <div class="return-item">
+                                <span class="return-label">Return Date</span>
+                                <span class="return-value">${warranty.return_details.return_date}</span>
+                            </div>
+                            
+                            ${warranty.return_details.handled_by && warranty.return_details.handled_by !== 'N/A' ? `
+                            <div class="return-item">
+                                <span class="return-label">Handled By</span>
+                                <span class="return-value">${warranty.return_details.handled_by}</span>
+                            </div>
+                            ` : ''}
+                            
+                            ${warranty.return_details.notes ? `
+                            <div class="return-item" style="grid-column: 1 / -1;">
+                                <span class="return-label">Return Notes</span>
+                                <span class="return-value">${warranty.return_details.notes}</span>
+                            </div>
+                            ` : ''}
+                        </div>
+                        
+                        ${warranty.return_details.images && warranty.return_details.images.length > 0 ? `
+                        <div class="images-section">
+                            <span class="return-label">Return Images (${warranty.return_details.images.length})</span>
+                            <div class="images-grid">
+                        ` : ''}
+                        
+                        ${warranty.return_details.images && warranty.return_details.images.length > 0 ? 
+                            warranty.return_details.images.map((img, index) => `
+                                <div class="image-container" onclick="window.open('${img.url}', '_blank')">
+                                   <img src="${img.url}" alt="Return image ${index + 1}" class="return-image">
+                                     
+                                 </div>
+                            `).join('') : ''
+                        }
+                        
+                        ${warranty.return_details.images && warranty.return_details.images.length > 0 ? `
+                            </div>
+                         
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        } else {
+            // Show message if no return details available
+            html += `
+                <div class="no-return-section">
+                    <i class="fas fa-clock"></i>
+                    <h5 style="color: #6c757d; margin-bottom: 10px;">No Return Information</h5>
+                    <p style="color: #6c757d; margin: 0;">This item has not been returned yet.</p>
+                </div>
+            `;
+        }
+        
+        content.innerHTML = html;
+    }
+
+    // Function to close warranty details modal
+    function closeWarrantyDetailsModal() {
+        document.getElementById('warrantyDetailsModal').style.display = 'none';
     }
 
     // Notes modal functionality
@@ -1552,7 +1996,7 @@
                                 const tbody = document.querySelector('#jobTable tbody');
                                 tbody.innerHTML = `
                                     <tr>
-                                        <td colspan="10" style="text-align:center; padding: 40px; color: #6c757d; font-style: italic;">
+                                        <td colspan="12" style="text-align:center; padding: 40px; color: #6c757d; font-style: italic;">
                                             <i class="fas fa-inbox" style="font-size: 48px; margin-bottom: 10px; display: block;"></i>
                                             No Job Cards Found
                                         </td>
@@ -1613,7 +2057,7 @@
                 alert.style.opacity = '0';
                 setTimeout(() => alert.remove(), 100);
             }
-        }, 300);
+        }, 5000);
     }
 
     // Close modals when clicking outside
@@ -1623,19 +2067,27 @@
         }
     });
 
+    // Close warranty modal when clicking outside
+    window.addEventListener('click', function(event) {
+        const modal = document.getElementById('warrantyDetailsModal');
+        if (event.target === modal) {
+            closeWarrantyDetailsModal();
+        }
+    });
 
     function toggleDropdown() {
-    const menu = document.getElementById("menuDropdown");
-    menu.style.display = menu.style.display === "block" ? "none" : "block";
-}
-window.onclick = function(e) {
-    if (!e.target.matches('.dropdown-toggle')) {
-        const dropdowns = document.getElementsByClassName("dropdown-menu");
-        for (let i = 0; i < dropdowns.length; i++) {
-            dropdowns[i].style.display = "none";
+        const menu = document.getElementById("menuDropdown");
+        menu.style.display = menu.style.display === "block" ? "none" : "block";
+    }
+
+    window.onclick = function(e) {
+        if (!e.target.matches('.dropdown-toggle')) {
+            const dropdowns = document.getElementsByClassName("dropdown-menu");
+            for (let i = 0; i < dropdowns.length; i++) {
+                dropdowns[i].style.display = "none";
+            }
         }
     }
-}
 
     // Initialize on page load
     document.addEventListener('DOMContentLoaded', function() {
@@ -1656,16 +2108,14 @@ window.onclick = function(e) {
         
         if (status) {
             document.getElementById('statusFilter').value = status;
-        } else {
-            // ✅ Default to "logged"
-            document.getElementById('statusFilter').value = 'logged';
         }
+        // No default status filter - show all by default
 
         if (search) document.getElementById('searchInput').value = search;
         if (dateFrom) document.getElementById('dateFrom').value = dateFrom;
         if (dateTo) document.getElementById('dateTo').value = dateTo;
         
-        // ✅ Always perform initial search (so "logged" is applied by default)
+        // Perform initial search
         setTimeout(performSearch, 100);
 
         console.log('✅ Job Card List initialized successfully');

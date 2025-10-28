@@ -59,7 +59,10 @@
                         <select id="department" name="department" class="form-control">
                             <option value="">Select Department (Optional)</option>
                             {% for dept in departments %}
-                            <option value="{{ dept.id }}">{{ dept.name }}</option>
+                                <option value="{{ dept.id }}"
+                                        {% if item.department_id == dept.id %}selected{% endif %}>
+                                    {{ dept.name }}
+                                </option>
                             {% endfor %}
                         </select>
                         <small class="help-text">Assign this item to a specific department</small>
@@ -165,12 +168,22 @@
                         <label for="tax_percentage">Tax Percentage <span class="required">*</span></label>
                         <select id="tax_percentage" name="tax_percentage" required class="form-control">
                             <option value="">Select Tax %</option>
+                            <option value="0.00" {% if item.tax_percentage == 0.00 %}selected{% endif %}>0%</option>
                             <option value="5.00" {% if item.tax_percentage == 5.00 %}selected{% endif %}>5%</option>
                             <option value="18.00" {% if item.tax_percentage == 18.00 %}selected{% endif %}>18%</option>
                             <option value="28.00" {% if item.tax_percentage == 28.00 %}selected{% endif %}>28%</option>
                         </select>
                         <small class="help-text">GST tax rate</small>
                     </div>
+
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select id="status" name="status" class="form-control">
+                            <option value="True" {% if item.is_active %}selected{% endif %}>Active</option>
+                            <option value="False" {% if not item.is_active %}selected{% endif %}>Inactive</option>
+                        </select>
+                    </div>
+
                 </div>
             </div>
 
@@ -197,6 +210,41 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Show metadata for update form -->
+            {% if action == 'Edit' %}
+            <div class="form-section metadata-section">
+                <h3 class="section-title">
+                    <i class="fas fa-info"></i> Record Information
+                </h3>
+                <div class="metadata-grid">
+                    <div class="metadata-item">
+                        <label>Created By:</label>
+                        <span class="metadata-value">
+                            <i class="fas fa-user"></i> {{ item.created_by|default:"Admin" }}
+                        </span>
+                    </div>
+                    <div class="metadata-item">
+                        <label>Created Date:</label>
+                        <span class="metadata-value">
+                            <i class="far fa-calendar"></i> {{ item.created_at|date:"d M Y, h:i A" }}
+                        </span>
+                    </div>
+                    <div class="metadata-item">
+                        <label>Last Updated By:</label>
+                        <span class="metadata-value">
+                            <i class="fas fa-user-edit"></i> {{ item.updated_by|default:"Admin" }}
+                        </span>
+                    </div>
+                    <div class="metadata-item">
+                        <label>Last Updated:</label>
+                        <span class="metadata-value">
+                            <i class="far fa-clock"></i> {{ item.updated_at|date:"d M Y, h:i A" }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
 
             <div class="form-actions">
                 <button type="submit" class="btn btn-primary btn-lg">
@@ -461,6 +509,10 @@ textarea.form-control {
         align-items: flex-start;
         gap: 15px;
     }
+
+    .metadata-grid {
+        grid-template-columns: 1fr;
+    }
     
     .form-actions {
         flex-direction: column;
@@ -470,6 +522,51 @@ textarea.form-control {
         width: 100%;
         justify-content: center;
     }
+}
+
+/* Metadata Section Styling */
+.metadata-section {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    border: 2px solid #e9ecef;
+}
+
+.metadata-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+.metadata-item {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.metadata-item label {
+    font-size: 12px;
+    text-transform: uppercase;
+    color: #7f8c8d;
+    font-weight: 600;
+    margin: 0;
+}
+
+.metadata-value {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: #2c3e50;
+    font-weight: 500;
+    background: white;
+    padding: 10px 15px;
+    border-radius: 6px;
+    border: 1px solid #e9ecef;
+}
+
+.metadata-value i {
+    color: #3498db;
 }
 </style>
 

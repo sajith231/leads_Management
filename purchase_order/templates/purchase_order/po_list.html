@@ -12,35 +12,100 @@
         </a>
     </div>
 
-    <!-- Search and Filter Bar -->
+    <!-- 🔍 Search and Filter Bar -->
     <div class="filter-section">
-        <div class="filter-group">
-            <div class="search-wrapper">
-                <div class="search-box">
-                    <i class="fas fa-search"></i>
-                    <input 
-                        type="text" 
-                        id="searchInput" 
-                        placeholder="Search by PO number, supplier, reference..." 
-                        class="search-input"
-                        autocomplete="off"
-                    >
-                </div>
-            </div>
-            
-            <select id="statusFilter" class="status-filter">
-                <option value="">All Status</option>
-                {% for value, label in status_choices %}
-                <option value="{{ value }}">{{ label }}</option>
-                {% endfor %}
-            </select>
 
-            <select id="adminStatusFilter" class="status-filter">
-                <option value="">All Admin Status</option>
-                <option value="PENDING">Pending</option>
-                <option value="APPROVED">Approved</option>
-                <option value="REJECTED">Rejected</option>
-            </select>
+        <!-- Search Box -->
+        <div class="search-box">
+            <i class="fas fa-search"></i>
+            <input 
+                type="text" 
+                id="searchInput" 
+                placeholder="Search by PO number, supplier, reference..." 
+                class="search-input"
+                autocomplete="off"
+            >
+        </div>
+
+        <!-- Filters -->
+        <div class="filter-group">
+            <!-- Status Filter -->
+            <div class="filter-box">
+                <label for="statusFilter" class="filter-label">Status</label>
+                <select id="statusFilter" class="filter-select">
+                    <option value="">All Status</option>
+                    {% for value, label in status_choices %}
+                    <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Admin Status Filter -->
+            <div class="filter-box">
+                <label for="adminStatusFilter" class="filter-label">Admin Status</label>
+                <select id="adminStatusFilter" class="filter-select">
+                    <option value="">All Admin Status</option>
+                    <option value="PENDING" {% if admin_status_filter == "PENDING" %}selected{% endif %}>Pending</option>
+                    <option value="APPROVED" {% if admin_status_filter == "APPROVED" %}selected{% endif %}>Approved</option>
+                    <option value="REJECTED" {% if admin_status_filter == "REJECTED" %}selected{% endif %}>Rejected</option>
+                </select>
+            </div>
+
+            <!-- Department Filter -->
+            <div class="filter-box">
+                <label for="departmentFilter" class="filter-label">Department</label>
+                <select id="departmentFilter" class="filter-select">
+                    <option value="">All Departments</option>
+                    {% for dept in departments %}
+                    <option value="{{ dept.id }}" {% if department_filter == dept.id|stringformat:"s" %}selected{% endif %}>
+                        {{ dept.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Supplier Filter -->
+            <div class="filter-box">
+                <label for="supplierFilter" class="filter-label">Supplier</label>
+                <select id="supplierFilter" class="filter-select">
+                    <option value="">All Suppliers</option>
+                    {% for supplier in suppliers %}
+                    <option value="{{ supplier.id }}" {% if supplier_filter == supplier.id|stringformat:"s" %}selected{% endif %}>
+                        {{ supplier.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- 📅 From Date Filter -->
+            <div class="filter-box">
+                <label for="startDate" class="filter-label">From</label>
+                <input 
+                    type="date" 
+                    id="startDate" 
+                    class="filter-select" 
+                    value="{{ start_date|default:'' }}"
+                >
+            </div>
+
+            <!-- 📅 To Date Filter -->
+            <div class="filter-box">
+                <label for="endDate" class="filter-label">To</label>
+                <input 
+                    type="date" 
+                    id="endDate" 
+                    class="filter-select" 
+                    value="{{ end_date|default:'' }}"
+                >
+            </div>
+
+            <!-- 🔄 Clear Filters Button -->
+            <div class="filter-box">
+                <label class="filter-label" style="opacity: 0;">Clear</label>
+                <button id="clearFiltersBtn" class="clear-filters-btn">
+                    <i class="fas fa-times-circle"></i> Clear
+                </button>
+            </div>
         </div>
     </div>
 
@@ -56,7 +121,7 @@
                         <th>Supplier</th>
                         <th>Delivery Date</th>
                         <th>Grand Total</th>
-                        <th>Payment Terms</th>
+                        <th>Department</th>
                         <th>Status</th>
                         <th>Admin Status</th>
                         <th>Actions</th>
@@ -85,7 +150,11 @@
                         <td>{{ po.delivery_date|date:"d M, Y" }}</td>
                         <td class="amount">₹{{ po.grand_total|floatformat:2 }}</td>
                         <td>
-                            <span class="payment-badge">{{ po.get_payment_terms_display }}</span>
+                            {% if po.supplier.department %}
+                            <span class="dept-badge">{{ po.supplier.department.name }}</span>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
                         </td>
                         <td>
                             <span class="status-badge status-{{ po.status|lower }}">
@@ -93,7 +162,7 @@
                             </span>
                         </td>
 
-                        <!-- Admin Status Column - Display Only (No Inline Editing) -->
+                        <!-- Admin Status Column -->
                         <td>
                             <span class="status-badge admin-status-{{ po.admin_status|lower }}">
                                 {% if not request.user.is_superuser %}
@@ -131,6 +200,33 @@
                 </tbody>
             </table>
         </div>
+
+        <!-- Pagination -->
+        {% if purchase_orders.has_other_pages %}
+        <div class="pagination-container">
+            <ul class="pagination">
+                {% if purchase_orders.has_previous %}
+                <li><a href="?page={{ purchase_orders.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if department_filter %}&department={{ department_filter }}{% endif %}{% if supplier_filter %}&supplier={{ supplier_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if admin_status_filter %}&admin_status={{ admin_status_filter }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}">&laquo; Prev</a></li>
+                {% else %}
+                <li class="disabled"><span>&laquo; Prev</span></li>
+                {% endif %}
+
+                {% for num in purchase_orders.paginator.page_range %}
+                    {% if purchase_orders.number == num %}
+                    <li class="active"><span>{{ num }}</span></li>
+                    {% elif num > purchase_orders.number|add:'-3' and num < purchase_orders.number|add:'3' %}
+                    <li><a href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if department_filter %}&department={{ department_filter }}{% endif %}{% if supplier_filter %}&supplier={{ supplier_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if admin_status_filter %}&admin_status={{ admin_status_filter }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}">{{ num }}</a></li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if purchase_orders.has_next %}
+                <li><a href="?page={{ purchase_orders.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if department_filter %}&department={{ department_filter }}{% endif %}{% if supplier_filter %}&supplier={{ supplier_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if admin_status_filter %}&admin_status={{ admin_status_filter }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}">Next &raquo;</a></li>
+                {% else %}
+                <li class="disabled"><span>Next &raquo;</span></li>
+                {% endif %}
+            </ul>
+        </div>
+        {% endif %}
         {% else %}
         <div class="no-data">
             <i class="fas fa-file-invoice"></i>
@@ -182,7 +278,7 @@ body {
 /* Layout Container */
 .content-wrapper {
     padding: 20px;
-    max-width: 1600px;
+    max-width: 1800px;
     margin: 0 auto;
 }
 
@@ -247,16 +343,6 @@ body {
     transform: translateY(-2px);
 }
 
-.btn-success {
-    background: #27ae60;
-    color: white;
-}
-
-.btn-success:hover {
-    background: #229954;
-    transform: translateY(-2px);
-}
-
 /* Filter Section */
 .filter-section {
     background: white;
@@ -264,18 +350,6 @@ body {
     border-radius: 8px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     margin-bottom: 20px;
-}
-
-.filter-group {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    flex-wrap: wrap;
-}
-
-.search-wrapper {
-    flex: 1;
-    min-width: 300px;
 }
 
 .search-box {
@@ -287,6 +361,7 @@ body {
     border-radius: 8px;
     border: 2px solid #e9ecef;
     transition: border-color 0.3s ease;
+    margin-bottom: 15px;
 }
 
 .search-box:focus-within {
@@ -311,21 +386,63 @@ body {
     color: #95a5a6;
 }
 
-.status-filter {
-    padding: 12px 20px;
+.filter-group {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.filter-box {
+    flex: 1;
+    min-width: 200px;
+}
+
+.filter-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #34495e;
+    margin-bottom: 5px;
+}
+
+.filter-select {
+    width: 100%;
+    padding: 12px 15px;
     border: 2px solid #e9ecef;
     border-radius: 8px;
-    font-size: 15px;
+    font-size: 14px;
     background: white;
     color: #2c3e50;
     cursor: pointer;
-    min-width: 180px;
     outline: none;
     transition: border-color 0.3s ease;
 }
 
-.status-filter:focus {
+.filter-select:focus {
     border-color: #3498db;
+}
+
+.clear-filters-btn {
+    width: 10%;
+    background-color: #525151ff;
+    color: #fff;
+    border: none;
+    padding: 12px 15px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.clear-filters-btn:hover {
+    background-color: #323232ff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px  #323232ff(231, 76, 60, 0.3);
 }
 
 /* Table Container */
@@ -362,16 +479,6 @@ body {
     white-space: nowrap;
 }
 
-/* Specific column alignments */
-.data-table th:nth-child(1) { width: 5%; text-align: center; } /* Checkbox/ID */
-.data-table th:nth-child(2) { width: 15%; } /* PO Number */
-.data-table th:nth-child(3) { width: 20%; } /* Supplier */
-.data-table th:nth-child(4) { width: 12%; } /* Date */
-.data-table th:nth-child(5) { width: 15%; text-align: right; padding-right: 20px; } /* Amount */
-.data-table th:nth-child(6) { width: 12%; text-align: center; } /* Payment */
-.data-table th:nth-child(7) { width: 12%; text-align: center; } /* Status */
-.data-table th:nth-child(8) { width: 8%; text-align: right; } /* Actions */
-
 .data-table tbody tr {
     border-bottom: 1px solid #ecf0f1;
     transition: all 0.3s ease;
@@ -392,13 +499,8 @@ body {
     vertical-align: middle;
 }
 
-/* Column-specific styles */
-.data-table td:nth-child(1) {
-    text-align: center;
-}
-
 .data-table td:nth-child(5) { 
-      text-align: right;
+    text-align: right;
     padding-right: 20px;
 }
 
@@ -456,6 +558,22 @@ body {
     white-space: nowrap;
 }
 
+/* Department Badge */
+.dept-badge {
+    background: #e3f2fd;
+    color: #1976d2;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    display: inline-block;
+}
+
+.text-muted {
+    color: #95a5a6;
+    font-style: italic;
+}
+
 /* Payment Badge */
 .payment-badge {
     background: #e8f5e9;
@@ -466,16 +584,6 @@ body {
     font-weight: 600;
     display: inline-block;
     text-transform: capitalize;
-}
-
-.payment-badge.partial {
-    background: #fff3e0;
-    color: #f57c00;
-}
-
-.payment-badge.unpaid {
-    background: #ffebee;
-    color: #c62828;
 }
 
 /* Status Badges */
@@ -549,10 +657,6 @@ body {
     font-size: 14px;
 }
 
-.rejection-reason-hint:hover {
-    color: #c0392b;
-}
-
 /* Action Buttons */
 .action-buttons {
     display: flex;
@@ -608,26 +712,6 @@ body {
     box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
 }
 
-.btn-approve {
-    background: #27ae60;
-    color: white;
-}
-
-.btn-approve:hover {
-    background: #229954;
-    transform: scale(1.1);
-}
-
-.btn-reject {
-    background: #e67e22;
-    color: white;
-}
-
-.btn-reject:hover {
-    background: #d35400;
-    transform: scale(1.1);
-}
-
 /* No Data State */
 .no-data {
     text-align: center;
@@ -647,8 +731,53 @@ body {
     margin-bottom: 20px;
 }
 
-.no-data .btn {
-    margin-top: 10px;
+/* Pagination */
+.pagination-container {
+    text-align: center;
+    padding: 20px;
+    background: #fff;
+    border-top: 1px solid #ecf0f1;
+}
+
+.pagination {
+    list-style: none;
+    display: inline-flex;
+    gap: 6px;
+    padding: 0;
+    margin: 0;
+}
+
+.pagination li {
+    display: inline;
+}
+
+.pagination a, .pagination span {
+    display: block;
+    padding: 8px 14px;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+    text-decoration: none;
+    color: #2c3e50;
+    transition: all 0.3s;
+    font-weight: 500;
+}
+
+.pagination a:hover {
+    background: #3498db;
+    color: white;
+    border-color: #3498db;
+}
+
+.pagination .active span {
+    background: #3498db;
+    color: white;
+    border-color: #3498db;
+}
+
+.pagination .disabled span {
+    color: #aaa;
+    border-color: #eee;
+    cursor: not-allowed;
 }
 
 /* Modal Styles */
@@ -663,12 +792,24 @@ body {
     background-color: rgba(0, 0, 0, 0.5);
     animation: fadeIn 0.3s ease;
     overflow: auto;
+    align-items: center;
+    justify-content: center;
 }
 
 .modal.active {
     display: flex;
-    align-items: center;
-    justify-content: center;
+}
+
+.modal-content {
+    background-color: white;
+    margin: auto;
+    padding: 0;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    animation: slideIn 0.3s ease;
+    position: relative;
 }
 
 .modal-content {
@@ -692,14 +833,6 @@ body {
     gap: 15px;
 }
 
-.modal-header.success {
-    background: linear-gradient(135deg, #27ae60, #229954);
-}
-
-.modal-header.warning {
-    background: linear-gradient(135deg, #f39c12, #e67e22);
-}
-
 .modal-header i {
     font-size: 28px;
 }
@@ -719,10 +852,6 @@ body {
     font-size: 16px;
     color: #2c3e50;
     line-height: 1.6;
-}
-
-.modal-body p:last-child {
-    margin-bottom: 0;
 }
 
 .modal-body strong {
@@ -746,47 +875,10 @@ body {
     gap: 10px;
 }
 
-/* Form Elements in Modals */
-.form-group {
-    margin-bottom: 20px;
-}
-
-.form-group label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: 600;
-    color: #2c3e50;
-    font-size: 14px;
-}
-
-.form-control {
-    width: 100%;
-    padding: 12px 15px;
-    border: 2px solid #e9ecef;
-    border-radius: 6px;
-    font-size: 15px;
-    transition: border-color 0.3s ease;
-    font-family: inherit;
-}
-
-.form-control:focus {
-    outline: none;
-    border-color: #3498db;
-}
-
-textarea.form-control {
-    resize: vertical;
-    min-height: 100px;
-}
-
 /* Animations */
 @keyframes fadeIn {
-    from { 
-        opacity: 0; 
-    }
-    to { 
-        opacity: 1; 
-    }
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
 @keyframes slideIn {
@@ -798,71 +890,6 @@ textarea.form-control {
         transform: translateY(0);
         opacity: 1;
     }
-}
-
-@keyframes slideOut {
-    from {
-        transform: translateY(0);
-        opacity: 1;
-    }
-    to {
-        transform: translateY(-50px);
-        opacity: 0;
-    }
-}
-
-/* Loading State */
-.loading {
-    text-align: center;
-    padding: 40px;
-    color: #7f8c8d;
-}
-
-.loading i {
-    font-size: 48px;
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-}
-
-/* Tooltip */
-.tooltip {
-    position: relative;
-    display: inline-block;
-}
-
-.tooltip .tooltiptext {
-    visibility: hidden;
-    width: 200px;
-    background-color: #2c3e50;
-    color: white;
-    text-align: center;
-    border-radius: 6px;
-    padding: 8px 12px;
-    position: absolute;
-    z-index: 1;
-    bottom: 125%;
-    left: 50%;
-    margin-left: -100px;
-    opacity: 0;
-    transition: opacity 0.3s;
-    font-size: 12px;
-}
-
-.tooltip:hover .tooltiptext {
-    visibility: visible;
-    opacity: 1;
-}
-
-/* Checkbox Styling */
-input[type="checkbox"] {
-    width: 18px;
-    height: 18px;
-    cursor: pointer;
-    accent-color: #3498db;
 }
 
 /* Responsive Design */
@@ -893,16 +920,9 @@ input[type="checkbox"] {
 
     .filter-group {
         flex-direction: column;
-        align-items: stretch;
-        gap: 12px;
     }
     
-    .search-wrapper {
-        min-width: 100%;
-    }
-    
-    .status-filter {
-        width: 100%;
+    .filter-box {
         min-width: 100%;
     }
 
@@ -932,33 +952,6 @@ input[type="checkbox"] {
         width: 100%;
         justify-content: center;
     }
-    
-    .action-buttons {
-        flex-wrap: wrap;
-    }
-}
-
-@media (max-width: 480px) {
-    .page-title {
-        font-size: 20px;
-    }
-    
-    .btn {
-        padding: 8px 16px;
-        font-size: 13px;
-    }
-    
-    .btn-icon {
-        width: 32px;
-        height: 32px;
-        font-size: 12px;
-    }
-    
-    .data-table th,
-    .data-table td {
-        padding: 12px 10px;
-        font-size: 13px;
-    }
 }
 
 /* Print Styles */
@@ -978,52 +971,112 @@ input[type="checkbox"] {
     .table-container {
         box-shadow: none;
     }
-    
-    .data-table tbody tr:hover {
-        background: transparent;
-    }
 }
 </style>
 
 <script>
-// Real-time search and filter functionality
+// Real-time search (client-side only, doesn't affect server-side filters)
 document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.getElementById('searchInput');
-    const statusFilter = document.getElementById('statusFilter');
-    const adminStatusFilter = document.getElementById('adminStatusFilter');
     const table = document.getElementById('poTable');
     const rows = table ? table.querySelectorAll('tbody tr') : [];
 
-    function filterTable() {
-        const searchValue = searchInput.value.toLowerCase();
-        const statusValue = statusFilter.value.toLowerCase();
-        const adminStatusValue = adminStatusFilter.value.toLowerCase();
-
-        rows.forEach(row => {
-            const text = row.textContent.toLowerCase();
-            const rowStatus = row.dataset.status ? row.dataset.status.toLowerCase() : '';
-            const rowAdminStatus = row.dataset.adminStatus ? row.dataset.adminStatus.toLowerCase() : '';
+    if (searchInput) {
+        searchInput.addEventListener('keyup', function() {
+            const searchValue = this.value.toLowerCase();
             
-            const matchesSearch = text.includes(searchValue);
-            const matchesStatus = !statusValue || rowStatus === statusValue;
-            const matchesAdminStatus = !adminStatusValue || rowAdminStatus === adminStatusValue;
-
-            row.style.display = (matchesSearch && matchesStatus && matchesAdminStatus) ? '' : 'none';
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(searchValue) ? '' : 'none';
+            });
         });
     }
-
-    if (searchInput) {
-        searchInput.addEventListener('keyup', filterTable);
-    }
-
-    if (statusFilter) {
-        statusFilter.addEventListener('change', filterTable);
-    }
-
-    if (adminStatusFilter) {
-        adminStatusFilter.addEventListener('change', filterTable);
-    }
 });
+
+// Status filter - reload page with filter parameter
+document.getElementById('statusFilter').addEventListener('change', function() {
+    updateFilters();
+});
+
+// Admin Status filter
+document.getElementById('adminStatusFilter').addEventListener('change', function() {
+    updateFilters();
+});
+
+// Department filter
+document.getElementById('departmentFilter').addEventListener('change', function() {
+    updateFilters();
+});
+
+// Supplier filter
+document.getElementById('supplierFilter').addEventListener('change', function() {
+    updateFilters();
+});
+
+// Date filters
+document.getElementById('startDate').addEventListener('change', updateFilters);
+document.getElementById('endDate').addEventListener('change', updateFilters);
+
+// Clear Filters Button - FIXED FUNCTIONALITY
+document.getElementById('clearFiltersBtn').addEventListener('click', function() {
+    // Get the base URL without any query parameters
+    const baseUrl = window.location.origin + window.location.pathname;
+    
+    // Redirect to the base URL (this clears all filters)
+    window.location.href = baseUrl;
+});
+
+function updateFilters() {
+    const url = new URL(window.location.href);
+    const statusFilter = document.getElementById('statusFilter').value;
+    const adminStatusFilter = document.getElementById('adminStatusFilter').value;
+    const departmentFilter = document.getElementById('departmentFilter').value;
+    const supplierFilter = document.getElementById('supplierFilter').value;
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
+    
+    // Update URL parameters
+    if (statusFilter) {
+        url.searchParams.set('status', statusFilter);
+    } else {
+        url.searchParams.delete('status');
+    }
+    
+    if (adminStatusFilter) {
+        url.searchParams.set('admin_status', adminStatusFilter);
+    } else {
+        url.searchParams.delete('admin_status');
+    }
+    
+    if (departmentFilter) {
+        url.searchParams.set('department', departmentFilter);
+    } else {
+        url.searchParams.delete('department');
+    }
+    
+    if (supplierFilter) {
+        url.searchParams.set('supplier', supplierFilter);
+    } else {
+        url.searchParams.delete('supplier');
+    }
+
+    if (startDate) {
+        url.searchParams.set('start_date', startDate);
+    } else {
+        url.searchParams.delete('start_date');
+    }
+    
+    if (endDate) {
+        url.searchParams.set('end_date', endDate);
+    } else {
+        url.searchParams.delete('end_date');
+    }
+    
+    // Reset to page 1 when changing filters
+    url.searchParams.delete('page');
+    
+    window.location.href = url.toString();
+}
 
 // Delete confirmation modal
 function confirmDelete(poId, poNumber) {
@@ -1033,12 +1086,12 @@ function confirmDelete(poId, poNumber) {
     
     poNumberElement.textContent = poNumber;
     deleteForm.action = "{% url 'purchase_order:po_delete' 0 %}".replace('0', poId);
-    modal.style.display = 'block';
+    modal.classList.add('active');
 }
 
 function closeModal() {
     const modal = document.getElementById('deleteModal');
-    modal.style.display = 'none';
+    modal.classList.remove('active');
 }
 
 window.onclick = function(event) {

@@ -31,6 +31,8 @@ urlpatterns = [
 
     # Add this to your urlpatterns
     path('get-customer-by-ticket/<str:ticket_no>/', views.get_customer_by_ticket, name='get_customer_by_ticket'),
+     path('update-status/<int:pk>/', views.update_status, name='update_status'),
+    path('api/jobcard-status/<str:ticket_no>/', views.api_jobcard_status, name='api_jobcard_status'),
 
    path('suppliermaster/', views.supplier_master, name='supplier_master'),
    path('suppliermaster/add/', views.supplier_master_add, name='supplier_master_add'),
@@ -44,10 +46,42 @@ urlpatterns = [
 
    path('jobcard/<int:jobcard_id>/standby-issue/', views.standby_issue_form, name='standby_issue_form'),
     path('jobcard/<int:jobcard_id>/standby-issue-item/', views.standby_issue_item, name='standby_issue_item'),
-      path('jobcard/<int:jobcard_id>/standby-return/', views.standby_issuance_return, name='standby_return_item'),
+    path('api/jobcard-detail/<int:pk>/', views.api_jobcard_detail, name='api_jobcard_detail'),
+    path('jobcard/<int:jobcard_id>/standby-return/', views.standby_issuance_return, name='standby_return_item'),
+    
     path('jobcard/<int:jobcard_id>/standby-details/', views.view_standby_issuance_details, name='view_standby_issuance_details'),
    
+    
 
+  
+ 
+   # Warranty URLs
+    path('warranty-item/', views.warranty_item_management, name='warranty_item'),
+    path('warranty-tickets/', views.warranty_ticket_list, name='warranty_ticket_list'),
+    path('warranty-ticket/<int:ticket_id>/', views.warranty_ticket_detail, name='warranty_ticket_detail'),
+    path('warranty-ticket/<int:ticket_id>/update-status/', views.update_warranty_item_status, name='update_warranty_item_status'),
+    path('process-warranty-tickets/', views.process_warranty_tickets, name='process_warranty_tickets'),
+    
+    # API endpoints for warranty
+    path('api/all-warranty-tickets/', views.api_all_warranty_tickets, name='api_all_warranty_tickets'),
+    path('api/ticket-details/', views.api_ticket_details, name='api_ticket_details'),
+    path('api/warranty-details/', views.api_warranty_details, name='api_warranty_details'),
+    path('warranty/tickets/<int:ticket_id>/edit/', views.warranty_ticket_edit, name='warranty_ticket_edit'),
+    path('warranty/tickets/<int:ticket_id>/delete/', views.warranty_ticket_delete, name='warranty_ticket_delete'),
+    path('warranty/tickets/<int:ticket_id>/return/', views.return_warranty_item, name='return_warranty_item'),
+    path('returns/<int:return_id>/', views.return_item_detail, name='return_item_detail'),
+    path('returns/<int:return_id>/delete/', views.return_item_delete, name='return_item_delete'),
+
+    path('service-billing/', views.service_billing_view, name='service_billing_view'),
+    path('get-jobcard-details/<str:ticket_no>/', views.get_jobcard_details, name='get_jobcard_details'),
+    path('service-billing/list/', views.service_billing_list, name='service_billing_list'),
+    # Add this to your urlpatterns in urls.py
+    path('service-billing/edit/<str:ticket_no>/', views.service_billing_edit, name='service_billing_edit'),
+    path('service-billing/view/<str:ticket_no>/', views.view_service_invoice, name='view_service_invoice'),
+    path('delete-service-invoice/<str:ticket_no>/', views.delete_service_invoice, name='delete_service_invoice'),
+    path('jobcard/update-status/<int:pk>/', views.update_jobcard_status, name='update_jobcard_status'),
+    path('jobcard/update-status-by-ticket/', views.update_jobcard_status_by_ticket, name='update_jobcard_status_by_ticket'),
 ]
+
 
 

@@ -25,18 +25,6 @@
         </div>
     </div>
 
-    <!-- Messages -->
-    {% if messages %}
-    <div class="messages-container">
-        {% for message in messages %}
-        <div class="alert alert-{{ message.tags }}">
-            <i class="fas fa-check-circle"></i>
-            {{ message }}
-        </div>
-        {% endfor %}
-    </div>
-    {% endif %}
-
     <!-- Departments Table -->
     <div class="table-container">
         {% if departments %}
@@ -57,16 +45,16 @@
                 <tbody>
                     {% for department in departments %}
                     <tr>
-                        <td><span class="id-badge">{{ department.id }}</span></td>
-                        <td>
+                        <td title="{{ department.id }}"><span class="id-badge">{{ department.id }}</span></td>
+                        <td title="{{ department.name }}{% if department.email %} - {{ department.email }}{% endif %}">
                             <div class="department-name">{{ department.name }}</div>
                             {% if department.email %}
                             <div class="department-email">{{ department.email }}</div>
                             {% endif %}
                         </td>
-                        <td>{{ department.city }}</td>
-                        <td>{{ department.state }}</td>
-                        <td>
+                        <td title="{{ department.city }}">{{ department.city }}</td>
+                        <td title="{{ department.state }}">{{ department.state }}</td>
+                        <td title="{{ department.contact_number }}{% if department.alternate_number %} / {{ department.alternate_number }}{% endif %}">
                             <div class="contact-info">
                                 <div>{{ department.contact_number }}</div>
                                 {% if department.alternate_number %}
@@ -74,7 +62,7 @@
                                 {% endif %}
                             </div>
                         </td>
-                        <td>
+                        <td title="{{ department.gst_number|default:'-' }}">
                             <span class="gst-code">{{ department.gst_number|default:"-" }}</span>
                         </td>
                         <td>
@@ -269,7 +257,52 @@
 .data-table {
     width: 100%;
     border-collapse: collapse;
+    table-layout: fixed;
     min-width: 1200px;
+}
+
+/* Define fixed widths for each column */
+.data-table th:nth-child(1),
+.data-table td:nth-child(1) {
+    width: 5%;  /* ID */
+    text-align: center;
+}
+
+.data-table th:nth-child(2),
+.data-table td:nth-child(2) {
+    width: 25%;  /* Department Name */
+}
+
+.data-table th:nth-child(3),
+.data-table td:nth-child(3) {
+    width: 15%;  /* City */
+}
+
+.data-table th:nth-child(4),
+.data-table td:nth-child(4) {
+    width: 12%;  /* State */
+}
+
+.data-table th:nth-child(5),
+.data-table td:nth-child(5) {
+    width: 15%;  /* Contact */
+}
+
+.data-table th:nth-child(6),
+.data-table td:nth-child(6) {
+    width: 15%;  /* GSTIN */
+}
+
+.data-table th:nth-child(7),
+.data-table td:nth-child(7) {
+    width: 8%;  /* Status */
+    text-align: center;
+}
+
+.data-table th:nth-child(8),
+.data-table td:nth-child(8) {
+    width: 8%;  /* Actions */
+    text-align: center;
 }
 
 .data-table thead {
@@ -299,6 +332,9 @@
 .data-table td {
     padding: 15px 12px;
     color: #2c3e50;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .id-badge {
@@ -313,16 +349,25 @@
 .department-name {
     font-weight: 600;
     color: #2c3e50;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .department-email {
     font-size: 12px;
     color: #7f8c8d;
     margin-top: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .contact-info div {
     font-size: 14px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .alt-contact {
@@ -336,6 +381,11 @@
     color: #7f8c8d;
     font-size: 13px;
     font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: inline-block;
+    max-width: 100%;
 }
 
 .badge {
@@ -359,6 +409,7 @@
 .action-buttons {
     display: flex;
     gap: 8px;
+    justify-content: center;
 }
 
 .btn-icon {

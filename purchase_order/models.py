@@ -2,8 +2,9 @@ from django.db import models
 from django.core.validators import RegexValidator
 from django.core.validators import MinValueValidator
 from decimal import Decimal
+from django.utils import timezone
 
-# ========== SUPPLIER MODEL ==========
+# ========== SUPPLIER MODEL (UPDATED) ==========
 class Supplier(models.Model):
     """
     Supplier Master - Stores supplier/vendor information
@@ -31,6 +32,45 @@ class Supplier(models.Model):
         verbose_name="Alternate Number"
     )
     
+    # ✅ NEW FIELDS
+    department = models.ForeignKey(
+        'Department',
+        on_delete=models.PROTECT,
+        related_name='suppliers',
+        verbose_name="Department",
+        help_text="Department associated with this supplier",
+        null=True,
+        blank=True
+    )
+    
+    gst_number = models.CharField(
+        max_length=15,
+        blank=True,
+        verbose_name="GST Number",
+        help_text="15-character GST Number"
+    )
+    
+    contact_person_name = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name="Contact Person Name",
+        help_text="Primary contact person at supplier"
+    )
+    
+    created_by = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name="Created By",
+        help_text="User who created this supplier"
+    )
+    
+    updated_by = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name="Last Updated By",
+        help_text="User who last updated this supplier"
+    )
+    
     # Metadata
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -43,7 +83,6 @@ class Supplier(models.Model):
 
     def __str__(self):
         return self.name
-
 
 # ========== PURCHASE ORDER MODEL ==========
 class PurchaseOrder(models.Model):
@@ -71,6 +110,12 @@ class PurchaseOrder(models.Model):
         ('PENDING', 'Pending'),
         ('APPROVED', 'Approved'),
         ('REJECTED', 'Rejected'),
+    ]
+
+    # ✅ NEW: Calculation Method Choices
+    CALCULATION_METHOD_CHOICES = [
+        ('PLUS_TAX', 'Plus Tax (Add tax on base amount)'),
+        ('REVERSE_TAX', 'Reverse Tax (Extract tax from total)'),
     ]
     
     # PO Basic Info
@@ -167,14 +212,37 @@ class PurchaseOrder(models.Model):
         blank=True,
         verbose_name="Rejection Reason"
     )
+
+    # ✅ NEW: Add Calculation Method field
+    calculation_method = models.CharField(
+        max_length=20,
+        choices=CALCULATION_METHOD_CHOICES,
+        default='PLUS_TAX',
+        verbose_name="Calculation Method",
+        help_text="Plus Tax: Add tax to base price | Reverse Tax: Extract tax from inclusive price"
+    )
     
     # Notes/Comments
     notes = models.TextField(blank=True, verbose_name="Additional Notes")
     
+    created_by = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name="Created By",
+        help_text="User who created this supplier"
+    )
+    
+    updated_by = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name="Last Updated By",
+        help_text="User who last updated this supplier"
+    )
+    
     # Metadata
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    created_by = models.CharField(max_length=100, blank=True)
+    is_active = models.BooleanField(default=True, verbose_name="Active Status")
 
     class Meta:
         ordering = ['-po_date', '-created_at']
@@ -229,6 +297,28 @@ class PurchaseOrder(models.Model):
             'REJECTED': '❌'
         }
         return f"{icons.get(self.admin_status, '')} {self.get_admin_status_display()}"    
+    
+    def calculate_totals_with_method(self):
+        """
+        Calculate totals based on selected calculation method
+        Returns: (subtotal, tax_amount, grand_total)
+        """
+        if self.calculation_method == 'PLUS_TAX':
+            # Plus Tax: Tax is added on top of base amount
+            # Formula: Grand Total = Subtotal + (Subtotal × Tax%)
+            subtotal = self.total_amount
+            tax_amount = subtotal * (self.tax_amount / subtotal) if subtotal > 0 else 0
+            grand_total = subtotal + tax_amount
+        else:  # REVERSE_TAX
+            # Reverse Tax: Tax is extracted from inclusive amount
+            # Formula: Subtotal = Grand Total / (1 + Tax%)
+            grand_total = self.grand_total
+            # Calculate subtotal by removing tax
+            tax_rate = self.tax_amount / self.total_amount if self.total_amount > 0 else 0
+            subtotal = grand_total / (1 + tax_rate) if grand_total > 0 else 0
+            tax_amount = grand_total - subtotal
+        
+        return subtotal, tax_amount, grand_total
 
 # ----------------- ITEM (PRODUCT) MASTER -----------------
 class Item(models.Model):
@@ -290,6 +380,12 @@ class Item(models.Model):
         validators=[MinValueValidator(Decimal('0.00'))],
         default=Decimal('0.00')
     )
+
+    is_active = models.BooleanField(default=True)
+    created_by = models.CharField(max_length=100, blank=True, null=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_by = models.CharField(max_length=100, blank=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.name
@@ -355,46 +451,103 @@ class Department(models.Model):
 
 
 # ----------------- PURCHASE ORDER LINE ITEMS -----------------
+# Update PurchaseOrderItem model in models.py
+
 class PurchaseOrderItem(models.Model):
-    purchase_order = models.ForeignKey('PurchaseOrder', on_delete=models.CASCADE, related_name='po_items')
+    """
+    Purchase Order Line Items
+    Includes entry_rate for Reverse Tax calculations
+    """
+    purchase_order = models.ForeignKey(
+        'PurchaseOrder', 
+        on_delete=models.CASCADE, 
+        related_name='po_items'
+    )
     item = models.ForeignKey(Item, on_delete=models.PROTECT)
-    department = models.ForeignKey(Department, on_delete=models.PROTECT, null=True,blank=True)  # NEW
-    quantity = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    unit_price = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    discount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    tax_percent = models.DecimalField(max_digits=5, decimal_places=2, default=0)
-    line_total = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    department = models.ForeignKey(
+        Department, 
+        on_delete=models.PROTECT, 
+        null=True,
+        blank=True
+    )
+    
+    quantity = models.DecimalField(
+        max_digits=12, 
+        decimal_places=2, 
+        default=0,
+        verbose_name="Quantity"
+    )
+    
+    unit_price = models.DecimalField(
+        max_digits=12, 
+        decimal_places=2, 
+        default=0,
+        verbose_name="Unit Price",
+        help_text="Inclusive or exclusive price depending on calculation method"
+    )
+    
+    # ✅ NEW: Entry Rate field for Reverse Tax
+    entry_rate = models.DecimalField(
+        max_digits=12, 
+        decimal_places=2, 
+        default=0,
+        verbose_name="Entry Rate",
+        help_text="Base price after tax extraction (for Reverse Tax method)"
+    )
+    
+    discount = models.DecimalField(
+        max_digits=12, 
+        decimal_places=2, 
+        default=0,
+        verbose_name="Discount"
+    )
+    
+    tax_percent = models.DecimalField(
+        max_digits=5, 
+        decimal_places=2, 
+        default=0,
+        verbose_name="Tax Percentage"
+    )
+    
+    line_total = models.DecimalField(
+        max_digits=12, 
+        decimal_places=2, 
+        default=0,
+        verbose_name="Line Total"
+    )
 
     def save(self, *args, **kwargs):
-        subtotal = (self.quantity * self.unit_price) - self.discount
-        tax_amt = subtotal * (self.tax_percent / 100)
-        self.line_total = subtotal + tax_amt
+        """
+        Auto-calculate line_total and entry_rate based on PO's calculation method
+        """
+        # Get the calculation method from parent PO
+        calc_method = self.purchase_order.calculation_method if self.purchase_order else 'PLUS_TAX'
+        
+        if calc_method == 'PLUS_TAX':
+            # Plus Tax: Add tax on base
+            subtotal = (self.quantity * self.unit_price) - self.discount
+            tax_amt = subtotal * (self.tax_percent / Decimal('100'))
+            self.line_total = subtotal + tax_amt
+            self.entry_rate = self.unit_price  # Entry rate same as unit price
+            
+        else:  # REVERSE_TAX
+            # Reverse Tax: Extract tax from inclusive price
+            # Calculate entry rate (base price per unit)
+            self.entry_rate = self.unit_price / (Decimal('1') + (self.tax_percent / Decimal('100')))
+            
+            # Calculate amounts
+            gross_amount = (self.quantity * self.unit_price) - self.discount
+            subtotal = (self.quantity * self.entry_rate) - (self.discount / (Decimal('1') + (self.tax_percent / Decimal('100'))))
+            tax_amt = gross_amount - subtotal
+            self.line_total = gross_amount
+        
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.item.name} ({self.quantity})"      
-
-    @staticmethod
-    def generate_po_number():
-        """
-        Auto-generate PO number in format: PO-YYYYMMDD-001
-        """
-        from datetime import date
-        today = date.today()
-        prefix = f"PO-{today.strftime('%Y%m%d')}"
-        
-        # Get last PO number for today
-        last_po = PurchaseOrder.objects.filter(
-            po_number__startswith=prefix
-        ).order_by('-po_number').first()
-        
-        if last_po:
-            # Extract the sequence number and increment
-            last_sequence = int(last_po.po_number.split('-')[-1])
-            new_sequence = last_sequence + 1
-        else:
-            new_sequence = 1
-        
-        return f"{prefix}-{new_sequence:03d}"  
+        return f"{self.item.name} ({self.quantity})"
+    
+    class Meta:
+        verbose_name = "Purchase Order Item"
+        verbose_name_plural = "Purchase Order Items"
     
     

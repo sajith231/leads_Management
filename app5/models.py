@@ -267,5 +267,200 @@ class Supplier(models.Model):
     class Meta:
         ordering = ['name']
 
+class WarrantyTicket(models.Model):
+    """Warranty claim tickets"""
+    ticket_no = models.CharField(max_length=50, unique=True)
+    jobcard = models.ForeignKey(JobCard, on_delete=models.CASCADE, related_name='warranty_tickets')
+    supplier = models.ForeignKey(Supplier, on_delete=models.SET_NULL, null=True, related_name='warranty_tickets')
+    
+    # Selected warranty item
+    selected_item = models.CharField(max_length=200)
+    item_serial = models.CharField(max_length=100, blank=True, null=True)
+    
+    # Status
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('submitted', 'Sent to Supplier'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+        ('completed', 'Completed'),
+    ]
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    
+    # Dates
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    submitted_at = models.DateTimeField(blank=True, null=True)
+    resolved_at = models.DateTimeField(blank=True, null=True)
+    
+    # Additional information
+    issue_description = models.TextField(blank=True, null=True)
+    supplier_response = models.TextField(blank=True, null=True)
+    resolution_notes = models.TextField(blank=True, null=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['selected_item', 'item_serial', 'status'],
+                condition=models.Q(status__in=['pending', 'submitted', 'approved']),
+                name='unique_active_warranty_per_item'
+            )
+        ]
+
+    def __str__(self):
+        return f"WT-{self.ticket_no} - {self.selected_item}"
+
+    @property
+    def customer_name(self):
+        return self.jobcard.customer if self.jobcard else ''
+
+    @property
+    def customer_phone(self):
+        return self.jobcard.phone if self.jobcard else ''
+
+
+class WarrantyItemLog(models.Model):
+    """Log of warranty item processing history"""
+    warranty_ticket = models.ForeignKey(WarrantyTicket, on_delete=models.CASCADE, related_name='logs')
+    action = models.CharField(max_length=100)
+    description = models.TextField()
+    performed_by = models.CharField(max_length=100, blank=True, null=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.warranty_ticket.ticket_no} - {self.action}"
+    
+
+
+    # ADD TO YOUR EXISTING models.py FILE
+
+from django.db import models
+from django.contrib.auth.models import User
+import os
+
+class ReturnItem(models.Model):
+    """
+    Model to track returned warranty items
+    """
+    warranty_ticket = models.OneToOneField(
+        'WarrantyTicket', 
+        on_delete=models.CASCADE,
+        related_name='return_item'
+    )
+    return_date = models.DateField()
+    notes = models.TextField(blank=True, null=True)
+    returned_by = models.ForeignKey(
+        User, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"Return for {self.warranty_ticket.ticket_no}"
+    
+    class Meta:
+        verbose_name = "Return Item"
+        verbose_name_plural = "Return Items"
+        ordering = ['-return_date', '-created_at']
+
+
+def return_image_upload_path(instance, filename):
+    """Generate upload path for return images"""
+    ticket_no = instance.return_item.warranty_ticket.ticket_no
+    return f'returns/{ticket_no}/{filename}'
+
+
+class ReturnImage(models.Model):
+    """
+    Model to store multiple images for return items
+    """
+    return_item = models.ForeignKey(
+        ReturnItem, 
+        on_delete=models.CASCADE, 
+        related_name='images'
+    )
+    image = models.ImageField(upload_to=return_image_upload_path)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"Image for {self.return_item.warranty_ticket.ticket_no}"
+    
+    def delete(self, *args, **kwargs):
+        # Delete the image file when the model is deleted
+        if self.image:
+            if os.path.isfile(self.image.path):
+                os.remove(self.image.path)
+        super().delete(*args, **kwargs)
+
+
+# Alternative normalized approach
+class ServiceBilling(models.Model):
+    PAYMENT_STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('paid', 'Paid'),
+        ('partial', 'Partial Payment'),
+    ]
+    
+    # Basic information
+    ticket_no = models.CharField(max_length=20)
+    date = models.DateField(default=timezone.now)
+    customer_name = models.CharField(max_length=100)
+    customer_contact = models.CharField(max_length=15)
+    customer_address = models.TextField()
+    technician = models.CharField(max_length=100)
+    
+    # Financial information
+    subtotal = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    tax = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    
+    # Additional information
+    payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default='pending')
+    notes = models.TextField(blank=True, null=True)
+    
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Service Billing"
+        verbose_name_plural = "Service Billings"
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"INV-{self.ticket_no} - {self.customer_name} - ₹{self.total}"
+    
+    def calculate_totals(self):
+        """Calculate subtotal, tax, and total based on service items"""
+        items = self.service_items.all()
+        self.subtotal = sum(item.charge for item in items)
+        self.tax = self.subtotal * 0.1  # 10% tax
+        self.total = self.subtotal + self.tax
+        self.save()
+
+class ServiceItem(models.Model):
+    billing = models.ForeignKey(ServiceBilling, on_delete=models.CASCADE, related_name='service_items')
+    item_name = models.CharField(max_length=100)
+    serial_no = models.CharField(max_length=50, blank=True, null=True)
+    service_description = models.TextField()
+    charge = models.DecimalField(max_digits=10, decimal_places=2)
+    
+    def __str__(self):
+        return f"{self.item_name} - ₹{self.charge}"   
+
+
+    
+         
+
 
         
+
+
+

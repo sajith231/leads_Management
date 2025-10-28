@@ -10,6 +10,82 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.core.files.base import ContentFile
 from .models import ImageCapture
+from PIL import Image
+import io
+
+# ------------------------------------------------------------------
+# ✅ NEW: Extract GPS from EXIF data (server-side)
+# ------------------------------------------------------------------
+def extract_gps_from_image(image_data):
+    """
+    Extract GPS coordinates from image EXIF data
+    Returns: (latitude, longitude) or (None, None)
+    """
+    try:
+        # Decode base64 image
+        if ';base64,' in image_data:
+            imgstr = image_data.split(';base64,')[1]
+        else:
+            imgstr = image_data
+        
+        image_bytes = base64.b64decode(imgstr)
+        image = Image.open(io.BytesIO(image_bytes))
+        
+        # Get EXIF data
+        exif_data = image._getexif()
+        
+        if not exif_data:
+            logging.warning("No EXIF data found in image")
+            return None, None
+        
+        # EXIF tags for GPS
+        GPS_INFO = 34853
+        
+        if GPS_INFO not in exif_data:
+            logging.warning("No GPS info in EXIF data")
+            return None, None
+        
+        gps_info = exif_data[GPS_INFO]
+        
+        # GPS tag IDs
+        GPS_LATITUDE = 2
+        GPS_LATITUDE_REF = 1
+        GPS_LONGITUDE = 4
+        GPS_LONGITUDE_REF = 3
+        
+        if GPS_LATITUDE not in gps_info or GPS_LONGITUDE not in gps_info:
+            logging.warning("GPS coordinates not found in EXIF")
+            return None, None
+        
+        # Convert GPS coordinates
+        lat = gps_info[GPS_LATITUDE]
+        lat_ref = gps_info.get(GPS_LATITUDE_REF, 'N')
+        lon = gps_info[GPS_LONGITUDE]
+        lon_ref = gps_info.get(GPS_LONGITUDE_REF, 'E')
+        
+        # Convert DMS to decimal
+        def dms_to_decimal(dms, ref):
+            degrees = float(dms[0])
+            minutes = float(dms[1])
+            seconds = float(dms[2])
+            
+            decimal = degrees + (minutes / 60.0) + (seconds / 3600.0)
+            
+            if ref in ['S', 'W']:
+                decimal = -decimal
+            
+            return decimal
+        
+        latitude = dms_to_decimal(lat, lat_ref)
+        longitude = dms_to_decimal(lon, lon_ref)
+        
+        logging.info(f"GPS extracted: {latitude}, {longitude}")
+        return latitude, longitude
+        
+    except Exception as e:
+        logging.error(f"Error extracting GPS from image: {e}")
+        return None, None
+
 
 # ------------------------------------------------------------------
 # ✅ OPTIMIZED: index view - NO MORE SLOW API CALLS
@@ -26,7 +102,7 @@ def index(request):
     return render(request, 'index.html', {
         'verified_captures': page_obj,
         'page_obj': page_obj,
-        'total_count': verified_captures.count()  # For stats
+        'total_count': verified_captures.count()
     })
 
 
@@ -60,7 +136,6 @@ def _get_location_name(latitude, longitude):
             data = response.json()
             address = data.get('address', {})
             
-            # Build location name from available address components
             location_parts = []
             
             if address.get('road'):
@@ -90,28 +165,37 @@ def _get_location_name(latitude, longitude):
 # Helper: send OTP through DxIng WhatsApp gateway
 # ------------------------------------------------------------------
 import threading
+import requests
+import logging
 
 def _send_otp_via_whatsapp(phone: str, otp: str) -> None:
     """
     Send OTP via DxIng WhatsApp in background thread (non-blocking)
-    phone: E.164 without '+', e.g. 9198xxxxxxxxx
     """
+
     def send():
+        # Ensure phone number is in international format (e.g. 91XXXXXXXXXX)
+        if len(phone) == 10:
+            phone_number = "91" + phone
+        else:
+            phone_number = phone
+
         url = (
             "https://app.dxing.in/api/send/whatsapp"
             "?secret=7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
-            "&account=1756959119812b4ba287f5ee0bc9d43bbf5bbe87fb68b9118fcf1af"
-            f"&recipient={phone}"
+            "&account=1761365422812b4ba287f5ee0bc9d43bbf5bbe87fb68fc4daea92d8"
+            f"&recipient={phone_number}"
             "&type=text"
             f"&message=Your verification code is {otp}. Valid for 5 minutes."
-            "&priority=0"  # ⚡️ Use highest priority for faster delivery
+            "&priority=1"
         )
-        try:
-            requests.get(url, timeout=5)
-        except Exception as e:
-            logging.error(f"WhatsApp send failed for {phone}: {e}")
 
-    # Start async thread
+        try:
+            response = requests.get(url, timeout=5)
+            logging.info(f"WhatsApp OTP sent to {phone_number}: {response.text}")
+        except Exception as e:
+            logging.error(f"WhatsApp send failed for {phone_number}: {e}")
+
     threading.Thread(target=send, daemon=True).start()
 
 
@@ -126,7 +210,6 @@ def image_capture_form(request):
     customer_name = None
     phone_number = None
 
-    # Fetch customer data from API
     try:
         api_url = "https://accmaster.imcbs.com/api/sync/rrc-clients/"
         response = requests.get(api_url, timeout=10)
@@ -137,12 +220,10 @@ def image_capture_form(request):
     except Exception as e:
         logging.error(f"API fetch error: {e}")
 
-    # Handle form submission
     if request.method == "POST":
         customer_name_dropdown = request.POST.get("customer_name", "").strip()
         customer_name_manual = request.POST.get("customer_name_manual", "").strip()
         
-        # Use manual input if provided, otherwise use dropdown selection
         if customer_name_manual:
             customer_name = customer_name_manual
         else:
@@ -177,7 +258,7 @@ def image_capture_form(request):
 
 
 # ------------------------------------------------------------------
-# 2. Customer landing page (asks phone number)
+# 2. Customer landing page
 # ------------------------------------------------------------------
 def capture_link_view(request, unique_id):
     data = get_object_or_404(ImageCapture, unique_id=unique_id)
@@ -185,7 +266,6 @@ def capture_link_view(request, unique_id):
     if request.method == "POST":
         entered_number = request.POST.get("phone_number", "").strip()
 
-        # Normalize to 10 digits for comparison
         entered_ten = entered_number.lstrip("0")[-10:]
         stored_ten = data.phone_number[-10:]
 
@@ -194,7 +274,6 @@ def capture_link_view(request, unique_id):
             request.session["otp"] = otp
             request.session["unique_id"] = str(unique_id)
 
-            # Send via WhatsApp (always 91-prefixed)
             ok = _send_otp_via_whatsapp(f"91{stored_ten}", otp)
             if not ok:
                 logging.error("OTP WhatsApp failed for 91%s", stored_ten)
@@ -223,7 +302,6 @@ def verify_otp(request, unique_id):
         if entered_otp == session_otp:
             data.verified = True
             data.save()
-            # Clear the OTP from session after successful verification
             if 'otp' in request.session:
                 del request.session['otp']
             return render(request, "image_capture_page.html", {"data": data})
@@ -237,13 +315,12 @@ def verify_otp(request, unique_id):
 
 
 # ------------------------------------------------------------------
-# ✅ OPTIMIZED: 4. Image + location submit handler
+# ✅ FIXED: 4. Image + location submit handler with server-side EXIF
 # ------------------------------------------------------------------
 def submit_image(request, unique_id):
     data = get_object_or_404(ImageCapture, unique_id=unique_id)
     
     if request.method == "POST":
-        # Check if user is verified
         if not data.verified:
             return render(request, 'image_capture_page.html', {
                 'data': data, 
@@ -251,18 +328,26 @@ def submit_image(request, unique_id):
             })
         
         image_data = request.POST.get("image_data")
-        latitude = request.POST.get("latitude")
-        longitude = request.POST.get("longitude")
+        # Client-side coordinates as fallback
+        client_latitude = request.POST.get("latitude")
+        client_longitude = request.POST.get("longitude")
 
         if image_data:
             try:
-                # Extract base64 data
+                # ✅ STEP 1: Extract GPS from EXIF (server-side) - PRIMARY METHOD
+                latitude, longitude = extract_gps_from_image(image_data)
+                
+                # ✅ STEP 2: Fallback to client-side coordinates if EXIF fails
+                if not latitude or not longitude:
+                    logging.warning("EXIF extraction failed, using client-side coordinates")
+                    latitude = client_latitude
+                    longitude = client_longitude
+                
+                # Extract base64 data and save image
                 if ';base64,' in image_data:
                     fmt, imgstr = image_data.split(';base64,')
-                    # Get file extension
                     ext = fmt.split('/')[-1] if '/' in fmt else 'jpg'
                 else:
-                    # Handle case where format prefix is missing
                     imgstr = image_data
                     ext = 'jpg'
                 
@@ -274,7 +359,7 @@ def submit_image(request, unique_id):
                 data.latitude = latitude
                 data.longitude = longitude
                 
-                # ✅ Get location name ONCE and store in database
+                # Get location name
                 if latitude and longitude:
                     data.location_name = _get_location_name(latitude, longitude)
                 else:

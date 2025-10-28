@@ -24,31 +24,98 @@ from django.db import models
 from .models import Employee, Attendance, LeaveRequest, Holiday,LateRequest,DefaultSettings,EarlyRequest
 from .utils import is_holiday
 
+import requests
+
 def send_whatsapp_message(phone_number, message):
+    """
+    Send a WhatsApp message using the updated DxIng API.
+    Automatically encodes the message and logs response info.
+    """
+    # ✅ Updated credentials
     secret = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
-    account = "1748250982812b4ba287f5ee0bc9d43bbf5bbe87fb683431662a427"
-    url = f"https://app.dxing.in/api/send/whatsapp?secret={secret}&account={account}&recipient={phone_number}&type=text&message={message}&priority=1"
-    response = requests.get(url)
-    if response.status_code == 200:
-        print(f"WhatsApp message sent successfully to {phone_number}")
-    else:
-        print(f"Failed to send WhatsApp message to {phone_number}. Status code: {response.status_code}, Response: {response.text}")
+    account = "1761365422812b4ba287f5ee0bc9d43bbf5bbe87fb68fc4daea92d8"
+
+    # ✅ Encode message safely for URL
+    encoded_message = requests.utils.quote(message)
+
+    # ✅ Build the full API URL
+    url = (
+        f"https://app.dxing.in/api/send/whatsapp?"
+        f"secret={secret}"
+        f"&account={account}"
+        f"&recipient={phone_number}"
+        f"&type=text"
+        f"&message={encoded_message}"
+        f"&priority=1"
+    )
+
+    try:
+        response = requests.get(url, timeout=10)
+
+        if response.status_code == 200:
+            print(f"✅ WhatsApp message sent successfully to {phone_number}")
+            return True
+        else:
+            print(
+                f"❌ Failed to send WhatsApp message to {phone_number}. "
+                f"Status code: {response.status_code}, Response: {response.text}"
+            )
+            return False
+
+    except requests.exceptions.RequestException as e:
+        print(f"⚠️ Error sending WhatsApp message: {e}")
+        return False
+
 
 
 
 import requests
 
 def send_whatsapp_message_for_service_log(phone_number, message):
+    """
+    Send a WhatsApp message for service logs using the DxIng API.
+    Sends a clean, human-readable message (no URL encoding issues).
+    """
+    import requests
+
+    # ✅ API credentials
     secret = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
-    account = "1756959119812b4ba287f5ee0bc9d43bbf5bbe87fb68b9118fcf1af"  # ✅ new account
-    url = f"https://app.dxing.in/api/send/whatsapp?secret={secret}&account={account}&recipient={phone_number}&type=text&message={message}&priority=1"
-    
-    response = requests.get(url)
-    
-    if response.status_code == 200:
-        print(f"WhatsApp message sent successfully to {phone_number}")
-    else:
-        print(f"Failed to send WhatsApp message to {phone_number}. Status code: {response.status_code}, Response: {response.text}")
+    account = "1761365422812b4ba287f5ee0bc9d43bbf5bbe87fb68fc4daea92d8"
+
+    # ✅ Ensure message is properly formatted (convert newlines for WhatsApp)
+    # Replace double spaces/newlines for better readability
+    message = message.replace("\r\n", "\n").replace("\r", "\n")
+
+    # ✅ Construct the API URL (no manual encoding)
+    url = (
+        f"https://app.dxing.in/api/send/whatsapp?"
+        f"secret={secret}"
+        f"&account={account}"
+        f"&recipient={phone_number}"
+        f"&type=text"
+        f"&message={message}"
+        f"&priority=1"
+    )
+
+    try:
+        response = requests.get(url, timeout=10)
+
+        if response.status_code == 200:
+            print(f"✅ WhatsApp service log message sent successfully to {phone_number}")
+            return True
+        else:
+            print(
+                f"❌ Failed to send WhatsApp service log message to {phone_number}. "
+                f"Status code: {response.status_code}, Response: {response.text}"
+            )
+            return False
+
+    except requests.exceptions.RequestException as e:
+        print(f"⚠️ Error sending WhatsApp service log message: {e}")
+        return False
+
+
+
 
 
 def login(request):
@@ -3831,18 +3898,28 @@ def create_leave_request(request):
 
 
 
-def send_whatsapp_message_new_request(phone_number, message):
-    secret = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
-    account = "1756959119812b4ba287f5ee0bc9d43bbf5bbe87fb68b9118fcf1af"  # ✅ updated account
+import requests
 
-    # Encode message for safe API call
+def send_whatsapp_message_new_request(phone_number, message):
+    """
+    Send a WhatsApp message using the updated DxIng API.
+    Automatically URL-encodes the message and handles connection errors.
+    """
+    secret = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
+    account = "1761365422812b4ba287f5ee0bc9d43bbf5bbe87fb68fc4daea92d8"  # ✅ updated account
+
+    # Encode message safely for URL
     encoded_message = requests.utils.quote(message)
 
+    # Build API URL
     url = (
         f"https://app.dxing.in/api/send/whatsapp?"
-        f"secret={secret}&account={account}"
+        f"secret={secret}"
+        f"&account={account}"
         f"&recipient={phone_number}"
-        f"&type=text&message={encoded_message}&priority=1"
+        f"&type=text"
+        f"&message={encoded_message}"
+        f"&priority=1"
     )
 
     try:
@@ -3857,6 +3934,7 @@ def send_whatsapp_message_new_request(phone_number, message):
                 f"Status code: {response.status_code}, Response: {response.text}"
             )
             return False
+
     except requests.exceptions.RequestException as e:
         print(f"⚠️ Error sending WhatsApp message: {e}")
         return False
@@ -5216,6 +5294,7 @@ def update_task_status(request, task_id):
 
 
 
+
 @login_required
 def user_menu_control(request):
     users = User.objects.all()
@@ -5224,11 +5303,8 @@ def user_menu_control(request):
         user_id = request.POST.get('user_id')
         if user_id:
             return redirect('configure_user_menu', user_id=user_id)
-            
+    
     return render(request, 'user_menu_control.html', {'users': users})
-
-
-
 
 @login_required
 def configure_user_menu(request, user_id):
@@ -5361,8 +5437,20 @@ def configure_user_menu(request, user_id):
         {'id': 'key_request_list', 'name': 'Key Request', 'icon': 'fas fa-file-signature'},
         {'id': 'key_request', 'name': 'Add Key Request', 'icon': 'fas fa-plus-circle'},
         {'id': 'collections_list', 'name': 'Collections', 'icon': 'fas fa-coins'},
+        {'id': 'image_capture', 'name': 'Image Capture', 'icon': 'fas fa-camera'},
+        {'id': 'purchase_order', 'name': 'Purchase Order', 'icon': 'fas fa-file-invoice'},
     
         
+    ]
+},
+{
+    'name': 'Vehicle Management',
+    'icon': 'fas fa-car',
+    'submenus': [
+        # include only the ones you actually route; keep/remove vehicle_list as needed
+        {'id': 'fuel_management',  'name': 'Fuel Management', 'icon': 'fas fa-gas-pump'},
+        {'id': 'fuel_monitoring',  'name': 'Vehicle Ledger',  'icon': 'fas fa-chart-line'},
+        # {'id': 'vehicle_list',   'name': 'Vehicles',        'icon': 'fas fa-car-side'},  # optional
     ]
 },
 {
@@ -5409,6 +5497,14 @@ def configure_user_menu(request, user_id):
             ]
         },
         {
+            'name': 'User Management',
+            'icon': 'fas fa-user-cog',
+            'submenus': [
+                {'id': 'users_table', 'name': 'Users List', 'icon': 'fas fa-users'},
+                
+            ]
+        },
+        {
             'name': 'Company',
             'icon': 'fas fa-building',
             'submenus': [
@@ -5417,7 +5513,6 @@ def configure_user_menu(request, user_id):
                 {'id': 'all_areas', 'name': 'Area', 'icon': 'fas fa-map-marker-alt'},
                 {'id': 'all_locations', 'name': 'Location', 'icon': 'fas fa-chart-area'},
                 {'id': 'all_branches', 'name': 'Offices\\Locations', 'icon': 'fas fa-code-branch'},
-                {'id': 'users_table', 'name': 'Users', 'icon': 'fas fa-users'},
                 {'id': 'department_list', 'name': 'Department', 'icon': 'fas fa-sitemap'},
             ]
         },
