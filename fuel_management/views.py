@@ -1,5 +1,6 @@
 import os
 from decimal import Decimal
+from datetime import datetime  # Add this import
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db import IntegrityError
 from django.contrib.auth.decorators import login_required
@@ -18,6 +19,9 @@ def vehicle(request):
     """Registration page + handle creation."""
     if request.method == 'POST':
         vehicle_number = request.POST['vehicle_number'].upper().strip()
+        vehicle_name = request.POST['vehicle_name'].strip()
+        model_number = request.POST['model_number'].strip()
+        manufacture_year = request.POST['manufacture_year']
         owner_name = request.POST['owner_name'].strip()
         fuel_type = request.POST.get('fuel_type', 'petrol')
         fuel_rate = request.POST.get('fuel_rate', '0.00')
@@ -32,6 +36,48 @@ def vehicle(request):
                 messages.error(request, "Vehicle number is required.")
                 return render(request, 'vehicle.html', {
                     'vehicle_number': vehicle_number,
+                    'vehicle_name': vehicle_name,
+                    'model_number': model_number,
+                    'manufacture_year': manufacture_year,
+                    'owner_name': owner_name,
+                    'fuel_type': fuel_type,
+                    'fuel_rate': fuel_rate,
+                    'avg_mileage': avg_mileage
+                })
+            
+            if not vehicle_name:
+                messages.error(request, "Vehicle name is required.")
+                return render(request, 'vehicle.html', {
+                    'vehicle_number': vehicle_number,
+                    'vehicle_name': vehicle_name,
+                    'model_number': model_number,
+                    'manufacture_year': manufacture_year,
+                    'owner_name': owner_name,
+                    'fuel_type': fuel_type,
+                    'fuel_rate': fuel_rate,
+                    'avg_mileage': avg_mileage
+                })
+            
+            if not model_number:
+                messages.error(request, "Model number is required.")
+                return render(request, 'vehicle.html', {
+                    'vehicle_number': vehicle_number,
+                    'vehicle_name': vehicle_name,
+                    'model_number': model_number,
+                    'manufacture_year': manufacture_year,
+                    'owner_name': owner_name,
+                    'fuel_type': fuel_type,
+                    'fuel_rate': fuel_rate,
+                    'avg_mileage': avg_mileage
+                })
+            
+            if not manufacture_year:
+                messages.error(request, "Manufacture year is required.")
+                return render(request, 'vehicle.html', {
+                    'vehicle_number': vehicle_number,
+                    'vehicle_name': vehicle_name,
+                    'model_number': model_number,
+                    'manufacture_year': manufacture_year,
                     'owner_name': owner_name,
                     'fuel_type': fuel_type,
                     'fuel_rate': fuel_rate,
@@ -42,6 +88,38 @@ def vehicle(request):
                 messages.error(request, "Owner name is required.")
                 return render(request, 'vehicle.html', {
                     'vehicle_number': vehicle_number,
+                    'vehicle_name': vehicle_name,
+                    'model_number': model_number,
+                    'manufacture_year': manufacture_year,
+                    'owner_name': owner_name,
+                    'fuel_type': fuel_type,
+                    'fuel_rate': fuel_rate,
+                    'avg_mileage': avg_mileage
+                })
+
+            # Validate manufacture year
+            try:
+                manufacture_year_int = int(manufacture_year)
+                current_year = datetime.now().year  # This was causing the error
+                if manufacture_year_int < 1900 or manufacture_year_int > current_year:
+                    messages.error(request, f"Manufacture year must be between 1900 and {current_year}.")
+                    return render(request, 'vehicle.html', {
+                        'vehicle_number': vehicle_number,
+                        'vehicle_name': vehicle_name,
+                        'model_number': model_number,
+                        'manufacture_year': manufacture_year,
+                        'owner_name': owner_name,
+                        'fuel_type': fuel_type,
+                        'fuel_rate': fuel_rate,
+                        'avg_mileage': avg_mileage
+                    })
+            except ValueError:
+                messages.error(request, "Invalid manufacture year.")
+                return render(request, 'vehicle.html', {
+                    'vehicle_number': vehicle_number,
+                    'vehicle_name': vehicle_name,
+                    'model_number': model_number,
+                    'manufacture_year': manufacture_year,
                     'owner_name': owner_name,
                     'fuel_type': fuel_type,
                     'fuel_rate': fuel_rate,
@@ -51,6 +129,9 @@ def vehicle(request):
             # Create vehicle
             Vehicle.objects.create(
                 vehicle_number=vehicle_number,
+                vehicle_name=vehicle_name,
+                model_number=model_number,
+                manufacture_year=manufacture_year_int,
                 owner_name=owner_name,
                 fuel_type=fuel_type,
                 fuel_rate=fuel_rate,
@@ -66,6 +147,9 @@ def vehicle(request):
             messages.error(request, f"Vehicle number '{vehicle_number}' already exists.")
             return render(request, 'vehicle.html', {
                 'vehicle_number': vehicle_number,
+                'vehicle_name': vehicle_name,
+                'model_number': model_number,
+                'manufacture_year': manufacture_year,
                 'owner_name': owner_name,
                 'fuel_type': fuel_type,
                 'fuel_rate': fuel_rate,
@@ -75,6 +159,9 @@ def vehicle(request):
             messages.error(request, f"Error adding vehicle: {str(e)}")
             return render(request, 'vehicle.html', {
                 'vehicle_number': vehicle_number,
+                'vehicle_name': vehicle_name,
+                'model_number': model_number,
+                'manufacture_year': manufacture_year,
                 'owner_name': owner_name,
                 'fuel_type': fuel_type,
                 'fuel_rate': fuel_rate,
@@ -83,6 +170,8 @@ def vehicle(request):
 
     # GET request - show empty form
     return render(request, 'vehicle.html')
+
+# ... rest of your views.py code remains the same ...
 
 def vehicle_list(request):
     """List all vehicles with edit/delete actions."""
@@ -97,8 +186,25 @@ def vehicle_edit(request, vehicle_id):
     if request.method == 'POST':
         try:
             # Update editable fields with validation
+            vehicle_name = request.POST.get('vehicle_name', '').strip()
+            model_number = request.POST.get('model_number', '').strip()
+            manufacture_year = request.POST.get('manufacture_year', '').strip()
             owner_name = request.POST.get('owner_name', '').strip()
             avg_mileage = request.POST.get('avg_mileage', '').strip()
+            fuel_type = request.POST.get('fuel_type', 'petrol')
+            
+            # Validate required fields
+            if not vehicle_name:
+                messages.error(request, "Vehicle name is required.")
+                return render(request, 'vehicle_edit.html', {'vehicle': vehicle})
+            
+            if not model_number:
+                messages.error(request, "Model number is required.")
+                return render(request, 'vehicle_edit.html', {'vehicle': vehicle})
+            
+            if not manufacture_year:
+                messages.error(request, "Manufacture year is required.")
+                return render(request, 'vehicle_edit.html', {'vehicle': vehicle})
             
             if not owner_name:
                 messages.error(request, "Owner name is required.")
@@ -108,6 +214,18 @@ def vehicle_edit(request, vehicle_id):
                 messages.error(request, "Average mileage is required.")
                 return render(request, 'vehicle_edit.html', {'vehicle': vehicle})
             
+            # Validate manufacture year
+            try:
+                manufacture_year_int = int(manufacture_year)
+                current_year = datetime.now().year
+                if manufacture_year_int < 1900 or manufacture_year_int > current_year:
+                    messages.error(request, f"Manufacture year must be between 1900 and {current_year}.")
+                    return render(request, 'vehicle_edit.html', {'vehicle': vehicle})
+            except ValueError:
+                messages.error(request, "Invalid manufacture year.")
+                return render(request, 'vehicle_edit.html', {'vehicle': vehicle})
+            
+            # Validate average mileage
             try:
                 avg_mileage_float = float(avg_mileage)
                 if avg_mileage_float <= 0:
@@ -117,8 +235,13 @@ def vehicle_edit(request, vehicle_id):
                 messages.error(request, "Invalid average mileage value.")
                 return render(request, 'vehicle_edit.html', {'vehicle': vehicle})
             
+            # Update vehicle fields
+            vehicle.vehicle_name = vehicle_name
+            vehicle.model_number = model_number
+            vehicle.manufacture_year = manufacture_year_int
             vehicle.owner_name = owner_name
             vehicle.avg_mileage = avg_mileage_float
+            vehicle.fuel_type = fuel_type
 
             # Handle file removals - check if checkbox is checked
             if request.POST.get('remove_rc_copy') == 'on':

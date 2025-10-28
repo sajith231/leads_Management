@@ -107,7 +107,7 @@ class KeyRequest(models.Model):
 
 class Collection(models.Model):
     """Payment-collection record with verification status."""
-
+ 
     # ------------------------------------------------------------------
     # Status
     # ------------------------------------------------------------------
