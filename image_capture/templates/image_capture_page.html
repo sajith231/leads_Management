@@ -83,7 +83,6 @@
       object-fit: contain;
     }
     
-    /* Location Status Styles */
     .location-status {
       margin-top: 20px;
       padding: 18px;
@@ -145,7 +144,6 @@
       height: 30px;
     }
     
-    /* Loading state */
     .loading-text {
       color: #718096;
       font-size: 14px;
@@ -180,7 +178,6 @@
 
       <img id="previewImage" class="preview-image" alt="Preview">
 
-      <!-- Location Status Display -->
       <div id="locationStatus" class="location-status">
         <div class="location-status-header">
           <i id="statusIcon"></i>
@@ -189,7 +186,6 @@
         <div id="statusDetails" class="location-details"></div>
       </div>
 
-      <!-- Processing Spinner -->
       <div class="processing-spinner text-center" id="processingSpinner">
         <div class="spinner-border" role="status">
           <span class="visually-hidden">Loading...</span>
@@ -215,7 +211,6 @@
     const submitBtn = document.getElementById('submitBtn');
     const uploadForm = document.getElementById('uploadForm');
 
-    // Show location status
     function showLocationStatus(type, message, details = '') {
       locationStatus.style.display = 'block';
       locationStatus.className = 'location-status';
@@ -244,30 +239,49 @@
       }
     }
 
-    // Convert EXIF GPS coordinates to decimal
     function convertDMSToDD(dms, ref) {
-      const [deg, min, sec] = dms;
-      let dd = deg + min / 60 + sec / 3600;
-      if (ref === "S" || ref === "W") dd = dd * -1;
-      return dd;
+      try {
+        let degrees, minutes, seconds;
+        
+        if (Array.isArray(dms) && dms.length === 3) {
+          degrees = (typeof dms[0] === 'number') ? dms[0] : (dms[0].numerator / dms[0].denominator);
+          minutes = (typeof dms[1] === 'number') ? dms[1] : (dms[1].numerator / dms[1].denominator);
+          seconds = (typeof dms[2] === 'number') ? dms[2] : (dms[2].numerator / dms[2].denominator);
+        } else {
+          console.error('Invalid DMS format:', dms);
+          return null;
+        }
+        
+        let dd = degrees + (minutes / 60) + (seconds / 3600);
+        
+        if (ref === "S" || ref === "W") {
+          dd = dd * -1;
+        }
+        
+        if (isNaN(dd) || !isFinite(dd)) {
+          console.error('Invalid coordinate calculation:', {dms, ref, result: dd});
+          return null;
+        }
+        
+        return dd;
+      } catch (error) {
+        console.error('Error converting DMS to DD:', error);
+        return null;
+      }
     }
 
-    // Preview and extract GPS data
     galleryUpload.addEventListener('change', function(event) {
       const file = event.target.files[0];
       if (!file) return;
 
-      // Reset status
       locationStatus.style.display = 'none';
       submitBtn.style.display = 'none';
       processingSpinner.style.display = 'block';
 
-      // Show processing status immediately
       showLocationStatus('processing', 'Processing image...', 'Reading location metadata from image');
 
       const reader = new FileReader();
 
-      // Read the image for preview
       reader.onload = function(e) {
         previewImage.src = e.target.result;
         previewImage.style.display = 'block';
@@ -275,60 +289,82 @@
       };
       reader.readAsDataURL(file);
 
-      // Read EXIF metadata for GPS with timeout fallback
       let exifProcessed = false;
       
-      // Set timeout to handle slow EXIF processing
       const timeoutId = setTimeout(() => {
         if (!exifProcessed) {
+          console.warn('EXIF processing timeout');
           processingSpinner.style.display = 'none';
           showLocationStatus(
             'not-available',
             'Location Not Available',
-            'Could not read GPS data from image. Our server will attempt to extract location or proceed without it.'
+            'Could not read GPS data from image. Our server will attempt to extract location.'
           );
           submitBtn.style.display = 'inline-block';
         }
-      }, 3000); // 3 second timeout
+      }, 8000);
 
       EXIF.getData(file, function() {
         exifProcessed = true;
         clearTimeout(timeoutId);
-        
-        // Hide spinner
         processingSpinner.style.display = 'none';
         
-        const lat = EXIF.getTag(this, "GPSLatitude");
-        const lon = EXIF.getTag(this, "GPSLongitude");
-        const latRef = EXIF.getTag(this, "GPSLatitudeRef");
-        const lonRef = EXIF.getTag(this, "GPSLongitudeRef");
+        try {
+          const lat = EXIF.getTag(this, "GPSLatitude");
+          const lon = EXIF.getTag(this, "GPSLongitude");
+          const latRef = EXIF.getTag(this, "GPSLatitudeRef");
+          const lonRef = EXIF.getTag(this, "GPSLongitudeRef");
 
-        if (lat && lon && latRef && lonRef) {
-          const latitude = convertDMSToDD(lat, latRef);
-          const longitude = convertDMSToDD(lon, lonRef);
+          console.log('EXIF GPS Data:', {lat, lon, latRef, lonRef});
 
-          document.getElementById('latitude').value = latitude;
-          document.getElementById('longitude').value = longitude;
+          if (lat && lon && latRef && lonRef) {
+            const latitude = convertDMSToDD(lat, latRef);
+            const longitude = convertDMSToDD(lon, lonRef);
 
-          showLocationStatus(
-            'detected',
-            'Location Detected',
-            `Coordinates: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`
-          );
-        } else {
+            console.log('Converted coordinates:', {latitude, longitude});
+
+            if (latitude !== null && longitude !== null && 
+                !isNaN(latitude) && !isNaN(longitude) &&
+                isFinite(latitude) && isFinite(longitude) &&
+                Math.abs(latitude) <= 90 && Math.abs(longitude) <= 180) {
+              
+              document.getElementById('latitude').value = latitude.toFixed(8);
+              document.getElementById('longitude').value = longitude.toFixed(8);
+
+              showLocationStatus(
+                'detected',
+                'Location Detected',
+                `Coordinates: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`
+              );
+            } else {
+              console.error('Invalid coordinates:', {latitude, longitude});
+              showLocationStatus(
+                'not-available',
+                'Location Not Available',
+                'Invalid GPS data in image. Our server will attempt to extract location.'
+              );
+            }
+          } else {
+            console.warn('Missing GPS tags');
+            showLocationStatus(
+              'not-available',
+              'Location Not Available',
+              'No GPS data found in image. Our server will attempt to extract location.'
+            );
+          }
+        } catch (error) {
+          console.error('Error processing EXIF:', error);
           showLocationStatus(
             'not-available',
-            'Location Not Available',
-            'No GPS data found in image. Our server will attempt to extract location or proceed without it.'
+            'Location Processing Error',
+            'Error reading GPS data. Our server will attempt to extract location.'
           );
         }
         
-        // Show submit button
         submitBtn.style.display = 'inline-block';
       });
     });
 
-    // Form submission handling
     uploadForm.addEventListener('submit', function(e) {
       submitBtn.disabled = true;
       submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
