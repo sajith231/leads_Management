@@ -167,6 +167,7 @@ def _get_location_name(latitude, longitude):
 import threading
 import requests
 import logging
+from urllib.parse import quote_plus
 
 def _send_otp_via_whatsapp(phone: str, otp: str) -> None:
     """
@@ -180,22 +181,35 @@ def _send_otp_via_whatsapp(phone: str, otp: str) -> None:
         else:
             phone_number = phone
 
+        # Prepare the message with proper URL encoding
+        message = f"Your verification code is {otp}. Valid for 5 minutes."
+        encoded_message = quote_plus(message)
+
+        # Build the URL with the new API format
         url = (
             "https://app.dxing.in/api/send/whatsapp"
             "?secret=7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
             "&account=1761365422812b4ba287f5ee0bc9d43bbf5bbe87fb68fc4daea92d8"
             f"&recipient={phone_number}"
             "&type=text"
-            f"&message=Your verification code is {otp}. Valid for 5 minutes."
+            f"&message={encoded_message}"
             "&priority=1"
         )
 
         try:
-            response = requests.get(url, timeout=5)
-            logging.info(f"WhatsApp OTP sent to {phone_number}: {response.text}")
-        except Exception as e:
+            response = requests.get(url, timeout=10)
+            if response.status_code == 200:
+                logging.info(f"WhatsApp OTP sent successfully to {phone_number}: {response.text}")
+            else:
+                logging.warning(f"WhatsApp OTP response status {response.status_code} for {phone_number}: {response.text}")
+        except requests.exceptions.Timeout:
+            logging.error(f"WhatsApp send timeout for {phone_number}")
+        except requests.exceptions.RequestException as e:
             logging.error(f"WhatsApp send failed for {phone_number}: {e}")
+        except Exception as e:
+            logging.error(f"Unexpected error sending WhatsApp OTP to {phone_number}: {e}")
 
+    # Start background thread
     threading.Thread(target=send, daemon=True).start()
 
 
