@@ -878,6 +878,8 @@ def collections_list(request):
         'is_paginated': page_obj.has_other_pages(),
         'page_obj': page_obj,
     }) 
+
+    
 # Update collection_details to include status
 def collection_details(request, collection_id):
     """Get collection details via AJAX"""
