@@ -248,6 +248,7 @@ class Item(models.Model):
 
     def __str__(self):
         return self.name
+    
 
     class Meta:
         ordering = ['name']
@@ -256,6 +257,7 @@ class Item(models.Model):
 class Supplier(models.Model):
     name = models.CharField(max_length=200)
     place = models.CharField(max_length=100)
+    is_active = models.BooleanField(default=True, verbose_name="Active Status",help_text="Whether this supplier is currently active")
     phone = models.CharField(max_length=15)
     address = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
@@ -267,11 +269,21 @@ class Supplier(models.Model):
     class Meta:
         ordering = ['name']
 
+# Update your app5/models.py WarrantyTicket model
+
 class WarrantyTicket(models.Model):
     """Warranty claim tickets"""
     ticket_no = models.CharField(max_length=50, unique=True)
     jobcard = models.ForeignKey(JobCard, on_delete=models.CASCADE, related_name='warranty_tickets')
-    supplier = models.ForeignKey(Supplier, on_delete=models.SET_NULL, null=True, related_name='warranty_tickets')
+    
+    # ✅ UPDATED: Reference purchase_order.Supplier instead of app5.Supplier
+    supplier = models.ForeignKey(
+        'purchase_order.Supplier',  # Changed from 'Supplier'
+        on_delete=models.CASCADE, 
+        related_name='warranty_tickets',
+        null=True,
+        blank=True
+    )
     
     # Selected warranty item
     selected_item = models.CharField(max_length=200)

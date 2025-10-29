@@ -12,7 +12,7 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 from app2.models import StandbyItem, StandbyImage
-   
+from app1.models import Complaint  
 import os
 import json
 from collections import defaultdict
@@ -236,6 +236,8 @@ def jobcard_create(request):
     items = Item.objects.all().order_by("name")
     suppliers = Supplier.objects.all().order_by("name")
 
+    hardware_complaints = Complaint.objects.filter(complaint_type='hardware').order_by('description')
+
     # Fetch customer data from API
     customer_data = []
     try:
@@ -254,6 +256,7 @@ def jobcard_create(request):
         'items': items,
         'customer_data': customer_data,
         'suppliers': suppliers,
+        'hardware_complaints': hardware_complaints,
     })
 
 
@@ -1568,12 +1571,37 @@ logger = logging.getLogger(__name__)
 # ... [all your existing job card views] ...
 
 # Warranty Management Views
+from purchase_order.models import Supplier as POSupplier
+
 def warranty_item_management(request):
     """
     Display warranty item management page with supplier selection
     """
-    suppliers = Supplier.objects.all()
-    
+    try:
+        # Try to use purchase_order suppliers first (preferred)
+        from purchase_order.models import Supplier as POSupplier
+        suppliers = POSupplier.objects.select_related('department').filter(is_active=True).order_by('-id')
+        supplier_source = 'purchase_order'
+    except ImportError:
+        # Fallback to app5 suppliers
+        from .models import Supplier
+        
+        # ✅ CHECK if is_active field exists
+        field_names = [f.name for f in Supplier._meta.get_fields()]
+        
+        if 'is_active' in field_names:
+            # Field exists, use it
+            suppliers = Supplier.objects.filter(is_active=True).order_by('-id')
+        else:
+            # Field doesn't exist, get all suppliers
+            suppliers = Supplier.objects.all().order_by('-id')
+            
+        supplier_source = 'app5'
+    except Exception as e:
+        suppliers = []
+        supplier_source = 'none'
+        logger.error(f"Error getting suppliers: {e}")
+
     # Get pre-selected values from URL parameters
     ticket_no = request.GET.get('ticket_no', '')
     supplier_id = request.GET.get('supplier_id', '')
@@ -1585,21 +1613,41 @@ def warranty_item_management(request):
     if supplier_id:
         try:
             # First try by ID
-            pre_selected_supplier = Supplier.objects.filter(id=supplier_id).first()
+            if supplier_source == 'purchase_order':
+                pre_selected_supplier = POSupplier.objects.filter(id=supplier_id, is_active=True).first()
+            else:
+                # For app5 suppliers, check if is_active exists
+                field_names = [f.name for f in Supplier._meta.get_fields()]
+                
+                if 'is_active' in field_names:
+                    pre_selected_supplier = Supplier.objects.filter(id=supplier_id, is_active=True).first()
+                else:
+                    pre_selected_supplier = Supplier.objects.filter(id=supplier_id).first()
+            
             if not pre_selected_supplier:
                 # Try by name
-                pre_selected_supplier = Supplier.objects.filter(name__icontains=supplier_id).first()
-        except:
-            pass
-    
+                if supplier_source == 'purchase_order':
+                    pre_selected_supplier = POSupplier.objects.filter(name__icontains=supplier_id, is_active=True).first()
+                else:
+                    if 'is_active' in field_names:
+                        pre_selected_supplier = Supplier.objects.filter(name__icontains=supplier_id, is_active=True).first()
+                    else:
+                        pre_selected_supplier = Supplier.objects.filter(name__icontains=supplier_id).first()
+        except Exception as e:
+            logger.error(f"Error finding supplier: {e}")
+
     context = {
         'suppliers': suppliers,
+        'supplier_source': supplier_source,
         'pre_selected_ticket': ticket_no,
         'pre_selected_supplier': pre_selected_supplier,
         'pre_selected_item': item_name,
         'pre_selected_serial': serial_no,
     }
     return render(request, 'warranty_item.html', context)
+
+# Alias for backwards compatibility
+warranty_item = warranty_item_management
 
 # Alias for backwards compatibility
 warranty_item = warranty_item_management
@@ -1707,10 +1755,16 @@ def api_ticket_details(request):
 
 @csrf_exempt
 @require_http_methods(["POST"])
+
+# Complete process_warranty_tickets function for app5/views.py
+# This version works regardless of migration state
+
+@csrf_exempt
+@require_http_methods(["POST"])
 def process_warranty_tickets(request):
     """
     Process multiple warranty items submission
-    Creates warranty tickets for all selected items
+    ✅ USES ONLY purchase_order.Supplier
     """
     try:
         supplier_id = request.POST.get('supplier')
@@ -1718,19 +1772,74 @@ def process_warranty_tickets(request):
         selected_items = request.POST.getlist('selected_items')
         item_serials = request.POST.getlist('item_serials[]')
         
+        logger.info(f"Processing warranty tickets - Supplier ID: {supplier_id}, Ticket: {ticket_no}")
+        
         # Validate required fields
         if not all([supplier_id, ticket_no]) or not selected_items:
+            error_msg = 'Supplier, ticket number, and at least one item must be selected'
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return JsonResponse({
-                    'success': False,
-                    'error': 'Supplier, ticket number, and at least one item must be selected'
-                })
-            messages.error(request, 'Supplier, ticket number, and at least one item must be selected')
+                return JsonResponse({'success': False, 'error': error_msg})
+            messages.error(request, error_msg)
             return redirect('app5:warranty_item')
         
-        # Get related objects
-        supplier = get_object_or_404(Supplier, id=supplier_id)
-        jobcard = get_object_or_404(JobCard, ticket_no=ticket_no)
+        # Get jobcard
+        try:
+            jobcard = JobCard.objects.get(ticket_no=ticket_no)
+            logger.info(f"Found jobcard: {jobcard.ticket_no}")
+        except JobCard.DoesNotExist:
+            error_msg = f'Job card {ticket_no} not found'
+            logger.error(error_msg)
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'success': False, 'error': error_msg})
+            messages.error(request, error_msg)
+            return redirect('app5:warranty_item')
+        
+        # ✅ GET SUPPLIER FROM PURCHASE_ORDER MODEL
+        supplier = None
+        try:
+            from purchase_order.models import Supplier as POSupplier
+            
+            logger.info(f"Looking for POSupplier with ID: {supplier_id}")
+            
+            # Try with is_active=True first
+            supplier = POSupplier.objects.filter(id=supplier_id, is_active=True).first()
+            
+            if not supplier:
+                # Try without is_active filter
+                logger.warning(f"Supplier {supplier_id} not found with is_active=True, trying without filter")
+                supplier = POSupplier.objects.filter(id=supplier_id).first()
+            
+            if supplier:
+                logger.info(f"✅ Found supplier: ID={supplier.id}, Name={supplier.name}, Active={supplier.is_active}")
+            else:
+                # List all available suppliers for debugging
+                all_suppliers = POSupplier.objects.all().values('id', 'name', 'is_active')
+                logger.error(f"❌ Supplier {supplier_id} not found. Available suppliers: {list(all_suppliers)}")
+                
+                error_msg = (
+                    f'Supplier with ID {supplier_id} not found. '
+                    f'Available suppliers: {", ".join([f"ID {s["id"]}: {s["name"]}" for s in all_suppliers[:5]])}'
+                )
+                
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({'success': False, 'error': error_msg})
+                messages.error(request, error_msg)
+                return redirect('app5:warranty_item')
+                
+        except ImportError:
+            error_msg = 'purchase_order app not available. Cannot process warranty tickets.'
+            logger.error(error_msg)
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'success': False, 'error': error_msg})
+            messages.error(request, error_msg)
+            return redirect('app5:warranty_item')
+        except Exception as e:
+            error_msg = f'Error finding supplier: {str(e)}'
+            logger.error(f"Supplier lookup error: {e}", exc_info=True)
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'success': False, 'error': error_msg})
+            messages.error(request, error_msg)
+            return redirect('app5:warranty_item')
         
         created_tickets = []
         processed_items = []
@@ -1738,6 +1847,8 @@ def process_warranty_tickets(request):
         
         # Process each selected item
         for idx, selected_item in enumerate(selected_items):
+            logger.info(f"Processing item {idx + 1}/{len(selected_items)}: {selected_item}")
+            
             # Find the selected item details from items_data
             selected_item_data = None
             item_serial = item_serials[idx] if idx < len(item_serials) else ''
@@ -1752,19 +1863,20 @@ def process_warranty_tickets(request):
                         break
             
             if not selected_item_data:
+                logger.warning(f"Item {selected_item} not found in jobcard items_data")
                 continue
             
             # Check if item has warranty
             if selected_item_data.get('warranty') != 'yes':
+                logger.warning(f"Item {selected_item} does not have warranty='yes'")
                 continue
             
-            # ✅ DUPLICATE DETECTION: Check if this item already has an active warranty ticket
+            # DUPLICATE DETECTION
             existing_tickets = WarrantyTicket.objects.filter(
                 selected_item=selected_item,
-                status__in=['pending', 'submitted', 'approved']  # Active statuses
+                status__in=['pending', 'submitted', 'approved']
             )
             
-            # If serial number is available, use it for more precise duplicate detection
             if item_serial:
                 existing_tickets = existing_tickets.filter(
                     models.Q(item_serial=item_serial) | models.Q(selected_item=selected_item)
@@ -1772,46 +1884,57 @@ def process_warranty_tickets(request):
             
             if existing_tickets.exists():
                 duplicate_tickets = list(existing_tickets.values_list('ticket_no', flat=True))
+                logger.info(f"Duplicate found for {selected_item}: {duplicate_tickets}")
                 duplicate_items.append({
                     'item': selected_item,
                     'serial': item_serial,
                     'existing_tickets': duplicate_tickets
                 })
-                continue  # Skip creating duplicate warranty ticket
+                continue
             
-            # Generate warranty ticket number for each item
+            # Generate warranty ticket number
             last_warranty = WarrantyTicket.objects.order_by('-id').first()
             if last_warranty:
                 try:
                     last_num = int(last_warranty.ticket_no.split('-')[-1])
                     new_ticket_no = f"WT-{last_num + 1:06d}"
-                except:
+                except Exception:
                     new_ticket_no = f"WT-{WarrantyTicket.objects.count() + 1:06d}"
             else:
                 new_ticket_no = "WT-000001"
             
-            # ✅ UPDATE WARRANTY STATUS IN ITEMS_DATA for each item
+            logger.info(f"Creating warranty ticket: {new_ticket_no}")
+            
+            # Update warranty status in items_data
             if item_index is not None and jobcard.items_data:
-                # Update the warranty status to show it's been sent to supplier
                 jobcard.items_data[item_index]['warranty_status'] = 'sent_to_supplier'
                 jobcard.items_data[item_index]['warranty_sent_date'] = timezone.now().isoformat()
                 jobcard.items_data[item_index]['warranty_supplier'] = supplier.name
                 jobcard.items_data[item_index]['warranty_ticket_no'] = new_ticket_no
                 jobcard.items_data[item_index]['warranty_processed'] = True
             
-            # Create warranty ticket for each item
-            warranty_ticket = WarrantyTicket.objects.create(
-                ticket_no=new_ticket_no,
-                jobcard=jobcard,
-                supplier=supplier,
-                selected_item=selected_item,
-                item_serial=item_serial,
-                status='submitted',
-                issue_description=f"Warranty claim for {selected_item}",
-                submitted_at=timezone.now()
-            )
+            # ✅ Create warranty ticket with purchase_order supplier
+            try:
+                warranty_ticket = WarrantyTicket.objects.create(
+                    ticket_no=new_ticket_no,
+                    jobcard=jobcard,
+                    supplier=supplier,  # This is purchase_order.Supplier
+                    selected_item=selected_item,
+                    item_serial=item_serial,
+                    status='submitted',
+                    issue_description=f"Warranty claim for {selected_item}",
+                    submitted_at=timezone.now()
+                )
+                logger.info(f"✅ Created warranty ticket: {new_ticket_no}")
+            except Exception as e:
+                logger.error(f"Error creating warranty ticket: {e}", exc_info=True)
+                error_msg = f"Error creating warranty ticket for {selected_item}: {str(e)}"
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({'success': False, 'error': error_msg})
+                messages.error(request, error_msg)
+                return redirect('app5:warranty_item')
             
-            # Create log entry for each item
+            # Create log entry
             WarrantyItemLog.objects.create(
                 warranty_ticket=warranty_ticket,
                 action='Created and Sent to Supplier',
@@ -1826,10 +1949,11 @@ def process_warranty_tickets(request):
                 'serial': item_serial
             })
         
-        # Save jobcard with updated warranty status for all items
+        # Save jobcard
         jobcard.save()
+        logger.info(f"Jobcard saved with {len(processed_items)} processed items")
         
-        # Handle response with duplicate information
+        # Prepare response
         response_data = {
             'success': True,
             'items_processed': len(processed_items),
@@ -1838,12 +1962,11 @@ def process_warranty_tickets(request):
             'jobcard_ticket': jobcard.ticket_no
         }
         
-        # Add duplicate information if any duplicates were found
         if duplicate_items:
             response_data['duplicate_items'] = duplicate_items
             response_data['has_duplicates'] = True
         
-        # ✅ Send WhatsApp notification for all processed items
+        # Send WhatsApp notification
         if created_tickets:
             try:
                 items_list = "\n".join([f"• {item['name']}" for item in processed_items])
@@ -1857,10 +1980,11 @@ def process_warranty_tickets(request):
                     f"*Date:* {timezone.now().strftime('%d-%m-%Y')}"
                 )
                 
-                # Add duplicate warning to WhatsApp if applicable
                 if duplicate_items:
-                    duplicate_list = "\n".join([f"• {item['item']} (Existing: {', '.join(item['existing_tickets'])})" 
-                                              for item in duplicate_items])
+                    duplicate_list = "\n".join([
+                        f"• {item['item']} (Existing: {', '.join(item['existing_tickets'])})" 
+                        for item in duplicate_items
+                    ])
                     message_text += f"\n\n⚠️ *Duplicates Skipped:*\n{duplicate_list}"
                 
                 whatsapp_api_base = "https://app.dxing.in/api/send/whatsapp"
@@ -1876,11 +2000,10 @@ def process_warranty_tickets(request):
             except Exception as e:
                 logger.debug(f"WhatsApp notification failed: {e}")
         
-        # Return JSON response for AJAX requests
+        # Return response
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse(response_data)
         
-        # Handle non-AJAX requests
         if duplicate_items:
             duplicate_message = "Some items were skipped due to existing warranty tickets: " + \
                               ", ".join([f"{item['item']} (Ticket: {', '.join(item['existing_tickets'])})" 
@@ -1896,14 +2019,16 @@ def process_warranty_tickets(request):
         return redirect('app5:warranty_ticket_list')
     
     except Exception as e:
+        import traceback
+        error_detail = traceback.format_exc()
+        logger.error(f"Error processing warranty items: {error_detail}")
+        
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return JsonResponse({
-                'success': False,
-                'error': str(e)
-            })
+            return JsonResponse({'success': False, 'error': str(e)})
         messages.error(request, f'Error processing warranty items: {str(e)}')
         return redirect('app5:warranty_item')
 
+# In views.py, update the warranty_ticket_list function
 def warranty_ticket_list(request):
     """
     Display list of all warranty tickets with filtering
@@ -1929,13 +2054,40 @@ def warranty_ticket_list(request):
     rejected_count = warranty_tickets.filter(status='rejected').count()
     completed_count = warranty_tickets.filter(status='completed').count()
     
-    # Get filter options
-    suppliers = Supplier.objects.all()
+    # ✅ FIXED: Get suppliers with proper error handling
+    suppliers = []
+    supplier_source = 'none'
+    
+    try:
+        # Try purchase_order suppliers first
+        from purchase_order.models import Supplier as POSupplier
+        suppliers = POSupplier.objects.filter(is_active=True).order_by('name')
+        supplier_source = 'purchase_order'
+    except ImportError:
+        try:
+            # Fallback to app5 suppliers
+            from .models import Supplier
+            field_names = [f.name for f in Supplier._meta.get_fields()]
+            
+            if 'is_active' in field_names:
+                # Field exists
+                suppliers = Supplier.objects.filter(is_active=True).order_by('name')
+            else:
+                # Field doesn't exist, get all suppliers
+                suppliers = Supplier.objects.all().order_by('name')
+                
+            supplier_source = 'app5'
+        except Exception as e:
+            logger.error(f"Error getting suppliers: {e}")
+            suppliers = []
+            supplier_source = 'none'
+    
     status_choices = WarrantyTicket.STATUS_CHOICES
     
     context = {
         'warranty_tickets': warranty_tickets,
         'suppliers': suppliers,
+        'supplier_source': supplier_source,
         'status_choices': status_choices,
         'current_status': status_filter,
         'current_supplier': supplier_filter,
