@@ -3,11 +3,17 @@
 
 {% block content %}
 <div class="container-fluid py-4">
-    <!-- Back Button -->
+    <!-- Dynamic Back Button -->
     <div class="mb-4">
-        <a href="{% url 'add_service_log' %}" class="btn btn-outline-primary">
-            <i class="fas fa-arrow-left me-2"></i>Back to Service Log
-        </a>
+        {% if request.GET.next %}
+            <a href="{{ request.GET.next }}" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left me-2"></i>Back to Previous Page
+            </a>
+        {% else %}
+            <a href="{% url 'add_service_log' %}" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left me-2"></i>Back to Service Log
+            </a>
+        {% endif %}
     </div>
 
     <!-- Customer Details Card -->
@@ -133,7 +139,6 @@
                             <div class="info-row">
                                 <div class="info-label">Installation Date:</div>
                                 <div class="info-value" id="installationDateDisplay">
-                                    <!-- Installation date will be populated by JavaScript -->
                                     {% if customer_data.installationdate %}
                                         {% if customer_data.installationdate != 'None' %}
                                             {{ customer_data.installationdate|date:"d-m-Y" }}
@@ -587,27 +592,22 @@ function formatInstallationDate() {
     const installationDateElement = document.getElementById('installationDateDisplay');
     const installationDate = '{{ customer_data.installationdate }}';
     
-    console.log('Raw installation date:', installationDate); // Debug log
+    console.log('Raw installation date:', installationDate);
     
     if (installationDate && installationDate !== 'None' && installationDate !== 'N/A') {
         try {
-            // Try to parse the date in multiple formats
             let parsedDate;
             
-            // If it's already a Date object string
             if (installationDate.includes('T')) {
                 parsedDate = new Date(installationDate);
             } 
-            // If it's in format "YYYY-MM-DD"
             else if (/^\d{4}-\d{2}-\d{2}$/.test(installationDate)) {
                 parsedDate = new Date(installationDate);
             }
-            // If it's in format "DD-MM-YYYY"
             else if (/^\d{2}-\d{2}-\d{4}$/.test(installationDate)) {
                 const parts = installationDate.split('-');
                 parsedDate = new Date(parts[2], parts[1] - 1, parts[0]);
             }
-            // Default fallback
             else {
                 parsedDate = new Date(installationDate);
             }
@@ -633,13 +633,12 @@ function formatInstallationDate() {
 
 function calculateCustomerAge() {
     const installationDate = '{{ customer_data.installationdate }}';
-    console.log('Age calculation - installation date:', installationDate); // Debug log
+    console.log('Age calculation - installation date:', installationDate);
     
     if (installationDate && installationDate !== 'None' && installationDate !== 'N/A') {
         try {
             let installDate;
             
-            // Try different date parsing methods
             if (installationDate.includes('T')) {
                 installDate = new Date(installationDate);
             } else if (/^\d{4}-\d{2}-\d{2}$/.test(installationDate)) {
@@ -666,7 +665,6 @@ function calculateCustomerAge() {
                 months += 12;
             }
             
-            // Adjust for days if needed
             if (today.getDate() < installDate.getDate()) {
                 months--;
                 if (months < 0) {
