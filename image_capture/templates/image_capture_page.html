@@ -6,7 +6,6 @@
   <title>Upload Image</title>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/exif-js/2.3.0/exif.min.js"></script>
   <style>
     body {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -40,16 +39,36 @@
       color: #718096;
       margin-bottom: 25px;
     }
-    .form-control {
-      border: 2px dashed #cbd5e0;
-      border-radius: 12px;
-      padding: 20px;
-      transition: all 0.3s ease;
-      cursor: pointer;
+    .upload-options {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
     }
-    .form-control:hover {
-      border-color: #667eea;
-      background-color: #f7fafc;
+    .upload-btn {
+      flex: 1;
+      padding: 15px;
+      border: 2px solid #667eea;
+      border-radius: 12px;
+      background: white;
+      color: #667eea;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+    .upload-btn:hover {
+      background: #667eea;
+      color: white;
+      transform: translateY(-2px);
+    }
+    .upload-btn i {
+      font-size: 24px;
+    }
+    .file-input {
+      display: none;
     }
     .btn-submit {
       background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
@@ -82,7 +101,6 @@
       max-height: 300px;
       object-fit: contain;
     }
-    
     .location-status {
       margin-top: 20px;
       padding: 18px;
@@ -143,20 +161,35 @@
       width: 30px;
       height: 30px;
     }
-    
     .loading-text {
       color: #718096;
       font-size: 14px;
       margin-top: 10px;
       font-style: italic;
     }
-
+    .info-note {
+      background: #e6f3ff;
+      border: 1px solid #4a90e2;
+      border-radius: 10px;
+      padding: 12px;
+      margin-top: 15px;
+      font-size: 13px;
+      color: #2c5aa0;
+      text-align: left;
+    }
+    .info-note i {
+      color: #4a90e2;
+      margin-right: 8px;
+    }
     @media (max-width: 576px) {
       .upload-container {
         padding: 30px 20px;
       }
       h3 {
         font-size: 22px;
+      }
+      .upload-options {
+        flex-direction: column;
       }
     }
   </style>
@@ -167,11 +200,23 @@
       <i class="fas fa-cloud-upload-alt"></i>
     </div>
     <h3>Upload Your Image</h3>
-    <p>Select an image from your gallery. We'll automatically detect its location.</p>
+    <p>Take a photo or select from gallery</p>
+
+    <div class="upload-options">
+      <label for="cameraInput" class="upload-btn">
+        <i class="fas fa-camera"></i>
+        <span>Take Photo</span>
+      </label>
+      <label for="galleryInput" class="upload-btn">
+        <i class="fas fa-images"></i>
+        <span>Choose from Gallery</span>
+      </label>
+    </div>
 
     <form method="POST" action="{% url 'submit_image' data.unique_id %}" id="uploadForm">
       {% csrf_token %}
-      <input type="file" id="galleryUpload" accept="image/*" class="form-control mb-3" required>
+      <input type="file" id="cameraInput" accept="image/*" capture="environment" class="file-input">
+      <input type="file" id="galleryInput" accept="image/*" class="file-input">
       <input type="hidden" name="image_data" id="image_data">
       <input type="hidden" name="latitude" id="latitude">
       <input type="hidden" name="longitude" id="longitude">
@@ -190,7 +235,12 @@
         <div class="spinner-border" role="status">
           <span class="visually-hidden">Loading...</span>
         </div>
-        <div class="loading-text">Processing image and extracting location...</div>
+        <div class="loading-text">Getting your location...</div>
+      </div>
+
+      <div class="info-note" id="infoNote" style="display: none;">
+        <i class="fas fa-info-circle"></i>
+        <strong>Note:</strong> We'll use your device's current location since the image doesn't contain GPS data.
       </div>
 
       <button type="submit" class="btn-submit" id="submitBtn">
@@ -200,7 +250,8 @@
   </div>
 
   <script>
-    const galleryUpload = document.getElementById('galleryUpload');
+    const cameraInput = document.getElementById('cameraInput');
+    const galleryInput = document.getElementById('galleryInput');
     const previewImage = document.getElementById('previewImage');
     const imageDataInput = document.getElementById('image_data');
     const locationStatus = document.getElementById('locationStatus');
@@ -210,6 +261,9 @@
     const processingSpinner = document.getElementById('processingSpinner');
     const submitBtn = document.getElementById('submitBtn');
     const uploadForm = document.getElementById('uploadForm');
+    const infoNote = document.getElementById('infoNote');
+
+    let locationObtained = false;
 
     function showLocationStatus(type, message, details = '') {
       locationStatus.style.display = 'block';
@@ -239,49 +293,44 @@
       }
     }
 
-    function convertDMSToDD(dms, ref) {
-      try {
-        let degrees, minutes, seconds;
-        
-        if (Array.isArray(dms) && dms.length === 3) {
-          degrees = (typeof dms[0] === 'number') ? dms[0] : (dms[0].numerator / dms[0].denominator);
-          minutes = (typeof dms[1] === 'number') ? dms[1] : (dms[1].numerator / dms[1].denominator);
-          seconds = (typeof dms[2] === 'number') ? dms[2] : (dms[2].numerator / dms[2].denominator);
-        } else {
-          console.error('Invalid DMS format:', dms);
-          return null;
+    function getCurrentLocation() {
+      return new Promise((resolve, reject) => {
+        if (!navigator.geolocation) {
+          reject(new Error('Geolocation not supported'));
+          return;
         }
-        
-        let dd = degrees + (minutes / 60) + (seconds / 3600);
-        
-        if (ref === "S" || ref === "W") {
-          dd = dd * -1;
-        }
-        
-        if (isNaN(dd) || !isFinite(dd)) {
-          console.error('Invalid coordinate calculation:', {dms, ref, result: dd});
-          return null;
-        }
-        
-        return dd;
-      } catch (error) {
-        console.error('Error converting DMS to DD:', error);
-        return null;
-      }
+
+        processingSpinner.style.display = 'block';
+        showLocationStatus('processing', 'Getting your location...', 'Please allow location access when prompted');
+
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const latitude = position.coords.latitude;
+            const longitude = position.coords.longitude;
+            resolve({ latitude, longitude });
+          },
+          (error) => {
+            console.error('Geolocation error:', error);
+            reject(error);
+          },
+          {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+          }
+        );
+      });
     }
 
-    galleryUpload.addEventListener('change', function(event) {
-      const file = event.target.files[0];
+    async function handleImageSelection(file) {
       if (!file) return;
 
       locationStatus.style.display = 'none';
       submitBtn.style.display = 'none';
-      processingSpinner.style.display = 'block';
-
-      showLocationStatus('processing', 'Processing image...', 'Reading location metadata from image');
+      infoNote.style.display = 'none';
+      locationObtained = false;
 
       const reader = new FileReader();
-
       reader.onload = function(e) {
         previewImage.src = e.target.result;
         previewImage.style.display = 'block';
@@ -289,80 +338,43 @@
       };
       reader.readAsDataURL(file);
 
-      let exifProcessed = false;
-      
-      const timeoutId = setTimeout(() => {
-        if (!exifProcessed) {
-          console.warn('EXIF processing timeout');
-          processingSpinner.style.display = 'none';
-          showLocationStatus(
-            'not-available',
-            'Location Not Available',
-            'Could not read GPS data from image. Our server will attempt to extract location.'
-          );
-          submitBtn.style.display = 'inline-block';
-        }
-      }, 8000);
+      try {
+        const location = await getCurrentLocation();
+        
+        document.getElementById('latitude').value = location.latitude.toFixed(8);
+        document.getElementById('longitude').value = location.longitude.toFixed(8);
 
-      EXIF.getData(file, function() {
-        exifProcessed = true;
-        clearTimeout(timeoutId);
+        processingSpinner.style.display = 'none';
+        showLocationStatus(
+          'detected',
+          'Location Detected',
+          `Coordinates: ${location.latitude.toFixed(6)}, ${location.longitude.toFixed(6)}`
+        );
+        
+        locationObtained = true;
+        submitBtn.style.display = 'inline-block';
+
+      } catch (error) {
+        console.error('Location error:', error);
         processingSpinner.style.display = 'none';
         
-        try {
-          const lat = EXIF.getTag(this, "GPSLatitude");
-          const lon = EXIF.getTag(this, "GPSLongitude");
-          const latRef = EXIF.getTag(this, "GPSLatitudeRef");
-          const lonRef = EXIF.getTag(this, "GPSLongitudeRef");
-
-          console.log('EXIF GPS Data:', {lat, lon, latRef, lonRef});
-
-          if (lat && lon && latRef && lonRef) {
-            const latitude = convertDMSToDD(lat, latRef);
-            const longitude = convertDMSToDD(lon, lonRef);
-
-            console.log('Converted coordinates:', {latitude, longitude});
-
-            if (latitude !== null && longitude !== null && 
-                !isNaN(latitude) && !isNaN(longitude) &&
-                isFinite(latitude) && isFinite(longitude) &&
-                Math.abs(latitude) <= 90 && Math.abs(longitude) <= 180) {
-              
-              document.getElementById('latitude').value = latitude.toFixed(8);
-              document.getElementById('longitude').value = longitude.toFixed(8);
-
-              showLocationStatus(
-                'detected',
-                'Location Detected',
-                `Coordinates: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`
-              );
-            } else {
-              console.error('Invalid coordinates:', {latitude, longitude});
-              showLocationStatus(
-                'not-available',
-                'Location Not Available',
-                'Invalid GPS data in image. Our server will attempt to extract location.'
-              );
-            }
-          } else {
-            console.warn('Missing GPS tags');
-            showLocationStatus(
-              'not-available',
-              'Location Not Available',
-              'No GPS data found in image. Our server will attempt to extract location.'
-            );
-          }
-        } catch (error) {
-          console.error('Error processing EXIF:', error);
-          showLocationStatus(
-            'not-available',
-            'Location Processing Error',
-            'Error reading GPS data. Our server will attempt to extract location.'
-          );
-        }
+        showLocationStatus(
+          'not-available',
+          'Location Permission Denied',
+          'Our server will try to extract location from the image, or you can enable location and try again.'
+        );
         
+        infoNote.style.display = 'block';
         submitBtn.style.display = 'inline-block';
-      });
+      }
+    }
+
+    cameraInput.addEventListener('change', function(event) {
+      handleImageSelection(event.target.files[0]);
+    });
+
+    galleryInput.addEventListener('change', function(event) {
+      handleImageSelection(event.target.files[0]);
     });
 
     uploadForm.addEventListener('submit', function(e) {
