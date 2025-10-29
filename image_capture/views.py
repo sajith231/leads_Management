@@ -214,6 +214,10 @@ def image_capture_form(request):
         response = requests.get(api_url, timeout=10)
         if response.status_code == 200:
             customers = response.json()
+
+            # ✅ Sort customers alphabetically by name (case-insensitive)
+            customers.sort(key=lambda x: x.get("name", "").lower())
+
         else:
             logging.error(f"Failed to fetch clients: {response.status_code}")
     except Exception as e:
@@ -254,6 +258,7 @@ def image_capture_form(request):
             "customers": customers,
         },
     )
+
 
 
 # ------------------------------------------------------------------
