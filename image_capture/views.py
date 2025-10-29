@@ -165,9 +165,10 @@ def _get_location_name(latitude, longitude):
 # Helper: send OTP through DxIng WhatsApp gateway
 # ------------------------------------------------------------------
 import threading
-import requests
+
+import threading
 import logging
-from urllib.parse import quote_plus
+import requests
 
 def _send_otp_via_whatsapp(phone: str, otp: str) -> None:
     """
@@ -175,41 +176,26 @@ def _send_otp_via_whatsapp(phone: str, otp: str) -> None:
     """
 
     def send():
-        # Ensure phone number is in international format (e.g. 91XXXXXXXXXX)
-        if len(phone) == 10:
-            phone_number = "91" + phone
-        else:
-            phone_number = phone
-
-        # Prepare the message with proper URL encoding
+        # Prepare the message
         message = f"Your verification code is {otp}. Valid for 5 minutes."
-        encoded_message = quote_plus(message)
 
-        # Build the URL with the new API format
+        # Construct the updated DxIng API URL
         url = (
             "https://app.dxing.in/api/send/whatsapp"
             "?secret=7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
             "&account=1761365422812b4ba287f5ee0bc9d43bbf5bbe87fb68fc4daea92d8"
-            f"&recipient={phone_number}"
+            f"&recipient={phone}"
             "&type=text"
-            f"&message={encoded_message}"
+            f"&message={message}"
             "&priority=1"
         )
 
         try:
-            response = requests.get(url, timeout=10)
-            if response.status_code == 200:
-                logging.info(f"WhatsApp OTP sent successfully to {phone_number}: {response.text}")
-            else:
-                logging.warning(f"WhatsApp OTP response status {response.status_code} for {phone_number}: {response.text}")
-        except requests.exceptions.Timeout:
-            logging.error(f"WhatsApp send timeout for {phone_number}")
-        except requests.exceptions.RequestException as e:
-            logging.error(f"WhatsApp send failed for {phone_number}: {e}")
+            requests.get(url, timeout=5)
         except Exception as e:
             logging.error(f"Unexpected error sending WhatsApp OTP to {phone_number}: {e}")
 
-    # Start background thread
+    # Run send() in a background thread
     threading.Thread(target=send, daemon=True).start()
 
 
@@ -229,6 +215,10 @@ def image_capture_form(request):
         response = requests.get(api_url, timeout=10)
         if response.status_code == 200:
             customers = response.json()
+
+            # ✅ Sort customers alphabetically by name (case-insensitive)
+            customers.sort(key=lambda x: x.get("name", "").lower())
+
         else:
             logging.error(f"Failed to fetch clients: {response.status_code}")
     except Exception as e:
@@ -269,6 +259,7 @@ def image_capture_form(request):
             "customers": customers,
         },
     )
+
 
 
 # ------------------------------------------------------------------
