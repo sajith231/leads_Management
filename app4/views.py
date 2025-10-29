@@ -849,7 +849,7 @@ def collections_list(request):
     filtered_count = collections.count()
     filtered_total_amount = collections.aggregate(Sum('amount'))['amount__sum'] or 0
 
-    # "This Month" count — based on full Collection data
+    # "This Month" count – based on full Collection data
     today = timezone.now().date()
     this_month_count = Collection.objects.filter(
         created_at__year=today.year,
@@ -861,10 +861,25 @@ def collections_list(request):
     verified_count = collections.filter(status='verified').count()
     multiple_entry_count = collections.filter(status='multiple entry').count()
 
-    # Pagination
-    paginator = Paginator(collections, 10)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
+    # Get items per page from query parameter (default: 10)
+    items_per_page = request.GET.get('per_page', '10')
+    
+    # Handle "Show All" option
+    if items_per_page == 'all':
+        page_obj = collections
+        is_paginated = False
+    else:
+        try:
+            items_per_page = int(items_per_page)
+            if items_per_page < 1:
+                items_per_page = 10
+        except ValueError:
+            items_per_page = 10
+        
+        paginator = Paginator(collections, items_per_page)
+        page_number = request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+        is_paginated = page_obj.has_other_pages()
 
     # Render to template
     return render(request, 'collections_list.html', {
@@ -875,7 +890,7 @@ def collections_list(request):
         'pending_count': pending_count,
         'verified_count': verified_count,
         'multiple_entry_count': multiple_entry_count,
-        'is_paginated': page_obj.has_other_pages(),
+        'is_paginated': page_obj.has_other_pages() if hasattr(page_obj, 'has_other_pages') else False,
         'page_obj': page_obj,
     }) 
 
