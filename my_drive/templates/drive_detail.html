@@ -420,42 +420,75 @@
 
 
 
-<!-- Search bar above the table -->
-<div style="margin-bottom: 12px; display: flex; justify-content: flex-end; gap: 8px; align-items: center;">
-  <input
-    type="text"
-    id="fileSearch"
-    placeholder="🔍 Search files..."
-    style="
-      padding: 8px 12px;
-      border: 1px solid #0d3f8a;
-      border-radius: 8px;
-      font-size: 14px;
-      width: 260px;
-    "
-  >
-  <button
-    id="clearSearch"
-    style="
-      padding: 8px 14px;
-      background: #e5e7eb;
-      border: none;
-      border-radius: 8px;
-      font-weight: 600;
-      cursor: pointer;
-      color: #374151;
-      transition: 0.2s;
-    "
-  >
-    Clear
-  </button>
+<!-- Search bar and Row count selector -->
+<div style="margin-bottom: 12px; display: flex; justify-content: space-between; gap: 8px; align-items: center;">
+  <!-- Row count selector (LEFT) -->
+  <div style="display: flex; align-items: center; gap: 10px;">
+    <label for="rowCount" style="font-weight: 600; color: #374151; font-size: 14px;">
+      Show rows:
+    </label>
+    <select 
+      id="rowCount" 
+      onchange="location.href='?per_page=' + this.value + '{% if request.GET.page %}&page=1{% endif %}'"
+      style="
+        padding: 8px 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        color: #374151;
+        background: #fff;
+        cursor: pointer;
+        transition: all 0.2s;
+      "
+      onmouseover="this.style.borderColor='#2563eb'"
+      onmouseout="this.style.borderColor='#d1d5db'"
+    >
+      <option value="10" {% if request.GET.per_page == '10' or not request.GET.per_page %}selected{% endif %}>10</option>
+      <option value="15" {% if request.GET.per_page == '15' %}selected{% endif %}>15</option>
+      <option value="25" {% if request.GET.per_page == '25' %}selected{% endif %}>25</option>
+      <option value="50" {% if request.GET.per_page == '50' %}selected{% endif %}>50</option>
+      <option value="100" {% if request.GET.per_page == '100' %}selected{% endif %}>100</option>
+    </select>
+  </div>
+
+  <!-- Search bar (RIGHT) -->
+  <div style="display: flex; gap: 8px; align-items: center;">
+    <input
+      type="text"
+      id="fileSearch"
+      placeholder="🔍 Search files..."
+      style="
+        padding: 8px 12px;
+        border: 1px solid #0d3f8a;
+        border-radius: 8px;
+        font-size: 14px;
+        width: 260px;
+      "
+    >
+    <button
+      id="clearSearch"
+      style="
+        padding: 8px 14px;
+        background: #e5e7eb;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        color: #374151;
+        transition: 0.2s;
+      "
+    >
+      Clear
+    </button>
+  </div>
 </div>
 
 
 {% if paginator.num_pages > 1 %}
   <div style="display:flex; justify-content:center; align-items:center; margin:15px 0 20px; gap:14px;">
     {% if page_obj.has_previous %}
-      <a href="?page={{ page_obj.previous_page_number }}"
+      <a href="?per_page={{ request.GET.per_page|default:'10' }}&page={{ page_obj.previous_page_number }}"
          style="text-decoration:none; color:#2563eb; padding:8px 12px; border-radius:6px; border:1px solid #e6eefb;">
         Previous
       </a>
@@ -468,7 +501,7 @@
     </span>
 
     {% if page_obj.has_next %}
-      <a href="?page={{ page_obj.next_page_number }}"
+      <a href="?per_page={{ request.GET.per_page|default:'10' }}&page={{ page_obj.next_page_number }}"
          style="text-decoration:none; color:#2563eb; padding:8px 12px; border-radius:6px; border:1px solid #e6eefb;">
         Next
       </a>
@@ -541,7 +574,7 @@
 <div id="createSubfolderModal">
   <div class="modal-card">
     <h3>Create New Subfolder</h3>
-    <p>Enter a name for your new subfolder inside “{{ folder.name }}”</p>
+    <p>Enter a name for your new subfolder inside "{{ folder.name }}"</p>
     <form method="POST" action="{% url 'subfolder_add' folder.id %}">
       {% csrf_token %}
       <input type="text" name="folderName" placeholder="Subfolder name" required>
