@@ -27,6 +27,13 @@
                 <div class="col-md-6 text-end">
                     <label class="form-label me-2">Select Month</label>
                     <input type="month" class="form-control d-inline-block w-auto" id="monthFilter" value="{{ selected_month }}">
+
+                    <select class="form-select d-inline-block w-auto ms-3" id="statusFilter" onchange="filterByStatus()">
+                        <option value="active" selected>Active Users</option>
+                        <option value="inactive">Inactive Users</option>
+                        <option value="all">All Users</option>
+                    </select>
+
                     
                     <!-- TODAY button with dropdown -->
                     <div class="btn-group ms-3" role="group">
@@ -218,7 +225,7 @@
                     </thead>
                     <tbody>
                         {% for emp_data in employee_requests %}
-                        <tr class="employee-row" data-employee-id="{{ emp_data.employee.id }}">
+                        <tr class="employee-row"data-employee-id="{{ emp_data.employee.id }}"data-status="{{ emp_data.employee.user.status|default:'active' }}">
                             <td>{{ forloop.counter }}</td>
                             <td>{{ emp_data.employee.name }}</td>
                             <td>{{ emp_data.employee.user.userid|default:"-" }}</td>
@@ -678,6 +685,26 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize tooltips
     var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
     tooltipTriggerList.map(function(el){ return new bootstrap.Tooltip(el); });
+});
+</script>
+<script>
+function filterByStatus() {
+    const selectedStatus = document.getElementById("statusFilter").value;
+    const rows = document.querySelectorAll(".employee-row");
+
+    rows.forEach(row => {
+        const status = row.getAttribute("data-status") || "active";
+        if (selectedStatus === "all" || status === selectedStatus) {
+            row.style.display = "";
+        } else {
+            row.style.display = "none";
+        }
+    });
+}
+
+// Apply default "active" filter on page load
+document.addEventListener("DOMContentLoaded", function() {
+    filterByStatus();
 });
 </script>
 
