@@ -283,7 +283,7 @@
     <thead>
       <tr>
         <th>No.</th>
-        <th>Date</th>
+        <!-- <th>Date</th> -->
         <th>Folder Name</th>
         <th>Files</th>
         <th>Edit</th>
@@ -291,50 +291,50 @@
       </tr>
     </thead>
     <tbody>
-      {% for folder in folders %}
-      <tr>
-        <td>{{ forloop.counter }}</td>
-        <td>{{ folder.created_at|date:"M d, Y" }}</td>
-        <td><strong>{{ folder.name }}</strong></td>
+  {% for folder in folders|dictsort:"name" %}
+  <tr>
+    <td>{{ forloop.counter }}</td>
+    <!-- <td>{{ folder.created_at|date:"M d, Y" }}</td> -->
+    <td><strong>{{ folder.name }}</strong></td>
 
-        <td>
-          <a class="file-link" href="{% url 'drive_detail' folder.id %}" title="Open folder">
-            📁
-            <span class="badge">{{ folder.files.count }}</span>
-          </a>
-        </td>
+    <td>
+      <a class="file-link" href="{% url 'drive_detail' folder.id %}" title="Open folder">
+        📁
+        <span class="badge">{{ folder.files.count }}</span>
+      </a>
+    </td>
 
-        <!-- Edit button: visible only if user has drive_edit permission or is admin/superuser -->
-        <td>
-          {% if 'drive_edit' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
-            <a href="{% url 'drive_edit' folder.id %}" class="action-btn edit-btn" title="Edit">
-              <i class="fa-solid fa-pen-to-square"></i>
-            </a>
-          {% else %}
-            <span style="display:inline-block; width:32px; height:32px;"></span>
-          {% endif %}
-        </td>
+    <!-- Edit button: visible only if user has drive_edit permission or is admin/superuser -->
+    <td>
+      {% if 'drive_edit' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+        <a href="{% url 'drive_edit' folder.id %}" class="action-btn edit-btn" title="Edit">
+          <i class="fa-solid fa-pen-to-square"></i>
+        </a>
+      {% else %}
+        <span style="display:inline-block; width:32px; height:32px;"></span>
+      {% endif %}
+    </td>
 
-        <!-- Delete button: visible only if user has drive_delete permission or is admin/superuser -->
-        <td>
-          {% if 'drive_delete' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
-            <a href="{% url 'drive_delete' folder.id %}"
-               class="action-btn delete-btn"
-               onclick="return handleFolderDelete({{ folder.files.count }}, {{ folder.subfolders.count }});"
-               title="Delete folder">
-              <i class="fa-solid fa-trash"></i>
-            </a>
-          {% else %}
-            <span style="display:inline-block; width:32px; height:32px;"></span>
-          {% endif %}
-        </td>
-      </tr>
-      {% empty %}
-      <tr>
-        <td colspan="6" class="empty-state">No folders created yet.</td>
-      </tr>
-      {% endfor %}
-    </tbody>
+    <!-- Delete button: visible only if user has drive_delete permission or is admin/superuser -->
+    <td>
+      {% if 'drive_delete' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+        <a href="{% url 'drive_delete' folder.id %}"
+           class="action-btn delete-btn"
+           onclick="return handleFolderDelete({{ folder.files.count }}, {{ folder.subfolders.count }});"
+           title="Delete folder">
+          <i class="fa-solid fa-trash"></i>
+        </a>
+      {% else %}
+        <span style="display:inline-block; width:32px; height:32px;"></span>
+      {% endif %}
+    </td>
+  </tr>
+  {% empty %}
+  <tr>
+    <td colspan="6" class="empty-state">No folders created yet.</td>
+  </tr>
+  {% endfor %}
+</tbody>
   </table>
 
 </div>
