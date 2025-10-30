@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -162,16 +161,6 @@
       text-decoration: underline;
     }
 
-    .location-badge {
-      background: rgba(255, 255, 255, 0.2);
-      padding: 8px 12px;
-      border-radius: 8px;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      margin-top: 10px;
-    }
-
     @media (max-width: 576px) {
       .verification-container {
         padding: 30px 20px;
@@ -202,17 +191,6 @@
     <div class="customer-info">
       <h5><i class="fas fa-user"></i>{{ data.customer_name }}</h5>
       <p><i class="fas fa-phone"></i>+91 {{ data.phone_number }}</p>
-      {% if data.location_name %}
-        <div class="location-badge">
-          <i class="fas fa-map-marker-alt"></i>
-          <span>{{ data.location_name }}</span>
-        </div>
-      {% elif data.latitude and data.longitude %}
-        <div class="location-badge">
-          <i class="fas fa-map-marker-alt"></i>
-          <span>{{ data.latitude }}, {{ data.longitude }}</span>
-        </div>
-      {% endif %}
     </div>
 
     <!-- Success Message -->
@@ -343,4 +321,4 @@
     });
   </script>
 </body>
-</html>
+</html> 
