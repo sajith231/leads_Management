@@ -77,8 +77,8 @@
         .table th {
             font-weight: 600;
             padding: 15px 12px;
-             border-right: 1px solid #bca3a3;
-             border-bottom: 1px solid #bca3a3;
+            border-right: 1px solid #bca3a3;
+            border-bottom: 1px solid #bca3a3;
             border-left: 1px solid #bca3a3;
             border-top: 1px solid #bca3a3;
             border-bottom: 2px solid var(--primary);
@@ -247,6 +247,29 @@
             font-size: 0.75rem;
             font-weight: 600;
         }
+
+        .invoice-amount {
+            font-weight: bold;
+            color: #28a745;
+        }
+
+        .free-service-indicator {
+            background: #28a745;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            margin-left: 5px;
+        }
+
+        .payable-service-indicator {
+            background: #007bff;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            margin-left: 5px;
+        }
     </style>
 </head>
 <body>
@@ -261,9 +284,6 @@
                     <a href="{% url 'app5:service_billing_view' %}" class="btn btn-light">
                         <i class="fas fa-plus-circle me-2"></i>New Invoice
                     </a>
-                    <!-- <a href="{% url 'app5:jobcard_list' %}" class="btn btn-outline-light">
-                        <i class="fas fa-list me-2"></i>Job Cards
-                    </a> -->
                 </div>
             </div>
         </div>
@@ -343,23 +363,21 @@
                     <thead>
                         <tr>
                             <th>Sl.No.</th>
-                             <th>Invoice Date</th>
+                            <th>Invoice Date</th>
                             <th>Ticket No</th>
                             <th>Customer Details</th>
-                             <th>Created By</th>
-                             <th>Items Name</th>
-                             
-                               
-                              <th>Invoice Status</th>
-                            
-                           <th>Actions</th>
+                            <th>Created By</th>
+                            <th>Items Name</th>
+                            <!-- <th>Invoice Amount</th> -->
+                            <th>Invoice Status</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
     {% for jobcard in jobcards %}
     <tr class="jobcard-row" data-status="{{ jobcard.status }}" data-date="{{ jobcard.created_at|date:'Y-m-d' }}">
         <td>{{ forloop.counter }}</td>
-          <td>
+        <td>
             {% if jobcard.has_invoice %}
                 <small>{{ jobcard.invoice.date|date:"d M Y" }}</small>
                 <br>
@@ -400,7 +418,6 @@
                 <span class="text-muted">No items</span>
             {% endif %}
         </td>
-     
         
         <td>
             {% if jobcard.has_invoice %}
@@ -410,7 +427,6 @@
                 <span class="badge bg-secondary">Not Invoiced</span>
             {% endif %}
         </td>
-      
         <td>
             <div class="action-buttons">
                 {% if not jobcard.has_invoice %}
@@ -609,7 +625,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     body: JSON.stringify({
                         ticket_no: ticketNo,
                         action: 'completed',
-                        update_type: 'invoice_status'  // Add this to distinguish from jobcard status
+                        update_type: 'invoice_status'
                     })
                 })
                 .then(response => response.json())
@@ -617,7 +633,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (data.success) {
                         // Update the invoice status badge in the table
                         const row = this.closest('tr');
-                        const invoiceStatusCell = row.querySelector('td:nth-child(7)');
+                        const invoiceStatusCell = row.querySelector('td:nth-child(8)');
                         if (invoiceStatusCell) {
                             invoiceStatusCell.innerHTML = `
                                 <span class="badge bg-success">Completed</span>
@@ -691,7 +707,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     body: JSON.stringify({
                         ticket_no: ticketNo,
                         action: 'returned',
-                        update_type: 'invoice_status'  // Add this to distinguish from jobcard status
+                        update_type: 'invoice_status'
                     })
                 })
                 .then(response => response.json())
@@ -699,7 +715,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (data.success) {
                         // Update the invoice status badge in the table
                         const row = this.closest('tr');
-                        const invoiceStatusCell = row.querySelector('td:nth-child(7)');
+                        const invoiceStatusCell = row.querySelector('td:nth-child(8)');
                         if (invoiceStatusCell) {
                             invoiceStatusCell.innerHTML = `
                                 <span class="badge bg-info">Returned</span>
@@ -786,7 +802,7 @@ function initializeButtonStates() {
     
     rows.forEach(row => {
         const status = row.getAttribute('data-status');
-        const hasInvoice = row.querySelector('.badge.bg-success, .badge.bg-info') !== null; // Check if invoiced badge exists
+        const hasInvoice = row.querySelector('.badge.bg-success, .badge.bg-info') !== null;
         
         const completeBtn = row.querySelector('.complete-btn');
         const returnBtn = row.querySelector('.return-btn');

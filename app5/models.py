@@ -424,7 +424,7 @@ class ServiceBilling(models.Model):
     ticket_no = models.CharField(max_length=20)
     date = models.DateField(default=timezone.now)
     customer_name = models.CharField(max_length=100)
-    customer_contact = models.CharField(max_length=15)
+    customer_contact = models.CharField(max_length=25)
     customer_address = models.TextField()
     technician = models.CharField(max_length=100)
     
@@ -458,12 +458,22 @@ class ServiceBilling(models.Model):
         self.save()
 
 class ServiceItem(models.Model):
+    SERVICE_STATUS_CHOICES = [
+        ('Payment', 'Payment'),
+        ('Free', 'Free'),
+    ]
+    
     billing = models.ForeignKey(ServiceBilling, on_delete=models.CASCADE, related_name='service_items')
     item_name = models.CharField(max_length=100)
     serial_no = models.CharField(max_length=50, blank=True, null=True)
     service_description = models.TextField()
     charge = models.DecimalField(max_digits=10, decimal_places=2)
-    
+    service_status = models.CharField(
+        max_length=20, 
+        choices=SERVICE_STATUS_CHOICES, 
+        default='Payment',
+        help_text="Whether this service is paid or free"
+    )
     def __str__(self):
         return f"{self.item_name} - ₹{self.charge}"   
 
