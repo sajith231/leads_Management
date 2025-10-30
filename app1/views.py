@@ -2882,51 +2882,93 @@ from django.views.decorators.csrf import csrf_exempt
 import json
 from .models import Employee, Attendance
 
+@login_required
 def attendance(request):
-    employees = Employee.objects.select_related('user').filter(
-        status='active'  # Add this filter to get only active employees
-    )
-    
-    today = timezone.now()
-    current_month = today.month
-    current_year = today.year
-    
-    # Get all attendance records for the current month
-    attendance_records = Attendance.objects.filter(
-        date__year=current_year,
-        date__month=current_month
-    ).select_related('employee')
+    """
+    Attendance page with user status filtering and month selection.
 
-    # Create a dictionary to store attendance data
+    Query params:
+      - status_filter: 'all' | 'active' | 'inactive'   (default: 'all')
+      - month: 'YYYY-MM'                                (default: current month)
+    """
+    # ---- Filters from request ----
+    status_filter = request.GET.get('status_filter', 'all').lower()
+    month_param = request.GET.get('month')
+
+    # Determine the month/year to show
+    if month_param:
+        # Expecting 'YYYY-MM'
+        try:
+            month_dt = datetime.strptime(month_param, "%Y-%m")
+        except ValueError:
+            # Fallback to "now" if bad input
+            month_dt = timezone.localtime()
+    else:
+        month_dt = timezone.localtime()
+
+    current_year = month_dt.year
+    current_month_num = month_dt.month  # 1..12
+    days_in_month = monthrange(current_year, current_month_num)[1]
+
+    # ---- Employees (with status filter) ----
+    employees_qs = Employee.objects.select_related('user')
+    if status_filter in ("active", "inactive"):
+        # Status is on the related User model
+        employees_qs = employees_qs.filter(user__status=status_filter)
+
+    employees = employees_qs
+
+    # ---- Attendance records for the selected month ----
+    attendance_records = (
+        Attendance.objects
+        .filter(date__year=current_year, date__month=current_month_num)
+        .select_related('employee')
+    )
+
+    # ---- Build attendance_data: { employee_id: { day: {...} } } ----
     attendance_data = {}
     for record in attendance_records:
-        employee_id = str(record.employee_id)  # Convert to string for JSON serialization
+        employee_id = str(record.employee_id)  # JSON-friendly key
         if employee_id not in attendance_data:
             attendance_data[employee_id] = {}
 
-        day = str(record.date.day)
-        
-        # Determine attendance status
-        status = record.status if record.status else 'initial'
+        day_key = str(record.date.day)
 
-        attendance_data[employee_id][day] = {
+        status = record.status if record.status else 'initial'
+        attendance_data[employee_id][day_key] = {
             'status': status,
             'punch_in': record.punch_in.isoformat() if record.punch_in else None,
-            'punch_out': record.punch_out.isoformat() if record.punch_out else None
+            'punch_out': record.punch_out.isoformat() if record.punch_out else None,
         }
 
-    # Calculate total days in current month
-    from calendar import monthrange
-    days_in_month = monthrange(current_year, current_month)[1]
+    # Today (for highlighting, optional)
+    today_local = timezone.localtime()
+    today_day = today_local.day if (today_local.year == current_year and today_local.month == current_month_num) else None
+
+    # For templates that want both "YYYY" + "MM" separately and an <input type="month"> value
+    current_month_for_input = f"{current_year:04d}-{current_month_num:02d}"  # e.g., "2025-10"
+    current_month_two_digit = f"{current_month_num:02d}"                     # e.g., "10"
+    days_of_month = list(range(1, days_in_month + 1))
 
     context = {
         'employees': employees,
         'attendance_data': json.dumps(attendance_data),
-        'current_month': today.strftime('%B %Y'),
+        # For <input type="month" value="">
+        'current_month_input': current_month_for_input,
+
+        # For date construction like {{ current_year }}-{{ current_month }}-{{ day }}
+        'current_year': current_year,
+        'current_month': current_month_two_digit,
+
+        # For loops / counts
         'days_in_month': days_in_month,
-        'today': today.day,
+        'days_of_month': days_of_month,   # if your template uses this name
         'range': range(1, days_in_month + 1),
-        'is_superuser': request.user.is_superuser  # Add this line
+
+        # UI helpers
+        'today': today_day,
+        'is_superuser': request.user.is_superuser,
+        'status_filter': status_filter,   # so the template can keep the dropdown selection
     }
 
     return render(request, 'attendance.html', context)
