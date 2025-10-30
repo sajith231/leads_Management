@@ -70,24 +70,18 @@
                 </div>
               </div>
 
-              <!-- BRANCH DROPDOWN (manual selection) -->
-              <div class="col-12 col-md-6">
-                <label for="branch" class="form-label fs-6">
-                  <i class="fas fa-building me-2"></i>Branch <span class="text-danger">*</span>
-                </label>
-                <select class="form-select form-select-lg" id="branch" name="branch" required>
-                  <option value="" disabled selected>Select branch</option>
-                  <option>IMC Mukkam</option>
-                  <option>IMC Merged</option>
-                  <option>IMCB HO</option>
-                  <option>IMCB DEV</option>
-                  <option>Sysmac Info System</option>
-                  <option>Sysmac Computers</option>
-                  <option>DQ Technologies</option>
-                </select>
-              </div>
-            </div>
-
+            <!-- BRANCH DROPDOWN (dynamic from departments) -->
+<div class="col-12 col-md-6">
+  <label for="branch" class="form-label fs-6">
+    <i class="fas fa-building me-2"></i>Branch <span class="text-danger">*</span>
+  </label>
+  <select class="form-select form-select-lg" id="branch" name="branch" required>
+    <option value="" disabled selected>Select branch</option>
+    {% for dept in departments %}
+      <option value="{{ dept.name }}">{{ dept.name }}</option>
+    {% endfor %}
+  </select>
+</div>
             <!-- =====  NEW : Collection Type  ===== -->
            <div class="row mb-4">
   <div class="col-12">

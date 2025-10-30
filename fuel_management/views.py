@@ -11,6 +11,9 @@ from app1.models import User
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.contrib.auth import get_user_model
+from django.db.models import Q, F
+from django.db.models.functions import Coalesce
+from django.core.paginator import Paginator
 
 User = get_user_model()
 
@@ -307,38 +310,32 @@ def vehicle_delete(request, vehicle_id):
 
 
 # Fuel managements
-def fuel_management(request):
-    """Display list of all fuel entries with search/filter support."""
-    fuel_entries = FuelEntry.objects.all().order_by('-date', '-id')
 
-    # --- 1. text search ------------------------------------------------------
+def fuel_management(request):
+    """
+    List trips with filtering + stable 'most recent first' ordering:
+    - Order by date DESC
+    - Then by (end_time OR start_time) DESC
+    - Then by id DESC
+    Includes pagination and same filters as before.
+    """
+    fuel_entries = FuelEntry.objects.all()
+
+    # ---- filters ----
     search_text = request.GET.get('search', '').strip()
     if search_text:
-        # vehicle number (text)
         text_q = Q(vehicle__vehicle_number__icontains=search_text)
-
-        # distance & cost – only if the input is a valid number
-        if search_text.isdigit():
-            text_q |= Q(distance_traveled=int(search_text))
-            text_q |= Q(fuel_cost=int(search_text))
-        else:
-            # accept floats like “120.5”
-            try:
-                val = float(search_text)
-                text_q |= Q(distance_traveled=val)
-                text_q |= Q(fuel_cost=val)
-            except ValueError:
-                pass          # not numeric – ignore these fields
-
+        try:
+            val = float(search_text)
+            text_q |= Q(distance_traveled=val) | Q(fuel_cost=val)
+        except ValueError:
+            pass
         fuel_entries = fuel_entries.filter(text_q)
 
-    # --- 2. traveller filter -------------------------------------------------
     traveler = request.GET.get('traveler', '').strip()
     if traveler:
-        fuel_entries = fuel_entries.filter(
-            travelled_by__username__icontains=traveler)
+        fuel_entries = fuel_entries.filter(travelled_by__username__icontains=traveler)
 
-    # --- 3. date filters -----------------------------------------------------
     date_from = request.GET.get('date_from')
     date_to = request.GET.get('date_to')
     if date_from:
@@ -346,82 +343,75 @@ def fuel_management(request):
     if date_to:
         fuel_entries = fuel_entries.filter(date__lte=date_to)
 
-    # --- 4. pagination (unchanged) ------------------------------------------
-    paginator = Paginator(fuel_entries, 10)
-    page_number = request.GET.get('page', 1)
-    page_obj = paginator.get_page(page_number)
+    # ---- stable recent-first ordering ----
+    # Use end_time when present, else start_time (open trips).
+    fuel_entries = fuel_entries.annotate(
+        sort_time=Coalesce('end_time', 'start_time')
+    ).order_by('-date', F('sort_time').desc(nulls_last=True), '-id')
 
-    return render(request, 'fuel_management.html',
-                  {'fuel_entries': page_obj, 'page_obj': page_obj})
+    # ---- pagination ----
+    paginator = Paginator(fuel_entries, 10)  # 10 per page
+    page_obj = paginator.get_page(request.GET.get('page', 1))
 
+    return render(request, 'fuel_management.html', {'page_obj': page_obj})
 
 @login_required
 def fuel_enter(request):
-    """Handle fuel entry form submission - START of trip only."""
+    """
+    Start a trip and return to the listing so End Trip can be done from there.
+    """
     if request.method == 'POST':
         try:
-            # Get vehicle from form
-            vehicle_id = request.POST['vehicle']
-            vehicle = get_object_or_404(Vehicle, id=vehicle_id)
-
-            # Get the authenticated user
+            vehicle = get_object_or_404(Vehicle, id=request.POST['vehicle'])
             user = request.user
-            if user.is_authenticated:
-                # Create initial trip entry with start data only
-                fuel_entry = FuelEntry.objects.create(
-                    vehicle=vehicle,
-                    travelled_by=user,  # Set logged-in user
-                    date=request.POST['date'],
-                    start_time=request.POST['start_time'],
-                    trip_from="Trip Started",
-                    trip_to="In Progress",
-                    fuel_cost=request.POST['fuel_cost'],
-                    odo_start_image=request.FILES['odo_start_image'],
-                    odo_start_reading=request.POST['odo_start_reading'],
-                    odo_end_reading=request.POST['odo_start_reading'],
-                )
-                messages.success(request, "Trip started successfully. Complete the trip by adding end details.")
-                return redirect('fuel_complete_trip', entry_id=fuel_entry.id)
-            else:
-                messages.error(request, "User authentication failed. Please log in again.")
-                return redirect('fuel_enter')
-
+            FuelEntry.objects.create(
+                vehicle=vehicle,
+                travelled_by=user if user.is_authenticated else None,
+                date=request.POST['date'],
+                start_time=request.POST['start_time'],
+                trip_from="Trip Started",
+                trip_to="In Progress",
+                fuel_cost=request.POST.get('fuel_cost', 0) or 0,
+                odo_start_image=request.FILES['odo_start_image'],
+                odo_start_reading=request.POST['odo_start_reading'],
+                # keep end reading same as start initially → "open"
+                odo_end_reading=request.POST['odo_start_reading'],
+            )
+            messages.success(request, "Trip started. You can end it later from Fuel Management → End Trip.")
+            return redirect('fuel_management')
         except Exception as e:
             messages.error(request, f"Error starting trip: {str(e)}")
             return redirect('fuel_enter')
 
-    # GET request - show form with vehicles
     vehicles = Vehicle.objects.all()
-    last_odometer = FuelEntry.get_last_odometer_reading() if hasattr(FuelEntry, 'get_last_odometer_reading') else None
-    return render(request, 'fuel_entre.html', {
-        'last_odometer': last_odometer,
-        'vehicles': vehicles
-    })
-
+    return render(request, 'fuel_entre.html', {'vehicles': vehicles})
 
 @login_required
 def fuel_complete_trip(request, entry_id):
-    """Complete the trip by adding end details."""
-    fuel_entry = get_object_or_404(FuelEntry, id=entry_id)
+    """
+    Finish a previously-started trip.
+    """
+    entry = get_object_or_404(FuelEntry, id=entry_id)
 
     if request.method == 'POST':
         try:
-            fuel_entry.trip_from = request.POST.get('trip_from', '').strip()
-            fuel_entry.trip_to = request.POST.get('trip_to', '').strip()
-            fuel_entry.odo_end_reading = request.POST.get('odo_end_reading')
-            fuel_entry.end_time = request.POST.get('end_time')
+            entry.trip_from = request.POST.get('trip_from', entry.trip_from).strip()
+            entry.trip_to = request.POST.get('trip_to', entry.trip_to).strip()
+            entry.odo_end_reading = request.POST.get('odo_end_reading')
+            entry.end_time = request.POST.get('end_time')
 
-            if 'odo_end_image' in request.FILES:
-                fuel_entry.odo_end_image = request.FILES['odo_end_image']
+            if 'odo_end_image' in request.FILES and request.FILES['odo_end_image']:
+                entry.odo_end_image = request.FILES['odo_end_image']
 
-            fuel_entry.save()
+            # (If your model computes distance_traveled on save, it will update automatically)
+            entry.save()
             messages.success(request, "Trip completed successfully!")
             return redirect('fuel_management')
-
         except Exception as e:
             messages.error(request, f"Error completing trip: {str(e)}")
 
-    return render(request, 'fuel_complete.html', {'entry': fuel_entry})
+    return render(request, 'fuel_complete.html', {'entry': entry})
+
 
 
 def fuel_edit(request, entry_id):
@@ -518,18 +508,13 @@ def fuel_edit(request, entry_id):
     })
 
 
-
 def fuel_delete(request, entry_id):
-    """Delete fuel entry."""
+    entry = get_object_or_404(FuelEntry, id=entry_id)
     if request.method == 'POST':
-        try:
-            fuel_entry = get_object_or_404(FuelEntry, id=entry_id)
-            fuel_entry.delete()
-            messages.success(request, "Trip entry deleted successfully.")
-        except Exception as e:
-            messages.error(request, f"Error deleting trip entry: {str(e)}")
-
+        entry.delete()
+        messages.success(request, "Trip deleted.")
     return redirect('fuel_management')
+
 
 def fuel_monitoring(request):
     """

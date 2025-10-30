@@ -521,9 +521,12 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Entries per page
-    document.getElementById('entriesPerPage').addEventListener('change', function() {
-        changeEntriesPerPage(this.value);
-    });
+    const perPageEl = document.getElementById('entriesPerPage');
+if (perPageEl) {
+  perPageEl.addEventListener('change', function () {
+    changeEntriesPerPage(this.value);
+  });
+}
 
     // Clear filters
     const clearBtn = document.getElementById('clearFilters');
