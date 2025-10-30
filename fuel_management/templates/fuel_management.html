@@ -2,670 +2,288 @@
 
 {% block content %}
 <style>
-    * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-    }
-
-    .fuel-management-container {
-        font-family: Arial, sans-serif;
-        background-color: #f5f5f5;
-        padding: 20px;
-        min-height: 100vh;
-    }
-
-    .container {
-        max-width: 100%;
-        margin: 0 auto;
-        padding: 0 20px;
-    }
-
-    .header {
-        background-color: #2c3e50;
-        color: white;
-        padding: 20px 30px;
-        border-radius: 4px;
-        margin-bottom: 20px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .header h1 {
-        font-size: 1.5em;
-        font-weight: normal;
-    }
-
-    .button-group {
-        display: flex;
-        gap: 10px;
-    }
-
-    .btn {
-        padding: 10px 20px;
-        border: none;
-        border-radius: 3px;
-        cursor: pointer;
-        font-size: 0.9em;
-        text-decoration: none;
-        display: inline-block;
-        font-weight: 500;
-    }
-
-    .btn-primary {
-        background-color: #27ae60;
-        color: white;
-    }
-
-    .btn-primary:hover {
-        background-color: #229954;
-    }
-
-    .btn-secondary {
-        background-color: #3498db;
-        color: white;
-    }
-
-    .btn-secondary:hover {
-        background-color: #2980b9;
-    }
-
-    .btn-warning {
-        background-color: #f39c12;
-        color: white;
-    }
-
-    .btn-warning:hover {
-        background-color: #e67e22;
-    }
-
-    .btn-danger {
-        background-color: #e74c3c;
-        color: white;
-    }
-
-    .btn-danger:hover {
-        background-color: #c0392b;
-    }
-
-    .btn-info {
-        background-color: #17a2b8;
-        color: white;
-    }
-
-    .btn-info:hover {
-        background-color: #138496;
-    }
-
-    /* Filter Section */
-    .filter-section {
-        background: white;
-        padding: 20px;
-        border-radius: 4px;
-        margin-bottom: 20px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-
-    .filter-row {
-        display: flex;
-        gap: 15px;
-        align-items: flex-end;
-        flex-wrap: wrap;
-    }
-
-    .filter-group {
-        flex: 1;
-        min-width: 200px;
-    }
-
-    .filter-group label {
-        display: block;
-        margin-bottom: 5px;
-        color: #2c3e50;
-        font-weight: 500;
-        font-size: 0.9em;
-    }
-
-    .filter-group input,
-    .filter-group select {
-        width: 100%;
-        padding: 10px;
-        border: 1px solid #ddd;
-        border-radius: 3px;
-        font-size: 0.9em;
-    }
-
-    .filter-group input:focus,
-    .filter-group select:focus {
-        outline: none;
-        border-color: #3498db;
-    }
-
-    .filter-buttons {
-        display: flex;
-        gap: 10px;
-    }
-
-    .btn-filter {
-        padding: 10px 20px;
-        background-color: #3498db;
-        color: white;
-        border: none;
-        border-radius: 3px;
-        cursor: pointer;
-        font-size: 0.9em;
-        font-weight: 500;
-    }
-
-    .btn-filter:hover {
-        background-color: #2980b9;
-    }
-
-    .btn-reset {
-        padding: 10px 20px;
-        background-color: #95a5a6;
-        color: white;
-        border: none;
-        border-radius: 3px;
-        cursor: pointer;
-        font-size: 0.9em;
-        font-weight: 500;
-    }
-
-    .btn-reset:hover {
-        background-color: #7f8c8d;
-    }
-
-    .content-box {
-        background: transparent;
-        border-radius: 0;
-        box-shadow: none;
-    }
-
-    .table-wrapper {
-        overflow-x: auto;
-        overflow-y: auto;
-        max-height: calc(100vh - 450px);
-        border-radius: 0;
-    }
-
-    .messages {
-        margin-bottom: 20px;
-    }
-
-    .alert {
-        padding: 12px 20px;
-        border-radius: 4px;
-        margin-bottom: 10px;
-    }
-
-    .alert-success {
-        background-color: #d4edda;
-        color: #155724;
-        border: 1px solid #c3e6cb;
-    }
-
-    .alert-error {
-        background-color: #f8d7da;
-        color: #721c24;
-        border: 1px solid #f5c6cb;
-    }
-
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        background: transparent;
-    }
-
-    thead {
-        background-color: #34495e;
-        color: white;
-        position: sticky;
-        top: 0;
-        z-index: 10;
-    }
-
-    th {
-        padding: 15px;
-        text-align: left;
-        font-weight: 600;
-        font-size: 0.9em;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        border: none;
-    }
-
-    td {
-        padding: 12px 15px;
-        border: none;
-        background: transparent;
-    }
-
-    tbody tr {
-        background: transparent;
-    }
-
-    tbody tr:hover {
-        background-color: rgba(0, 0, 0, 0.02);
-    }
-
-    .no-data {
-        padding: 40px;
-        text-align: center;
-        color: #7f8c8d;
-        background: white;
-        border-radius: 4px;
-    }
-
-    .action-buttons {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-    }
-
-    .btn-small {
-        padding: 6px 12px;
-        font-size: 0.8em;
-    }
-
-    .delete-form {
-        display: inline;
-    }
-
-    .image-cell {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    .btn-view-icon {
-        background-color: #3498db;
-        color: white;
-        border: none;
-        padding: 8px 12px;
-        border-radius: 3px;
-        cursor: pointer;
-        font-size: 0.85em;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        transition: background-color 0.2s;
-        font-weight: 500;
-    }
-
-    .btn-view-icon:hover {
-        background-color: #2980b9;
-    }
-
-    .no-image {
-        color: #95a5a6;
-        font-style: italic;
-        font-size: 0.85em;
-    }
-
-    /* Traveler info styles */
-    .traveler-name {
-        font-size: 0.9em;
-        color: #2c3e50;
-    }
-
-    .no-traveler {
-        color: #95a5a6;
-        font-style: italic;
-        font-size: 0.85em;
-    }
-
-    /* Results counter */
-    .results-info {
-        background: white;
-        padding: 10px 20px;
-        border-radius: 4px;
-        margin-bottom: 15px;
-        color: #2c3e50;
-        font-size: 0.9em;
-    }
-
-    /* Pagination Styles */
-    .pagination-wrapper {
-        background: white;
-        padding: 20px;
-        border-radius: 4px;
-        margin-top: 20px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-
-    .pagination {
-        display: flex;
-        gap: 5px;
-        list-style: none;
-        padding: 0;
-        margin: 0;
-        flex-wrap: wrap;
-        justify-content: center;
-    }
-
-    .pagination a,
-    .pagination span {
-        padding: 8px 12px;
-        border: 1px solid #ddd;
-        border-radius: 3px;
-        text-decoration: none;
-        color: #2c3e50;
-        font-size: 0.9em;
-        display: inline-block;
-        min-width: 40px;
-        text-align: center;
-        transition: all 0.2s;
-    }
-
-    .pagination a:hover {
-        background-color: #3498db;
-        color: white;
-        border-color: #3498db;
-    }
-
-    .pagination .current {
-        background-color: #2c3e50;
-        color: white;
-        border-color: #2c3e50;
-        font-weight: bold;
-    }
-
-    .pagination .disabled {
-        color: #bdc3c7;
-        cursor: not-allowed;
-        border-color: #ecf0f1;
-    }
-
-    .pagination .disabled:hover {
-        background-color: transparent;
-        color: #bdc3c7;
-        border-color: #ecf0f1;
-    }
-
-    @media (max-width: 768px) {
-        .header {
-            flex-direction: column;
-            gap: 15px;
-            align-items: flex-start;
-        }
-
-        .button-group {
-            width: 100%;
-            flex-direction: column;
-        }
-
-        .btn {
-            width: 100%;
-            text-align: center;
-        }
-
-        .filter-row {
-            flex-direction: column;
-        }
-
-        .filter-group {
-            width: 100%;
-        }
-
-        .filter-buttons {
-            width: 100%;
-            flex-direction: column;
-        }
-
-        .btn-filter,
-        .btn-reset {
-            width: 100%;
-        }
-
-        .table-wrapper {
-            max-height: calc(100vh - 550px);
-        }
-
-        table {
-            font-size: 0.85em;
-        }
-
-        th, td {
-            padding: 10px 8px;
-        }
-
-        .action-buttons {
-            flex-direction: column;
-        }
-
-        .btn-small {
-            width: 100%;
-            text-align: center;
-        }
-
-        .pagination a,
-        .pagination span {
-            padding: 6px 10px;
-            font-size: 0.85em;
-            min-width: 35px;
-        }
-    }
+  *{margin:0;padding:0;box-sizing:border-box}
+  .fuel-management-container{font-family:Arial,sans-serif;background:#f5f5f5;padding:20px;min-height:100vh}
+  .container{max-width:100%;margin:0 auto;padding:0 20px}
+  .header{background:#2c3e50;color:#fff;padding:20px 30px;border-radius:4px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center}
+  .header h1{font-size:1.5em;font-weight:normal}
+  .button-group{display:flex;gap:10px}
+
+  .btn{padding:10px 20px;border:none;border-radius:3px;cursor:pointer;font-size:.9em;text-decoration:none;display:inline-block;font-weight:500}
+  .btn-small{padding:6px 12px;font-size:.8em}
+  .btn-primary{background:#27ae60;color:#fff}.btn-primary:hover{background:#229954}
+  .btn-warning{background:#f39c12;color:#fff}.btn-warning:hover{background:#e67e22}
+  .btn-danger{background:#e74c3c;color:#fff}.btn-danger:hover{background:#c0392b}
+  .btn-info{background:#17a2b8;color:#fff}.btn-info:hover{background:#138496}
+
+  .filter-section{background:#fff;padding:20px;border-radius:4px;margin-bottom:20px;box-shadow:0 2px 4px rgba(0,0,0,.1)}
+  .filter-row{display:flex;gap:15px;align-items:flex-end;flex-wrap:wrap}
+  .filter-group{flex:1;min-width:200px}
+  .filter-group label{display:block;margin-bottom:5px;color:#2c3e50;font-weight:500;font-size:.9em}
+  .filter-group input,.filter-group select{width:100%;padding:10px;border:1px solid #ddd;border-radius:3px;font-size:.9em}
+  .filter-buttons{display:flex;gap:10px}
+  .btn-filter{padding:10px 20px;background:#3498db;color:#fff;border:none;border-radius:3px;cursor:pointer;font-size:.9em;font-weight:500}
+  .btn-filter:hover{background:#2980b9}
+  .btn-reset{padding:10px 20px;background:#95a5a6;color:#fff;border:none;border-radius:3px;cursor:pointer;font-size:.9em;font-weight:500}
+  .btn-reset:hover{background:#7f8c8d}
+
+  .results-info{background:#fff;padding:10px 20px;border-radius:4px;margin-bottom:15px;color:#2c3e50;font-size:.9em}
+  .table-wrapper{overflow-x:auto;overflow-y:auto;max-height:calc(100vh - 450px)}
+  table{width:100%;border-collapse:collapse;background:transparent;table-layout:fixed}
+  thead{background:#34495e;color:#fff;position:sticky;top:0;z-index:10}
+  th{padding:14px;text-align:left;font-weight:600;font-size:.85em;text-transform:uppercase;letter-spacing:.5px;border:none;white-space:nowrap}
+  td{padding:12px 14px;border:none;background:transparent;vertical-align:middle;word-wrap:break-word;word-break:break-word}
+  tbody tr:hover{background:rgba(0,0,0,.03)}
+  .no-data{padding:40px;text-align:center;color:#7f8c8d;background:#fff;border-radius:4px}
+
+  .messages{margin-bottom:20px}
+  .alert{padding:12px 20px;border-radius:4px;margin-bottom:10px}
+  .alert-success{background:#d4edda;color:#155724;border:1px solid #c3e6cb}
+  .alert-error{background:#f8d7da;color:#721c24;border:1px solid #f5c6cb}
+
+  .image-cell{display:flex;align-items:center;gap:8px}
+  .btn-view-icon{background:#3498db;color:#fff;border:none;padding:8px 12px;border-radius:3px;cursor:pointer;font-size:.85em;display:inline-flex;align-items:center;justify-content:center;transition:background-color .2s;font-weight:500}
+  .btn-view-icon:hover{background:#2980b9}
+  .no-image{color:#95a5a6;font-style:italic;font-size:.85em}
+
+  .status-badge{padding:4px 8px;border-radius:999px;font-size:.75em;font-weight:700;display:inline-block}
+  .status-open{background:#fff6e6;color:#a35d00;border:1px solid #ffd699}
+  .status-done{background:#e8f5e8;color:#2e7d32;border:1px solid #c8e6c9}
+
+  .status-cell{display:flex;align-items:center;gap:8px}
+
+  .pagination-wrapper{background:#fff;padding:20px;border-radius:4px;margin-top:20px;display:flex;justify-content:center;align-items:center;box-shadow:0 2px 4px rgba(0,0,0,.1)}
+  .pagination{display:flex;gap:5px;list-style:none;padding:0;margin:0;flex-wrap:wrap;justify-content:center}
+  .pagination a,.pagination span{padding:8px 12px;border:1px solid #ddd;border-radius:3px;text-decoration:none;color:#2c3e50;font-size:.9em;min-width:40px;text-align:center;transition:all .2s}
+  .pagination a:hover{background:#3498db;color:#fff;border-color:#3498db}
+  .pagination .current{background:#2c3e50;color:#fff;border-color:#2c3e50;font-weight:bold}
+  .pagination .disabled{color:#bdc3c7;cursor:not-allowed;border-color:#ecf0f1}
+
+  /* Column widths */
+  th:nth-child(1), td:nth-child(1){width:60px;text-align:center}
+  th:nth-child(2), td:nth-child(2){width:160px}
+  th:nth-child(3){width:140px}
+  th:nth-child(4){width:140px}
+  th:nth-child(5), th:nth-child(6), th:nth-child(7){width:110px}
+  th:nth-child(8), th:nth-child(9), th:nth-child(10){width:110px}
+  th:nth-child(11){width:120px}
+  th:nth-child(12), th:nth-child(13){width:110px}
+  th:nth-child(14){width:140px}
 </style>
 
 <div class="fuel-management-container">
-    <div class="container">
-        <div class="header">
-             <h1>Fuel Management</h1>
-            <div class="button-group">
-                <a href="{% url 'fuel_enter' %}" class="btn btn-primary">ADD New Trip</a>
-                
-            </div>
-        </div>
-
-        <!-- Django Messages -->
-        {% if messages %}
-        <div class="messages">
-            {% for message in messages %}
-            <div class="alert alert-{{ message.tags }}">
-                {{ message }}
-            </div>
-            {% endfor %}
-        </div>
-        {% endif %}
-
-        <!-- Filter Section -->
-        <div class="filter-section">
-            <form method="GET" action="" id="filterForm">
-                <div class="filter-row">
-                    <div class="filter-group">
-                        <label for="searchInput">Search (Vehicle/Distance/Cost)</label>
-                        <input type="text" id="searchInput" name="search" placeholder="Type to search..." value="{{ request.GET.search }}">
-                    </div>
-                    <div class="filter-group">
-                        <label for="travelerSearch">Search by Traveler</label>
-                        <input type="text" id="travelerSearch" name="traveler" placeholder="Enter traveler name..." value="{{ request.GET.traveler }}">
-                    </div>
-                    <div class="filter-group">
-                        <label for="dateFrom">Date From</label>
-                        <input type="date" id="dateFrom" name="date_from" value="{{ request.GET.date_from }}">
-                    </div>
-                    <div class="filter-group">
-                        <label for="dateTo">Date To</label>
-                        <input type="date" id="dateTo" name="date_to" value="{{ request.GET.date_to }}">
-                    </div>
-                    <div class="filter-buttons">
-                        <button type="submit" class="btn-filter">Apply Filters</button>
-                        <button type="button" class="btn-reset" onclick="resetFilters()">Reset</button>
-                    </div>
-                </div>
-            </form>
-        </div>
-
-        <!-- Results Info -->
-        <div class="results-info" id="resultsInfo">
-            <strong>{{ page_obj.paginator.count }}</strong> trip(s) found | Showing page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
-        </div>
-
-        <div class="content-box">
-            {% if fuel_entries %}
-            <div class="table-wrapper">
-                <table id="tripsTable">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Vehicle</th>
-                            <th>Traveled By</th>
-                            <th>Date</th>
-                            <th>Start Time</th>
-                            <th>End Time</th>
-                            <th>Odo Start</th>
-                            <th>Odo End</th>
-                            <th>Distance (km)</th>
-                            <th>Fuel Cost (₹)</th>
-                            <th>Start Image</th>
-                            <th>End Image</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tableBody">
-                        {% for entry in fuel_entries %}
-                        <tr>
-                            <td>{{ forloop.counter|add:page_obj.start_index|add:"-1" }}</td>
-                            <td>{{ entry.vehicle.vehicle_number }}</td>
-                            <td>
-                                {% if entry.travelled_by %}
-                                <span class="traveler-name">{{ entry.travelled_by.username }}</span>
-                                {% else %}
-                                <span class="no-traveler">Not assigned</span>
-                                {% endif %}
-                            </td>
-                            <td>{{ entry.date|date:"d-M-Y" }}</td>
-                            <td>{% if entry.start_time %}{{ entry.start_time|time:"h:i A" }}{% else %}-{% endif %}</td>
-                            <td>{% if entry.end_time %}{{ entry.end_time|time:"h:i A" }}{% else %}-{% endif %}</td>
-                            <td>{{ entry.odo_start_reading }}</td>
-                            <td>{{ entry.odo_end_reading }}</td>
-                            <td>{{ entry.distance_traveled }}</td>
-                            <td>₹{{ entry.fuel_cost }}</td>
-                            <td>
-                                <div class="image-cell">
-                                    {% if entry.odo_start_image %}
-                                    <button class="btn-view-icon" onclick="showImage('{{ entry.odo_start_image.url }}', 'Start Odometer')" title="View Start Image">
-                                        View
-                                    </button>
-                                    {% else %}
-                                    <span class="no-image">No Image</span>
-                                    {% endif %}
-                                </div>
-                            </td>
-                            <td>
-                                <div class="image-cell">
-                                    {% if entry.odo_end_image %}
-                                    <button class="btn-view-icon" onclick="showImage('{{ entry.odo_end_image.url }}', 'End Odometer')" title="View End Image">
-                                        View
-                                    </button>
-                                    {% else %}
-                                    <span class="no-image">No Image</span>
-                                    {% endif %}
-                                </div>
-                            </td>
-                            <td>
-                                <div class="action-buttons">
-                                    <a href="{% url 'fuel_edit' entry.id %}" class="btn btn-info btn-small">Edit</a>
-                                    <form class="delete-form" method="post" action="{% url 'fuel_delete' entry.id %}" onsubmit="return confirm('Are you sure you want to delete this trip entry?');">
-                                        {% csrf_token %}
-                                        <button type="submit" class="btn btn-danger btn-small">Delete</button>
-                                    </form>
-                                </div>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Pagination -->
-            {% if page_obj.paginator.num_pages > 1 %}
-            <div class="pagination-wrapper">
-                <ul class="pagination">
-                    {% if page_obj.has_previous %}
-                    <li><a href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.traveler %}&traveler={{ request.GET.traveler }}{% endif %}{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}">First</a></li>
-                    <li><a href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.traveler %}&traveler={{ request.GET.traveler }}{% endif %}{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}">Previous</a></li>
-                    {% else %}
-                    <li><span class="disabled">First</span></li>
-                    <li><span class="disabled">Previous</span></li>
-                    {% endif %}
-
-                    {% for num in page_obj.paginator.page_range %}
-                    {% if page_obj.number == num %}
-                    <li><span class="current">{{ num }}</span></li>
-                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                    <li><a href="?page={{ num }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.traveler %}&traveler={{ request.GET.traveler }}{% endif %}{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}">{{ num }}</a></li>
-                    {% endif %}
-                    {% endfor %}
-
-                    {% if page_obj.has_next %}
-                    <li><a href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.traveler %}&traveler={{ request.GET.traveler }}{% endif %}{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}">Next</a></li>
-                    <li><a href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.traveler %}&traveler={{ request.GET.traveler }}{% endif %}{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}">Last</a></li>
-                    {% else %}
-                    <li><span class="disabled">Next</span></li>
-                    <li><span class="disabled">Last</span></li>
-                    {% endif %}
-                </ul>
-            </div>
-            {% endif %}
-            {% else %}
-            <div class="no-data">
-                <p>No trip entries found. Click "Add New Trip" to create one.</p>
-            </div>
-            {% endif %}
-        </div>
+  <div class="container">
+    <div class="header">
+      <h1>Fuel Management</h1>
+      <div class="button-group">
+        <a href="{% url 'fuel_enter' %}" class="btn btn-primary">Add New Trip</a>
+      </div>
     </div>
+
+    {% if messages %}
+      <div class="messages">
+        {% for message in messages %}
+          <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <div class="filter-section">
+      <form method="GET" id="filterForm">
+        <div class="filter-row">
+          <div class="filter-group">
+            <label for="searchInput">Search (Vehicle/Distance/Cost)</label>
+            <input type="text" id="searchInput" name="search" placeholder="Type to search..." value="{{ request.GET.search }}">
+          </div>
+          <div class="filter-group">
+            <label for="travelerSearch">Search by Traveler</label>
+            <input type="text" id="travelerSearch" name="traveler" placeholder="Enter traveler name..." value="{{ request.GET.traveler }}">
+          </div>
+          <div class="filter-group">
+            <label for="dateFrom">Date From</label>
+            <input type="date" id="dateFrom" name="date_from" value="{{ request.GET.date_from }}">
+          </div>
+          <div class="filter-group">
+            <label for="dateTo">Date To</label>
+            <input type="date" id="dateTo" name="date_to" value="{{ request.GET.date_to }}">
+          </div>
+          <div class="filter-buttons">
+            <button type="submit" class="btn-filter">Apply Filters</button>
+            <button type="button" class="btn-reset" onclick="resetFilters()">Reset</button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <div class="results-info">
+      <strong>{{ page_obj.paginator.count }}</strong> trip(s) found | Showing page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+    </div>
+
+    <div class="content-box">
+      {% if page_obj %}
+      <div class="table-wrapper">
+        <table id="tripsTable">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Status / Action</th>
+              <th>Vehicle</th>
+              <th>Traveled By</th>
+              <th>Date</th>
+              <th>Start Time</th>
+              <th>End Time</th>
+              <th>Odo Start</th>
+              <th>Odo End</th>
+              <th>Distance (km)</th>
+              <th>Fuel Cost (₹)</th>
+              <th>Start Image</th>
+              <th>End Image</th>
+              <th>More</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody">
+            {% for entry in page_obj %}
+            <tr>
+              <!-- 1-based index across pages -->
+              <td>{{ forloop.counter|add:page_obj.start_index|add:"-1" }}</td>
+
+              <!-- Status cell: ONLY badge and End Trip (if open). No Edit/Delete here -->
+              <td class="status-cell">
+                {% if not entry.end_time or entry.odo_end_reading == entry.odo_start_reading %}
+                  <span class="status-badge status-open">Started</span>
+                  <a href="{% url 'fuel_complete_trip' entry.id %}" class="btn btn-warning btn-small">End Trip</a>
+                {% else %}
+                  <span class="status-badge status-done">Completed</span>
+                {% endif %}
+              </td>
+
+              <td>{{ entry.vehicle.vehicle_number }}</td>
+
+              <td>
+                {% if entry.travelled_by %}
+                  {{ entry.travelled_by.username }}
+                {% else %}
+                  <span class="no-traveler">—</span>
+                {% endif %}
+              </td>
+
+              <td>{{ entry.date|date:"d-M-Y" }}</td>
+              <td>{% if entry.start_time %}{{ entry.start_time|time:"h:i A" }}{% else %}-{% endif %}</td>
+              <td>{% if entry.end_time %}{{ entry.end_time|time:"h:i A" }}{% else %}-{% endif %}</td>
+
+              <td>{{ entry.odo_start_reading }}</td>
+              <td>{{ entry.odo_end_reading }}</td>
+
+              <td>
+                {% if entry.distance_traveled %}
+                  {{ entry.distance_traveled }}
+                {% else %}
+                  -
+                {% endif %}
+              </td>
+
+              <td>₹{{ entry.fuel_cost }}</td>
+
+              <td>
+                <div class="image-cell">
+                  {% if entry.odo_start_image %}
+                    <button class="btn-view-icon" type="button" onclick="showImage('{{ entry.odo_start_image.url }}', 'Start Odometer')">View</button>
+                  {% else %}
+                    <span class="no-image">No Image</span>
+                  {% endif %}
+                </div>
+              </td>
+
+              <td>
+                <div class="image-cell">
+                  {% if entry.odo_end_image %}
+                    <button class="btn-view-icon" type="button" onclick="showImage('{{ entry.odo_end_image.url }}', 'End Odometer')">View</button>
+                  {% else %}
+                    <span class="no-image">No Image</span>
+                  {% endif %}
+                </div>
+              </td>
+
+              <!-- MORE: ONLY Edit & Delete live here -->
+              <td>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-start">
+                  <a href="{% url 'fuel_edit' entry.id %}" class="btn btn-info btn-small">Edit</a>
+                  <form method="post" action="{% url 'fuel_delete' entry.id %}" onsubmit="return confirm('Delete this trip?');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger btn-small">Delete</button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      {% if page_obj.paginator.num_pages > 1 %}
+      <div class="pagination-wrapper">
+        <ul class="pagination">
+          {% if page_obj.has_previous %}
+            <li><a href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.traveler %}&traveler={{ request.GET.traveler }}{% endif %}{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}">First</a></li>
+            <li><a href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.traveler %}&traveler={{ request.GET.traveler }}{% endif %}{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}">Previous</a></li>
+          {% else %}
+            <li><span class="disabled">First</span></li>
+            <li><span class="disabled">Previous</span></li>
+          {% endif %}
+
+          {% for num in page_obj.paginator.page_range %}
+            {% if page_obj.number == num %}
+              <li><span class="current">{{ num }}</span></li>
+            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+              <li><a href="?page={{ num }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.traveler %}&traveler={{ request.GET.traveler }}{% endif %}{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}">{{ num }}</a></li>
+            {% endif %}
+          {% endfor %}
+
+          {% if page_obj.has_next %}
+            <li><a href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.traveler %}&traveler={{ request.GET.traveler }}{% endif %}{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}">Next</a></li>
+            <li><a href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.traveler %}&traveler={{ request.GET.traveler }}{% endif %}{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}">Last</a></li>
+          {% else %}
+            <li><span class="disabled">Next</span></li>
+            <li><span class="disabled">Last</span></li>
+          {% endif %}
+        </ul>
+      </div>
+      {% endif %}
+
+      {% else %}
+        <div class="no-data"><p>No trip entries found. Click “Add New Trip” to create one.</p></div>
+      {% endif %}
+    </div>
+  </div>
 </div>
 
 <!-- Image Modal -->
-<div id="imageModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; justify-content: center; align-items: center;">
-    <div style="position: relative; max-width: 90%; max-height: 90%; display: flex; flex-direction: column; align-items: center;">
-        <div style="background: white; padding: 10px 20px; border-radius: 5px 5px 0 0; width: 100%; display: flex; justify-content: space-between; align-items: center;">
-            <h3 id="modalTitle" style="margin: 0; color: #2c3e50;">Image Preview</h3>
-            <button onclick="closeImage()" style="background: #e74c3c; color: white; border: none; padding: 8px 15px; border-radius: 3px; cursor: pointer; font-weight: bold;">Close</button>
-        </div>
-        <img id="modalImage" src="" alt="Enlarged view" style="max-width: 100%; max-height: calc(90vh - 60px); border-radius: 0 0 5px 5px; background: white; padding: 10px;">
+<div id="imageModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:1000;justify-content:center;align-items:center;">
+  <div style="position:relative;max-width:90%;max-height:90%;display:flex;flex-direction:column;align-items:center;">
+    <div style="background:#fff;padding:10px 20px;border-radius:5px 5px 0 0;width:100%;display:flex;justify-content:space-between;align-items:center;">
+      <h3 id="modalTitle" style="margin:0;color:#2c3e50;">Image Preview</h3>
+      <button onclick="closeImage()" style="background:#e74c3c;color:#fff;border:none;padding:8px 15px;border-radius:3px;cursor:pointer;font-weight:bold;">Close</button>
     </div>
+    <img id="modalImage" src="" alt="Enlarged view" style="max-width:100%;max-height:calc(90vh - 60px);border-radius:0 0 5px 5px;background:#fff;padding:10px;">
+  </div>
 </div>
 
 <script>
-// Image Modal Functions
-function showImage(imageUrl, title) {
-    document.getElementById('modalImage').src = imageUrl;
-    document.getElementById('modalTitle').textContent = title || 'Image Preview';
-    document.getElementById('imageModal').style.display = 'flex';
+function showImage(url, title){
+  document.getElementById('modalImage').src = url;
+  document.getElementById('modalTitle').textContent = title || 'Image Preview';
+  document.getElementById('imageModal').style.display = 'flex';
 }
+function closeImage(){ document.getElementById('imageModal').style.display = 'none'; }
+document.getElementById('imageModal').addEventListener('click', function(e){ if(e.target===this){ closeImage(); }});
+document.addEventListener('keydown', function(e){ if(e.key==='Escape'){ closeImage(); }});
 
-function closeImage() {
-    document.getElementById('imageModal').style.display = 'none';
-}
-
-// Close modal when clicking outside the image
-document.getElementById('imageModal').addEventListener('click', function(e) {
-    if (e.target === this) {
-        closeImage();
-    }
-});
-
-// Close modal with Escape key
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-        closeImage();
-    }
-});
-
-// Filter Functions
-function resetFilters() {
-    document.getElementById('searchInput').value = '';
-    document.getElementById('travelerSearch').value = '';
-    document.getElementById('dateFrom').value = '';
-    document.getElementById('dateTo').value = '';
-    window.location.href = window.location.pathname;
+function resetFilters(){
+  document.getElementById('searchInput').value='';
+  document.getElementById('travelerSearch').value='';
+  document.getElementById('dateFrom').value='';
+  document.getElementById('dateTo').value='';
+  window.location.href = window.location.pathname;
 }
 </script>
 {% endblock %}

@@ -69,23 +69,20 @@
                 </div>
               </div>
 
-              <!-- BRANCH -->
-              <div class="col-12 col-md-6">
-                <label for="branch" class="form-label fs-6">
-                  <i class="fas fa-building me-2"></i>Branch <span class="text-danger">*</span>
-                </label>
-                <select class="form-select form-select-lg" id="branch" name="branch" required>
-                  <option value="" disabled>Select branch</option>
-                  <option value="IMC Mukkam"     {% if collection.branch == "IMC Mukkam"     %}selected{% endif %}>IMC Mukkam</option>
-                  <option value="IMC Merged"     {% if collection.branch == "IMC Merged"     %}selected{% endif %}>IMC Merged</option>
-                  <option value="IMCB HO"        {% if collection.branch == "IMCB HO"        %}selected{% endif %}>IMCB HO</option>
-                  <option value="IMCB DEV"       {% if collection.branch == "IMCB DEV"       %}selected{% endif %}>IMCB DEV</option>
-                  <option value="Sysmac Info System" {% if collection.branch == "Sysmac Info System" %}selected{% endif %}>Sysmac Info System</option>
-                  <option value="Sysmac Computers" {% if collection.branch == "Sysmac Computers" %}selected{% endif %}>Sysmac Computers</option>
-                  <option value="DQ Technologies" {% if collection.branch == "DQ Technologies" %}selected{% endif %}>DQ Technologies</option>
-                </select>
-              </div>
-            </div>
+             <!-- BRANCH/DEPARTMENT DROPDOWN -->
+<div class="col-12 col-md-6">
+  <label for="branch" class="form-label fs-6">
+    <i class="fas fa-building me-2"></i>Branch <span class="text-danger">*</span>
+  </label>
+  <select class="form-select form-select-lg" id="branch" name="branch" required>
+    <option value="" disabled>Select branch</option>
+    {% for dept in departments %}
+      <option value="{{ dept.name }}" {% if dept.name == collection.branch %}selected{% endif %}>
+        {{ dept.name }}
+      </option>
+    {% endfor %}
+  </select>
+</div>
 
             <!-- COLLECTION TYPE (with UPI & NEFT) -->
             <div class="row mb-4">
