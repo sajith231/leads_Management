@@ -52,6 +52,14 @@
                     <label class="form-label">Search by Name</label>
                     <input type="text" class="form-control" id="nameFilter" onkeyup="filterEmployees()" placeholder="Enter name">
                 </div>
+                <div class="col-md-4">
+                    <label class="form-label">Filter by User Status</label>
+                    <select class="form-select" id="statusFilter" onchange="filterByStatus()">
+                        <option value="active" selected>Active Users</option>
+                        <option value="inactive">Inactive Users</option>
+                        <option value="all">All Users</option>
+                    </select>
+                </div>
                 <div class="d-grid gap-2 d-md-flex" style="white-space: nowrap;">
                 <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#holidayModal">
                     Add Holiday
@@ -283,7 +291,8 @@
                 </thead>
                     <tbody id="attendanceBody">
     {% for employee in employees|dictsort:"name" %}
-    <tr class="employee-row" data-employee-id="{{ employee.id }}" data-name="{{ employee.name }}">
+    <tr class="employee-row" data-employee-id="{{ employee.id }}" data-name="{{ employee.name }}" data-status="{{ employee.user.status }}">
+
         <td>{{ forloop.counter }}</td>
         <td class="sticky-data" style="background-color: white;">{{ employee.name }}</td>
         <td>{{ employee.user.userid|default:'' }}</td>
@@ -2205,6 +2214,27 @@ document.addEventListener('DOMContentLoaded', function(){
   });
 });
 </script>
+<script>
+function filterByStatus() {
+    const selectedStatus = document.getElementById("statusFilter").value;
+    const rows = document.querySelectorAll(".employee-row");
+
+    rows.forEach(row => {
+        const status = row.getAttribute("data-status") || "active";
+        if (selectedStatus === "all" || status === selectedStatus) {
+            row.style.display = "";
+        } else {
+            row.style.display = "none";
+        }
+    });
+}
+
+// Auto-apply the default filter (active only) when page loads
+document.addEventListener("DOMContentLoaded", function() {
+    filterByStatus();
+});
+</script>
+
 
 {% endif %}
 {% endblock %}

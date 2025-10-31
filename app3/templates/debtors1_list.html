@@ -345,7 +345,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    // 🔁 Toggle OB/Debit/Credit columns
     const toggleBtn = document.getElementById('toggleColumnsBtn');
     toggleBtn.addEventListener('click', () => {
         document.querySelectorAll('.toggle-col').forEach(col => col.classList.toggle('d-none'));
@@ -356,7 +355,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
     let fullLedgerData = [];
 
-    // 📄 Ledger Modal
     document.querySelectorAll('.ledger-link').forEach(link => {
         link.addEventListener('click', function () {
             const code = this.dataset.code;
@@ -365,7 +363,10 @@ document.addEventListener('DOMContentLoaded', function () {
             const content = document.getElementById('ledgerContent');
             const filterDateInput = document.getElementById('filterDate');
             const resetBtn = document.getElementById('resetLedgerBtn');
-            document.getElementById('ledgerClientName').textContent = name;
+
+            // ✅ Show Name + Code together in modal title
+            document.getElementById('ledgerClientName').innerHTML = `${name} <small class="text-warning">(Code: ${code})</small>`;
+
             content.innerHTML = "Loading...";
             filterDateInput.value = '';
 
@@ -397,43 +398,61 @@ document.addEventListener('DOMContentLoaded', function () {
                     const credit = parseFloat(entry.credit || 0);
                     totalDebit += debit;
                     totalCredit += credit;
+
                     return `
-                        <tr>
-                            <td>${entry.code}</td>
-                            <td>${formatDate(entry.entry_date)}</td>
-                            <td>${entry.voucher_no || ''}</td>
-                            <td>${entry.particulars || ''}</td>
-                            <td class="text-end">${debit.toFixed(2)}</td>
-                            <td class="text-end">${credit.toFixed(2)}</td>
-                            <td>${entry.narration || ''}</td>
-                        </tr>`;
+    <tr>
+        <td>${formatDate(entry.entry_date)}</td>
+        <td class="voucher-col d-none">${entry.voucher_no || ''}</td>
+        <td style=" color:#cc6600;">
+            <div><strong>${entry.particulars || ''}</strong></div>
+            ${entry.narration ? `<div class="text-muted fst-italic small">${entry.narration}</div>` : ''}
+        </td>
+        <td class="text-end">₹${debit.toFixed(2)}</td>
+        <td class="text-end">₹${credit.toFixed(2)}</td>
+    </tr>`;
+
                 }).join('');
 
+                const totalBalance = totalDebit - totalCredit;
+
                 content.innerHTML = `
-                    <table class="table table-bordered table-sm">
+                    <div class="d-flex justify-content-end mb-2">
+                        <button class="btn btn-sm btn-outline-primary" id="toggleVoucherBtn">Show Voucher</button>
+                    </div>
+                    <table class="table table-bordered table-sm align-middle">
                         <thead class="table-light">
                             <tr>
-                                <th>Code</th>
                                 <th>Date</th>
-                                <th>Voucher</th>
+                                <th class="voucher-col d-none">Voucher</th>
                                 <th>Particulars</th>
-                                <th>Debit</th>
-                                <th>Credit</th>
-                                <th>Narration</th>
+                                <th class="text-end">Debit</th>
+                                <th class="text-end">Credit</th>
                             </tr>
                         </thead>
                         <tbody>${rows}</tbody>
                         <tfoot class="table-light fw-bold">
                             <tr>
-                                <td colspan="4" class="text-end">Total</td>
+                                <td></td>
+                                <td class="voucher-col d-none"></td>
+                                <td>Total</td>
                                 <td class="text-end text-dark">₹${totalDebit.toFixed(2)}</td>
                                 <td class="text-end text-dark">₹${totalCredit.toFixed(2)}</td>
-                                <td></td>
+                            </tr>
+                            <tr>
+                                <td colspan="2"></td>
+                                <td colspan="3" class="text-end text-danger">Balance: ₹${totalBalance.toFixed(2)}</td>
                             </tr>
                         </tfoot>
                     </table>`;
+
+                // ✅ Voucher show/hide toggle
+                document.getElementById('toggleVoucherBtn').addEventListener('click', function () {
+                    document.querySelectorAll('.voucher-col').forEach(col => col.classList.toggle('d-none'));
+                    this.textContent = this.textContent.includes('Show') ? 'Hide Voucher' : 'Show Voucher';
+                });
             }
 
+            // ✅ Date filter
             filterDateInput.addEventListener('change', function () {
                 const date = this.value;
                 if (!date) {
@@ -446,6 +465,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 renderTable(filtered);
             });
 
+            // ✅ Reset button
             resetBtn.addEventListener('click', () => {
                 filterDateInput.value = '';
                 renderTable(fullLedgerData);
@@ -453,34 +473,17 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
+    // ✅ Date format helper
     function formatDate(dateStr) {
         if (!dateStr) return '';
         const date = new Date(dateStr);
         if (isNaN(date)) return dateStr;
         return `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`;
     }
-
-    // 🔍 Search highlight (skip icons like eye)
-    const query = "{{ query }}";
-    if (query) {
-        const terms = query.toLowerCase().split(' ');
-        document.querySelectorAll('.main-table tbody tr').forEach(row => {
-            row.querySelectorAll('td').forEach(cell => {
-                // ❌ Skip if cell contains <i> tag (icon)
-                if (cell.querySelector('i')) return;
-
-                const text = cell.textContent;
-                let html = text;
-                terms.forEach(term => {
-                    if (!term) return;
-                    const regex = new RegExp(`(${term})`, 'gi');
-                    html = html.replace(regex, '<mark>$1</mark>');
-                });
-                cell.innerHTML = html;
-            });
-        });
-    }
 });
 </script>
+
+
+
 
 {% endblock %}

@@ -595,6 +595,9 @@
         <i class="fas fa-chart-line"></i> Vehicle Ledger
     </a>
     {% endif %}
+    <a href="{% url 'claims_list' %}">
+        <i class="fas fa-briefcase"></i> Claims
+    </a>
 </div>
 {% endif %}
 
@@ -988,12 +991,18 @@
         License Key
     </a>
     {% endif %}
-    {% if 'key_request' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+    {% if 'key_request_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+    <a href="{% url 'key_request_list' %}">
+        <i class="fas fa-file-signature" style="margin-right: 5px;"></i>
+        Key Request
+    </a>
+    {% endif %}
+    <!-- {% if 'key_request' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
     <a href="{% url 'key_request' %}">
         <i class="fas fa-plus-circle" style="margin-right: 5px;"></i>
         Add Key Request
     </a>
-    {% endif %}
+    {% endif %} -->
     {% if 'collections_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
     <a href="{% url 'collections_list' %}">
         <i class="fas fa-coins" style="margin-right: 5px;"></i>
@@ -1051,6 +1060,9 @@
         <i class="fas fa-chart-line"></i> Vehicle Ledger
     </a>
     {% endif %}
+    <a href="{% url 'claims_list' %}">
+        <i class="fas fa-briefcase"></i> Claims
+    </a>
 </div>
 {% endif %}
 

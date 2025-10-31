@@ -4,6 +4,7 @@ from django.db import models
 from django.urls import reverse
 from django.core.exceptions import ValidationError
 from django.conf import settings
+from django.utils import timezone
 
 class Vehicle(models.Model):
     FUEL_TYPES = [
@@ -12,6 +13,13 @@ class Vehicle(models.Model):
     ]
     
     vehicle_number = models.CharField(max_length=20, unique=True)
+    vehicle_name = models.CharField(max_length=100, help_text="Name of the vehicle")
+    model_number = models.CharField(max_length=50, help_text="Model number of the vehicle")
+    manufacture_year = models.PositiveIntegerField(
+        help_text="Year of manufacture",
+        validators=[MinValueValidator(1900)],
+        default=2030  # Default value for existing records
+    )
     owner_name = models.CharField(max_length=100)
     fuel_type = models.CharField(
         max_length=10, 
@@ -39,7 +47,7 @@ class Vehicle(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.vehicle_number} — {self.owner_name}"
+        return f"{self.vehicle_number} — {self.vehicle_name} — {self.owner_name}"
 
     def get_absolute_url(self):
         return reverse('vehicle_edit', kwargs={'vehicle_id': self.id})

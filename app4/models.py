@@ -107,7 +107,7 @@ class KeyRequest(models.Model):
 
 class Collection(models.Model):
     """Payment-collection record with verification status."""
-
+ 
     # ------------------------------------------------------------------
     # Status
     # ------------------------------------------------------------------
@@ -156,7 +156,8 @@ class Collection(models.Model):
     # ------------------------------------------------------------------
     client_name = models.CharField(max_length=255, help_text="Name of the client")
     payment_method = models.CharField(max_length=50, default='cash')
-    branch = models.CharField(max_length=255, help_text="Branch name")
+    branch = models.CharField(max_length=255)  # stores department name
+
     amount = models.DecimalField(
         max_digits=10, decimal_places=2, help_text="Amount collected"
     )

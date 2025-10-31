@@ -26,6 +26,7 @@ from django.conf import settings
 from django.shortcuts import get_object_or_404
 from django.core.cache import cache
 from django.contrib.auth.decorators import login_required
+from purchase_order.models import Department
 
 
 # Set up logging
@@ -729,13 +730,16 @@ def send_collection_whatsapp(client_name, branch, created_by, amount, created_at
 
 # -------------------------------------------------
 # -------------------------------------------------
+
 @login_required
 def collections_add(request):
-    """Add new collection – client auto-complete + branch auto-fill."""
+    """Add new collection – client auto-complete + department selection."""
     clients = _load_clients()
+    departments = Department.objects.filter(is_active=True).order_by('name')  # Fetch active departments
+    
     if request.method == "POST":
         client_name       = request.POST.get("client_name", "").strip()
-        branch            = request.POST.get("branch", "").strip()
+        branch            = request.POST.get("branch", "").strip()  # This will now be department name
         amount            = request.POST.get("amount", "").strip()
         paid_for          = request.POST.get("paid_for", "").strip()
         collection_type   = request.POST.get("collection_type", "cash").strip()
@@ -748,6 +752,7 @@ def collections_add(request):
             return render(request, "collections_add.html", {
                 "error": "Please fill all required fields.",
                 "clients_json": clients,
+                "departments": departments,
             })
 
         try:
@@ -755,8 +760,8 @@ def collections_add(request):
             if amount <= 0:
                 raise ValueError("Amount must be greater than 0")
 
-            # validate file only when needed   // << UPDATED
-            if collection_type in ('online', 'cheque', 'neft'):        # << added neft
+            # validate file only when needed
+            if collection_type in ('upi', 'neft', 'cheque'):
                 if not screenshot:
                     raise ValueError(f"Proof image is required for {collection_type.replace('_', ' ').title()}")
                 allowed = {"image/jpeg", "image/jpg", "image/png", "image/gif"}
@@ -768,7 +773,7 @@ def collections_add(request):
             # create record
             collection = Collection.objects.create(
                 client_name=client_name,
-                branch=branch,
+                branch=branch,  # This stores the department name
                 amount=amount,
                 paid_for=paid_for,
                 collection_type=collection_type,
@@ -794,15 +799,20 @@ def collections_add(request):
             return render(request, "collections_add.html", {
                 "error": str(e),
                 "clients_json": clients,
+                "departments": departments,
             })
         except Exception as e:
             logger.error("Error saving collection: %s", e)
             return render(request, "collections_add.html", {
                 "error": f"Error saving collection: {e}",
                 "clients_json": clients,
+                "departments": departments,
             })
 
-    return render(request, "collections_add.html", {"clients_json": clients})
+    return render(request, "collections_add.html", {
+        "clients_json": clients,
+        "departments": departments,
+    })
 
 def collections_list(request):
     """List all collections with search, filter, and status functionality"""
@@ -849,7 +859,7 @@ def collections_list(request):
     filtered_count = collections.count()
     filtered_total_amount = collections.aggregate(Sum('amount'))['amount__sum'] or 0
 
-    # "This Month" count — based on full Collection data
+    # "This Month" count – based on full Collection data
     today = timezone.now().date()
     this_month_count = Collection.objects.filter(
         created_at__year=today.year,
@@ -861,10 +871,25 @@ def collections_list(request):
     verified_count = collections.filter(status='verified').count()
     multiple_entry_count = collections.filter(status='multiple entry').count()
 
-    # Pagination
-    paginator = Paginator(collections, 10)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
+    # Get items per page from query parameter (default: 10)
+    items_per_page = request.GET.get('per_page', '10')
+    
+    # Handle "Show All" option
+    if items_per_page == 'all':
+        page_obj = collections
+        is_paginated = False
+    else:
+        try:
+            items_per_page = int(items_per_page)
+            if items_per_page < 1:
+                items_per_page = 10
+        except ValueError:
+            items_per_page = 10
+        
+        paginator = Paginator(collections, items_per_page)
+        page_number = request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+        is_paginated = page_obj.has_other_pages()
 
     # Render to template
     return render(request, 'collections_list.html', {
@@ -875,9 +900,11 @@ def collections_list(request):
         'pending_count': pending_count,
         'verified_count': verified_count,
         'multiple_entry_count': multiple_entry_count,
-        'is_paginated': page_obj.has_other_pages(),
+        'is_paginated': page_obj.has_other_pages() if hasattr(page_obj, 'has_other_pages') else False,
         'page_obj': page_obj,
     }) 
+
+    
 # Update collection_details to include status
 def collection_details(request, collection_id):
     """Get collection details via AJAX"""
@@ -940,6 +967,7 @@ def collections_edit(request, collection_id):
     """Edit collection record with client autocomplete functionality"""
     collection = get_object_or_404(Collection, id=collection_id)
     clients = _load_clients()
+    departments = Department.objects.filter(is_active=True).order_by('name')  # Add departments
 
     if request.method == "POST":
         client_name        = request.POST.get("client_name", "").strip()
@@ -956,6 +984,7 @@ def collections_edit(request, collection_id):
             return render(request, "collections_edit.html", {
                 "collection": collection,
                 "clients_json": clients,
+                "departments": departments,  # Add to error response
                 "error": "Please fill all required fields.",
             })
 
@@ -1001,6 +1030,7 @@ def collections_edit(request, collection_id):
             return render(request, "collections_edit.html", {
                 "collection": collection,
                 "clients_json": clients,
+                "departments": departments,  # Add to error response
                 "error": str(e),
             })
         except Exception as e:
@@ -1008,12 +1038,14 @@ def collections_edit(request, collection_id):
             return render(request, "collections_edit.html", {
                 "collection": collection,
                 "clients_json": clients,
+                "departments": departments,  # Add to error response
                 "error": f"Error updating collection: {str(e)}",
             })
 
     return render(request, "collections_edit.html", {
         "collection": collection,
         "clients_json": clients,
+        "departments": departments,  # Add to GET response
     })
 
 @csrf_exempt
@@ -1173,23 +1205,47 @@ import logging
 logger = logging.getLogger(__name__)
 
 # ---------- API: Add new collection (POST with image) ----------
+@require_http_methods(["GET"])
+def api_departments_list(request):
+    """API endpoint to fetch active departments for mobile app"""
+    try:
+        departments = Department.objects.filter(is_active=True).order_by('name')
+        data = [
+            {
+                "id": dept.id,
+                "name": dept.name,
+                "code": getattr(dept, 'code', ''),  # if you have a code field
+            }
+            for dept in departments
+        ]
+        return JsonResponse({
+            "success": True,
+            "count": len(data),
+            "data": data
+        })
+    except Exception as e:
+        logger.error(f"API error fetching departments: {e}")
+        return JsonResponse({"success": False, "error": str(e)}, status=500)
+
+
+# ---------- UPDATED API: Add new collection (POST with image) ----------
 @csrf_exempt
 @require_http_methods(["POST"])
 def api_collections_add(request):
     try:
         client_name = request.POST.get("client_name", "").strip()
-        branch      = request.POST.get("branch", "").strip()
+        department  = request.POST.get("department", "").strip()  # Changed from branch
         amount      = request.POST.get("amount", "").strip()
         paid_for    = request.POST.get("paid_for", "").strip()
-        payment_method = request.POST.get("payment_method", "").strip()  # NEW: Get payment method
+        payment_method = request.POST.get("payment_method", "").strip()
         notes       = request.POST.get("notes", "").strip()
-        created_by  = request.POST.get("created_by", "").strip()  # NEW: Get actual user name
+        created_by  = request.POST.get("created_by", "").strip()
         screenshot  = request.FILES.get("payment_screenshot")
 
         # --- Basic validation ---
-        if not all([client_name, branch, amount, paid_for, payment_method]):
+        if not all([client_name, department, amount, paid_for, payment_method]):
             return JsonResponse(
-                {"success": False, "error": "Client name, branch, amount, paid_for, and payment_method are required"},
+                {"success": False, "error": "Client name, department, amount, paid_for, and payment_method are required"},
                 status=400
             )
         
@@ -1215,22 +1271,22 @@ def api_collections_add(request):
             if screenshot.size > 5 * 1024 * 1024:
                 return JsonResponse({"success": False, "error": "File size must be < 5 MB"}, status=400)
 
-        # --- Save collection ---
+        # --- Save collection (branch field now stores department name) ---
         collection = Collection.objects.create(
             client_name=client_name,
-            branch=branch,
+            branch=department,  # Storing department name in branch field
             amount=amount,
             paid_for=paid_for,
             payment_method=payment_method,
             payment_screenshot=screenshot if payment_method.lower() != "cash" else None,
             notes=notes or None,
-            created_by=created_by if created_by else "Mobile App"  # Use provided name or fallback
+            created_by=created_by if created_by else "Mobile App"
         )
 
         # --- WhatsApp alert ---
         send_collection_whatsapp(
             client_name=collection.client_name,
-            branch=collection.branch,
+            branch=collection.branch,  # This is actually department now
             created_by=collection.created_by,
             amount=collection.amount,
             created_at=collection.created_at
@@ -1242,7 +1298,7 @@ def api_collections_add(request):
             "data": {
                 "id": collection.id,
                 "client_name": collection.client_name,
-                "branch": collection.branch,
+                "department": collection.branch,  # Renamed in response for clarity
                 "amount": str(collection.amount),
                 "paid_for": collection.paid_for,
                 "payment_method": collection.payment_method,
@@ -1258,7 +1314,7 @@ def api_collections_add(request):
         return JsonResponse({"success": False, "error": str(e)}, status=500)
 
 
-# ---------- API: Get all collections (GET) ----------
+# ---------- UPDATED API: Get all collections (GET) ----------
 @require_http_methods(["GET"])
 def api_collections_list(request):
     try:
@@ -1267,7 +1323,7 @@ def api_collections_list(request):
             {
                 "id": c.id,
                 "client_name": c.client_name,
-                "branch": c.branch,
+                "department": c.branch,  # Renamed from branch to department for clarity
                 "amount": str(c.amount),
                 "paid_for": c.paid_for,
                 "payment_method": getattr(c, 'payment_method', 'N/A'),
@@ -1286,10 +1342,11 @@ def api_collections_list(request):
 
 
 
-
 # http://127.0.0.1:8000/app4/api/collections/
 
 #http://127.0.0.1:8000/app4/api/collections/add/ 
+
+#http://127.0.0.1:8000/app4/api/departments/
 
 
 # {
