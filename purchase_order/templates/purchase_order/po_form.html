@@ -52,7 +52,7 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label for="department">Buyer Department <span class="required">*</span></label>
-                        <select id="department" name="department" required class="form-control" onchange="loadDepartmentInfo()">
+                        <select id="department" name="department" required class="form-control">
                             <option value="">Select Department</option>
                             {% for d in departments %}
                             <option value="{{ d.id }}" 
@@ -74,7 +74,7 @@
                             type="date" 
                             id="po_date" 
                             name="po_date" 
-                            value="{{ po.po_date|date:'Y-m-d'|default:today }}"
+                            value="{% if po.po_date %}{{ po.po_date|date:'Y-m-d' }}{% else %}{{ today }}{% endif %}"
                             required
                             class="form-control"
                         >
@@ -94,18 +94,18 @@
                             {% endfor %}
                         </select>
                     </div>
-
                     <div class="form-group">
                         <label for="delivery_date">Delivery Date <span class="required">*</span></label>
                         <input 
                             type="date" 
                             id="delivery_date" 
                             name="delivery_date" 
-                            value="{{ po.delivery_date|date:'Y-m-d'|default:today }}"
+                            value="{% if po.delivery_date %}{{ po.delivery_date|date:'Y-m-d' }}{% else %}{{ today }}{% endif %}"
                             required
                             class="form-control"
                         >
                     </div>
+                    
                 </div>
 
                 <div class="form-row">
@@ -267,13 +267,23 @@
                             <tr>
                                 <th style="width: 25%;">Item</th>
                                 <th style="width: 10%;">Qty</th>
-                                <th style="width: 12%;">Unit Price</th>
-                                <!-- ✅ Dynamic Entry Rate Column -->
-                                <th class="entry-rate-column" style="width: 12%;">
+                                <th style="width: 12%;">
                                     Entry Rate <span class="required">*</span>
                                     <i class="fas fa-info-circle" 
                                     style="font-size: 11px; cursor: help;" 
-                                    title="Base price (editable): Plus Tax = copied to Unit Price | Reverse Tax = calculates inclusive Unit Price"></i>
+                                    title="Enter base price here. Plus Tax: copies to Unit Price | Reverse Tax: calculates Unit Price with tax included"></i>
+                                </th>
+                                <th style="width: 12%;">
+                                    Sales Price (MRP)
+                                    <i class="fas fa-info-circle" 
+                                    style="font-size: 11px; cursor: help;" 
+                                    title="Editable sales price from Item Master MRP"></i>
+                                </th>
+                                <th style="width: 12%;">
+                                    Unit Price
+                                    <i class="fas fa-info-circle" 
+                                    style="font-size: 11px; cursor: help;" 
+                                    title="Auto-calculated based on Entry Rate and Calculation Method"></i>
                                 </th>
                                 <th style="width: 10%;">Discount</th>
                                 <th style="width: 10%;">Tax %</th>
@@ -293,6 +303,7 @@
                                                 data-price="{{ item.purchase_price }}"
                                                 data-tax="{{ item.tax_percentage }}"
                                                 data-unit="{{ item.unit_of_measure }}"
+                                                data-mrp="{{ item.mrp }}"
                                                 {% if po_item.item.id == item.id %}selected{% endif %}>
                                                 {{ item.name }} ({{ item.unit_of_measure }})
                                             </option>
@@ -304,17 +315,23 @@
                                             value="{{ po_item.quantity|floatformat:0 }}" onchange="calculateLineTotal({{ forloop.counter }})" required>
                                     </td>
                                     <td>
-                                        <input type="number" name="unit_price[]" class="unit-price readonly-field" step="0.01" min="0" 
-                                            value="{{ po_item.unit_price }}" onchange="calculateLineTotal({{ forloop.counter }})" 
-                                            readonly required>
-                                    </td>
-                                    <!-- ✅ Entry Rate Column (hidden by default) -->
-                                    <td class="entry-rate-column">
                                         <input type="number" name="entry_rate[]" class="entry-rate" step="0.01" min="0" 
                                             value="{{ po_item.entry_rate }}" 
                                             onchange="handleEntryRateChange({{ forloop.counter }})"
-                                            title="Base price (editable)" required>
+                                            title="Enter base price" required>
                                     </td>
+                                    <td>
+                                        <input type="number" name="sales_price[]" class="sales-price" step="0.01" min="0" 
+                                            value="{{ po_item.sales_price|default:0 }}" 
+                                            title="Editable Sales Price (MRP)">
+                                    </td>
+                                    <td>
+                                        <input type="number" name="unit_price[]" class="unit-price readonly-field" step="0.01" min="0" 
+                                            value="{{ po_item.unit_price }}" 
+                                            readonly 
+                                            title="Auto-calculated from Entry Rate" required>
+                                    </td>
+                                    <!-- ✅ ADD THIS NEW COLUMN -->
                                     <td>
                                         <input type="number" name="discount[]" class="discount" step="0.01" min="0" 
                                             value="{{ po_item.discount }}" onchange="calculateLineTotal({{ forloop.counter }})">
@@ -365,11 +382,53 @@
 
             <!-- Submit Buttons -->
             <div class="form-actions text-right mt-4">
-                <button type="submit" class="btn btn-primary">{{ action }} Purchase Order</button>
-                <button type="button" class="btn btn-warning" id="resetFormBtn">Reset</button>
-                <a href="{% url 'purchase_order:po_list' %}" class="btn btn-secondary">Cancel</a>
+                <a href="{% url 'purchase_order:po_list' %}" class="btn btn-secondary">Close</a>
+                <button type="button" class="btn btn-warning" id="resetFormBtn">Refresh</button>
+                <button type="submit" class="btn btn-primary">
+                    {% if action == 'Create' %}
+                        Save Purchase Order
+                    {% else %}
+                        Update Purchase Order
+                    {% endif %}
+                </button>
             </div>
         </form>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmationModal" class="confirmation-modal">
+        <div class="confirmation-content">
+            <div class="confirmation-header">
+                <i class="fas fa-question-circle"></i>
+                <h2 id="confirmationTitle">Confirm Action</h2>
+            </div>
+            <div class="confirmation-body">
+                <p id="confirmationMessage">Are you sure you want to proceed?</p>
+            </div>
+            <div class="confirmation-footer">
+                <button type="button" class="btn-cancel" onclick="closeConfirmationModal()">Cancel</button>
+                <button type="button" class="btn-confirm" id="confirmButton">
+                    <i class="fas fa-check"></i> Confirm
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loader Overlay -->
+    <div id="loaderOverlay" class="loader-overlay">
+        <div class="loader-content">
+            <div class="loader-spinner"></div>
+            <div class="loader-text" id="loaderText">Processing...</div>
+        </div>
+    </div>
+
+    <!-- Success Message -->
+    <div id="successMessage" class="success-message">
+        <div class="success-icon">
+            <i class="fas fa-check"></i>
+        </div>
+        <div class="success-text" id="successText">Success!</div>
+        <div class="success-subtext" id="successSubtext">Operation completed successfully</div>
     </div>
 </div>
 
@@ -636,7 +695,7 @@ label {
 .form-actions {
     display: flex;
     gap: 15px;
-    justify-content: flex-start;
+    justify-content: flex-end;  /* ✅ CHANGED: Align buttons to right */
     padding-top: 20px;
 }
 
@@ -783,9 +842,242 @@ label {
     color: #7f8c8d;
     margin-top: 5px;
 }
+/* ==================== MODAL STYLES ==================== */
+
+/* Loader Overlay */
+.loader-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 9999;
+    justify-content: center;
+    align-items: center;
+}
+
+.loader-overlay.active {
+    display: flex;
+}
+
+.loader-content {
+    background: white;
+    padding: 40px;
+    border-radius: 12px;
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    animation: slideIn 0.3s ease;
+}
+
+.loader-spinner {
+    width: 60px;
+    height: 60px;
+    border: 6px solid #f3f3f3;
+    border-top: 6px solid #3498db;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 20px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loader-text {
+    font-size: 18px;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-top: 15px;
+}
+
+/* Success Message */
+.success-message {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 40px 60px;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    z-index: 10000;
+    text-align: center;
+    animation: slideIn 0.3s ease;
+}
+
+.success-message.active {
+    display: block;
+}
+
+.success-icon {
+    width: 80px;
+    height: 80px;
+    background: #27ae60;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    animation: scaleIn 0.5s ease;
+}
+
+.success-icon i {
+    font-size: 40px;
+    color: white;
+}
+
+@keyframes scaleIn {
+    0% {
+        transform: scale(0);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.success-text {
+    font-size: 24px;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 10px;
+}
+
+.success-subtext {
+    font-size: 16px;
+    color: #7f8c8d;
+}
+
+/* Confirmation Modal */
+.confirmation-modal {
+    display: none;
+    position: fixed;
+    z-index: 9998;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    animation: fadeIn 0.3s ease;
+}
+
+.confirmation-modal.active {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.confirmation-content {
+    background-color: white;
+    padding: 0;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    animation: slideIn 0.3s ease;
+}
+
+.confirmation-header {
+    padding: 25px 30px;
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    color: white;
+    border-radius: 12px 12px 0 0;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.confirmation-header i {
+    font-size: 28px;
+}
+
+.confirmation-header h2 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 600;
+}
+
+.confirmation-body {
+    padding: 30px;
+}
+
+.confirmation-body p {
+    margin: 0 0 15px 0;
+    font-size: 16px;
+    color: #2c3e50;
+    line-height: 1.6;
+}
+
+.confirmation-footer {
+    padding: 20px 30px;
+    background: #f8f9fa;
+    border-radius: 0 0 12px 12px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.btn-confirm {
+    background: #3498db;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-confirm:hover {
+    background: #2980b9;
+    transform: translateY(-2px);
+}
+
+.btn-cancel {
+    background: #95a5a6;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-cancel:hover {
+    background: #7f8c8d;
+    transform: translateY(-2px);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateY(-50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
 </style>
 
 <script>
+// ==================== GLOBAL VARIABLES ====================
+
 // Items data from Django
 const items = [
     {% for item in items %}
@@ -794,7 +1086,8 @@ const items = [
         name: "{{ item.name|escapejs }}",
         unit: "{{ item.unit_of_measure|escapejs }}",
         price: {{ item.purchase_price }},
-        tax: {{ item.tax_percentage }}
+        tax: {{ item.tax_percentage }},
+        mrp: {{ item.mrp }}
     }{% if not forloop.last %},{% endif %}
     {% endfor %}
 ];
@@ -803,30 +1096,69 @@ let rowCounter = {% if po.po_items.all %}{{ po.po_items.count }}{% else %}0{% en
 let allClients = [];
 let dropdownVisible = false;
 let clientMode = 'select';
+let confirmCallback = null;
 
 const PREFILLED_CLIENT = "{{ po.client_details|escapejs|default:'' }}"; 
+
+// ==================== UTILITY FUNCTIONS ====================
+
+function loadDepartmentInfo() {
+    const deptSelect = document.getElementById('department');
+    if (!deptSelect) return;
+    
+    const selectedOption = deptSelect.options[deptSelect.selectedIndex];
+    if (selectedOption && selectedOption.value) {
+        console.log('Department selected:', selectedOption.text);
+    }
+}
 
 // ==================== INITIALIZATION ====================
 
 document.addEventListener('DOMContentLoaded', function() {
-    {% if action == 'Create' %}
+    // Fallback: If dates are still empty, set to today
     const today = new Date().toISOString().split('T')[0];
-    document.getElementById('po_date').value = today;
-    document.getElementById('delivery_date').value = today; // ADD THIS LINE
+    const poDateInput = document.getElementById('po_date');
+    const deliveryDateInput = document.getElementById('delivery_date');
     
+    if (poDateInput && !poDateInput.value) {
+        poDateInput.value = today;
+    }
+    if (deliveryDateInput && !deliveryDateInput.value) {
+        deliveryDateInput.value = today;
+    }
+    
+    {% if action == 'Create' %}
     if (rowCounter === 0) {
         addItemRow();
     }
     {% endif %}
     
+    // Initialize department select
     const deptSelect = document.getElementById('department');
-    if (deptSelect.value) {
-        loadDepartmentInfo();
+    if (deptSelect) {
+        if (deptSelect.value) {
+            loadDepartmentInfo();
+        }
+        // Add change event listener
+        deptSelect.addEventListener('change', loadDepartmentInfo);
     }
     
+    // Initialize other components
     loadClientsFromAPI();
     handleCalculationMethodChange();
     updateTotals();
+    
+    // Initialize date validation
+    const deliveryDateInput2 = document.getElementById('delivery_date');
+    if (deliveryDateInput2) {
+        deliveryDateInput2.addEventListener('change', function() {
+            const poDate = document.getElementById('po_date').value;
+            if (poDate && this.value && new Date(this.value) < new Date(poDate)) {
+                alert('Delivery date cannot be before PO date');
+                this.value = '';
+            }
+        });
+    }
 });
 
 // ==================== CALCULATION METHOD HANDLING ====================
@@ -834,7 +1166,6 @@ document.addEventListener('DOMContentLoaded', function() {
 function handleCalculationMethodChange() {
     const method = document.getElementById('calculation_method').value;
     const description = document.getElementById('methodDescription');
-    const entryRateColumns = document.querySelectorAll('.entry-rate-column');
     const helpText = document.getElementById('itemsHelpText');
     
     if (method === 'PLUS_TAX') {
@@ -871,15 +1202,12 @@ function handleEntryRateChange(rowId) {
     const method = document.getElementById('calculation_method').value;
     
     if (method === 'PLUS_TAX') {
-        // Plus Tax: Entry Rate = Unit Price (direct copy)
         unitPriceInput.value = entryRate.toFixed(2);
     } else {
-        // Reverse Tax: Unit Price = (Entry Rate / (100 + Tax%)) * 100
         const exclusivePrice = (entryRate / (100 + taxPercent)) * 100;
         unitPriceInput.value = exclusivePrice.toFixed(2);
     }
     
-    // Recalculate line total
     calculateLineTotal(rowId);
 }
 
@@ -891,27 +1219,30 @@ function addItemRow() {
     const row = document.createElement('tr');
     row.id = `row_${rowCounter}`;
     
-    const method = document.getElementById('calculation_method').value;
-    const showEntryRate = method === 'REVERSE_TAX';
-    
     row.innerHTML = `
         <td>
             <select name="item_id[]" class="item-select" onchange="updateItemPrice(this, ${rowCounter})" required>
                 <option value="">Select Item</option>
-                ${items.map(item => `<option value="${item.id}" data-price="${item.price}" data-tax="${item.tax}" data-unit="${item.unit}">${item.name} (${item.unit})</option>`).join('')}
+                ${items.map(item => `<option value="${item.id}" data-price="${item.price}" data-tax="${item.tax}" data-unit="${item.unit}" data-mrp="${item.mrp}">${item.name} (${item.unit})</option>`).join('')}
             </select>
         </td>
         <td>
             <input type="number" name="quantity[]" class="quantity" step="1" min="1" value="1" onchange="calculateLineTotal(${rowCounter})" required>
         </td>
         <td>
-            <input type="number" name="unit_price[]" class="unit-price readonly-field" step="0.01" min="0" value="0" 
-                onchange="calculateLineTotal(${rowCounter})" readonly required>
-        </td>
-        <td class="entry-rate-column">
             <input type="number" name="entry_rate[]" class="entry-rate" step="0.01" min="0" 
-                value="0.00" onchange="handleEntryRateChange(${rowCounter})" required>
+                value="0.00" onchange="handleEntryRateChange(${rowCounter})" required 
+                placeholder="Enter price">
         </td>
+        <td>
+            <input type="number" name="sales_price[]" class="sales-price" step="0.01" min="0" value="0.00" 
+                title="Editable Sales Price (MRP)">
+        </td>
+        <td>
+            <input type="number" name="unit_price[]" class="unit-price readonly-field" step="0.01" min="0" value="0" 
+                readonly title="Auto-calculated" required>
+        </td>
+        <!-- ✅ ADD THIS NEW COLUMN -->
         <td>
             <input type="number" name="discount[]" class="discount" step="0.01" min="0" value="0" onchange="calculateLineTotal(${rowCounter})">
         </td>
@@ -936,18 +1267,24 @@ function updateItemPrice(selectElement, rowId) {
     const selectedOption = selectElement.options[selectElement.selectedIndex];
     const price = selectedOption.getAttribute('data-price') || 0;
     const tax = selectedOption.getAttribute('data-tax') || 18;
+    const mrp = selectedOption.getAttribute('data-mrp') || 0;  // ✅ ADD THIS
     
     const row = document.getElementById(`row_${rowId}`);
     const priceInput = row.querySelector('.unit-price');
     const taxInput = row.querySelector('.tax-percent');
-    const entryRateInput = row.querySelector('.entry-rate'); // ADD THIS
+    const entryRateInput = row.querySelector('.entry-rate');
+    const salesPriceInput = row.querySelector('.sales-price');  // ✅ ADD THIS
     
     priceInput.value = parseFloat(price).toFixed(2);
     taxInput.value = parseFloat(tax).toFixed(2);
     
-    // ADD THIS: Set entry rate to purchase price
     if (entryRateInput) {
         entryRateInput.value = parseFloat(price).toFixed(2);
+    }
+    
+    // ✅ ADD THIS: Auto-fill Sales Price from MRP
+    if (salesPriceInput) {
+        salesPriceInput.value = parseFloat(mrp).toFixed(2);
     }
     
     priceInput.setAttribute('readonly', true);
@@ -963,11 +1300,10 @@ function calculateLineTotal(rowId) {
     const qty = parseFloat(row.querySelector('.quantity').value) || 0;
     const unitPrice = parseFloat(row.querySelector('.unit-price').value) || 0;
     const taxPercent = parseFloat(row.querySelector('.tax-percent').value) || 0;
-
     const discount = parseFloat(row.querySelector('.discount').value) || 0;
+    
     const taxableValue = (qty * unitPrice) - discount;
     const taxAmount = taxableValue * (taxPercent / 100);
-
     const entryTotal = taxableValue + taxAmount;
 
     row.querySelector('.line-total').value = `₹${entryTotal.toFixed(2)}`;
@@ -1015,6 +1351,8 @@ function loadClientsFromAPI() {
     const searchInput = document.getElementById('client_search_input');
     const loadingText = document.getElementById('clientLoadingText');
     const errorText = document.getElementById('clientErrorText');
+    
+    if (!searchInput) return;
     
     loadingText.style.display = 'block';
     searchInput.disabled = true;
@@ -1080,6 +1418,8 @@ function loadClientsFromAPI() {
 
 function populateClientDropdown(clients) {
     const dropdownList = document.getElementById('client_dropdown_list');
+    if (!dropdownList) return;
+    
     dropdownList.innerHTML = '';
     
     clients.forEach(client => {
@@ -1114,6 +1454,8 @@ function populateClientDropdown(clients) {
 
 function filterClients(searchTerm) {
     const dropdownList = document.getElementById('client_dropdown_list');
+    if (!dropdownList) return;
+    
     const items = dropdownList.getElementsByClassName('dropdown-item');
     
     if (!dropdownVisible) {
@@ -1152,15 +1494,18 @@ function selectClient(displayName) {
     const hiddenInput = document.getElementById('client_details');
     const dropdownList = document.getElementById('client_dropdown_list');
     
-    searchInput.value = displayName;
-    hiddenInput.value = displayName;
+    if (searchInput) searchInput.value = displayName;
+    if (hiddenInput) hiddenInput.value = displayName;
     
-    dropdownList.style.display = 'none';
-    dropdownVisible = false;
+    if (dropdownList) {
+        dropdownList.style.display = 'none';
+        dropdownVisible = false;
+    }
 }
 
 function toggleClientDropdown() {
     const dropdownList = document.getElementById('client_dropdown_list');
+    if (!dropdownList) return;
     
     if (dropdownVisible) {
         dropdownList.style.display = 'none';
@@ -1180,84 +1525,131 @@ function switchClientMode(mode) {
     const manualBtn = document.getElementById('manualClientModeBtn');
     
     if (mode === 'select') {
-        selectContainer.style.display = 'block';
-        manualContainer.style.display = 'none';
-        selectBtn.classList.add('active');
-        manualBtn.classList.remove('active');
+        if (selectContainer) selectContainer.style.display = 'block';
+        if (manualContainer) manualContainer.style.display = 'none';
+        if (selectBtn) selectBtn.classList.add('active');
+        if (manualBtn) manualBtn.classList.remove('active');
     } else {
-        selectContainer.style.display = 'none';
-        manualContainer.style.display = 'block';
-        selectBtn.classList.remove('active');
-        manualBtn.classList.add('active');
+        if (selectContainer) selectContainer.style.display = 'none';
+        if (manualContainer) manualContainer.style.display = 'block';
+        if (selectBtn) selectBtn.classList.remove('active');
+        if (manualBtn) manualBtn.classList.add('active');
         
         const dropdownList = document.getElementById('client_dropdown_list');
-        dropdownList.style.display = 'none';
-        dropdownVisible = false;
+        if (dropdownList) {
+            dropdownList.style.display = 'none';
+            dropdownVisible = false;
+        }
     }
 }
 
-// ==================== FORM VALIDATION ====================
+// ==================== CONFIRMATION & LOADER FUNCTIONS ====================
+
+function showConfirmationModal(title, message, onConfirm) {
+    const modal = document.getElementById('confirmationModal');
+    const titleElement = document.getElementById('confirmationTitle');
+    const messageElement = document.getElementById('confirmationMessage');
+    const confirmButton = document.getElementById('confirmButton');
+    
+    if (!modal) return;
+    
+    if (titleElement) titleElement.textContent = title;
+    if (messageElement) messageElement.textContent = message;
+    
+    confirmCallback = onConfirm;
+    
+    modal.classList.add('active');
+    
+    if (confirmButton) {
+        confirmButton.onclick = function() {
+            closeConfirmationModal();
+            if (confirmCallback) {
+                confirmCallback();
+            }
+        };
+    }
+}
+
+function closeConfirmationModal() {
+    const modal = document.getElementById('confirmationModal');
+    if (modal) {
+        modal.classList.remove('active');
+    }
+    confirmCallback = null;
+}
+
+function showLoader(text = 'Processing...') {
+    const loader = document.getElementById('loaderOverlay');
+    const loaderText = document.getElementById('loaderText');
+    
+    if (loaderText) loaderText.textContent = text;
+    if (loader) loader.classList.add('active');
+}
+
+function hideLoader() {
+    const loader = document.getElementById('loaderOverlay');
+    if (loader) loader.classList.remove('active');
+}
+
+function showSuccessMessage(title, subtitle, redirectUrl = null, delay = 2000) {
+    const successMsg = document.getElementById('successMessage');
+    const successText = document.getElementById('successText');
+    const successSubtext = document.getElementById('successSubtext');
+    
+    if (!successMsg) return;
+    
+    if (successText) successText.textContent = title;
+    if (successSubtext) successSubtext.textContent = subtitle;
+    
+    successMsg.classList.add('active');
+    
+    setTimeout(() => {
+        successMsg.classList.remove('active');
+        if (redirectUrl) {
+            window.location.href = redirectUrl;
+        }
+    }, delay);
+}
+
+// ==================== SIMPLE FORM SUBMISSION (EMERGENCY FIX) ====================
 
 document.getElementById('poForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    // Quick validation
     const rows = document.querySelectorAll('#itemsTableBody tr');
     if (rows.length === 0) {
-        e.preventDefault();
         alert('Please add at least one item!');
-        return false;
-    }
-
-    let allItemsSelected = true;
-    rows.forEach(row => {
-        if (!row.querySelector('.item-select').value) {
-            allItemsSelected = false;
-        }
-    });
-
-    if (!allItemsSelected) {
-        e.preventDefault();
-        alert('Please select an item for all rows!');
         return false;
     }
     
     const clientDetails = document.getElementById('client_details');
-    const manualInput = document.getElementById('client_manual_input');
-    
-    if (clientMode === 'manual') {
-        const manualValue = manualInput.value.trim();
-        if (!manualValue || manualValue.length < 3) {
-            e.preventDefault();
-            alert('Please enter a valid client name!');
-            return false;
-        }
-        clientDetails.value = manualValue;
-    } else if (!clientDetails.value) {
-        e.preventDefault();
+    if (!clientDetails || !clientDetails.value) {
         alert('Please select a client!');
         return false;
     }
-});
-
-document.getElementById('delivery_date').addEventListener('change', function() {
-    const poDate = document.getElementById('po_date').value;
-    if (poDate && this.value && new Date(this.value) < new Date(poDate)) {
-        alert('Delivery date cannot be before PO date');
-        this.value = '';
+    
+    // Show simple confirmation
+    if (confirm('Are you sure you want to submit this Purchase Order?')) {
+        // Show loader
+        const loader = document.getElementById('loaderOverlay');
+        if (loader) loader.classList.add('active');
+        
+        // Submit form
+        this.submit();
     }
+    
+    return false;
 });
-
-function loadDepartmentInfo() {
-    const deptSelect = document.getElementById('department');
-    const selectedOption = deptSelect.options[deptSelect.selectedIndex];
-    if (selectedOption.value) {
-        console.log('Department selected:', selectedOption.text);
-    }
-}
 
 // Manual input handler
 const manualInput = document.getElementById('client_manual_input');
 if (manualInput) {
     manualInput.addEventListener('input', function() {
-        document.getElementById('client_details').value = this.value.trim();
+        const clientDetails = document.getElementById('client_details');
+        if (clientDetails) {
+            clientDetails.value = this.value.trim();
+        }
     });
 }
 
@@ -1265,68 +1657,88 @@ if (manualInput) {
 document.addEventListener('click', function(event) {
     const dropdown = document.querySelector('.searchable-dropdown');
     if (dropdown && !dropdown.contains(event.target)) {
-        document.getElementById('client_dropdown_list').style.display = 'none';
-        dropdownVisible = false;
+        const dropdownList = document.getElementById('client_dropdown_list');
+        if (dropdownList) {
+            dropdownList.style.display = 'none';
+            dropdownVisible = false;
+        }
+    }
+});
+
+// Close modal on Escape
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        closeConfirmationModal();
+    }
+});
+
+// Close modal on outside click
+window.addEventListener('click', function(event) {
+    const modal = document.getElementById('confirmationModal');
+    if (event.target === modal) {
+        closeConfirmationModal();
     }
 });
 
 // ==================== RESET FORM FUNCTION ====================
 
-document.getElementById('resetFormBtn').addEventListener('click', function() {
-    if (!confirm('Are you sure you want to reset the form? All entered data will be lost.')) {
-        return;
-    }
-    
-    // Reset all form fields
-    const form = document.getElementById('poForm');
-    form.reset();
-    
-    // Set today's date for date fields
-    const today = new Date().toISOString().split('T')[0];
-    document.getElementById('po_date').value = today;
-    document.getElementById('delivery_date').value = today;
-    
-    // Clear all items from table
-    const tbody = document.getElementById('itemsTableBody');
-    tbody.innerHTML = '';
-    rowCounter = 0;
-    
-    // Add one empty row
-    addItemRow();
-    
-    // Reset client details
-    document.getElementById('client_search_input').value = '';
-    document.getElementById('client_manual_input').value = '';
-    document.getElementById('client_details').value = '';
-    document.getElementById('clientSelectedText').style.display = 'none';
-    
-    // Switch to select mode
-    switchClientMode('select');
-    
-    // Reset dropdown
-    document.getElementById('client_dropdown_list').style.display = 'none';
-    dropdownVisible = false;
-    
-    // Reset totals
-    updateTotals();
-    
-    // Reset calculation method help text
-    handleCalculationMethodChange();
-    
-    // Scroll to top
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    
-    // Show success message
-    const pageTitle = document.querySelector('.page-title');
-    const originalText = pageTitle.textContent;
-    pageTitle.textContent = '✓ Form Reset Successfully';
-    pageTitle.style.color = '#27ae60';
-    
-    setTimeout(() => {
-        pageTitle.textContent = originalText;
-        pageTitle.style.color = '#2c3e50';
-    }, 2000);
-});
+const resetFormBtn = document.getElementById('resetFormBtn');
+if (resetFormBtn) {
+    resetFormBtn.addEventListener('click', function() {
+        if (!confirm('Are you sure you want to reset the form? All entered data will be lost.')) {
+            return;
+        }
+        
+        const form = document.getElementById('poForm');
+        form.reset();
+        
+        const today = new Date().toISOString().split('T')[0];
+        const poDateInput = document.getElementById('po_date');
+        const deliveryDateInput = document.getElementById('delivery_date');
+        
+        if (poDateInput) poDateInput.value = today;
+        if (deliveryDateInput) deliveryDateInput.value = today;
+        
+        const tbody = document.getElementById('itemsTableBody');
+        tbody.innerHTML = '';
+        rowCounter = 0;
+        
+        addItemRow();
+        
+        const clientSearchInput = document.getElementById('client_search_input');
+        const clientManualInput = document.getElementById('client_manual_input');
+        const clientDetailsInput = document.getElementById('client_details');
+        
+        if (clientSearchInput) clientSearchInput.value = '';
+        if (clientManualInput) clientManualInput.value = '';
+        if (clientDetailsInput) clientDetailsInput.value = '';
+        
+        switchClientMode('select');
+        
+        const dropdownList = document.getElementById('client_dropdown_list');
+        if (dropdownList) {
+            dropdownList.style.display = 'none';
+            dropdownVisible = false;
+        }
+        
+        updateTotals();
+        handleCalculationMethodChange();
+        
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        
+        const pageTitle = document.querySelector('.page-title');
+        if (pageTitle) {
+            const originalText = pageTitle.textContent;
+            pageTitle.textContent = '✓ Form Reset Successfully';
+            pageTitle.style.color = '#27ae60';
+            
+            setTimeout(() => {
+                pageTitle.textContent = originalText;
+                pageTitle.style.color = '#2c3e50';
+            }, 2000);
+        }
+    });
+}
 
 </script>
 {% endblock %}

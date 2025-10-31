@@ -373,15 +373,28 @@ def purchase_order_list(request):
 def purchase_order_create(request):
     """Create new purchase order with line items including entry rate"""
     if request.method == 'POST':
+        # ✅ ADD THIS: Debug logging
+        print("=" * 50)
+        print("POST REQUEST RECEIVED")
+        print("=" * 50)
+        print(f"POST Data: {request.POST}")
+        print(f"User: {request.user}")
+        
         try:
             supplier = get_object_or_404(Supplier, pk=request.POST.get('supplier'))
             department = get_object_or_404(Department, pk=request.POST.get('department'))
             po_number = request.POST.get('po_number') or PurchaseOrder.generate_po_number()
             client_details = request.POST.get('client_details', '').strip()
 
+            # ✅ ADD THIS: Validate client details
             if not client_details:
+                print("❌ ERROR: Client details missing!")
                 messages.error(request, 'Please select a client from the dropdown')
                 return redirect('purchase_order:po_create')
+            
+            print(f"✅ Creating PO: {po_number}")
+            print(f"✅ Supplier: {supplier.name}")
+            print(f"✅ Client: {client_details}")
             
             if request.user.is_superuser:
                 admin_status = request.POST.get('admin_status', 'PENDING')
@@ -408,13 +421,18 @@ def purchase_order_create(request):
                 created_by=request.user.username if request.user.is_authenticated else 'Admin'
             )
 
+            print(f"✅ PO Created: {po.po_number} (ID: {po.id})")
+
             # Get line items
             item_ids = request.POST.getlist('item_id[]')
             quantities = request.POST.getlist('quantity[]')
             unit_prices = request.POST.getlist('unit_price[]')
-            entry_rates = request.POST.getlist('entry_rate[]')  # ✅ NEW
+            entry_rates = request.POST.getlist('entry_rate[]')
+            sales_prices = request.POST.getlist('sales_price[]')
             discounts = request.POST.getlist('discount[]')
             tax_percents = request.POST.getlist('tax_percent[]')
+
+            print(f"✅ Processing {len(item_ids)} line items")
 
             total_amount = Decimal('0.00')
             total_tax = Decimal('0.00')
@@ -430,31 +448,26 @@ def purchase_order_create(request):
                 discount = Decimal(discounts[i] or '0')
                 tax_percent = Decimal(tax_percents[i] or '0')
 
-                # ✅ Calculate entry_rate and totals based on method
                 if calculation_method == 'PLUS_TAX':
-                    # Plus Tax: base price + tax
-                    entry_rate = unit_price  # Same as unit price
+                    entry_rate = unit_price
                     subtotal = (qty * unit_price) - discount
                     tax_amount = subtotal * (tax_percent / 100)
                     line_total = subtotal + tax_amount
                 else:  # REVERSE_TAX
-                    # Reverse Tax: extract tax from inclusive price
-                    # Entry rate = base price after removing tax
                     entry_rate = unit_price / (Decimal('1') + (tax_percent / Decimal('100')))
-                    
                     gross_amount = (qty * unit_price) - discount
                     subtotal = (qty * entry_rate) - (discount / (Decimal('1') + (tax_percent / Decimal('100'))))
                     tax_amount = gross_amount - subtotal
                     line_total = gross_amount
 
-                # Create PO Item with entry_rate
                 PurchaseOrderItem.objects.create(
                     purchase_order=po,
                     item=item,
                     department=department,
                     quantity=qty,
                     unit_price=unit_price,
-                    entry_rate=entry_rate,  # ✅ NEW
+                    entry_rate=entry_rate,
+                    sales_price=Decimal(sales_prices[i] or '0'), 
                     discount=discount,
                     tax_percent=tax_percent,
                     line_total=line_total
@@ -469,16 +482,23 @@ def purchase_order_create(request):
             po.grand_total = total_amount + total_tax
             po.save()
 
+            print(f"✅ PO SAVED: Total = ₹{po.grand_total}")
+            print("=" * 50)
+
             messages.success(request, f'Purchase Order {po.po_number} created successfully!')
-            return redirect('purchase_order:po_detail', pk=po.pk)
+            return redirect('purchase_order:po_list')
 
         except Exception as e:
+            print(f"❌ ERROR: {str(e)}")
+            print("=" * 50)
+            import traceback
+            traceback.print_exc()
             messages.error(request, f'Error creating purchase order: {str(e)}')
             return redirect('purchase_order:po_create')
 
-    # GET request
-    suppliers = Supplier.objects.filter(is_active=True).order_by('name')
-    items = Item.objects.all().order_by('name')
+    # ✅✅✅ GET REQUEST - FILTER ONLY ACTIVE ITEMS & SUPPLIERS ✅✅✅
+    suppliers = Supplier.objects.filter(is_active=True).order_by('name')  # ✅ CHANGED
+    items = Item.objects.filter(is_active=True).order_by('name')  # ✅ CHANGED
     departments = Department.objects.filter(is_active=True).order_by('name')
 
     context = {
@@ -488,11 +508,12 @@ def purchase_order_create(request):
         'payment_terms': PurchaseOrder.PAYMENT_TERMS_CHOICES,
         'status_choices': PurchaseOrder.STATUS_CHOICES,
         'calculation_methods': PurchaseOrder.CALCULATION_METHOD_CHOICES,
-        'today': date.today(),
+        'today': date.today().isoformat(),
         'action': 'Create',
         'auto_po_number': PurchaseOrder.generate_po_number()
     }
     return render(request, 'purchase_order/po_form.html', context)
+
 
 # ==================== UPDATE PURCHASE ORDER ====================
 @transaction.atomic
@@ -543,7 +564,8 @@ def purchase_order_update(request, pk):
             item_ids = request.POST.getlist('item_id[]')
             quantities = request.POST.getlist('quantity[]')
             unit_prices = request.POST.getlist('unit_price[]')
-            entry_rates = request.POST.getlist('entry_rate[]')  # ✅ NEW
+            entry_rates = request.POST.getlist('entry_rate[]')
+            sales_prices = request.POST.getlist('sales_price[]')  # ✅ Already getting this
             discounts = request.POST.getlist('discount[]')
             tax_percents = request.POST.getlist('tax_percent[]')
 
@@ -557,6 +579,7 @@ def purchase_order_update(request, pk):
                 item = get_object_or_404(Item, pk=item_ids[i])
                 qty = Decimal(quantities[i] or '0')
                 unit_price = Decimal(unit_prices[i] or '0')
+                sales_price = Decimal(sales_prices[i] or '0')  # ✅ Extract sales_price
                 discount = Decimal(discounts[i] or '0')
                 tax_percent = Decimal(tax_percents[i] or '0')
 
@@ -573,13 +596,15 @@ def purchase_order_update(request, pk):
                     tax_amount = gross_amount - subtotal
                     line_total = gross_amount
 
+                # ✅ FIX: Include sales_price when creating the item
                 PurchaseOrderItem.objects.create(
                     purchase_order=po,
                     item=item,
                     department=department,
                     quantity=qty,
                     unit_price=unit_price,
-                    entry_rate=entry_rate,  # ✅ NEW
+                    entry_rate=entry_rate,
+                    sales_price=sales_price,  # ✅ ADD THIS LINE
                     discount=discount,
                     tax_percent=tax_percent,
                     line_total=line_total
@@ -594,14 +619,33 @@ def purchase_order_update(request, pk):
             po.save()
 
             messages.success(request, f'Purchase Order {po.po_number} updated successfully!')
-            return redirect('purchase_order:po_detail', pk=po.pk)
+            return redirect('purchase_order:po_list')
 
         except Exception as e:
             messages.error(request, f'Error updating purchase order: {str(e)}')
 
-    # GET request
+    # ✅✅✅ GET REQUEST - SHOW ACTIVE + CURRENTLY USED INACTIVE RECORDS ✅✅✅
+    
+    # Get all active suppliers
     suppliers = Supplier.objects.filter(is_active=True).order_by('name')
-    items = Item.objects.all().order_by('name')
+    
+    # ✅ IMPORTANT: Include currently selected supplier even if inactive
+    if po.supplier and not po.supplier.is_active:
+        suppliers = suppliers | Supplier.objects.filter(id=po.supplier.id)
+    
+    # Get all active items
+    items = Item.objects.filter(is_active=True).order_by('name')
+    
+    # ✅ IMPORTANT: Include currently used items even if inactive
+    used_item_ids = po.po_items.values_list('item_id', flat=True)
+    inactive_used_items = Item.objects.filter(
+        id__in=used_item_ids,
+        is_active=False
+    )
+    if inactive_used_items.exists():
+        items = items | inactive_used_items
+    
+    # Get active departments
     departments = Department.objects.filter(is_active=True).order_by('name')
 
     context = {
@@ -615,7 +659,7 @@ def purchase_order_update(request, pk):
         'calculation_methods': PurchaseOrder.CALCULATION_METHOD_CHOICES,
         'is_superuser': request.user.is_superuser,
         'action': 'Update',
-        'today': date.today(),
+        'today': date.today().isoformat(), 
         'auto_po_number': po.po_number
     }
     return render(request, 'purchase_order/po_form.html', context)

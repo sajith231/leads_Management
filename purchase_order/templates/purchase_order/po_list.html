@@ -387,14 +387,14 @@ body {
 }
 
 .filter-group {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 15px;
-    flex-wrap: wrap;
 }
 
 .filter-box {
-    flex: 1;
-    min-width: 200px;
+    display: flex;
+    flex-direction: column;
 }
 
 .filter-label {
@@ -423,11 +423,11 @@ body {
 }
 
 .clear-filters-btn {
-    width: 10%;
+    min-width: 120px;
     background-color: #525151ff;
     color: #fff;
     border: none;
-    padding: 12px 15px;
+    padding: 12px 20px;
     border-radius: 8px;
     font-size: 14px;
     font-weight: 500;
@@ -437,6 +437,7 @@ body {
     align-items: center;
     justify-content: center;
     gap: 8px;
+    white-space: nowrap;
 }
 
 .clear-filters-btn:hover {

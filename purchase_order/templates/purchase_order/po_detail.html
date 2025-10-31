@@ -208,9 +208,9 @@
                             <th class="packing-col">Packing</th>
                             <th class="qty-col">QTY</th>
                             <th class="discount-col">Discount</th>
-                            <th class="rate-col">Rate</th>
+                            <th class="rate-col">Entry Rate</th>  <!-- ✅ CHANGED from "Rate" -->
                             <th class="tax-col">Tax %</th>
-                            <th class="mrp-col">MRP</th>
+                            <th class="mrp-col">Sales Price (MRP)</th>  <!-- ✅ CHANGED from "MRP" -->
                             <th class="total-col">Total Amount</th>
                             <th class="remark-col">Remark</th>
                         </tr>
@@ -225,9 +225,9 @@
                             <td class="center-align">{{ item.item.unit_of_measure }}</td>
                             <td class="right-align">{{ item.quantity }}</td>
                             <td class="right-align">{{ item.discount|floatformat:2 }}</td>
-                            <td class="right-align">{{ item.unit_price|floatformat:2 }}</td>
+                            <td class="right-align">{{ item.entry_rate|floatformat:2 }}</td>  <!-- ✅ Changed from unit_price -->
                             <td class="center-align">{{ item.tax_percent }}</td>
-                            <td class="right-align">{{ item.unit_price|floatformat:2 }}</td>
+                            <td class="right-align">{{ item.sales_price|default:0|floatformat:2 }}</td>  <!-- ✅ Changed from unit_price -->
                             <td class="right-align line-total">{{ item.line_total|floatformat:2 }}</td>
                             <td></td>
                         </tr>
