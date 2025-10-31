@@ -270,6 +270,13 @@
             font-size: 0.7rem;
             margin-left: 5px;
         }
+
+        .disabled-invoice-btn {
+            background: #6c757d;
+            border: none;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
     </style>
 </head>
 <body>
@@ -281,9 +288,9 @@
                     <p class="mb-0">Manage and track service invoices for jobs in technician hand</p>
                 </div>
                 <div class="col-md-6 text-end">
-                    <a href="{% url 'app5:service_billing_view' %}" class="btn btn-light">
+                    <!-- <a href="{% url 'app5:service_billing_view' %}" class="btn btn-light">
                         <i class="fas fa-plus-circle me-2"></i>New Invoice
-                    </a>
+                    </a> -->
                 </div>
             </div>
         </div>
@@ -368,7 +375,7 @@
                             <th>Customer Details</th>
                             <th>Created By</th>
                             <th>Items Name</th>
-                            <!-- <th>Invoice Amount</th> -->
+                            <!-- <th>Job Status</th> -->
                             <th>Invoice Status</th>
                             <th>Actions</th>
                         </tr>
@@ -419,6 +426,16 @@
             {% endif %}
         </td>
         
+        <!-- <td>
+            <span class="status-badge 
+                {% if jobcard.status == 'accepted' %}status-accepted
+                {% elif jobcard.status == 'completed' %}status-completed
+                {% elif jobcard.status == 'returned' %}status-returned
+                {% else %}bg-secondary{% endif %}">
+                {{ jobcard.status|title }}
+            </span>
+        </td> -->
+        
         <td>
             {% if jobcard.has_invoice %}
                 <span class="badge bg-success">Invoiced</span>
@@ -427,15 +444,18 @@
                 <span class="badge bg-secondary">Not Invoiced</span>
             {% endif %}
         </td>
+        
         <td>
             <div class="action-buttons">
-                {% if not jobcard.has_invoice %}
+                {% if jobcard.status == 'accepted' and not jobcard.has_invoice %}
+                    <!-- Show Create Invoice button ONLY for accepted jobs without invoice -->
                     <a href="{% url 'app5:service_billing_view' %}?ticket_no={{ jobcard.ticket_no }}" 
                        class="btn btn-primary btn-sm" 
                        title="Create Invoice">
                         <i class="fas fa-file-invoice"></i>
                     </a>
-                {% else %}
+                {% elif jobcard.has_invoice %}
+                    <!-- Show View/Edit buttons for jobs with existing invoices -->
                     <a href="{% url 'app5:view_service_invoice' jobcard.ticket_no %}" 
                        class="btn btn-info btn-sm" 
                        title="View Invoice">
@@ -446,10 +466,16 @@
                        title="Edit Invoice">
                         <i class="fas fa-edit"></i>
                     </a>
+                {% else %}
+                    <!-- Show disabled button for non-accepted jobs without invoice -->
+                    <button class="btn btn-secondary btn-sm disabled-invoice-btn" disabled 
+                            title="Invoice can only be created for jobs 'In Technician Hand'">
+                        <i class="fas fa-file-invoice"></i>
+                    </button>
                 {% endif %}
                 
                 <!-- Complete Button -->
-                {% if jobcard.status != 'completed' %}
+                {% if jobcard.status != 'completed' and jobcard.status != 'returned' %}
                 <button class="btn btn-success btn-sm complete-btn" 
                         title="Mark as Complete"
                         data-ticket-no="{{ jobcard.ticket_no }}"
@@ -459,7 +485,7 @@
                 {% endif %}
                 
                 <!-- Return Button -->
-                {% if jobcard.status != 'returned' %}
+                {% if jobcard.status == 'completed' %}
                 <button class="btn btn-info btn-sm return-btn" 
                         title="Mark as Returned"
                         data-ticket-no="{{ jobcard.ticket_no }}"
@@ -602,14 +628,14 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Complete functionality - Update Invoice Status to Completed
+    // Complete functionality - Update Job Status to Completed
     const completeButtons = document.querySelectorAll('.complete-btn');
     completeButtons.forEach(button => {
         button.addEventListener('click', function() {
             const ticketNo = this.getAttribute('data-ticket-no');
             const customer = this.getAttribute('data-customer');
             
-            if (confirm(`Are you sure you want to mark this INVOICE as completed?\n\nTicket: ${ticketNo}\nCustomer: ${customer}`)) {
+            if (confirm(`Are you sure you want to mark this JOB as completed?\n\nTicket: ${ticketNo}\nCustomer: ${customer}`)) {
                 // Show loading state
                 const originalHTML = this.innerHTML;
                 this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
@@ -624,21 +650,17 @@ document.addEventListener('DOMContentLoaded', function() {
                     },
                     body: JSON.stringify({
                         ticket_no: ticketNo,
-                        action: 'completed',
-                        update_type: 'invoice_status'
+                        action: 'completed'
                     })
                 })
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        // Update the invoice status badge in the table
+                        // Update the job status badge in the table
                         const row = this.closest('tr');
-                        const invoiceStatusCell = row.querySelector('td:nth-child(8)');
-                        if (invoiceStatusCell) {
-                            invoiceStatusCell.innerHTML = `
-                                <span class="badge bg-success">Completed</span>
-                                <small class="text-muted d-block">INV-${ticketNo}</small>
-                            `;
+                        const jobStatusCell = row.querySelector('td:nth-child(7)');
+                        if (jobStatusCell) {
+                            jobStatusCell.innerHTML = `<span class="status-badge status-completed">Completed</span>`;
                         }
                         
                         // Update row data attribute
@@ -647,27 +669,38 @@ document.addEventListener('DOMContentLoaded', function() {
                         // Hide the complete button after successful action
                         this.style.display = 'none';
                         
-                        // Enable return button for completed invoices
+                        // Show return button for completed jobs
                         const returnBtn = row.querySelector('.return-btn');
                         if (returnBtn) {
+                            returnBtn.style.display = '';
                             returnBtn.disabled = false;
                             returnBtn.style.opacity = '1';
                             returnBtn.style.cursor = 'pointer';
-                            returnBtn.title = 'Mark Invoice as Returned';
+                            returnBtn.title = 'Mark Job as Returned';
                         }
                         
-                        showAlert(`Invoice ${ticketNo} marked as completed successfully!`, 'success');
+                        // Update invoice button state
+                        const invoiceBtn = row.querySelector('.btn-primary, .disabled-invoice-btn');
+                        if (invoiceBtn && invoiceBtn.classList.contains('btn-primary')) {
+                            invoiceBtn.classList.remove('btn-primary');
+                            invoiceBtn.classList.add('disabled-invoice-btn');
+                            invoiceBtn.disabled = true;
+                            invoiceBtn.title = 'Invoice cannot be created for completed jobs';
+                            invoiceBtn.innerHTML = '<i class="fas fa-file-invoice"></i>';
+                        }
+                        
+                        showAlert(`Job ${ticketNo} marked as completed successfully!`, 'success');
                         updateStatistics();
                         
                     } else {
-                        showAlert(data.error || 'Error marking invoice as completed', 'danger');
+                        showAlert(data.error || 'Error marking job as completed', 'danger');
                         this.innerHTML = originalHTML;
                         this.disabled = false;
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    showAlert('Network error marking invoice as completed', 'danger');
+                    showAlert('Network error marking job as completed', 'danger');
                     this.innerHTML = originalHTML;
                     this.disabled = false;
                 });
@@ -675,23 +708,23 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Return functionality - Update Invoice Status to Returned (ONLY for completed invoices)
+    // Return functionality - Update Job Status to Returned (ONLY for completed jobs)
     const returnButtons = document.querySelectorAll('.return-btn');
     returnButtons.forEach(button => {
         button.addEventListener('click', function() {
-            // Double check if invoice is completed
+            // Double check if job is completed
             const row = this.closest('tr');
             const status = row.getAttribute('data-status');
             
             if (status !== 'completed') {
-                showAlert('Return action is only available for completed invoices!', 'warning');
+                showAlert('Return action is only available for completed jobs!', 'warning');
                 return;
             }
             
             const ticketNo = this.getAttribute('data-ticket-no');
             const customer = this.getAttribute('data-customer');
             
-            if (confirm(`Are you sure you want to mark this COMPLETED INVOICE as returned?\n\nTicket: ${ticketNo}\nCustomer: ${customer}`)) {
+            if (confirm(`Are you sure you want to mark this COMPLETED JOB as returned?\n\nTicket: ${ticketNo}\nCustomer: ${customer}`)) {
                 // Show loading state
                 const originalHTML = this.innerHTML;
                 this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
@@ -706,21 +739,17 @@ document.addEventListener('DOMContentLoaded', function() {
                     },
                     body: JSON.stringify({
                         ticket_no: ticketNo,
-                        action: 'returned',
-                        update_type: 'invoice_status'
+                        action: 'returned'
                     })
                 })
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        // Update the invoice status badge in the table
+                        // Update the job status badge in the table
                         const row = this.closest('tr');
-                        const invoiceStatusCell = row.querySelector('td:nth-child(8)');
-                        if (invoiceStatusCell) {
-                            invoiceStatusCell.innerHTML = `
-                                <span class="badge bg-info">Returned</span>
-                                <small class="text-muted d-block">INV-${ticketNo}</small>
-                            `;
+                        const jobStatusCell = row.querySelector('td:nth-child(7)');
+                        if (jobStatusCell) {
+                            jobStatusCell.innerHTML = `<span class="status-badge status-returned">Returned</span>`;
                         }
                         
                         // Update row data attribute
@@ -729,18 +758,18 @@ document.addEventListener('DOMContentLoaded', function() {
                         // Hide the return button after successful action
                         this.style.display = 'none';
                         
-                        showAlert(`Invoice ${ticketNo} marked as returned successfully!`, 'success');
+                        showAlert(`Job ${ticketNo} marked as returned successfully!`, 'success');
                         updateStatistics();
                         
                     } else {
-                        showAlert(data.error || 'Error marking invoice as returned', 'danger');
+                        showAlert(data.error || 'Error marking job as returned', 'danger');
                         this.innerHTML = originalHTML;
                         this.disabled = false;
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    showAlert('Network error marking invoice as returned', 'danger');
+                    showAlert('Network error marking job as returned', 'danger');
                     this.innerHTML = originalHTML;
                     this.disabled = false;
                 });
@@ -796,38 +825,54 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 5000);
 });
 
-// Initialize button states based on invoice status
+// Initialize button states based on job status
 function initializeButtonStates() {
     const rows = document.querySelectorAll('.jobcard-row');
     
     rows.forEach(row => {
         const status = row.getAttribute('data-status');
-        const hasInvoice = row.querySelector('.badge.bg-success, .badge.bg-info') !== null;
+        const hasInvoice = row.querySelector('.badge.bg-success') !== null;
         
         const completeBtn = row.querySelector('.complete-btn');
         const returnBtn = row.querySelector('.return-btn');
+        const invoiceBtn = row.querySelector('.btn-primary, .disabled-invoice-btn');
         
-        // Show complete button only if invoice exists and invoice is not completed/returned
+        // Show complete button only for active jobs (not completed/returned)
         if (completeBtn) {
-            if (hasInvoice && status !== 'completed' && status !== 'returned') {
+            if (status !== 'completed' && status !== 'returned') {
                 completeBtn.style.display = '';
             } else {
                 completeBtn.style.display = 'none';
             }
         }
         
-        // Enable return button only if invoice is completed
+        // Show return button only for completed jobs
         if (returnBtn) {
             if (status === 'completed') {
+                returnBtn.style.display = '';
                 returnBtn.disabled = false;
                 returnBtn.style.opacity = '1';
                 returnBtn.style.cursor = 'pointer';
-                returnBtn.title = 'Mark Invoice as Returned';
+                returnBtn.title = 'Mark Job as Returned';
             } else {
-                returnBtn.disabled = true;
-                returnBtn.style.opacity = '0.5';
-                returnBtn.style.cursor = 'not-allowed';
-                returnBtn.title = 'Return only available for completed invoices';
+                returnBtn.style.display = 'none';
+            }
+        }
+        
+        // Update invoice button based on status
+        if (invoiceBtn && !hasInvoice) {
+            if (status === 'accepted') {
+                invoiceBtn.classList.remove('disabled-invoice-btn');
+                invoiceBtn.classList.add('btn-primary');
+                invoiceBtn.disabled = false;
+                invoiceBtn.title = 'Create Invoice';
+                invoiceBtn.innerHTML = '<i class="fas fa-file-invoice"></i>';
+            } else {
+                invoiceBtn.classList.remove('btn-primary');
+                invoiceBtn.classList.add('disabled-invoice-btn');
+                invoiceBtn.disabled = true;
+                invoiceBtn.title = 'Invoice can only be created for jobs "In Technician Hand"';
+                invoiceBtn.innerHTML = '<i class="fas fa-file-invoice"></i>';
             }
         }
     });
