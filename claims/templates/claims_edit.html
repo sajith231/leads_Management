@@ -1,0 +1,302 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+    body { margin:0; padding:0; background:#f5f5f5; }
+    .form-container { max-width:100%; height:100vh; margin:0; padding:20px; background:#fff; box-sizing:border-box; overflow-y:auto; }
+    h1 { color:#333; margin-bottom:16px; font-size:24px; font-weight:600; text-align:center; }
+    .meta { background:#fafafa; border:1px solid #eee; border-radius:8px; padding:12px 14px; margin-bottom:16px; display:grid; grid-template-columns:1fr 1fr; gap:10px; font-size:13px; color:#444; }
+    .meta div span { color:#666; }
+    .attribution { background:#eef7ff; border:1px solid #d6ecff; color:#0b3b74; padding:10px 12px; border-radius:6px; margin-bottom:18px; font-size:13px; }
+    .form-group { margin-bottom:20px; }
+    label { display:block; margin-bottom:8px; color:#555; font-weight:500; font-size:14px; }
+    input[type="text"], input[type="number"], select, textarea { width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:4px; font-size:14px; transition:border-color .3s; box-sizing:border-box; }
+    input[type="text"]:focus, input[type="number"]:focus, select:focus, textarea:focus { outline:none; border-color:#4CAF50; }
+    textarea { resize:vertical; min-height:100px; }
+    input[type="file"] { width:100%; padding:10px; border:2px dashed #ddd; border-radius:4px; cursor:pointer; font-size:14px; }
+    .button-group { display:flex; gap:10px; margin-top:30px; padding-bottom:20px; }
+    button[type="submit"] { flex:1; padding:12px 24px; background:#4CAF50; color:#fff; border:none; border-radius:4px; font-size:16px; font-weight:500; cursor:pointer; transition:background .3s; }
+    button[type="submit"]:hover { background:#45a049; }
+    .back-link { flex:1; padding:12px 24px; background:#f5f5f5; color:#333; border:none; border-radius:4px; font-size:16px; font-weight:500; text-align:center; text-decoration:none; display:inline-block; transition:background .3s; }
+    .back-link:hover { background:#e0e0e0; }
+    .required { color:#e74c3c; }
+    .optional { color:#999; font-size:12px; font-weight:normal; }
+    .current-receipt { margin-top:10px; padding:10px; background:#f8f9fa; border-radius:4px; }
+    .current-receipt a { color:#1976d2; text-decoration:none; font-weight:500; }
+    .current-receipt a:hover { text-decoration:underline; }
+    .select-wrapper { position:relative; }
+    .search-input { width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:4px; font-size:14px; box-sizing:border-box; }
+    .search-input:focus { outline:none; border-color:#4CAF50; }
+    .dropdown-list { position:absolute; top:100%; left:0; right:0; max-height:250px; overflow-y:auto; background:#fff; border:1px solid #ddd; border-top:none; border-radius:0 0 4px 4px; box-shadow:0 4px 6px rgba(0,0,0,.1); z-index:1000; display:none; }
+    .dropdown-list.show { display:block; }
+    .dropdown-item { padding:10px 12px; cursor:pointer; border-bottom:1px solid #f0f0f0; transition:background .2s; }
+    .dropdown-item:hover { background:#f5f5f5; }
+    .client-name { font-weight:500; color:#333; }
+    .client-details { font-size:12px; color:#777; margin-top:2px; }
+    .loading-message, .error-message, .no-results { padding:10px 12px; text-align:center; color:#777; font-size:14px; }
+    .error-message { color:#e74c3c; }
+    .hidden-select { display:none; }
+    .info-box { background:#e3f2fd; border-left:4px solid #2196F3; padding:12px; margin-bottom:20px; border-radius:4px; font-size:13px; color:#1565c0; }
+    @media (min-width:768px){ .form-container{ max-width:700px; margin:0 auto; padding:40px; height:auto; min-height:100vh; } .meta{ grid-template-columns:1fr 1fr; } }
+</style>
+
+<div class="form-container">
+    <h1>Edit Claim</h1>
+
+    {% if claim %}
+    <div class="meta">
+        <div>
+            <strong>Created by:</strong>
+            <span>
+                {% if claim.created_by %} {{ claim.created_by.get_full_name|default:claim.created_by.username }} {% else %} — {% endif %}
+                {% if claim.created_at %} on {{ claim.created_at|date:"M d, Y H:i" }} {% endif %}
+            </span>
+        </div>
+        <div>
+            <strong>Last updated by:</strong>
+            <span>
+                {% if claim.updated_by %} {{ claim.updated_by.get_full_name|default:claim.updated_by.username }} {% else %} — {% endif %}
+                {% if claim.updated_at %} on {{ claim.updated_at|date:"M d, Y H:i" }} {% endif %}
+            </span>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="attribution">
+        This update will be recorded under <strong>{{ request.user.get_full_name|default:request.user.username }}</strong>.
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div style="padding:10px; margin-bottom:20px; border-radius:4px;
+                        background:{% if message.tags == 'error' %}#fee{% else %}#efe{% endif %};
+                        color:{% if message.tags == 'error' %}#c33{% else %}#060{% endif %};">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="info-box">
+        ℹ️ <strong>Note:</strong> Either select a <strong>Client</strong> OR provide a <strong>Purpose</strong>. You don't need both, but at least one is required.
+    </div>
+
+    <form method="post" enctype="multipart/form-data" action="{% url 'claims_edit' claim.id %}">
+        {% csrf_token %}
+
+        <div class="form-group">
+            <label for="expense_type">Expense Type <span class="required">*</span></label>
+            <select id="expense_type" name="expense_type" required>
+                <option value="">Select Expense Type</option>
+                <option value="self" {% if claim.expense_type == 'self' %}selected{% endif %}>Self/Personal Expense</option>
+                <option value="travel" {% if claim.expense_type == 'travel' %}selected{% endif %}>Travel/Public Transport Expense</option>
+                <option value="food" {% if claim.expense_type == 'food' %}selected{% endif %}>Food/Meal Expense</option>
+                <option value="accommodation" {% if claim.expense_type == 'accommodation' %}selected{% endif %}>Accommodation Expense</option>
+                <option value="fuel" {% if claim.expense_type == 'fuel' %}selected{% endif %}>Fuel/Parking & Toll Expense</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="department">Department <span class="optional">(Optional)</span></label>
+            <select id="department" name="department">
+                <option value="">Select Department</option>
+                {% for dept in departments %}
+                    <option value="{{ dept.id }}" {% if claim.department_id == dept.id %}selected{% endif %}>
+                        {{ dept.name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="client">Client <span class="optional">(Optional - provide this OR purpose below)</span></label>
+            <div class="select-wrapper">
+                <input type="text" id="client-search" class="search-input" 
+                       placeholder="Search for a client by name, branch, or place..."
+                       value="{% if claim.client_name %}{{ claim.client_name }}{% if claim.client %} - {{ claim.client }}{% endif %}{% endif %}" 
+                       autocomplete="off">
+                <div id="client-dropdown" class="dropdown-list"></div>
+                <select id="client" name="client" class="hidden-select">
+                    {% if claim.client %}
+                        <option value="{{ claim.client }}" selected>{{ claim.client_name }}</option>
+                    {% else %}
+                        <option value="">Select Client</option>
+                    {% endif %}
+                </select>
+                <input type="hidden" id="client_name" name="client_name" value="{{ claim.client_name }}">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="purpose">Purpose <span class="optional">(Optional - provide this OR client above)</span></label>
+            <textarea id="purpose" name="purpose" placeholder="Enter the purpose of this expense if no client is selected...">{{ claim.purpose }}</textarea>
+            <small style="color:#777;display:block;margin-top:6px;">
+                Required only if no client is selected above.
+            </small>
+        </div>
+
+        <div class="form-group">
+            <label for="amount">Amount <span class="required">*</span></label>
+            <input type="number" id="amount" name="amount" step="0.01" min="0" value="{{ claim.amount }}" required>
+        </div>
+
+        <div class="form-group" id="description-group">
+            <label for="description">Description <span class="required">*</span></label>
+            <textarea id="description" name="description">{{ claim.description }}</textarea>
+        </div>
+
+        <div class="form-group" id="receipt-group">
+            <label for="receipt">Upload Bill/Receipt <span id="receipt-required-mark" class="required">*</span></label>
+            <input type="file" id="receipt" name="receipt" accept="image/*,.pdf">
+            <small id="receipt-hint" style="color:#777;display:block;margin-top:6px;">
+                Required for all expenses except Self/Personal.
+            </small>
+            <div class="current-receipt">
+                Current receipt:
+                {% if claim.receipt %}
+                    <a href="{{ claim.receipt.url }}" target="_blank" rel="noopener noreferrer">View Current Receipt</a>
+                {% else %}
+                    <em>None uploaded</em>
+                {% endif %}
+                <br><small style="color:#777;">Leave empty to keep current receipt.</small>
+            </div>
+        </div>
+
+        <div class="button-group">
+            <a href="{% url 'claims_list' %}" class="back-link">Cancel</a>
+            <button type="submit">Update Claim</button>
+        </div>
+    </form>
+</div>
+
+<script>
+    let clientsData = [];
+    const searchInput = document.getElementById('client-search');
+    const dropdown = document.getElementById('client-dropdown');
+    const hiddenSelect = document.getElementById('client');
+    const clientNameInput = document.getElementById('client_name');
+    const purposeTextarea = document.getElementById('purpose');
+
+    async function fetchClients() {
+        dropdown.innerHTML = '<div class="loading-message">Loading clients...</div>';
+        dropdown.classList.add('show');
+        try {
+            const response = await fetch('{% url "get_clients" %}');
+            if (!response.ok) throw new Error('Failed to fetch clients');
+            const result = await response.json();
+            if (result.success) {
+                clientsData = result.data;
+                clientsData.sort((a,b)=>a.name.localeCompare(b.name));
+                dropdown.classList.remove('show');
+                hiddenSelect.innerHTML = '<option value="">Select Client</option>';
+                clientsData.forEach(client => {
+                    const option = document.createElement('option');
+                    option.value = client.code;
+                    option.textContent = `${client.name} - ${client.branch}`;
+                    hiddenSelect.appendChild(option);
+                });
+                if ('{{ claim.client }}') hiddenSelect.value = '{{ claim.client }}';
+            } else {
+                throw new Error(result.error || 'Unknown error');
+            }
+        } catch (error) {
+            dropdown.innerHTML = '<div class="error-message">Error loading clients. Please try again.</div>';
+            console.error('Error fetching clients:', error);
+        }
+    }
+
+    function displayClients(clients){
+        if (clients.length === 0) {
+            dropdown.innerHTML = '<div class="no-results">No clients found</div>';
+            dropdown.classList.add('show');
+            return;
+        }
+        dropdown.innerHTML = '';
+        clients.forEach(client=>{
+            const item = document.createElement('div');
+            item.className = 'dropdown-item';
+            item.innerHTML = `
+                <div class="client-name">${client.name}</div>
+                <div class="client-details">${client.branch} - ${client.address3 || client.address || ''} (${client.code})</div>
+            `;
+            item.addEventListener('click', ()=>selectClient(client));
+            dropdown.appendChild(item);
+        });
+        dropdown.classList.add('show');
+    }
+
+    function filterClients(term){
+        if(!term.trim()){ displayClients(clientsData); return; }
+        const t = term.toLowerCase();
+        const filtered = clientsData.filter(client => (
+            client.name.toLowerCase().includes(t) ||
+            client.branch.toLowerCase().includes(t) ||
+            (client.address && client.address.toLowerCase().includes(t)) ||
+            (client.address3 && client.address3.toLowerCase().includes(t)) ||
+            client.code.toLowerCase().includes(t)
+        )).sort((a,b)=>a.name.localeCompare(b.name));
+        displayClients(filtered);
+    }
+
+    function selectClient(client){
+        searchInput.value = `${client.name} - ${client.branch}`;
+        hiddenSelect.value = client.code;
+        clientNameInput.value = client.name;
+        dropdown.classList.remove('show');
+        
+        // Clear purpose when client is selected
+        if (purposeTextarea.value === '') {
+            purposeTextarea.placeholder = 'Client selected - purpose is optional';
+        }
+    }
+
+    searchInput.addEventListener('focus', ()=>{
+        if (clientsData.length === 0) fetchClients(); else displayClients(clientsData);
+    });
+    searchInput.addEventListener('input', (e)=>filterClients(e.target.value));
+    document.addEventListener('click', (e)=>{
+        if(!searchInput.contains(e.target) && !dropdown.contains(e.target)) dropdown.classList.remove('show');
+    });
+
+    // Monitor when client is cleared
+    searchInput.addEventListener('input', e => {
+        if (e.target.value === '') {
+            hiddenSelect.value = '';
+            clientNameInput.value = '';
+            purposeTextarea.placeholder = 'Enter the purpose of this expense if no client is selected...';
+        }
+    });
+
+    // --- Expense type logic ---
+    const expenseTypeSelect = document.getElementById('expense_type');
+    const descriptionGroup = document.getElementById('description-group');
+    const descriptionTextarea = document.getElementById('description');
+    const receiptGroup = document.getElementById('receipt-group');
+    const receiptRequiredMark = document.getElementById('receipt-required-mark');
+    const receiptHint = document.getElementById('receipt-hint');
+
+    function toggleFields(){
+        const type = expenseTypeSelect.value;
+
+        // Description auto for food
+        if(type === 'food'){
+            descriptionGroup.style.display = 'none';
+            descriptionTextarea.removeAttribute('required');
+            if(!descriptionTextarea.value) descriptionTextarea.value = 'Food/Meal Expense';
+        } else {
+            descriptionGroup.style.display = 'block';
+            descriptionTextarea.setAttribute('required', 'required');
+            if(descriptionTextarea.value === 'Food/Meal Expense') descriptionTextarea.value = '';
+        }
+
+        // Hide receipt field for "Self/Personal Expense"
+        if(type === 'self'){
+            receiptGroup.style.display = 'none';
+        } else {
+            receiptGroup.style.display = 'block';
+        }
+    }
+
+    expenseTypeSelect.addEventListener('change', toggleFields);
+    toggleFields();
+</script>
+
+{% endblock %}

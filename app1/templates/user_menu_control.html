@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<style>
+    @media only screen and (max-width: 768px) {
+  
+  .backbutton {
+    margin-top: 15%;
+  }
+}
+
+</style>
+<div class="backbutton"><a href="{% url 'users_table' %}" class="btn btn-primary" style="background-color: black; margin-right: 5%;">
+    ← Back
+</a></div>
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3" style="position: relative;">
+        <a href="{% url 'default_menus' %}" class="btn btn-primary">
+            Set Default Menus 
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Select User for Menu Control</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="user_id" class="form-label">Select User</label>
+                            <select name="user_id" id="user_id" class="form-select" required>
+                                <option value="">-- Select User --</option>
+                                {% for user in users|dictsort:"name" %}
+                                    {% if user.user_level != 'admin_level' and not user.is_superuser %}
+                                        <option value="{{ user.id }}">{{ user.name }} ({{ user.userid }})</option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">Configure Menu Access</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

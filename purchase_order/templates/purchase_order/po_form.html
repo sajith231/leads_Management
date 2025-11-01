@@ -1,0 +1,1332 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ action }} Purchase Order{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+    <div class="page-header">
+        <h1 class="page-title">{{ action }} Purchase Order</h1>
+        <a href="{% url 'purchase_order:po_list' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to List
+        </a>
+    </div>
+
+    <div class="form-container">
+        <form method="POST" id="poForm">
+            {% csrf_token %}
+
+            <!-- PO Header Section -->
+            <div class="form-section">
+                <h3 class="section-title">
+                    <i class="fas fa-file-invoice"></i> Purchase Order Information
+                </h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="po_number">PO Number</label>
+                        <input 
+                            type="text" 
+                            id="po_number" 
+                            name="po_number" 
+                            value="{{ po.po_number|default:auto_po_number }}"
+                            readonly
+                            class="form-control"
+                            style="background: #f8f9fa; font-weight: 600;"
+                        >
+                        <small class="help-text">Auto-generated</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="reference_number">Reference Number</label>
+                        <input 
+                            type="text" 
+                            id="reference_number" 
+                            name="reference_number" 
+                            value="{{ po.reference_number|default:'' }}"
+                            class="form-control"
+                            placeholder="Quotation/Reference"
+                        >
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="department">Buyer Department <span class="required">*</span></label>
+                        <select id="department" name="department" required class="form-control" onchange="loadDepartmentInfo()">
+                            <option value="">Select Department</option>
+                            {% for d in departments %}
+                            <option value="{{ d.id }}" 
+                                data-address="{{ d.address|escapejs }}"
+                                data-city="{{ d.city|escapejs }}"
+                                data-state="{{ d.state|escapejs }}"
+                                data-pincode="{{ d.pincode|escapejs }}"
+                                data-gst="{{ d.gst_number|escapejs }}"
+                                {% if po.department.id == d.id %}selected{% endif %}>
+                                {{ d.name }} - {{ d.city }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="po_date">PO Date <span class="required">*</span></label>
+                        <input 
+                            type="date" 
+                            id="po_date" 
+                            name="po_date" 
+                            value="{{ po.po_date|date:'Y-m-d'|default:today }}"
+                            required
+                            class="form-control"
+                        >
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="supplier">Supplier <span class="required">*</span></label>
+                        <select id="supplier" name="supplier" required class="form-control">
+                            <option value="">Select Supplier</option>
+                            {% for s in suppliers %}
+                            <option value="{{ s.id }}" 
+                                {% if po.supplier.id == s.id %}selected{% endif %}>
+                                {{ s.name }} - {{ s.city }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="delivery_date">Delivery Date <span class="required">*</span></label>
+                        <input 
+                            type="date" 
+                            id="delivery_date" 
+                            name="delivery_date" 
+                            value="{{ po.delivery_date|date:'Y-m-d'|default:today }}"
+                            required
+                            class="form-control"
+                        >
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="payment_terms">Payment Terms <span class="required">*</span></label>
+                        <select id="payment_terms" name="payment_terms" required class="form-control">
+                            {% for value, label in payment_terms %}
+                            <option value="{{ value }}" {% if po.payment_terms == value %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="status">Status <span class="required">*</span></label>
+                        <select id="status" name="status" required class="form-control">
+                            {% for value, label in status_choices %}
+                            <option value="{{ value }}" {% if po.status == value %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+             
+                <!-- ✅ UPDATED: Client Details + Calculation Method Side by Side -->
+                <div class="form-row client-calc-row">
+                    <!-- Client Details (Left Column) -->
+                    <div class="form-group">
+                        <label for="client_search_input">
+                            Client Details <span class="required">*</span>
+                        </label>
+                        
+                        <!-- Mode Toggle Buttons -->
+                        <div class="client-mode-toggle">
+                            <button 
+                                type="button" 
+                                id="selectClientModeBtn" 
+                                class="mode-btn active"
+                                onclick="switchClientMode('select')">
+                                <i class="fas fa-list"></i> Select from List
+                            </button>
+                            <button 
+                                type="button" 
+                                id="manualClientModeBtn" 
+                                class="mode-btn"
+                                onclick="switchClientMode('manual')">
+                                <i class="fas fa-keyboard"></i> Enter Manually
+                            </button>
+                        </div>
+
+                        <!-- Select Mode Container (visible by default) -->
+                        <div id="selectClientContainer" class="client-input-container">
+                            <div class="searchable-dropdown">
+                                <input 
+                                    type="text" 
+                                    id="client_search_input"
+                                    class="form-control searchable-input"
+                                    placeholder="Type to search or click to select..."
+                                    autocomplete="off"
+                                    onclick="toggleClientDropdown()"
+                                    oninput="filterClients(this.value)"
+                                >
+                                
+                                <span class="dropdown-arrow" onclick="toggleClientDropdown()">
+                                    <i class="fas fa-chevron-down"></i>
+                                </span>
+                                
+                                <div id="client_dropdown_list" class="dropdown-list" style="display: none;">
+                                    <div class="dropdown-item" data-value="">-- Select Client --</div>
+                                </div>
+                            </div>
+                            
+                            <small class="help-text" id="clientLoadingText" style="color: #3498db; display: none;">
+                                <i class="fas fa-spinner fa-spin"></i> Loading clients...
+                            </small>
+                            <small class="help-text" id="clientErrorText" style="color: #e74c3c; display: none;"></small>
+                            <small class="help-text" id="clientSelectedText" style="color: #27ae60; display: none;">
+                                <i class="fas fa-check-circle"></i> <span id="selectedClientName"></span>
+                            </small>
+                        </div>
+
+                        <!-- Manual Entry Container (hidden by default) -->
+                        <div id="manualClientContainer" class="client-input-container" style="display: none;">
+                            <input 
+                                type="text" 
+                                id="client_manual_input"
+                                class="form-control"
+                                placeholder="Enter client name (e.g., ABC Company - Mumbai)"
+                                maxlength="255"
+                            >
+                            <small class="help-text">
+                                <i class="fas fa-info-circle"></i> 
+                                Enter client name with location (e.g., "XYZ Corp - Delhi")
+                            </small>
+                        </div>
+                        
+                        <!-- Hidden input for form submission -->
+                        <input 
+                            type="hidden" 
+                            id="client_details" 
+                            name="client_details"
+                            required
+                        >
+                    </div>
+
+                    <!-- Calculation Method (Right Column) -->
+                    <div class="form-group">
+                        <label for="calculation_method">
+                            Calculation Method <span class="required">*</span>
+                            <i class="fas fa-info-circle" 
+                            style="color: #3498db; cursor: help;" 
+                            title="Plus Tax: Add tax on base price | Reverse Tax: Extract tax from inclusive price"></i>
+                        </label>
+                        <select id="calculation_method" name="calculation_method" required class="form-control" onchange="handleCalculationMethodChange()">
+                            {% for value, label in calculation_methods %}
+                            <option value="{{ value }}" {% if po.calculation_method == value %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <small class="help-text" id="calculationMethodHelp">
+                            <i class="fas fa-calculator"></i> 
+                            <span id="methodDescription">Tax will be added on top of base price</span>
+                        </small>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group full-width">
+                        <label for="notes">Notes</label>
+                        <input 
+                            type="text" 
+                            id="notes" 
+                            name="notes" 
+                            value="{{ po.notes|default:'' }}"
+                            class="form-control"
+                            placeholder="Additional notes"
+                        >
+                    </div>
+                </div>
+            </div>
+
+            <!-- Line Items Section -->
+            <div class="form-section">
+                <div class="section-header">
+                    <h3 class="section-title">
+                        <i class="fas fa-list"></i> Order Items
+                    </h3>
+                    <button type="button" class="btn btn-success" onclick="addItemRow()">
+                        <i class="fas fa-plus"></i> Add Item
+                    </button>
+                </div>
+
+                <div class="table-wrapper">
+                    <table class="line-items-table" id="itemsTable">
+                        <thead>
+                            <tr>
+                                <th style="width: 25%;">Item</th>
+                                <th style="width: 10%;">Qty</th>
+                                <th style="width: 12%;">Unit Price</th>
+                                <!-- ✅ Dynamic Entry Rate Column -->
+                                <th class="entry-rate-column" style="width: 12%;">
+                                    Entry Rate <span class="required">*</span>
+                                    <i class="fas fa-info-circle" 
+                                    style="font-size: 11px; cursor: help;" 
+                                    title="Base price (editable): Plus Tax = copied to Unit Price | Reverse Tax = calculates inclusive Unit Price"></i>
+                                </th>
+                                <th style="width: 10%;">Discount</th>
+                                <th style="width: 10%;">Tax %</th>
+                                <th style="width: 15%;">Entry Total</th>
+                                <th style="width: 8%;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="itemsTableBody">
+                            {% if po.po_items.all %}
+                                {% for po_item in po.po_items.all %}
+                                <tr id="row_{{ forloop.counter }}">
+                                    <td>
+                                        <select name="item_id[]" class="item-select" onchange="updateItemPrice(this, {{ forloop.counter }})" required>
+                                            <option value="">Select Item</option>
+                                            {% for item in items %}
+                                            <option value="{{ item.id }}" 
+                                                data-price="{{ item.purchase_price }}"
+                                                data-tax="{{ item.tax_percentage }}"
+                                                data-unit="{{ item.unit_of_measure }}"
+                                                {% if po_item.item.id == item.id %}selected{% endif %}>
+                                                {{ item.name }} ({{ item.unit_of_measure }})
+                                            </option>
+                                            {% endfor %}
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <input type="number" name="quantity[]" class="quantity" step="1" min="1" 
+                                            value="{{ po_item.quantity|floatformat:0 }}" onchange="calculateLineTotal({{ forloop.counter }})" required>
+                                    </td>
+                                    <td>
+                                        <input type="number" name="unit_price[]" class="unit-price readonly-field" step="0.01" min="0" 
+                                            value="{{ po_item.unit_price }}" onchange="calculateLineTotal({{ forloop.counter }})" 
+                                            readonly required>
+                                    </td>
+                                    <!-- ✅ Entry Rate Column (hidden by default) -->
+                                    <td class="entry-rate-column">
+                                        <input type="number" name="entry_rate[]" class="entry-rate" step="0.01" min="0" 
+                                            value="{{ po_item.entry_rate }}" 
+                                            onchange="handleEntryRateChange({{ forloop.counter }})"
+                                            title="Base price (editable)" required>
+                                    </td>
+                                    <td>
+                                        <input type="number" name="discount[]" class="discount" step="0.01" min="0" 
+                                            value="{{ po_item.discount }}" onchange="calculateLineTotal({{ forloop.counter }})">
+                                    </td>
+                                    <td>
+                                        <input type="number" name="tax_percent[]" class="tax-percent readonly-field" step="0.01" min="0" max="100" 
+                                            value="{{ po_item.tax_percent }}" onchange="calculateLineTotal({{ forloop.counter }})" 
+                                            readonly>
+                                    </td>
+                                    <td>
+                                        <input type="text" class="line-total" value="₹{{ po_item.line_total }}" readonly>
+                                    </td>
+                                    <td>
+                                        <button type="button" class="btn-remove" onclick="removeRow({{ forloop.counter }})">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="items-help">
+                    <i class="fas fa-info-circle"></i>
+                    <span id="itemsHelpText">Add multiple items to this purchase order. Prices and tax will be auto-filled from item master.</span>
+                </div>
+            </div>
+
+            <!-- Totals Section -->
+            <div class="totals-section">
+                <div class="totals-container">
+                    <div class="total-row">
+                        <span class="total-label">Subtotal:</span>
+                        <span class="total-value" id="subtotalDisplay">₹0.00</span>
+                    </div>
+                    <div class="total-row">
+                        <span class="total-label">Total Tax:</span>
+                        <span class="total-value" id="taxDisplay">₹0.00</span>
+                    </div>
+                    <div class="total-row grand-total">
+                        <span class="total-label">Grand Total:</span>
+                        <span class="total-value" id="grandTotalDisplay">₹0.00</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submit Buttons -->
+            <div class="form-actions text-right mt-4">
+                <button type="submit" class="btn btn-primary">{{ action }} Purchase Order</button>
+                <button type="button" class="btn btn-warning" id="resetFormBtn">Reset</button>
+                <a href="{% url 'purchase_order:po_list' %}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.content-wrapper {
+    padding: 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.page-title {
+    font-size: 28px;
+    font-weight: 600;
+    color: #2c3e50;
+    margin: 0;
+}
+
+.btn {
+    padding: 10px 20px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-primary {
+    background: #3498db;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #2980b9;
+}
+
+.btn-secondary {
+    background: #95a5a6;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #7f8c8d;
+}
+
+.btn-success {
+    background: #27ae60;
+    color: white;
+}
+
+.btn-success:hover {
+    background: #229954;
+}
+
+.btn-warning {
+    background: #f39c12;
+    color: white;
+}
+
+.btn-warning:hover {
+    background: #e67e22;
+}
+
+.form-container {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    padding: 30px;
+}
+
+.form-section {
+    margin-bottom: 30px;
+    padding-bottom: 30px;
+    border-bottom: 2px solid #ecf0f1;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.section-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #2c3e50;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group.full-width {
+    grid-column: 1 / -1;
+}
+
+label {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+
+.required {
+    color: #e74c3c;
+}
+
+.form-control {
+    padding: 12px 15px;
+    border: 2px solid #e9ecef;
+    border-radius: 6px;
+    font-size: 15px;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+.table-wrapper {
+    overflow-x: auto;
+    margin-bottom: 15px;
+}
+
+.line-items-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.line-items-table thead {
+    background: #34495e;
+    color: white;
+}
+
+.line-items-table th {
+    padding: 12px 10px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 13px;
+    text-transform: uppercase;
+}
+
+.line-items-table td {
+    padding: 10px;
+    border-bottom: 1px solid #ecf0f1;
+}
+
+.line-items-table input,
+.line-items-table select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 13px;
+}
+
+.line-items-table input[readonly] {
+    background: #f8f9fa;
+    font-weight: 600;
+    color: #27ae60;
+}
+
+/* ✅ Entry Rate Column - Matches table design (no highlight) */
+.entry-rate-column {
+    /* No special background - inherits from table */
+}
+
+.entry-rate {
+    background: #f8f9fa;
+    font-weight: 600;
+    color: #27ae60;
+    text-align: right;
+}
+
+.btn-remove {
+    background: #e74c3c;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.btn-remove:hover {
+    background: #c0392b;
+}
+
+.items-help {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    background: #e3f2fd;
+    border-left: 4px solid #2196f3;
+    border-radius: 4px;
+    font-size: 14px;
+    color: #1976d2;
+}
+
+.totals-section {
+    background: linear-gradient(135deg, #E3F2FD 100%);
+    border-radius: 8px;
+    padding: 25px;
+    margin-bottom: 30px;
+}
+
+.totals-container {
+    max-width: 400px;
+    margin-left: auto;
+}
+
+.total-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0;
+    font-size: 16px;
+}
+
+.total-row.grand-total {
+    border-top: 2px solid rgba(255, 255, 255, 0.37);
+    margin-top: 10px;
+    padding-top: 15px;
+    font-size: 18px;
+}
+
+.total-label {
+    font-weight: 600;
+}
+
+.total-value {
+    font-weight: 700;
+}
+
+.form-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: flex-start;
+    padding-top: 20px;
+}
+
+#calculationMethodHelp {
+    padding: 8px 12px;
+    background: #f0f8ff;
+    border-left: 4px solid #3498db;
+    border-radius: 4px;
+    margin-top: 8px;
+    display: block;
+}
+
+#methodDescription {
+    font-weight: 500;
+}
+
+/* Client Details Styling */
+.searchable-dropdown {
+    position: relative;
+    width: 100%;
+}
+
+.searchable-input {
+    padding-right: 40px !important;
+    cursor: text;
+}
+
+.dropdown-arrow {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #7f8c8d;
+    pointer-events: auto;
+    z-index: 2;
+    padding: 5px;
+}
+
+.dropdown-arrow:hover {
+    color: #3498db;
+}
+
+.dropdown-list {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    max-height: 300px;
+    overflow-y: auto;
+    background: white;
+    border: 2px solid #3498db;
+    border-top: none;
+    border-radius: 0 0 6px 6px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 1000;
+    margin-top: -2px;
+}
+
+.dropdown-item {
+    padding: 12px 15px;
+    cursor: pointer;
+    transition: background 0.2s;
+    font-size: 14px;
+    color: #2c3e50;
+}
+
+.dropdown-item:hover {
+    background: #ecf0f1;
+}
+
+.dropdown-item.selected {
+    background: #3498db;
+    color: white;
+}
+
+.dropdown-item.hidden {
+    display: none;
+}
+
+.client-mode-toggle {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+    background: #f8f9fa;
+    padding: 8px;
+    border-radius: 8px;
+}
+
+.mode-btn {
+    flex: 1;
+    padding: 10px 15px;
+    border: 2px solid #e9ecef;
+    background: white;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    color: #7f8c8d;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.mode-btn:hover {
+    border-color: #3498db;
+    color: #3498db;
+}
+
+.mode-btn.active {
+    background: #E3F2FD;
+    border-color:  #E3F2FD;
+    color: black;
+}
+
+.client-input-container {
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+#client_manual_input {
+    border: 2px dashed #ceecffff;
+    background: #f0f8ff;
+}
+
+#client_manual_input:focus {
+    border-style: solid;
+    background: white;
+}
+
+.help-text {
+    font-size: 12px;
+    color: #7f8c8d;
+    margin-top: 5px;
+}
+</style>
+
+<script>
+// Items data from Django
+const items = [
+    {% for item in items %}
+    {
+        id: {{ item.id }},
+        name: "{{ item.name|escapejs }}",
+        unit: "{{ item.unit_of_measure|escapejs }}",
+        price: {{ item.purchase_price }},
+        tax: {{ item.tax_percentage }}
+    }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+];
+
+let rowCounter = {% if po.po_items.all %}{{ po.po_items.count }}{% else %}0{% endif %};
+let allClients = [];
+let dropdownVisible = false;
+let clientMode = 'select';
+
+const PREFILLED_CLIENT = "{{ po.client_details|escapejs|default:'' }}"; 
+
+// ==================== INITIALIZATION ====================
+
+document.addEventListener('DOMContentLoaded', function() {
+    {% if action == 'Create' %}
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('po_date').value = today;
+    document.getElementById('delivery_date').value = today; // ADD THIS LINE
+    
+    if (rowCounter === 0) {
+        addItemRow();
+    }
+    {% endif %}
+    
+    const deptSelect = document.getElementById('department');
+    if (deptSelect.value) {
+        loadDepartmentInfo();
+    }
+    
+    loadClientsFromAPI();
+    handleCalculationMethodChange();
+    updateTotals();
+});
+
+// ==================== CALCULATION METHOD HANDLING ====================
+
+function handleCalculationMethodChange() {
+    const method = document.getElementById('calculation_method').value;
+    const description = document.getElementById('methodDescription');
+    const entryRateColumns = document.querySelectorAll('.entry-rate-column');
+    const helpText = document.getElementById('itemsHelpText');
+    
+    if (method === 'PLUS_TAX') {
+        description.innerHTML = '<strong>Plus Tax:</strong> Enter base price in Entry Rate (copies to Unit Price)';
+        description.style.color = '#27ae60';
+        
+        helpText.innerHTML = '<i class="fas fa-info-circle"></i> <strong>Entry Rate = Unit Price.</strong> Tax will be calculated and added on top.';
+    } else {
+        description.innerHTML = '<strong>Reverse Tax:</strong> Enter base price in Entry Rate (calculates inclusive Unit Price)';
+        description.style.color = '#e67e22';
+        
+        helpText.innerHTML = '<i class="fas fa-calculator"></i>  <strong>Unit Price = (Entry Rate / (100 + Tax%)) × 100</strong>.';
+    }
+    
+    const rows = document.querySelectorAll('#itemsTableBody tr');
+    rows.forEach((row) => {
+        const rowId = row.id.split('_')[1];
+        if (rowId) {
+            calculateLineTotal(parseInt(rowId));
+        }
+    });
+}
+
+// ==================== ENTRY RATE CHANGE HANDLER ====================
+
+function handleEntryRateChange(rowId) {
+    const row = document.getElementById(`row_${rowId}`);
+    if (!row) return;
+
+    const entryRate = parseFloat(row.querySelector('.entry-rate').value) || 0;
+    const taxPercent = parseFloat(row.querySelector('.tax-percent').value) || 0;
+    const unitPriceInput = row.querySelector('.unit-price');
+    
+    const method = document.getElementById('calculation_method').value;
+    
+    if (method === 'PLUS_TAX') {
+        // Plus Tax: Entry Rate = Unit Price (direct copy)
+        unitPriceInput.value = entryRate.toFixed(2);
+    } else {
+        // Reverse Tax: Unit Price = (Entry Rate / (100 + Tax%)) * 100
+        const exclusivePrice = (entryRate / (100 + taxPercent)) * 100;
+        unitPriceInput.value = exclusivePrice.toFixed(2);
+    }
+    
+    // Recalculate line total
+    calculateLineTotal(rowId);
+}
+
+// ==================== LINE ITEM FUNCTIONS ====================
+
+function addItemRow() {
+    rowCounter++;
+    const tbody = document.getElementById('itemsTableBody');
+    const row = document.createElement('tr');
+    row.id = `row_${rowCounter}`;
+    
+    const method = document.getElementById('calculation_method').value;
+    const showEntryRate = method === 'REVERSE_TAX';
+    
+    row.innerHTML = `
+        <td>
+            <select name="item_id[]" class="item-select" onchange="updateItemPrice(this, ${rowCounter})" required>
+                <option value="">Select Item</option>
+                ${items.map(item => `<option value="${item.id}" data-price="${item.price}" data-tax="${item.tax}" data-unit="${item.unit}">${item.name} (${item.unit})</option>`).join('')}
+            </select>
+        </td>
+        <td>
+            <input type="number" name="quantity[]" class="quantity" step="1" min="1" value="1" onchange="calculateLineTotal(${rowCounter})" required>
+        </td>
+        <td>
+            <input type="number" name="unit_price[]" class="unit-price readonly-field" step="0.01" min="0" value="0" 
+                onchange="calculateLineTotal(${rowCounter})" readonly required>
+        </td>
+        <td class="entry-rate-column">
+            <input type="number" name="entry_rate[]" class="entry-rate" step="0.01" min="0" 
+                value="0.00" onchange="handleEntryRateChange(${rowCounter})" required>
+        </td>
+        <td>
+            <input type="number" name="discount[]" class="discount" step="0.01" min="0" value="0" onchange="calculateLineTotal(${rowCounter})">
+        </td>
+        <td>
+            <input type="number" name="tax_percent[]" class="tax-percent readonly-field" step="0.01" min="0" max="100" value="18" 
+                onchange="calculateLineTotal(${rowCounter})" readonly>
+        </td>
+        <td>
+            <input type="text" class="line-total" value="₹0.00" readonly>
+        </td>
+        <td>
+            <button type="button" class="btn-remove" onclick="removeRow(${rowCounter})">
+                <i class="fas fa-trash"></i>
+            </button>
+        </td>
+    `;
+    
+    tbody.appendChild(row);
+}
+
+function updateItemPrice(selectElement, rowId) {
+    const selectedOption = selectElement.options[selectElement.selectedIndex];
+    const price = selectedOption.getAttribute('data-price') || 0;
+    const tax = selectedOption.getAttribute('data-tax') || 18;
+    
+    const row = document.getElementById(`row_${rowId}`);
+    const priceInput = row.querySelector('.unit-price');
+    const taxInput = row.querySelector('.tax-percent');
+    const entryRateInput = row.querySelector('.entry-rate'); // ADD THIS
+    
+    priceInput.value = parseFloat(price).toFixed(2);
+    taxInput.value = parseFloat(tax).toFixed(2);
+    
+    // ADD THIS: Set entry rate to purchase price
+    if (entryRateInput) {
+        entryRateInput.value = parseFloat(price).toFixed(2);
+    }
+    
+    priceInput.setAttribute('readonly', true);
+    taxInput.setAttribute('readonly', true);
+    
+    calculateLineTotal(rowId);
+}
+
+function calculateLineTotal(rowId) {
+    const row = document.getElementById(`row_${rowId}`);
+    if (!row) return;
+
+    const qty = parseFloat(row.querySelector('.quantity').value) || 0;
+    const unitPrice = parseFloat(row.querySelector('.unit-price').value) || 0;
+    const taxPercent = parseFloat(row.querySelector('.tax-percent').value) || 0;
+
+    const discount = parseFloat(row.querySelector('.discount').value) || 0;
+    const taxableValue = (qty * unitPrice) - discount;
+    const taxAmount = taxableValue * (taxPercent / 100);
+
+    const entryTotal = taxableValue + taxAmount;
+
+    row.querySelector('.line-total').value = `₹${entryTotal.toFixed(2)}`;
+
+    updateTotals();
+}
+
+function updateTotals() {
+    let subtotal = 0;
+    let taxTotal = 0;
+
+    const rows = document.querySelectorAll('#itemsTableBody tr');
+
+    rows.forEach(row => {
+        const qty = parseFloat(row.querySelector('.quantity').value) || 0;
+        const unitPrice = parseFloat(row.querySelector('.unit-price').value) || 0;
+        const discount = parseFloat(row.querySelector('.discount').value) || 0;
+        const taxPercent = parseFloat(row.querySelector('.tax-percent').value) || 0;
+
+        const taxableValue = (qty * unitPrice) - discount;
+        const taxAmount = taxableValue * (taxPercent / 100);
+
+        subtotal += taxableValue;
+        taxTotal += taxAmount;
+    });
+
+    const grandTotal = subtotal + taxTotal;
+
+    document.getElementById('subtotalDisplay').textContent = `₹${subtotal.toFixed(2)}`;
+    document.getElementById('taxDisplay').textContent = `₹${taxTotal.toFixed(2)}`;
+    document.getElementById('grandTotalDisplay').textContent = `₹${grandTotal.toFixed(2)}`;
+}
+
+function removeRow(rowId) {
+    const row = document.getElementById(`row_${rowId}`);
+    if (row) {
+        row.remove();
+        updateTotals();
+    }
+}
+
+// ==================== CLIENT API FUNCTIONS ====================
+
+function loadClientsFromAPI() {
+    const searchInput = document.getElementById('client_search_input');
+    const loadingText = document.getElementById('clientLoadingText');
+    const errorText = document.getElementById('clientErrorText');
+    
+    loadingText.style.display = 'block';
+    searchInput.disabled = true;
+    searchInput.placeholder = 'Loading clients...';
+    errorText.style.display = 'none';
+    
+    const apiUrl = '/po/api/clients/';
+    
+    fetch(apiUrl)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Server returned ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            loadingText.style.display = 'none';
+            searchInput.disabled = false;
+            searchInput.placeholder = 'Type to search or click to select...';
+            
+            let clients = [];
+            if (Array.isArray(data)) {
+                clients = data;
+            } else if (data.results) {
+                clients = data.results;
+            } else if (data.data) {
+                clients = data.data;
+            }
+            
+            if (clients.length === 0) {
+                errorText.innerHTML = '⚠️ No clients found';
+                errorText.style.display = 'block';
+                return;
+            }
+            
+            allClients = clients;
+            populateClientDropdown(allClients);
+            
+            if (PREFILLED_CLIENT) {
+                setTimeout(() => {
+                    const matchingClient = allClients.find(c => 
+                        c.display_name === PREFILLED_CLIENT || c.name === PREFILLED_CLIENT
+                    );
+                    
+                    if (matchingClient) {
+                        switchClientMode('select');
+                        selectClient(matchingClient.display_name, matchingClient.name);
+                    } else {
+                        switchClientMode('manual');
+                        document.getElementById('client_manual_input').value = PREFILLED_CLIENT;
+                        document.getElementById('client_details').value = PREFILLED_CLIENT;
+                    }
+                }, 500);
+            }
+        })
+        .catch(error => {
+            searchInput.disabled = false;
+            loadingText.style.display = 'none';
+            errorText.innerHTML = `❌ Error: ${error.message}`;
+            errorText.style.display = 'block';
+        });
+}
+
+function populateClientDropdown(clients) {
+    const dropdownList = document.getElementById('client_dropdown_list');
+    dropdownList.innerHTML = '';
+    
+    clients.forEach(client => {
+        const item = document.createElement('div');
+        item.className = 'dropdown-item';
+        
+        const displayName = client.display_name || client.name;
+        const originalName = client.name;
+        
+        item.innerHTML = `
+            <div class="client-dropdown-item">
+                <div class="client-name">${originalName}</div>
+                ${client.place || client.city ? `
+                    <div class="client-location">
+                        <i class="fas fa-map-marker-alt"></i> 
+                        ${client.place || client.city}
+                    </div>
+                ` : ''}
+            </div>
+        `;
+        
+        item.setAttribute('data-value', displayName);
+        item.setAttribute('data-original-name', originalName);
+        
+        item.onclick = function() {
+            selectClient(displayName, originalName);
+        };
+        
+        dropdownList.appendChild(item);
+    });
+}
+
+function filterClients(searchTerm) {
+    const dropdownList = document.getElementById('client_dropdown_list');
+    const items = dropdownList.getElementsByClassName('dropdown-item');
+    
+    if (!dropdownVisible) {
+        dropdownList.style.display = 'block';
+        dropdownVisible = true;
+    }
+    
+    const searchLower = searchTerm.toLowerCase();
+    let visibleCount = 0;
+    
+    Array.from(items).forEach(item => {
+        const displayValue = item.getAttribute('data-value')?.toLowerCase() || '';
+        const matches = displayValue.includes(searchLower);
+        
+        if (matches) {
+            item.classList.remove('hidden');
+            visibleCount++;
+        } else {
+            item.classList.add('hidden');
+        }
+    });
+    
+    if (visibleCount === 0 && searchTerm.length > 0) {
+        dropdownList.innerHTML = `
+            <div class="dropdown-item no-results" style="text-align: center; padding: 20px;">
+                <p>No clients found matching "${searchTerm}"</p>
+            </div>
+        `;
+    } else if (visibleCount === 0 && searchTerm.length === 0) {
+        populateClientDropdown(allClients);
+    }
+}
+
+function selectClient(displayName) {
+    const searchInput = document.getElementById('client_search_input');
+    const hiddenInput = document.getElementById('client_details');
+    const dropdownList = document.getElementById('client_dropdown_list');
+    
+    searchInput.value = displayName;
+    hiddenInput.value = displayName;
+    
+    dropdownList.style.display = 'none';
+    dropdownVisible = false;
+}
+
+function toggleClientDropdown() {
+    const dropdownList = document.getElementById('client_dropdown_list');
+    
+    if (dropdownVisible) {
+        dropdownList.style.display = 'none';
+        dropdownVisible = false;
+    } else {
+        dropdownList.style.display = 'block';
+        dropdownVisible = true;
+    }
+}
+
+function switchClientMode(mode) {
+    clientMode = mode;
+    
+    const selectContainer = document.getElementById('selectClientContainer');
+    const manualContainer = document.getElementById('manualClientContainer');
+    const selectBtn = document.getElementById('selectClientModeBtn');
+    const manualBtn = document.getElementById('manualClientModeBtn');
+    
+    if (mode === 'select') {
+        selectContainer.style.display = 'block';
+        manualContainer.style.display = 'none';
+        selectBtn.classList.add('active');
+        manualBtn.classList.remove('active');
+    } else {
+        selectContainer.style.display = 'none';
+        manualContainer.style.display = 'block';
+        selectBtn.classList.remove('active');
+        manualBtn.classList.add('active');
+        
+        const dropdownList = document.getElementById('client_dropdown_list');
+        dropdownList.style.display = 'none';
+        dropdownVisible = false;
+    }
+}
+
+// ==================== FORM VALIDATION ====================
+
+document.getElementById('poForm').addEventListener('submit', function(e) {
+    const rows = document.querySelectorAll('#itemsTableBody tr');
+    if (rows.length === 0) {
+        e.preventDefault();
+        alert('Please add at least one item!');
+        return false;
+    }
+
+    let allItemsSelected = true;
+    rows.forEach(row => {
+        if (!row.querySelector('.item-select').value) {
+            allItemsSelected = false;
+        }
+    });
+
+    if (!allItemsSelected) {
+        e.preventDefault();
+        alert('Please select an item for all rows!');
+        return false;
+    }
+    
+    const clientDetails = document.getElementById('client_details');
+    const manualInput = document.getElementById('client_manual_input');
+    
+    if (clientMode === 'manual') {
+        const manualValue = manualInput.value.trim();
+        if (!manualValue || manualValue.length < 3) {
+            e.preventDefault();
+            alert('Please enter a valid client name!');
+            return false;
+        }
+        clientDetails.value = manualValue;
+    } else if (!clientDetails.value) {
+        e.preventDefault();
+        alert('Please select a client!');
+        return false;
+    }
+});
+
+document.getElementById('delivery_date').addEventListener('change', function() {
+    const poDate = document.getElementById('po_date').value;
+    if (poDate && this.value && new Date(this.value) < new Date(poDate)) {
+        alert('Delivery date cannot be before PO date');
+        this.value = '';
+    }
+});
+
+function loadDepartmentInfo() {
+    const deptSelect = document.getElementById('department');
+    const selectedOption = deptSelect.options[deptSelect.selectedIndex];
+    if (selectedOption.value) {
+        console.log('Department selected:', selectedOption.text);
+    }
+}
+
+// Manual input handler
+const manualInput = document.getElementById('client_manual_input');
+if (manualInput) {
+    manualInput.addEventListener('input', function() {
+        document.getElementById('client_details').value = this.value.trim();
+    });
+}
+
+// Close dropdown on outside click
+document.addEventListener('click', function(event) {
+    const dropdown = document.querySelector('.searchable-dropdown');
+    if (dropdown && !dropdown.contains(event.target)) {
+        document.getElementById('client_dropdown_list').style.display = 'none';
+        dropdownVisible = false;
+    }
+});
+
+// ==================== RESET FORM FUNCTION ====================
+
+document.getElementById('resetFormBtn').addEventListener('click', function() {
+    if (!confirm('Are you sure you want to reset the form? All entered data will be lost.')) {
+        return;
+    }
+    
+    // Reset all form fields
+    const form = document.getElementById('poForm');
+    form.reset();
+    
+    // Set today's date for date fields
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('po_date').value = today;
+    document.getElementById('delivery_date').value = today;
+    
+    // Clear all items from table
+    const tbody = document.getElementById('itemsTableBody');
+    tbody.innerHTML = '';
+    rowCounter = 0;
+    
+    // Add one empty row
+    addItemRow();
+    
+    // Reset client details
+    document.getElementById('client_search_input').value = '';
+    document.getElementById('client_manual_input').value = '';
+    document.getElementById('client_details').value = '';
+    document.getElementById('clientSelectedText').style.display = 'none';
+    
+    // Switch to select mode
+    switchClientMode('select');
+    
+    // Reset dropdown
+    document.getElementById('client_dropdown_list').style.display = 'none';
+    dropdownVisible = false;
+    
+    // Reset totals
+    updateTotals();
+    
+    // Reset calculation method help text
+    handleCalculationMethodChange();
+    
+    // Scroll to top
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+    // Show success message
+    const pageTitle = document.querySelector('.page-title');
+    const originalText = pageTitle.textContent;
+    pageTitle.textContent = '✓ Form Reset Successfully';
+    pageTitle.style.color = '#27ae60';
+    
+    setTimeout(() => {
+        pageTitle.textContent = originalText;
+        pageTitle.style.color = '#2c3e50';
+    }, 2000);
+});
+
+</script>
+{% endblock %}

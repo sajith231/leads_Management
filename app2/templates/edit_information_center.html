@@ -1,0 +1,423 @@
+<!-- edit_information_center.html -->
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="form-container">
+    <div class="form-header">
+        <h1>Edit Information</h1>
+        <a href="{% url 'information_center' %}" class="back-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="back-icon">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            Back to List
+        </a>
+    </div>
+
+    <div class="form-card">
+        <form method="post" enctype="multipart/form-data" class="information-form">
+            {% csrf_token %}
+            
+            <div class="form-section">
+                <h3 class="section-title">Basic Information</h3>
+                
+                <div class="form-group">
+                    <label for="title">Title <span class="required">*</span></label>
+                    <input type="text" id="title" name="title" class="form-control" value="{{ item.title }}" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="remark">Description</label>
+                    <textarea id="remark" name="remark" class="form-control" rows="4">{{ item.remark }}</textarea>
+                    <div class="helper-text">Brief description of the information content</div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="url">URL <span class="required">*</span></label>
+                    <input type="url" id="url" name="url" class="form-control" value="{{ item.url }}" required>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <h3 class="section-title">Categorization</h3>
+                
+                <div class="form-row">
+                    <div class="form-group half">
+                        <label for="product_type">Product Type <span class="required">*</span></label>
+                        <select id="product_type" name="product_type" class="form-control" required>
+                            {% for type in product_types %}
+                            <option value="{{ type.id }}" {% if type.id == item.product_type.id %}selected{% endif %}>{{ type.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="form-group half">
+                        <label for="product_category">Product Category <span class="required">*</span></label>
+                        <select id="product_category" name="product_category" class="form-control" required>
+                            {% for category in product_categories %}
+                            <option value="{{ category.id }}" {% if category.id == item.product_category.id %}selected{% endif %}>{{ category.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group half">
+                        <label for="priority">Priority <span class="required">*</span></label>
+                        <select id="priority" name="priority" class="form-control" required>
+                            <option value="priority1" {% if item.priority == 'priority1' %}selected{% endif %}>Priority 1</option>
+                            <option value="priority2" {% if item.priority == 'priority2' %}selected{% endif %}>Priority 2</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group half">
+                        <label for="added_date">Added Date <span class="required">*</span></label>
+                        <input type="date" id="added_date" name="added_date" class="form-control" value="{{ item.added_date|date:'Y-m-d' }}" required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="position">Video Position <span class="required">*</span></label>
+                    <input type="number" id="position" name="position" class="form-control" min="1" value="{{ item.position }}" required>
+                    <div class="helper-text">Lower numbers appear first in the list</div>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <h3 class="section-title">Additional Information</h3>
+                
+                <div class="form-group">
+                    <label for="language">Language</label>
+                    <input type="text" id="language" name="language" class="form-control" value="{{ item.language }}">
+                </div>
+                
+                <div class="form-group">
+                    <label for="duration">Duration</label>
+                    <input type="text" id="duration" name="duration" class="form-control" value="{{ item.duration }}">
+                </div>
+                
+                <div class="form-group">
+                    <label for="host">Host</label>
+                    <input type="text" id="host" name="host" class="form-control" value="{{ item.host }}">
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <h3 class="section-title">Media</h3>
+                
+                <div class="form-group">
+                    <label for="thumbnail">Thumbnail Image</label>
+                    <div class="file-upload">
+                        <input type="file" id="thumbnail" name="thumbnail" accept="image/*" class="file-input">
+                        <label for="thumbnail" class="file-label">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="upload-icon">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                            <span id="file-name">Choose file...</span>
+                        </label>
+                    </div>
+                    <div class="helper-text">Current: {{ item.thumbnail.name }}</div>
+                </div>
+                
+                <div class="thumbnail-preview">
+                    <div id="preview-container">
+                        <img id="image-preview" src="{{ item.thumbnail.url }}" alt="Current thumbnail" style="display: block;">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-actions">
+                <button type="button" class="btn-secondary" onclick="window.location.href='{% url 'information_center' %}'">Cancel</button>
+                <button type="submit" class="btn-primary">Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    /* Form Container */
+    .form-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 30px 15px;
+    }
+    
+    /* Form Header */
+    .form-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+    }
+    
+    .form-header h1 {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #212529;
+        margin: 0;
+    }
+    
+    .back-btn {
+        display: flex;
+        align-items: center;
+        color: #6c757d;
+        text-decoration: none;
+        font-weight: 500;
+        transition: color 0.2s;
+    }
+    
+    .back-btn:hover {
+        color: #343a40;
+    }
+    
+    .back-icon {
+        margin-right: 8px;
+    }
+    
+    /* Form Card */
+    .form-card {
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        padding: 30px;
+    }
+    
+    /* Form Sections */
+    .form-section {
+        margin-bottom: 30px;
+        padding-bottom: 25px;
+        border-bottom: 1px solid #e9ecef;
+    }
+    
+    .form-section:last-of-type {
+        border-bottom: none;
+    }
+    
+    .section-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #495057;
+        margin: 0 0 20px 0;
+    }
+    
+    /* Form Groups */
+    .form-group {
+        margin-bottom: 20px;
+    }
+    
+    .form-row {
+        display: flex;
+        gap: 20px;
+        margin-bottom: 15px;
+    }
+    
+    .form-group.half {
+        flex: 1;
+    }
+    
+    label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 500;
+        color: #495057;
+    }
+    
+    .required {
+        color: #dc3545;
+    }
+    
+    .form-control {
+        width: 100%;
+        padding: 12px 15px;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        font-size: 1rem;
+        transition: border-color 0.2s;
+    }
+    
+    .form-control:focus {
+        border-color: #007bff;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+    }
+    
+    select.form-control {
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23495057' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 15px center;
+        background-size: 16px;
+        padding-right: 40px;
+    }
+    
+    .helper-text {
+        font-size: 0.85rem;
+        color: #6c757d;
+        margin-top: 5px;
+    }
+    
+    /* File Upload */
+    .file-upload {
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .file-input {
+        position: absolute;
+        left: 0;
+        top: 0;
+        opacity: 0;
+        width: 0.1px;
+        height: 0.1px;
+        z-index: -1;
+    }
+    
+    .file-label {
+        display: flex;
+        align-items: center;
+        padding: 12px 20px;
+        background-color: #f8f9fa;
+        border: 1px dashed #ced4da;
+        border-radius: 4px;
+        color: #495057;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+    
+    .file-label:hover {
+        background-color: #e9ecef;
+    }
+    
+    .upload-icon {
+        margin-right: 10px;
+    }
+    
+    /* Thumbnail Preview */
+    .thumbnail-preview {
+        margin-top: 15px;
+    }
+    
+    #preview-container {
+        width: 100%;
+        max-width: 320px;
+        height: 180px;
+        border-radius: 8px;
+        overflow: hidden;
+        background-color: #f8f9fa;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    #image-preview {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .no-preview {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        color: #adb5bd;
+    }
+    
+    .no-preview svg {
+        margin-bottom: 10px;
+    }
+    
+    .no-preview p {
+        margin: 0;
+        font-size: 0.9rem;
+    }
+    
+    /* Form Actions */
+    .form-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 15px;
+        margin-top: 20px;
+    }
+    
+    .btn-primary {
+        background-color: #007bff;
+        color: white;
+        border: none;
+        padding: 12px 25px;
+        border-radius: 4px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+    
+    .btn-primary:hover {
+        background-color: #0069d9;
+    }
+    
+    .btn-secondary {
+        background-color: #f8f9fa;
+        color: #495057;
+        border: 1px solid #ced4da;
+        padding: 12px 25px;
+        border-radius: 4px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+    
+    .btn-secondary:hover {
+        background-color: #e9ecef;
+    }
+    
+    /* Responsive Styles */
+    @media (max-width: 768px) {
+        .form-card {
+            padding: 20px;
+        }
+        
+        .form-row {
+            flex-direction: column;
+            gap: 0;
+        }
+        
+        .form-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 15px;
+        }
+    }
+</style>
+
+<script>
+    // Display thumbnail preview when file is selected
+    document.addEventListener('DOMContentLoaded', function() {
+        const fileInput = document.getElementById('thumbnail');
+        const fileNameDisplay = document.getElementById('file-name');
+        const imagePreview = document.getElementById('image-preview');
+        const noPreview = document.getElementById('no-preview');
+        
+        fileInput.addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                const file = this.files[0];
+                fileNameDisplay.textContent = file.name;
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    imagePreview.src = e.target.result;
+                    imagePreview.style.display = 'block';
+                    if (noPreview) noPreview.style.display = 'none';
+                }
+                reader.readAsDataURL(file);
+            } else {
+                fileNameDisplay.textContent = 'Choose file...';
+                imagePreview.style.display = 'block'; // Keep showing current image
+                if (noPreview) noPreview.style.display = 'none';
+            }
+        });
+    });
+</script>
+{% endblock %}

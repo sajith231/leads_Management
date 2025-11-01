@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="">
+    <h2 style="display: flex;justify-content: center;">Edit Employee</h2>
+    <form action="{% url 'edit_employee' employee.id %}" method="post" enctype="multipart/form-data" style="width: 60%;margin-left: 20%;">
+        {% csrf_token %}
+        
+        <div class="mb-3">
+            <label class="form-label">Name</label>
+            <input type="text" name="name" class="form-control" value="{{ employee.name }}" required>
+        </div>
+        
+        <div class="mb-3">
+            <label class="form-label">Photo</label><br>
+            <img src="{{ employee.photo.url }}" width="50" height="50" alt="Photo">
+            <input type="file" name="photo" class="form-control">
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Address</label>
+            <input type="text" name="address" class="form-control" value="{{ employee.address }}">
+        </div>
+        
+
+        <div class="mb-3">
+            <label class="form-label">Phone (Personal)</label>
+            <input type="text" name="phone_personal" class="form-control" value="{{ employee.phone_personal }}" required>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Phone (Residential)</label>
+            <input type="text" name="phone_residential" class="form-control" value="{{ employee.phone_residential }}">
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Place</label>
+            <input type="text" name="place" class="form-control" value="{{ employee.place }}" required>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">District</label>
+            <input type="text" name="district" class="form-control" value="{{ employee.district }}" required>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Education</label>
+            <input type="text" name="education" class="form-control" value="{{ employee.education }}">
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Experience</label>
+            <input type="text" name="experience" class="form-control" value="{{ employee.experience }}">
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Job Titile</label>
+            <input type="text" name="job_title" class="form-control" value="{{ employee.job_title }}" required>
+        </div>
+        <div class="mb-3">
+    <label class="form-label">Duty Time Start</label>
+    <input type="time" name="duty_time_start" class="form-control" value="{{ employee.duty_time_start|time:'H:i' }}">
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Duty Time End</label>
+        <input type="time" name="duty_time_end" class="form-control" value="{{ employee.duty_time_end|time:'H:i' }}">
+    </div>
+        <div class="mb-3">
+            <label class="form-label">Organization</label>
+            <select name="organization" class="form-control">
+                <option value="" {% if not employee.organization %}selected{% endif %}>Select Organization</option>
+                <option value="IMC" {% if employee.organization == "IMC" %}selected{% endif %}>IMC</option>
+                <option value="SYSMAC" {% if employee.organization == "SYSMAC" %}selected{% endif %}>SYSMAC</option>
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Joining Date</label>
+            <input type="date" name="joining_date" class="form-control" value="{{ joining_date }}" required>
+        </div>
+        
+        <div class="mb-3">
+            <label class="form-label">Date of Birth</label>
+            <input type="date" name="dob" class="form-control" value="{{ dob }}" required>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Select Employee User ID</label>
+            <select name="user_id" class="form-control">
+                <option value="" {% if not employee.user %}selected{% endif %}>No User ID</option>
+                {% for user in users %}
+                    <option value="{{ user.id }}" {% if employee.user and employee.user.id == user.id %}selected{% endif %}>
+                        {{ user.userid }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        
+
+        <div class="mb-3">
+    <label class="form-label">Attachments</label><br>
+    {% if employee.attachments.all %}
+        {% for attachment in employee.attachments.all %}
+            <div class="form-check">
+                <input type="checkbox" name="delete_attachments" value="{{ attachment.id }}" class="form-check-input">
+                <label class="form-check-label">
+                    <a href="{{ attachment.file.url }}" target="_blank">View Attachment</a>
+                    <span style="color: red;">(Delete)</span>
+                </label>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p>No existing attachments.</p>
+    {% endif %}
+    <input type="file" name="attachments" class="form-control" multiple>
+</div>
+
+        <div class="mb-3">
+            <label class="form-label">Bank Account Number</label>
+            <input type="text" name="bank_account_number" class="form-control" value="{{ employee.bank_account_number }}">
+        </div>
+        
+        <div class="mb-3">
+            <label class="form-label">IFSC Code</label>
+            <input type="text" name="ifsc_code" class="form-control" value="{{ employee.ifsc_code }}">
+        </div>
+        
+        <div class="mb-3">
+            <label class="form-label">Bank Name</label>
+            <input type="text" name="bank_name" class="form-control" value="{{ employee.bank_name }}">
+        </div>
+        
+        <div class="mb-3">
+            <label class="form-label">Branch</label>
+            <input type="text" name="branch" class="form-control" value="{{ employee.branch }}">
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Status</label>
+            <select name="status" class="form-control" required>
+                <option value="active" {% if employee.status == 'active' %}selected{% endif %}>Active</option>
+                <option value="inactive" {% if employee.status == 'inactive' %}selected{% endif %}>Inactive</option>
+                <option value="on_leave" {% if employee.status == 'on_leave' %}selected{% endif %}>On Leave</option>
+            </select>
+        </div>
+
+        <button type="submit" class="btn btn-success">Update Employee</button>
+    </form>
+</div>
+{% endblock %}
