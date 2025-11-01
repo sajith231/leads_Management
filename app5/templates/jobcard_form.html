@@ -1,0 +1,1620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Job Card</title>
+    <style>
+    /* Your existing CSS styles remain exactly the same */
+    body {
+        font-family: 'Segoe UI', Tahoma, sans-serif;
+        background: #f4f8fb;
+        padding: 15px;
+        margin: 0;
+    }
+    .form-container {
+        background: #fff;
+        max-width: 1200px;
+        margin: auto;
+        border-radius: 12px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        padding: 15px;
+    }
+
+    .customer-results {
+    position: absolute;
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    max-height: 200px;
+    overflow-y: auto;
+    width: 100%;
+    display: none;
+    z-index: 1000;
+}
+.customer-results div {
+    padding: 8px;
+    cursor: pointer;
+}
+.customer-results div:hover {
+    background: #f0f8ff;
+}
+    h2 {
+        text-align: center;
+        margin-top: 15px;
+        font-size: 26px;
+        color: #222;
+    }
+    h3 {
+        text-align: center;  
+        color: #0056b3;
+        margin-bottom: 10px;
+    }
+    .form-row {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 12px;
+    }
+     .customer-section {
+        background: #ede088;
+        border-radius: 8px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        margin-bottom: 12px;
+        border: 1px solid #e22525;
+    }
+    .customer-section h3 {
+        margin-bottom: 8px;
+        font-size: 20px;
+        color:black;
+    }
+    .customer-row {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+    .customer-row .form-group {
+        flex: 1;
+        min-width: 160px;
+    }
+    .customer-row label {
+        display: block;
+        font-weight: 500;
+        margin-bottom: 4px;
+    }
+    .customer-row input, .customer-row select {
+        width: 100%;
+        padding: 5px 7px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 13px;
+    }
+    .form-group {
+        flex: 1;
+        margin-bottom: 12px;
+    }
+    .form-group label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 5px;
+        font-size: 13px;
+        color: #333;
+    }
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        width: 100%;
+        padding: 7px 8px;
+        font-size: 13px;
+        border: 2px solid #e1e8ed;
+        border-radius: 8px;
+        background: #fafafa;
+        outline: none;
+        transition: all 0.3s ease;
+        box-sizing: border-box;
+    }
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+        border-color: #28a745;
+        background: #fff;
+        box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.1);
+    }
+    .form-group textarea {
+        min-height: 50px;
+        resize: vertical;
+    }
+      .item-block {
+        border: 2px solid #253123;
+        border-radius: 12px;
+        margin-bottom: 15px;
+        background: #e1fad4;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        position: relative;
+    }
+    .item-block h3 {
+        margin-bottom: 8px;
+        color: black;
+        font-size: 20px;
+        padding-bottom: 6px;
+        border-bottom: 1px solid #e9ecef;
+    }
+     .complaint-section {
+        background: #eccfdcd4;
+        border-radius: 10px;
+        margin: 10px 0;
+        border: 1px solid #c81919;
+        position: relative;
+    }
+    .complaint-section h3 {
+        margin-bottom: 10px;
+        text-align: center;
+        color: black;
+        font-size: 20px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    .serial-config-row {
+        display: flex;
+        gap: 8px;
+        margin-top: 10px;
+        flex-wrap: wrap;
+    }
+    .btn-add, .btn-remove {
+        padding: 5px 8px;
+        font-size: 11px;
+        font-weight: 600;
+        border-radius: 6px;
+        border: none;
+        cursor: pointer;
+        margin-top: 8px;
+        margin-right: 4px;
+    }
+    .btn-add { background: green; color: #fff; }
+    .btn-add:hover { background: darkgreen; }
+    .btn-remove { background: #dc3545; color: #fff; }
+    .btn-remove:hover { background: #b52a37; }
+    .btn-submit {
+        display: block;
+        margin: 15px auto;
+        padding: 8px 20px;
+        background: #000;
+        color: #fff;
+        font-size: 13px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+    }
+    .btn-submit:hover { background: #333; }
+    .add-item-btn {
+        background: green;
+        color: white;
+        padding: 8px 15px;
+        font-size: 13px;
+        font-weight: 600;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        margin: 10px 0;
+    }
+    .add-item-btn:hover { background: darkgreen; }
+    
+    /* Status Dropdown Styles */
+    .status-section {
+        position: absolute;
+        top: 10px;
+        right: 15px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .status-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #555;
+    }
+    
+    .status-dropdown {
+        padding: 4px 8px;
+        font-size: 11px;
+        font-weight: 600;
+        border: 2px solid #e1e8ed;
+        border-radius: 6px;
+        background: #fafafa;
+        color: #333;
+        cursor: pointer;
+        outline: none;
+        transition: all 0.3s ease;
+        min-width: 120px;
+    }
+    
+    .status-dropdown:focus {
+        border-color: #28a745;
+        background: #fff;
+        box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.1);
+    }
+    
+    /* Status-specific dropdown colors */
+    .status-dropdown.logged {
+        background-color: #ffc107;
+        color: #000;
+        border-color: #ffc107;
+    }
+    
+    .status-dropdown.sent_technician {
+        background-color: #17a2b8;
+        color: #fff;
+        border-color: #17a2b8;
+    }
+    
+    .status-dropdown.pending {
+        background-color: #6c757d;
+        color: #fff;
+        border-color: #6c757d;
+    }
+    
+    .status-dropdown.completed {
+        background-color: #28a745;
+        color: #fff;
+        border-color: #28a745;
+    }
+    
+    .status-dropdown.returned {
+        background-color: #6f42c1;
+        color: #fff;
+        border-color: #6f42c1;
+    }
+    
+    .status-dropdown.rejected {
+        background-color: #dc3545;
+        color: #fff;
+        border-color: #dc3545;
+    }
+    
+    /* Item controls row */
+    .item-controls {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top: 1px solid #e9ecef;
+    }
+    
+    /* Fixed Preview Container - Remove scrollbar issues */
+    .preview-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        margin-top: 6px;
+        width: 100%;
+    }
+    .preview-container img {
+        width: 50px;
+        height: 50px;
+        object-fit: cover;
+        border-radius: 6px;
+        border: 2px solid #dee2e6;
+        flex-shrink: 0;
+    }
+    .image-container {
+        position: relative;
+        display: inline-block;
+    }
+    .image-remove-btn {
+        position: absolute;
+        top: -3px;
+        right: 1px;
+        background: #dc3545;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 16px;
+        height: 16px;
+        font-size: 10px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .image-remove-btn:hover {
+        background: #b52a37;
+    }
+    .error-text {
+        color: red;
+        font-size: 11px;
+        margin-top: 2px;
+        display: none;
+    }
+
+
+    .selected-customer {
+    margin-top: 8px;
+    padding: 8px;
+    background-color: #e7f3ff;
+    border-radius: 6px;
+    border-left: 4px solid #007bff;
+    font-size: 14px;
+    display: none;
+}
+
+.selected-customer div {
+    margin-bottom: 4px;
+}
+
+.selected-customer strong {
+    color: #007bff;
+    font-size: 15px;
+}
+
+@media (max-width: 768px) {
+    .selected-customer {
+        font-size: 13px;
+    }
+}
+    
+    /* New Complaint Field Styles */
+    .complaint-instructions {
+        background: #e7f3ff;
+        padding: 6px 8px;
+        border-radius: 6px;
+        margin-bottom: 8px;
+        border-left: 4px solid #007bff;
+        font-size: 11px;
+    }
+    
+    .complaint-instructions p {
+        margin: 1px 0;
+        color: #555;
+    }
+    
+    .complaint-counter {
+        position: absolute;
+        top: -6px;
+        right: 12px;
+        background: #007bff;
+        color: white;
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: bold;
+        z-index: 1;
+    }
+    
+    /* Fixed Complaint Textarea - Remove max-height and overflow */
+    .complaint-textarea {
+        min-height: 80px !important;
+        line-height: 1.5;
+        font-family: 'Segoe UI', Arial, sans-serif;
+        resize: vertical; /* Allow manual resizing if needed */
+    }
+    
+    .add-complaint-btn {
+        background: #007bff;
+        color: white;
+        border: none;
+        padding: 5px 8px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 11px;
+        font-weight: 600;
+        margin-top: 6px;
+        transition: background 0.3s ease;
+    }
+    
+    .add-complaint-btn:hover {
+        background: #0056b3;
+    }
+
+    /* Complaint delete functionality */
+    .complaint-item {
+        position: relative;
+        margin-bottom: 6px;
+        padding-right: 20px;
+    }
+    
+    .complaint-delete-btn {
+        position: absolute;
+        right: 3px;
+        top: 3px;
+        background: #dc3545;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 14px;
+        height: 14px;
+        font-size: 8px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 2;
+        opacity: 0.8;
+        transition: opacity 0.2s ease;
+    }
+    
+    .complaint-delete-btn:hover {
+        background: #b52a37;
+        opacity: 1;
+    }
+    
+    .complaint-text {
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        padding: 4px 10px 4px 4px;
+        margin-bottom: 4px;
+        font-size: 11px;
+        line-height: 1.3;
+        position: relative;
+    }
+    
+    .complaint-number {
+        font-weight: bold;
+        color: #007bff;
+    }
+
+    /* Side by Side Complaint Fields - Modified for new order */
+    .complaint-row-inline {
+        display: flex;
+        gap: 8px;
+        align-items: flex-start;
+        flex-wrap: wrap;
+    }
+    
+    .complaint-row-inline .form-group {
+        flex: 1;
+        min-width: 220px;
+    }
+    
+    .complaint-row-inline .form-group:first-child {
+        flex: 2; /* Make complaint description field wider */
+        min-width: 260px;
+    }
+
+    /* Flex row for item selection + serial + config */
+    .form-inline {
+        display: flex;
+        gap: 8px;
+        align-items: flex-end;
+        flex-wrap: wrap;
+        margin-bottom: 8px;
+    }
+
+    .form-inline .form-group {
+        flex: 1;
+        min-width: 160px;
+    }
+
+    /* Horizontal layout for complaint section - side by side */
+    .complaint-horizontal {
+        display: flex;
+        gap: 8px;
+        align-items: flex-start;
+        flex-wrap: wrap;
+    }
+    
+    .complaint-horizontal .form-group {
+        flex: 1;
+        min-width: 200px;
+    }
+
+    /* Enhanced complaints container - no scrollbars */
+    .complaints-container {
+        width: 100%;
+    }
+    .btn-back {
+        background: black;
+        color: white;
+        border: none;
+        padding: 8px 15px;
+        border-radius: 5px;
+        font-size: 14px;
+        cursor: pointer;
+        transition: background 0.3s ease;
+    }
+
+    .btn-back:hover {
+        background: #555656;
+    }
+
+    /* Customer dropdown styles */
+    .customer-dropdown-container {
+        position: relative;
+        width: 100%;
+    }
+    
+    .customer-dropdown {
+        width: 100%;
+        padding: 7px 8px;
+        font-size: 13px;
+        border: 2px solid #e1e8ed;
+        border-radius: 8px;
+        background: #fafafa;
+        outline: none;
+        transition: all 0.3s ease;
+        box-sizing: border-box;
+    }
+    
+    .customer-dropdown:focus {
+        border-color: #28a745;
+        background: #fff;
+        box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.1);
+    }
+    
+    .customer-option {
+        padding: 8px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+    
+    .customer-option:hover {
+        background-color: #f0f8ff;
+    }
+    
+    .customer-details {
+        margin-top: 10px;
+        padding: 10px;
+        background-color: #f8f9fa;
+        border-radius: 6px;
+        border-left: 4px solid #007bff;
+        display: none;
+    }
+    
+    .customer-detail-row {
+        display: flex;
+        margin-bottom: 5px;
+    }
+    
+    .customer-detail-label {
+        font-weight: 600;
+        min-width: 120px;
+        color: #555;
+    }
+    
+    .customer-detail-value {
+        color: #333;
+    }
+    
+    .loading-indicator {
+        display: none;
+        text-align: center;
+        padding: 10px;
+        color: #007bff;
+    }
+
+    /* Remove Item Icon Button Styles */
+    .remove-item-btn {
+        background: #dc3545;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 16px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    
+    .remove-item-btn:hover {
+        background: #b52a37;
+        transform: scale(1.1);
+        box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+    }
+    
+    .remove-item-btn:active {
+        transform: scale(0.95);
+    }
+    
+    .remove-item-icon {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        position: relative;
+    }
+    
+    .remove-item-icon::before,
+    .remove-item-icon::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 14px;
+        height: 2px;
+        background: white;
+        border-radius: 1px;
+    }
+    
+    .remove-item-icon::before {
+        transform: translate(-50%, -50%) rotate(45deg);
+    }
+    
+    .remove-item-icon::after {
+        transform: translate(-50%, -50%) rotate(-45deg);
+    }
+
+    /* Selected customer display */
+    .selected-customer {
+        margin-top: 8px;
+        padding: 8px;
+        background-color: #e7f3ff;
+        border-radius: 6px;
+        border-left: 4px solid #007bff;
+        font-size: 14px;
+        display: none;
+    }
+    
+    .selected-customer strong {
+        color: #007bff;
+    }
+
+    /* NEW: Self Assignment Modal Styles */
+    .modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        z-index: 10000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .modal-content {
+        background: #fff;
+        padding: 30px;
+        border-radius: 15px;
+        text-align: center;
+        max-width: 450px;
+        width: 90%;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        animation: modalSlideIn 0.3s ease;
+        position: relative;
+    }
+    
+    @keyframes modalSlideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-50px) scale(0.9);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+    
+    .modal-title {
+        font-size: 24px;
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+    }
+    
+    .modal-message {
+        font-size: 16px;
+        color: #666;
+        margin-bottom: 30px;
+        line-height: 1.5;
+    }
+    
+    .modal-buttons {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    
+    .btn-self-assign,
+    .btn-no-assign {
+        padding: 15px 25px;
+        font-size: 16px;
+        font-weight: 600;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        min-width: 140px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+    
+    .btn-self-assign {
+        background: #28a745;
+        color: white;
+    }
+    
+    .btn-self-assign:hover {
+        background: #218838;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(40, 167, 69, 0.4);
+    }
+    
+    .btn-no-assign {
+        background: #6c757d;
+        color: white;
+    }
+    
+    .btn-no-assign:hover {
+        background: #5a6268;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(108, 117, 125, 0.4);
+    }
+    
+    .close-modal {
+        position: absolute;
+        top: 10px;
+        right: 15px;
+        background: none;
+        border: none;
+        font-size: 24px;
+        color: #999;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 50%;
+        width: 35px;
+        height: 35px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+    }
+    
+    .close-modal:hover {
+        background: #f8f9fa;
+        color: #333;
+    }
+
+    /* NEW: Warranty and Office Select Styles */
+    .warranty-select, .office-select {
+        width: 100%;
+        padding: 7px 8px;
+        font-size: 13px;
+        border: 2px solid #e1e8ed;
+        border-radius: 8px;
+        background: #fafafa;
+        outline: none;
+        transition: all 0.3s ease;
+        box-sizing: border-box;
+    }
+
+    .warranty-select:focus, .office-select:focus {
+        border-color: #28a745;
+        background: #fff;
+        box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.1);
+    }
+
+    /* Warranty Details Styles */
+    .warranty-details {
+        margin-top: 15px;
+        background: #fff8e1;
+        padding: 15px;
+        border-radius: 8px;
+        border: 2px solid #ffc107;
+        display: none;
+    }
+    
+    .warranty-details h4 {
+        color: #b8860b;
+        font-size: 16px;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .warranty-instructions {
+        margin-top: 10px;
+        padding: 8px;
+        background: #fff3cd;
+        border-radius: 4px;
+        font-size: 11px;
+        color: #856404;
+    }
+
+    @media (max-width: 768px) {
+        .form-row,
+        .serial-config-row,
+        .form-inline,
+        .complaint-horizontal { 
+            flex-direction: column; 
+        }
+        
+        .customer-row {
+            flex-direction: column;
+        }
+        
+        .customer-row .form-group,
+        .complaint-horizontal .form-group {
+            min-width: unset;
+        }
+
+        .status-section {
+            position: static;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+
+        .customer-results {
+    position: absolute;
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    max-height: 200px;
+    overflow-y: auto;
+    width: 100%;
+    display: none;
+    z-index: 1000;
+}
+.customer-results div {
+    padding: 8px;
+    cursor: pointer;
+}
+.customer-results div:hover {
+    background: #f0f8ff;
+}
+
+        
+        /* Mobile image preview adjustments */
+        .preview-container {
+            justify-content: flex-start;
+        }
+        
+        .customer-detail-row {
+            flex-direction: column;
+        }
+        
+        .customer-detail-label {
+            min-width: unset;
+            margin-bottom: 2px;
+        }
+        
+        .remove-item-btn {
+            width: 28px;
+            height: 28px;
+        }
+        
+        .modal-content {
+            padding: 20px;
+            margin: 20px;
+        }
+        
+        .modal-buttons {
+            flex-direction: column;
+        }
+        
+        .btn-self-assign,
+        .btn-no-assign {
+            width: 100%;
+        }
+
+        /* Mobile adjustments for new form fields */
+        .form-inline .form-group {
+            min-width: unset;
+        }
+        
+        .warranty-details {
+            padding: 10px;
+        }
+    }
+</style>
+</head>
+<body>
+    <div class="form-container">
+        <button class="btn-back" onclick="history.back()">Back</button>
+        <h2>Create Job Card</h2>
+        <form method="POST" enctype="multipart/form-data" id="jobCardForm">
+            {% csrf_token %}
+            
+            <!-- Hidden field for self assignment -->
+            <input type="hidden" name="self_assigned" id="selfAssignedInput" value="">
+            
+           <div class="customer-section">
+    <h3>Customer Information</h3>
+    <div class="customer-row">
+        <div class="form-group">
+            <label>Customer Name *</label>
+            <div class="customer-dropdown-container">
+                <input type="text" id="customer-search" 
+                       placeholder="Type customer name..." 
+                       onkeyup="searchCustomer()" 
+                       autocomplete="off" 
+                       name="customer" 
+                       required 
+                       class="customer-dropdown">
+                <div id="customer-results" class="customer-results"></div>
+            </div>
+
+            <!-- Customer info preview -->
+            <div id="selected-customer-display" class="selected-customer"></div>
+        </div>
+
+        <div class="form-group">
+            <label>Place *</label>
+            <input type="text" id="address" name="address" placeholder="Enter Place" required>
+        </div>
+        <div class="form-group">
+            <label>Phone Number *</label>
+            <input type="tel" id="phone" name="phone" placeholder="Enter phone number" required>
+        </div>
+    </div>
+</div>
+
+            
+            <div id="itemsContainer">
+                <div class="item-block" id="item-0">
+                    <!-- Status dropdown section -->
+                    <div class="status-section">
+                        <span class="status-label">Status:</span>
+                        <select class="status-dropdown logged" name="status" onchange="setStatus(0, this.value)" id="status-dropdown-0">
+                            <option value="logged" selected>Logged</option>
+                            <option value="sent_technician">Sent To Technician</option>
+                            <option value="pending">Pending</option>
+                            <option value="completed">Completed</option>
+                            <option value="returned">Returned</option>
+                            <option value="rejected">Rejected</option>
+                        </select>
+                    </div>
+                    
+                    <h3>Item Details</h3>
+
+                    <div class="form-inline">
+                        <div class="form-group">
+                            <label>Select Item *</label>
+                            <select name="items[]" onchange="toggleItemFields(this, 0); updateWarrantyItemName(this, 0)" required>
+    <option value="">Select Item</option>
+    {% for item in items %}
+        <option value="{{ item.name }}">{{ item.name }}</option>
+    {% endfor %}
+</select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Serial Number</label>
+                            <input type="text" name="serials[]" maxlength="20" oninput="validateSerial(this)">
+                            <div class="error-text">Duplicate or invalid serial number!</div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Configuration</label>
+                            <input type="text" name="configs[]">
+                        </div>
+
+                        <!-- NEW: Warranty Item Question -->
+                        <div class="form-group">
+                            <label>Warranty Item?</label>
+                            <select name="warranty[]" class="warranty-select">
+                                <option value="no">No</option>
+                                <option value="yes">Yes</option>
+                            </select>
+                        </div>
+
+                        <!-- NEW: Take to Office Question -->
+                        <div class="form-group">
+                            <label>Take to Office?</label>
+                            <select name="take_to_office[]" class="office-select">
+                                <option value="no">No</option>
+                                <option value="yes">Yes</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    
+
+                    <div class="hidden-section" id="item-fields-0" style="display:none;">
+                        <div class="complaint-section">
+                            <h3>Complaint Details</h3>
+                            
+                            <div class="complaint-horizontal">
+                                <div class="form-group" style="position: relative;">
+                                    <label>Complaint Descriptions</label>
+                                    <div class="complaint-counter" id="counter-0">1:</div>
+                                    <div id="complaints-container-0" class="complaints-container"></div>
+                                    <textarea 
+                                        id="complaints-0" 
+                                        name="complaints-0[]" 
+                                        style="display: none;"
+                                    ></textarea>
+                                    <button type="button" class="add-complaint-btn" onclick="addNewComplaint(0)">+ Add New</button>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label>Images</label>
+                                    <input type="file" name="images-0-0[]" multiple accept="image/*" onchange="previewImages(event, '0')">
+                                    <div class="preview-container" id="preview-0"></div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label>Additional Notes</label>
+                                    <textarea name="complaint_notes-0[]" placeholder="Any additional notes or observations for this item..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="item-controls">
+                        <div></div>
+                        <button type="button" class="remove-item-btn" onclick="removeItem(0)" title="Remove Item">
+                            <span class="remove-item-icon"></span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <button type="button" class="add-item-btn" onclick="addItem()">+ Add Item</button>
+            <button class="btn-submit" type="button" onclick="showSelfAssignModal()">Create Job Card</button>
+        </form>
+    </div>
+    
+    <!-- Self Assignment Modal -->
+    <div id="selfAssignModal" class="modal">
+    <div class="modal-content">
+        <button class="close-modal" onclick="closeSelfAssignModal()">&times;</button>
+        <h3 class="modal-title">
+            <i class="fas fa-user-check" style="color: #28a745;"></i>
+            Self Assignment
+        </h3>
+        <div class="modal-message">
+            Do you want to assign this job card to yourself right now?
+        </div>
+        <div class="modal-buttons">
+            <button type="button" class="btn-self-assign" onclick="submitWithSelfAssign(true)">
+                <i class="fas fa-check"></i>
+                Yes, Assign to Me
+            </button>
+            <button type="button" class="btn-no-assign" onclick="submitWithSelfAssign(false)">
+                <i class="fas fa-times"></i>
+                No, Keep Unassigned
+            </button>
+        </div>
+    </div>
+</div>
+
+    
+    <script>
+        let itemCount = 1;
+        let complaintData = [[]];
+    const customers = [
+    {% for customer in customer_data %}
+    {
+        name: "{{ customer.name|escapejs }}",
+        address: "{{ customer.address|escapejs }}",
+        branch: "{{ customer.branch|escapejs }}",
+        phone: "{{ customer.phone_number|default_if_none:''|escapejs }}"  
+    },
+    {% endfor %}
+];
+
+
+
+function searchCustomer() {
+    const input = document.getElementById("customer-search").value.toLowerCase();
+    const resultsBox = document.getElementById("customer-results");
+    resultsBox.innerHTML = "";
+
+    if (!input) {
+        resultsBox.style.display = "none";
+        return;
+    }
+
+    const matches = customers.filter(c => c.name.toLowerCase().startsWith(input));
+
+    if (matches.length > 0) {
+        matches.forEach(c => {
+            const div = document.createElement("div");
+            div.innerHTML = `
+                <strong>${c.name}</strong><br>
+                <small>📍 ${c.address}</small><br>
+                ${c.branch ? `<small>🏢 ${c.branch}</small>` : ""}
+                ${c.phone ? `<br><small>📞 ${c.phone}</small>` : ""}
+            `;
+            div.style.padding = "6px 8px";
+            div.style.borderBottom = "1px solid #eee";
+            div.onclick = () => selectCustomer(c);
+            resultsBox.appendChild(div);
+        });
+
+        resultsBox.style.display = "block";
+    } else {
+        resultsBox.style.display = "none";
+    }
+}
+
+function selectCustomer(customer) {
+    document.getElementById("customer-search").value = customer.name;
+    document.getElementById("address").value = customer.address;
+    document.getElementById("phone").value = customer.phone || ""; // ✅ use phone
+
+    const display = document.getElementById("selected-customer-display");
+
+    let phoneDisplay = "";
+    if (customer.phone && customer.phone.trim() !== "") {  // ✅ use phone
+        phoneDisplay = `<div>📞 <strong>${customer.phone}</strong></div>`;
+    }
+
+    display.innerHTML = `
+        <div><strong>${customer.name}</strong></div>
+        ${phoneDisplay}
+        <div>📍 ${customer.address}</div>
+        ${customer.branch ? `<div>🏢 Branch: ${customer.branch}</div>` : ""}
+    `;
+
+    display.style.display = "block";
+    document.getElementById("customer-results").style.display = "none";
+    
+    // Update customer name in all warranty sections
+    updateAllWarrantyCustomerNames();
+}
+
+// Close dropdown when clicking outside
+document.addEventListener("click", function(e) {
+    if (!e.target.closest(".customer-dropdown-container")) {
+        document.getElementById("customer-results").style.display = "none";
+    }
+});
+
+        function setStatus(itemIndex, status) {
+            const dropdown = document.getElementById(`status-dropdown-${itemIndex}`);
+            
+            // Remove all status classes
+            dropdown.className = dropdown.className.replace(/\b(logged|sent_technician|pending|completed|returned|rejected)\b/g, '');
+            
+            // Add new status class
+            dropdown.classList.add('status-dropdown', status);
+            dropdown.value = status;
+        }
+
+        function addNewComplaint(itemIndex) {
+            if (!complaintData[itemIndex]) {
+                complaintData[itemIndex] = [];
+            }
+            
+            const complaintNumber = complaintData[itemIndex].length + 1;
+            complaintData[itemIndex].push({
+                number: complaintNumber,
+                text: ''
+            });
+            
+            renderComplaints(itemIndex);
+            
+            // Focus on the new complaint input
+            setTimeout(() => {
+                const newInput = document.querySelector(`#complaint-input-${itemIndex}-${complaintNumber - 1}`);
+                if (newInput) {
+                    newInput.focus();
+                }
+            }, 50);
+        }
+
+        function renderComplaints(itemIndex) {
+            const container = document.getElementById(`complaints-container-${itemIndex}`);
+            const hiddenInputsContainer = document.querySelector(`textarea[name="complaints-${itemIndex}[]"]`);
+            
+            if (!complaintData[itemIndex]) {
+                complaintData[itemIndex] = [{number: 1, text: ''}];
+            }
+            
+            container.innerHTML = '';
+            
+            complaintData[itemIndex].forEach((complaint, index) => {
+                const complaintDiv = document.createElement('div');
+                complaintDiv.className = 'complaint-item';
+                
+                complaintDiv.innerHTML = `
+                    <div class="complaint-text">
+                        <span class="complaint-number">${complaint.number}:</span>
+                        <input type="text" 
+                               id="complaint-input-${itemIndex}-${index}"
+                               name="complaints-${itemIndex}[]"
+                               placeholder="Enter complaint description..."
+                               value="${complaint.text}"
+                               style="border: none; outline: none; background: transparent; width: calc(100% - 30px); margin-left: 5px;"
+                               onchange="updateComplaintText(${itemIndex}, ${index}, this.value)"
+                               oninput="updateComplaintText(${itemIndex}, ${index}, this.value)">
+                        ${complaintData[itemIndex].length > 1 ? 
+                            `<button type="button" class="complaint-delete-btn" onclick="deleteComplaint(${itemIndex}, ${index})" title="Delete complaint">×</button>` 
+                            : ''}
+                    </div>
+                `;
+                
+                container.appendChild(complaintDiv);
+            });
+            
+            // Update counter
+            document.getElementById(`counter-${itemIndex}`).textContent = `${complaintData[itemIndex].length}:`;
+        }
+
+        function updateComplaintText(itemIndex, complaintIndex, value) {
+            if (!complaintData[itemIndex]) {
+                complaintData[itemIndex] = [];
+            }
+            
+            complaintData[itemIndex][complaintIndex].text = value;
+        }
+
+        function deleteComplaint(itemIndex, complaintIndex) {
+            if (complaintData[itemIndex].length <= 1) {
+                return; // Don't delete if it's the last complaint
+            }
+            
+            complaintData[itemIndex].splice(complaintIndex, 1);
+            
+            // Renumber remaining complaints
+            complaintData[itemIndex].forEach((complaint, index) => {
+                complaint.number = index + 1;
+            });
+            
+            renderComplaints(itemIndex);
+        }
+        
+        function toggleItemFields(select, index) {
+            const fields = document.getElementById(`item-fields-${index}`);
+            fields.style.display = select.value ? 'block' : 'none';
+            
+            if (select.value) {
+                // Initialize complaint fields
+                if (!complaintData[index]) {
+                    complaintData[index] = [{number: 1, text: ''}];
+                }
+                renderComplaints(index);
+            }
+        }
+
+        function addItem() {
+            const index = itemCount;
+            const container = document.getElementById('itemsContainer');
+
+            // Fixed HTML structure to match the initial item
+            const html = `
+                <div class="item-block" id="item-${index}">
+                    <!-- Status dropdown section -->
+                    <div class="status-section">
+                        <span class="status-label">Status:</span>
+                        <select class="status-dropdown logged" name="status" onchange="setStatus(${index}, this.value)" id="status-dropdown-${index}">
+                            <option value="logged" selected>Logged</option>
+                            <option value="sent_technician">Sent To Technician</option>
+                            <option value="pending">Pending</option>
+                            <option value="completed">Completed</option>
+                            <option value="returned">Returned</option>
+                            <option value="rejected">Rejected</option>
+                        </select>
+                    </div>
+                    
+                    <h3>Item ${index + 1}</h3>
+
+                    <div class="form-inline">
+                        <div class="form-group">
+                            <label>Select Item *</label>
+                            <select name="items[]" onchange="toggleItemFields(this, ${index}); updateWarrantyItemName(this, ${index})" required>
+                                <option value="">Select Item</option>
+                                {% for item in items %}
+                                    <option value="{{ item }}">{{ item }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Serial Number</label>
+                            <input type="text" name="serials[]" maxlength="20" oninput="validateSerial(this)">
+                            <div class="error-text">Duplicate or invalid serial number!</div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Configuration</label>
+                            <input type="text" name="configs[]">
+                        </div>
+
+                        <!-- NEW: Warranty Item Question -->
+                        <div class="form-group">
+                            <label>Warranty Item?</label>
+                            <select name="warranty[]" class="warranty-select">
+                                <option value="no">No</option>
+                                <option value="yes">Yes</option>
+                            </select>
+                        </div>
+
+                        <!-- NEW: Take to Office Question -->
+                        <div class="form-group">
+                            <label>Take to Office?</label>
+                            <select name="take_to_office[]" class="office-select">
+                                <option value="no">No</option>
+                                <option value="yes">Yes</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Warranty details (hidden by default) -->
+                    <div class="warranty-details">
+                        <h4>
+                            <i class="fas fa-file-contract"></i>
+                            Warranty Item Details
+                        </h4>
+
+                        <div class="form-inline">
+                            <div class="form-group">
+                                <label>Supplier *</label>
+                                <select name="supplier[]" class="supplier-select">
+                                    <option value="">Select Supplier</option>
+                                    {% for supplier in suppliers %}
+                                        <option value="{{ supplier.id }}">{{ supplier.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Ticket No *</label>
+                                <input type="text" name="warranty_ticket_no[]" placeholder="Enter Ticket No">
+                            </div>
+
+                            <div class="form-group">
+                                <label>Customer Name</label>
+                                <input type="text" name="warranty_customer_name[]" readonly style="background:#f5f5f5;">
+                            </div>
+
+                            <div class="form-group">
+                                <label>Item Name</label>
+                                <input type="text" name="warranty_item_name[]" readonly style="background:#f5f5f5;">
+                            </div>
+                        </div>
+                        
+                        <div class="warranty-instructions">
+                            <strong>Note:</strong> Warranty items require supplier information and ticket number for processing.
+                        </div>
+                    </div>
+
+                    <div class="hidden-section" id="item-fields-${index}" style="display:none;">
+                        <div class="complaint-section">
+                            <h3>Complaint Details</h3>
+                            
+                            <div class="complaint-horizontal">
+                                <div class="form-group" style="position: relative;">
+                                    <label>Complaint Descriptions</label>
+                                    <div class="complaint-counter" id="counter-${index}">1:</div>
+                                    <div id="complaints-container-${index}" class="complaints-container"></div>
+                                    <textarea 
+                                        id="complaints-${index}" 
+                                        name="complaints-${index}[]" 
+                                        style="display: none;"
+                                    ></textarea>
+                                    <button type="button" class="add-complaint-btn" onclick="addNewComplaint(${index})">+ Add New</button>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label>Images</label>
+                                    <input type="file" name="images-${index}-0[]" multiple accept="image/*" onchange="previewImages(event, '${index}')">
+                                    <div class="preview-container" id="preview-${index}"></div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label>Additional Notes</label>
+                                    <textarea name="complaint_notes-${index}[]" placeholder="Any additional notes or observations for this item..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="item-controls">
+                        <div></div>
+                        <button type="button" class="remove-item-btn" onclick="removeItem(${index})" title="Remove Item">
+                            <span class="remove-item-icon"></span>
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            container.insertAdjacentHTML('beforeend', html);
+            
+            // Initialize warranty handler for the new item
+            const newWarrantySelect = document.querySelector(`#item-${index} .warranty-select`);
+            if (newWarrantySelect) {
+                newWarrantySelect.addEventListener('change', function() {
+                    toggleWarrantyDetails(this, index);
+                });
+                // Initialize warranty details
+                toggleWarrantyDetails(newWarrantySelect, index);
+            }
+            
+            // Initialize complaint data for new item
+            complaintData[index] = [{number: 1, text: ''}];
+            itemCount++;
+            updateItemNumbers();
+        }
+
+        function removeItem(index) {
+            if (confirm('Are you sure you want to remove this item?')) {
+                document.getElementById(`item-${index}`).remove();
+                updateItemNumbers();
+            }
+        }
+
+        function updateItemNumbers() {
+            const items = document.querySelectorAll('.item-block h3');
+            items.forEach((h3, idx) => {
+                h3.textContent = `Item ${idx + 1}`;
+            });
+        }
+        
+        // Store all selected files for each input
+        let allSelectedFiles = {};
+
+        function previewImages(event, index) {
+            const preview = document.getElementById(`preview-${index}`);
+            const fileInput = event.target;
+            
+            if (!allSelectedFiles[index]) {
+                allSelectedFiles[index] = [];
+            }
+            
+            Array.from(event.target.files).forEach(file => {
+                const exists = allSelectedFiles[index].some(existingFile => 
+                    existingFile.name === file.name && existingFile.size === file.size
+                );
+                
+                if (!exists) {
+                    allSelectedFiles[index].push(file);
+                }
+            });
+            
+            updateFileInput(fileInput, allSelectedFiles[index]);
+            
+            preview.innerHTML = '';
+            allSelectedFiles[index].forEach((file, fileIndex) => {
+                const imgContainer = document.createElement('div');
+                imgContainer.style.position = 'relative';
+                imgContainer.style.display = 'inline-block';
+                
+                const img = document.createElement('img');
+                img.src = URL.createObjectURL(file);
+                img.onload = () => URL.revokeObjectURL(img.src);
+                img.style.width = '70px';
+                img.style.height = '70px';
+                img.style.objectFit = 'cover';
+                img.style.borderRadius = '6px';
+                img.style.border = '2px solid #dee2e6';
+                img.style.marginRight = '8px';
+                img.style.marginBottom = '8px';
+                
+                const removeBtn = document.createElement('button');
+                removeBtn.innerHTML = '×';
+                removeBtn.type = 'button';
+                removeBtn.className = 'image-remove-btn';
+                removeBtn.onclick = () => removeImage(index, fileIndex, fileInput);
+                
+                imgContainer.appendChild(img);
+                imgContainer.appendChild(removeBtn);
+                preview.appendChild(imgContainer);
+            });
+        }
+
+        function removeImage(index, fileIndex, fileInput) {
+            allSelectedFiles[index].splice(fileIndex, 1);
+            updateFileInput(fileInput, allSelectedFiles[index]);
+            
+            const preview = document.getElementById(`preview-${index}`);
+            preview.innerHTML = '';
+            
+            allSelectedFiles[index].forEach((file, idx) => {
+                const imgContainer = document.createElement('div');
+                imgContainer.style.position = 'relative';
+                imgContainer.style.display = 'inline-block';
+                
+                const img = document.createElement('img');
+                img.src = URL.createObjectURL(file);
+                img.onload = () => URL.revokeObjectURL(img.src);
+                img.style.width = '70px';
+                img.style.height = '70px';
+                img.style.objectFit = 'cover';
+                img.style.borderRadius = '6px';
+                img.style.border = '2px solid #dee2e6';
+                img.style.marginRight = '8px';
+                img.style.marginBottom = '8px';
+                
+                const removeBtn = document.createElement('button');
+                removeBtn.innerHTML = '×';
+                removeBtn.type = 'button';
+                removeBtn.className = 'image-remove-btn';
+                removeBtn.onclick = () => removeImage(index, idx, fileInput);
+                
+                imgContainer.appendChild(img);
+                imgContainer.appendChild(removeBtn);
+                preview.appendChild(imgContainer);
+            });
+        }
+
+        function updateFileInput(fileInput, files) {
+            const dataTransfer = new DataTransfer();
+            files.forEach(file => dataTransfer.items.add(file));
+            fileInput.files = dataTransfer.files;
+        }
+        
+        function validateSerial(input) {
+            input.value = input.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+            const serial = input.value;
+            const allSerials = Array.from(document.querySelectorAll('input[name="serials[]"]')).map(el => el.value);
+            const duplicates = allSerials.filter(s => s === serial && s !== '').length > 1;
+            const errorText = input.nextElementSibling;
+            
+            if (duplicates) {
+                errorText.style.display = 'block';
+                input.style.borderColor = 'red';
+            } else {
+                errorText.style.display = 'none';
+                input.style.borderColor = '#e1e8ed';
+            }
+        }
+
+        // NEW: Self Assignment Modal Functions
+        function showSelfAssignModal() {
+            // First validate the form
+            const form = document.getElementById('jobCardForm');
+            const requiredFields = form.querySelectorAll('[required]');
+            let isValid = true;
+            
+            requiredFields.forEach(field => {
+                if (!field.value.trim()) {
+                    isValid = false;
+                    field.style.borderColor = 'red';
+                    field.focus();
+                } else {
+                    field.style.borderColor = '#e1e8ed';
+                }
+            });
+            
+            if (!isValid) {
+                alert('Please fill in all required fields before proceeding.');
+                return;
+            }
+            
+            // Show the modal
+            document.getElementById('selfAssignModal').style.display = 'flex';
+        }
+        
+        function closeSelfAssignModal() {
+            document.getElementById('selfAssignModal').style.display = 'none';
+        }
+        
+        function submitWithSelfAssign(selfAssign) {
+            // Set the hidden field value
+            document.getElementById('selfAssignedInput').value = selfAssign ? 'true' : 'false';
+            
+            // Close the modal
+            closeSelfAssignModal();
+            
+            // Submit the form
+            document.getElementById('jobCardForm').submit();
+        }
+        
+        // Close modal when clicking outside
+        window.addEventListener('click', function(event) {
+            if (event.target === document.getElementById('selfAssignModal')) {
+                closeSelfAssignModal();
+            }
+        });
+
+        // Initialize complaint data for first item
+        complaintData[0] = [{number: 1, text: ''}];
+        
+        // Initialize warranty handlers when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeWarrantyHandlers();
+            
+            // Also update customer name in warranty sections when page loads
+            updateAllWarrantyCustomerNames();
+        });
+    </script>
+</body>
+</html>

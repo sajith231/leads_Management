@@ -1,0 +1,342 @@
+
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+.form-container {
+  background: #fff;
+  padding: 30px;
+  max-width: 800px;
+  margin: auto;
+  border-radius: 12px;
+  box-shadow: 0 0 15px rgba(0,0,0,0.1);
+  position: relative;
+}
+h2 {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #333;
+}
+.form-group {
+  margin-bottom: 15px;
+}
+label {
+  font-weight: bold;
+  display: block;
+  margin-bottom: 6px;
+  color: #444;
+}
+input, textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  box-sizing: border-box;
+  font-size: 15px;
+}
+textarea {
+  height: 80px;
+  resize: vertical;
+}
+input[name="itemname"] {
+  text-transform: uppercase;
+}
+input[name="serialnumber"] {
+  text-transform: uppercase;
+}
+.preview-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin-top: 15px;
+}
+.preview-box {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fafafa;
+}
+.preview-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.remove-btn {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background: rgba(220, 53, 69, 0.9);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 25px;
+  height: 25px;
+  font-size: 14px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background 0.3s;
+}
+.remove-btn:hover {
+  background: rgba(200, 35, 51, 1);
+}
+.button-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+button[type="submit"] {
+  background: black;
+  color: #fff;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+button[type="submit"]:hover {
+  background: #333;
+}
+button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+.error {
+  color: red;
+  font-size: 14px;
+  display: none;
+  margin-top: 5px;
+}
+.back-btn {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  background: black;
+  color: #fff;
+  padding: 10px 16px;
+  text-decoration: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: bold;
+  transition: background 0.3s;
+}
+.back-btn:hover {
+  background: #333;
+}
+.required {
+  color: red;
+}
+.form-note {
+  font-size: 12px;
+  color: #666;
+  margin-top: 4px;
+}
+</style>
+</head>
+<body>
+
+<div class="form-container">
+<a href="{% url 'item_list' %}" class="back-btn">← Back</a>
+<h2>Add New StandBy Item</h2>
+
+<form method="POST" enctype="multipart/form-data" id="itemForm">
+{% csrf_token %}
+
+<div class="form-group">
+  <label>Item Name <span class="required">*</span></label>
+  <input type="text" name="itemname" id="itemname" required placeholder="Enter item name">
+  <div class="form-note">Item name will be automatically converted to uppercase</div>
+</div>
+
+<div class="form-group">
+  <label>Serial Number <span class="required">*</span></label>
+  <input type="text" id="serialnumber" name="serialnumber" required placeholder="Enter unique serial number" maxlength="50">
+  <div class="error" id="serial-error">Serial number already exists!</div>
+  <div class="form-note">Serial number must be unique and will be converted to uppercase</div>
+</div>
+
+<div class="form-group">
+  <label>Notes</label>
+  <textarea name="notes" id="notes" placeholder="Enter any additional notes about this item (optional)"></textarea>
+</div>
+
+<div class="form-group">
+  <label>Upload Images</label>
+  <input type="file" id="imageUpload" name="images" accept="image/*" multiple>
+  <div class="form-note">You can select multiple images at once. Supported formats: JPG, PNG, GIF</div>
+  <div class="preview-container" id="preview"></div>
+</div>
+
+<div class="form-group">
+  <label>Stock <span class="required">*</span></label>
+  <input type="number" name="stock" id="stock" min="0" required placeholder="Enter stock quantity" value="0">
+  <div class="form-note">Initial stock quantity (minimum: 0)</div>
+</div>
+
+<div class="button-container">
+  <button type="submit" id="submitBtn">Add Item</button>
+</div>
+</form>
+</div>
+
+<script>
+// ✅ Force uppercase in Item Name
+const itemNameInput = document.getElementById('itemname');
+itemNameInput.addEventListener('input', function () {
+  this.value = this.value.toUpperCase();
+});
+
+// ✅ Force uppercase in Serial Number
+const serialInput = document.getElementById('serialnumber');
+serialInput.addEventListener('input', function () {
+  this.value = this.value.toUpperCase();
+});
+
+// ✅ Multiple Uploads with Preview
+const imageInput = document.getElementById('imageUpload');
+const previewContainer = document.getElementById('preview');
+let filesArray = [];
+
+imageInput.addEventListener('change', function() {
+  const newFiles = Array.from(this.files);
+  filesArray = [...filesArray, ...newFiles];
+  updateInputFiles();
+  displayImages();
+});
+
+function displayImages() {
+  previewContainer.innerHTML = '';
+  filesArray.forEach((file, index) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const box = document.createElement('div');
+      box.classList.add('preview-box');
+      box.innerHTML = `
+        <img src="${e.target.result}" alt="Image Preview">
+        <button type="button" class="remove-btn" onclick="removeImage(${index})" title="Remove this image">&times;</button>
+      `;
+      previewContainer.appendChild(box);
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function removeImage(index) {
+  filesArray.splice(index, 1);
+  updateInputFiles();
+  displayImages();
+}
+
+function updateInputFiles() {
+  const dataTransfer = new DataTransfer();
+  filesArray.forEach(file => dataTransfer.items.add(file));
+  imageInput.files = dataTransfer.files;
+}
+
+// ✅ Serial Number Check (AJAX)
+const serialError = document.getElementById('serial-error');
+const submitBtn = document.getElementById('submitBtn');
+let serialCheckTimeout;
+
+serialInput.addEventListener('input', function() {
+  const value = this.value.toUpperCase();
+  
+  // Clear previous timeout
+  clearTimeout(serialCheckTimeout);
+  
+  if (value.length > 0) {
+    // Add debounce to avoid too many requests
+    serialCheckTimeout = setTimeout(() => {
+      fetch(`/check-serial/?serial=${encodeURIComponent(value)}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.exists) {
+            serialError.style.display = 'block';
+            submitBtn.disabled = true;
+            serialInput.style.borderColor = '#dc3545';
+          } else {
+            serialError.style.display = 'none';
+            submitBtn.disabled = false;
+            serialInput.style.borderColor = '#28a745';
+          }
+        })
+        .catch(err => {
+          console.error('Error checking serial:', err);
+          serialError.style.display = 'none';
+          submitBtn.disabled = false;
+          serialInput.style.borderColor = '#ccc';
+        });
+    }, 300);
+  } else {
+    serialError.style.display = 'none';
+    submitBtn.disabled = false;
+    serialInput.style.borderColor = '#ccc';
+  }
+});
+
+// ✅ Form validation before submit
+document.getElementById('itemForm').addEventListener('submit', function(e) {
+  const itemName = itemNameInput.value.trim();
+  const serialNumber = serialInput.value.trim();
+  const stock = document.getElementById('stock').value;
+  
+  if (!itemName) {
+    alert('Please enter an item name');
+    itemNameInput.focus();
+    e.preventDefault();
+    return;
+  }
+  
+  if (!serialNumber) {
+    alert('Please enter a serial number');
+    serialInput.focus();
+    e.preventDefault();
+    return;
+  }
+  
+  if (!stock || stock < 0) {
+    alert('Please enter a valid stock quantity (minimum: 0)');
+    document.getElementById('stock').focus();
+    e.preventDefault();
+    return;
+  }
+  
+  if (submitBtn.disabled) {
+    alert('Please fix the serial number error before submitting');
+    e.preventDefault();
+    return;
+  }
+  
+  // Show loading state
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Adding Item...';
+  
+  // Re-enable button after 10 seconds as failsafe
+  setTimeout(() => {
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Add Item';
+  }, 10000);
+});
+
+// ✅ Reset serial input border on focus
+serialInput.addEventListener('focus', function() {
+  if (!this.value) {
+    this.style.borderColor = '#ccc';
+  }
+});
+
+// ✅ Auto-focus on first input
+window.addEventListener('load', function() {
+  itemNameInput.focus();
+});
+
+console.log('Add StandBy Item Form Loaded Successfully! ➕');
+</script>
+
+{% endblock %}

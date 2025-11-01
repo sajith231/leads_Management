@@ -1,0 +1,1434 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}PO Details - {{ po.po_number }}{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+    <div class="page-header no-print">
+        <h1 class="page-title">Purchase Order Details</h1>
+        <div class="header-actions">
+            <a href="{% url 'purchase_order:po_update' po.pk %}" class="btn btn-primary">
+                <i class="fas fa-edit"></i> Edit
+            </a>
+            <a href="{% url 'purchase_order:po_list' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back
+            </a>
+        </div>
+    </div>
+
+    <div class="po-container">
+        <!-- Print Header (visible only in print) -->
+        <div class="print-header">
+            <!-- Department (From) Information -->
+            {% if po.department %}
+            <div class="print-from-section">
+                <h2>{{ po.department.name|upper }}</h2>
+                <p>{{ po.department.address }}</p>
+                <p>{{ po.department.city }}, {{ po.department.state }} - {{ po.department.pincode }}</p>
+                <p>{{ po.department.contact_number }}</p>
+                {% if po.department.gst_number %}
+                <p><strong>GSTIN:</strong> {{ po.department.gst_number }}</p>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- PO Title and Details -->
+            <div class="print-po-title">
+                <h1>PURCHASE ORDER</h1>
+                <div class="print-po-info">
+                    <span class="page-number">Page 1 of 1</span>
+                </div>
+            </div>
+
+            <!-- To and PO Number Section -->
+            <div class="print-to-section">
+                <div class="print-to-left">
+                    <div class="to-label">To</div>
+                    <div class="to-content">
+                        <strong>{{ po.supplier.name|upper }}</strong>
+                        <p>{{ po.supplier.address }}</p>
+                        {% if po.supplier.places %}
+                        <p>{{ po.supplier.places }}</p>
+                        {% endif %}
+                        <p>{{ po.supplier.city }}</p>
+                        <p>{{ po.supplier.state }}</p>
+                    </div>
+                </div>
+                <div class="print-to-right">
+                    <table class="print-info-table">
+                        <tr>
+                            <td class="info-label-cell">No</td>
+                            <td class="info-value-cell">{{ po.po_number }}</td>
+                        </tr>
+                        <tr>
+                            <td class="info-label-cell">Date</td>
+                            <td class="info-value-cell">{{ po.po_date|date:"d/m/Y" }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Sir Section -->
+            <div class="print-sir-section">
+                Sir,
+            </div>
+        </div>
+
+        <!-- PO Header (screen only) -->
+        <div class="po-header screen-only">
+            <div class="po-header-left">
+                <h2 class="po-number">{{ po.po_number }}</h2>
+                <span class="status-badge status-{{ po.status|lower }}">
+                    {{ po.get_status_display }}
+                </span>
+                <span class="status-badge admin-status-{{ po.admin_status|lower }}">
+                    <i class="fas fa-shield-alt"></i> {{ po.get_admin_status_display }}
+                </span>
+            </div>
+            <div class="po-header-right">
+                <div class="po-dates">
+                    <div class="date-item">
+                        <span class="date-label">PO Date:</span>
+                        <span class="date-value">{{ po.po_date|date:"d M, Y" }}</span>
+                    </div>
+                    <div class="date-item">
+                        <span class="date-label">Delivery Date:</span>
+                        <span class="date-value">{{ po.delivery_date|date:"d M, Y" }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Supplier, Department, Client and Delivery Info (screen only) -->
+        <div class="info-grid three-column screen-only">
+            <div class="info-card">
+                <h3 class="card-title">
+                    <i class="fas fa-building"></i> Supplier Information
+                </h3>
+                <div class="card-content">
+                    <div class="info-row">
+                        <span class="info-label">Supplier Name:</span>
+                        <span class="info-value">{{ po.supplier.name }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Address:</span>
+                        <span class="info-value">{{ po.supplier.address }}</span>
+                    </div>
+                    {% if po.supplier.places %}
+                    <div class="info-row">
+                        <span class="info-label">Place:</span>
+                        <span class="info-value">{{ po.supplier.places }}</span>
+                    </div>
+                    {% endif %}
+                    <div class="info-row">
+                        <span class="info-label">Location:</span>
+                        <span class="info-value">{{ po.supplier.city }}, {{ po.supplier.state }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Mobile:</span>
+                        <span class="info-value">{{ po.supplier.mobile_no }}</span>
+                    </div>
+                    {% if po.supplier.alternate_number %}
+                    <div class="info-row">
+                        <span class="info-label">Alternate:</span>
+                        <span class="info-value">{{ po.supplier.alternate_number }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if po.department %}
+            <div class="info-card">
+                <h3 class="card-title">
+                    <i class="fas fa-store"></i> Buyer Department
+                </h3>
+                <div class="card-content">
+                    <div class="info-row">
+                        <span class="info-label">Department Name:</span>
+                        <span class="info-value">{{ po.department.name }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Location:</span>
+                        <span class="info-value">{{ po.department.city }}, {{ po.department.state }} - {{ po.department.pincode }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Contact:</span>
+                        <span class="info-value">{{ po.department.contact_number }}</span>
+                    </div>
+                    {% if po.department.alternate_number %}
+                    <div class="info-row">
+                        <span class="info-label">Alternate:</span>
+                        <span class="info-value">{{ po.department.alternate_number }}</span>
+                    </div>
+                    {% endif %}
+                    {% if po.department.email %}
+                    <div class="info-row">
+                        <span class="info-label">Email:</span>
+                        <span class="info-value">{{ po.department.email }}</span>
+                    </div>
+                    {% endif %}
+                    {% if po.department.gst_number %}
+                    <div class="info-row">
+                        <span class="info-label">GSTIN:</span>
+                        <span class="info-value">{{ po.department.gst_number }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if po.client_details %}
+            <div class="info-card">
+                <h3 class="card-title">
+                    <i class="fas fa-user-tie"></i> Client Details
+                </h3>
+                <div class="card-content">
+                    <div class="info-row">
+                        <span class="info-label">Client Name:</span>
+                        <span class="info-value">{{ po.client_details }}</span>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Line Items Section -->
+        <div class="items-section">
+            <h3 class="section-title screen-only">
+                <i class="fas fa-box"></i> Order Items
+            </h3>
+            {% if po.po_items.all %}
+            <div class="items-table-wrapper">
+                <table class="items-table print-items-table">
+                    <thead>
+                        <tr>
+                            <th class="sl-col">Sl No</th>
+                            <th class="item-col">Item</th>
+                            <th class="packing-col">Packing</th>
+                            <th class="qty-col">QTY</th>
+                            <th class="discount-col">Discount</th>
+                            <th class="rate-col">Rate</th>
+                            <th class="tax-col">Tax %</th>
+                            <th class="mrp-col">MRP</th>
+                            <th class="total-col">Total Amount</th>
+                            <th class="remark-col">Remark</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in po.po_items.all %}
+                        <tr>
+                            <td class="center-align">{{ forloop.counter }}</td>
+                            <td>
+                                <div class="item-name">{{ item.item.name }}</div>
+                            </td>
+                            <td class="center-align">{{ item.item.unit_of_measure }}</td>
+                            <td class="right-align">{{ item.quantity }}</td>
+                            <td class="right-align">{{ item.discount|floatformat:2 }}</td>
+                            <td class="right-align">{{ item.unit_price|floatformat:2 }}</td>
+                            <td class="center-align">{{ item.tax_percent }}</td>
+                            <td class="right-align">{{ item.unit_price|floatformat:2 }}</td>
+                            <td class="right-align line-total">{{ item.line_total|floatformat:2 }}</td>
+                            <td></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot class="print-table-footer">
+                        <tr class="total-row">
+                            <td colspan="8" class="right-align"><strong>Total</strong></td>
+                            <td class="right-align"><strong>{{ po.total_amount|floatformat:2 }}</strong></td>
+                            <td></td>
+                        </tr>
+                        <tr class="total-row">
+                            <td colspan="8" class="right-align"><strong>Discount</strong></td>
+                            <td class="right-align"><strong>0.00</strong></td>
+                            <td></td>
+                        </tr>
+                        <tr class="total-row">
+                            <td colspan="8" class="right-align"><strong>Tax</strong></td>
+                            <td class="right-align"><strong>{{ po.tax_amount|floatformat:2 }}</strong></td>
+                            <td></td>
+                        </tr>
+                        <tr class="grand-total-row-print">
+                            <td colspan="8" class="right-align"><strong>Grand Total</strong></td>
+                            <td class="right-align grand-total-value"><strong>{{ po.grand_total|floatformat:2 }}</strong></td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+            {% else %}
+            <div class="no-items">
+                <i class="fas fa-inbox"></i>
+                <p>No items in this purchase order</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Print Footer -->
+        <div class="print-footer">
+            <div class="print-footer-row">
+                <div class="footer-item">
+                    <strong>Mode of Transport</strong>
+                </div>
+            </div>
+            <div class="print-footer-row">
+                <div class="footer-item">
+                    <strong>Enclosures</strong>
+                </div>
+            </div>
+            <div class="print-signature">
+                <div class="signature-left">
+                    <p>Yours Faithfully</p>
+                </div>
+                <div class="signature-right">
+                    <div class="signature-box">
+                        Authorised Signatory
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Financial Details (screen only) -->
+        <div class="financial-section screen-only">
+            <h3 class="section-title">
+                <i class="fas fa-sack-dollar"></i> Financial Details
+            </h3>
+            <div class="financial-grid">
+                <div class="financial-row">
+                    <span class="financial-label">Total Amount:</span>
+                    <span class="financial-value">₹{{ po.total_amount|floatformat:2 }}</span>
+                </div>
+                <div class="financial-row">
+                    <span class="financial-label">Discount:</span>
+                    <span class="financial-value">₹0.00</span>
+                </div>
+                <div class="financial-row">
+                    <span class="financial-label">Tax Amount:</span>
+                    <span class="financial-value">₹{{ po.tax_amount|floatformat:2 }}</span>
+                </div>
+                <div class="financial-row grand-total-row">
+                    <span class="financial-label">Grand Total:</span>
+                    <span class="financial-value">₹{{ po.grand_total|floatformat:2 }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Approval Section (superadmin only) -->
+        {% if user.is_superuser %}
+        <div class="approval-section screen-only">
+            <h3 class="section-title">
+                <i class="fas fa-shield-alt"></i> Admin Approval
+            </h3>
+            <form method="POST" action="{% url 'purchase_order:po_approve' po.pk %}" class="approval-form">
+                {% csrf_token %}
+                <div class="approval-content">
+                    <div class="approval-field">
+                        <label for="admin_status" class="approval-label">Approval Status:</label>
+                        <select name="admin_status" id="admin_status" class="approval-select status-{{ po.admin_status|lower }}" onchange="toggleRejectionReason()">
+                            <option value="PENDING" {% if po.admin_status == 'PENDING' %}selected{% endif %}>⏳ Pending</option>
+                            <option value="APPROVED" {% if po.admin_status == 'APPROVED' %}selected{% endif %}>✅ Approved</option>
+                            <option value="REJECTED" {% if po.admin_status == 'REJECTED' %}selected{% endif %}>❌ Rejected</option>
+                        </select>
+                    </div>
+                    
+                    {% comment %} <div class="rejection-reason-field" id="rejectionReasonField" style="display: {% if po.admin_status == 'REJECTED' %}block{% else %}none{% endif %};">
+                        <label for="rejection_reason" class="approval-label">Rejection Reason:</label>
+                        <textarea name="rejection_reason" id="rejection_reason" class="rejection-textarea" rows="3" placeholder="Enter reason for rejection...">{{ po.admin_rejection_reason }}</textarea>
+                    </div> {% endcomment %}
+                    
+                    {% comment %} {% if po.admin_approved_by %}
+                    <div class="approval-info">
+                        <div class="approval-info-item">
+                            <i class="fas fa-user"></i>
+                            <span><strong>Last Action By:</strong> {{ po.admin_approved_by }}</span>
+                        </div>
+                        {% if po.admin_approved_at %}
+                        <div class="approval-info-item">
+                            <i class="fas fa-calendar"></i>
+                            <span><strong>Date:</strong> {{ po.admin_approved_at|date:"d M, Y H:i" }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %} {% endcomment %}
+                    
+                    <div class="approval-actions">
+                        <button type="submit" class="btn btn-success btn-approval">
+                            <i class="fas fa-check"></i> Update Approval Status
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+        {% elif po.admin_status != 'PENDING' %}
+        <!-- Show read-only status for non-superadmin -->
+        <div class="approval-section screen-only">
+            <h3 class="section-title">
+                <i class="fas fa-shield-alt"></i> Admin Approval Status
+            </h3>
+            <div class="approval-readonly">
+                <span class="status-badge admin-status-{{ po.admin_status|lower }}">
+                    {{ po.get_admin_status_display }}
+                </span>
+                {% comment %} {% if po.admin_approved_by %}
+                <div class="approval-info-readonly">
+                    <p><i class="fas fa-user"></i> <strong>By:</strong> {{ po.admin_approved_by }}</p>
+                    {% if po.admin_approved_at %}
+                    <p><i class="fas fa-calendar"></i> <strong>Date:</strong> {{ po.admin_approved_at|date:"d M, Y H:i" }}</p>
+                    {% endif %}
+                    {% if po.admin_rejection_reason %}
+                    <p><i class="fas fa-comment"></i> <strong>Reason:</strong> {{ po.admin_rejection_reason }}</p>
+                    {% endif %}
+                </div>
+                {% endif %} {% endcomment %}
+            </div>
+        </div>
+        {% endif %}
+        
+
+        <!-- Additional Notes (screen only) -->
+        {% if po.notes %}
+        <div class="notes-section screen-only">
+            <h3 class="section-title">
+                <i class="fas fa-sticky-note"></i> Additional Notes
+            </h3>
+            <div class="notes-content">
+                {{ po.notes|linebreaks }}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Metadata (screen only) -->
+        <div class="metadata-section screen-only">
+            <div class="metadata-item">
+                <i class="fas fa-calendar-plus"></i>
+                <span>Created: {{ po.created_at|date:"d M, Y H:i" }}</span>
+                {% if po.created_by %}
+                <span class="metadata-by">by {{ po.created_by }}</span>
+                {% endif %}
+            </div>
+            <div class="metadata-item">
+                <i class="fas fa-calendar-check"></i>
+                <span>Last Updated: {{ po.updated_at|date:"d M, Y H:i" }}</span>
+            </div>
+        </div>
+
+        <!-- Action Buttons (screen only) -->
+        <div class="detail-actions no-print">
+            <a href="{% url 'purchase_order:po_update' po.pk %}" class="btn btn-primary btn-lg">
+                <i class="fas fa-edit"></i> Edit Purchase Order
+            </a>
+            <a href="{% url 'purchase_order:po_delete' po.pk %}" class="btn btn-danger btn-lg">
+                <i class="fas fa-trash"></i> Delete
+            </a>
+            <button onclick="window.print()" class="btn btn-info btn-lg">
+                <i class="fas fa-print"></i> Print
+            </button>
+            <a href="{% url 'purchase_order:po_list' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Screen Styles */
+.content-wrapper {
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.page-title {
+    font-size: 28px;
+    font-weight: 600;
+    color: #2c3e50;
+    margin: 0;
+}
+
+.header-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.btn {
+    padding: 10px 20px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-primary {
+    background: #3498db;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #2980b9;
+}
+
+.btn-secondary {
+    background: #95a5a6;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #7f8c8d;
+}
+
+.btn-danger {
+    background: #e74c3c;
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #c0392b;
+}
+
+.btn-info {
+    background: #16a085;
+    color: white;
+}
+
+.btn-info:hover {
+    background: #138d75;
+}
+
+.btn-lg {
+    padding: 12px 24px;
+    font-size: 16px;
+}
+
+.po-container {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    padding: 30px;
+}
+
+/* Hide print elements on screen */
+.print-header,
+.print-footer,
+.print-table-footer {
+    display: none !important;
+}
+
+.po-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #ecf0f1;
+    margin-bottom: 30px;
+}
+
+.po-header-left {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.po-number {
+    font-size: 32px;
+    font-weight: 700;
+    color: #2c3e50;
+    margin: 0;
+}
+
+.status-badge {
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    display: inline-block;
+    text-transform: uppercase;
+}
+
+.status-draft {
+    background: #e3f2fd;
+    color: #1976d2;
+}
+
+.status-pending {
+    background: #fff3e0;
+    color: #f57c00;
+}
+
+.status-approved {
+    background: #e8f5e9;
+    color: #388e3c;
+}
+
+.status-delivered {
+    background: #f3e5f5;
+    color: #7b1fa2;
+}
+
+.status-cancelled {
+    background: #ffebee;
+    color: #c62828;
+}
+
+.po-dates {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-end;
+}
+
+.date-item {
+    display: flex;
+    gap: 10px;
+}
+
+.date-label {
+    color: #7f8c8d;
+    font-weight: 600;
+}
+
+.date-value {
+    color: #2c3e50;
+    font-weight: 700;
+}
+
+.info-grid {
+    display: grid;
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.info-grid.three-column {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.info-card {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 20px;
+    border: 1px solid #e9ecef;
+}
+
+.card-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.card-title i {
+    color: #3498db;
+}
+
+.card-content {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.info-row {
+    display: flex;
+    gap: 10px;
+    flex-direction: column;
+}
+
+.info-label {
+    font-weight: 600;
+    color: #7f8c8d;
+    font-size: 13px;
+}
+
+.info-value {
+    color: #2c3e50;
+    line-height: 1.5;
+}
+
+.financial-section {
+    background: linear-gradient(135deg, #E3F2FD 100%);
+    border-radius: 8px;
+    padding: 25px;
+    margin-bottom: 30px;
+}
+
+.section-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: black;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.section-title i {
+    color: #3498db;
+}
+
+.financial-grid {
+    display: grid;
+    gap: 15px;
+}
+
+.financial-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.37);
+}
+
+.financial-row:last-child {
+    border-bottom: none;
+}
+
+.financial-label {
+    font-weight: 600;
+    color: rgba(0, 0, 0, 1);
+    font-size: 16px;
+    text-align: left;
+    flex: 1;
+}
+
+.financial-value {
+    font-weight: 700;
+    color: black;
+    font-size: 18px;
+    text-align: right;
+    min-width: 150px;
+}
+
+.grand-total-row {
+    background: rgba(255, 255, 255, 0.37);
+    padding: 15px;
+    border-radius: 6px;
+    margin-top: 10px;
+}
+
+.grand-total-row .financial-label {
+    font-size: 18px;
+}
+
+.grand-total-row .financial-value {
+    font-size: 24px;
+}
+
+.notes-section {
+    background: #e6fff4ff;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 30px;
+}
+
+.notes-section .section-title {
+    color: #2c3e50;
+    margin-bottom: 15px;
+}
+
+.notes-section .section-title i {
+    color: #f39c12;
+}
+
+.notes-content {
+    color: #2c3e50;
+    line-height: 1.6;
+    white-space: pre-wrap;
+}
+
+.metadata-section {
+    display: flex;
+    gap: 30px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+}
+
+.metadata-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #7f8c8d;
+    font-size: 14px;
+}
+
+.metadata-item i {
+    color: #3498db;
+}
+
+.metadata-by {
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.detail-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    padding-top: 20px;
+    border-top: 2px solid #ecf0f1;
+}
+
+.items-section {
+    background: white;
+    border-radius: 8px;
+    padding: 25px;
+    margin-bottom: 30px;
+    border: 1px solid #e9ecef;
+}
+
+.items-table-wrapper {
+    overflow-x: auto;
+}
+
+.items-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+
+.items-table thead {
+    background: #f8f9fa;
+}
+
+.items-table th {
+    padding: 12px;
+    text-align: center;
+    font-weight: 600;
+    color: #2c3e50;
+    border-bottom: 2px solid #e9ecef;
+    font-size: 13px;
+    text-transform: uppercase;
+}
+
+.items-table td {
+    padding: 12px;
+    border-bottom: 1px solid #ecf0f1;
+    color: #2c3e50;
+}
+
+.items-table tbody tr:hover {
+    background: #f8f9fa;
+}
+
+.item-name {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 4px;
+}
+
+.item-unit {
+    font-size: 12px;
+    color: #7f8c8d;
+    text-transform: uppercase;
+}
+
+.line-total {
+    font-weight: 700;
+    color: #27ae60;
+    font-size: 15px;
+}
+
+.no-items {
+    text-align: center;
+    padding: 40px;
+    color: #7f8c8d;
+}
+
+.no-items i {
+    font-size: 48px;
+    margin-bottom: 15px;
+    opacity: 0.3;
+}
+
+.no-items p {
+    font-size: 16px;
+}
+
+/* Table column alignments for screen */
+.items-table th.sl-col,
+.items-table td.center-align {
+    text-align: center;
+}
+
+.items-table th.item-col {
+    text-align: left;
+}
+
+.items-table th.qty-col,
+.items-table th.discount-col,
+.items-table th.rate-col,
+.items-table th.tax-col,
+.items-table th.mrp-col,
+.items-table th.total-col,
+.items-table td.right-align {
+    text-align: right;
+}
+
+.items-table th.packing-col,
+.items-table th.remark-col {
+    text-align: center;
+}
+
+@media print {
+    @page {
+        size: A4;
+        margin: 0.5cm;
+    }
+
+    body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+    }
+
+    .content-wrapper {
+        padding: 0;
+        max-width: 100%;
+        margin: 0;
+        width: 100%;
+    }
+
+    .po-container {
+        box-shadow: none;
+        padding: 0.5cm;
+        border-radius: 0;
+        background: white !important;
+        margin: 0 !important;
+        position: relative !important;
+        z-index: 1 !important;
+        width: 100%;
+        max-width: 100%;
+    }
+
+    /* HIDE ALL SCREEN ELEMENTS */
+    .no-print,
+    .screen-only,
+    .page-header,
+    .detail-actions,
+    .btn,
+    header, 
+    nav, 
+    .navbar, 
+    .header, 
+    .top-bar, 
+    .user-menu, 
+    button[type="button"],
+    .user-profile, 
+    .profile-menu, 
+    .login-btn, 
+    .auth-buttons,
+    [class*="user"], 
+    [class*="profile"], 
+    [class*="login"], 
+    [class*="auth"],
+    .logo,
+    .sidebar,
+    .side-menu {
+        display: none !important;
+        visibility: hidden !important;
+    }
+
+    /* Remove all floating/fixed elements */
+    * {
+        position: static !important;
+    }
+    
+    .print-header, .print-footer, .items-section {
+        position: relative !important;
+        overflow: visible !important;
+    }
+
+    /* Show ONLY print elements */
+    .print-header,
+    .print-footer {
+        display: block !important;
+        visibility: visible !important;
+    }
+
+    .print-table-footer {
+        display: table-footer-group !important;
+        visibility: visible !important;
+    }
+
+    /* Print Header Styles */
+    .print-from-section {
+        text-align: left;
+        margin-bottom: 15px;
+        padding-bottom: 12px;
+        border-bottom: 2px solid #000;
+        width: 100%;
+        overflow: visible !important;
+        background: white !important;
+        position: relative !important;
+        z-index: 10 !important;
+        display: block !important;
+    }
+
+    .print-from-section h2 {
+        margin: 0 0 5px 0;
+        font-size: 14px;
+        font-weight: bold;
+        word-wrap: break-word;
+        white-space: normal;
+        max-width: 100%;
+        display: block !important;
+        visibility: visible !important;
+    }
+
+    .print-from-section p {
+        margin: 2px 0;
+        font-size: 11px;
+        line-height: 1.4;
+        word-wrap: break-word;
+        display: block !important;
+        visibility: visible !important;
+    }
+
+    .print-po-title {
+        text-align: right;
+        margin: 15px 0;
+        position: relative;
+    }
+
+    .print-po-title h1 {
+        margin: 0;
+        font-size: 24px;
+        font-weight: bold;
+        color: #00bfa5;
+    }
+
+    .page-number {
+        font-size: 10px;
+        color: #666;
+    }
+
+    .print-to-section {
+        display: flex;
+        justify-content: space-between;
+        margin: 15px 0;
+        padding: 12px 0;
+        border-top: 1px solid #ddd;
+        border-bottom: 1px solid #ddd;
+    }
+
+    .print-to-left {
+        flex: 1;
+    }
+
+    .to-label {
+        font-weight: bold;
+        margin-bottom: 10px;
+        font-size: 12px;
+    }
+
+    .to-content {
+        font-size: 11px;
+        line-height: 1.5;
+    }
+
+    .to-content strong {
+        display: block;
+        margin-bottom: 4px;
+        font-size: 12px;
+    }
+
+    .to-content p {
+        margin: 2px 0;
+    }
+
+    .print-to-right {
+        flex: 0 0 280px;
+    }
+
+    .print-info-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .print-info-table td {
+        padding: 8px;
+        border: 1px solid #000;
+        font-size: 11px;
+    }
+
+    .info-label-cell {
+        background: #00bfa5;
+        color: white;
+        font-weight: bold;
+        width: 90px;
+    }
+
+    .info-value-cell {
+        background: #e0f2f1;
+        font-weight: bold;
+    }
+
+    .print-sir-section {
+        margin: 15px 0;
+        padding: 20px 10px;
+        background: #ffffcc;
+        text-align: left;
+        font-size: 12px;
+        min-height: 60px;
+    }
+
+    /* Print Table Styles */
+    .items-section {
+        padding: 0;
+        margin: 20px 0;
+        border: none;
+        background: none;
+        width: 100%;
+    }
+
+    .print-items-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 10px;
+        margin-top: 0;
+    }
+
+    .print-items-table thead {
+        background: #00bfa5 !important;
+        color: white;
+    }
+
+    .print-items-table th {
+        padding: 8px 4px;
+        text-align: center;
+        font-weight: bold;
+        border: 1px solid #000;
+        font-size: 10px;
+    }
+
+    .print-items-table td {
+        padding: 6px 3px;
+        border: 1px solid #000;
+        font-size: 10px;
+    }
+
+    .print-items-table .sl-col { width: 5%; }
+    .print-items-table .item-col { width: 20%; }
+    .print-items-table .packing-col { width: 8%; }
+    .print-items-table .qty-col { width: 7%; }
+    .print-items-table .discount-col { width: 7%; }
+    .print-items-table .rate-col { width: 9%; }
+    .print-items-table .tax-col { width: 7%; }
+    .print-items-table .mrp-col { width: 9%; }
+    .print-items-table .total-col { width: 12%; }
+    .print-items-table .remark-col { width: 16%; }
+
+    .center-align {
+        text-align: center;
+    }
+
+    .right-align {
+        text-align: right;
+    }
+
+    .print-items-table tbody tr:hover {
+        background: none;
+    }
+
+    .print-items-table tfoot td {
+        font-weight: bold;
+        padding: 7px 3px;
+        font-size: 10px;
+    }
+
+    .total-row td {
+        background: #f5f5f5;
+    }
+
+    .grand-total-row-print td {
+        background: #e0f2f1 !important;
+        font-weight: bold;
+    }
+
+    .grand-total-value {
+        background: #ffeb3b !important;
+        color: #000;
+    }
+
+    /* Print Footer Styles */
+    .print-footer {
+        margin-top: 20px;
+        page-break-inside: avoid;
+    }
+
+    .print-footer-row {
+        margin: 10px 0;
+        font-size: 11px;
+    }
+
+    .footer-item {
+        line-height: 1.8;
+    }
+
+    .print-signature {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 25px;
+        font-size: 11px;
+    }
+
+    .signature-left {
+        text-align: left;
+    }
+
+    .signature-right {
+        text-align: right;
+    }
+
+    .signature-box {
+        background: #00bfa5;
+        color: white;
+        padding: 8px 20px;
+        display: inline-block;
+        margin-top: 35px;
+        font-weight: bold;
+        font-size: 11px;
+    }
+}
+
+@media (max-width: 768px) {
+    .info-grid.three-column {
+        grid-template-columns: 1fr;
+    }
+    
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+    
+    .po-header {
+        flex-direction: column;
+        gap: 20px;
+    }
+    
+    .po-dates {
+        align-items: flex-start;
+    }
+    
+    .detail-actions {
+        flex-direction: column;
+    }
+    
+    .btn-lg {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .metadata-section {
+        flex-direction: column;
+        gap: 15px;
+    }
+}
+.approval-info-section {
+    margin-bottom: 20px;
+}
+
+/* Admin Status Badges */
+.admin-status-pending {
+    background: #fff3e0;
+    color: #f57c00;
+}
+
+.admin-status-approved {
+    background: #e8f5e9;
+    color: #388e3c;
+}
+
+.admin-status-rejected {
+    background: #ffebee;
+    color: #c62828;
+}
+
+/* Admin Approval Section Styles */
+.approval-section {
+    background: linear-gradient(135deg, #E3F2FD 100%);
+    border-radius: 8px;
+    padding: 25px;
+    margin-bottom: 30px;
+    border-left: 4px solid #ffffffff;
+}
+
+.approval-section .section-title {
+    color: #000000ff;
+    margin-bottom: 20px;
+}
+
+.approval-section .section-title i {
+    color: #000000ff;
+}
+
+.approval-form {
+    width: 100%;
+}
+
+.approval-content {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.approval-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.approval-label {
+    font-weight: 600;
+    color: #000000ff;
+    font-size: 14px;
+}
+
+.approval-select {
+    padding: 12px 16px;
+    border-radius: 6px;
+    border: 2px solid #ffffffff;
+    font-size: 16px;
+    font-weight: 600;
+    background: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    max-width: 300px;
+}
+
+.approval-select:hover {
+    border-color: #ffffffff;
+}
+
+.approval-select:focus {
+    outline: none;
+    border-color: #ffffffff;
+    box-shadow: 0 0 0 3px rgba(255, 152, 0, 0.1);
+}
+
+/* Status-based colors for select */
+.approval-select.status-pending {
+    background: #FFF3E0;
+    color: #f57c00;
+}
+
+.approval-select.status-approved {
+    background: #E8F5E9;
+    color: #388e3c;
+}
+
+.approval-select.status-rejected {
+    background: #FFEBEE;
+    color: #c62828;
+}
+
+.approval-info {
+    background: rgba(255, 255, 255, 0.5);
+    padding: 15px;
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.approval-info-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #424242;
+    font-size: 14px;
+}
+
+.approval-info-item i {
+    color: #ffffffff;
+    width: 20px;
+}
+
+.approval-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-approval {
+    padding: 12px 24px;
+    font-size: 16px;
+    flex: 0 0 auto;
+}
+
+.btn-success {
+    background: #4CAF50;
+    color: white;
+}
+
+.btn-success:hover {
+    background: #45a049;
+}
+
+/* Read-only approval display */
+.approval-readonly {
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 6px;
+}
+
+.approval-info-readonly {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.approval-info-readonly p {
+    margin: 8px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #424242;
+}
+
+.approval-info-readonly i {
+    color: #ffffffff;
+    width: 20px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .approval-select {
+        max-width: 100%;
+    }
+}
+</style>
+
+<script>
+function toggleRejectionReason() {
+    const select = document.getElementById('admin_status');
+    const reasonField = document.getElementById('rejectionReasonField');
+    
+    if (select.value === 'REJECTED') {
+        reasonField.style.display = 'block';
+    } else {
+        reasonField.style.display = 'none';
+    }
+    
+    // Update select styling based on status
+    select.className = 'approval-select status-' + select.value.toLowerCase();
+}
+</script>
+{% endblock %}
+

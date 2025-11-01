@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Add Complaint</h2>
+    <form method="post">
+        {% csrf_token %}
+        <!-- Show form with bootstrap classes (form uses widgets set in forms.py) -->
+        {{ form.non_field_errors }}
+        <div class="mb-3">
+            <label class="form-label" for="{{ form.description.id_for_label }}">Description</label>
+            {{ form.description }}
+            {{ form.description.errors }}
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label" for="{{ form.complaint_type.id_for_label }}">Complaint Type</label>
+            {{ form.complaint_type }}
+            {{ form.complaint_type.errors }}
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label" for="{{ form.software.id_for_label }}">Software</label>
+            {{ form.software }}
+            {{ form.software.errors }}
+        </div>
+
+        <button type="submit" class="btn btn-primary">Submit</button>
+        <a href="{% url 'all_complaints' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}

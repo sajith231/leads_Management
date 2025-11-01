@@ -1,0 +1,216 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<style>
+    th {
+        text-transform: capitalize;
+    }
+    .password-field {
+        display: flex;
+        align-items: center;
+    }
+    .password-field input {
+        border: none;
+        background: none;
+        width: 100px;
+    }
+    .password-field input:focus {
+        outline: none;
+    }
+    .toggle-password {
+        cursor: pointer;
+        margin-left: 5px;
+    }
+    .user-img {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+    .allbody{
+        margin-top: 2%;
+    }
+    .filter-dropdown {
+        width: 200px;
+        margin-bottom: 10px;
+    }
+</style>
+<style>
+    @media (max-width: 768px) {
+        .allbody{
+            margin-top: 15%;
+
+        }}
+        
+</style>
+<div class="allbody">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="mb-0 text-center mb-4">All Users</h2>
+
+            <div class="d-flex justify-content-between align-items-center mb-3" style="position: relative;">
+                <a href="{% url 'add_user' %}" class="btn btn-primary" style="position: absolute; right: 0; margin-bottom: 10px;">
+                    Add User
+                </a>
+            </div>
+
+
+            <!-- <div class="d-flex justify-content-between align-items-center mb-3" style="position: relative;">
+                <a href="{% url 'user_menu_control' %}" class="btn btn-primary" style="position: absolute; left: 0; margin-bottom: 45px;">
+                    Add Menu Control
+                </a>
+            </div> -->
+
+
+            <div>
+                <a href="{% url 'all_branches' %}" class="btn btn-primary">
+                <i class="fas fa-code-branch"></i> Branch
+                </a>
+
+            </div>
+
+            
+
+            {% if messages %}
+            <div class="messages mb-3">
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Status Filter Dropdown -->
+            <div class="mb-3">
+                <form method="get" action="{% url 'users_table' %}" id="filter-form">
+                    <select class="form-select filter-dropdown" name="status_filter" id="status-filter" onchange="this.form.submit()">
+                        <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All Users</option>
+                        <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active Users</option>
+                        <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Inactive Users</option>
+                    </select>
+                </form>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>No.</th>
+                                    <th>Photo</th>  <!-- Added photo column -->
+                                    <th>Name</th>
+                                    <th>User ID</th>
+                                    <th>Password</th>
+                                    <th>Branch</th>
+                                    <th>User Level</th>
+                                    <th>Job Role</th>
+                                    <th>Phone Number</th>
+                                    <th>Status</th>       
+                                    <th>Edit</th>
+                                    <th>Delete</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user in users|dictsort:"name" %}
+                                {% if not user.is_superuser %}
+                                <tr>
+                                    <td>{{ forloop.counter }}</td>
+                                    <td>
+                                        {% if user.image %}
+                                            <img src="{{ user.image.url }}" alt="User Image" class="user-img">
+                                        {% else %}
+                                            <!-- <img src="{% static 'default_profile.png' %}" alt="Default User" class="user-img"> -->
+                                             None
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ user.name }}</td>
+                                    <td>{{ user.userid }}</td>
+                                    <!-- In the password field section of users_table.html -->
+                                    <td>
+                                        <div class="password-field">
+                                            <input type="password" value="********" readonly class="password-input" id="password-{{ user.id }}">
+                                            <span class="toggle-password" onclick="togglePasswordVisibility('password-{{ user.id }}', '{{ user.password }}')">
+                                                <i class="fa fa-eye"></i>
+                                            </span>
+                                        </div>
+                                    </td>
+                                    <td>{{ user.branch }}</td>
+                                    <td>
+                                        {% if user.user_level == 'normal' %}
+                                            <span class="user-level-badge level-normal">Admin</span>
+                                        {% elif user.user_level == 'admin_level' %}
+                                            <span class="user-level-badge level-admin">Super Admin</span>
+                                        {% elif user.user_level == '3level' %}
+                                            <span class="user-level-badge level-3">User</span>
+                                        {% elif user.user_level == '4level' %}
+                                            <span class="user-level-badge level-4">Superuser</span>
+                                        {% elif user.user_level == '5level' %}
+                                            <span class="user-level-badge level-5">Branch User</span>
+                                        {% endif %}
+                                    </td>
+                                     <td>
+                                        {% if user.job_role %}
+                                            {{ user.job_role.title }}
+                                        {% else %}
+                                            <span class="text-muted">Not Assigned</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ user.phone_number|default:"-" }}</td>
+                                    <td>
+                                        {% if user.status == 'active' %}
+                                            <span class="badge bg-success">Active</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">Inactive</span>
+                                        {% endif %}
+                                    </td>
+                                    
+                                    <td>
+                                        <a href="{% url 'edit_user' user.id %}" class="btn btn-warning btn-sm">
+                                            <i class="fa fa-edit"></i>
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <form method="post" action="{% url 'delete_user' user.id %}" style="display: inline;">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-danger btn-sm" 
+                                                    onclick="return confirm('Are you sure you want to delete user \'{{ user.name }}\'?');">
+                                                <i class="fa fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% endif %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {% if not users %}
+                    <div class="alert alert-info">
+                        No users have been added yet.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function togglePasswordVisibility(inputId, password) {
+        const passwordInput = document.getElementById(inputId);
+        if (passwordInput.type === "password") {
+            passwordInput.type = "text";
+            passwordInput.value = password;
+        } else {
+            passwordInput.type = "password";
+            passwordInput.value = "********";
+        }
+    }
+</script>
+
+{% endblock %}

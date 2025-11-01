@@ -1,0 +1,514 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Add Item{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+    <div class="page-header">
+        <h1 class="page-title">Add Item</h1>
+        <a href="{% url 'purchase_order:item_list' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to List
+        </a>
+    </div>
+
+    <div class="form-container">
+        <form method="POST" action="" class="item-form" id="itemForm">
+            {% csrf_token %}
+            
+            <div class="form-section">
+                <h3 class="section-title">
+                    <i class="fas fa-box"></i> Item Information
+                </h3>
+                <div class="form-row">
+                    <div class="form-group full-width">
+                        <label for="name">Item Name <span class="required">*</span></label>
+                        <input 
+                            type="text" 
+                            id="name" 
+                            name="name" 
+                            required
+                            class="form-control"
+                            placeholder="Enter item name"
+                        >
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group full-width">
+                        <label for="description">Description</label>
+                        <textarea 
+                            id="description" 
+                            name="description" 
+                            rows="3"
+                            class="form-control"
+                            placeholder="Enter item description (optional)"
+                        ></textarea>
+                        <small class="help-text">Provide detailed information about the item</small>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group full-width">
+                        <label for="department">Department</label>
+                        <select id="department" name="department" class="form-control">
+                            <option value="">Select Department (Optional)</option>
+                            {% for dept in departments %}
+                            <option value="{{ dept.id }}">{{ dept.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <small class="help-text">Assign this item to a specific department</small>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="unit_of_measure">Unit of Measure <span class="required">*</span></label>
+                        <select id="unit_of_measure" name="unit_of_measure" required class="form-control">
+                            <option value="">Select Unit</option>
+                            <option value="pcs" selected>Pieces (pcs)</option>
+                            <option value="kg">Kilogram (kg)</option>
+                            <option value="g">Gram (g)</option>
+                            <option value="ltr">Liter (ltr)</option>
+                            <option value="ml">Milliliter (ml)</option>
+                            <option value="box">Box</option>
+                            <option value="dozen">Dozen</option>
+                            <option value="meter">Meter (m)</option>
+                            <option value="sqft">Square Feet (sqft)</option>
+                            <option value="pack">Pack</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="hsn_code">HSN Code</label>
+                        <input 
+                            type="text" 
+                            id="hsn_code" 
+                            name="hsn_code"
+                            class="form-control"
+                            placeholder="Enter HSN code"
+                        >
+                        <small class="help-text">For GST purposes</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3 class="section-title">
+                    <i class="fas fa-tag"></i> Pricing Details
+                </h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="mrp">MRP (Maximum Retail Price) <span class="required">*</span></label>
+                        <div class="input-group">
+                            <span class="input-prefix">₹</span>
+                            <input 
+                                type="number" 
+                                id="mrp" 
+                                name="mrp" 
+                                step="0.01" 
+                                min="0" 
+                                required
+                                class="form-control"
+                                placeholder="0.00"
+                            >
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="purchase_price">Purchase Price <span class="required">*</span></label>
+                        <div class="input-group">
+                            <span class="input-prefix">₹</span>
+                            <input 
+                                type="number" 
+                                id="purchase_price" 
+                                name="purchase_price" 
+                                step="0.01" 
+                                min="0" 
+                                required
+                                class="form-control"
+                                placeholder="0.00"
+                            >
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="cost">Cost Price <span class="required">*</span></label>
+                        <div class="input-group">
+                            <span class="input-prefix">₹</span>
+                            <input 
+                                type="number" 
+                                id="cost" 
+                                name="cost" 
+                                step="0.01" 
+                                min="0" 
+                                required
+                                class="form-control"
+                                placeholder="0.00"
+                            >
+                        </div>
+                        <small class="help-text">Actual cost to company</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="tax_percentage">Tax Percentage <span class="required">*</span></label>
+                        <select id="tax_percentage" name="tax_percentage" required class="form-control">
+                            <option value="">Select Tax %</option>
+                            <option value="0.00">0%</option>
+                            <option value="5.00">5%</option>
+                            <option value="18.00" selected>18%</option>
+                            <option value="28.00">28%</option>
+                        </select>
+                        <small class="help-text">GST tax rate</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="price-summary">
+                <h4><i class="fas fa-calculator"></i> Price Summary</h4>
+                <div class="summary-grid">
+                    <div class="summary-item">
+                        <span class="summary-label">MRP:</span>
+                        <span class="summary-value" id="displayMRP">₹0.00</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Purchase Price:</span>
+                        <span class="summary-value" id="displayPurchase">₹0.00</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Cost:</span>
+                        <span class="summary-value" id="displayCost">₹0.00</span>
+                    </div>
+                    <div class="summary-item highlight">
+                        <span class="summary-label">Profit Margin:</span>
+                        <span class="summary-value" id="displayMargin">0%</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="fas fa-save"></i> Save Item
+                </button>
+                <a href="{% url 'purchase_order:item_list' %}" class="btn btn-secondary btn-lg">
+                    <i class="fas fa-times"></i> Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.content-wrapper {
+    padding: 20px;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.page-title {
+    font-size: 28px;
+    font-weight: 600;
+    color: #2c3e50;
+    margin: 0;
+}
+
+.btn {
+    padding: 10px 20px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-primary {
+    background: #3498db;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #2980b9;
+}
+
+.btn-secondary {
+    background: #95a5a6;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #7f8c8d;
+}
+
+.btn-lg {
+    padding: 12px 30px;
+    font-size: 16px;
+}
+
+.form-container {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    padding: 30px;
+}
+
+.form-section {
+    margin-bottom: 30px;
+    padding-bottom: 30px;
+    border-bottom: 2px solid #ecf0f1;
+}
+
+.form-section:last-of-type {
+    border-bottom: none;
+}
+
+.section-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.section-title i {
+    color: #3498db;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.form-row:last-child {
+    margin-bottom: 0;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group.full-width {
+    grid-column: 1 / -1;
+}
+
+label {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+
+.required {
+    color: #e74c3c;
+}
+
+.form-control {
+    padding: 12px 15px;
+    border: 2px solid #e9ecef;
+    border-radius: 6px;
+    font-size: 15px;
+    transition: all 0.3s ease;
+    font-family: inherit;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+select.form-control {
+    cursor: pointer;
+}
+
+textarea.form-control {
+    resize: vertical;
+    min-height: 80px;
+}
+
+.input-group {
+    position: relative;
+    display: flex;
+    align-items: stretch;
+}
+
+.input-prefix {
+    display: flex;
+    align-items: center;
+    padding: 0 15px;
+    background: #f8f9fa;
+    border: 2px solid #e9ecef;
+    border-right: none;
+    border-radius: 6px 0 0 6px;
+    color: #7f8c8d;
+    font-weight: 600;
+}
+
+.input-group .form-control {
+    border-radius: 0 6px 6px 0;
+}
+
+.help-text {
+    font-size: 12px;
+    color: #7f8c8d;
+    margin-top: 5px;
+}
+
+.price-summary {
+    background: linear-gradient(135deg, #E3F2FD 100%);
+    padding: 25px;
+    border-radius: 8px;
+    margin-bottom: 30px;
+    color: black;
+}
+
+.price-summary h4 {
+    margin: 0 0 20px 0;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+}
+
+.summary-item {
+    background: rgba(255, 255, 255, 0.37);
+    padding: 15px;
+    border-radius: 6px;
+    backdrop-filter: blur(10px);
+}
+
+.summary-item.highlight {
+    background: rgba(255, 255, 255, 0.37);
+    border: 2px solid rgba(255,255,255,0.3);
+}
+
+.summary-label {
+    display: block;
+    font-size: 13px;
+    opacity: 0.9;
+    margin-bottom: 5px;
+}
+
+.summary-value {
+    display: block;
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.form-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: flex-start;
+    padding-top: 20px;
+}
+
+@media (max-width: 768px) {
+    .form-row, .summary-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .btn-lg {
+        width: 100%;
+        justify-content: center;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('itemForm');
+    const mrpInput = document.getElementById('mrp');
+    const purchaseInput = document.getElementById('purchase_price');
+    const costInput = document.getElementById('cost');
+    
+    // Update price summary
+    function updateSummary() {
+        const mrp = parseFloat(mrpInput.value) || 0;
+        const purchase = parseFloat(purchaseInput.value) || 0;
+        const cost = parseFloat(costInput.value) || 0;
+        
+        document.getElementById('displayMRP').textContent = '₹' + mrp.toFixed(2);
+        document.getElementById('displayPurchase').textContent = '₹' + purchase.toFixed(2);
+        document.getElementById('displayCost').textContent = '₹' + cost.toFixed(2);
+        
+        // Calculate profit margin
+        const margin = purchase > 0 ? ((purchase - cost) / purchase * 100) : 0;
+        document.getElementById('displayMargin').textContent = margin.toFixed(2) + '%';
+    }
+    
+    mrpInput.addEventListener('input', updateSummary);
+    purchaseInput.addEventListener('input', updateSummary);
+    costInput.addEventListener('input', updateSummary);
+    
+    // Form validation
+    form.addEventListener('submit', function(e) {
+        const mrp = parseFloat(mrpInput.value);
+        const purchase = parseFloat(purchaseInput.value);
+        const cost = parseFloat(costInput.value);
+        
+        if (mrp < 0 || purchase < 0 || cost < 0) {
+            e.preventDefault();
+            alert('Prices cannot be negative!');
+            return false;
+        }
+        
+        if (cost > purchase) {
+            if (!confirm('Cost price is higher than purchase price. This may result in loss. Continue?')) {
+                e.preventDefault();
+                return false;
+            }
+        }
+        
+        if (purchase > mrp) {
+            if (!confirm('Purchase price is higher than MRP. Continue?')) {
+                e.preventDefault();
+                return false;
+            }
+        }
+    });
+    
+    // Auto-format prices on blur
+    [mrpInput, purchaseInput, costInput].forEach(input => {
+        input.addEventListener('blur', function() {
+            if (this.value) {
+                this.value = parseFloat(this.value).toFixed(2);
+                updateSummary();
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
