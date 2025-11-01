@@ -16,6 +16,7 @@
     .back-link { flex:1; padding:12px 24px; background:#f5f5f5; color:#333; border:none; border-radius:4px; font-size:16px; font-weight:500; text-align:center; text-decoration:none; display:inline-block; transition:background .3s; }
     .back-link:hover { background:#e0e0e0; }
     .required { color:#e74c3c; }
+    .optional { color:#999; font-size:12px; font-weight:normal; }
     .select-wrapper { position:relative; }
     .search-input { width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:4px; font-size:14px; box-sizing:border-box; }
     .search-input:focus { outline:none; border-color:#4CAF50; }
@@ -28,11 +29,12 @@
     .loading-message, .error-message, .no-results { padding:10px 12px; text-align:center; color:#777; font-size:14px; }
     .error-message { color:#e74c3c; }
     .hidden-select { display:none; }
+    .info-box { background:#e3f2fd; border-left:4px solid #2196F3; padding:12px; margin-bottom:20px; border-radius:4px; font-size:13px; color:#1565c0; }
     @media (min-width:768px){ .form-container{ max-width:700px; margin:0 auto; padding:40px; height:auto; min-height:100vh; } }
 </style>
 
 <div class="form-container">
-    <h1>Add New Claim🧾</h1>
+    <h1>Add New Claim 🧾</h1>
 
     <div class="form-group">
       <label for="claimed_by">Claimed By</label>
@@ -55,6 +57,10 @@
       {% endfor %}
     {% endif %}
 
+    <div class="info-box">
+        ℹ️ <strong>Note:</strong> Either select a <strong>Client</strong> OR provide a <strong>Purpose</strong>. You don't need both, but at least one is required.
+    </div>
+
     <form method="post" enctype="multipart/form-data" action="{% url 'claims_add' %}">
         {% csrf_token %}
 
@@ -71,15 +77,36 @@
         </div>
 
         <div class="form-group">
-            <label for="client">Client <span class="required">*</span></label>
+    <label for="department">Department <span class="optional">(Optional)</span></label>
+    <select id="department" name="department">
+        <option value="">Select Department</option>
+        {% for dept in departments %}
+            <option value="{{ dept.id }}"
+                {% if form_department_id == dept.id|stringformat:"s" %}selected{% endif %}>
+                {{ dept.name }}
+            </option>
+        {% endfor %}
+    </select>
+</div>
+
+        <div class="form-group">
+            <label for="client">Client <span class="optional">(Optional - provide this OR purpose below)</span></label>
             <div class="select-wrapper">
-                <input type="text" id="client-search" class="search-input" placeholder="Search for a client by name, branch, or place..." autocomplete="off" required>
+                <input type="text" id="client-search" class="search-input" placeholder="Search for a client by name, branch, or place..." autocomplete="off">
                 <div id="client-dropdown" class="dropdown-list"></div>
-                <select id="client" name="client" class="hidden-select" required>
+                <select id="client" name="client" class="hidden-select">
                     <option value="">Select Client</option>
                 </select>
                 <input type="hidden" id="client_name" name="client_name">
             </div>
+        </div>
+
+        <div class="form-group">
+            <label for="purpose">Purpose <span class="optional">(Optional - provide this OR client above)</span></label>
+            <textarea id="purpose" name="purpose" placeholder="Enter the purpose of this expense if no client is selected..."></textarea>
+            <small style="color:#777;display:block;margin-top:6px;">
+                Required only if no client is selected above.
+            </small>
         </div>
 
         <div class="form-group">
@@ -92,7 +119,6 @@
             <textarea id="description" name="description"></textarea>
         </div>
 
-        <!-- ✅ Receipt group toggles visibility + required based on expense type -->
         <div class="form-group" id="receipt-group">
             <label for="receipt">Upload Bill/Receipt <span id="receipt-required-mark" class="required">*</span></label>
             <input type="file" id="receipt" name="receipt" accept="image/*,.pdf">
@@ -109,12 +135,13 @@
 </div>
 
 <script>
-    // --- Client search (same as before) ---
+    // Client search
     let clientsData = [];
     const searchInput = document.getElementById('client-search');
     const dropdown = document.getElementById('client-dropdown');
     const hiddenSelect = document.getElementById('client');
     const clientNameInput = document.getElementById('client_name');
+    const purposeTextarea = document.getElementById('purpose');
 
     async function fetchClients() {
         dropdown.innerHTML = '<div class="loading-message">Loading clients...</div>';
@@ -180,6 +207,11 @@
         hiddenSelect.value = client.code;
         clientNameInput.value = client.name;
         dropdown.classList.remove('show');
+        
+        // Clear purpose when client is selected
+        if (purposeTextarea.value === '') {
+            purposeTextarea.placeholder = 'Client selected - purpose is optional';
+        }
     }
 
     searchInput.addEventListener('focus', ()=>{
@@ -190,7 +222,16 @@
         if(!searchInput.contains(e.target) && !dropdown.contains(e.target)) dropdown.classList.remove('show');
     });
 
-    // --- Expense type logic ---
+    // Monitor when client is cleared
+    searchInput.addEventListener('input', e => {
+        if (e.target.value === '') {
+            hiddenSelect.value = '';
+            clientNameInput.value = '';
+            purposeTextarea.placeholder = 'Enter the purpose of this expense if no client is selected...';
+        }
+    });
+
+    // Expense type logic
     const expenseTypeSelect = document.getElementById('expense_type');
     const descriptionGroup = document.getElementById('description-group');
     const descriptionTextarea = document.getElementById('description');
@@ -210,7 +251,7 @@
             if(descriptionTextarea.value === 'Food/Meal Expense') descriptionTextarea.value = '';
         }
 
-        // ✅ Hide receipt field completely for "Self/Personal Expense"
+        // Hide receipt field for "Self/Personal Expense"
         if(type === 'self'){
             receiptGroup.style.display = 'none';
         } else {
