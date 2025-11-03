@@ -209,6 +209,8 @@
           <i class="fa-solid fa-magnifying-glass"></i>
         </button>
 
+        
+
         {% if query %}
         <a href="{% url 'drive_list' %}"
            style="
@@ -251,6 +253,35 @@
       {% endif %}
     </div>
   </div>
+
+  <div style="margin-bottom: 12px; display: flex; justify-content: flex-end; align-items: center; gap: 10px;">
+  <label for="rowCount" style="font-weight: 600; color: #374151; font-size: 14px;">
+    Show rows:
+  </label>
+  <select 
+    id="rowCount" 
+    onchange="location.href='?per_page=' + this.value + '{% if query %}&q={{ query|urlencode }}{% endif %}'"
+    style="
+      padding: 8px 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #374151;
+      background: #fff;
+      cursor: pointer;
+      transition: all 0.2s;
+    "
+    onmouseover="this.style.borderColor='#2563eb'"
+    onmouseout="this.style.borderColor='#d1d5db'"
+  >
+    <option value="10" {% if per_page == 10 %}selected{% endif %}>10</option>
+    <option value="15" {% if per_page == 15 %}selected{% endif %}>15</option>
+    <option value="25" {% if per_page == 25 %}selected{% endif %}>25</option>
+    <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
+    <option value="100" {% if per_page == 100 %}selected{% endif %}>100</option>
+  </select>
+</div>
 
   <!-- 🔹 Pagination Section -->
   {% if paginator.num_pages > 1 %}
