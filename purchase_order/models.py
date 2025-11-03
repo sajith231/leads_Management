@@ -494,6 +494,14 @@ class PurchaseOrderItem(models.Model):
         verbose_name="Entry Rate",
         help_text="Base price after tax extraction (for Reverse Tax method)"
     )
+
+    sales_price = models.DecimalField(
+        max_digits=12, 
+        decimal_places=2, 
+        default=0,
+        verbose_name="Sales Price (MRP)",
+        help_text="Sales price from Item Master MRP"
+    )
     
     discount = models.DecimalField(
         max_digits=12, 

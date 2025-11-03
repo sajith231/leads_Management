@@ -63,10 +63,11 @@ INSTALLED_APPS = [
     'fuel_management',
     'django.contrib.humanize',
     "wfh_Request",
-    "punchout_reminder",
+    # "punchout_reminder",
     "image_capture",
     'software_master',
-    'purchase_order'
+    'purchase_order',
+    'claims',
     
 ]
 

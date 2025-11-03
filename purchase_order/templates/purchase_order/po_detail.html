@@ -102,42 +102,6 @@
 
         <!-- Supplier, Department, Client and Delivery Info (screen only) -->
         <div class="info-grid three-column screen-only">
-            <div class="info-card">
-                <h3 class="card-title">
-                    <i class="fas fa-building"></i> Supplier Information
-                </h3>
-                <div class="card-content">
-                    <div class="info-row">
-                        <span class="info-label">Supplier Name:</span>
-                        <span class="info-value">{{ po.supplier.name }}</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Address:</span>
-                        <span class="info-value">{{ po.supplier.address }}</span>
-                    </div>
-                    {% if po.supplier.places %}
-                    <div class="info-row">
-                        <span class="info-label">Place:</span>
-                        <span class="info-value">{{ po.supplier.places }}</span>
-                    </div>
-                    {% endif %}
-                    <div class="info-row">
-                        <span class="info-label">Location:</span>
-                        <span class="info-value">{{ po.supplier.city }}, {{ po.supplier.state }}</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Mobile:</span>
-                        <span class="info-value">{{ po.supplier.mobile_no }}</span>
-                    </div>
-                    {% if po.supplier.alternate_number %}
-                    <div class="info-row">
-                        <span class="info-label">Alternate:</span>
-                        <span class="info-value">{{ po.supplier.alternate_number }}</span>
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-
             {% if po.department %}
             <div class="info-card">
                 <h3 class="card-title">
@@ -178,6 +142,41 @@
             </div>
             {% endif %}
 
+            <div class="info-card">
+                <h3 class="card-title">
+                    <i class="fas fa-building"></i> Supplier Information
+                </h3>
+                <div class="card-content">
+                    <div class="info-row">
+                        <span class="info-label">Supplier Name:</span>
+                        <span class="info-value">{{ po.supplier.name }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Address:</span>
+                        <span class="info-value">{{ po.supplier.address }}</span>
+                    </div>
+                    {% if po.supplier.places %}
+                    <div class="info-row">
+                        <span class="info-label">Place:</span>
+                        <span class="info-value">{{ po.supplier.places }}</span>
+                    </div>
+                    {% endif %}
+                    <div class="info-row">
+                        <span class="info-label">Location:</span>
+                        <span class="info-value">{{ po.supplier.city }}, {{ po.supplier.state }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Mobile:</span>
+                        <span class="info-value">{{ po.supplier.mobile_no }}</span>
+                    </div>
+                    {% if po.supplier.alternate_number %}
+                    <div class="info-row">
+                        <span class="info-label">Alternate:</span>
+                        <span class="info-value">{{ po.supplier.alternate_number }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
             {% if po.client_details %}
             <div class="info-card">
                 <h3 class="card-title">
@@ -208,9 +207,9 @@
                             <th class="packing-col">Packing</th>
                             <th class="qty-col">QTY</th>
                             <th class="discount-col">Discount</th>
-                            <th class="rate-col">Rate</th>
+                            <th class="rate-col">Entry Rate</th>  <!-- ✅ CHANGED from "Rate" -->
                             <th class="tax-col">Tax %</th>
-                            <th class="mrp-col">MRP</th>
+                            <th class="mrp-col">Sales Price (MRP)</th>  <!-- ✅ CHANGED from "MRP" -->
                             <th class="total-col">Total Amount</th>
                             <th class="remark-col">Remark</th>
                         </tr>
@@ -225,9 +224,9 @@
                             <td class="center-align">{{ item.item.unit_of_measure }}</td>
                             <td class="right-align">{{ item.quantity }}</td>
                             <td class="right-align">{{ item.discount|floatformat:2 }}</td>
-                            <td class="right-align">{{ item.unit_price|floatformat:2 }}</td>
+                            <td class="right-align">{{ item.entry_rate|floatformat:2 }}</td>  <!-- ✅ Changed from unit_price -->
                             <td class="center-align">{{ item.tax_percent }}</td>
-                            <td class="right-align">{{ item.unit_price|floatformat:2 }}</td>
+                            <td class="right-align">{{ item.sales_price|default:0|floatformat:2 }}</td>  <!-- ✅ Changed from unit_price -->
                             <td class="right-align line-total">{{ item.line_total|floatformat:2 }}</td>
                             <td></td>
                         </tr>
@@ -314,6 +313,18 @@
             </div>
         </div>
 
+        <!-- Additional Notes (screen only) -->
+        {% if po.notes %}
+        <div class="notes-section screen-only">
+            <h3 class="section-title">
+                <i class="fas fa-sticky-note"></i> Additional Notes
+            </h3>
+            <div class="notes-content">
+                {{ po.notes|linebreaks }}
+            </div>
+        </div>
+        {% endif %}
+
         <!-- Admin Approval Section (superadmin only) -->
         {% if user.is_superuser %}
         <div class="approval-section screen-only">
@@ -330,28 +341,7 @@
                             <option value="APPROVED" {% if po.admin_status == 'APPROVED' %}selected{% endif %}>✅ Approved</option>
                             <option value="REJECTED" {% if po.admin_status == 'REJECTED' %}selected{% endif %}>❌ Rejected</option>
                         </select>
-                    </div>
-                    
-                    {% comment %} <div class="rejection-reason-field" id="rejectionReasonField" style="display: {% if po.admin_status == 'REJECTED' %}block{% else %}none{% endif %};">
-                        <label for="rejection_reason" class="approval-label">Rejection Reason:</label>
-                        <textarea name="rejection_reason" id="rejection_reason" class="rejection-textarea" rows="3" placeholder="Enter reason for rejection...">{{ po.admin_rejection_reason }}</textarea>
-                    </div> {% endcomment %}
-                    
-                    {% comment %} {% if po.admin_approved_by %}
-                    <div class="approval-info">
-                        <div class="approval-info-item">
-                            <i class="fas fa-user"></i>
-                            <span><strong>Last Action By:</strong> {{ po.admin_approved_by }}</span>
-                        </div>
-                        {% if po.admin_approved_at %}
-                        <div class="approval-info-item">
-                            <i class="fas fa-calendar"></i>
-                            <span><strong>Date:</strong> {{ po.admin_approved_at|date:"d M, Y H:i" }}</span>
-                        </div>
-                        {% endif %}
-                    </div>
-                    {% endif %} {% endcomment %}
-                    
+                    </div> 
                     <div class="approval-actions">
                         <button type="submit" class="btn btn-success btn-approval">
                             <i class="fas fa-check"></i> Update Approval Status
@@ -385,19 +375,6 @@
         </div>
         {% endif %}
         
-
-        <!-- Additional Notes (screen only) -->
-        {% if po.notes %}
-        <div class="notes-section screen-only">
-            <h3 class="section-title">
-                <i class="fas fa-sticky-note"></i> Additional Notes
-            </h3>
-            <div class="notes-content">
-                {{ po.notes|linebreaks }}
-            </div>
-        </div>
-        {% endif %}
-
         <!-- Metadata (screen only) -->
         <div class="metadata-section screen-only">
             <div class="metadata-item">
@@ -424,6 +401,9 @@
             <button onclick="window.print()" class="btn btn-info btn-lg">
                 <i class="fas fa-print"></i> Print
             </button>
+            {% comment %} <button id="whatsappShareBtn" class="btn btn-success btn-lg">
+                <i class="fab fa-whatsapp"></i> WhatsApp Share
+            </button> {% endcomment %}
             <a href="{% url 'purchase_order:po_list' %}" class="btn btn-secondary">
                 <i class="fas fa-arrow-left"></i> Back
             </a>
@@ -1430,5 +1410,37 @@ function toggleRejectionReason() {
     select.className = 'approval-select status-' + select.value.toLowerCase();
 }
 </script>
+
+<script>
+document.getElementById("whatsappShareBtn").addEventListener("click", function () {
+    const csrfToken = "{{ csrf_token }}";
+    const sendUrl = "{% url 'purchase_order:send_whatsapp_po' po.id %}";
+
+    fetch(sendUrl, {
+        method: "POST",
+        headers: {
+            "X-CSRFToken": csrfToken,
+        },
+    })
+    .then(async (response) => {
+        const text = await response.text();
+        try {
+            const data = JSON.parse(text);
+            if (data.status === "success") {
+                alert("✅ WhatsApp message sent successfully!");
+            } else {
+                alert("⚠️ Failed: " + (data.error || data.message || "Unknown error"));
+            }
+        } catch {
+            console.error("Raw response:", text);
+            alert("❌ Server returned invalid JSON. Check console for details.");
+        }
+    })
+    .catch(err => {
+        alert("❌ Network error: " + err);
+    });
+});
+</script>
+
 {% endblock %}
 

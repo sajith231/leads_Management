@@ -10,30 +10,24 @@
     .grp label{display:block;margin-bottom:6px;font-weight:600;color:#555}
     input[type=text],input[type=file],input[type=number],select{width:100%;padding:12px;border:2px solid #ddd;border-radius:6px;font-size:16px}
     input[type=text]:focus,input[type=file]:focus,input[type=number]:focus,select:focus{outline:none;border-color:#4caf50}
-    input[type=text]:disabled{background:#f0f0f0;cursor:not-allowed;color:#999}
     .upload-area{background:#fafafa;border:2px dashed #ccc;border-radius:8px;padding:20px;margin:25px 0}
     .upload-area h3{text-align:center;margin-bottom:15px;color:#333}
     .file-grp{margin-bottom:15px}
-    .file-info{background:#f0f7ff;padding:8px 12px;border-radius:4px;font-size:14px;color:#0066cc;margin-top:6px;display:flex;justify-content:space-between;align-items:center}
-    .remove-file{color:#d32f2f;cursor:pointer;font-weight:600;font-size:12px}
-    .remove-file:hover{text-decoration:underline}
     .optional{color:#666;font-weight:normal;font-size:14px}
-    .btn-group{display:flex;gap:10px;margin-top:30px}
-    .btn{padding:14px 0;border:none;border-radius:6px;font-size:18px;cursor:pointer;transition:.3s;flex:1}
-    .btn-submit{background:#4caf50;color:#fff}
-    .btn-submit:hover{background:#45a049}
-    .btn-cancel{background:#e0e0e0;color:#333}
-    .btn-cancel:hover{background:#d0d0d0}
+    .btn{background:#4caf50;color:#fff;padding:14px 0;border:none;border-radius:6px;font-size:18px;width:100%;cursor:pointer;transition:.3s}
+    .btn:hover{background:#45a049}
     .rate-display{background:#e9f7ef;padding:10px;border-radius:4px;margin-top:8px;font-weight:600;color:#2c5aa0}
     .alert{margin-bottom:20px;padding:12px;border-radius:6px}
     .alert-error{background:#f8d7da;color:#721c24;border:1px solid #f5c6cb}
     .alert-success{background:#d1edff;color:#155724;border:1px solid #c3e6cb}
-    .readonly-info{background:#f9f9f9;padding:12px;border-radius:6px;border:1px solid #e0e0e0;font-size:14px;color:#555}
+    .file-info{background:#f8f9fa;padding:10px;border-radius:4px;margin-top:5px;font-size:14px}
+    .checkbox-grp{margin-top:10px}
+    .checkbox-grp input{margin-right:8px}
 </style>
 
 <div class="vehicle-container">
     <div class="card">
-        <h1>Edit Vehicle Details</h1>
+        <h1>Edit Vehicle</h1>
         
         <!-- Display Messages -->
         {% if messages %}
@@ -46,101 +40,94 @@
 
         <form method="post" enctype="multipart/form-data">
             {% csrf_token %}
-            
             <div class="grp">
                 <label>Vehicle Number</label>
-                <input type="text" value="{{ vehicle.vehicle_number }}" disabled>
-                <div class="readonly-info">Vehicle number cannot be changed</div>
+                <input type="text" value="{{ vehicle.vehicle_number }}" readonly style="background:#f5f5f5;">
+                <small style="color:#666;">Vehicle number cannot be changed</small>
             </div>
-
+            <div class="grp">
+                <label>Vehicle Name</label>
+                <input type="text" name="vehicle_name" value="{{ vehicle.vehicle_name }}" required>
+            </div>
+            <div class="grp">
+                <label>Model Number</label>
+                <input type="text" name="model_number" value="{{ vehicle.model_number }}" required>
+            </div>
+            <div class="grp">
+                <label>Manufacture Year</label>
+                <input type="number" name="manufacture_year" value="{{ vehicle.manufacture_year }}" min="1900" max="{% now 'Y' %}" required>
+            </div>
             <div class="grp">
                 <label>Owner Name</label>
                 <input type="text" name="owner_name" value="{{ vehicle.owner_name }}" required>
             </div>
-
             <div class="grp">
                 <label>Fuel Type</label>
-                <input type="text" value="{{ vehicle.fuel_type|upper }}" disabled>
-                <div class="readonly-info">Fuel type cannot be changed</div>
+                <select name="fuel_type" required>
+                    <option value="petrol" {% if vehicle.fuel_type == 'petrol' %}selected{% endif %}>Petrol</option>
+                    <option value="diesel" {% if vehicle.fuel_type == 'diesel' %}selected{% endif %}>Diesel</option>
+                </select>
             </div>
-
-            <div class="grp">
-                <label>Fuel Rate (₹/liter)</label>
-                <input type="number" name="fuel_rate" id="fuel_rate" step="0.01" min="0" value="{{ vehicle.fuel_rate }}" required readonly>
-                <div class="rate-display">
-                    Current rate: ₹<span id="rate_value">{{ vehicle.fuel_rate }}</span> per liter
-                </div>
-            </div>
-
             <div class="grp">
                 <label>Average Mileage (km/l)</label>
                 <input type="number" name="avg_mileage" step="0.01" min="0" value="{{ vehicle.avg_mileage }}" required>
             </div>
 
             <div class="upload-area">
-                <h3>Required Documents <span class="optional">(Optional)</span></h3>
+                <h3>Document Management</h3>
                 
                 <div class="file-grp">
-                    <label>RC Copy <span class="optional">- Optional</span></label>
+                    <label>RC Copy</label>
                     {% if vehicle.rc_copy %}
                         <div class="file-info">
-                            <a href="{{ vehicle.rc_copy.url }}" target="_blank">📄 RC Copy uploaded</a>
-                            <label class="remove-file">
-                                <input type="checkbox" name="remove_rc_copy" style="display:none;">
-                                Remove
-                            </label>
+                            <a href="{{ vehicle.rc_copy.url }}" target="_blank">View Current File</a>
                         </div>
                     {% endif %}
                     <input type="file" name="rc_copy" accept=".pdf,.jpg,.jpeg,.png">
+                    {% if vehicle.rc_copy %}
+                    <div class="checkbox-grp">
+                        <input type="checkbox" id="remove_rc_copy" name="remove_rc_copy">
+                        <label for="remove_rc_copy" style="font-weight:normal;">Remove current RC copy</label>
+                    </div>
+                    {% endif %}
                 </div>
-
+                
                 <div class="file-grp">
-                    <label>Insurance Copy <span class="optional">- Optional</span></label>
+                    <label>Insurance Copy</label>
                     {% if vehicle.insurance_copy %}
                         <div class="file-info">
-                            <a href="{{ vehicle.insurance_copy.url }}" target="_blank">📄 Insurance Copy uploaded</a>
-                            <label class="remove-file">
-                                <input type="checkbox" name="remove_insurance_copy" style="display:none;">
-                                Remove
-                            </label>
+                            <a href="{{ vehicle.insurance_copy.url }}" target="_blank">View Current File</a>
                         </div>
                     {% endif %}
                     <input type="file" name="insurance_copy" accept=".pdf,.jpg,.jpeg,.png">
+                    {% if vehicle.insurance_copy %}
+                    <div class="checkbox-grp">
+                        <input type="checkbox" id="remove_insurance_copy" name="remove_insurance_copy">
+                        <label for="remove_insurance_copy" style="font-weight:normal;">Remove current insurance copy</label>
+                    </div>
+                    {% endif %}
                 </div>
-
+                
                 <div class="file-grp">
-                    <label>Pollution Copy <span class="optional">- Optional</span></label>
+                    <label>Pollution Copy</label>
                     {% if vehicle.pollution_copy %}
                         <div class="file-info">
-                            <a href="{{ vehicle.pollution_copy.url }}" target="_blank">📄 Pollution Copy uploaded</a>
-                            <label class="remove-file">
-                                <input type="checkbox" name="remove_pollution_copy" style="display:none;">
-                                Remove
-                            </label>
+                            <a href="{{ vehicle.pollution_copy.url }}" target="_blank">View Current File</a>
                         </div>
                     {% endif %}
                     <input type="file" name="pollution_copy" accept=".pdf,.jpg,.jpeg,.png">
+                    {% if vehicle.pollution_copy %}
+                    <div class="checkbox-grp">
+                        <input type="checkbox" id="remove_pollution_copy" name="remove_pollution_copy">
+                        <label for="remove_pollution_copy" style="font-weight:normal;">Remove current pollution copy</label>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
 
-            <div class="btn-group">
-                <button type="submit" class="btn btn-submit">Update Vehicle</button>
-                <a href="{% url 'vehicle_list' %}" class="btn btn-cancel" style="text-decoration:none;display:flex;align-items:center;justify-content:center;">Cancel</a>
-            </div>
+            <button type="submit" class="btn">Update Vehicle Details</button>
+            <a href="{% url 'vehicle_list' %}" style="display:block;text-align:center;margin-top:15px;color:#666;text-decoration:none;">← Back to Vehicle List</a>
         </form>
     </div>
 </div>
-
-<script>
-    // Handle file removal checkboxes
-    document.querySelectorAll('.remove-file').forEach(function(element) {
-        element.addEventListener('click', function(e) {
-            e.preventDefault();
-            const checkbox = this.querySelector('input[type="checkbox"]');
-            checkbox.checked = !checkbox.checked;
-            this.style.opacity = checkbox.checked ? '0.5' : '1';
-            this.textContent = checkbox.checked ? '✓ Remove' : 'Remove';
-        });
-    });
-</script>
 {% endblock %}

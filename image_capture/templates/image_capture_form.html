@@ -323,7 +323,7 @@
   }
 
   .customer-search-input {
-    padding: 12px 40px 12px 18px;
+    padding: 12px 80px 12px 18px;
     border: 2px solid #e2e8f0;
     border-radius: 10px;
     font-size: 14px;
@@ -341,11 +341,41 @@
 
   .search-icon {
     position: absolute;
-    right: 12px;
+    right: 50px;
     top: 50%;
     transform: translateY(-50%);
     color: #718096;
     font-size: 16px;
+  }
+
+  .btn-view-customer {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: #667eea;
+    border: none;
+    color: white;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    z-index: 10;
+  }
+
+  .btn-view-customer:hover:not(:disabled) {
+    background: #5568d3;
+    transform: translateY(-50%) scale(1.05);
+  }
+
+  .btn-view-customer:disabled {
+    background: #cbd5e0;
+    cursor: not-allowed;
+    opacity: 0.6;
   }
 
   .customer-dropdown {
@@ -455,10 +485,13 @@
 
         <!-- Dropdown Section -->
         <div id="dropdown-section" class="customer-input-section active">
-          <!-- Search Input -->
+          <!-- Search Input with Eye Button -->
           <div class="customer-search-container">
             <input type="text" id="customer-search" class="customer-search-input" placeholder="Click to search customers..." readonly>
             <i class="fas fa-search search-icon"></i>
+            <button type="button" class="btn-view-customer" id="viewCustomerBtn" title="View Customer Details" disabled>
+              <i class="fas fa-eye"></i>
+            </button>
           </div>
           
           <!-- Dropdown with Search Results -->
@@ -540,7 +573,7 @@ function sendViaWhatsApp(customerName, phoneNumber, link) {
   const message = `Hi ${customerName}, please verify your identity by clicking this link: ${link}`;
   const encodedMessage = encodeURIComponent(message);
   
-  const apiUrl = `https://app.dxing.in/api/send/whatsapp?secret=7b8ae820ecb39f8d173d57b51e1fce4c023e359e&account=1756959119812b4ba287f5ee0bc9d43bbf5bbe87fb68b9118fcf1af&recipient=91${phoneNumber}&type=text&message=${encodedMessage}&priority=0`;
+  const apiUrl = `https://app.dxing.in/api/send/whatsapp?secret=7b8ae820ecb39f8d173d57b51e1fce4c023e359e&account=1761365422812b4ba287f5ee0bc9d43bbf5bbe87fb68fc4daea92d8&recipient=91${phoneNumber}&type=text&message=${encodedMessage}&priority=1`;
   
   fetch(apiUrl)
     .then(response => {
@@ -632,8 +665,23 @@ function initializeCustomerSearch() {
   const customDropdown = document.getElementById('customer-custom-dropdown');
   const originalSelect = document.getElementById('customer_dropdown');
   const customerOptions = customDropdown.querySelectorAll('.customer-option');
+  const viewCustomerBtn = document.getElementById('viewCustomerBtn');
   
   if (!searchInput) return;
+  
+  let selectedCustomerData = null;
+  let allCustomersData = [];
+  
+  // Fetch all customer data from API
+  fetch('/proxy/customers/')
+    .then(response => response.json())
+    .then(data => {
+      allCustomersData = data;
+      console.log('Customers loaded:', allCustomersData.length);
+    })
+    .catch(error => {
+      console.error('Error loading customers:', error);
+    });
   
   // Show all options
   function showAllOptions() {
@@ -687,6 +735,8 @@ function initializeCustomerSearch() {
     
     if (searchTerm === '') {
       showAllOptions();
+      selectedCustomerData = null;
+      viewCustomerBtn.disabled = true;
     } else {
       filterOptions(searchTerm);
     }
@@ -708,7 +758,33 @@ function initializeCustomerSearch() {
       
       // Hide dropdown after selection
       customDropdown.style.display = 'none';
+      
+      // Find and store full customer data
+      const customer = allCustomersData.find(c => c.name === value);
+      if (customer) {
+        selectedCustomerData = customer;
+        viewCustomerBtn.disabled = false;
+        console.log('Selected customer:', customer);
+      } else {
+        selectedCustomerData = null;
+        viewCustomerBtn.disabled = true;
+      }
     });
+  });
+  
+  // View Customer Button Click Handler
+  viewCustomerBtn.addEventListener('click', function(e) {
+    e.preventDefault();
+    if (selectedCustomerData) {
+      // Encode customer data for URL
+      const encodedData = encodeURIComponent(JSON.stringify(selectedCustomerData));
+      
+      // Get current URL to return to
+      const currentUrl = window.location.href;
+      
+      // Redirect to customer details page in app1
+      window.location.href = `/customer-details/?data=${encodedData}&next=${encodeURIComponent(currentUrl)}`;
+    }
   });
   
   // Hide dropdown when clicking outside
@@ -716,10 +792,12 @@ function initializeCustomerSearch() {
     if (!searchInput.contains(event.target) && !customDropdown.contains(event.target)) {
       customDropdown.style.display = 'none';
       
-      // If search input is empty after clicking away, set back to readonly
+      // If search input is empty after clicking away, reset it
       if (!searchInput.value.trim()) {
         searchInput.setAttribute('readonly', 'true');
         searchInput.placeholder = 'Click to search customers...';
+        selectedCustomerData = null;
+        viewCustomerBtn.disabled = true;
       }
     }
   });
@@ -770,6 +848,7 @@ function initializeCustomerSearch() {
 document.addEventListener('DOMContentLoaded', function() {
   const toggleButtons = document.querySelectorAll('.toggle-btn');
   const form = document.querySelector('form');
+  const viewCustomerBtn = document.getElementById('viewCustomerBtn');
   
   // Initialize search functionality
   initializeCustomerSearch();
@@ -795,6 +874,8 @@ document.addEventListener('DOMContentLoaded', function() {
       } else {
         document.getElementById('customer_dropdown').required = false;
         document.getElementById('customer_manual').required = true;
+        // Disable eye button for manual entry
+        viewCustomerBtn.disabled = true;
       }
     });
   });

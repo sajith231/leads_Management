@@ -209,6 +209,8 @@
           <i class="fa-solid fa-magnifying-glass"></i>
         </button>
 
+        
+
         {% if query %}
         <a href="{% url 'drive_list' %}"
            style="
@@ -252,6 +254,35 @@
     </div>
   </div>
 
+  <div style="margin-bottom: 12px; display: flex; justify-content: flex-end; align-items: center; gap: 10px;">
+  <label for="rowCount" style="font-weight: 600; color: #374151; font-size: 14px;">
+    Show rows:
+  </label>
+  <select 
+    id="rowCount" 
+    onchange="location.href='?per_page=' + this.value + '{% if query %}&q={{ query|urlencode }}{% endif %}'"
+    style="
+      padding: 8px 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #374151;
+      background: #fff;
+      cursor: pointer;
+      transition: all 0.2s;
+    "
+    onmouseover="this.style.borderColor='#2563eb'"
+    onmouseout="this.style.borderColor='#d1d5db'"
+  >
+    <option value="10" {% if per_page == 10 %}selected{% endif %}>10</option>
+    <option value="15" {% if per_page == 15 %}selected{% endif %}>15</option>
+    <option value="25" {% if per_page == 25 %}selected{% endif %}>25</option>
+    <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
+    <option value="100" {% if per_page == 100 %}selected{% endif %}>100</option>
+  </select>
+</div>
+
   <!-- 🔹 Pagination Section -->
   {% if paginator.num_pages > 1 %}
     <div style="display:flex; justify-content:center; align-items:center; margin-bottom:25px; gap:14px;">
@@ -283,7 +314,7 @@
     <thead>
       <tr>
         <th>No.</th>
-        <th>Date</th>
+        <!-- <th>Date</th> -->
         <th>Folder Name</th>
         <th>Files</th>
         <th>Edit</th>
@@ -291,50 +322,50 @@
       </tr>
     </thead>
     <tbody>
-      {% for folder in folders %}
-      <tr>
-        <td>{{ forloop.counter }}</td>
-        <td>{{ folder.created_at|date:"M d, Y" }}</td>
-        <td><strong>{{ folder.name }}</strong></td>
+  {% for folder in folders|dictsort:"name" %}
+  <tr>
+    <td>{{ forloop.counter }}</td>
+    <!-- <td>{{ folder.created_at|date:"M d, Y" }}</td> -->
+    <td><strong>{{ folder.name }}</strong></td>
 
-        <td>
-          <a class="file-link" href="{% url 'drive_detail' folder.id %}" title="Open folder">
-            📁
-            <span class="badge">{{ folder.files.count }}</span>
-          </a>
-        </td>
+    <td>
+      <a class="file-link" href="{% url 'drive_detail' folder.id %}" title="Open folder">
+        📁
+        <span class="badge">{{ folder.files.count }}</span>
+      </a>
+    </td>
 
-        <!-- Edit button: visible only if user has drive_edit permission or is admin/superuser -->
-        <td>
-          {% if 'drive_edit' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
-            <a href="{% url 'drive_edit' folder.id %}" class="action-btn edit-btn" title="Edit">
-              <i class="fa-solid fa-pen-to-square"></i>
-            </a>
-          {% else %}
-            <span style="display:inline-block; width:32px; height:32px;"></span>
-          {% endif %}
-        </td>
+    <!-- Edit button: visible only if user has drive_edit permission or is admin/superuser -->
+    <td>
+      {% if 'drive_edit' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+        <a href="{% url 'drive_edit' folder.id %}" class="action-btn edit-btn" title="Edit">
+          <i class="fa-solid fa-pen-to-square"></i>
+        </a>
+      {% else %}
+        <span style="display:inline-block; width:32px; height:32px;"></span>
+      {% endif %}
+    </td>
 
-        <!-- Delete button: visible only if user has drive_delete permission or is admin/superuser -->
-        <td>
-          {% if 'drive_delete' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
-            <a href="{% url 'drive_delete' folder.id %}"
-               class="action-btn delete-btn"
-               onclick="return handleFolderDelete({{ folder.files.count }}, {{ folder.subfolders.count }});"
-               title="Delete folder">
-              <i class="fa-solid fa-trash"></i>
-            </a>
-          {% else %}
-            <span style="display:inline-block; width:32px; height:32px;"></span>
-          {% endif %}
-        </td>
-      </tr>
-      {% empty %}
-      <tr>
-        <td colspan="6" class="empty-state">No folders created yet.</td>
-      </tr>
-      {% endfor %}
-    </tbody>
+    <!-- Delete button: visible only if user has drive_delete permission or is admin/superuser -->
+    <td>
+      {% if 'drive_delete' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+        <a href="{% url 'drive_delete' folder.id %}"
+           class="action-btn delete-btn"
+           onclick="return handleFolderDelete({{ folder.files.count }}, {{ folder.subfolders.count }});"
+           title="Delete folder">
+          <i class="fa-solid fa-trash"></i>
+        </a>
+      {% else %}
+        <span style="display:inline-block; width:32px; height:32px;"></span>
+      {% endif %}
+    </td>
+  </tr>
+  {% empty %}
+  <tr>
+    <td colspan="6" class="empty-state">No folders created yet.</td>
+  </tr>
+  {% endfor %}
+</tbody>
   </table>
 
 </div>

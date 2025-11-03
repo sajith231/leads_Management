@@ -67,7 +67,7 @@
                 <tbody>
                     {% for item in items %}
                     <tr>
-                        <td><span class="id-badge">{{ item.id }}</span></td>
+                        <td><span class="id-badge">{{ forloop.counter }}</span></td>
                         <td>
                             <div class="item-info">
                                 <div class="item-name">{{ item.name }}</div>
@@ -125,38 +125,43 @@
         {% endif %}
     </div>
 
-    <!-- Pagination -->
-    {% if items.has_other_pages %}
-    <div class="pagination-container">
-        <ul class="pagination">
-            {% if items.has_previous %}
-                <li>
-                    <a href="?page={{ items.previous_page_number }}{% if selected_department %}&department={{ selected_department }}{% endif %}">&laquo; Previous</a>
-                </li>
-            {% else %}
-                <li class="disabled"><span>&laquo; Previous</span></li>
-            {% endif %}
-
-            {% for num in items.paginator.page_range %}
-                {% if items.number == num %}
-                    <li class="active"><span>{{ num }}</span></li>
-                {% else %}
+    <!-- ✅ Updated Modern Pagination -->
+        {% if items.has_other_pages %}
+        <div class="pagination-wrapper">
+            <ul class="modern-pagination">
+                {% if items.has_previous %}
                     <li>
-                        <a href="?page={{ num }}{% if selected_department %}&department={{ selected_department }}{% endif %}">{{ num }}</a>
+                        <a href="?page={{ items.previous_page_number }}{% if selected_department %}&department={{ selected_department }}{% endif %}">«</a>
                     </li>
+                {% else %}
+                    <li class="disabled"><span>«</span></li>
                 {% endif %}
-            {% endfor %}
 
-            {% if items.has_next %}
-                <li>
-                    <a href="?page={{ items.next_page_number }}{% if selected_department %}&department={{ selected_department }}{% endif %}">Next &raquo;</a>
-                </li>
-            {% else %}
-                <li class="disabled"><span>Next &raquo;</span></li>
-            {% endif %}
-        </ul>
-    </div>
-    {% endif %}
+                {% for num in items.paginator.page_range %}
+                    {% if items.number == num %}
+                        <li class="active"><span>{{ num }}</span></li>
+                    {% elif num > items.number|add:'-3' and num < items.number|add:'3' %}
+                        <li><a href="?page={{ num }}{% if selected_department %}&department={{ selected_department }}{% endif %}">{{ num }}</a></li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if items.has_next %}
+                    <li>
+                        <a href="?page={{ items.next_page_number }}{% if selected_department %}&department={{ selected_department }}{% endif %}">»</a>
+                    </li>
+                {% else %}
+                    <li class="disabled"><span>»</span></li>
+                {% endif %}
+            </ul>
+        </div>
+        {% endif %}
+        {% else %}
+        <div class="no-data">
+            <i class="fas fa-box-open"></i>
+            <p>No items found</p>
+            <a href="{% url 'purchase_order:item_add' %}" class="btn btn-primary">Add First Item</a>
+        </div>
+        {% endif %}
 </div>
 
 <!-- Delete Confirmation Modal -->
@@ -689,52 +694,65 @@ td .action-buttons {
     }
 }
 
-.pagination-container {
-    text-align: center;
-    padding: 20px;
-    background: #fff;
-    border-top: 1px solid #ecf0f1;
+/* ✅ Modern Pagination Styles */
+.pagination-wrapper {
+    display: flex;
+    justify-content: center;
+    margin: 30px 0;
 }
 
-.pagination {
+.modern-pagination {
+    display: flex;
     list-style: none;
-    display: inline-flex;
-    gap: 6px;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
     padding: 0;
+}
+
+.modern-pagination li {
     margin: 0;
 }
 
-.pagination li {
-    display: inline;
-}
-
-.pagination a, .pagination span {
+.modern-pagination a,
+.modern-pagination span {
     display: block;
-    padding: 8px 14px;
-    border-radius: 6px;
-    border: 1px solid #ddd;
+    padding: 10px 18px;
     text-decoration: none;
-    color: #2c3e50;
-    transition: all 0.3s;
+    color: #34495e;
     font-weight: 500;
+    transition: all 0.2s ease;
 }
 
-.pagination a:hover {
+.modern-pagination a:hover {
     background: #3498db;
-    color: white;
-    border-color: #3498db;
+    color: #fff;
 }
 
-.pagination .active span {
+.modern-pagination .active span {
     background: #3498db;
-    color: white;
-    border-color: #3498db;
+    color: #fff;
+    font-weight: 600;
 }
 
-.pagination .disabled span {
+.modern-pagination .disabled span {
     color: #aaa;
-    border-color: #eee;
     cursor: not-allowed;
+    background: #f4f4f4;
+}
+
+.modern-pagination li:first-child a,
+.modern-pagination li:first-child span {
+    border-top-left-radius: 8px;
+    border-bottom-left-radius: 8px;
+}
+
+.modern-pagination li:last-child a,
+.modern-pagination li:last-child span {
+    border-top-right-radius: 8px;
+    border-bottom-right-radius: 8px;
 }
 
 .filter-box {

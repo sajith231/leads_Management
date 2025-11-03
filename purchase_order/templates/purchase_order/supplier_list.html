@@ -21,7 +21,13 @@
                 id="searchInput"
                 placeholder="Search by name, city, state, mobile, GST or contact person..." 
                 class="search-input"
+                value="{{ search_query|default:'' }}"
             >
+            {% if search_query %}
+            <button type="button" id="clearSearch" class="btn-clear" title="Clear search">
+                <i class="fas fa-times"></i>
+            </button>
+            {% endif %}
         </div>
         
         <!-- Department Filter -->
@@ -63,25 +69,25 @@
                 <tbody>
                     {% for supplier in suppliers %}
                     <tr>
-                        <td><span class="id-badge">{{ supplier.id }}</span></td>
-                        <td>
+                        <td><span class="id-badge">{{ forloop.counter }}</span></td>
+                        <td title="{{ supplier.name }}{% if supplier.places %} - {{ supplier.places }}{% endif %}">
                             <div class="supplier-name">{{ supplier.name }}</div>
                             {% if supplier.places %}
                             <div class="supplier-place">{{ supplier.places }}</div>
                             {% endif %}
                         </td>
-                        <td>{{ supplier.contact_person_name|default:"-" }}</td>
-                        <td>{{ supplier.city }}</td>
-                        <td>{{ supplier.state }}</td>
-                        <td>{{ supplier.mobile_no }}</td>
-                        <td>
+                        <td title="{{ supplier.contact_person_name|default:'-' }}">{{ supplier.contact_person_name|default:"-" }}</td>
+                        <td title="{{ supplier.city }}">{{ supplier.city }}</td>
+                        <td title="{{ supplier.state }}">{{ supplier.state }}</td>
+                        <td title="{{ supplier.mobile_no }}">{{ supplier.mobile_no }}</td>
+                        <td title="{{ supplier.gst_number|default:'-' }}">
                             {% if supplier.gst_number %}
                             <span class="gst-number">{{ supplier.gst_number }}</span>
                             {% else %}
                             <span class="text-muted">-</span>
                             {% endif %}
                         </td>
-                        <td>
+                        <td title="{% if supplier.department %}{{ supplier.department.name }}{% else %}-{% endif %}">
                             {% if supplier.department %}
                             <span class="dept-badge">{{ supplier.department.name }}</span>
                             {% else %}
@@ -133,26 +139,34 @@
         {% endif %}
 
         {% if suppliers.has_other_pages %}
-        <div class="pagination-container">
-            <ul class="pagination">
+        <div class="pagination-wrapper">
+            <ul class="modern-pagination">
                 {% if suppliers.has_previous %}
-                <li><a href="?page={{ suppliers.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if department_filter %}&department={{ department_filter }}{% endif %}">&laquo; Prev</a></li>
+                    <li>
+                        <a href="?page={{ suppliers.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if department_filter %}&department={{ department_filter }}{% endif %}">«</a>
+                    </li>
                 {% else %}
-                <li class="disabled"><span>&laquo; Prev</span></li>
+                    <li class="disabled"><span>«</span></li>
                 {% endif %}
 
                 {% for num in suppliers.paginator.page_range %}
                     {% if suppliers.number == num %}
-                    <li class="active"><span>{{ num }}</span></li>
+                        <li class="active"><span>{{ num }}</span></li>
                     {% elif num > suppliers.number|add:'-3' and num < suppliers.number|add:'3' %}
-                    <li><a href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if department_filter %}&department={{ department_filter }}{% endif %}">{{ num }}</a></li>
+                        <li>
+                            <a href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if department_filter %}&department={{ department_filter }}{% endif %}">
+                                {{ num }}
+                            </a>
+                        </li>
                     {% endif %}
                 {% endfor %}
 
                 {% if suppliers.has_next %}
-                <li><a href="?page={{ suppliers.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if department_filter %}&department={{ department_filter }}{% endif %}">Next &raquo;</a></li>
+                    <li>
+                        <a href="?page={{ suppliers.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if department_filter %}&department={{ department_filter }}{% endif %}">»</a>
+                    </li>
                 {% else %}
-                <li class="disabled"><span>Next &raquo;</span></li>
+                    <li class="disabled"><span>»</span></li>
                 {% endif %}
             </ul>
         </div>
@@ -240,6 +254,25 @@
     font-size: 15px;
     outline: none;
     color: #2c3e50;
+}
+
+.btn-clear {
+    background: #e74c3c;
+    color: white;
+    border: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-clear:hover {
+    background: #c0392b;
+    transform: scale(1.1);
 }
 
 .filter-box {
@@ -372,6 +405,9 @@
 .data-table td {
     padding: 15px 12px;
     color: #2c3e50;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .id-badge {
@@ -386,12 +422,18 @@
 .supplier-name {
     font-weight: 600;
     color: #2c3e50;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .supplier-place {
     font-size: 12px;
     color: #7f8c8d;
     margin-top: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .dept-badge {
@@ -410,6 +452,11 @@
     padding: 3px 8px;
     border-radius: 4px;
     font-size: 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: inline-block;
+    max-width: 100%;
 }
 
 .user-info, .date-info {
@@ -449,6 +496,7 @@
 .action-buttons {
     display: flex;
     gap: 8px;
+    justify-content: center;
 }
 
 .btn-icon {
@@ -573,20 +621,111 @@
     cursor: not-allowed;
 }
 
+/* ✅ Unified Modern Pagination Style */
+.pagination-wrapper {
+    display: flex;
+    justify-content: center;
+    margin: 30px 0;
+}
+
+.modern-pagination {
+    display: flex;
+    list-style: none;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    padding: 0;
+}
+
+.modern-pagination li {
+    margin: 0;
+}
+
+.modern-pagination a,
+.modern-pagination span {
+    display: block;
+    padding: 10px 18px;
+    text-decoration: none;
+    color: #34495e;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.modern-pagination a:hover {
+    background: #3498db;
+    color: #fff;
+}
+
+.modern-pagination .active span {
+    background: #3498db;
+    color: #fff;
+    font-weight: 600;
+}
+
+.modern-pagination .disabled span {
+    color: #aaa;
+    cursor: not-allowed;
+    background: #f4f4f4;
+}
+
+.modern-pagination li:first-child a,
+.modern-pagination li:first-child span {
+    border-top-left-radius: 8px;
+    border-bottom-left-radius: 8px;
+}
+
+.modern-pagination li:last-child a,
+.modern-pagination li:last-child span {
+    border-top-right-radius: 8px;
+    border-bottom-right-radius: 8px;
+}
+
 </style>
 
 <script>
-// Real-time search functionality
-document.getElementById('searchInput').addEventListener('keyup', function() {
-    const searchValue = this.value.toLowerCase();
-    const table = document.getElementById('supplierTable');
-    const rows = table.getElementsByTagName('tr');
+// Debounced search functionality
+let searchTimeout;
+const searchInput = document.getElementById('searchInput');
+const supplierTable = document.getElementById('supplierTable');
 
-    for (let i = 1; i < rows.length; i++) {
-        const row = rows[i];
-        const text = row.textContent.toLowerCase();
-        row.style.display = text.includes(searchValue) ? '' : 'none';
+// Set initial search value from URL
+const urlParams = new URLSearchParams(window.location.search);
+const currentSearch = urlParams.get('search');
+if (currentSearch) {
+    searchInput.value = currentSearch;
+}
+
+// Client-side filtering for immediate feedback
+searchInput.addEventListener('keyup', function() {
+    const searchValue = this.value.toLowerCase().trim();
+    
+    if (supplierTable) {
+        const rows = supplierTable.getElementsByTagName('tr');
+        for (let i = 1; i < rows.length; i++) {
+            const row = rows[i];
+            const text = row.textContent.toLowerCase();
+            row.style.display = text.includes(searchValue) ? '' : 'none';
+        }
     }
+    
+    // Debounced server-side search (only if search changes significantly)
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(function() {
+        const url = new URL(window.location.href);
+        if (searchValue.length > 0) {
+            url.searchParams.set('search', searchValue);
+        } else {
+            url.searchParams.delete('search');
+        }
+        url.searchParams.delete('page'); // Reset to first page on new search
+        
+        // Only reload if search value actually changed from URL param
+        if (searchValue !== (currentSearch || '')) {
+            window.location.href = url.toString();
+        }
+    }, 800); // Wait 800ms after user stops typing
 });
 
 // Department filter
@@ -597,7 +736,20 @@ document.getElementById('departmentFilter').addEventListener('change', function(
     } else {
         url.searchParams.delete('department');
     }
+    url.searchParams.delete('page'); // Reset to first page on filter change
     window.location.href = url.toString();
 });
+
+// Clear search button functionality
+const clearSearchBtn = document.getElementById('clearSearch');
+if (clearSearchBtn) {
+    clearSearchBtn.addEventListener('click', function() {
+        searchInput.value = '';
+        const url = new URL(window.location.href);
+        url.searchParams.delete('search');
+        url.searchParams.delete('page');
+        window.location.href = url.toString();
+    });
+}
 </script>
 {% endblock %}

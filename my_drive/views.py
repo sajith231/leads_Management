@@ -36,16 +36,23 @@ def _response_filename(f: DriveFile) -> str:
 
 
 # ---------- Folder Views ----------
-
 def drive_list(request):
     query = request.GET.get("q", "").strip()
     page_num = request.GET.get("page", 1)
+    per_page = request.GET.get("per_page", "10")
 
-    folders_qs = DriveFolder.objects.filter(parent__isnull=True)
+    try:
+        per_page = int(per_page)
+        if per_page not in [10, 15, 25, 50, 100]:
+            per_page = 10
+    except (ValueError, TypeError):
+        per_page = 10
+
+    folders_qs = DriveFolder.objects.filter(parent__isnull=True).order_by('name')
     if query:
         folders_qs = folders_qs.filter(name__icontains=query)
 
-    paginator = Paginator(folders_qs, 10)
+    paginator = Paginator(folders_qs, per_page)
     try:
         page_obj = paginator.page(page_num)
     except PageNotAnInteger:
@@ -61,8 +68,10 @@ def drive_list(request):
             "page_obj": page_obj,
             "paginator": paginator,
             "query": query,
+            "per_page": per_page,
         },
     )
+
 
 
 def drive_add(request):
@@ -97,7 +106,6 @@ def drive_delete(request, pk):
     folder.delete()
     return redirect("drive_detail", pk=parent.pk) if parent else redirect("drive_list")
 
-
 @require_http_methods(["GET", "POST"])
 def drive_detail(request, pk):
     folder = get_object_or_404(DriveFolder, pk=pk)
@@ -117,7 +125,16 @@ def drive_detail(request, pk):
     subfolders = folder.subfolders.annotate(file_count=Count("files"))
     files_qs = folder.files.all().order_by("-uploaded_at")
 
-    paginator = Paginator(files_qs, 10)
+    # Get per_page from query params, default to 10
+    per_page = request.GET.get("per_page", "10")
+    try:
+        per_page = int(per_page)
+        if per_page not in [10, 15, 25, 50, 100]:
+            per_page = 10
+    except (ValueError, TypeError):
+        per_page = 10
+
+    paginator = Paginator(files_qs, per_page)
     page_number = request.GET.get("page")
 
     try:
