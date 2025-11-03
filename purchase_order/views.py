@@ -11,8 +11,26 @@ from .models import Supplier, PurchaseOrder, Item, PurchaseOrderItem, Department
 from django.core.paginator import Paginator
 from django.core.paginator import EmptyPage, PageNotAnInteger
 from django.db.models import ProtectedError
+import requests
 
-
+def send_whatsapp_message(recipient, message):
+    """Send WhatsApp message via dxing.in API."""
+    try:
+        base_url = "https://app.dxing.in/api/send/whatsapp"
+        secret = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
+        account = "1761365422812b4ba287f5ee0bc9d43bbf5bbe87fb68fc4daea92d8"
+        payload = {
+            "secret": secret,
+            "account": account,
+            "recipient": str(recipient),
+            "type": "text",
+            "message": message,
+            "priority": 1
+        }
+        response = requests.get(base_url, params=payload, timeout=10)
+        print(f"📨 WhatsApp API Status: {response.status_code}")
+    except Exception as e:
+        print(f"❌ WhatsApp send failed: {e}")
 
 # ==================== SUPPLIER VIEWS (UPDATED) ====================
 
@@ -37,7 +55,7 @@ def supplier_list(request):
         suppliers = suppliers.filter(department_id=department_filter)
 
     # 🧾 Apply pagination (30 per page)
-    paginator = Paginator(suppliers.order_by('-id'), 30)
+    paginator = Paginator(suppliers.order_by('-id'), 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
@@ -160,30 +178,41 @@ def supplier_delete(request, pk):
 # ==================== ITEM MASTER VIEWS ====================
 
 def item_list(request):
-    """Display all items"""
+    """Display all items with pagination"""
     search_query = request.GET.get('search', '')
-    department_filter = request.GET.get('department', '')  # ✅ NEW
+    department_filter = request.GET.get('department', '')
+
+    # Base queryset
     items = Item.objects.all().order_by('name')
-    
+
+    # 🔍 Search filter
     if search_query:
         items = items.filter(
             Q(name__icontains=search_query) |
             Q(hsn_code__icontains=search_query)
         )
 
-    # ✅ NEW: Filter by department
+    # 🏢 Department filter
     if department_filter:
         items = items.filter(department_id=department_filter)
-    
-    # ✅ NEW: Get departments for filter dropdown
-    departments = Department.objects.filter(is_active=True).order_by('name')    
-    
+
+    # ✅ Pagination (25 per page)
+    from django.core.paginator import Paginator
+    paginator = Paginator(items, 10)
+    page_number = request.GET.get('page')
+    items = paginator.get_page(page_number)
+
+    # 🧭 Department dropdown list
+    departments = Department.objects.filter(is_active=True).order_by('name')
+
+    # ✅ Context for template
     context = {
         'items': items,
         'search_query': search_query,
-        'departments': departments,  # ✅ ADDED
-        'department_filter': department_filter,  # ✅ ADDED
+        'departments': departments,
+        'selected_department': department_filter,  # match your template variable
     }
+
     return render(request, 'purchase_order/item_list.html', context)
 
 
@@ -334,7 +363,7 @@ def purchase_order_list(request):
         purchase_orders = purchase_orders.filter(po_date__lte=parse_date(end_date))    
     
     # Pagination - 25 items per page
-    paginator = Paginator(purchase_orders, 25)
+    paginator = Paginator(purchase_orders, 10)
     page = request.GET.get('page')
     
     try:
@@ -373,15 +402,28 @@ def purchase_order_list(request):
 def purchase_order_create(request):
     """Create new purchase order with line items including entry rate"""
     if request.method == 'POST':
+        # ✅ ADD THIS: Debug logging
+        print("=" * 50)
+        print("POST REQUEST RECEIVED")
+        print("=" * 50)
+        print(f"POST Data: {request.POST}")
+        print(f"User: {request.user}")
+        
         try:
             supplier = get_object_or_404(Supplier, pk=request.POST.get('supplier'))
             department = get_object_or_404(Department, pk=request.POST.get('department'))
             po_number = request.POST.get('po_number') or PurchaseOrder.generate_po_number()
             client_details = request.POST.get('client_details', '').strip()
 
+            # ✅ ADD THIS: Validate client details
             if not client_details:
+                print("❌ ERROR: Client details missing!")
                 messages.error(request, 'Please select a client from the dropdown')
                 return redirect('purchase_order:po_create')
+            
+            print(f"✅ Creating PO: {po_number}")
+            print(f"✅ Supplier: {supplier.name}")
+            print(f"✅ Client: {client_details}")
             
             if request.user.is_superuser:
                 admin_status = request.POST.get('admin_status', 'PENDING')
@@ -408,13 +450,18 @@ def purchase_order_create(request):
                 created_by=request.user.username if request.user.is_authenticated else 'Admin'
             )
 
+            print(f"✅ PO Created: {po.po_number} (ID: {po.id})")
+
             # Get line items
             item_ids = request.POST.getlist('item_id[]')
             quantities = request.POST.getlist('quantity[]')
             unit_prices = request.POST.getlist('unit_price[]')
-            entry_rates = request.POST.getlist('entry_rate[]')  # ✅ NEW
+            entry_rates = request.POST.getlist('entry_rate[]')
+            sales_prices = request.POST.getlist('sales_price[]')
             discounts = request.POST.getlist('discount[]')
             tax_percents = request.POST.getlist('tax_percent[]')
+
+            print(f"✅ Processing {len(item_ids)} line items")
 
             total_amount = Decimal('0.00')
             total_tax = Decimal('0.00')
@@ -430,31 +477,26 @@ def purchase_order_create(request):
                 discount = Decimal(discounts[i] or '0')
                 tax_percent = Decimal(tax_percents[i] or '0')
 
-                # ✅ Calculate entry_rate and totals based on method
                 if calculation_method == 'PLUS_TAX':
-                    # Plus Tax: base price + tax
-                    entry_rate = unit_price  # Same as unit price
+                    entry_rate = unit_price
                     subtotal = (qty * unit_price) - discount
                     tax_amount = subtotal * (tax_percent / 100)
                     line_total = subtotal + tax_amount
                 else:  # REVERSE_TAX
-                    # Reverse Tax: extract tax from inclusive price
-                    # Entry rate = base price after removing tax
                     entry_rate = unit_price / (Decimal('1') + (tax_percent / Decimal('100')))
-                    
                     gross_amount = (qty * unit_price) - discount
                     subtotal = (qty * entry_rate) - (discount / (Decimal('1') + (tax_percent / Decimal('100'))))
                     tax_amount = gross_amount - subtotal
                     line_total = gross_amount
 
-                # Create PO Item with entry_rate
                 PurchaseOrderItem.objects.create(
                     purchase_order=po,
                     item=item,
                     department=department,
                     quantity=qty,
                     unit_price=unit_price,
-                    entry_rate=entry_rate,  # ✅ NEW
+                    entry_rate=entry_rate,
+                    sales_price=Decimal(sales_prices[i] or '0'), 
                     discount=discount,
                     tax_percent=tax_percent,
                     line_total=line_total
@@ -469,16 +511,35 @@ def purchase_order_create(request):
             po.grand_total = total_amount + total_tax
             po.save()
 
+            print(f"✅ PO SAVED: Total = ₹{po.grand_total}")
+            print("=" * 50)
+
             messages.success(request, f'Purchase Order {po.po_number} created successfully!')
-            return redirect('purchase_order:po_detail', pk=po.pk)
+            # ✅ WhatsApp notification to Super Admin when PO is created
+            msg = (
+                f"🧾 *New Purchase Order Created*\n"
+                f"📄 *PO Number:* {po.po_number}\n"
+                f"🏢 *Supplier:* {po.supplier.name}\n"
+                f"🏬 *Department:* {po.department.name if po.department else 'N/A'}\n"
+                f"💰 *Total:* ₹{po.grand_total}\n"
+                f"📦 *Status:* {po.status}\n"
+                f"📅 *Date:* {po.po_date}\n"
+                f"👤 *Created By:* {po.created_by or request.user.username or 'System'}"
+            )
+            send_whatsapp_message("9946545535", msg)
+            return redirect('purchase_order:po_list')
 
         except Exception as e:
+            print(f"❌ ERROR: {str(e)}")
+            print("=" * 50)
+            import traceback
+            traceback.print_exc()
             messages.error(request, f'Error creating purchase order: {str(e)}')
             return redirect('purchase_order:po_create')
 
-    # GET request
-    suppliers = Supplier.objects.filter(is_active=True).order_by('name')
-    items = Item.objects.all().order_by('name')
+    # ✅✅✅ GET REQUEST - FILTER ONLY ACTIVE ITEMS & SUPPLIERS ✅✅✅
+    suppliers = Supplier.objects.filter(is_active=True).order_by('name')  # ✅ CHANGED
+    items = Item.objects.filter(is_active=True).order_by('name')  # ✅ CHANGED
     departments = Department.objects.filter(is_active=True).order_by('name')
 
     context = {
@@ -488,11 +549,12 @@ def purchase_order_create(request):
         'payment_terms': PurchaseOrder.PAYMENT_TERMS_CHOICES,
         'status_choices': PurchaseOrder.STATUS_CHOICES,
         'calculation_methods': PurchaseOrder.CALCULATION_METHOD_CHOICES,
-        'today': date.today(),
+        'today': date.today().isoformat(),
         'action': 'Create',
         'auto_po_number': PurchaseOrder.generate_po_number()
     }
     return render(request, 'purchase_order/po_form.html', context)
+
 
 # ==================== UPDATE PURCHASE ORDER ====================
 @transaction.atomic
@@ -520,18 +582,45 @@ def purchase_order_update(request, pk):
             # Admin status handling
             if request.user.is_superuser:
                 new_admin_status = request.POST.get('admin_status', po.admin_status)
+
                 if new_admin_status != po.admin_status:
+                    po.admin_status = new_admin_status
+                    po.admin_approved_by = request.user.username
+                    po.admin_approved_at = timezone.now()
+
+                    # ✅ APPROVED
                     if new_admin_status == 'APPROVED':
-                        po.admin_approved_by = request.user.username
-                        po.admin_approved_at = timezone.now()
                         po.admin_rejection_reason = ''
-                        messages.success(request, f'✅ Purchase Order {po.po_number} APPROVED!')
+                        messages.success(request, f'✅ Purchase Order {po.po_number} has been approved!')
+
+                        msg = (
+                            f"✅ *Purchase Order Approved*\n"
+                            f"📄 *PO Number:* {po.po_number}\n"
+                            f"🏢 *Supplier:* {po.supplier.name}\n"
+                            f"🏬 *Department:* {po.department.name if po.department else 'N/A'}\n"
+                            f"💰 *Total:* ₹{po.grand_total}\n"
+                            f"📅 *Approved On:* {timezone.now().strftime('%Y-%m-%d %H:%M')}\n"
+                            f"👤 *Approved By:* {request.user.username}"
+                        )
+                        send_whatsapp_message("8606360089", msg)
+
+                    # ❌ REJECTED
                     elif new_admin_status == 'REJECTED':
-                        po.admin_approved_by = request.user.username
-                        po.admin_approved_at = timezone.now()
-                        po.admin_rejection_reason = request.POST.get('rejection_reason', 'No reason provided')
-                        messages.warning(request, f'❌ Purchase Order {po.po_number} REJECTED!')
-                po.admin_status = new_admin_status
+                        rejection_reason = request.POST.get('rejection_reason', 'No reason provided')
+                        po.admin_rejection_reason = rejection_reason
+                        messages.warning(request, f'❌ Purchase Order {po.po_number} has been rejected!')
+
+                        msg = (
+                            f"❌ *Purchase Order Rejected*\n"
+                            f"📄 *PO Number:* {po.po_number}\n"
+                            f"🏢 *Supplier:* {po.supplier.name}\n"
+                            f"🏬 *Department:* {po.department.name if po.department else 'N/A'}\n"
+                            f"💰 *Total:* ₹{po.grand_total}\n"
+                            f"📅 *Rejected On:* {timezone.now().strftime('%Y-%m-%d %H:%M')}\n"
+                            f"📝 *Reason:* {rejection_reason}\n"
+                            f"👤 *Rejected By:* {request.user.username}"
+                        )
+                        send_whatsapp_message("8606360089", msg)
             
             po.notes = request.POST.get('notes', '')
             po.save()
@@ -543,7 +632,8 @@ def purchase_order_update(request, pk):
             item_ids = request.POST.getlist('item_id[]')
             quantities = request.POST.getlist('quantity[]')
             unit_prices = request.POST.getlist('unit_price[]')
-            entry_rates = request.POST.getlist('entry_rate[]')  # ✅ NEW
+            entry_rates = request.POST.getlist('entry_rate[]')
+            sales_prices = request.POST.getlist('sales_price[]')  # ✅ Already getting this
             discounts = request.POST.getlist('discount[]')
             tax_percents = request.POST.getlist('tax_percent[]')
 
@@ -557,6 +647,7 @@ def purchase_order_update(request, pk):
                 item = get_object_or_404(Item, pk=item_ids[i])
                 qty = Decimal(quantities[i] or '0')
                 unit_price = Decimal(unit_prices[i] or '0')
+                sales_price = Decimal(sales_prices[i] or '0')  # ✅ Extract sales_price
                 discount = Decimal(discounts[i] or '0')
                 tax_percent = Decimal(tax_percents[i] or '0')
 
@@ -573,13 +664,15 @@ def purchase_order_update(request, pk):
                     tax_amount = gross_amount - subtotal
                     line_total = gross_amount
 
+                # ✅ FIX: Include sales_price when creating the item
                 PurchaseOrderItem.objects.create(
                     purchase_order=po,
                     item=item,
                     department=department,
                     quantity=qty,
                     unit_price=unit_price,
-                    entry_rate=entry_rate,  # ✅ NEW
+                    entry_rate=entry_rate,
+                    sales_price=sales_price,  # ✅ ADD THIS LINE
                     discount=discount,
                     tax_percent=tax_percent,
                     line_total=line_total
@@ -594,14 +687,45 @@ def purchase_order_update(request, pk):
             po.save()
 
             messages.success(request, f'Purchase Order {po.po_number} updated successfully!')
-            return redirect('purchase_order:po_detail', pk=po.pk)
+            # ✅ Notify Super Admin when PO is updated
+            if not request.user.is_superuser:
+                msg = (
+                    f"✏️ *Purchase Order Updated*\n"
+                    f"📄 *PO Number:* {po.po_number}\n"
+                    f"🏢 *Supplier:* {po.supplier.name}\n"
+                    f"🏬 *Department:* {po.department.name if po.department else 'N/A'}\n"
+                    f"💰 *Total:* ₹{po.grand_total}\n"
+                    f"📅 *Updated On:* {timezone.now().strftime('%Y-%m-%d %H:%M')}\n"
+                    f"👤 *Updated By:* {request.user.username}"
+                )
+                send_whatsapp_message("9946545535", msg)
+            return redirect('purchase_order:po_list')
 
         except Exception as e:
             messages.error(request, f'Error updating purchase order: {str(e)}')
 
-    # GET request
+    # ✅✅✅ GET REQUEST - SHOW ACTIVE + CURRENTLY USED INACTIVE RECORDS ✅✅✅
+    
+    # Get all active suppliers
     suppliers = Supplier.objects.filter(is_active=True).order_by('name')
-    items = Item.objects.all().order_by('name')
+    
+    # ✅ IMPORTANT: Include currently selected supplier even if inactive
+    if po.supplier and not po.supplier.is_active:
+        suppliers = suppliers | Supplier.objects.filter(id=po.supplier.id)
+    
+    # Get all active items
+    items = Item.objects.filter(is_active=True).order_by('name')
+    
+    # ✅ IMPORTANT: Include currently used items even if inactive
+    used_item_ids = po.po_items.values_list('item_id', flat=True)
+    inactive_used_items = Item.objects.filter(
+        id__in=used_item_ids,
+        is_active=False
+    )
+    if inactive_used_items.exists():
+        items = items | inactive_used_items
+    
+    # Get active departments
     departments = Department.objects.filter(is_active=True).order_by('name')
 
     context = {
@@ -615,7 +739,7 @@ def purchase_order_update(request, pk):
         'calculation_methods': PurchaseOrder.CALCULATION_METHOD_CHOICES,
         'is_superuser': request.user.is_superuser,
         'action': 'Update',
-        'today': date.today(),
+        'today': date.today().isoformat(), 
         'auto_po_number': po.po_number
     }
     return render(request, 'purchase_order/po_form.html', context)
@@ -681,25 +805,27 @@ def get_supplier_details(request, supplier_id):
 # ==================== DEPARTMENT MASTER VIEWS (ADD THESE) ====================
 
 def department_list(request):
-    """Display all departments with search functionality"""
     search_query = request.GET.get('search', '')
-    departments = Department.objects.filter(is_active=True)
-    
+
+    departments = Department.objects.all().order_by('name')
+
     if search_query:
         departments = departments.filter(
             Q(name__icontains=search_query) |
             Q(city__icontains=search_query) |
-            Q(state__icontains=search_query) |
-            Q(contact_number__icontains=search_query) |
-            Q(gst_number__icontains=search_query)
+            Q(gst_number__icontains=search_query) |
+            Q(contact_number__icontains=search_query)
         )
-    
-    context = {
-        'departments': departments,
-        'search_query': search_query
-    }
-    return render(request, 'purchase_order/department_list.html', context)
 
+    # ✅ PAGINATION
+    paginator = Paginator(departments, 10)  # 25 entries per page
+    page_number = request.GET.get('page')
+    departments = paginator.get_page(page_number)
+
+    return render(request, 'purchase_order/department_list.html', {
+        'departments': departments,
+        'search_query': search_query,
+    })
 
 def department_create(request):
     """Create a new department"""
@@ -974,5 +1100,150 @@ def approve_purchase_order(request, pk):
             messages.error(request, 'Invalid approval status.')
     
     return redirect('purchase_order:po_detail', pk=po.pk)
-    
-    
+
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import A4
+
+@login_required
+def generate_po_pdf(request, pk):
+    """Generate and return PO PDF as bytes for printing or WhatsApp sharing."""
+    from io import BytesIO
+    po = get_object_or_404(PurchaseOrder, pk=pk)
+
+    buffer = BytesIO()
+    p = canvas.Canvas(buffer, pagesize=A4)
+    width, height = A4
+
+    y = height - 50
+
+    p.setFont("Helvetica-Bold", 16)
+    p.drawString(200, y, f"PURCHASE ORDER - {po.po_number}")
+
+    y -= 40
+    p.setFont("Helvetica", 12)
+    p.drawString(50, y, f"Supplier: {po.supplier.name}")
+    y -= 20
+    p.drawString(50, y, f"Department: {po.department.name if po.department else 'N/A'}")
+    y -= 20
+    p.drawString(50, y, f"PO Date: {po.po_date}")
+    y -= 20
+    p.drawString(50, y, f"Total Amount: ₹{po.grand_total}")
+    y -= 30
+
+    p.setFont("Helvetica-Bold", 13)
+    p.drawString(50, y, "Items:")
+    y -= 20
+    p.setFont("Helvetica", 11)
+
+    for item in po.po_items.all():
+        line = f"{item.item.name} - Qty: {item.quantity} | Rate: ₹{item.unit_price} | Total: ₹{item.line_total}"
+        p.drawString(50, y, line)
+        y -= 15
+        if y < 100:
+            p.showPage()
+            y = height - 50
+            p.setFont("Helvetica", 11)
+
+    p.showPage()
+    p.save()
+    buffer.seek(0)
+
+    # Return raw PDF bytes for reuse
+    return buffer
+
+import os
+import requests
+from io import BytesIO
+from django.conf import settings
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.decorators import login_required
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import A4
+from .models import PurchaseOrder
+
+@csrf_exempt
+@login_required
+def send_whatsapp_po(request, pk):
+    """Generate PO PDF and send it via WhatsApp to the supplier."""
+    if request.method != "POST":
+        return JsonResponse({"error": "Invalid request method"}, status=405)
+
+    po = get_object_or_404(PurchaseOrder, pk=pk)
+    supplier = po.supplier
+
+    if not supplier.mobile_no:
+        return JsonResponse({"error": "Supplier mobile number not found"}, status=400)
+
+    # ✅ Normalize the phone number
+    raw_number = str(supplier.mobile_no).strip().replace("+", "")
+    if len(raw_number) == 10:  # assume local Indian number
+        recipient_number = "91" + raw_number
+    else:
+        recipient_number = raw_number
+
+    print(f"📱 Sending WhatsApp to: {recipient_number}")
+
+    # ✅ 1. Generate PDF
+    try:
+        pdf_buffer = BytesIO()
+        c = canvas.Canvas(pdf_buffer, pagesize=A4)
+        c.drawString(100, 800, f"Purchase Order: {po.po_number}")
+        c.drawString(100, 780, f"Supplier: {supplier.name}")
+        c.drawString(100, 760, f"Total: ₹{po.grand_total}")
+        c.showPage()
+        c.save()
+        pdf_buffer.seek(0)
+
+        folder_path = os.path.join(settings.MEDIA_ROOT, "po_pdfs")
+        os.makedirs(folder_path, exist_ok=True)
+        file_name = f"PO_{po.po_number}.pdf"
+        file_path = os.path.join(folder_path, file_name)
+
+        with open(file_path, "wb") as f:
+            f.write(pdf_buffer.getbuffer())
+
+        # ✅ Use your live domain for file link
+        file_url = f"https://myimc.in/media/po_pdfs/{file_name}"
+
+        print(f"📎 PDF URL: {file_url}")
+
+    except Exception as e:
+        return JsonResponse({"error": f"PDF generation failed: {str(e)}"}, status=500)
+
+    # ✅ 2. Send to WhatsApp API
+    try:
+        base_url = "https://app.dxing.in/api/send/whatsapp"
+        secret = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
+        account = "1761365422812b4ba287f5ee0bc9d43bbf5bbe87fb68fc4daea92d8"
+
+        payload = {
+            "secret": secret,
+            "account": account,
+            "recipient": recipient_number,
+            "type": "document",
+            "document_url": file_url,
+            "document_name": file_name,
+            "document_type": "pdf",
+            "priority": 1,
+        }
+
+        response = requests.get(base_url, params=payload, timeout=10)
+        print("📤 WhatsApp API Response:", response.status_code, response.text)
+
+        if response.status_code == 200:
+            return JsonResponse({
+                "status": "success",
+                "message": "WhatsApp message sent successfully!",
+                "api_response": response.text,
+            })
+        else:
+            return JsonResponse({
+                "status": "failed",
+                "message": f"WhatsApp API returned {response.status_code}",
+                "api_response": response.text,
+            }, status=400)
+
+    except Exception as e:
+        return JsonResponse({"error": f"WhatsApp send failed: {str(e)}"}, status=500)

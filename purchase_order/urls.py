@@ -29,7 +29,8 @@ urlpatterns = [
     path('purchase-orders/<int:pk>/edit/', views.purchase_order_update, name='po_update'),
     path('purchase-orders/<int:pk>/delete/', views.purchase_order_delete, name='po_delete'),
     path('purchase-order/<int:pk>/approve/', views.approve_purchase_order, name='po_approve'),
-    
+    path('purchase-orders/<int:pk>/send-whatsapp/', views.send_whatsapp_po, name='send_whatsapp_po'),
+
     # ========== AJAX API ENDPOINTS ==========
     path('api/items/<int:item_id>/', views.get_item_details, name='get_item_details'),
     path('api/suppliers/<int:supplier_id>/', views.get_supplier_details, name='get_supplier_details'),

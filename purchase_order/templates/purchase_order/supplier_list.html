@@ -139,26 +139,34 @@
         {% endif %}
 
         {% if suppliers.has_other_pages %}
-        <div class="pagination-container">
-            <ul class="pagination">
+        <div class="pagination-wrapper">
+            <ul class="modern-pagination">
                 {% if suppliers.has_previous %}
-                <li><a href="?page={{ suppliers.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if department_filter %}&department={{ department_filter }}{% endif %}">&laquo; Prev</a></li>
+                    <li>
+                        <a href="?page={{ suppliers.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if department_filter %}&department={{ department_filter }}{% endif %}">«</a>
+                    </li>
                 {% else %}
-                <li class="disabled"><span>&laquo; Prev</span></li>
+                    <li class="disabled"><span>«</span></li>
                 {% endif %}
 
                 {% for num in suppliers.paginator.page_range %}
                     {% if suppliers.number == num %}
-                    <li class="active"><span>{{ num }}</span></li>
+                        <li class="active"><span>{{ num }}</span></li>
                     {% elif num > suppliers.number|add:'-3' and num < suppliers.number|add:'3' %}
-                    <li><a href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if department_filter %}&department={{ department_filter }}{% endif %}">{{ num }}</a></li>
+                        <li>
+                            <a href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if department_filter %}&department={{ department_filter }}{% endif %}">
+                                {{ num }}
+                            </a>
+                        </li>
                     {% endif %}
                 {% endfor %}
 
                 {% if suppliers.has_next %}
-                <li><a href="?page={{ suppliers.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if department_filter %}&department={{ department_filter }}{% endif %}">Next &raquo;</a></li>
+                    <li>
+                        <a href="?page={{ suppliers.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if department_filter %}&department={{ department_filter }}{% endif %}">»</a>
+                    </li>
                 {% else %}
-                <li class="disabled"><span>Next &raquo;</span></li>
+                    <li class="disabled"><span>»</span></li>
                 {% endif %}
             </ul>
         </div>
@@ -611,6 +619,67 @@
     color: #aaa;
     border-color: #eee;
     cursor: not-allowed;
+}
+
+/* ✅ Unified Modern Pagination Style */
+.pagination-wrapper {
+    display: flex;
+    justify-content: center;
+    margin: 30px 0;
+}
+
+.modern-pagination {
+    display: flex;
+    list-style: none;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    padding: 0;
+}
+
+.modern-pagination li {
+    margin: 0;
+}
+
+.modern-pagination a,
+.modern-pagination span {
+    display: block;
+    padding: 10px 18px;
+    text-decoration: none;
+    color: #34495e;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.modern-pagination a:hover {
+    background: #3498db;
+    color: #fff;
+}
+
+.modern-pagination .active span {
+    background: #3498db;
+    color: #fff;
+    font-weight: 600;
+}
+
+.modern-pagination .disabled span {
+    color: #aaa;
+    cursor: not-allowed;
+    background: #f4f4f4;
+}
+
+.modern-pagination li:first-child a,
+.modern-pagination li:first-child span {
+    border-top-left-radius: 8px;
+    border-bottom-left-radius: 8px;
+}
+
+.modern-pagination li:last-child a,
+.modern-pagination li:last-child span {
+    border-top-right-radius: 8px;
+    border-bottom-right-radius: 8px;
 }
 
 </style>
