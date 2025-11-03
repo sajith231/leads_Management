@@ -106,11 +106,15 @@ def drive_delete(request, pk):
     folder.delete()
     return redirect("drive_detail", pk=parent.pk) if parent else redirect("drive_list")
 
+
+from django.db.models import Count, Q
+
+
 @require_http_methods(["GET", "POST"])
 def drive_detail(request, pk):
     folder = get_object_or_404(DriveFolder, pk=pk)
 
-    # Handle file upload
+    # Handle file upload (unchanged)
     if request.method == "POST" and request.FILES.get("fileUpload"):
         uploaded_file = request.FILES["fileUpload"]
         custom_name = (request.POST.get("file_name") or "").strip()
@@ -123,9 +127,18 @@ def drive_detail(request, pk):
         return redirect("drive_detail", pk=folder.pk)
 
     subfolders = folder.subfolders.annotate(file_count=Count("files"))
-    files_qs = folder.files.all().order_by("-uploaded_at")
 
-    # Get per_page from query params, default to 10
+    # NEW: search across ALL files in this folder
+    query = (request.GET.get("q") or "").strip()
+
+    files_qs = folder.files.all().order_by("-uploaded_at")
+    if query:
+        files_qs = files_qs.filter(
+            Q(file_name__icontains=query) |
+            Q(file__icontains=query)  # matches original filename within the stored path
+        )
+
+    # per_page (same logic you already had)
     per_page = request.GET.get("per_page", "10")
     try:
         per_page = int(per_page)
@@ -157,6 +170,8 @@ def drive_detail(request, pk):
             "page_obj": page_obj,
             "paginator": paginator,
             "breadcrumbs": crumbs,
+            "query": query,          # <-- pass it through
+            "per_page": per_page,    # <-- handy for drive_detail template
         },
     )
 
