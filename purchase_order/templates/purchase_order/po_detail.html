@@ -401,9 +401,9 @@
             <button onclick="window.print()" class="btn btn-info btn-lg">
                 <i class="fas fa-print"></i> Print
             </button>
-            {% comment %} <button id="whatsappShareBtn" class="btn btn-success btn-lg">
+            <button id="whatsappShareBtn" class="btn btn-success btn-lg">
                 <i class="fab fa-whatsapp"></i> WhatsApp Share
-            </button> {% endcomment %}
+            </button> 
             <a href="{% url 'purchase_order:po_list' %}" class="btn btn-secondary">
                 <i class="fas fa-arrow-left"></i> Back
             </a>
@@ -1440,6 +1440,52 @@ document.getElementById("whatsappShareBtn").addEventListener("click", function (
         alert("❌ Network error: " + err);
     });
 });
+
+function sendWhatsAppPO(poId) {
+    if (!confirm('Send this PO via WhatsApp?')) return;
+    
+    const btn = document.getElementById('whatsapp-btn');
+    btn.disabled = true;
+    btn.innerHTML = '⏳ Sending...';
+    
+    fetch(`/purchase-order/purchase-orders/${poId}/send-whatsapp/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('✅ ' + data.message);
+        } else {
+            alert('❌ Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('❌ Network error: ' + error);
+    })
+    .finally(() => {
+        btn.disabled = false;
+        btn.innerHTML = '📱 Send WhatsApp';
+    });
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
 </script>
 
 {% endblock %}

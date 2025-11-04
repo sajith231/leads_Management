@@ -35,5 +35,9 @@ urlpatterns = [
     path('api/items/<int:item_id>/', views.get_item_details, name='get_item_details'),
     path('api/suppliers/<int:supplier_id>/', views.get_supplier_details, name='get_supplier_details'),
     path('api/clients/', views.get_clients_from_api, name='get_clients_api'),
+
+    # In urls.py, add:
+    path('purchase-orders/<int:pk>/test-pdf/', views.test_pdf_generation, name='test_pdf'),
+
 ]
 

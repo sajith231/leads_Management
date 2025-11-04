@@ -1154,96 +1154,333 @@ def generate_po_pdf(request, pk):
 import os
 import requests
 from io import BytesIO
-from django.conf import settings
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
-from django.views.decorators.csrf import csrf_exempt
-from django.contrib.auth.decorators import login_required
+from django.conf import settings
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
-from .models import PurchaseOrder
+# Note: Make sure PurchaseOrder is already imported at the top of your file
 
-@csrf_exempt
-@login_required
+
+def generate_and_save_po_pdf_file(po):
+    """
+    Generates a professional PO PDF and saves it to MEDIA_ROOT/po_pdfs/<PO_NUMBER>.pdf.
+    Returns the absolute file path.
+    """
+    # Create directory if it doesn't exist
+    pdf_dir = os.path.join(settings.MEDIA_ROOT, 'po_pdfs')
+    os.makedirs(pdf_dir, exist_ok=True)
+
+    pdf_name = f"{po.po_number}.pdf"
+    file_path = os.path.join(pdf_dir, pdf_name)
+
+    # Create PDF
+    buffer = BytesIO()
+    p = canvas.Canvas(buffer, pagesize=A4)
+    width, height = A4
+    
+    # Starting position
+    y = height - 50
+
+    # Header
+    p.setFont("Helvetica-Bold", 18)
+    p.drawString(50, y, "PURCHASE ORDER")
+    
+    y -= 30
+    p.setFont("Helvetica-Bold", 14)
+    p.drawString(50, y, f"PO Number: {po.po_number}")
+    
+    y -= 25
+    p.setFont("Helvetica", 11)
+    p.drawString(50, y, f"Date: {po.po_date}")
+    
+    y -= 20
+    if po.delivery_date:
+        p.drawString(50, y, f"Delivery Date: {po.delivery_date}")
+        y -= 20
+    
+    # Supplier Details
+    y -= 10
+    p.setFont("Helvetica-Bold", 12)
+    p.drawString(50, y, "Supplier Details:")
+    y -= 20
+    
+    p.setFont("Helvetica", 10)
+    p.drawString(50, y, f"Name: {po.supplier.name}")
+    y -= 15
+    
+    if po.supplier.address:
+        p.drawString(50, y, f"Address: {po.supplier.address}")
+        y -= 15
+    
+    if po.supplier.city and po.supplier.state:
+        p.drawString(50, y, f"Location: {po.supplier.city}, {po.supplier.state}")
+        y -= 15
+    
+    if po.supplier.mobile_no:
+        p.drawString(50, y, f"Mobile: {po.supplier.mobile_no}")
+        y -= 15
+    
+    if po.supplier.gst_number:
+        p.drawString(50, y, f"GST: {po.supplier.gst_number}")
+        y -= 15
+    
+    # Department Details
+    if po.department:
+        y -= 10
+        p.setFont("Helvetica-Bold", 12)
+        p.drawString(50, y, "Department:")
+        y -= 20
+        p.setFont("Helvetica", 10)
+        p.drawString(50, y, po.department.name)
+        y -= 15
+    
+    # Client Details
+    if po.client_details:
+        y -= 10
+        p.setFont("Helvetica-Bold", 12)
+        p.drawString(50, y, "Client:")
+        y -= 20
+        p.setFont("Helvetica", 10)
+        p.drawString(50, y, po.client_details)
+        y -= 15
+    
+    # Items Table Header
+    y -= 20
+    p.setFont("Helvetica-Bold", 11)
+    p.drawString(50, y, "Items:")
+    y -= 20
+    
+    # Draw table headers
+    p.setFont("Helvetica-Bold", 9)
+    p.drawString(50, y, "Item")
+    p.drawString(250, y, "Qty")
+    p.drawString(300, y, "Rate")
+    p.drawString(360, y, "Discount")
+    p.drawString(420, y, "Tax %")
+    p.drawString(470, y, "Total")
+    
+    y -= 5
+    p.line(50, y, 540, y)  # Horizontal line
+    y -= 15
+    
+    # Items
+    p.setFont("Helvetica", 9)
+    for item in po.po_items.all():
+        # Check if we need a new page
+        if y < 100:
+            p.showPage()
+            y = height - 50
+            p.setFont("Helvetica", 9)
+        
+        # Truncate long item names
+        item_name = item.item.name[:35] + "..." if len(item.item.name) > 35 else item.item.name
+        
+        p.drawString(50, y, item_name)
+        p.drawString(250, y, str(item.quantity))
+        p.drawString(300, y, f"₹{item.unit_price}")
+        p.drawString(360, y, f"₹{item.discount}")
+        p.drawString(420, y, f"{item.tax_percent}%")
+        p.drawString(470, y, f"₹{item.line_total}")
+        
+        y -= 15
+    
+    # Totals
+    y -= 10
+    p.line(50, y, 540, y)
+    y -= 20
+    
+    p.setFont("Helvetica-Bold", 11)
+    p.drawString(380, y, "Subtotal:")
+    p.drawString(470, y, f"₹{po.total_amount}")
+    y -= 20
+    
+    p.drawString(380, y, "Tax:")
+    p.drawString(470, y, f"₹{po.tax_amount}")
+    y -= 20
+    
+    p.setFont("Helvetica-Bold", 13)
+    p.drawString(380, y, "Grand Total:")
+    p.drawString(470, y, f"₹{po.grand_total}")
+    
+    # Notes
+    if po.notes:
+        y -= 30
+        p.setFont("Helvetica-Bold", 10)
+        p.drawString(50, y, "Notes:")
+        y -= 15
+        p.setFont("Helvetica", 9)
+        # Wrap notes text if too long
+        notes_lines = po.notes.split('\n')
+        for line in notes_lines:
+            if y < 50:
+                p.showPage()
+                y = height - 50
+            p.drawString(50, y, line[:80])
+            y -= 12
+    
+    # Footer
+    p.setFont("Helvetica-Oblique", 8)
+    p.drawString(50, 30, f"Generated by: {po.created_by} | Status: {po.get_status_display()}")
+    
+    # Save PDF
+    p.save()
+    
+    # Write to file and verify
+    buffer.seek(0)
+    pdf_bytes = buffer.getvalue()
+    
+    # Verify it's a valid PDF
+    if not pdf_bytes.startswith(b'%PDF'):
+        raise Exception("Generated content is not a valid PDF")
+    
+    with open(file_path, 'wb') as f:
+        f.write(pdf_bytes)
+    
+    print(f"✅ PDF Generated: {file_path} ({len(pdf_bytes)} bytes)")
+    
+    return file_path
+
+
 def send_whatsapp_po(request, pk):
-    """Generate PO PDF and send it via WhatsApp to the supplier."""
-    if request.method != "POST":
-        return JsonResponse({"error": "Invalid request method"}, status=405)
-
+    """
+    Generate PO PDF, upload to temporary hosting, and send download link via WhatsApp.
+    """
     po = get_object_or_404(PurchaseOrder, pk=pk)
     supplier = po.supplier
-
-    if not supplier.mobile_no:
-        return JsonResponse({"error": "Supplier mobile number not found"}, status=400)
-
-    # ✅ Normalize the phone number
-    raw_number = str(supplier.mobile_no).strip().replace("+", "")
-    if len(raw_number) == 10:  # assume local Indian number
-        recipient_number = "91" + raw_number
-    else:
-        recipient_number = raw_number
-
-    print(f"📱 Sending WhatsApp to: {recipient_number}")
-
-    # ✅ 1. Generate PDF
+    
+    # Validate phone number
+    phone = (supplier.mobile_no or '').strip()
+    if not phone:
+        return JsonResponse({
+            'success': False,
+            'error': 'Supplier has no mobile number'
+        }, status=400)
+    
+    # Clean phone number
+    phone = ''.join(filter(str.isdigit, phone))
+    if not phone.startswith('91') and len(phone) == 10:
+        phone = '91' + phone
+    
     try:
-        pdf_buffer = BytesIO()
-        c = canvas.Canvas(pdf_buffer, pagesize=A4)
-        c.drawString(100, 800, f"Purchase Order: {po.po_number}")
-        c.drawString(100, 780, f"Supplier: {supplier.name}")
-        c.drawString(100, 760, f"Total: ₹{po.grand_total}")
-        c.showPage()
-        c.save()
-        pdf_buffer.seek(0)
-
-        folder_path = os.path.join(settings.MEDIA_ROOT, "po_pdfs")
-        os.makedirs(folder_path, exist_ok=True)
-        file_name = f"PO_{po.po_number}.pdf"
-        file_path = os.path.join(folder_path, file_name)
-
-        with open(file_path, "wb") as f:
-            f.write(pdf_buffer.getbuffer())
-
-        # ✅ Use your live domain for file link
-        file_url = f"https://myimc.in/media/po_pdfs/{file_name}"
-
-        print(f"📎 PDF URL: {file_url}")
-
-    except Exception as e:
-        return JsonResponse({"error": f"PDF generation failed: {str(e)}"}, status=500)
-
-    # ✅ 2. Send to WhatsApp API
-    try:
+        # 1. Generate PDF
+        file_path = generate_and_save_po_pdf_file(po)
+        
+        # 2. Verify file
+        if not os.path.exists(file_path) or os.path.getsize(file_path) == 0:
+            return JsonResponse({'success': False, 'error': 'PDF generation failed'}, status=500)
+        
+        print(f"📄 PDF File: {file_path}")
+        print(f"📱 Sending to: {phone}")
+        
+        # 3. Upload to tmpfiles.org
+        with open(file_path, 'rb') as pdf_file:
+            upload_response = requests.post(
+                'https://tmpfiles.org/api/v1/upload',
+                files={'file': (f'{po.po_number}.pdf', pdf_file, 'application/pdf')},
+                timeout=30
+            )
+        
+        if upload_response.status_code != 200:
+            return JsonResponse({
+                'success': False, 
+                'error': f'PDF upload failed: {upload_response.text}'
+            }, status=500)
+        
+        upload_data = upload_response.json()
+        
+        if upload_data.get('status') != 'success':
+            return JsonResponse({
+                'success': False, 
+                'error': f'Upload failed: {upload_data}'
+            }, status=500)
+        
+        # Get direct download link
+        file_url = upload_data['data']['url']
+        pdf_url = file_url.replace('tmpfiles.org/', 'tmpfiles.org/dl/')
+        
+        print(f"📤 Uploaded to: {pdf_url}")
+        
+        # 4. Prepare WhatsApp API call - SEND AS TEXT MESSAGE
         base_url = "https://app.dxing.in/api/send/whatsapp"
         secret = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
         account = "1761365422812b4ba287f5ee0bc9d43bbf5bbe87fb68fc4daea92d8"
-
+        
+        # Message with download link
+        message = (
+            f"📋 *Purchase Order {po.po_number}*\n\n"
+            f"Dear {supplier.name},\n\n"
+            f"📅 PO Date: {po.po_date}\n"
+            f"💰 Total Amount: ₹{po.grand_total}\n\n"
+            f"📥 *Download PDF:*\n{pdf_url}\n\n"
+            f"Thank you for your business! 🙏"
+        )
+        
         payload = {
             "secret": secret,
             "account": account,
-            "recipient": recipient_number,
-            "type": "document",
-            "document_url": file_url,
-            "document_name": file_name,
-            "document_type": "pdf",
-            "priority": 1,
+            "recipient": str(phone),
+            "type": "document",  # Changed back to text
+            "message": message,
+            "priority": 1
         }
-
-        response = requests.get(base_url, params=payload, timeout=10)
-        print("📤 WhatsApp API Response:", response.status_code, response.text)
-
-        if response.status_code == 200:
+        
+        # 5. Send via WhatsApp (GET request like before)
+        response = requests.get(base_url, params=payload, timeout=30)
+        
+        print(f"📱 Status: {response.status_code}")
+        print(f"📱 Response: {response.text}")
+        
+        try:
+            response_data = response.json()
+        except:
+            response_data = {'raw_text': response.text}
+        
+        # 6. Return result
+        if response.status_code == 200 and response_data.get('status') == 200:
             return JsonResponse({
-                "status": "success",
-                "message": "WhatsApp message sent successfully!",
-                "api_response": response.text,
+                'success': True,
+                'message': f'PO download link sent to {phone}',
+                'response': response_data,
+                'pdf_url': pdf_url
             })
         else:
             return JsonResponse({
-                "status": "failed",
-                "message": f"WhatsApp API returned {response.status_code}",
-                "api_response": response.text,
+                'success': False,
+                'error': response_data.get('message', 'WhatsApp send failed'),
+                'response': response_data,
+                'pdf_url': pdf_url
             }, status=400)
-
+    
     except Exception as e:
-        return JsonResponse({"error": f"WhatsApp send failed: {str(e)}"}, status=500)
+        import traceback
+        print(f"❌ ERROR: {e}")
+        print(traceback.format_exc())
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+    
+
+    # TEMPORARY TEST FUNCTION - Remove after testing
+def test_pdf_generation(request, pk):
+    """Test PDF generation and download"""
+    from django.http import HttpResponse
+    
+    po = get_object_or_404(PurchaseOrder, pk=pk)
+    
+    try:
+        # Generate PDF
+        file_path = generate_and_save_po_pdf_file(po)
+        
+        # Read and return PDF
+        with open(file_path, 'rb') as f:
+            pdf_content = f.read()
+        
+        response = HttpResponse(pdf_content, content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="{po.po_number}.pdf"'
+        return response
+        
+    except Exception as e:
+        import traceback
+        return HttpResponse(f"Error: {str(e)}\n\n{traceback.format_exc()}", content_type="text/plain")
