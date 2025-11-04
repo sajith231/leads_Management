@@ -119,6 +119,7 @@
                         <th>Status</th>
                         <th>Punch In Time</th>
                         <th>Punch Out Time</th>
+                        <th>Total Working Time</th> <!-- NEW -->
                         <th>Punch In Location</th>
                         <th>Punch Out Location</th>
                         <th>Note</th>  <!-- Add this new column -->
@@ -143,6 +144,9 @@
                         </td>
                         <td>{{ record.punch_in }}</td>
                         <td>{{ record.punch_out }}</td>
+                        <td class="working-time"
+                        data-in="{{ record.punch_in }}"
+                        data-out="{{ record.punch_out }}">-</td>
                         <td>
                             {% if record.punch_in_location != '-' and record.punch_in_latitude and record.punch_in_longitude %}
                             <a href="https://www.google.com/maps?q={{ record.punch_in_latitude }},{{ record.punch_in_longitude }}" 
@@ -245,4 +249,44 @@
         padding: 0.5em 0.75em;
     }
 </style>
+<script>
+  (function () {
+    function toMinutes(t) {
+      if (!t || t.trim() === '-' ) return null;
+      // Expecting formats like "09:15 AM" / "06:45 PM"
+      const m = t.trim().match(/^(\d{1,2}):(\d{2})\s*([AP]M)$/i);
+      if (!m) return null;
+      let hh = parseInt(m[1], 10);
+      const mm = parseInt(m[2], 10);
+      const ap = m[3].toUpperCase();
+      if (ap === 'AM') {
+        if (hh === 12) hh = 0;
+      } else {
+        if (hh !== 12) hh += 12;
+      }
+      return hh * 60 + mm;
+    }
+
+    function fmt(mins) {
+      const h = Math.floor(mins / 60);
+      const m = mins % 60;
+      const hh = String(h).padStart(2, '0');
+      const mm = String(m).padStart(2, '0');
+      return `${hh}:${mm}`;
+    }
+
+    document.querySelectorAll('td.working-time').forEach(td => {
+      const tin = toMinutes(td.getAttribute('data-in'));
+      const tout = toMinutes(td.getAttribute('data-out'));
+      if (tin == null || tout == null) {
+        td.textContent = '-';
+        return;
+      }
+      let diff = tout - tin;
+      if (diff < 0) diff += 24 * 60; // handle overnight
+      td.textContent = fmt(diff);
+    });
+  })();
+</script>
+
 {% endblock %}
