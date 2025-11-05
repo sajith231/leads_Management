@@ -13,6 +13,7 @@ class Claim(models.Model):
 
     STATUS_CHOICES = [
         ('claimed', 'Claimed'),
+        ('paid', 'Paid'),
         ('approved', 'Approved'),
         ('rejected', 'Rejected'),
     ]

@@ -37,9 +37,30 @@
     .department-badge { display: inline-block; padding: 4px 10px; border-radius: 10px; font-size: 11px; font-weight: 500; background: #e8eaf6; color: #3f51b5; }
     .status-dropdown { padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; cursor: pointer; transition: border-color 0.3s; width: 120px; }
     .status-dropdown:focus { outline: none; border-color: #4CAF50; }
-    .status-claimed { background: #fff3cd; color: #856404; border-color: #ffc107; }
-    .status-approved { background: #d4edda; color: #155724; border-color: #28a745; }
-    .status-rejected { background: #f8d7da; color: #721c24; border-color: #dc3545; }
+    .status-claimed {
+    background: #fff3cd;  /* soft yellow */
+    color: #856404;
+    border-color: #ffc107;
+}
+
+.status-paid {
+    background: #c8e6c9;  /* light green */
+    color: #1b5e20;       /* dark green text */
+    border-color: #2e7d32; /* deep green border */
+}
+
+.status-approved {
+    background: #e3f2fd;  /* light blue */
+    color: #0d47a1;       /* deep blue text */
+    border-color: #2196f3; /* medium blue border */
+}
+
+.status-rejected {
+    background: #f8d7da;  /* light red */
+    color: #721c24;
+    border-color: #dc3545;
+}
+
     .amount { font-weight: 600; color: #2e7d32; }
     .receipt-icon { color: #1976d2; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; padding: 8px; border-radius: 4px; transition: all 0.3s; }
     .receipt-icon:hover { background: #e3f2fd; color: #1565c0; transform: scale(1.1); }
@@ -129,6 +150,7 @@
                 <select id="status" name="status" class="filter-select">
                     <option value="">All Status</option>
                     <option value="claimed" {% if request.GET.status == 'claimed' %}selected{% endif %}>Claimed</option>
+                    <option value="paid" {% if request.GET.status == 'paid' %}selected{% endif %}>Paid</option>
                     <option value="approved" {% if request.GET.status == 'approved' %}selected{% endif %}>Approved</option>
                     <option value="rejected" {% if request.GET.status == 'rejected' %}selected{% endif %}>Rejected</option>
                 </select>
@@ -245,6 +267,7 @@
                                 onchange="updateStatus({{ claim.id }}, this.value)"
                                 data-original="{{ claim.status }}">
                             <option value="claimed" {% if claim.status == 'claimed' %}selected{% endif %}>Claimed</option>
+                            <option value="paid" {% if claim.status == 'paid' %}selected{% endif %}>Paid</option>
                             <option value="approved" {% if claim.status == 'approved' %}selected{% endif %}>Approved</option>
                             <option value="rejected" {% if claim.status == 'rejected' %}selected{% endif %}>Rejected</option>
                         </select>
