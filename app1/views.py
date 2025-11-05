@@ -2358,46 +2358,68 @@ from django.http import HttpResponse
 from .models import Employee, Attachment
 from django.core.files.storage import FileSystemStorage
 
-
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import render
-from .models import Employee
-
-from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Q
 
 @login_required
 def employee_management(request):
-    status_filter = request.GET.get('status', 'active')  # Default to 'active'
-    search_query = request.GET.get('search', '')  # Get search query
-    
-    # Base queryset with status filter
-    employees = Employee.objects.filter(status=status_filter).select_related("user").order_by('name')
+    # --- Read GET params ---
+    # Template uses these exact parameter names: search, status, job, organization, page
+    search_query = request.GET.get('search', '').strip()
+    status_filter = request.GET.get('status', '').strip()        # '' means all statuses; 'active' etc. if provided
+    job_filter = request.GET.get('job', '').strip()
+    organization_filter = request.GET.get('organization', '').strip()
 
-    
-    # Apply search filter if search query exists
+    # --- Base queryset ---
+    qs = Employee.objects.select_related("user").all().order_by('name')
+
+    # Apply status filter only if provided (keeps default behavior if you want 'active' by default, set below)
+    if status_filter:
+        qs = qs.filter(status=status_filter)
+
+    # Apply search across multiple fields
     if search_query:
-        employees = employees.filter(
+        qs = qs.filter(
             Q(name__icontains=search_query) |
             Q(user__userid__icontains=search_query) |
             Q(job_title__icontains=search_query) |
             Q(organization__icontains=search_query)
         )
-    
-    # Pagination - 15 employees per page
-    paginator = Paginator(employees, 15)
+
+    # Apply job filter if provided
+    if job_filter:
+        qs = qs.filter(job_title=job_filter)
+
+    # Apply organization filter if provided
+    if organization_filter:
+        qs = qs.filter(organization=organization_filter)
+
+    # --- Build job_list and organization_list for dropdowns ---
+    # Use distinct values from DB so the dropdown shows actual options
+    job_list = list(Employee.objects.values_list('job_title', flat=True).distinct().order_by('job_title'))
+    organization_list = list(Employee.objects.values_list('organization', flat=True).distinct().order_by('organization'))
+
+    # --- Pagination (apply after all filters) ---
+    per_page = 15
+    paginator = Paginator(qs, per_page)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    
-    return render(request, "employee_management.html", {
+    page_employees = page_obj.object_list
+
+    context = {
         "page_obj": page_obj,
-        "employees": page_obj,  # For backward compatibility
+        "employees": page_employees,     # template loops over `employees`
         "status_filter": status_filter,
         "search_query": search_query,
-        "total_employees": paginator.count,
-    })
+        "total_employees": qs.count(),   # total after filters
+        # filter dropdown context expected by the template:
+        "job_list": job_list,
+        "job_filter": job_filter,
+        "organization_list": organization_list,
+        "organization_filter": organization_filter,
+    }
+    return render(request, "employee_management.html", context)
 
 
 
@@ -2405,37 +2427,61 @@ from django.shortcuts import render, redirect
 from .models import Employee, Attachment, CV
 from django.shortcuts import render, redirect
 from .models import Employee, User, Attachment, CV
+from purchase_order.models import Department
 
 @login_required
 def add_employee(request):
-    users = User.objects.all()  # Fetch all users for the dropdown
-    
+    users = User.objects.all()  # For user dropdown
+    departments = Department.objects.all().order_by('name')  # <-- NEW
+
     if request.method == "POST":
-        name = request.POST['name']
-        user_id = request.POST.get("user_id")  # Capture selected user ID
-        photo = request.FILES['photo']
+        # ---- basic fields ----
+        name = request.POST.get('name', '').strip()
+        user_id = request.POST.get("user_id")
+        selected_user = User.objects.get(id=user_id) if user_id else None
+
+        # Unique user guard on add (your model clean also enforces; this is friendlier)
+        if selected_user and Employee.objects.filter(user=selected_user).exists():
+            messages.error(request, f"User ID {selected_user.userid} is already assigned to another employee.")
+            return render(
+                request, 'add_employee.html',
+                {'users': users, 'cvs': CV.objects.all(), 'departments': departments}
+            )
+
+        # Department: posted value is dept id; we store the dept NAME in Employee.organization
+        dept_id = request.POST.get("organization")
+        dept_name = ""
+        if dept_id:
+            try:
+                d = Department.objects.get(id=dept_id)
+                # use d.name; if your Department uses another field, swap here
+                dept_name = getattr(d, "name", str(d))
+            except Department.DoesNotExist:
+                pass
+
+        # Required file fields and other data (match your existing form names)
+        photo = request.FILES.get('photo')
         address = request.POST.get('address', '')
-        phone_personal = request.POST['phone_personal']
-        phone_residential = request.POST['phone_residential']
-        place = request.POST['place']
-        district = request.POST['district']
-        education = request.POST['education']
-        experience = request.POST['experience']
-        job_title = request.POST['job_title']
-        organization = request.POST.get("organization")
-        joining_date = request.POST['joining_date']
-        dob = request.POST['dob']
+        phone_personal = request.POST.get('phone_personal', '')
+        phone_residential = request.POST.get('phone_residential', '')
+        place = request.POST.get('place', '')
+        district = request.POST.get('district', '')
+        education = request.POST.get('education', '')
+        experience = request.POST.get('experience', '')
+        job_title = request.POST.get('job_title', '')
+        joining_date = request.POST.get('joining_date')
+        dob = request.POST.get('dob')
         bank_account_number = request.POST.get('bank_account_number', '')
         ifsc_code = request.POST.get('ifsc_code', '')
         bank_name = request.POST.get('bank_name', '')
         branch = request.POST.get('branch', '')
-        status = request.POST.get("status")
-        duty_time_start = request.POST.get('duty_time_start', None)
-        duty_time_end = request.POST.get('duty_time_end', None)
+        status = request.POST.get('status')
+        duty_time_start = request.POST.get('duty_time_start') or None
+        duty_time_end = request.POST.get('duty_time_end') or None
 
         employee = Employee.objects.create(
             name=name,
-            user=User.objects.get(id=user_id) if user_id else None,  # Assign selected user
+            user=selected_user,
             photo=photo,
             address=address,
             phone_personal=phone_personal,
@@ -2445,7 +2491,7 @@ def add_employee(request):
             education=education,
             experience=experience,
             job_title=job_title,
-            organization=organization,
+            organization=dept_name,           # <-- store NAME, not id
             joining_date=joining_date,
             dob=dob,
             bank_account_number=bank_account_number,
@@ -2457,12 +2503,17 @@ def add_employee(request):
             duty_time_end=duty_time_end,
         )
 
+        # Attachments (same as your current flow)
         for file in request.FILES.getlist('attachments'):
             Attachment.objects.create(employee=employee, file=file)
 
         return redirect('employee_management')
-    
-    return render(request, 'add_employee.html', {'users': users, 'cvs': CV.objects.all()})
+
+    # GET
+    return render(
+        request, 'add_employee.html',
+        {'users': users, 'cvs': CV.objects.all(), 'departments': departments}
+    )
 
 
 
@@ -2481,63 +2532,77 @@ from django.contrib import messages
 @login_required
 def edit_employee(request, emp_id):
     employee = get_object_or_404(Employee, id=emp_id)
-    users = User.objects.exclude(employee__isnull=False).union(User.objects.filter(id=employee.user.id if employee.user else None))
+    # Keep current user in list even if already assigned; exclude others that are taken
+    users = User.objects.exclude(employee__isnull=False).union(
+        User.objects.filter(id=employee.user.id if employee.user else None)
+    )
+    departments = Department.objects.all().order_by('name')  # <-- NEW
 
     if request.method == "POST":
         user_id = request.POST.get("user_id")
         selected_user = User.objects.get(id=user_id) if user_id else None
 
-        # Ensure User ID is unique
+        # Ensure User ID is unique (your original logic)
         if selected_user and Employee.objects.exclude(id=employee.id).filter(user=selected_user).exists():
             messages.error(request, f"User ID {selected_user.userid} is already assigned to another employee.")
-            return redirect("edit_employee", emp_id=emp_id)
+            return redirect("edit_employee", emp_id=emp_id)  # :contentReference[oaicite:4]{index=4}
 
-        # Update employee fields
+        # Resolve department id -> name; store in Employee.organization
+        dept_id = request.POST.get("organization")
+        dept_name = ""
+        if dept_id:
+            try:
+                d = Department.objects.get(id=dept_id)
+                dept_name = getattr(d, "name", str(d))
+            except Department.DoesNotExist:
+                pass
+
+        # Update fields (mirrors your existing code; just swaps organization to dept_name)
         employee.user = selected_user
-        employee.name = request.POST["name"]
+        employee.name = request.POST.get("name", "").strip()
         if "photo" in request.FILES:
             employee.photo = request.FILES["photo"]
         employee.address = request.POST.get("address", "")
-        employee.phone_personal = request.POST["phone_personal"]
+        employee.phone_personal = request.POST.get("phone_personal", "")
         employee.phone_residential = request.POST.get("phone_residential", "")
-        employee.place = request.POST["place"]
-        employee.district = request.POST["district"]
-        employee.education = request.POST["education"]
+        employee.place = request.POST.get("place", "")
+        employee.district = request.POST.get("district", "")
+        employee.education = request.POST.get("education", "")
         employee.experience = request.POST.get("experience", "")
-        employee.job_title = request.POST["job_title"]
-        employee.organization = request.POST.get("organization", "")
-        employee.joining_date = request.POST["joining_date"]
-        employee.dob = request.POST["dob"]
+        employee.job_title = request.POST.get("job_title", "")
+        employee.organization = dept_name                   # <-- here
+        employee.joining_date = request.POST.get("joining_date")
+        employee.dob = request.POST.get("dob")
         employee.bank_account_number = request.POST.get("bank_account_number", "")
         employee.ifsc_code = request.POST.get("ifsc_code", "")
         employee.bank_name = request.POST.get("bank_name", "")
         employee.branch = request.POST.get("branch", "")
         employee.status = request.POST.get("status")
-        employee.duty_time_start = request.POST.get("duty_time_start", None)
-        employee.duty_time_end = request.POST.get("duty_time_end", None)
+        employee.duty_time_start = request.POST.get("duty_time_start") or None
+        employee.duty_time_end = request.POST.get("duty_time_end") or None
         employee.save()
 
-        # Delete selected attachments
+        # Optional: support deleting selected attachments (if you kept those checkboxes)
         delete_attachments = request.POST.getlist("delete_attachments")
         if delete_attachments:
             Attachment.objects.filter(id__in=delete_attachments).delete()
 
-        # Handle new attachments (if any)
+        # New attachments
         for file in request.FILES.getlist('attachments'):
             Attachment.objects.create(employee=employee, file=file)
 
         messages.success(request, "Employee updated successfully.")
         return redirect("employee_management")
 
+    # GET: prefill dates like your version does
     context = {
         "employee": employee,
         "users": users,
-        "joining_date": employee.joining_date.strftime("%Y-%m-%d"),
-        "dob": employee.dob.strftime("%Y-%m-%d"),
+        "departments": departments,
+        "joining_date": employee.joining_date.strftime("%Y-%m-%d") if employee.joining_date else "",
+        "dob": employee.dob.strftime("%Y-%m-%d") if employee.dob else "",
     }
-
     return render(request, "edit_employee.html", context)
-
 
 
 

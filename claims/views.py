@@ -185,7 +185,7 @@ def update_claim_status(request, pk):
             claim = get_object_or_404(Claim, pk=pk)
             data = json.loads(request.body)
             new_status = data.get('status')
-            if new_status in ['claimed', 'approved', 'rejected']:
+            if new_status in ['claimed', 'paid', 'approved', 'rejected']:
                 claim.status = new_status
                 claim.save()
                 return JsonResponse({
