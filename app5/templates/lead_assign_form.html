@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+<style>
+/* === Page Container === */
+.assign-container {
+  max-width: 600px;
+  margin: 40px auto;
+  background: #fff;
+  padding: 30px 40px;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.assign-container h2 {
+  text-align: center;
+  color: #333;
+  margin-bottom: 25px;
+}
+
+/* === Form Styling === */
+.form-group {
+  margin-bottom: 18px;
+}
+
+.form-group label {
+  display: block;
+  font-weight: 600;
+  color: #444;
+  margin-bottom: 6px;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: 0.3s;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  border-color: #007bff;
+  outline: none;
+  box-shadow: 0 0 4px rgba(0, 123, 255, 0.3);
+}
+
+/* === Button Section === */
+.form-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 25px;
+}
+
+.btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: 0.3s;
+}
+
+.btn-cancel {
+  background: #ccc;
+  color: #333;
+}
+
+.btn-cancel:hover {
+  background: #b3b3b3;
+}
+
+.btn-submit {
+  background: #28a745;
+  color: #fff;
+}
+
+.btn-submit:hover {
+  background: #218838;
+}
+
+/* === Responsive === */
+@media (max-width: 600px) {
+  .assign-container {
+    padding: 20px;
+  }
+}
+</style>
+
+<div class="assign-container">
+  <h2>Assign Lead</h2>
+
+  <form method="POST" action="{% url 'assign_lead' %}">
+    {% csrf_token %}
+
+    <div class="form-group">
+      <label for="ticket_no">Ticket No</label>
+      <input type="text" id="ticket_no" name="ticket_no" value="{{ lead.ticket_no }}" readonly>
+    </div>
+
+    <div class="form-group">
+      <label for="assign_to">Assign To</label>
+      <select id="assign_to" name="assign_to" required>
+        <option value="">-- Select User --</option>
+        {% for user in users %}
+        <option value="{{ user.id }}" {% if lead.assigned_to and lead.assigned_to.id == user.id %}selected{% endif %}>
+          {{ user.get_full_name|default:user.username }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-actions">
+      <a href="{% url 'lead_list' %}" class="btn btn-cancel">Cancel</a>
+      <button type="submit" class="btn btn-submit">Assign</button>
+    </div>
+  </form>
+</div>
+
+{% endblock %}

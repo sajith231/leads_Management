@@ -1,6 +1,7 @@
 # app5/urls.py
-from django.urls import path
+from django.urls import path,include
 from . import views
+
 
 app_name = 'app5'        # optional but useful for the {% url %} tag
 
@@ -81,6 +82,25 @@ urlpatterns = [
     path('delete-service-invoice/<str:ticket_no>/', views.delete_service_invoice, name='delete_service_invoice'),
     path('jobcard/update-status/<int:pk>/', views.update_jobcard_status, name='update_jobcard_status'),
     path('jobcard/update-status-by-ticket/', views.update_jobcard_status_by_ticket, name='update_jobcard_status_by_ticket'),
+
+# lead
+    path("lead/", views.lead_form_view, name="lead"),
+    path("lead-report/", views.lead_report_view, name="lead_report"),
+    # app5/urls.py
+   path('requirement-form/', views.requirement_form, name='requirement_form'),
+   path('requirements-list/', views.requirements_list_view, name='requirements_list'),
+   path('lead/<int:lead_id>/edit/', views.lead_edit, name='lead_edit'),  
+   path('lead/<int:id>/delete/', views.lead_delete, name='lead_delete'),
+   path('api/lead/<int:lead_id>/', views.lead_detail_api, name='lead_detail_api'),
+   path('requirement-form/', views.requirement_form, name='requirement_form'),
+   path('requirement-list/', views.requirement_list, name='requirement_list'),
+
+
+
+    path('business-nature/', views.business_nature_list, name='business_nature_list'),
+    path('business-nature/create/', views.business_nature_create, name='business_nature_create'),
+    path('business-nature/edit/<int:id>/', views.business_nature_edit, name='business_nature_edit'),
+    path('business-nature/delete/<int:pk>/', views.business_nature_delete, name='business_nature_delete'),
 ]
 
 

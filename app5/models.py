@@ -478,6 +478,108 @@ class ServiceItem(models.Model):
         return f"{self.item_name} - ₹{self.charge}"   
 
 
+# lead
+
+# Add this to your models.py
+from django.db import models
+
+
+# models.py
+import uuid
+from django.db import models
+from django.utils import timezone
+
+class Lead(models.Model):
+    ticket_number = models.CharField(max_length=20, unique=True, blank=True)
+    ownerName = models.CharField(max_length=100)
+    phoneNo = models.CharField(max_length=15)
+    email = models.EmailField(blank=True, null=True)
+    customerType = models.CharField(max_length=20, default='Business')
+    
+    # Business fields
+    name = models.CharField(max_length=100, blank=True, null=True)  # Firm name
+    address = models.TextField(blank=True, null=True)
+    place = models.CharField(max_length=100, blank=True, null=True)
+    District = models.CharField(max_length=100, blank=True, null=True)
+    State = models.CharField(max_length=100, blank=True, null=True)
+    pinCode = models.CharField(max_length=10, blank=True, null=True)
+    
+    # Individual fields
+    firstName = models.CharField(max_length=100, blank=True, null=True)
+    lastName = models.CharField(max_length=100, blank=True, null=True)
+    individualAddress = models.TextField(blank=True, null=True)
+    individualPlace = models.CharField(max_length=100, blank=True, null=True)
+    individualDistrict = models.CharField(max_length=100, blank=True, null=True)
+    individualState = models.CharField(max_length=100, blank=True, null=True)
+    individualPinCode = models.CharField(max_length=10, blank=True, null=True)
+    
+    # Business information
+    status = models.CharField(max_length=20, default='Active')
+    refFrom = models.CharField(max_length=100, blank=True, null=True)
+    business = models.CharField(max_length=100, blank=True, null=True)
+    marketedBy = models.CharField(max_length=100, blank=True, null=True)
+    Consultant = models.CharField(max_length=100, blank=True, null=True)
+    requirement = models.CharField(max_length=100, blank=True, null=True)
+    details = models.TextField(blank=True, null=True)
+    date = models.DateField(default=timezone.now)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs):
+        if not self.ticket_number:
+            # Generate ticket number: TKT-YYYYMMDD-XXXX
+            date_part = timezone.now().strftime('%Y%m%d')
+            
+            # Get the count of leads created today for sequential number
+            today_leads = Lead.objects.filter(
+                created_at__date=timezone.now().date()
+            ).count()
+            
+            sequential = str(today_leads + 1).zfill(4)
+            self.ticket_number = f"TKT-{date_part}-{sequential}"
+        
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.ticket_number} - {self.ownerName}"
+
+    @property
+    def display_name(self):
+        if self.customerType == 'Business':
+            return self.name or '-'
+        else:
+            return f"{self.firstName or ''} {self.lastName or ''}".strip() or '-'
+
+    @property
+    def display_place(self):
+        if self.customerType == 'Business':
+            return self.place or '-'
+        else:
+            return self.individualPlace or '-'
+
+from django.db import models
+
+class RequirementItem(models.Model):
+    item_name = models.CharField(max_length=200)
+    unit = models.CharField(max_length=50)
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    total = models.DecimalField(max_digits=12, decimal_places=2)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.item_name
+    
+# bussiness nature
+
+class BusinessNature(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    description = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return self.name
+
+
     
          
 

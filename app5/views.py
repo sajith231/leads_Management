@@ -3139,4 +3139,434 @@ def api_jobcard_status(request, ticket_no):
     
 
 
+# lead
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from django.utils import timezone
+from django.db.models import Q
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from .models import Lead, RequirementItem
+from django.db.models import Sum
+
+
+def lead_form_view(request):
+    if request.method == "POST":
+        data = request.POST
+
+        # Detect customer type toggle (Business = checked)
+        customer_type = "Business" if data.get("customerTypeToggle") else "Individual"
+
+        try:
+            lead = Lead.objects.create(
+                ownerName=data.get("ownerName"),
+                phoneNo=data.get("phoneNo"),
+                email=data.get("email"),
+
+                customerType=customer_type,
+
+                # Business fields
+                name=data.get("name") if customer_type == "Business" else None,
+                address=data.get("address") if customer_type == "Business" else None,
+                place=data.get("place") if customer_type == "Business" else None,
+                District=data.get("District") if customer_type == "Business" else None,
+                State=data.get("State") if customer_type == "Business" else None,
+                pinCode=data.get("pinCode") if customer_type == "Business" else None,
+
+                # Individual fields
+                firstName=data.get("firstName") if customer_type == "Individual" else None,
+                lastName=data.get("lastName") if customer_type == "Individual" else None,
+                individualAddress=data.get("individualAddress") if customer_type == "Individual" else None,
+                individualPlace=data.get("individualPlace") if customer_type == "Individual" else None,
+                individualDistrict=data.get("individualDistrict") if customer_type == "Individual" else None,
+                individualState=data.get("individualState") if customer_type == "Individual" else None,
+                individualPinCode=data.get("individualPinCode") if customer_type == "Individual" else None,
+
+                # Business Info
+                date=data.get("date"),
+                status=data.get("status"),
+                refFrom=data.get("refFrom"),
+                business=data.get("business"),
+                marketedBy=data.get("marketedBy"),
+                Consultant=data.get("Consultant"),
+                requirement=data.get("requirement"),
+                details=data.get("details"),
+            )
+
+            messages.success(request, f"Lead saved successfully! Ticket Number: {lead.ticket_number}")
+            return redirect("app5:lead_report")
+
+        except Exception as e:
+            messages.error(request, f"Error saving lead: {str(e)}")
+            return redirect("app5:lead")
+
+    # GET request - show empty form
+    return render(request, "lead_form.html")
+
+def lead_report_view(request):
+    """
+    Display lead report with filtering and search capabilities
+    """
+    # Get all leads
+    leads = Lead.objects.all().order_by("-created_at")
     
+    # Get filter parameters
+    status_filter = request.GET.get('status', '')
+    customer_type_filter = request.GET.get('customer_type', '')
+    search_query = request.GET.get('search', '').strip()
+    start_date = request.GET.get('start_date', '')
+    end_date = request.GET.get('end_date', '')
+    
+    # Status filter
+    if status_filter:
+        leads = leads.filter(status=status_filter)
+    
+    # Customer type filter
+    if customer_type_filter:
+        leads = leads.filter(customerType=customer_type_filter)
+    
+    # Search filter (searches across multiple fields including ticket number)
+    if search_query:
+        leads = leads.filter(
+            Q(ownerName__icontains=search_query) |
+            Q(phoneNo__icontains=search_query) |
+            Q(email__icontains=search_query) |
+            Q(ticket_number__icontains=search_query) |
+            Q(name__icontains=search_query) |  # Firm name for Business
+            Q(firstName__icontains=search_query) |
+            Q(lastName__icontains=search_query) |
+            Q(place__icontains=search_query) |
+            Q(individualPlace__icontains=search_query) |
+            Q(refFrom__icontains=search_query)
+        )
+    
+    # Date range filter
+    if start_date:
+        try:
+            start_date_obj = timezone.datetime.strptime(start_date, '%Y-%m-%d').date()
+            leads = leads.filter(created_at__date__gte=start_date_obj)
+        except ValueError:
+            # Handle invalid date format
+            pass
+    
+    if end_date:
+        try:
+            end_date_obj = timezone.datetime.strptime(end_date, '%Y-%m-%d').date()
+            # Include the entire end date (up to 23:59:59)
+            end_date_obj = end_date_obj + timezone.timedelta(days=1) - timezone.timedelta(seconds=1)
+            leads = leads.filter(created_at__date__lte=end_date_obj)
+        except ValueError:
+            # Handle invalid date format
+            pass
+    
+    # Calculate statistics
+    total_leads = Lead.objects.count()
+    active_leads = Lead.objects.filter(status="Active").count()
+    inactive_leads = Lead.objects.filter(status="Inactive").count()
+    installed_leads = Lead.objects.filter(status="Installed").count()
+    business_leads = Lead.objects.filter(customerType="Business").count()
+    individual_leads = Lead.objects.filter(customerType="Individual").count()
+    
+    # Calculate today's leads
+    today_leads = Lead.objects.filter(
+        created_at__date=timezone.now().date()
+    ).count()
+    
+    # Count filtered results
+    filtered_count = leads.count()
+    
+    # Check if any filters are active
+    has_filters = bool(status_filter or customer_type_filter or search_query or start_date or end_date)
+    
+    context = {
+        "leads": leads,
+        "total_leads": total_leads,
+        "active_leads": active_leads,
+        "inactive_leads": inactive_leads,
+        "installed_leads": installed_leads,
+        "business_leads": business_leads,
+        "individual_leads": individual_leads,
+        "today_leads": today_leads,
+        "filtered_count": filtered_count,
+        "has_filters": has_filters,
+        "current_status_filter": status_filter,
+        "current_customer_type_filter": customer_type_filter,
+        "current_search_query": search_query,
+        "current_start_date": start_date,
+        "current_end_date": end_date,
+    }
+    return render(request, "lead_report.html", context)
+
+
+def lead_detail_api(request, lead_id):
+    lead = get_object_or_404(Lead, id=lead_id)
+    return JsonResponse({
+        "id": lead.id,
+        "ticket_number": lead.ticket_number,
+        "owner_name": lead.ownerName,
+        "phone_number": lead.phoneNo,
+        "email": lead.email,
+        "customer_type": lead.customerType,
+        "firm_name": lead.name,
+        "first_name": lead.firstName,
+        "last_name": lead.lastName,
+        "business_address": lead.address,
+        "individual_address": lead.individualAddress,
+        "place": lead.place,
+        "individual_place": lead.individualPlace,
+        "district": lead.District,
+        "individual_district": lead.individualDistrict,
+        "state": lead.State,
+        "individual_state": lead.individualState,
+        "pin_code": lead.pinCode,
+        "individual_pin_code": lead.individualPinCode,
+        "status": lead.status,
+        "reference_from": lead.refFrom,
+        "business_nature": lead.business,
+        "marketed_by": lead.marketedBy,
+        "consultant": lead.Consultant,
+        "branch": lead.requirement,
+        "notes": lead.details,
+        "date": lead.date.strftime('%Y-%m-%d') if lead.date else None,
+        "created_at": lead.created_at.strftime('%Y-%m-%d %H:%M:%S') if lead.created_at else None,
+        "updated_at": lead.updated_at.strftime('%Y-%m-%d %H:%M:%S') if lead.updated_at else None
+    })
+
+
+def lead_edit(request, lead_id):
+    lead = get_object_or_404(Lead, id=lead_id)
+    
+    if request.method == 'POST':
+        # Update lead data
+        lead.ownerName = request.POST.get('ownerName')
+        lead.phoneNo = request.POST.get('phoneNo')
+        lead.email = request.POST.get('email')
+        lead.customerType = 'Business' if request.POST.get('customerTypeToggle') else 'Individual'
+        lead.status = request.POST.get('status', 'Active')
+        lead.refFrom = request.POST.get('refFrom')
+        lead.business = request.POST.get('business')
+        lead.marketedBy = request.POST.get('marketedBy')
+        lead.Consultant = request.POST.get('Consultant')
+        lead.requirement = request.POST.get('requirement')
+        lead.details = request.POST.get('details')
+        lead.date = request.POST.get('date') or lead.date
+        
+        # Update fields based on customer type
+        if lead.customerType == 'Business':
+            lead.name = request.POST.get('name')
+            lead.address = request.POST.get('address')
+            lead.place = request.POST.get('place')
+            lead.District = request.POST.get('District')
+            lead.State = request.POST.get('State')
+            lead.pinCode = request.POST.get('pinCode')
+            
+            # Clear individual fields
+            lead.firstName = None
+            lead.lastName = None
+            lead.individualAddress = None
+            lead.individualPlace = None
+            lead.individualDistrict = None
+            lead.individualState = None
+            lead.individualPinCode = None
+        else:
+            lead.firstName = request.POST.get('firstName')
+            lead.lastName = request.POST.get('lastName')
+            lead.individualAddress = request.POST.get('individualAddress')
+            lead.individualPlace = request.POST.get('individualPlace')
+            lead.individualDistrict = request.POST.get('individualDistrict')
+            lead.individualState = request.POST.get('individualState')
+            lead.individualPinCode = request.POST.get('individualPinCode')
+            
+            # Clear business fields
+            lead.name = None
+            lead.address = None
+            lead.place = None
+            lead.District = None
+            lead.State = None
+            lead.pinCode = None
+        
+        lead.save()
+        messages.success(request, f"Lead updated successfully! Ticket Number: {lead.ticket_number}")
+        return redirect('app5:lead_report')
+    
+    return render(request, 'lead_form_edit.html', {'lead': lead})
+
+
+def lead_delete(request, lead_id):
+    lead = get_object_or_404(Lead, id=lead_id)
+    if request.method == 'POST':
+        ticket_number = lead.ticket_number
+        lead.delete()
+        messages.success(request, f"Lead with Ticket Number {ticket_number} deleted successfully!")
+        return redirect('app5:lead_report')
+    return redirect('app5:lead_report')
+
+
+# ------------------------------
+# Requirement Views
+# ------------------------------
+
+@csrf_exempt
+def requirement_form(request):
+    """Handles adding new requirement items"""
+    if request.method == "POST":
+        items = request.POST.getlist('item_name')
+        units = request.POST.getlist('unit')
+        prices = request.POST.getlist('price')
+
+        items_created = 0
+        for i in range(len(items)):
+            item_name = items[i].strip()
+            unit = units[i] if i < len(units) else ""
+            try:
+                price = float(prices[i]) if i < len(prices) and prices[i] else 0.0
+            except (ValueError, TypeError):
+                price = 0.0
+            
+            total = price  # total column currently same as price
+            
+            if item_name:  # Only create if item name is not empty
+                RequirementItem.objects.create(
+                    item_name=item_name,
+                    unit=unit,
+                    price=price,
+                    total=total
+                )
+                items_created += 1
+
+        if items_created > 0:
+            messages.success(request, f'Successfully added {items_created} requirement item(s)!')
+        else:
+            messages.warning(request, 'No valid items were added.')
+        
+        return redirect('app5:requirement_list')
+
+    # GET request - show the form
+    return render(request, 'requirement_form.html')
+
+
+def requirement_list(request):
+    """Show all saved requirement items"""
+    items = RequirementItem.objects.all().order_by('-created_at')
+    grand_total = sum(item.total for item in items)
+    context = {
+        'items': items,
+        'grand_total': grand_total,
+    }
+    return render(request, 'requirement_list.html', context)
+
+
+def requirement_form_view(request):
+    if request.method == "POST":
+        item_names = request.POST.getlist("item_name")
+        units = request.POST.getlist("unit")
+        prices = request.POST.getlist("price")
+
+        for name, unit, price in zip(item_names, units, prices):
+            if name and unit and price:
+                RequirementItem.objects.create(
+                    item_name=name,
+                    unit=unit,
+                    price=price,
+                    total=price   # or calculate here
+                )
+
+        messages.success(request, "Items saved successfully!")
+        return redirect("app5:requirements_list")
+
+    return render(request, "requirement_form.html")
+
+
+def requirements_list_view(request):
+    items = RequirementItem.objects.all()
+    grand_total = RequirementItem.objects.aggregate(total=Sum('total'))['total'] or 0
+    return render(request, "requirement_list.html", {
+        "items": items,
+        "grand_total": grand_total
+    })
+
+
+
+# Replace the business nature views in your views.py with these fixed versions
+
+# app5/views.py - Business Nature Views
+# Add these imports at the top if not present
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from django.db import IntegrityError
+from .models import BusinessNature
+
+
+# In views.py, update the business nature views:
+
+def business_nature_list(request):
+    natures = BusinessNature.objects.all()
+    # Remove 'app5/' prefix since your template is in the main templates directory
+    return render(request, 'business_nature_list.html', {'natures': natures})
+
+def business_nature_create(request):
+    """Create a new Business Nature"""
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        description = request.POST.get('description', '')
+        # Remove is_active processing since it's not in the model
+        
+        try:
+            BusinessNature.objects.create(
+                name=name,
+                description=description
+                # Remove is_active from here
+            )
+            messages.success(request, f'Business nature "{name}" created successfully!')
+            return redirect('app5:business_nature_list')
+        except IntegrityError:
+            messages.error(request, f'Business nature "{name}" already exists!')
+        except Exception as e:
+            messages.error(request, f'Error creating business nature: {str(e)}')
+    
+    return render(request, 'bussiness_nature_form.html', {
+        'title': 'Create Business Nature'
+    })
+
+def business_nature_edit(request, id):
+    """Edit an existing Business Nature"""
+    nature = get_object_or_404(BusinessNature, id=id)
+    
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        description = request.POST.get('description', '')
+        is_active = request.POST.get('is_active') == 'on'
+        
+        try:
+            # Check for duplicate name (excluding current object)
+            if BusinessNature.objects.filter(name=name).exclude(id=id).exists():
+                messages.error(request, f'Business nature "{name}" already exists!')
+            else:
+                nature.name = name
+                nature.description = description
+                nature.is_active = is_active
+                nature.save()
+                messages.success(request, f'Business nature "{name}" updated successfully!')
+                return redirect('app5:business_nature_list')
+        except Exception as e:
+            messages.error(request, f'Error updating business nature: {str(e)}')
+    
+    # GET request - show form with existing data
+    return render(request, 'bussiness_nature_form.html', {  # Remove 'app5/' prefix
+        'nature': nature,
+        'title': 'Edit Business Nature'
+    })
+
+
+def business_nature_delete(request, pk):
+    nature = get_object_or_404(BusinessNature, pk=pk)
+    
+    # Handle both POST and GET for backward compatibility
+    if request.method in ["POST", "GET"]:
+        nature_name = nature.name
+        nature.delete()
+        messages.success(request, f'Business nature "{nature_name}" deleted successfully!')
+        return redirect('app5:business_nature_list')
+    
+    messages.error(request, 'Invalid request method.')
+    return redirect('app5:business_nature_list')
