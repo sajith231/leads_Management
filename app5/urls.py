@@ -90,7 +90,7 @@ urlpatterns = [
    path('requirement-form/', views.requirement_form, name='requirement_form'),
    path('requirements-list/', views.requirements_list_view, name='requirements_list'),
    path('lead/<int:lead_id>/edit/', views.lead_edit, name='lead_edit'),  
-   path('lead/<int:id>/delete/', views.lead_delete, name='lead_delete'),
+   path('lead/delete/<int:lead_id>/', views.lead_delete, name='lead_delete'),
    path('api/lead/<int:lead_id>/', views.lead_detail_api, name='lead_detail_api'),
    path('requirement-form/', views.requirement_form, name='requirement_form'),
    path('requirement-list/', views.requirement_list, name='requirement_list'),
@@ -101,7 +101,13 @@ urlpatterns = [
     path('business-nature/create/', views.business_nature_create, name='business_nature_create'),
     path('business-nature/edit/<int:id>/', views.business_nature_edit, name='business_nature_edit'),
     path('business-nature/delete/<int:pk>/', views.business_nature_delete, name='business_nature_delete'),
-]
 
+
+
+     path('state/', views.state_list, name='state_master_list'),  # Changed to state_master_list
+    path('state/create/', views.state_master_create, name='state_master_create'),
+    path('state/<int:id>/edit/', views.state_master_edit, name='state_master_edit'),
+    path('state/<int:id>/delete/', views.state_master_delete, name='state_master_delete'),
+]
 
 

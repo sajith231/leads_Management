@@ -684,26 +684,24 @@
                                 </div>
                                 
                                 <div class="compact-form-group">
-                                    <label for="District">District</label>
-                                    <select id="District" name="District">
-                                        <option value="">Select District</option>
-                                        <option value="Wayanad">Wayanad</option>
-                                        <option value="Kanoor">Kanoor</option>
-                                        <option value="Calicut">Calicut</option>
-                                        <option value="Iduki">Iduki</option>
-                                    </select>
-                                </div>
+    <label for="District">District</label>
+    <select id="District" name="District">
+        <option value="">Select District</option>
+        {% for district in districts %}
+        <option value="{{ district.name }}">{{ district.name }}</option>
+        {% endfor %}
+    </select>
+</div>
                                 
-                                <div class="compact-form-group">
-                                    <label for="State">State</label>
-                                    <select id="State" name="State">
-                                        <option value="">Select State</option>
-                                        <option value="Kerala">Kerala</option>
-                                        <option value="Tamilnadu">Tamilnadu</option>
-                                        <option value="Karnadaka">Karnadaka</option>
-                                        <option value="UP">UP</option>
-                                    </select>
-                                </div>
+                                                             <div class="compact-form-group">
+    <label for="State">State</label>
+    <select id="State" name="State">
+        <option value="">Select State</option>
+        {% for state in states %}
+        <option value="{{ state.name }}">{{ state.name }}</option>
+        {% endfor %}
+    </select>
+</div>
                                 
                                 <div class="compact-form-group">
                                     <label for="pinCode">Pin Code *</label>
@@ -734,26 +732,23 @@
                                 </div>
                                 
                                 <div class="compact-form-group">
-                                    <label for="individualDistrict">District</label>
-                                    <select id="individualDistrict" name="individualDistrict">
-                                        <option value="">Select District</option>
-                                        <option value="Wayanad">Wayanad</option>
-                                        <option value="Kanoor">Kanoor</option>
-                                        <option value="Calicut">Calicut</option>
-                                        <option value="Iduki">Iduki</option>
-                                    </select>
-                                </div>
-                                
+    <label for="District">District</label>
+    <select id="District" name="District">
+        <option value="">Select District</option>
+        {% for district in districts %}
+        <option value="{{ district.name }}">{{ district.name }}</option>
+        {% endfor %}
+    </select>
+</div>
                                 <div class="compact-form-group">
-                                    <label for="individualState">State</label>
-                                    <select id="individualState" name="individualState">
-                                        <option value="">Select State</option>
-                                        <option value="Kerala">Kerala</option>
-                                        <option value="Tamilnadu">Tamilnadu</option>
-                                        <option value="Karnadaka">Karnadaka</option>
-                                        <option value="UP">UP</option>
-                                    </select>
-                                </div>
+    <label for="State">State</label>
+    <select id="State" name="State">
+        <option value="">Select State</option>
+        {% for state in states %}
+        <option value="{{ state.name }}">{{ state.name }}</option>
+        {% endfor %}
+    </select>
+</div>
                                 
                                 <div class="compact-form-group">
                                     <label for="individualPinCode">Pin Code *</label>
@@ -799,26 +794,23 @@
                             </div>
                             
                             <div class="compact-form-group">
-                                <label for="business">Business Nature</label>
-                                <select id="business" name="business">
-                                    <option value="">Select Business</option>
-                                    <option value="RETAIL">RETAIL</option>
-                                    <option value="WHOLESALE">WHOLESALE</option>
-                                    <option value="MANUFACTURING">MANUFACTURING</option>
-                                    <option value="SERVICES">SERVICES</option>
-                                    <option value="OTHER">OTHER</option>
-                                </select>
-                            </div>
+    <label for="business">Business Nature</label>
+    <select id="business" name="business">
+        <option value="">Select Business Nature</option>
+        {% for nature in business_natures %}
+        <option value="{{ nature.name }}">{{ nature.name }}</option>
+        {% endfor %}
+    </select>
+</div>
                             
                             <div class="compact-form-group">
                                 <label for="marketedBy">Marketed By</label>
-                                <select id="marketedBy" name="marketedBy">
-                                    <option value="">Select Marketer</option>
-                                    <option value="DIRECT">DIRECT</option>
-                                    <option value="AGENT">AGENT</option>
-                                    <option value="REFERRAL">REFERRAL</option>
-                                    <option value="ONLINE">ONLINE</option>
-                                </select>
+                                <select name="marketedBy" class="form-select" required>
+    <option value="">-- Select Marketed By --</option>
+    {% for user in active_users %}
+        <option value="{{ user.name }}">{{ user.name }}</option>
+    {% endfor %}
+</select>
                             </div>
                             
                             <div class="compact-form-group">

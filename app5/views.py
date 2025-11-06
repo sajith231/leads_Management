@@ -3148,7 +3148,11 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from .models import Lead, RequirementItem
 from django.db.models import Sum
+from app1.models import District 
 
+# In views.py, update the lead_form_view function:
+
+from app1.models import User   # ✅ Make sure User model is imported
 
 def lead_form_view(request):
     if request.method == "POST":
@@ -3162,7 +3166,6 @@ def lead_form_view(request):
                 ownerName=data.get("ownerName"),
                 phoneNo=data.get("phoneNo"),
                 email=data.get("email"),
-
                 customerType=customer_type,
 
                 # Business fields
@@ -3182,7 +3185,7 @@ def lead_form_view(request):
                 individualState=data.get("individualState") if customer_type == "Individual" else None,
                 individualPinCode=data.get("individualPinCode") if customer_type == "Individual" else None,
 
-                # Business Info
+                # Lead Info
                 date=data.get("date"),
                 status=data.get("status"),
                 refFrom=data.get("refFrom"),
@@ -3200,8 +3203,23 @@ def lead_form_view(request):
             messages.error(request, f"Error saving lead: {str(e)}")
             return redirect("app5:lead")
 
-    # GET request - show empty form
-    return render(request, "lead_form.html")
+    # ✅ GET request - show empty form
+    districts = District.objects.all().order_by('name')
+    business_natures = BusinessNature.objects.all().order_by('name')
+    states = StateMaster.objects.all().order_by('name')
+
+    # ✅ Fetch only ACTIVE users for dropdown
+    active_users = User.objects.filter(status='active').order_by('name')
+
+    context = {
+        'business_natures': business_natures,
+        'states': states,
+        'districts': districts,
+        'active_users': active_users,   # ✅ Added
+    }
+
+    return render(request, "lead_form.html", context)
+
 
 def lead_report_view(request):
     """
@@ -3333,6 +3351,8 @@ def lead_detail_api(request, lead_id):
     })
 
 
+from app1.models import User   # ✅ Make sure User model is imported
+
 def lead_edit(request, lead_id):
     lead = get_object_or_404(Lead, id=lead_id)
     
@@ -3389,14 +3409,34 @@ def lead_edit(request, lead_id):
         messages.success(request, f"Lead updated successfully! Ticket Number: {lead.ticket_number}")
         return redirect('app5:lead_report')
     
-    return render(request, 'lead_form_edit.html', {'lead': lead})
+    # GET request - Load dropdown data
+    business_natures = BusinessNature.objects.all().order_by('name')
+    states = StateMaster.objects.all().order_by('name')
+    districts = District.objects.all().order_by('name')
+
+    # ✅ Fetch ACTIVE users for dropdown
+    active_users = User.objects.filter(status='active').order_by('name')
+
+    context = {
+        'lead': lead,
+        'business_natures': business_natures,
+        'states': states,
+        'districts': districts,
+        'active_users': active_users,  # ✅ Added
+    }
+    
+    return render(request, 'lead_form_edit.html', context)
+
+
 
 
 def lead_delete(request, lead_id):
+    print(f"Delete request received for lead ID: {lead_id}")  # Debug
     lead = get_object_or_404(Lead, id=lead_id)
     if request.method == 'POST':
         ticket_number = lead.ticket_number
         lead.delete()
+        print(f"Lead {ticket_number} deleted successfully")  # Debug
         messages.success(request, f"Lead with Ticket Number {ticket_number} deleted successfully!")
         return redirect('app5:lead_report')
     return redirect('app5:lead_report')
@@ -3507,15 +3547,13 @@ def business_nature_list(request):
 def business_nature_create(request):
     """Create a new Business Nature"""
     if request.method == 'POST':
-        name = request.POST.get('name')
+        name = request.POST.get('name', '').strip().upper()  # Convert to uppercase
         description = request.POST.get('description', '')
-        # Remove is_active processing since it's not in the model
         
         try:
             BusinessNature.objects.create(
                 name=name,
                 description=description
-                # Remove is_active from here
             )
             messages.success(request, f'Business nature "{name}" created successfully!')
             return redirect('app5:business_nature_list')
@@ -3533,9 +3571,8 @@ def business_nature_edit(request, id):
     nature = get_object_or_404(BusinessNature, id=id)
     
     if request.method == 'POST':
-        name = request.POST.get('name')
+        name = request.POST.get('name', '').strip().upper()  # Convert to uppercase
         description = request.POST.get('description', '')
-        is_active = request.POST.get('is_active') == 'on'
         
         try:
             # Check for duplicate name (excluding current object)
@@ -3544,7 +3581,6 @@ def business_nature_edit(request, id):
             else:
                 nature.name = name
                 nature.description = description
-                nature.is_active = is_active
                 nature.save()
                 messages.success(request, f'Business nature "{name}" updated successfully!')
                 return redirect('app5:business_nature_list')
@@ -3552,7 +3588,7 @@ def business_nature_edit(request, id):
             messages.error(request, f'Error updating business nature: {str(e)}')
     
     # GET request - show form with existing data
-    return render(request, 'bussiness_nature_form.html', {  # Remove 'app5/' prefix
+    return render(request, 'bussiness_nature_form.html', {
         'nature': nature,
         'title': 'Edit Business Nature'
     })
@@ -3570,3 +3606,135 @@ def business_nature_delete(request, pk):
     
     messages.error(request, 'Invalid request method.')
     return redirect('app5:business_nature_list')
+
+
+# state master
+# Add these imports at the top if not already present
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from .models import StateMaster
+
+# Update your state views in views.py
+
+def state_list(request):
+    """Display all states in the list"""
+    states = StateMaster.objects.all().order_by('name')
+    
+    # Get counts for statistics
+    total_states = states.count()
+    
+    context = {
+        'states': states,
+        'total_states': total_states,
+    }
+    return render(request, 'state_master_list.html', context)
+
+# In the state_master_create function, update the name processing:
+def state_master_create(request):
+    """Handle state creation form"""
+    if request.method == 'POST':
+        name = request.POST.get('stateName', '').strip().upper()  # Add .upper() here
+        description = request.POST.get('stateDescription', '').strip()
+        
+        # Validate required fields
+        if not name:
+            messages.error(request, 'State name is required')
+            return render(request, 'state_master_form.html', {
+                'state_name': name,
+                'description': description
+            })
+        
+        # Check for duplicate state name
+        if StateMaster.objects.filter(name__iexact=name).exists():
+            messages.error(request, f'State "{name}" already exists!')
+            return render(request, 'state_master_form.html', {
+                'state_name': name,
+                'description': description
+            })
+        
+        try:
+            # Create new state
+            state = StateMaster.objects.create(
+                name=name,  # This will now be in uppercase
+                description=description
+            )
+            
+            messages.success(request, f'State "{name}" created successfully!')
+            return redirect('app5:state_master_list')
+            
+        except Exception as e:
+            messages.error(request, f'Error creating state: {str(e)}')
+            return render(request, 'state_master_form.html', {
+                'state_name': name,
+                'description': description
+            })
+    
+    # GET request - show empty form
+    return render(request, 'state_master_form.html')
+
+# Add these additional state management views
+
+# In the state_master_edit function, update the name processing:
+def state_master_edit(request, id):
+    """Edit an existing state"""
+    state = get_object_or_404(StateMaster, id=id)
+    
+    if request.method == 'POST':
+        name = request.POST.get('stateName', '').strip().upper()  # Add .upper() here
+        description = request.POST.get('stateDescription', '').strip()
+        
+        # Validate required fields
+        if not name:
+            messages.error(request, 'State name is required')
+            return render(request, 'state_master_form.html', {
+                'state': state,
+                'state_name': name,
+                'description': description,
+                'is_edit': True
+            })
+        
+        # Check for duplicate state name (excluding current state)
+        if StateMaster.objects.filter(name__iexact=name).exclude(id=id).exists():
+            messages.error(request, f'State "{name}" already exists!')
+            return render(request, 'state_master_form.html', {
+                'state': state,
+                'state_name': name,
+                'description': description,
+                'is_edit': True
+            })
+        
+        try:
+            # Update state
+            state.name = name  # This will now be in uppercase
+            state.description = description
+            state.save()
+            
+            messages.success(request, f'State "{name}" updated successfully!')
+            return redirect('app5:state_master_list')
+            
+        except Exception as e:
+            messages.error(request, f'Error updating state: {str(e)}')
+            return render(request, 'state_master_form.html', {
+                'state': state,
+                'state_name': name,
+                'description': description,
+                'is_edit': True
+            })
+    
+    # GET request - show form with existing data
+    return render(request, 'state_master_form.html', {
+        'state': state,
+        'is_edit': True
+    })
+def state_master_delete(request, id):
+    """Delete a state"""
+    state = get_object_or_404(StateMaster, id=id)
+    
+    if request.method == 'POST':
+        state_name = state.name
+        state.delete()
+        messages.success(request, f'State "{state_name}" deleted successfully!')
+        return redirect('app5:state_master_list')
+    
+    # If not POST, show confirmation page (optional)
+    return render(request, 'state_confirm_delete.html', {'state': state})

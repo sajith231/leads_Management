@@ -3,6 +3,8 @@
 {% block title %}Lead Report{% endblock %}
 
 {% block content %}
+<!DOCTYPE html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -248,7 +250,9 @@
         }
         
         .btn-secondary:hover {
-            background: #5a6268;
+            background: #dc3545 !important;
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
         }
         
         .btn-success {
@@ -288,62 +292,13 @@
             border: 1px solid #e9ecef;
         }
 
-        /* Notes Icon Styles */
-        .notes-icon {
-            position: relative;
+        /* Form inline alignment fix */
+        form[action*="delete"] {
+            margin: 0;
             display: inline-block;
-            cursor: pointer;
         }
 
-        .notes-icon i {
-            color: #6c757d;
-            font-size: 18px;
-            transition: color 0.3s;
-        }
-
-        .notes-icon.has-notes i {
-            color: #ffc107;
-        }
-
-        .notes-icon:hover i {
-            color: #2575fc;
-        }
-
-        .notes-tooltip {
-            position: absolute;
-            bottom: 100%;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #333;
-            color: white;
-            padding: 8px 12px;
-            border-radius: 6px;
-            font-size: 12px;
-            white-space: nowrap;
-            z-index: 100;
-            margin-bottom: 8px;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.3s, visibility 0.3s;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        }
-
-        .notes-tooltip::after {
-            content: '';
-            position: absolute;
-            top: 100%;
-            left: 50%;
-            transform: translateX(-50%);
-            border: 6px solid transparent;
-            border-top-color: #333;
-        }
-
-        .notes-icon:hover .notes-tooltip {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        /* Enhanced Modal Styles */
+        /* Modal Styles */
         .modal {
             display: none;
             position: fixed;
@@ -415,7 +370,6 @@
             padding: 25px;
         }
 
-        /* Enhanced Card Styles */
         .detail-card {
             background: white;
             margin: 0 0 20px 0;
@@ -473,7 +427,6 @@
             align-items: center;
         }
 
-        /* Updated Lead Meta Styles - Single Line */
         .lead-meta-single-line {
             display: flex;
             justify-content: space-between;
@@ -513,11 +466,6 @@
             font-weight: 700;
             font-size: 16px;
             backdrop-filter: blur(10px);
-        }
-
-        .lead-id {
-            font-size: 14px;
-            opacity: 0.9;
         }
 
         .card-header h4 {
@@ -617,13 +565,11 @@
             padding: 15px;
             background: #f8f9fa;
             border-radius: 8px;
-            /* border-left: 4px solid #28a745; */
             line-height: 1.6;
             color: #495057;
             font-style: italic;
         }
 
-        /* Enhanced Badge Styles */
         .status-badge {
             display: inline-flex;
             align-items: center;
@@ -653,68 +599,7 @@
             border: 1px solid rgba(0, 123, 255, 0.3);
         }
 
-        .customer-type {
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 13px;
-            font-weight: 600;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .business-type {
-            background: rgba(33, 150, 243, 0.15);
-            color: #0d47a1;
-            border: 1px solid rgba(33, 150, 243, 0.3);
-        }
-
-        .individual-type {
-            background: rgba(156, 39, 176, 0.15);
-            color: #4a148c;
-            border: 1px solid rgba(156, 39, 176, 0.3);
-        }
-
-        .filter-badge {
-            display: inline-block;
-            padding: 5px 12px;
-            background: #e3f2fd;
-            color: #1976d2;
-            border-radius: 20px;
-            font-size: 13px;
-            margin-right: 10px;
-            margin-bottom: 5px;
-        }
-
-        .filters-active {
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 1px solid #eee;
-        }
-
-        .search-input {
-            min-width: 200px;
-        }
-
-        .date-input {
-            min-width: 140px;
-        }
-
         /* Responsive Design */
-        @media (max-width: 1200px) {
-            .filter-row {
-                gap: 10px;
-            }
-            
-            .filter-group {
-                min-width: 130px;
-            }
-            
-            .search-input {
-                min-width: 180px;
-            }
-        }
-
         @media (max-width: 768px) {
             .container {
                 padding: 10px;
@@ -739,12 +624,6 @@
                 justify-content: center;
             }
             
-            .table-header {
-                flex-direction: column;
-                gap: 10px;
-                text-align: center;
-            }
-            
             table {
                 font-size: 12px;
             }
@@ -756,102 +635,6 @@
             .action-buttons {
                 flex-direction: column;
                 align-items: center;
-            }
-            
-            .serial-number {
-                min-width: 30px;
-            }
-            
-            /* Mobile Modal Styles */
-            .modal-content {
-                margin: 1% auto;
-                width: 98%;
-                border-radius: 10px;
-            }
-            
-            .card-header {
-                padding: 15px 20px;
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 10px;
-            }
-            
-            .lead-title {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 10px;
-            }
-            
-            .lead-badges {
-                justify-content: flex-start;
-            }
-            
-            .lead-meta-single-line {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 10px;
-            }
-            
-            .creation-info-compact {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 8px;
-            }
-            
-            .creation-separator {
-                display: none;
-            }
-            
-            .info-grid {
-                grid-template-columns: 1fr;
-                gap: 15px;
-            }
-            
-            .info-item {
-                padding: 12px;
-            }
-            
-            .card-body {
-                padding: 20px;
-            }
-            
-            .notes-content {
-                flex-direction: column;
-                gap: 10px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .modal-header h2 {
-                font-size: 20px;
-            }
-            
-            .lead-title h3 {
-                font-size: 20px;
-            }
-            
-            .card-header h4 {
-                font-size: 16px;
-            }
-            
-            .info-item {
-                flex-direction: column;
-                text-align: center;
-                gap: 10px;
-            }
-            
-            .info-icon {
-                align-self: center;
-            }
-            
-            .creation-info-compact .creation-item {
-                font-size: 11px;
-                padding: 4px 8px;
-            }
-            
-            .ticket-number-large {
-                font-size: 14px;
-                padding: 6px 12px;
             }
         }
     </style>
@@ -891,7 +674,6 @@
         <div class="filters">
             <form method="get" id="filterForm">
                 <div class="filter-row">
-                    <!-- Status Filter -->
                     <div class="filter-group">
                         <label><i class="fas fa-filter"></i> Status</label>
                         <select name="status" id="statusFilter">
@@ -902,7 +684,6 @@
                         </select>
                     </div>
                     
-                    <!-- Customer Type Filter -->
                     <div class="filter-group">
                         <label><i class="fas fa-user-tag"></i> Customer Type</label>
                         <select name="customer_type" id="customerTypeFilter">
@@ -912,25 +693,21 @@
                         </select>
                     </div>
                     
-                    <!-- Start Date Filter -->
                     <div class="filter-group">
                         <label><i class="fas fa-calendar-alt"></i> From Date</label>
                         <input type="date" name="start_date" id="startDateFilter" value="{{ current_start_date }}" class="date-input">
                     </div>
                     
-                    <!-- End Date Filter -->
                     <div class="filter-group">
                         <label><i class="fas fa-calendar-alt"></i> To Date</label>
                         <input type="date" name="end_date" id="endDateFilter" value="{{ current_end_date }}" class="date-input">
                     </div>
                     
-                    <!-- Search Filter -->
                     <div class="filter-group search-input">
                         <label><i class="fas fa-search"></i> Search</label>
                         <input type="text" name="search" id="searchFilter" value="{{ current_search_query }}" placeholder="Ticket no, name, phone, email...">
                     </div>
                     
-                    <!-- Action Buttons -->
                     <div class="filter-actions">
                         <a href="{% url 'app5:lead' %}" class="btn btn-success">
                             <i class="fas fa-plus"></i> New Lead
@@ -956,13 +733,12 @@
                         <tr>
                             <th class="serial-number">Sl.No</th>
                             <th>Ticket No</th>
+                            <th>Creadted Date</th>
                             <th>Owner Name</th>
                             <th>Phone</th>
                             <th>Name/Firm</th>
                             <th>Place</th>
-                            <th>Status</th>
                             <th>Reference</th>
-                            <th>Date</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -973,6 +749,7 @@
                             <td>
                                 <span class="ticket-number">{{ lead.ticket_number }}</span>
                             </td>
+                            <td>{{ lead.date|date:"d M Y" }}</td>
                             <td>
                                 <strong>{{ lead.ownerName }}</strong>
                                 {% if lead.email %}<br><small style="color: #666;">{{ lead.email }}</small>{% endif %}
@@ -1001,7 +778,7 @@
                                     {{ lead.individualPlace|default:"-" }}
                                 {% endif %}
                             </td>
-                            <td>
+                            <!-- <td>
                                 {% if lead.status == 'Active' %}
                                     <span class="status-active">🟢 {{ lead.status }}</span>
                                 {% elif lead.status == 'Inactive' %}
@@ -1011,9 +788,9 @@
                                 {% else %}
                                     <span>{{ lead.status }}</span>
                                 {% endif %}
-                            </td>
+                            </td> -->
                             <td>{{ lead.refFrom|default:"-" }}</td>
-                            <td>{{ lead.date|date:"d M Y" }}</td>
+                            
                             <td>
                                 <div class="action-buttons">
                                     <!-- View Button -->
@@ -1047,7 +824,8 @@
                                         data-date="{{ lead.date|date:'Y-m-d' }}"
                                         data-created="{{ lead.created_at|date:'Y-m-d H:i:s' }}"
                                         data-updated="{{ lead.updated_at|date:'Y-m-d H:i:s' }}"
-                                        data-created-by="{{ lead.created_by|default:'System' }}">
+                                        data-created-by="{{ lead.created_by|default:'System' }}"
+                                        title="View Lead Details">
                                         <i class="fas fa-eye"></i>
                                     </button>
 
@@ -1058,12 +836,18 @@
                                         <i class="fas fa-edit"></i>
                                     </button>
 
-                                    <!-- Delete Button -->
-                                    <button class="btn btn-secondary btn-small"
-                                            onclick="if(confirm('Are you sure you want to delete this lead?')) window.location.href='{% url 'app5:lead_delete' lead.id %}'"
-                                            title="Delete Lead">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
+                                    <!-- Delete Button with Form -->
+                                    <form method="POST" 
+                                          action="{% url 'app5:lead_delete' lead.id %}" 
+                                          style="display: inline;"
+                                          onsubmit="return confirm('⚠️ Are you sure you want to delete this lead?\n\nTicket: {{ lead.ticket_number }}\nOwner: {{ lead.ownerName }}\n\nThis action cannot be undone!');">
+                                        {% csrf_token %}
+                                        <button type="submit" 
+                                                class="btn btn-secondary btn-small"
+                                                title="Delete Lead">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
                                 </div>
                             </td>
                         </tr>
@@ -1134,18 +918,26 @@
                 });
             }
 
-            // Set today's date as default for end date if not set
-            if (endDateFilter && !endDateFilter.value) {
-                const today = new Date().toISOString().split('T')[0];
-                endDateFilter.value = today;
-            }
-
-            // Set default start date as 30 days ago if not set
-            if (startDateFilter && !startDateFilter.value) {
-                const thirtyDaysAgo = new Date();
-                thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-                startDateFilter.value = thirtyDaysAgo.toISOString().split('T')[0];
-            }
+            // Enhanced delete confirmation with loading state
+            const deleteForms = document.querySelectorAll('form[action*="delete"]');
+            
+            deleteForms.forEach(form => {
+                form.addEventListener('submit', function(e) {
+                    const deleteBtn = this.querySelector('button[type="submit"]');
+                    const originalText = deleteBtn.innerHTML;
+                    
+                    // Get form action result first (confirmation)
+                    const confirmed = this.onsubmit ? this.onsubmit() : true;
+                    
+                    if (confirmed !== false) {
+                        // Show loading state
+                        deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                        deleteBtn.disabled = true;
+                    } else {
+                        e.preventDefault();
+                    }
+                });
+            });
         });
 
         // Modal functionality
@@ -1217,9 +1009,6 @@
                 statusBadge = '<span class="status-badge badge-installed">🔧 Installed</span>';
             }
 
-            let customerTypeBadge = '';
-            
-
             // Determine data based on customer type
             let address = lead.customerType === 'Business' ? lead.address : lead.individualAddress;
             let place = lead.customerType === 'Business' ? lead.place : lead.individualPlace;
@@ -1248,7 +1037,6 @@
                             <h3><i class="fas fa-user-tie"></i> ${lead.ownerName || 'Unnamed Lead'}</h3>
                             <div class="lead-badges">
                                 ${statusBadge}
-                                ${customerTypeBadge}
                             </div>
                         </div>
                         <div class="lead-meta-single-line">
@@ -1446,9 +1234,6 @@
                     </div>
                 </div>
                 ` : ''}
-
-                <!-- System Information Card -->
-                
             `;
 
             modalBody.innerHTML = modalContent;

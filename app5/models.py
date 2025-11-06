@@ -578,6 +578,24 @@ class BusinessNature(models.Model):
 
     def __str__(self):
         return self.name
+    
+
+   
+# state model
+class StateMaster(models.Model):
+    name = models.CharField(max_length=100, unique=True, verbose_name="State Name")
+    description = models.TextField(blank=True, null=True, verbose_name="Description")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'state_master'
+        verbose_name = 'State Master'
+        verbose_name_plural = 'State Masters'
+        ordering = ['name']
+    
+    def __str__(self):
+        return self.name
 
 
     

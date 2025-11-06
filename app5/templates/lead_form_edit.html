@@ -432,8 +432,7 @@
             }
         }
     </style>
-</head>
-<body>
+
     <div class="container">
         <div class="form-container">
             <div class="form-header">
@@ -487,12 +486,12 @@
                                 </div>
                                 <div class="header-controls">
                                     <div class="toggle-container">
-                                        <span class="toggle-label">Individual</span>
+                                        <span class="toggle-label">New</span>
                                         <label class="toggle-switch">
                                             <input type="checkbox" id="customerTypeToggle" {% if lead.customerType == 'Business' %}checked{% endif %}>
                                             <span class="toggle-slider"></span>
                                         </label>
-                                        <span class="toggle-label">Business</span>
+                                        <span class="toggle-label">Exist</span>
                                     </div>
                                 </div>
                             </div>
@@ -515,24 +514,23 @@
                                 </div>
                                 
                                 <div class="compact-form-group">
-                                    <label for="District">District</label>
-                                    <select id="District" name="District">
+                                    <label for="District">District *</label>
+                                    <select id="District" name="District" required>
                                         <option value="">Select District</option>
-                                        <option value="Wayanad" {% if lead.District == 'Wayanad' %}selected{% endif %}>Wayanad</option>
-                                        <option value="Kanoor" {% if lead.District == 'Kanoor' %}selected{% endif %}>Kanoor</option>
-                                        <option value="Calicut" {% if lead.District == 'Calicut' %}selected{% endif %}>Calicut</option>
-                                        <option value="Iduki" {% if lead.District == 'Iduki' %}selected{% endif %}>Iduki</option>
+                                        {% for district in districts %}
+                                        <option value="{{ district.name }}" {% if lead.District == district.name %}selected{% endif %}>{{ district.name }}</option>
+                                        {% endfor %}
                                     </select>
                                 </div>
                                 
                                 <div class="compact-form-group">
-                                    <label for="State">State</label>
-                                    <select id="State" name="State">
+                                    <label for="State">State *</label>
+                                    <select id="State" name="State" required>
                                         <option value="">Select State</option>
-                                        <option value="Kerala" {% if lead.State == 'Kerala' %}selected{% endif %}>Kerala</option>
-                                        <option value="Tamilnadu" {% if lead.State == 'Tamilnadu' %}selected{% endif %}>Tamilnadu</option>
-                                        <option value="Karnadaka" {% if lead.State == 'Karnadaka' %}selected{% endif %}>Karnadaka</option>
-                                        <option value="UP" {% if lead.State == 'UP' %}selected{% endif %}>UP</option>
+                                        {% for state in states %}
+                                        <option value="{{ district.name }}" {% if lead.District == district.name %}selected{% endif %}>
+
+                                        {% endfor %}
                                     </select>
                                 </div>
                                 
@@ -568,10 +566,9 @@
                                     <label for="individualDistrict">District</label>
                                     <select id="individualDistrict" name="individualDistrict">
                                         <option value="">Select District</option>
-                                        <option value="Wayanad" {% if lead.individualDistrict == 'Wayanad' %}selected{% endif %}>Wayanad</option>
-                                        <option value="Kanoor" {% if lead.individualDistrict == 'Kanoor' %}selected{% endif %}>Kanoor</option>
-                                        <option value="Calicut" {% if lead.individualDistrict == 'Calicut' %}selected{% endif %}>Calicut</option>
-                                        <option value="Iduki" {% if lead.individualDistrict == 'Iduki' %}selected{% endif %}>Iduki</option>
+                                        {% for district in districts %}
+                                        <option value="{{ district.name }}" {% if lead.individualDistrict == district.name %}selected{% endif %}>{{ district.name }}</option>
+                                        {% endfor %}
                                     </select>
                                 </div>
                                 
@@ -579,10 +576,9 @@
                                     <label for="individualState">State</label>
                                     <select id="individualState" name="individualState">
                                         <option value="">Select State</option>
-                                        <option value="Kerala" {% if lead.individualState == 'Kerala' %}selected{% endif %}>Kerala</option>
-                                        <option value="Tamilnadu" {% if lead.individualState == 'Tamilnadu' %}selected{% endif %}>Tamilnadu</option>
-                                        <option value="Karnadaka" {% if lead.individualState == 'Karnadaka' %}selected{% endif %}>Karnadaka</option>
-                                        <option value="UP" {% if lead.individualState == 'UP' %}selected{% endif %}>UP</option>
+                                        {% for state in states %}
+                                        <option value="{{ state.name }}" {% if lead.individualState == state.name %}selected{% endif %}>{{ state.name }}</option>
+                                        {% endfor %}
                                     </select>
                                 </div>
                                 
@@ -632,24 +628,24 @@
                             <div class="compact-form-group">
                                 <label for="business">Business Nature</label>
                                 <select id="business" name="business">
-                                    <option value="">Select Business</option>
-                                    <option value="RETAIL" {% if lead.business == 'RETAIL' %}selected{% endif %}>RETAIL</option>
-                                    <option value="WHOLESALE" {% if lead.business == 'WHOLESALE' %}selected{% endif %}>WHOLESALE</option>
-                                    <option value="MANUFACTURING" {% if lead.business == 'MANUFACTURING' %}selected{% endif %}>MANUFACTURING</option>
-                                    <option value="SERVICES" {% if lead.business == 'SERVICES' %}selected{% endif %}>SERVICES</option>
-                                    <option value="OTHER" {% if lead.business == 'OTHER' %}selected{% endif %}>OTHER</option>
+                                    <option value="">Select Business Nature</option>
+                                    {% for nature in business_natures %}
+                                    <option value="{{ nature.name }}" {% if lead.business == nature.name %}selected{% endif %}>{{ nature.name }}</option>
+                                    {% endfor %}
                                 </select>
                             </div>
                             
                             <div class="compact-form-group">
                                 <label for="marketedBy">Marketed By</label>
-                                <select id="marketedBy" name="marketedBy">
-                                    <option value="">Select Marketer</option>
-                                    <option value="DIRECT" {% if lead.marketedBy == 'DIRECT' %}selected{% endif %}>DIRECT</option>
-                                    <option value="AGENT" {% if lead.marketedBy == 'AGENT' %}selected{% endif %}>AGENT</option>
-                                    <option value="REFERRAL" {% if lead.marketedBy == 'REFERRAL' %}selected{% endif %}>REFERRAL</option>
-                                    <option value="ONLINE" {% if lead.marketedBy == 'ONLINE' %}selected{% endif %}>ONLINE</option>
-                                </select>
+                             <select name="marketedBy" class="form-select" required>
+    <option value="">-- Select Marketed By --</option>
+    {% for user in active_users %}
+        <option value="{{ user.name }}" {% if lead.marketedBy == user.name %}selected{% endif %}>
+            {{ user.name }}
+        </option>
+    {% endfor %}
+</select>
+
                             </div>
                             
                             <div class="compact-form-group">
@@ -684,9 +680,9 @@
                         </button>
                         <button type="button" class="reset-btn" onclick="window.history.back()">
                             <i class="fas fa-arrow-left"></i>
-                            &nbsp;back
+                            &nbsp; Back
                         </button>
-                        
+                       
                     </div>
                 </form>
             </div>
@@ -747,7 +743,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         if (isBusiness) {
-            const requiredBusiness = ['name', 'place', 'pinCode'];
+            const requiredBusiness = ['name', 'place', 'pinCode', 'District', 'State'];
             requiredBusiness.forEach(fieldId => {
                 const field = document.getElementById(fieldId);
                 if (!field.value.trim()) {
