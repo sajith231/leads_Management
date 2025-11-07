@@ -4,7 +4,7 @@
 <style>
 /* === Page Container === */
 .assign-container {
-  max-width: 600px;
+  max-width: 800px;
   margin: 40px auto;
   background: #fff;
   padding: 30px 40px;
@@ -48,6 +48,61 @@
   box-shadow: 0 0 4px rgba(0, 123, 255, 0.3);
 }
 
+/* === Unassigned Leads Section === */
+.unassigned-leads-section {
+  margin: 25px 0;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.unassigned-leads-section h3 {
+  color: #495057;
+  margin-bottom: 15px;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lead-details {
+  margin-top: 15px;
+  padding: 15px;
+  background: white;
+  border-radius: 6px;
+  border: 1px solid #dee2e6;
+  display: none;
+}
+
+.lead-details.active {
+  display: block;
+}
+
+.lead-detail-row {
+  display: flex;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #f1f1f1;
+}
+
+.lead-detail-label {
+  font-weight: 600;
+  color: #495057;
+  min-width: 120px;
+}
+
+.lead-detail-value {
+  color: #6c757d;
+}
+
+.no-unassigned {
+  padding: 20px;
+  text-align: center;
+  color: #6c757d;
+  font-style: italic;
+}
+
 /* === Button Section === */
 .form-actions {
   display: flex;
@@ -62,15 +117,19 @@
   cursor: pointer;
   font-weight: 600;
   transition: 0.3s;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .btn-cancel {
-  background: #ccc;
-  color: #333;
+  background: #6c757d;
+  color: #fff;
 }
 
 .btn-cancel:hover {
-  background: #b3b3b3;
+  background: #5a6268;
 }
 
 .btn-submit {
@@ -82,41 +141,157 @@
   background: #218838;
 }
 
+.btn-submit:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+}
+
 /* === Responsive === */
 @media (max-width: 600px) {
   .assign-container {
     padding: 20px;
   }
+  
+  .form-actions {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .btn {
+    width: 100%;
+    justify-content: center;
+  }
 }
 </style>
 
 <div class="assign-container">
-  <h2>Assign Lead</h2>
+  <h2>📋 Assign Lead</h2>
 
-  <form method="POST" action="{% url 'assign_lead' %}">
+  <form method="POST" action="{% url 'app5:assign_lead' %}">
     {% csrf_token %}
 
     <div class="form-group">
-      <label for="ticket_no">Ticket No</label>
-      <input type="text" id="ticket_no" name="ticket_no" value="{{ lead.ticket_no }}" readonly>
-    </div>
-
-    <div class="form-group">
-      <label for="assign_to">Assign To</label>
-      <select id="assign_to" name="assign_to" required>
-        <option value="">-- Select User --</option>
-        {% for user in users %}
-        <option value="{{ user.id }}" {% if lead.assigned_to and lead.assigned_to.id == user.id %}selected{% endif %}>
-          {{ user.get_full_name|default:user.username }}
+      <label for="ticket_no">🎫 Select Ticket</label>
+      <select id="ticket_no" name="ticket_no" required onchange="updateLeadDetails(this.value)">
+        <option value="">-- Select a Ticket --</option>
+        {% for unassigned_lead in unassigned_leads %}
+        <option value="{{ unassigned_lead.ticket_number }}" 
+                data-owner="{{ unassigned_lead.ownerName }}"
+                data-created="{{ unassigned_lead.created_at|date:'M d, Y' }}"
+                {% if lead.ticket_number == unassigned_lead.ticket_number %}selected{% endif %}>
+          {{ unassigned_lead.ticket_number }} - {{ unassigned_lead.ownerName }}
         </option>
         {% endfor %}
       </select>
     </div>
+
+    <!-- Lead Details Section -->
+    <!-- <div class="unassigned-leads-section">
+      <h3>
+        <i class="fas fa-info-circle"></i>
+        Lead Details
+      </h3>
+      
+      {% if unassigned_leads %}
+      <div class="lead-details" id="leadDetails">
+        <div class="lead-detail-row">
+          <span class="lead-detail-label">Ticket No:</span>
+          <span class="lead-detail-value" id="detailTicket">-</span>
+        </div>
+        <div class="lead-detail-row">
+          <span class="lead-detail-label">Owner:</span>
+          <span class="lead-detail-value" id="detailOwner">-</span>
+        </div>
+        <div class="lead-detail-row">
+          <span class="lead-detail-label">Created:</span>
+          <span class="lead-detail-value" id="detailCreated">-</span>
+        </div>
+      </div>
+      {% else %}
+      <div class="no-unassigned">
+        <i class="fas fa-inbox"></i><br>
+        No unassigned leads available
+      </div>
+      {% endif %}
+    </div> -->
+
+    <div class="form-group">
+      <label for="assign_to">👤 Assign To</label>
+      <select id="assign_to" name="assign_to" required>
+        <option value="">-- Select User --</option>
+        {% for user in users %}
+        <option value="{{ user.id }}" {% if lead.assigned_to and lead.assigned_to.id == user.id %}selected{% endif %}>
+          {{ user.name }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+
     <div class="form-actions">
-      <a href="{% url 'lead_list' %}" class="btn btn-cancel">Cancel</a>
-      <button type="submit" class="btn btn-submit">Assign</button>
+      <a href="{% url 'app5:lead_assign_list' %}" class="btn btn-cancel">
+        <i class="fas fa-arrow-left"></i> Back to List
+      </a>
+      <button type="submit" class="btn btn-submit" id="submitBtn" {% if not unassigned_leads %}disabled{% endif %}>
+        <i class="fas fa-user-check"></i> Assign Lead
+      </button>
     </div>
   </form>
 </div>
+
+<script>
+// Function to update lead details when a ticket is selected
+function updateLeadDetails(ticketNumber) {
+  const ticketSelect = document.getElementById('ticket_no');
+  const selectedOption = ticketSelect.options[ticketSelect.selectedIndex];
+  const leadDetails = document.getElementById('leadDetails');
+  
+  if (ticketNumber && selectedOption) {
+    // Update details
+    document.getElementById('detailTicket').textContent = ticketNumber;
+    document.getElementById('detailOwner').textContent = selectedOption.getAttribute('data-owner');
+    document.getElementById('detailCreated').textContent = selectedOption.getAttribute('data-created');
+    
+    // Show details section
+    leadDetails.classList.add('active');
+    
+    // Enable submit button
+    document.getElementById('submitBtn').disabled = false;
+  } else {
+    // Hide details section
+    leadDetails.classList.remove('active');
+    
+    // Disable submit button if no ticket selected
+    document.getElementById('submitBtn').disabled = true;
+  }
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+  const ticketSelect = document.getElementById('ticket_no');
+  
+  // If a ticket is pre-selected, show its details
+  if (ticketSelect.value) {
+    updateLeadDetails(ticketSelect.value);
+  }
+});
+
+// Form validation
+document.querySelector('form').addEventListener('submit', function(e) {
+  const ticketNo = document.getElementById('ticket_no').value;
+  const assignTo = document.getElementById('assign_to').value;
+  
+  if (!ticketNo) {
+    e.preventDefault();
+    alert('Please select a lead from the dropdown.');
+    return false;
+  }
+  
+  if (!assignTo) {
+    e.preventDefault();
+    alert('Please select a user to assign the lead to.');
+    return false;
+  }
+});
+</script>
 
 {% endblock %}

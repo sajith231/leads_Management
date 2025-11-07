@@ -489,21 +489,39 @@ import uuid
 from django.db import models
 from django.utils import timezone
 
+# app5/models.py
+from django.db import models
+from django.utils import timezone
+from django.conf import settings
+
+from django.db import models, IntegrityError, transaction
+from django.conf import settings
+from django.utils import timezone
+import uuid
+
 class Lead(models.Model):
-    ticket_number = models.CharField(max_length=20, unique=True, blank=True)
+    ASSIGNMENT_CHOICES = [
+        ('self_assigned', 'Self Assigned'),
+        ('unassigned', 'Unassigned'),
+    ]
+
+    assignment_type = models.CharField(
+        max_length=20, choices=ASSIGNMENT_CHOICES, default='unassigned'
+    )
+    ticket_number = models.CharField(max_length=30, unique=True, blank=True)
     ownerName = models.CharField(max_length=100)
     phoneNo = models.CharField(max_length=15)
     email = models.EmailField(blank=True, null=True)
     customerType = models.CharField(max_length=20, default='Business')
-    
+
     # Business fields
-    name = models.CharField(max_length=100, blank=True, null=True)  # Firm name
+    name = models.CharField(max_length=100, blank=True, null=True)
     address = models.TextField(blank=True, null=True)
     place = models.CharField(max_length=100, blank=True, null=True)
     District = models.CharField(max_length=100, blank=True, null=True)
     State = models.CharField(max_length=100, blank=True, null=True)
     pinCode = models.CharField(max_length=10, blank=True, null=True)
-    
+
     # Individual fields
     firstName = models.CharField(max_length=100, blank=True, null=True)
     lastName = models.CharField(max_length=100, blank=True, null=True)
@@ -512,7 +530,7 @@ class Lead(models.Model):
     individualDistrict = models.CharField(max_length=100, blank=True, null=True)
     individualState = models.CharField(max_length=100, blank=True, null=True)
     individualPinCode = models.CharField(max_length=10, blank=True, null=True)
-    
+
     # Business information
     status = models.CharField(max_length=20, default='Active')
     refFrom = models.CharField(max_length=100, blank=True, null=True)
@@ -522,24 +540,64 @@ class Lead(models.Model):
     requirement = models.CharField(max_length=100, blank=True, null=True)
     details = models.TextField(blank=True, null=True)
     date = models.DateField(default=timezone.now)
-    
+
+    # Assignment fields
+    assigned_to = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='assigned_leads'
+    )
+    assigned_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='assigned_by_leads'
+    )
+    assigned_date = models.DateField(null=True, blank=True)
+    assigned_time = models.TimeField(null=True, blank=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def save(self, *args, **kwargs):
+        """
+        Generate ticket if missing: TKT-YYYYMMDD-XXXX
+        Use retry loop to avoid unique constraint errors under concurrency.
+        Fall back to UUID suffix if retries exhausted.
+        """
         if not self.ticket_number:
-            # Generate ticket number: TKT-YYYYMMDD-XXXX
             date_part = timezone.now().strftime('%Y%m%d')
-            
-            # Get the count of leads created today for sequential number
-            today_leads = Lead.objects.filter(
-                created_at__date=timezone.now().date()
-            ).count()
-            
-            sequential = str(today_leads + 1).zfill(4)
-            self.ticket_number = f"TKT-{date_part}-{sequential}"
-        
-        super().save(*args, **kwargs)
+            max_attempts = 5
+
+            for attempt in range(max_attempts):
+                # compute sequential part based on how many leads exist today
+                today_count = Lead.objects.filter(created_at__date=timezone.now().date()).count()
+                seq = str(today_count + 1).zfill(4)
+                candidate = f"TKT-{date_part}-{seq}"
+                self.ticket_number = candidate
+
+                try:
+                    # Try to save within a transaction; IntegrityError means collision
+                    with transaction.atomic():
+                        super().save(*args, **kwargs)
+                    return  # saved successfully
+                except IntegrityError:
+                    # collision — try again (recompute count)
+                    if attempt == max_attempts - 1:
+                        # last attempt failed — fall back to UUID-style ticket and save once
+                        fallback_suffix = uuid.uuid4().hex[:6].upper()
+                        self.ticket_number = f"TKT-{date_part}-{fallback_suffix}"
+                        with transaction.atomic():
+                            super().save(*args, **kwargs)
+                        return
+                    # otherwise loop and retry
+
+        else:
+            # ticket already present (manual or editing) — normal save
+            super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.ticket_number} - {self.ownerName}"
@@ -547,16 +605,9 @@ class Lead(models.Model):
     @property
     def display_name(self):
         if self.customerType == 'Business':
-            return self.name or '-'
-        else:
-            return f"{self.firstName or ''} {self.lastName or ''}".strip() or '-'
+            return self.name or self.ownerName
+        return f"{self.firstName or ''} {self.lastName or ''}".strip() or self.ownerName
 
-    @property
-    def display_place(self):
-        if self.customerType == 'Business':
-            return self.place or '-'
-        else:
-            return self.individualPlace or '-'
 
 from django.db import models
 

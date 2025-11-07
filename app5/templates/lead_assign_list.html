@@ -20,6 +20,38 @@ h2 {
     margin-bottom: 25px;
 }
 
+/* === Header Section with Button === */
+.header-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+.header-section h2 {
+    margin-bottom: 0;
+}
+
+.btn-new-assign {
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: 0.3s;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-new-assign:hover {
+    background: #0056b3;
+    text-decoration: none;
+    color: white;
+}
+
 .table-container {
     overflow-x: auto;
 }
@@ -60,10 +92,14 @@ td {
     cursor: pointer;
     transition: 0.3s;
     font-size: 14px;
+    text-decoration: none;
+    display: inline-block;
 }
 
 .btn-assign:hover {
     background: #218838;
+    text-decoration: none;
+    color: white;
 }
 
 .status-pill {
@@ -84,10 +120,17 @@ td {
 .status-closed {
     background: #6c757d;
 }
+
+.text-muted {
+    color: #6c757d !important;
+}
 </style>
 
 <div class="container">
-    <h2>Lead Assignment List</h2>
+    <div class="header-section">
+        <h2>Lead Assignment List</h2>
+        <a href="{% url 'app5:assign_lead' %}" class="btn-new-assign">+ New Assignment</a>
+    </div>
 
     <div class="table-container">
         <table>
@@ -112,7 +155,7 @@ td {
                     <td>{{ lead.customer_name }}</td>
                     <td>
                         {% if lead.assigned_to %}
-                            {{ lead.assigned_to.get_full_name|default:lead.assigned_to.username }}
+                            {{ lead.assigned_to.get_full_name|default:lead.assigned_to.name }}
                         {% else %}
                             <span class="text-muted">Not Assigned</span>
                         {% endif %}
@@ -130,7 +173,7 @@ td {
                         {% endif %}
                     </td>
                     <td>
-                        <a href="{% url 'assign_lead' lead.id %}" class="btn-assign">Assign</a>
+                        <a href="{% url 'app5:edit_lead' lead.id %}" class="btn-assign">Edit</a>
                     </td>
                 </tr>
                 {% empty %}

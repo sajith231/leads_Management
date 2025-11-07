@@ -90,51 +90,49 @@
             margin: 0 -5px;
         }
 
-
         /* Status Select Styling */
-.status-select {
-    width: 100% !important;      /* full width */
-    padding: 10px 12px;
-    font-size: 14px;
-    font-weight: 600;
-    border: 2px solid #2575fc;
-    border-radius: 8px;
-    background: #f9fcff;
-    cursor: pointer;
-    transition: 0.2s ease-in-out;
-}
+        .status-select {
+            width: 100% !important;      /* full width */
+            padding: 10px 12px;
+            font-size: 14px;
+            font-weight: 600;
+            border: 2px solid #2575fc;
+            border-radius: 8px;
+            background: #f9fcff;
+            cursor: pointer;
+            transition: 0.2s ease-in-out;
+        }
 
-.status-select:focus {
-    border-color: #0a57d1;
-    background: white;
-    box-shadow: 0 0 6px rgba(0, 102, 255, 0.4);
-    outline: none;
-}
+        .status-select:focus {
+            border-color: #0a57d1;
+            background: white;
+            box-shadow: 0 0 6px rgba(0, 102, 255, 0.4);
+            outline: none;
+        }
 
-.status-select:hover {
-    background: #eef6ff;
-}
+        .status-select:hover {
+            background: #eef6ff;
+        }
 
-/* Status Legend Styling */
-.status-legend {
-    font-size: 13px;
-    font-weight: 600;
-    margin-bottom: 6px;
-    opacity: 0.9;
-}
+        /* Status Legend Styling */
+        .status-legend {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            opacity: 0.9;
+        }
 
-.st-active {
-    color: #0a8f2f;
-}
+        .st-active {
+            color: #0a8f2f;
+        }
 
-.st-inactive {
-    color: #c21d1d;
-}
+        .st-inactive {
+            color: #c21d1d;
+        }
 
-.st-installed {
-    color: #0d66d0;
-}
-
+        .st-installed {
+            color: #0d66d0;
+        }
         
         .form-group {
             flex: 1;
@@ -476,6 +474,106 @@
         .business-fields {
             display: block;
         }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            animation: modalSlideIn 0.3s ease-out;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-content h3 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .modal-content p {
+            color: #666;
+            margin-bottom: 25px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 25px;
+        }
+
+        .modal-btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            flex: 1;
+        }
+
+        .self-assign-btn {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+        }
+
+        .self-assign-btn:hover {
+            background: linear-gradient(135deg, #45a049, #4CAF50);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .unassign-btn {
+            background: linear-gradient(135deg, #6c757d, #5a6268);
+            color: white;
+        }
+
+        .unassign-btn:hover {
+            background: linear-gradient(135deg, #5a6268, #6c757d);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .cancel-btn {
+            padding: 10px 20px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background: #f8f9fa;
+            color: #666;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .cancel-btn:hover {
+            background: #e9ecef;
+            border-color: #adb5bd;
+        }
         
         @media (max-width: 1200px) {
             .single-line-sections {
@@ -537,6 +635,10 @@
             
             .nav-item {
                 flex: 1 0 50%;
+            }
+
+            .modal-buttons {
+                flex-direction: column;
             }
         }
         
@@ -684,24 +786,24 @@
                                 </div>
                                 
                                 <div class="compact-form-group">
-    <label for="District">District</label>
-    <select id="District" name="District">
-        <option value="">Select District</option>
-        {% for district in districts %}
-        <option value="{{ district.name }}">{{ district.name }}</option>
-        {% endfor %}
-    </select>
-</div>
+                                    <label for="District">District</label>
+                                    <select id="District" name="District">
+                                        <option value="">Select District</option>
+                                        {% for district in districts %}
+                                        <option value="{{ district.name }}">{{ district.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
                                 
-                                                             <div class="compact-form-group">
-    <label for="State">State</label>
-    <select id="State" name="State">
-        <option value="">Select State</option>
-        {% for state in states %}
-        <option value="{{ state.name }}">{{ state.name }}</option>
-        {% endfor %}
-    </select>
-</div>
+                                <div class="compact-form-group">
+                                    <label for="State">State</label>
+                                    <select id="State" name="State">
+                                        <option value="">Select State</option>
+                                        {% for state in states %}
+                                        <option value="{{ state.name }}">{{ state.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
                                 
                                 <div class="compact-form-group">
                                     <label for="pinCode">Pin Code *</label>
@@ -732,23 +834,24 @@
                                 </div>
                                 
                                 <div class="compact-form-group">
-    <label for="District">District</label>
-    <select id="District" name="District">
-        <option value="">Select District</option>
-        {% for district in districts %}
-        <option value="{{ district.name }}">{{ district.name }}</option>
-        {% endfor %}
-    </select>
-</div>
+                                    <label for="individualDistrict">District</label>
+                                    <select id="individualDistrict" name="individualDistrict">
+                                        <option value="">Select District</option>
+                                        {% for district in districts %}
+                                        <option value="{{ district.name }}">{{ district.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                
                                 <div class="compact-form-group">
-    <label for="State">State</label>
-    <select id="State" name="State">
-        <option value="">Select State</option>
-        {% for state in states %}
-        <option value="{{ state.name }}">{{ state.name }}</option>
-        {% endfor %}
-    </select>
-</div>
+                                    <label for="individualState">State</label>
+                                    <select id="individualState" name="individualState">
+                                        <option value="">Select State</option>
+                                        {% for state in states %}
+                                        <option value="{{ state.name }}">{{ state.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
                                 
                                 <div class="compact-form-group">
                                     <label for="individualPinCode">Pin Code *</label>
@@ -794,23 +897,23 @@
                             </div>
                             
                             <div class="compact-form-group">
-    <label for="business">Business Nature</label>
-    <select id="business" name="business">
-        <option value="">Select Business Nature</option>
-        {% for nature in business_natures %}
-        <option value="{{ nature.name }}">{{ nature.name }}</option>
-        {% endfor %}
-    </select>
-</div>
+                                <label for="business">Business Nature</label>
+                                <select id="business" name="business">
+                                    <option value="">Select Business Nature</option>
+                                    {% for nature in business_natures %}
+                                    <option value="{{ nature.name }}">{{ nature.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
                             
                             <div class="compact-form-group">
                                 <label for="marketedBy">Marketed By</label>
                                 <select name="marketedBy" class="form-select" required>
-    <option value="">-- Select Marketed By --</option>
-    {% for user in active_users %}
-        <option value="{{ user.name }}">{{ user.name }}</option>
-    {% endfor %}
-</select>
+                                    <option value="">-- Select Marketed By --</option>
+                                    {% for user in active_users %}
+                                        <option value="{{ user.name }}">{{ user.name }}</option>
+                                    {% endfor %}
+                                </select>
                             </div>
                             
                             <div class="compact-form-group">
@@ -822,11 +925,9 @@
                                 <label for="requirement">Branch</label>
                                 <select id="requirement" name="requirement">
                                     <option value="">Select Branch</option>
-                                    <option value="SOFTWARE">SOFTWARE</option>
-                                    <option value="HARDWARE">HARDWARE</option>
-                                    <option value="CONSULTING">CONSULTING</option>
-                                    <option value="SUPPORT">SUPPORT</option>
-                                    <option value="OTHER">OTHER</option>
+                                    {% for department in departments %}
+                                    <option value="{{ department.id }}">{{ department.name }}</option>
+                                    {% endfor %}
                                 </select>
                             </div>
                             
@@ -836,6 +937,9 @@
                             </div>
                         </div>
                     </div>
+                    
+                    <!-- Hidden field to store assignment type -->
+                    <input type="hidden" id="assignmentType" name="assignmentType" value="">
                     
                     <!-- Form Actions -->
                     <div class="btn-group" id="form-actions">
@@ -853,146 +957,224 @@
         </div>
     </div>
 
+    <!-- Self-Assigned Modal -->
+    <div id="assignmentModal" class="modal">
+        <div class="modal-content">
+            <h3>Select Assignment Type</h3>
+            <p>How would you like to handle this lead?</p>
+            
+            <div class="modal-buttons">
+                <button type="button" id="selfAssignedBtn" class="modal-btn self-assign-btn">
+                    <i class="fas fa-user-check"></i> Self Assigned
+                </button>
+                <button type="button" id="unassignedBtn" class="modal-btn unassign-btn">
+                    <i class="fas fa-users"></i> Unassigned
+                </button>
+            </div>
+            
+            <button type="button" id="cancelModalBtn" class="cancel-btn">
+                Cancel
+            </button>
+        </div>
+    </div>
+
     <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Set today's date as default
-    const today = new Date().toISOString().split('T')[0];
-    document.getElementById('date').value = today;
-    
-    // Toggle functionality for Individual/Business
-    const customerTypeToggle = document.getElementById('customerTypeToggle');
-    const businessFields = document.querySelector('.business-fields');
-    const individualFields = document.querySelector('.individual-fields');
-    
-    // Initialize toggle state
-    function initializeToggle() {
-        if (customerTypeToggle.checked) {
-            // Business mode
-            businessFields.style.display = 'block';
-            individualFields.style.display = 'none';
-            
-            // Set required attributes for business fields
-            document.querySelectorAll('.business-fields [required]').forEach(field => {
-                field.required = true;
-            });
-            document.querySelectorAll('.individual-fields [required]').forEach(field => {
-                field.required = false;
-            });
-        } else {
-            // Individual mode
-            businessFields.style.display = 'none';
-            individualFields.style.display = 'block';
-            
-            // Set required attributes for individual fields
-            document.querySelectorAll('.business-fields [required]').forEach(field => {
-                field.required = false;
-            });
-            document.querySelectorAll('.individual-fields [required]').forEach(field => {
-                field.required = true;
-            });
-        }
-    }
-    
-    // Initialize on page load
-    initializeToggle();
-    
-    // Handle toggle change
-    customerTypeToggle.addEventListener('change', function() {
-        initializeToggle();
-    });
-    
-    // Form validation function
-    function validateForm() {
-        let isValid = true;
-        const isBusiness = customerTypeToggle.checked;
+    document.addEventListener('DOMContentLoaded', function() {
+        // Set today's date as default
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('date').value = today;
         
-        // Clear previous error styles
-        document.querySelectorAll('input, select').forEach(field => {
-            field.style.borderColor = '#ddd';
+        // Toggle functionality for Individual/Business
+        const customerTypeToggle = document.getElementById('customerTypeToggle');
+        const businessFields = document.querySelector('.business-fields');
+        const individualFields = document.querySelector('.individual-fields');
+        
+        // Modal elements
+        const assignmentModal = document.getElementById('assignmentModal');
+        const selfAssignedBtn = document.getElementById('selfAssignedBtn');
+        const unassignedBtn = document.getElementById('unassignedBtn');
+        const cancelModalBtn = document.getElementById('cancelModalBtn');
+        const assignmentTypeField = document.getElementById('assignmentType');
+        
+        // Initialize toggle state
+        function initializeToggle() {
+            if (customerTypeToggle.checked) {
+                // Business mode
+                businessFields.style.display = 'block';
+                individualFields.style.display = 'none';
+                
+                // Set required attributes for business fields
+                document.querySelectorAll('.business-fields [required]').forEach(field => {
+                    field.required = true;
+                });
+                document.querySelectorAll('.individual-fields [required]').forEach(field => {
+                    field.required = false;
+                });
+            } else {
+                // Individual mode
+                businessFields.style.display = 'none';
+                individualFields.style.display = 'block';
+                
+                // Set required attributes for individual fields
+                document.querySelectorAll('.business-fields [required]').forEach(field => {
+                    field.required = false;
+                });
+                document.querySelectorAll('.individual-fields [required]').forEach(field => {
+                    field.required = true;
+                });
+            }
+        }
+        
+        // Initialize on page load
+        initializeToggle();
+        
+        // Handle toggle change
+        customerTypeToggle.addEventListener('change', function() {
+            initializeToggle();
         });
         
-        // Basic validation - Communication Details
-        const requiredBasic = ['ownerName', 'phoneNo'];
-        requiredBasic.forEach(fieldId => {
-            const field = document.getElementById(fieldId);
-            if (!field.value.trim()) {
-                isValid = false;
-                field.style.borderColor = 'red';
-                field.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Form validation function
+        function validateForm() {
+            let isValid = true;
+            const isBusiness = customerTypeToggle.checked;
+            
+            // Clear previous error styles
+            document.querySelectorAll('input, select').forEach(field => {
+                field.style.borderColor = '#ddd';
+            });
+            
+            // Basic validation - Communication Details
+            const requiredBasic = ['ownerName', 'phoneNo'];
+            requiredBasic.forEach(fieldId => {
+                const field = document.getElementById(fieldId);
+                if (!field.value.trim()) {
+                    isValid = false;
+                    field.style.borderColor = 'red';
+                    field.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            });
+            
+            // Customer type specific validation
+            if (isBusiness) {
+                const requiredBusiness = ['name', 'place', 'pinCode'];
+                requiredBusiness.forEach(fieldId => {
+                    const field = document.getElementById(fieldId);
+                    if (!field.value.trim()) {
+                        isValid = false;
+                        field.style.borderColor = 'red';
+                        if (isValid === false) {
+                            field.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                    }
+                });
+            } else {
+                const requiredIndividual = ['firstName', 'lastName', 'individualPlace', 'individualPinCode'];
+                requiredIndividual.forEach(fieldId => {
+                    const field = document.getElementById(fieldId);
+                    if (!field.value.trim()) {
+                        isValid = false;
+                        field.style.borderColor = 'red';
+                        if (isValid === false) {
+                            field.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                    }
+                });
+            }
+            
+            return isValid;
+        }
+        
+        // Show assignment modal
+        function showAssignmentModal() {
+            assignmentModal.style.display = 'flex';
+        }
+        
+        // Hide assignment modal
+        function hideAssignmentModal() {
+            assignmentModal.style.display = 'none';
+        }
+        
+        // Handle self-assigned option
+        selfAssignedBtn.addEventListener('click', function() {
+            assignmentTypeField.value = 'self_assigned';
+            hideAssignmentModal();
+            submitForm();
+        });
+        
+        // Handle unassigned option
+        unassignedBtn.addEventListener('click', function() {
+            assignmentTypeField.value = 'unassigned';
+            hideAssignmentModal();
+            submitForm();
+        });
+        
+        // Handle cancel button
+        cancelModalBtn.addEventListener('click', function() {
+            hideAssignmentModal();
+        });
+        
+        // Close modal when clicking outside
+        assignmentModal.addEventListener('click', function(e) {
+            if (e.target === assignmentModal) {
+                hideAssignmentModal();
             }
         });
         
-        // Customer type specific validation
-        if (isBusiness) {
-            const requiredBusiness = ['name', 'place', 'pinCode'];
-            requiredBusiness.forEach(fieldId => {
-                const field = document.getElementById(fieldId);
-                if (!field.value.trim()) {
-                    isValid = false;
-                    field.style.borderColor = 'red';
-                    if (isValid === false) {
-                        field.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }
-                }
-            });
-        } else {
-            const requiredIndividual = ['firstName', 'lastName', 'individualPlace', 'individualPinCode'];
-            requiredIndividual.forEach(fieldId => {
-                const field = document.getElementById(fieldId);
-                if (!field.value.trim()) {
-                    isValid = false;
-                    field.style.borderColor = 'red';
-                    if (isValid === false) {
-                        field.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }
-                }
-            });
-        }
-        
-        return isValid;
-    }
-    
-    // Form submission
-    const form = document.getElementById('customerForm');
-    form.addEventListener('submit', function(e) {
-        if (!validateForm()) {
-            e.preventDefault();
-            alert('Please fill in all required fields marked in red.');
-        } else {
-            // Form is valid, show success message
-            alert('Form submitted successfully!');
-            console.log('Form validation passed, submitting...');
-            
-            // You can optionally add code here to show a loading spinner
-            // or disable the submit button to prevent double submission
+        // Actual form submission
+        function submitForm() {
             const submitBtn = document.querySelector('.submit-btn');
+            const originalText = submitBtn.innerHTML;
+            
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> &nbsp; Submitting...';
             submitBtn.disabled = true;
+            
+            // Submit the form
+            document.getElementById('customerForm').submit();
+            
+            // Re-enable button after 5 seconds in case submission fails
+            setTimeout(() => {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }, 5000);
         }
-    });
-    
-    // Real-time validation
-    document.querySelectorAll('input[required], select[required]').forEach(field => {
-        field.addEventListener('blur', function() {
-            if (!this.value.trim()) {
-                this.style.borderColor = 'red';
-            } else {
-                this.style.borderColor = '#ddd';
+        
+        // Form submission handler - FIXED VERSION
+        const form = document.getElementById('customerForm');
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            if (!validateForm()) {
+                alert('Please fill in all required fields marked in red.');
+                return;
             }
+            
+            // Show assignment modal instead of submitting directly
+            showAssignmentModal();
+        });
+        
+        // Real-time validation
+        document.querySelectorAll('input[required], select[required]').forEach(field => {
+            field.addEventListener('blur', function() {
+                if (!this.value.trim()) {
+                    this.style.borderColor = 'red';
+                } else {
+                    this.style.borderColor = '#ddd';
+                }
+            });
+        });
+        
+        // Navigation menu functionality
+        const navLinks = document.querySelectorAll('.nav-link');
+        navLinks.forEach(link => {
+            link.addEventListener('click', function(e) {
+                if (this.getAttribute('href').startsWith('#')) {
+                    e.preventDefault();
+                    navLinks.forEach(l => l.classList.remove('active'));
+                    this.classList.add('active');
+                }
+                // Allow external links (like Requirements) to work normally
+            });
         });
     });
-    
-    // Navigation menu functionality
-    const navLinks = document.querySelectorAll('.nav-link');
-    navLinks.forEach(link => {
-        link.addEventListener('click', function(e) {
-            if (this.getAttribute('href').startsWith('#')) {
-                e.preventDefault();
-                navLinks.forEach(l => l.classList.remove('active'));
-                this.classList.add('active');
-            }
-        });
-    });
-});
 </script>
 {% endblock %}

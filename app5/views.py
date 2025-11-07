@@ -3158,8 +3158,12 @@ def lead_form_view(request):
     if request.method == "POST":
         data = request.POST
 
+        # Get assignment type
+        assignment_type = data.get("assignmentType", "unassigned")
+        
         # Detect customer type toggle (Business = checked)
         customer_type = "Business" if data.get("customerTypeToggle") else "Individual"
+        
 
         try:
             lead = Lead.objects.create(
@@ -3167,6 +3171,8 @@ def lead_form_view(request):
                 phoneNo=data.get("phoneNo"),
                 email=data.get("email"),
                 customerType=customer_type,
+                assignment_type=assignment_type,
+                    # Add this field to your model
 
                 # Business fields
                 name=data.get("name") if customer_type == "Business" else None,
@@ -3194,28 +3200,36 @@ def lead_form_view(request):
                 Consultant=data.get("Consultant"),
                 requirement=data.get("requirement"),
                 details=data.get("details"),
+                
             )
 
-            messages.success(request, f"Lead saved successfully! Ticket Number: {lead.ticket_number}")
+            # Add success message based on assignment type
+            assignment_msg = "self-assigned" if assignment_type == "self_assigned" else "submitted for assignment"
+            messages.success(request, f"Lead saved successfully and {assignment_msg}! Ticket Number: {lead.ticket_number}")
             return redirect("app5:lead_report")
 
         except Exception as e:
             messages.error(request, f"Error saving lead: {str(e)}")
             return redirect("app5:lead")
 
-    # ✅ GET request - show empty form
+    # GET request - show empty form
     districts = District.objects.all().order_by('name')
     business_natures = BusinessNature.objects.all().order_by('name')
     states = StateMaster.objects.all().order_by('name')
-
-    # ✅ Fetch only ACTIVE users for dropdown
     active_users = User.objects.filter(status='active').order_by('name')
+    
+    try:
+        from purchase_order.models import Department
+        departments = Department.objects.filter(is_active=True).order_by('name')
+    except ImportError:
+        departments = []
 
     context = {
         'business_natures': business_natures,
         'states': states,
         'districts': districts,
-        'active_users': active_users,   # ✅ Added
+        'active_users': active_users,
+        'departments': departments,
     }
 
     return render(request, "lead_form.html", context)
@@ -3367,7 +3381,7 @@ def lead_edit(request, lead_id):
         lead.business = request.POST.get('business')
         lead.marketedBy = request.POST.get('marketedBy')
         lead.Consultant = request.POST.get('Consultant')
-        lead.requirement = request.POST.get('requirement')
+        lead.requirement = request.POST.get('requirement')  # Department ID
         lead.details = request.POST.get('details')
         lead.date = request.POST.get('date') or lead.date
         
@@ -3416,13 +3430,21 @@ def lead_edit(request, lead_id):
 
     # ✅ Fetch ACTIVE users for dropdown
     active_users = User.objects.filter(status='active').order_by('name')
+    
+    # ✅ NEW: Fetch all active departments for branch field
+    try:
+        from purchase_order.models import Department
+        departments = Department.objects.filter(is_active=True).order_by('name')
+    except ImportError:
+        departments = []
 
     context = {
         'lead': lead,
         'business_natures': business_natures,
         'states': states,
         'districts': districts,
-        'active_users': active_users,  # ✅ Added
+        'active_users': active_users,
+        'departments': departments,  # ✅ Added
     }
     
     return render(request, 'lead_form_edit.html', context)
@@ -3440,6 +3462,124 @@ def lead_delete(request, lead_id):
         messages.success(request, f"Lead with Ticket Number {ticket_number} deleted successfully!")
         return redirect('app5:lead_report')
     return redirect('app5:lead_report')
+
+
+def lead_assign_list_view(request):
+    leads = Lead.objects.select_related('assigned_to').all()  # or your actual queryset/filtering
+    leads_display = []
+    for lead in leads:
+        if lead.assigned_to:
+            assigned_name = lead.assigned_to.get_full_name() or lead.assigned_to.username
+        else:
+            assigned_name = "Unassigned"
+        # you can pass the whole lead and a computed field together
+        leads_display.append({
+            'lead': lead,
+            'assigned_name': assigned_name,
+        })
+
+    return render(request, "lead_assign_list.html", {'leads_display': leads_display})
+
+
+def assign_lead_view(request):
+    """
+    View to assign leads to users - SHOWS ONLY UNASSIGNED LEADS
+    """
+    users = User.objects.filter(status='active')  # Get active users for assignment
+    
+    if request.method == 'POST':
+        ticket_no = request.POST.get('ticket_no')
+        assign_to_id = request.POST.get('assign_to')
+        
+        try:
+            # Get the lead by ticket number
+            lead = Lead.objects.get(ticket_number=ticket_no)
+            
+            # Get current user (assigner)
+            current_user = None
+            if request.session.get('custom_user_id'):
+                try:
+                    current_user = User.objects.get(id=request.session['custom_user_id'])
+                except User.DoesNotExist:
+                    pass
+            
+            # Update lead assignment
+            lead.assigned_to_id = assign_to_id
+            lead.assigned_by = current_user
+            lead.assigned_date = timezone.now().date()
+            lead.assigned_time = timezone.now().time()
+            lead.status = 'assigned'
+            lead.assignment_type = 'assigned'  # Update assignment type
+            lead.save()
+            
+            messages.success(request, f'Lead {ticket_no} assigned successfully!')
+            return redirect('app5:lead_assign_list')
+            
+        except Lead.DoesNotExist:
+            messages.error(request, f'Lead with ticket number {ticket_no} not found!')
+        except Exception as e:
+            messages.error(request, f'Error assigning lead: {str(e)}')
+    
+    # GET request - show form
+    # ✅ GET ONLY UNASSIGNED LEADS
+    unassigned_leads = Lead.objects.filter(
+        assignment_type='unassigned'
+    ).order_by('-created_at')
+    
+    # Get lead_id from URL parameter for pre-selection
+    lead_id = request.GET.get('lead_id')
+    lead = None
+    
+    if lead_id:
+        try:
+            lead = Lead.objects.get(id=lead_id, assignment_type='unassigned')
+        except Lead.DoesNotExist:
+            messages.error(request, 'Lead not found or already assigned!')
+    
+    context = {
+        'users': users,
+        'lead': lead,
+        'unassigned_leads': unassigned_leads,  # Pass unassigned leads to template
+    }
+    return render(request, "lead_assign_form.html", context)
+
+def edit_lead_view(request, lead_id):
+    """
+    View to edit lead assignment
+    """
+    lead = get_object_or_404(Lead, id=lead_id)
+    users = User.objects.filter(status='active')
+    
+    if request.method == 'POST':
+        try:
+            assign_to_id = request.POST.get('assign_to')
+            
+            # Get current user (assigner)
+            current_user = None
+            if request.session.get('custom_user_id'):
+                try:
+                    current_user = User.objects.get(id=request.session['custom_user_id'])
+                except User.DoesNotExist:
+                    pass
+            
+            lead.assigned_to_id = assign_to_id
+            lead.assigned_by = current_user
+            lead.assigned_date = timezone.now().date()
+            lead.assigned_time = timezone.now().time()
+            lead.status = 'assigned'
+            lead.save()
+            
+            messages.success(request, 'Lead assignment updated successfully!')
+            return redirect('app5:lead_assign_list')
+        except Exception as e:
+            messages.error(request, f'Error updating lead assignment: {str(e)}')
+    
+    context = {
+        'users': users,
+        'lead': lead
+    }
+    return render(request, 'lead_assign_form.html', context)
+
 
 
 # ------------------------------
@@ -3738,3 +3878,16 @@ def state_master_delete(request, id):
     
     # If not POST, show confirmation page (optional)
     return render(request, 'state_confirm_delete.html', {'state': state})
+
+
+
+def _generate_unique_lead_ticket():
+    today_str = timezone.now().strftime("%Y%m%d")
+    base_prefix = f"TKT-{today_str}-"
+    counter = 1
+    
+    while True:
+        ticket_no = f"{base_prefix}{counter:04d}"
+        if not Lead.objects.filter(ticket_number=ticket_no).exists():
+            return ticket_no
+        counter += 1

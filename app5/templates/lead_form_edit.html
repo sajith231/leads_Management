@@ -654,16 +654,14 @@
                             </div>
                             
                             <div class="compact-form-group">
-                                <label for="requirement">Branch</label>
-                                <select id="requirement" name="requirement">
-                                    <option value="">Select Branch</option>
-                                    <option value="SOFTWARE" {% if lead.requirement == 'SOFTWARE' %}selected{% endif %}>SOFTWARE</option>
-                                    <option value="HARDWARE" {% if lead.requirement == 'HARDWARE' %}selected{% endif %}>HARDWARE</option>
-                                    <option value="CONSULTING" {% if lead.requirement == 'CONSULTING' %}selected{% endif %}>CONSULTING</option>
-                                    <option value="SUPPORT" {% if lead.requirement == 'SUPPORT' %}selected{% endif %}>SUPPORT</option>
-                                    <option value="OTHER" {% if lead.requirement == 'OTHER' %}selected{% endif %}>OTHER</option>
-                                </select>
-                            </div>
+    <label for="requirement">Branch</label>
+    <select id="requirement" name="requirement">
+        <option value="">Select Branch</option>
+        {% for department in departments %}
+        <option value="{{ department.id }}">{{ department.name }}</option>
+        {% endfor %}
+    </select>
+</div>
                             
                             <div class="compact-form-group">
                                 <label for="details">Notes</label>

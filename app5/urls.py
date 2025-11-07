@@ -94,6 +94,11 @@ urlpatterns = [
    path('api/lead/<int:lead_id>/', views.lead_detail_api, name='lead_detail_api'),
    path('requirement-form/', views.requirement_form, name='requirement_form'),
    path('requirement-list/', views.requirement_list, name='requirement_list'),
+   # Lead Assignment URLs
+    path('lead-assign-list/', views.lead_assign_list_view, name='lead_assign_list'),
+    path('assign-lead/', views.assign_lead_view, name='assign_lead'),  # Add this line
+    path('edit-lead/<int:lead_id>/', views.edit_lead_view, name='edit_lead'),
+   
 
 
 
