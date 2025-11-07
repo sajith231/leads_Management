@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+<div style="max-width:400px;margin:100px auto;text-align:center;font-family:sans-serif;">
+  <h2>Enter Security Code</h2>
+  {% if error %}<p style="color:red;">{{ error }}</p>{% endif %}
+  <form method="POST">
+    {% csrf_token %}
+    <input type="text" name="code" maxlength="4" placeholder="Enter 4-digit code"
+           style="padding:10px;border:1px solid #ccc;border-radius:8px;width:100%;text-align:center;font-size:18px;">
+    <button type="submit" style="margin-top:15px;padding:10px 20px;border:none;background:#2563eb;color:#fff;border-radius:8px;cursor:pointer;">
+      Verify & Download
+    </button>
+  </form>
+</div>
+{% endblock %}

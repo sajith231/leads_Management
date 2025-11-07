@@ -270,3 +270,36 @@ def drive_edit(request, pk):
             return redirect("drive_list")
 
     return render(request, "drive_add.html", {"folder": folder, "mode": "edit"})
+
+
+
+
+from django.shortcuts import render, get_object_or_404
+from django.http import JsonResponse
+from django.core.cache import cache
+import random
+
+from .models import DriveFile
+
+def generate_share_code(request, pk):
+    """Generate temporary 4-digit code and link for a file."""
+    f = get_object_or_404(DriveFile, pk=pk)
+    code = str(random.randint(1000, 9999))
+    cache_key = f"share_code_{f.id}"
+    cache.set(cache_key, code, timeout=60)  # valid for 1 minute
+    share_link = request.build_absolute_uri(f"/drive/share/{f.id}/")
+    return JsonResponse({"code": code, "link": share_link})
+
+
+def verify_share_code(request, pk):
+    """Check code and allow download."""
+    f = get_object_or_404(DriveFile, pk=pk)
+    cache_key = f"share_code_{f.id}"
+    saved_code = cache.get(cache_key)
+    if request.method == "POST":
+        entered = request.POST.get("code")
+        if entered and entered == saved_code:
+            return file_download(request, pk)  # reuse your existing function
+        else:
+            return render(request, "enter_code.html", {"file": f, "error": "Invalid or expired code"})
+    return render(request, "enter_code.html", {"file": f})
