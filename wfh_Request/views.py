@@ -7,15 +7,17 @@ from django.shortcuts import get_object_or_404
 from app1.models import Employee, Attendance  # existing
 from .models import WorkFromHomeRequest
 
-ADMIN_NUMBERS = ["9946545535", "7593820007", "7593820005","9846754998","8129191379"]
+ADMIN_NUMBERS = ["9946545535", "7593820007", "7593820005","9846754998","8129191379","7306197537"]
 WA_SECRET = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
-WA_ACCOUNT = "1756959119812b4ba287f5ee0bc9d43bbf5bbe87fb68b9118fcf1af"
+WA_ACCOUNT = "1761365422812b4ba287f5ee0bc9d43bbf5bbe87fb68fc4daea92d8"
 
 def send_whatsapp(to, message):
     encoded = requests.utils.quote(message)
-    url = (f"https://app.dxing.in/api/send/whatsapp?"
-           f"secret={WA_SECRET}&account={WA_ACCOUNT}&recipient={to}"
-           f"&type=text&message={encoded}&priority=1")
+    url = (
+        f"https://app.dxing.in/api/send/whatsapp?"
+        f"secret={WA_SECRET}&account={WA_ACCOUNT}&recipient={to}"
+        f"&type=text&message={encoded}&priority=1"
+    )
     try:
         requests.get(url, timeout=10)
     except requests.exceptions.RequestException:

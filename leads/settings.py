@@ -68,6 +68,8 @@ INSTALLED_APPS = [
     'software_master',
     'purchase_order',
     'claims',
+    "django_extensions",
+    
     'wallet',
 ]
 
