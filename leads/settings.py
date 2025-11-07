@@ -70,6 +70,7 @@ INSTALLED_APPS = [
     'claims',
     "django_extensions",
     
+    'wallet',
 ]
 
 
@@ -152,7 +153,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'leading_management',
         'USER': 'postgres',
-        'PASSWORD': 'sajith@2003',
+        'PASSWORD': 'info@imc',
         'HOST': 'localhost',
         'PORT': '5432',
     }

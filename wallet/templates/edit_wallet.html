@@ -1,0 +1,252 @@
+{% extends "base.html" %}
+{% block content %}
+<title>Edit Wallet Item</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<style>
+/* copy the same styles as add_wallet (kept concise here for brevity) */
+... /* you can re-use CSS from add_wallet.html (paste the same <style> block) */
+</style>
+
+<div class="page-center">
+  <div class="form-container">
+    <div class="form-header">
+      <i class="fas fa-wallet upload-icon"></i>
+      <h2>Edit Wallet Item</h2>
+      <p>Update bank details, QR codes, or documents</p>
+    </div>
+
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert alert-info">
+          <div class="message-text">{{ message }}</div>
+          <button type="button" class="close-btn" aria-label="Close">&times;</button>
+        </div>
+      {% endfor %}
+    {% endif %}
+
+    <form method="post" enctype="multipart/form-data" id="walletForm" autocomplete="off">
+      {% csrf_token %}
+
+      <div class="form-row">
+        <label class="form-label" for="title">Wallet name <span class="required">*</span></label>
+        <input id="title" name="title" type="text" value="{{ wallet.title }}" required>
+      </div>
+
+      <div class="form-row">
+        <label class="form-label" for="upload_type">Upload Type <span class="required">*</span></label>
+        <select id="upload_type" name="upload_type" required>
+          <option value="">Select upload type</option>
+          <option value="bank" {% if wallet.upload_type == 'bank' %}selected{% endif %}>Bank/Details wallet</option>
+          <option value="qr" {% if wallet.upload_type == 'qr' %}selected{% endif %}>QR</option>
+          <option value="document" {% if wallet.upload_type == 'document' %}selected{% endif %}>Documentation Image</option>
+          <option value="other" {% if wallet.upload_type == 'other' %}selected{% endif %}>Other Wallet</option>
+        </select>
+        <div class="info-text">Select the category for this wallet item</div>
+      </div>
+
+      <!-- Bank Fields -->
+      <div id="bankFields" class="dynamic-fields" aria-hidden="true">
+        <div class="field-group">
+          <div class="field-group-title"><i class="fas fa-university"></i> Bank Account Details</div>
+          <div class="form-row">
+            <label class="form-label" for="account_holder_name">Account Holder Name</label>
+            <input id="account_holder_name" name="account_holder_name" type="text" value="{{ wallet.account_holder_name }}">
+          </div>
+          <div class="form-row">
+            <label class="form-label" for="account_number">Account Number</label>
+            <input id="account_number" name="account_number" type="text" value="{{ wallet.account_number }}">
+          </div>
+          <div class="form-row">
+            <label class="form-label" for="ifsc_code">IFSC Code</label>
+            <input id="ifsc_code" name="ifsc_code" type="text" value="{{ wallet.ifsc_code }}" style="text-transform:uppercase;">
+          </div>
+          <div class="form-row">
+            <label class="form-label" for="bank_address">Bank Address</label>
+            <textarea id="bank_address" name="bank_address" rows="3">{{ wallet.bank_address }}</textarea>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <label class="form-label" for="bank_image"><i class="fas fa-image"></i> Bank Image (replace)</label>
+          <input id="bank_image" name="image_bank" type="file" accept="image/png, image/jpeg, image/jpg">
+          <div class="info-text">Upload bank card or document image (optional — leave empty to keep existing)</div>
+          <div id="bankImagePreview" class="image-preview-container" style="display:{{ wallet.image|yesno:'block,none' }}">
+            {% if wallet.image %}
+              <img id="bankPreviewImg" class="image-preview" src="{{ wallet.image.url }}" alt="Preview">
+            {% else %}
+              <img id="bankPreviewImg" class="image-preview" src="" alt="Preview" style="display:none">
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- QR Fields -->
+      <div id="qrFields" class="dynamic-fields" aria-hidden="true">
+        <div class="field-group">
+          <div class="field-group-title"><i class="fas fa-qrcode"></i> QR Details</div>
+          <div class="form-row">
+            <label class="form-label" for="qr_name">QR Name</label>
+            <input id="qr_name" name="qr_name" type="text" value="{{ wallet.qr_name }}">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <label class="form-label" for="qr_image"><i class="fas fa-image"></i> QR Code Image (replace)</label>
+          <input id="qr_image" name="image_qr" type="file" accept="image/png, image/jpeg, image/jpg">
+          <div class="info-text">Upload the QR code image (optional — leave empty to keep existing)</div>
+          <div id="qrImagePreview" class="image-preview-container" style="display:{{ wallet.image|yesno:'block,none' }}">
+            {% if wallet.image %}
+              <img id="qrPreviewImg" class="image-preview" src="{{ wallet.image.url }}" alt="Preview">
+            {% else %}
+              <img id="qrPreviewImg" class="image-preview" src="" alt="Preview" style="display:none">
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Document Fields -->
+      <div id="documentFields" class="dynamic-fields" aria-hidden="true">
+        <div class="form-row">
+          <label class="form-label" for="document_image"><i class="fas fa-image"></i> Document Image (replace)</label>
+          <input id="document_image" name="image_document" type="file" accept="image/png, image/jpeg, image/jpg">
+          <div class="info-text">Upload the documentation image (optional — leave empty to keep existing)</div>
+          <div id="documentImagePreview" class="image-preview-container" style="display:{{ wallet.image|yesno:'block,none' }}">
+            {% if wallet.image %}
+              <img id="documentPreviewImg" class="image-preview" src="{{ wallet.image.url }}" alt="Preview">
+            {% else %}
+              <img id="documentPreviewImg" class="image-preview" src="" alt="Preview" style="display:none">
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Other Fields -->
+      <div id="otherFields" class="dynamic-fields" aria-hidden="true">
+        <div class="field-group">
+          <div class="field-group-title"><i class="fas fa-wallet"></i> Wallet Details</div>
+          <div class="form-row">
+            <label class="form-label" for="other_name">Wallet Name</label>
+            <input id="other_name" name="other_name" type="text" value="{{ wallet.other_name }}">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <label class="form-label" for="other_image"><i class="fas fa-image"></i> Image (replace)</label>
+          <input id="other_image" name="image_other" type="file" accept="image/png, image/jpeg, image/jpg">
+          <div class="info-text">Upload an image (optional — leave empty to keep existing)</div>
+          <div id="otherImagePreview" class="image-preview-container" style="display:{{ wallet.image|yesno:'block,none' }}">
+            {% if wallet.image %}
+              <img id="otherPreviewImg" class="image-preview" src="{{ wallet.image.url }}" alt="Preview">
+            {% else %}
+              <img id="otherPreviewImg" class="image-preview" src="" alt="Preview" style="display:none">
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <label class="form-label" for="visibility_priority"><i class="fas fa-eye"></i> Visibility Priority <span class="required">*</span></label>
+        <select id="visibility_priority" name="visibility_priority" required>
+          <option value="">Select visibility level</option>
+          <option value="superadmin" {% if wallet.visibility_priority == 'superadmin' %}selected{% endif %}>Super Admin</option>
+          <option value="admin" {% if wallet.visibility_priority == 'admin' %}selected{% endif %}>Admin</option>
+          <option value="user" {% if wallet.visibility_priority == 'user' %}selected{% endif %}>User</option>
+        </select>
+        <div class="info-text">Who can view this wallet item</div>
+      </div>
+
+      <div class="form-row">
+        <label class="form-label" for="description"><i class="fas fa-align-left"></i> Description</label>
+        <textarea id="description" name="description" rows="4">{{ wallet.description }}</textarea>
+      </div>
+
+      <div class="form-row">
+        <button type="submit" class="btn btn-submit"><i class="fas fa-save"></i> Update Wallet Item</button>
+      </div>
+    </form>
+
+    <div style="text-align:center; margin-top:12px;">
+      <a href="{% url 'wallet_list' %}" class="btn-back"><i class="fas fa-arrow-left"></i> Back to Wallet List</a>
+    </div>
+  </div>
+</div>
+
+<script>
+// reuse show/hide logic from add_wallet.html
+function hideAllDynamic() {
+  document.querySelectorAll('.dynamic-fields').forEach(el => {
+    el.style.display = 'none';
+    el.setAttribute('aria-hidden', 'true');
+  });
+}
+function showSection(id) {
+  hideAllDynamic();
+  const el = document.getElementById(id);
+  if (el) {
+    el.style.display = 'block';
+    el.setAttribute('aria-hidden', 'false');
+  }
+}
+
+const uploadTypeEl = document.getElementById('upload_type');
+function initSections() {
+  const val = uploadTypeEl.value;
+  if (!val) { hideAllDynamic(); return; }
+  showSection(val + 'Fields');
+}
+if (uploadTypeEl) {
+  initSections();
+  uploadTypeEl.addEventListener('change', function () {
+    const val = this.value;
+    if (!val) { hideAllDynamic(); return; }
+    showSection(val + 'Fields');
+  });
+}
+
+// image preview setup (reads file input and updates image src)
+function setupImagePreview(inputId, previewContainerId, previewImgId) {
+  const input = document.getElementById(inputId);
+  const container = document.getElementById(previewContainerId);
+  const img = document.getElementById(previewImgId);
+  if (!input || !container || !img) return;
+
+  input.addEventListener('change', function (e) {
+    const file = e.target.files && e.target.files[0];
+    if (!file) {
+      // keep existing preview if present
+      return;
+    }
+    const allowed = ['image/jpeg','image/jpg','image/png'];
+    if (!allowed.includes(file.type)) {
+      alert('Only JPG, JPEG, and PNG images are allowed.');
+      input.value = '';
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image file size should not exceed 5MB.');
+      input.value = '';
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = function (ev) {
+      img.src = ev.target.result;
+      container.style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+setupImagePreview('bank_image','bankImagePreview','bankPreviewImg');
+setupImagePreview('qr_image','qrImagePreview','qrPreviewImg');
+setupImagePreview('document_image','documentImagePreview','documentPreviewImg');
+setupImagePreview('other_image','otherImagePreview','otherPreviewImg');
+
+// IFSC uppercase enforcement
+(function () {
+  const ifsc = document.getElementById('ifsc_code');
+  if (!ifsc) return;
+  ifsc.addEventListener('input', function () { this.value = this.value.toUpperCase(); });
+})();
+</script>
+{% endblock %}
