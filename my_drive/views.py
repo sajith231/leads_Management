@@ -249,12 +249,13 @@ def file_preview(request, pk):
 
 
 def file_download(request, pk):
-    """Force file download with correct name + extension."""
     f = get_object_or_404(DriveFile, pk=pk)
     file_path = f.file.path
-    file_handle = open(file_path, "rb")
-    response = FileResponse(file_handle, as_attachment=True)
-    response["Content-Disposition"] = f'attachment; filename="{_response_filename(f)}"'
+
+    filename = _response_filename(f)   # ✅ Ensures extension always added
+
+    response = FileResponse(open(file_path, "rb"))
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
     return response
 
 
@@ -280,26 +281,59 @@ from django.core.cache import cache
 import random
 
 from .models import DriveFile
+from django.utils import timezone
+import random
 
 def generate_share_code(request, pk):
-    """Generate temporary 4-digit code and link for a file."""
-    f = get_object_or_404(DriveFile, pk=pk)
-    code = str(random.randint(1000, 9999))
-    cache_key = f"share_code_{f.id}"
-    cache.set(cache_key, code, timeout=60)  # valid for 1 minute
-    share_link = request.build_absolute_uri(f"/drive/share/{f.id}/")
-    return JsonResponse({"code": code, "link": share_link})
+    file = get_object_or_404(DriveFile, pk=pk)
 
+    code = str(random.randint(1000, 9999))
+    expiry = timezone.now() + timezone.timedelta(minutes=1)
+
+    file.share_code = code
+    file.share_expiry = expiry
+    file.save()
+
+    share_link = request.build_absolute_uri(
+        f"/my_drive/drives/share/{file.id}/"
+    )
+
+    return JsonResponse({
+        "code": code,
+        "expires_in": "1 minute",
+        "link": share_link
+    })
+
+
+
+from django.shortcuts import render
+from django.utils import timezone
+from django.http import HttpResponseRedirect
 
 def verify_share_code(request, pk):
-    """Check code and allow download."""
-    f = get_object_or_404(DriveFile, pk=pk)
-    cache_key = f"share_code_{f.id}"
-    saved_code = cache.get(cache_key)
-    if request.method == "POST":
-        entered = request.POST.get("code")
-        if entered and entered == saved_code:
-            return file_download(request, pk)  # reuse your existing function
-        else:
-            return render(request, "enter_code.html", {"file": f, "error": "Invalid or expired code"})
-    return render(request, "enter_code.html", {"file": f})
+    file = get_object_or_404(DriveFile, pk=pk)
+
+    # ❗ If direct open without code => show code input page
+    if request.method == "GET":
+        return render(request, "enter_code.html")
+
+    # POST --> Check code
+    entered = request.POST.get("code", "").strip()
+
+    # If expired
+    if not file.share_expiry or timezone.now() > file.share_expiry:
+        return render(request, "enter_code.html", {
+            "error": "Code expired! Generate a new one."
+        })
+
+    # Wrong code
+    if entered != file.share_code:
+        return render(request, "enter_code.html", {
+            "error": "Invalid code! Try again."
+        })
+
+    # ✅ Correct → download
+    filename = _response_filename(file)
+    response = FileResponse(open(file.file.path, "rb"))
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+    return response
