@@ -45,6 +45,7 @@ urlpatterns = [
 
     path('po/', include('purchase_order.urls')),
     path('claims/', include('claims.urls')),
+    path('wallet/', include('wallet.urls')),
 
 
 

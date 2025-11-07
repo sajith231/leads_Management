@@ -188,35 +188,45 @@ def vehicle_edit(request, vehicle_id):
 
     if request.method == 'POST':
         try:
-            # Update editable fields with validation
+            # Get form values
+            vehicle_number = request.POST.get('vehicle_number', '').upper().strip()
             vehicle_name = request.POST.get('vehicle_name', '').strip()
             model_number = request.POST.get('model_number', '').strip()
             manufacture_year = request.POST.get('manufacture_year', '').strip()
             owner_name = request.POST.get('owner_name', '').strip()
             avg_mileage = request.POST.get('avg_mileage', '').strip()
             fuel_type = request.POST.get('fuel_type', 'petrol')
-            
+
             # Validate required fields
+            if not vehicle_number:
+                messages.error(request, "Vehicle number is required.")
+                return render(request, 'vehicle_edit.html', {'vehicle': vehicle})
+
+            # Check for duplicate vehicle number (exclude current vehicle)
+            if Vehicle.objects.exclude(id=vehicle.id).filter(vehicle_number=vehicle_number).exists():
+                messages.error(request, f"Vehicle number '{vehicle_number}' already exists.")
+                return render(request, 'vehicle_edit.html', {'vehicle': vehicle})
+
             if not vehicle_name:
                 messages.error(request, "Vehicle name is required.")
                 return render(request, 'vehicle_edit.html', {'vehicle': vehicle})
-            
+
             if not model_number:
                 messages.error(request, "Model number is required.")
                 return render(request, 'vehicle_edit.html', {'vehicle': vehicle})
-            
+
             if not manufacture_year:
                 messages.error(request, "Manufacture year is required.")
                 return render(request, 'vehicle_edit.html', {'vehicle': vehicle})
-            
+
             if not owner_name:
                 messages.error(request, "Owner name is required.")
                 return render(request, 'vehicle_edit.html', {'vehicle': vehicle})
-            
+
             if not avg_mileage:
                 messages.error(request, "Average mileage is required.")
                 return render(request, 'vehicle_edit.html', {'vehicle': vehicle})
-            
+
             # Validate manufacture year
             try:
                 manufacture_year_int = int(manufacture_year)
@@ -227,7 +237,7 @@ def vehicle_edit(request, vehicle_id):
             except ValueError:
                 messages.error(request, "Invalid manufacture year.")
                 return render(request, 'vehicle_edit.html', {'vehicle': vehicle})
-            
+
             # Validate average mileage
             try:
                 avg_mileage_float = float(avg_mileage)
@@ -237,8 +247,9 @@ def vehicle_edit(request, vehicle_id):
             except ValueError:
                 messages.error(request, "Invalid average mileage value.")
                 return render(request, 'vehicle_edit.html', {'vehicle': vehicle})
-            
+
             # Update vehicle fields
+            vehicle.vehicle_number = vehicle_number
             vehicle.vehicle_name = vehicle_name
             vehicle.model_number = model_number
             vehicle.manufacture_year = manufacture_year_int
@@ -251,30 +262,29 @@ def vehicle_edit(request, vehicle_id):
                 if vehicle.rc_copy:
                     vehicle.rc_copy.delete(save=False)
                     vehicle.rc_copy = None
-            
+
             if request.POST.get('remove_insurance_copy') == 'on':
                 if vehicle.insurance_copy:
                     vehicle.insurance_copy.delete(save=False)
                     vehicle.insurance_copy = None
-            
+
             if request.POST.get('remove_pollution_copy') == 'on':
                 if vehicle.pollution_copy:
                     vehicle.pollution_copy.delete(save=False)
                     vehicle.pollution_copy = None
 
             # Handle new file uploads
-            if 'rc_copy' in request.FILES:
-                # Delete old file if exists
+            if 'rc_copy' in request.FILES and request.FILES['rc_copy']:
                 if vehicle.rc_copy:
                     vehicle.rc_copy.delete(save=False)
                 vehicle.rc_copy = request.FILES['rc_copy']
-            
-            if 'insurance_copy' in request.FILES:
+
+            if 'insurance_copy' in request.FILES and request.FILES['insurance_copy']:
                 if vehicle.insurance_copy:
                     vehicle.insurance_copy.delete(save=False)
                 vehicle.insurance_copy = request.FILES['insurance_copy']
-            
-            if 'pollution_copy' in request.FILES:
+
+            if 'pollution_copy' in request.FILES and request.FILES['pollution_copy']:
                 if vehicle.pollution_copy:
                     vehicle.pollution_copy.delete(save=False)
                 vehicle.pollution_copy = request.FILES['pollution_copy']
@@ -283,12 +293,11 @@ def vehicle_edit(request, vehicle_id):
             messages.success(request, "Vehicle updated successfully.")
             return redirect('vehicle_list')
 
-        except ValueError as e:
-            messages.error(request, f"Invalid input: {str(e)}")
+        except IntegrityError:
+            messages.error(request, "A vehicle with this number already exists.")
         except Exception as e:
             messages.error(request, f"An error occurred: {str(e)}")
-            
-        return render(request, 'vehicle_edit.html', {'vehicle': vehicle})
+        # If error, fall through to re-render with current vehicle context
 
     context = {
         'vehicle': vehicle,
@@ -518,16 +527,19 @@ def fuel_delete(request, entry_id):
 
 def fuel_monitoring(request):
     """
-    Monitoring view:
+    Monitoring view with date filters:
     - Uses vehicle.fuel_rate (if available) as primary rate.
     - Derives litres (total fuel) from recorded fields or cost/rate.
     - Calculates fuel consumed for the recorded distance: fuel_needed_for_distance = distance / mileage
     - NEW: fuel_balance = total_fuel - fuel_needed_for_distance  (litres left)
+    - Supports date_from and date_to filtering
     """
     vehicles = Vehicle.objects.all()
     users    = User.objects.all()
     selected_id      = request.GET.get('vid')
     selected_user_id = request.GET.get('user_id')
+    date_from        = request.GET.get('date_from')
+    date_to          = request.GET.get('date_to')
 
     # optional global override via ?rate=
     try:
@@ -645,6 +657,7 @@ def fuel_monitoring(request):
                    .exclude(odo_end_reading__isnull=True)
                    .order_by('-date', '-start_time'))
 
+        # Apply user filter
         if selected_user_id:
             try:
                 uid = int(selected_user_id)
@@ -652,13 +665,21 @@ def fuel_monitoring(request):
             except (TypeError, ValueError):
                 pass
 
+        # Apply date filters
+        if date_from:
+            entries = entries.filter(date__gte=date_from)
+        if date_to:
+            entries = entries.filter(date__lte=date_to)
+
         total_distance       = 0.0
         total_cost           = 0.0
         total_expected_cost  = 0.0
         total_litres         = 0.0
         total_km_from_fuel   = 0.0
 
-        traveller_ids = set(entries.filter(travelled_by__isnull=False)
+        # Get all travelers for this vehicle (not filtered by date)
+        all_entries = selected_vehicle.fuel_entries.exclude(odo_end_reading__isnull=True)
+        traveller_ids = set(all_entries.filter(travelled_by__isnull=False)
                                    .values_list('travelled_by__id', flat=True))
         if traveller_ids:
             vehicle_travelers = list(User.objects.filter(id__in=traveller_ids))
@@ -691,7 +712,7 @@ def fuel_monitoring(request):
             except Exception:
                 cost = 0.0
 
-            # total fuel (litres) — actual litres recorded or derived from cost/rate
+            # total fuel (litres) – actual litres recorded or derived from cost/rate
             litres = _entry_litres(e, distance, rate_for_vehicle)
             if litres is None:
                 # fallback: derive from distance & vehicle mileage
@@ -723,7 +744,7 @@ def fuel_monitoring(request):
 
             names = _entry_travellers(e)
 
-            # NEW: fuel balance (litres left)
+            # fuel balance (litres left)
             fuel_balance = (litres or 0.0) - (fuel_needed_for_distance or 0.0)
 
             trips.append({
@@ -732,11 +753,11 @@ def fuel_monitoring(request):
                 'end_time': getattr(e, 'end_time', None),
                 'distance': distance,
                 'cost': cost,
-                'fuel_used': litres,  # “Total Fuel” in template
+                'fuel_used': litres,  # "Total Fuel" in template
                 'fuel_consumed_for_distance': fuel_needed_for_distance,
                 'cost_for_distance': cost_for_distance,
                 'travelled_by': ', '.join(names) if names else '—',
-                'fuel_balance': fuel_balance,  # NEW
+                'fuel_balance': fuel_balance,
             })
 
             total_distance += (distance or 0.0)
@@ -763,6 +784,8 @@ def fuel_monitoring(request):
         'summary': summary,
         'trips': trips,
         'vehicle_travelers': vehicle_travelers,
+        'date_from': date_from,
+        'date_to': date_to,
     }
     return render(request, 'monitoring.html', ctx)
 
