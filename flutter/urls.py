@@ -14,7 +14,7 @@ from .views import (
     create_early_request, get_early_requests, delete_early_request,
 )
 
-
+app_name = "flutter"
 
 
 urlpatterns = [

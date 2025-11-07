@@ -97,6 +97,7 @@ MIDDLEWARE = [
 
     'app1.middleware.NoCacheMiddleware',  # Add this line for logout issue
     'app1.middleware.UserMenuMiddleware', 
+    'leads.middleware.LoginRequiredMiddleware',  # add this at bottom
     
     
 ]
@@ -151,7 +152,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'leading_management',
         'USER': 'postgres',
-        'PASSWORD': 'info@imc',
+        'PASSWORD': 'sajith@2003',
         'HOST': 'localhost',
         'PORT': '5432',
     }
