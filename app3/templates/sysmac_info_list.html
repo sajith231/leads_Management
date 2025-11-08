@@ -382,15 +382,14 @@ document.addEventListener("DOMContentLoaded", function () {
             fetch(`/app3/get_sysmac_info_ledger/?code=${code}`)
                 .then(r => r.json())
                 .then(data => {
-                    fullData = Array.isArray(data) ? data : [];
+                    if (!Array.isArray(data) || data.length === 0) {
+                        content.innerHTML = "<div class='text-dark'>No ledger entries available.</div>";
+                        modal.show();
+                        return;
+                    }
 
-                    // ✅ Sort by voucher number ascending
-                    fullData.sort((a, b) => {
-                        const v1 = a.voucher_no || '';
-                        const v2 = b.voucher_no || '';
-                        return v1.localeCompare(v2, undefined, { numeric: true, sensitivity: 'base' });
-                    });
-
+                    // ✅ Default sort: earliest date first
+                    fullData = data.sort((a, b) => new Date(a.entry_date) - new Date(b.entry_date));
                     renderTable(fullData);
                     modal.show();
                 })
@@ -399,6 +398,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     modal.show();
                 });
 
+            // ✅ Main render function
             function renderTable(entries) {
                 if (!entries.length) {
                     content.innerHTML = "<div class='text-dark'>No ledger entries available.</div>";
@@ -427,8 +427,14 @@ document.addEventListener("DOMContentLoaded", function () {
                 const totalBalance = totalDebit - totalCredit;
 
                 content.innerHTML = `
-                    <div class="d-flex justify-content-end mb-2">
-                        <button class="btn btn-sm btn-outline-primary" id="toggleVoucherBtn">Show Voucher</button>
+                    <div class="d-flex justify-content-between mb-2">
+                        <div>
+                            <button class="btn btn-sm btn-outline-primary me-2" id="sortDateBtn">Sort by Date</button>
+                            <button class="btn btn-sm btn-outline-primary me-2" id="sortVoucherBtn">Sort by Voucher</button>
+                        </div>
+                        <div>
+                            <button class="btn btn-sm btn-outline-primary" id="toggleVoucherBtn">Show Voucher</button>
+                        </div>
                     </div>
                     <table class="table table-bordered table-sm align-middle">
                         <thead class="table-light">
@@ -456,6 +462,22 @@ document.addEventListener("DOMContentLoaded", function () {
                         </tfoot>
                     </table>`;
 
+                // ✅ Sort by Date (earliest first)
+                document.getElementById("sortDateBtn").addEventListener("click", () => {
+                    const sorted = [...entries].sort((a, b) => new Date(a.entry_date) - new Date(b.entry_date));
+                    renderTable(sorted);
+                });
+
+                // ✅ Sort by Voucher (ascending)
+                document.getElementById("sortVoucherBtn").addEventListener("click", () => {
+                    const sorted = [...entries].sort((a, b) => {
+                        const va = a.voucher_no || "";
+                        const vb = b.voucher_no || "";
+                        return va.localeCompare(vb, undefined, { numeric: true, sensitivity: "base" });
+                    });
+                    renderTable(sorted);
+                });
+
                 // ✅ Toggle Voucher Column
                 document.getElementById("toggleVoucherBtn").addEventListener("click", function () {
                     document.querySelectorAll(".voucher-col").forEach(col => col.classList.toggle("d-none"));
@@ -473,7 +495,9 @@ document.addEventListener("DOMContentLoaded", function () {
             // ✅ Date filter
             filterInput.oninput = () => {
                 const selected = filterInput.value;
-                const filtered = !selected ? fullData : fullData.filter(e => e.entry_date && e.entry_date.startsWith(selected));
+                const filtered = !selected
+                    ? fullData
+                    : fullData.filter(e => e.entry_date && e.entry_date.startsWith(selected));
                 renderTable(filtered);
             };
 
@@ -486,5 +510,6 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 });
 </script>
+
 
 {% endblock %}

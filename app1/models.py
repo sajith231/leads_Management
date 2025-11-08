@@ -505,7 +505,7 @@ class Employee(models.Model):
     education = models.CharField(max_length=100)
     experience = models.CharField(max_length=100, blank=True, null=True)
     job_title = models.CharField(max_length=100)
-    organization = models.CharField(max_length=10, choices=ORGANIZATION_CHOICES, blank=True, null=True)  # Optional field
+    organization = models.CharField(max_length=100, choices=ORGANIZATION_CHOICES, blank=True, null=True)  # Optional field
     joining_date = models.DateField()
     dob = models.DateField()
     experience_start_date = models.DateField(blank=True, null=True)

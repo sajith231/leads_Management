@@ -4,372 +4,1228 @@
 {% block content %}
 <style>
     @media (max-width: 768px) {
-        .allbody{
+        .allbody {
             margin-top: 15%;
         }
     }
-    .sticky-name {
-        position: sticky;
-        left: 0;
-        background: white;
-        z-index: 2;
+
+    .employee-management-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 20px;
     }
-    thead .sticky-name {
-        background: #f8f9fa; /* Light grey for header */
+
+    .page-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 10px;
+        margin-bottom: 30px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }
-    tbody .sticky-name {
-        background: white; /* Keep background white */
-    }
-    .pagination-info {
-        display: flex;
-        justify-content: between;
-        align-items: center;
-        margin: 20px 0;
-    }
-    .pagination {
+
+    .page-header h2 {
         margin: 0;
+        font-size: 28px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 15px;
     }
+
+    .filters-section {
+        background: white;
+        padding: 25px;
+        border-radius: 10px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+        margin-bottom: 25px;
+    }
+
     .filters-row {
         display: flex;
-        gap: 15px;
+        gap: 20px;
         margin-bottom: 20px;
-        align-items: end;
+        align-items: flex-end;
     }
+
     .filter-group {
         flex: 1;
     }
+
+    .filter-group label {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 8px;
+        display: block;
+        font-size: 14px;
+    }
+
+    .filter-group input,
+    .filter-group select {
+        width: 100%;
+        padding: 10px 15px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-size: 14px;
+        transition: all 0.3s;
+    }
+
+    .filter-group input:focus,
+    .filter-group select:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .action-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .btn-add-employee {
+        background: #667eea;
+        color: white;
+        padding: 12px 24px;
+        border: none;
+        border-radius: 6px;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s;
+    }
+
+    .btn-add-employee:hover {
+        background: #5568d3;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .employee-layout {
+        display: grid;
+        grid-template-columns: 350px 1fr;
+        gap: 25px;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+    }
+
+    .employee-list-panel {
+        background: #f8f9fa;
+        border-right: 1px solid #e0e0e0;
+        max-height: 700px;
+        overflow-y: auto;
+    }
+
+    .employee-list-header {
+        padding: 20px;
+        background: white;
+        border-bottom: 2px solid #e0e0e0;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+
+    .employee-list-header h3 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 600;
+        color: #333;
+    }
+
+    .employee-count {
+        color: #666;
+        font-size: 14px;
+        margin-top: 5px;
+    }
+
+    .employee-item {
+        padding: 18px 20px;
+        border-bottom: 1px solid #e0e0e0;
+        cursor: pointer;
+        transition: all 0.2s;
+        background: white;
+        margin: 0;
+    }
+
+    .employee-item:hover {
+        background: #f0f4ff;
+    }
+
+    .employee-item.active {
+        background: #667eea;
+        color: white;
+        border-left: 4px solid #5568d3;
+    }
+
+    .employee-item-content {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .employee-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid #e0e0e0;
+    }
+
+    .employee-item.active .employee-avatar {
+        border-color: white;
+    }
+
+    .employee-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .employee-name {
+        font-weight: 600;
+        font-size: 15px;
+        margin: 0 0 4px 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .employee-title {
+        font-size: 13px;
+        color: #666;
+        margin: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .employee-item.active .employee-title {
+        color: rgba(255, 255, 255, 0.9);
+    }
+
+    .employee-details-panel {
+        padding: 30px;
+        max-height: 700px;
+        overflow-y: auto;
+    }
+
+    .no-employee-selected {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        color: #999;
+        text-align: center;
+    }
+
+    .no-employee-selected i {
+        font-size: 64px;
+        margin-bottom: 20px;
+        opacity: 0.3;
+    }
+
+    .employee-header {
+        display: flex;
+        align-items: center;
+        gap: 25px;
+        padding-bottom: 25px;
+        border-bottom: 2px solid #f0f0f0;
+        margin-bottom: 25px;
+    }
+
+    .employee-photo-large {
+        width: 120px;
+        height: 120px;
+        border-radius: 12px;
+        object-fit: cover;
+        border: 3px solid #e0e0e0;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .employee-header-info h3 {
+        margin: 0 0 8px 0;
+        font-size: 24px;
+        font-weight: 700;
+        color: #333;
+    }
+
+    .employee-id {
+        color: #666;
+        font-size: 14px;
+        margin-bottom: 10px;
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    .status-active {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .status-inactive {
+        background: #f8d7da;
+        color: #721c24;
+    }
+
+    .status-on-leave {
+        background: #fff3cd;
+        color: #856404;
+    }
+
+    .tabs-container {
+        margin-bottom: 25px;
+    }
+
+    .nav-tabs {
+        border-bottom: 2px solid #e0e0e0;
+        display: flex;
+        gap: 5px;
+    }
+
+    .nav-tab {
+        padding: 12px 24px;
+        background: none;
+        border: none;
+        color: #666;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        border-bottom: 3px solid transparent;
+        transition: all 0.3s;
+        position: relative;
+    }
+
+    .nav-tab:hover {
+        color: #667eea;
+        background: #f8f9fa;
+    }
+
+    .nav-tab.active {
+        color: #667eea;
+        border-bottom-color: #667eea;
+    }
+
+    .tab-content {
+        display: none;
+    }
+
+    .tab-content.active {
+        display: block;
+        animation: fadeIn 0.3s;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .detail-section {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+
+    .detail-section h4 {
+        font-size: 16px;
+        font-weight: 700;
+        color: #333;
+        margin: 0 0 15px 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .detail-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 15px;
+    }
+
+    .detail-item {
+        background: white;
+        padding: 15px;
+        border-radius: 6px;
+        border-left: 3px solid #667eea;
+    }
+
+    .detail-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #666;
+        text-transform: uppercase;
+        margin-bottom: 6px;
+        letter-spacing: 0.5px;
+    }
+
+    .detail-value {
+        font-size: 15px;
+        color: #333;
+        font-weight: 500;
+        word-wrap: break-word;
+    }
+
+    .detail-text-area {
+        background: white;
+        padding: 15px;
+        border-radius: 6px;
+        border-left: 3px solid #667eea;
+        margin-top: 10px;
+    }
+
+    .attachments-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 10px;
+    }
+
+    .attachment-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        color: #667eea;
+        text-decoration: none;
+        font-size: 14px;
+        transition: all 0.3s;
+    }
+
+    .attachment-link:hover {
+        background: #667eea;
+        color: white;
+        border-color: #667eea;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 10px;
+        margin-top: 25px;
+        padding-top: 25px;
+        border-top: 2px solid #f0f0f0;
+    }
+
+    .btn-edit,
+    .btn-delete {
+        flex: 1;
+        padding: 12px 24px;
+        border: none;
+        border-radius: 6px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .btn-edit {
+        background: #ffc107;
+        color: #000;
+    }
+
+    .btn-edit:hover {
+        background: #ffb300;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(255, 193, 7, 0.3);
+    }
+
+    .btn-delete {
+        background: #dc3545;
+        color: white;
+    }
+
+    .btn-delete:hover {
+        background: #c82333;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+    }
+
+    .pagination-info {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px 0;
+    }
+
+    .pagination-text {
+        color: #666;
+        font-size: 14px;
+    }
+
+    .pagination {
+        display: flex;
+        gap: 5px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .page-item {
+        margin: 0;
+    }
+
+    .page-link {
+        padding: 8px 14px;
+        background: white;
+        border: 1px solid #ddd;
+        color: #667eea;
+        text-decoration: none;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 14px;
+        transition: all 0.3s;
+    }
+
+    .page-link:hover {
+        background: #667eea;
+        color: white;
+        border-color: #667eea;
+    }
+
+    .page-item.active .page-link {
+        background: #667eea;
+        color: white;
+        border-color: #667eea;
+    }
+
+    @media (max-width: 1024px) {
+        .employee-layout {
+            grid-template-columns: 1fr;
+        }
+
+        .employee-list-panel {
+            max-height: 400px;
+            border-right: none;
+            border-bottom: 1px solid #e0e0e0;
+        }
+    }
+
     @media (max-width: 768px) {
         .filters-row {
             flex-direction: column;
-            gap: 10px;
+            gap: 15px;
         }
+
+        .detail-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .employee-header {
+            flex-direction: column;
+            text-align: center;
+        }
+
+        .action-buttons {
+            flex-direction: column;
+        }
+    }
+
+    /* Modal Styles */
+    .modal-content {
+        border-radius: 10px;
+        border: none;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    }
+
+    .modal-header {
+        background: #667eea;
+        color: white;
+        border-radius: 10px 10px 0 0;
+        padding: 20px 25px;
+    }
+
+    .modal-title {
+        font-weight: 600;
+    }
+
+    .modal-body {
+        padding: 25px;
+    }
+
+    .modal-footer {
+        padding: 15px 25px;
+        border-top: 1px solid #e0e0e0;
+    }
+
+    /* Scrollbar Styling */
+    .employee-list-panel::-webkit-scrollbar,
+    .employee-details-panel::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .employee-list-panel::-webkit-scrollbar-track,
+    .employee-details-panel::-webkit-scrollbar-track {
+        background: #f1f1f1;
+    }
+
+    .employee-list-panel::-webkit-scrollbar-thumb,
+    .employee-details-panel::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 4px;
+    }
+
+    .employee-list-panel::-webkit-scrollbar-thumb:hover,
+    .employee-details-panel::-webkit-scrollbar-thumb:hover {
+        background: #555;
     }
 </style>
 
 <div class="allbody">
-    <h2 style="display: flex; justify-content: center; gap: 10px;">
-        <i class="fas fa-users"></i> EMPLOYEE MANAGEMENT
-    </h2>
-
-    <!-- Filters Row -->
-    <div class="filters-row">
-        <!-- Name Search Filter -->
-        <div class="filter-group">
-            <label for="searchInput" class="form-label">Search by Name/ID/Job/Organization:</label>
-            <input type="text" id="searchInput" class="form-control" placeholder="Search..." value="{{ search_query }}">
+    <div class="employee-management-container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h2>
+                <i class="fas fa-users"></i>
+                Employee Management 
+            </h2>
         </div>
 
-        <!-- Status Filter -->
-        <div class="filter-group" style="max-width: 300px;">
-            <label for="statusFilter" class="form-label">Filter by Status:</label>
-            <select id="statusFilter" class="form-select" onchange="filterByStatus()">
-                <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
-                <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Inactive</option>
-                <option value="on_leave" {% if status_filter == 'on_leave' %}selected{% endif %}>On Leave</option>
-            </select>
-        </div>
-    </div>
+        <!-- Filters Section -->
+        <div class="filters-section">
+            <div class="filters-row">
+                <div class="filter-group">
+                    <label for="searchInput">Search by Name/ID/Job/Organization</label>
+                    <input type="text" id="searchInput" placeholder="Type to search..." value="{{ search_query }}">
+                </div>
 
-    <a href="{% url 'add_employee' %}" class="btn btn-primary mb-3">Add New Employee</a>
+                <div class="filter-group" style="max-width: 300px;">
+                    <label for="statusFilter">Filter by Status</label>
+                    <select id="statusFilter" onchange="filterByStatus()">
+                        <option value="" {% if not status_filter %}selected{% endif %}>All Statuses</option>
+                        <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active Employees</option>
+                        <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Inactive Employees</option>
+                        <option value="on_leave" {% if status_filter == 'on_leave' %}selected{% endif %}>On Leave</option>
+                    </select>
+                </div>
 
-    <!-- Pagination Info -->
-    <div class="pagination-info">
-        <div>
-            <p class="mb-0">
-                Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ total_employees }} employees
-                {% if search_query %}(filtered results){% endif %}
-            </p>
-        </div>
-        
-        <!-- Pagination Controls -->
-        {% if page_obj.has_other_pages %}
-        <nav aria-label="Employee pagination">
-            <ul class="pagination">
-                {% if page_obj.has_previous %}
-                    <li class="page-item">
-                        <a class="page-link" href="?{% if status_filter %}status={{ status_filter }}&{% endif %}{% if search_query %}search={{ search_query }}&{% endif %}page={{ page_obj.previous_page_number }}">Previous</a>
-                    </li>
-                {% endif %}
+                <!-- Job Filter -->
+                <div class="filter-group" style="max-width: 300px;">
+                    <label for="jobFilter">Filter by Job</label>
+                    <select id="jobFilter" onchange="filterByJob()">
+                        <option value="">All Jobs</option>
+                        {% for job in job_list %}
+                            <option value="{{ job }}" {% if job_filter == job %}selected{% endif %}>{{ job }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
 
-                {% for num in page_obj.paginator.page_range %}
-                    {% if page_obj.number == num %}
-                        <li class="page-item active">
-                            <span class="page-link">{{ num }}</span>
-                        </li>
-                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                        <li class="page-item">
-                            <a class="page-link" href="?{% if status_filter %}status={{ status_filter }}&{% endif %}{% if search_query %}search={{ search_query }}&{% endif %}page={{ num }}">{{ num }}</a>
-                        </li>
-                    {% endif %}
-                {% endfor %}
+                <!-- Organization Filter -->
+                <div class="filter-group" style="max-width: 300px;">
+                    <label for="organizationFilter">Filter by Organization</label>
+                    <select id="organizationFilter" onchange="filterByOrganization()">
+                        <option value="">All Organizations</option>
+                        {% for org in organization_list %}
+                            <option value="{{ org }}" {% if organization_filter == org %}selected{% endif %}>{{ org }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
 
-                {% if page_obj.has_next %}
-                    <li class="page-item">
-                        <a class="page-link" href="?{% if status_filter %}status={{ status_filter }}&{% endif %}{% if search_query %}search={{ search_query }}&{% endif %}page={{ page_obj.next_page_number }}">Next</a>
-                    </li>
-                {% endif %}
-            </ul>
-        </nav>
+            <div class="action-bar">
+    <div class="pagination-text">
+        Showing {% if page_obj %}{{ page_obj.start_index }} to {{ page_obj.end_index }} of {% endif %}{{ total_employees }} employees
+        {% if search_query or job_filter or organization_filter or status_filter %}
+            <span style="color: #667eea; font-weight: 600;">(filtered)</span>
         {% endif %}
     </div>
-
-    <div style="overflow-x: auto; white-space: nowrap; max-width: 100%;">
-        <table class="table table-bordered" style="min-width: 1200px;">
-            <thead>
-                <tr>
-                    <th>No</th>
-                    <th class="sticky-name">Name</th>
-                    <th>Photo</th>
-                    <th>User ID</th>
-                    <th>Address</th>
-                    <th>Phone (Personal)</th>
-                    <th>Phone (Residential)</th>
-                    <th>Place</th>
-                    <th>District</th>
-                    <th>Education</th>
-                    <th>Experience</th>
-                    <th>Job Title</th>
-                    <th>Duty Time Start</th>
-                    <th>Duty Time End</th>
-                    <th>Organization</th>
-                    <th>Joining Date</th>
-                    <th>DOB</th>
-                    <th>Attachments</th>
-                    <th>Bank Account Number</th>
-                    <th>IFSC Code</th>
-                    <th>Bank Name</th>
-                    <th>Branch</th>
-                    <th>Status</th> 
-                    <th>Edit</th>
-                    <th>Delete</th>
-                </tr>
-            </thead>
-            <tbody id="employeeTable">
-                {% for employee in employees %}
-                <tr>
-                    <td>{{ page_obj.start_index|add:forloop.counter0 }}</td> 
-                    <td class="sticky-name employee-name">{{ employee.name }}</td>
-                    <td>
-                        <a href="#" data-bs-toggle="modal" data-bs-target="#photoModal{{ employee.id }}">
-                            <img src="{{ employee.photo.url }}" width="50" height="50" alt="Photo">
-                        </a>
-
-                        <!-- Bootstrap Modal for Image -->
-                        <div class="modal fade" id="photoModal{{ employee.id }}" tabindex="-1" aria-labelledby="photoModalLabel" aria-hidden="true">
-                            <div class="modal-dialog modal-dialog-centered">
-                                <div class="modal-content">
-                                    <div class="modal-header">
-                                        <h5 class="modal-title" id="photoModalLabel">Employee Photo</h5>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                    </div>
-                                    <div class="modal-body text-center">
-                                        <img src="{{ employee.photo.url }}" class="img-fluid" alt="Employee Photo">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </td>
-                    <td>{{ employee.user.userid }}</td>
-                    <td>{{ employee.address }}</td>
-                    <td>{{ employee.phone_personal }}</td>
-                    <td>{{ employee.phone_residential }}</td>
-                    <td>{{ employee.place }}</td>
-                    <td>{{ employee.district }}</td>
-                    <td>
-                        <a href="#" data-bs-toggle="modal" data-bs-target="#educationModal{{ employee.id }}">
-                            <i class="fas fa-graduation-cap" style="cursor: pointer; color: green; display: flex; justify-content: center;"></i>
-                        </a>
-                    
-                        <!-- Bootstrap Modal -->
-                        <div class="modal fade" id="educationModal{{ employee.id }}" tabindex="-1" aria-labelledby="educationModalLabel" aria-hidden="true">
-                            <div class="modal-dialog">
-                                <div class="modal-content">
-                                    <div class="modal-header">
-                                        <h5 class="modal-title" id="educationModalLabel">Education Details</h5>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                    </div>
-                                    <div class="modal-body">
-                                        {{ employee.education }}
-                                    </div>
-                                    <div class="modal-footer">
-                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </td>
-                    
-                    <td>
-                        <a href="#" data-bs-toggle="modal" data-bs-target="#experienceModal{{ employee.id }}">
-                            <i class="fas fa-suitcase" style="cursor: pointer; color: blue; display: flex; justify-content: center;"></i>
-                        </a>
-
-                        <!-- Bootstrap Modal -->
-                        <div class="modal fade" id="experienceModal{{ employee.id }}" tabindex="-1" aria-labelledby="experienceModalLabel" aria-hidden="true">
-                            <div class="modal-dialog">
-                                <div class="modal-content">
-                                    <div class="modal-header">
-                                        <h5 class="modal-title" id="experienceModalLabel">Experience Details</h5>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                    </div>
-                                    <div class="modal-body">
-                                        {{ employee.experience }}
-                                    </div>
-                                    <div class="modal-footer">
-                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </td>
-                    
-                    <td>{{ employee.job_title }}</td>
-                    <td>{{ employee.duty_time_start }}</td>
-                    <td>{{ employee.duty_time_end }}</td>
-                    <td>{{ employee.organization }}</td> 
-                    <td>{{ employee.joining_date }}</td>
-                    <td>{{ employee.dob }}</td>
-                    <td>
-                        {% for attachment in employee.attachments.all %}
-                            <a href="{{ attachment.file.url }}" target="_blank">View</a><br>
-                        {% endfor %}
-                    </td>
-                    <td>{{ employee.bank_account_number }}</td>
-                    <td>
-                        {% if employee.ifsc_code %}
-                            <i class="fa fa-info-circle" onclick="showDetails('{{ employee.ifsc_code }}', 'IFSC Code')"></i>
-                        {% else %}
-                            None
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if employee.bank_name %}
-                            <i class="fa fa-info-circle" onclick="showDetails('{{ employee.bank_name }}', 'Bank Name')"></i>
-                        {% else %}
-                            None
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if employee.branch %}
-                            <i class="fa fa-info-circle" onclick="showDetails('{{ employee.branch }}', 'Branch')"></i>
-                        {% else %}
-                            None
-                        {% endif %}
-                    </td>
-                                        
-                    <td>{{ employee.get_status_display }}</td> 
-                    
-                    <td>
-                        <a href="{% url 'edit_employee' employee.id %}" class="btn btn-warning btn-sm">Edit</a>
-                    </td>
-                    <td>
-                        <form action="{% url 'delete_employee' employee.id %}" method="post" onsubmit="return confirmDeletion()">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
-                        </form>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="23" class="text-center">No employees found</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <div style="display: flex; gap: 10px; align-items: center;">
+        <!-- Clear Filters button -->
+        <button type="button" onclick="clearAllFilters()" class="btn-clear-filters" 
+            style="background: #f1f1f1; color: #333; border: none; padding: 10px 18px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: all 0.3s;">
+            <i class="fas fa-eraser"></i> Clear Filters
+        </button>
+        <!-- Add Employee button -->
+        <a href="{% url 'add_employee' %}" class="btn-add-employee">
+            <i class="fas fa-plus"></i> Add New Employee
+        </a>
     </div>
-
-    <!-- Bottom Pagination -->
-    {% if page_obj.has_other_pages %}
-    <div class="pagination-info" style="margin-top: 20px;">
-        <div></div>
-        <nav aria-label="Employee pagination">
-            <ul class="pagination">
-                {% if page_obj.has_previous %}
-                    <li class="page-item">
-                        <a class="page-link" href="?{% if status_filter %}status={{ status_filter }}&{% endif %}{% if search_query %}search={{ search_query }}&{% endif %}page={{ page_obj.previous_page_number }}">Previous</a>
-                    </li>
-                {% endif %}
-
-                {% for num in page_obj.paginator.page_range %}
-                    {% if page_obj.number == num %}
-                        <li class="page-item active">
-                            <span class="page-link">{{ num }}</span>
-                        </li>
-                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                        <li class="page-item">
-                            <a class="page-link" href="?{% if status_filter %}status={{ status_filter }}&{% endif %}{% if search_query %}search={{ search_query }}&{% endif %}page={{ num }}">{{ num }}</a>
-                        </li>
-                    {% endif %}
-                {% endfor %}
-
-                {% if page_obj.has_next %}
-                    <li class="page-item">
-                        <a class="page-link" href="?{% if status_filter %}status={{ status_filter }}&{% endif %}{% if search_query %}search={{ search_query }}&{% endif %}page={{ page_obj.next_page_number }}">Next</a>
-                    </li>
-                {% endif %}
-            </ul>
-        </nav>
-    </div>
-    {% endif %}
 </div>
 
-<!-- Modal for bank details -->
-<div class="modal fade" id="infoModal" tabindex="-1" aria-labelledby="infoModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
+        <!-- Main layout -->
+        <div class="employee-layout">
+            <div class="employee-list-panel">
+                <div class="employee-list-header">
+                    <h3>Employee Directory</h3>
+                    <div class="employee-count">{% if employees %}{{ employees|length }} employee(s) on this page{% else %}0 employees{% endif %}</div>
+                </div>
+
+                {% for employee in employees %}
+                <div class="employee-item {% if forloop.first %}active{% endif %}" 
+                     onclick="showEmployeeDetails({{ employee.id }}, this)"
+                     data-employee-id="{{ employee.id }}">
+                    <div class="employee-item-content">
+                        <img src="{{ employee.photo.url }}" alt="{{ employee.name }}" class="employee-avatar">
+                        <div class="employee-info">
+                            <p class="employee-name">{{ employee.name }}</p>
+                            <p class="employee-title">{{ employee.job_title }}</p>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div style="padding: 40px; text-align: center; color: #999;">
+                    <i class="fas fa-user-slash" style="font-size: 48px; margin-bottom: 15px; opacity: 0.3;"></i>
+                    <p>No employees found</p>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="employee-details-panel" id="employeeDetailsPanel">
+                {% if employees %}
+                {% with employee=employees.0 %}
+                <div id="employeeDetails{{ employee.id }}" class="employee-details-content">
+                    <div class="employee-header">
+                        <img src="{{ employee.photo.url }}" alt="{{ employee.name }}" class="employee-photo-large" onclick="showPhotoModal('{{ employee.photo.url }}', '{{ employee.name }}')">
+                        <div class="employee-header-info">
+                            <h3>{{ employee.name }}</h3>
+                            <p class="employee-id">Employee ID: {{ employee.user.userid }}</p>
+                            <span class="status-badge status-{{ employee.status }}">{{ employee.get_status_display }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Tabs -->
+                    <div class="tabs-container">
+                        <div class="nav-tabs">
+                            <button class="nav-tab active" onclick="switchTab(event, 'jobInfo{{ employee.id }}')">
+                                <i class="fas fa-briefcase"></i> Job Information
+                            </button>
+                            <button class="nav-tab" onclick="switchTab(event, 'contactInfo{{ employee.id }}')">
+                                <i class="fas fa-address-book"></i> Contact Details
+                            </button>
+                            <button class="nav-tab" onclick="switchTab(event, 'bankInfo{{ employee.id }}')">
+                                <i class="fas fa-university"></i> Bank Details
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="jobInfo{{ employee.id }}" class="tab-content active">
+                        <div class="detail-section">
+                            <h4><i class="fas fa-briefcase"></i> Position & Organization</h4>
+                            <div class="detail-grid">
+                                <div class="detail-item">
+                                    <div class="detail-label">Job Title</div>
+                                    <div class="detail-value">{{ employee.job_title }}</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">Organization</div>
+                                    <div class="detail-value">{{ employee.organization }}</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">Joining Date</div>
+                                    <div class="detail-value">{{ employee.joining_date }}</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">Date of Birth</div>
+                                    <div class="detail-value">{{ employee.dob }}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="detail-section">
+                            <h4><i class="fas fa-clock"></i> Working Hours</h4>
+                            <div class="detail-grid">
+                                <div class="detail-item">
+                                    <div class="detail-label">Duty Start Time</div>
+                                    <div class="detail-value">{{ employee.duty_time_start }}</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">Duty End Time</div>
+                                    <div class="detail-value">{{ employee.duty_time_end }}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="detail-section">
+                            <h4><i class="fas fa-graduation-cap"></i> Education</h4>
+                            <div class="detail-text-area">
+                                <div class="detail-value">{{ employee.education }}</div>
+                            </div>
+                        </div>
+
+                        <div class="detail-section">
+                            <h4><i class="fas fa-suitcase"></i> Experience</h4>
+                            <div class="detail-text-area">
+                                <div class="detail-value">{{ employee.experience }}</div>
+                            </div>
+                        </div>
+
+                        {% if employee.attachments.all %}
+                        <div class="detail-section">
+                            <h4><i class="fas fa-paperclip"></i> Attachments</h4>
+                            <div class="attachments-list">
+                                {% for attachment in employee.attachments.all %}
+                                <a href="{{ attachment.file.url }}" target="_blank" class="attachment-link">
+                                    <i class="fas fa-file-alt"></i>
+                                    View Document {{ forloop.counter }}
+                                </a>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div id="contactInfo{{ employee.id }}" class="tab-content">
+                        <div class="detail-section">
+                            <h4><i class="fas fa-phone"></i> Phone Numbers</h4>
+                            <div class="detail-grid">
+                                <div class="detail-item">
+                                    <div class="detail-label">Personal Phone</div>
+                                    <div class="detail-value">{{ employee.phone_personal }}</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">Residential Phone</div>
+                                    <div class="detail-value">{{ employee.phone_residential }}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="detail-section">
+                            <h4><i class="fas fa-map-marker-alt"></i> Address Information</h4>
+                            <div class="detail-grid">
+                                <div class="detail-item">
+                                    <div class="detail-label">Address</div>
+                                    <div class="detail-value">{{ employee.address }}</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">Place</div>
+                                    <div class="detail-value">{{ employee.place }}</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">District</div>
+                                    <div class="detail-value">{{ employee.district }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="bankInfo{{ employee.id }}" class="tab-content">
+                        <div class="detail-section">
+                            <h4><i class="fas fa-university"></i> Bank Account Information</h4>
+                            <div class="detail-grid">
+                                <div class="detail-item">
+                                    <div class="detail-label">Bank Account Number</div>
+                                    <div class="detail-value">{{ employee.bank_account_number|default:"Not provided" }}</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">IFSC Code</div>
+                                    <div class="detail-value">{{ employee.ifsc_code|default:"Not provided" }}</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">Bank Name</div>
+                                    <div class="detail-value">{{ employee.bank_name|default:"Not provided" }}</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">Branch</div>
+                                    <div class="detail-value">{{ employee.branch|default:"Not provided" }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="action-buttons">
+                        <a href="{% url 'edit_employee' employee.id %}" class="btn-edit">
+                            <i class="fas fa-edit"></i>
+                            Edit Employee
+                        </a>
+                        <form action="{% url 'delete_employee' employee.id %}" method="post" style="flex: 1;" onsubmit="return confirmDeletion()">
+                            {% csrf_token %}
+                            <button type="submit" class="btn-delete">
+                                <i class="fas fa-trash"></i>
+                                Delete Employee
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                {% endwith %}
+                {% else %}
+                <div class="no-employee-selected">
+                    <i class="fas fa-user-circle"></i>
+                    <h3>No Employees Available</h3>
+                    <p>Add a new employee to get started</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Pagination -->
+        {% if page_obj.has_other_pages %}
+        <div class="pagination-info">
+            <div></div>
+            <nav aria-label="Employee pagination">
+                <ul class="pagination">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?{% if status_filter %}status={{ status_filter }}&{% endif %}{% if search_query %}search={{ search_query }}&{% endif %}{% if job_filter %}job={{ job_filter }}&{% endif %}{% if organization_filter %}organization={{ organization_filter }}&{% endif %}page={{ page_obj.previous_page_number }}">
+                                <i class="fas fa-chevron-left"></i> Previous
+                            </a>
+                        </li>
+                    {% endif %}
+
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?{% if status_filter %}status={{ status_filter }}&{% endif %}{% if search_query %}search={{ search_query }}&{% endif %}{% if job_filter %}job={{ job_filter }}&{% endif %}{% if organization_filter %}organization={{ organization_filter }}&{% endif %}page={{ num }}">{{ num }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?{% if status_filter %}status={{ status_filter }}&{% endif %}{% if search_query %}search={{ search_query }}&{% endif %}{% if job_filter %}job={{ job_filter }}&{% endif %}{% if organization_filter %}organization={{ organization_filter }}&{% endif %}page={{ page_obj.next_page_number }}">
+                                Next <i class="fas fa-chevron-right"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Photo modal -->
+<div class="modal fade" id="photoModal" tabindex="-1" aria-labelledby="photoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="modalTitle"></h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <h5 class="modal-title" id="photoModalLabel">Employee Photo</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body">
-                <p id="modalContent"></p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <div class="modal-body text-center">
+                <img id="photoModalImage" src="" class="img-fluid" alt="Employee Photo">
             </div>
         </div>
     </div>
 </div>
 
-<!-- JavaScript for Search and Filtering -->
 <script>
-    let searchTimeout;
-    document.getElementById("searchInput").addEventListener("keyup", function() {
-        clearTimeout(searchTimeout);
-        const searchValue = this.value;
-        
-        // Debounce search to avoid too many requests
-        searchTimeout = setTimeout(function() {
-            let currentUrl = new URL(window.location);
-            if (searchValue.trim()) {
-                currentUrl.searchParams.set('search', searchValue.trim());
-            } else {
-                currentUrl.searchParams.delete('search');
-            }
-            currentUrl.searchParams.delete('page'); // Reset to first page
-            window.location.href = currentUrl.toString();
-        }, 500); // Wait 500ms after user stops typing
-    });
+    // Small debug help: open browser console and check logs if something unexpected happens.
+    console.log("Employee page loaded. Current query string:", window.location.search);
+
+    // Build employeeData for client-side detail rendering
+    const employeeData = {
+        {% for employee in employees %}
+        {{ employee.id }}: {
+            name: "{{ employee.name|escapejs }}",
+            userid: "{{ employee.user.userid|escapejs }}",
+            photo: "{{ employee.photo.url|escapejs }}",
+            status: "{{ employee.status|escapejs }}",
+            statusDisplay: "{{ employee.get_status_display|escapejs }}",
+            jobTitle: "{{ employee.job_title|escapejs }}",
+            organization: "{{ employee.organization|escapejs }}",
+            joiningDate: "{{ employee.joining_date|escapejs }}",
+            dob: "{{ employee.dob|escapejs }}",
+            dutyTimeStart: "{{ employee.duty_time_start|escapejs }}",
+            dutyTimeEnd: "{{ employee.duty_time_end|escapejs }}",
+            education: "{{ employee.education|escapejs }}",
+            experience: "{{ employee.experience|escapejs }}",
+            phonePersonal: "{{ employee.phone_personal|escapejs }}",
+            phoneResidential: "{{ employee.phone_residential|escapejs }}",
+            address: "{{ employee.address|escapejs }}",
+            place: "{{ employee.place|escapejs }}",
+            district: "{{ employee.district|escapejs }}",
+            bankAccountNumber: "{{ employee.bank_account_number|default:'Not provided'|escapejs }}",
+            ifscCode: "{{ employee.ifsc_code|default:'Not provided'|escapejs }}",
+            bankName: "{{ employee.bank_name|default:'Not provided'|escapejs }}",
+            branch: "{{ employee.branch|default:'Not provided'|escapejs }}",
+            editUrl: "{% url 'edit_employee' employee.id %}",
+            deleteUrl: "{% url 'delete_employee' employee.id %}",
+            attachments: [
+                {% for attachment in employee.attachments.all %}
+                {url: "{{ attachment.file.url|escapejs }}", index: {{ forloop.counter }}}{% if not forloop.last %},{% endif %}
+                {% endfor %}
+            ]
+        }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    };
+
+    function showEmployeeDetails(employeeId, element) {
+        document.querySelectorAll('.employee-item').forEach(item => item.classList.remove('active'));
+        if (element) element.classList.add('active');
+
+        const employee = employeeData[employeeId];
+        if (!employee) {
+            console.warn("No employee data found for id:", employeeId);
+            return;
+        }
+
+        // Build details HTML (kept as in your original template)
+        const detailsHTML = `
+            <div id="employeeDetails${employeeId}" class="employee-details-content">
+                <div class="employee-header">
+                    <img src="${employee.photo}" alt="${employee.name}" class="employee-photo-large" onclick="showPhotoModal('${employee.photo}', '${employee.name}')">
+                    <div class="employee-header-info">
+                        <h3>${employee.name}</h3>
+                        <p class="employee-id">Employee ID: ${employee.userid}</p>
+                        <span class="status-badge status-${employee.status}">${employee.statusDisplay}</span>
+                    </div>
+                </div>
+
+                <div class="tabs-container">
+                    <div class="nav-tabs">
+                        <button class="nav-tab active" onclick="switchTab(event, 'jobInfo${employeeId}')">
+                            <i class="fas fa-briefcase"></i> Job Information
+                        </button>
+                        <button class="nav-tab" onclick="switchTab(event, 'contactInfo${employeeId}')">
+                            <i class="fas fa-address-book"></i> Contact Details
+                        </button>
+                        <button class="nav-tab" onclick="switchTab(event, 'bankInfo${employeeId}')">
+                            <i class="fas fa-university"></i> Bank Details
+                        </button>
+                    </div>
+                </div>
+
+                <div id="jobInfo${employeeId}" class="tab-content active">
+                    <div class="detail-section">
+                        <h4><i class="fas fa-briefcase"></i> Position & Organization</h4>
+                        <div class="detail-grid">
+                            <div class="detail-item">
+                                <div class="detail-label">Job Title</div>
+                                <div class="detail-value">${employee.jobTitle}</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Organization</div>
+                                <div class="detail-value">${employee.organization}</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Joining Date</div>
+                                <div class="detail-value">${employee.joiningDate}</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Date of Birth</div>
+                                <div class="detail-value">${employee.dob}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="detail-section">
+                        <h4><i class="fas fa-clock"></i> Working Hours</h4>
+                        <div class="detail-grid">
+                            <div class="detail-item">
+                                <div class="detail-label">Duty Start Time</div>
+                                <div class="detail-value">${employee.dutyTimeStart}</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Duty End Time</div>
+                                <div class="detail-value">${employee.dutyTimeEnd}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="detail-section">
+                        <h4><i class="fas fa-graduation-cap"></i> Education</h4>
+                        <div class="detail-text-area">
+                            <div class="detail-value">${employee.education}</div>
+                        </div>
+                    </div>
+
+                    <div class="detail-section">
+                        <h4><i class="fas fa-suitcase"></i> Experience</h4>
+                        <div class="detail-text-area">
+                            <div class="detail-value">${employee.experience}</div>
+                        </div>
+                    </div>
+
+                    ${employee.attachments.length > 0 ? `
+                    <div class="detail-section">
+                        <h4><i class="fas fa-paperclip"></i> Attachments</h4>
+                        <div class="attachments-list">
+                            ${employee.attachments.map(att => `
+                                <a href="${att.url}" target="_blank" class="attachment-link">
+                                    <i class="fas fa-file-alt"></i>
+                                    View Document ${att.index}
+                                </a>
+                            `).join('')}
+                        </div>
+                    </div>
+                    ` : ''}
+                </div>
+
+                <div id="contactInfo${employeeId}" class="tab-content">
+                    <div class="detail-section">
+                        <h4><i class="fas fa-phone"></i> Phone Numbers</h4>
+                        <div class="detail-grid">
+                            <div class="detail-item">
+                                <div class="detail-label">Personal Phone</div>
+                                <div class="detail-value">${employee.phonePersonal}</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Residential Phone</div>
+                                <div class="detail-value">${employee.phoneResidential}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="detail-section">
+                        <h4><i class="fas fa-map-marker-alt"></i> Address Information</h4>
+                        <div class="detail-grid">
+                            <div class="detail-item">
+                                <div class="detail-label">Address</div>
+                                <div class="detail-value">${employee.address}</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Place</div>
+                                <div class="detail-value">${employee.place}</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">District</div>
+                                <div class="detail-value">${employee.district}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="bankInfo${employeeId}" class="tab-content">
+                    <div class="detail-section">
+                        <h4><i class="fas fa-university"></i> Bank Account Information</h4>
+                        <div class="detail-grid">
+                            <div class="detail-item">
+                                <div class="detail-label">Bank Account Number</div>
+                                <div class="detail-value">${employee.bankAccountNumber}</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">IFSC Code</div>
+                                <div class="detail-value">${employee.ifscCode}</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Bank Name</div>
+                                <div class="detail-value">${employee.bankName}</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Branch</div>
+                                <div class="detail-value">${employee.branch}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <a href="${employee.editUrl}" class="btn-edit">
+                        <i class="fas fa-edit"></i>
+                        Edit Employee
+                    </a>
+
+                    <form action="${employee.deleteUrl}" method="post" style="flex: 1;" onsubmit="return confirmDeletion()">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-delete">
+                            <i class="fas fa-trash"></i>
+                            Delete Employee
+                        </button>
+                    </form>
+                </div>
+            </div>
+        `;
+        document.getElementById('employeeDetailsPanel').innerHTML = detailsHTML;
+    }
+
+    function switchTab(event, tabId) {
+        const tabsContainer = event.target.closest('.tabs-container');
+        // deactivate current tabs
+        tabsContainer.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
+        event.target.classList.add('active');
+
+        // hide content siblings in the same employee details container
+        const detailsContainer = document.getElementById(tabId).closest('.employee-details-content');
+        detailsContainer.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+    }
+
+    function showPhotoModal(photoUrl, employeeName) {
+        document.getElementById('photoModalImage').src = photoUrl;
+        document.getElementById('photoModalLabel').textContent = employeeName + ' - Photo';
+        const modal = new bootstrap.Modal(document.getElementById('photoModal'));
+        modal.show();
+    }
 
     function confirmDeletion() {
         return confirm("Are you sure you want to delete this employee? This action cannot be undone.");
     }
 
-    function showDetails(value, title) {
-        document.getElementById('modalTitle').innerText = title;
-        document.getElementById('modalContent').innerText = value;
-        
-        // Use Bootstrap 5 method to show modal
-        var myModal = new bootstrap.Modal(document.getElementById('infoModal'));
-        myModal.show();
+    // ---------------- Filter helpers ----------------
+    function setQueryParam(url, key, value) {
+        if (!key) return;
+        if (value === null || value === undefined || value === '') {
+            url.searchParams.delete(key);
+        } else {
+            url.searchParams.set(key, value);
+        }
     }
 
     function filterByStatus() {
         const status = document.getElementById('statusFilter').value;
-        let currentUrl = new URL(window.location);
-        currentUrl.searchParams.set('status', status);
-        currentUrl.searchParams.delete('page'); // Reset to first page
-        window.location.href = currentUrl.toString();
+        const u = new URL(window.location);
+        setQueryParam(u, 'status', status);
+        u.searchParams.delete('page');
+        console.log("Applying status filter:", status);
+        window.location.href = u.toString();
     }
+
+    function filterByJob() {
+        const job = document.getElementById('jobFilter').value;
+        const u = new URL(window.location);
+        setQueryParam(u, 'job', job);
+        u.searchParams.delete('page');
+        console.log("Applying job filter:", job);
+        window.location.href = u.toString();
+    }
+
+    function filterByOrganization() {
+        const org = document.getElementById('organizationFilter').value;
+        const u = new URL(window.location);
+        setQueryParam(u, 'organization', org);
+        u.searchParams.delete('page');
+        console.log("Applying organization filter:", org);
+        window.location.href = u.toString();
+    }
+
+    // Search input with debounce
+    let searchTimeout;
+    document.getElementById("searchInput").addEventListener("keyup", function() {
+        clearTimeout(searchTimeout);
+        const value = this.value;
+        searchTimeout = setTimeout(function() {
+            const u = new URL(window.location);
+            setQueryParam(u, 'search', value && value.trim() ? value.trim() : '');
+            u.searchParams.delete('page');
+            console.log("Applying search:", value);
+            window.location.href = u.toString();
+        }, 400);
+    });
+
+    function clearAllFilters() {
+    // Reset input values visually
+    document.getElementById('searchInput').value = '';
+    document.getElementById('statusFilter').selectedIndex = 0;
+    document.getElementById('jobFilter').selectedIndex = 0;
+    document.getElementById('organizationFilter').selectedIndex = 0;
+
+    // Reload without any query params
+    const cleanUrl = window.location.origin + window.location.pathname;
+    console.log("Clearing all filters...");
+    window.location.href = cleanUrl;
+}
+
 </script>
+
 {% endblock %}

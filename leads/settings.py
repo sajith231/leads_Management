@@ -68,7 +68,9 @@ INSTALLED_APPS = [
     'software_master',
     'purchase_order',
     'claims',
+    "django_extensions",
     
+    'wallet',
 ]
 
 
@@ -96,6 +98,7 @@ MIDDLEWARE = [
 
     'app1.middleware.NoCacheMiddleware',  # Add this line for logout issue
     'app1.middleware.UserMenuMiddleware', 
+    'leads.middleware.LoginRequiredMiddleware',  # add this at bottom
     
     
 ]

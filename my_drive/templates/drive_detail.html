@@ -567,14 +567,14 @@
   }
 </style>
 
-<div class="page-wrap">
+<div class="">
   <div class="top-bar">
     <a href="{% url 'drive_list' %}" class="back-link">← Back to Drive</a>
   </div>
 
   <div class="main-grid">
     <!-- LEFT: Subfolders -->
-    <aside class="subfolder-panel">
+    <aside class="">
       <div class="subfolder-header">
         <h3>Subfolders</h3>
         <button id="openCreateSubfolder"><i class="fa-solid fa-folder"></i></button>
@@ -685,6 +685,8 @@
               <th>Date</th>
               <th>File Name</th>
               <th class="text-center">Download</th>
+              <th class="text-center">Copy Link</th>
+
               <th class="text-center">View</th>
               <th class="text-center">Edit</th>
               <th class="text-center">Delete</th>
@@ -707,6 +709,13 @@
                 </td>
 
                 <td class="text-center"><a class="icon-btn icon-view" href="{% url 'file_download' f.id %}"><i class="fa-solid fa-download"></i></a></td>
+                <td class="text-center">
+                  <button class="icon-btn icon-view" onclick="generateCode({{ f.id }}, this)">
+                    <i class="fa-solid fa-link"></i>
+                  </button>
+                  <span class="share-code" style="display:none;margin-left:8px;color:#2563eb;font-weight:bold;"></span>
+                </td>
+
                 <td class="text-center"><a class="icon-btn icon-view" href="{% url 'file_preview' f.id %}" target="_blank"><i class="fa-solid fa-eye"></i></a></td>
                 <td class="text-center">
                   <a href="{% url 'file_edit_page' f.id %}" class="icon-btn icon-edit" title="Edit file name">
@@ -804,5 +813,61 @@
     searchInput.focus();
   });
 </script>
+
+
+<script>
+function generateCode(fileId, btn) {
+  // Disable button while generating
+  btn.disabled = true;
+  btn.style.opacity = "0.6";
+
+  fetch(`/my_drive/drives/share/gen/${fileId}/`)
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`Server responded with ${response.status}`);
+      }
+      return response.json();
+    })
+    .then(data => {
+      if (!data.code || !data.link) {
+        throw new Error("Invalid response format");
+      }
+
+      // Show code beside the button
+      const codeSpan = btn.parentElement.querySelector(".share-code");
+      codeSpan.textContent = data.code;
+      codeSpan.style.display = "inline";
+      codeSpan.style.background = "#2563eb";
+      codeSpan.style.color = "#fff";
+      codeSpan.style.padding = "4px 8px";
+      codeSpan.style.borderRadius = "6px";
+      codeSpan.style.marginLeft = "8px";
+      codeSpan.style.fontWeight = "600";
+
+      // Copy link to clipboard
+      navigator.clipboard.writeText(data.link)
+        .then(() => {
+          alert("✅ Link copied!\nUse this code: " + data.code);
+        })
+        .catch(() => {
+          alert("🔗 Code generated: " + data.code + "\n(Could not copy automatically)");
+        });
+
+      // Remove code after 1 minute
+      setTimeout(() => {
+        codeSpan.style.display = "none";
+        btn.disabled = false;
+        btn.style.opacity = "1";
+      }, 60000);
+    })
+    .catch(err => {
+      console.error("Error:", err);
+      alert("⚠️ Error generating link.\nPlease check the URL or reload the page.");
+      btn.disabled = false;
+      btn.style.opacity = "1";
+    });
+}
+</script>
+
 
 {% endblock %}
