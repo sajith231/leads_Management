@@ -68,7 +68,9 @@ INSTALLED_APPS = [
     'software_master',
     'purchase_order',
     'claims',
+    "django_extensions",
     
+    'wallet',
 ]
 
 
@@ -96,6 +98,7 @@ MIDDLEWARE = [
 
     'app1.middleware.NoCacheMiddleware',  # Add this line for logout issue
     'app1.middleware.UserMenuMiddleware', 
+    'leads.middleware.LoginRequiredMiddleware',  # add this at bottom
     
     
 ]
@@ -226,3 +229,15 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 DATA_UPLOAD_MAX_MEMORY_SIZE = 52428800  
 FILE_UPLOAD_MAX_MEMORY_SIZE = 52428800 
+
+
+# ===== DXing WhatsApp API credentials =====
+import os
+DXING_SECRET = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
+DXING_ACCOUNT = "1761365422812b4ba287f5ee0bc9d43bbf5bbe87fb68fc4daea92d8"
+
+if DEBUG:
+    BASE_URL = "http://127.0.0.1:8000"
+else:
+    BASE_URL = "https://myimc.in"
+

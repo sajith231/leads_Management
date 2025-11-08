@@ -143,7 +143,11 @@
                             <div class="supplier-info">
                                 <strong>{{ po.supplier.name }}</strong>
                                 <div class="supplier-location">
-                                    {{ po.supplier.city }}, {{ po.supplier.state }}
+                                    {% if po.client_details %}
+                                        {{ po.client_details }}
+                                    {% else %}
+                                        <span class="text-muted">No Client Info</span>
+                                    {% endif %}
                                 </div>
                             </div>
                         </td>
@@ -466,11 +470,10 @@ body {
     overflow-x: auto;
 }
 
-/* Data Table */
 .data-table {
     width: 100%;
     border-collapse: collapse;
-    min-width: 1200px;
+    min-width: 1400px; /* Increased for better column spacing */
 }
 
 .data-table thead {
@@ -543,20 +546,24 @@ body {
 
 /* Supplier Info */
 .supplier-info {
-    line-height: 1.5;
+    line-height: 1.4;
+    min-width: 200px; /* Ensure adequate width */
 }
 
 .supplier-info strong {
     display: block;
     color: #2c3e50;
     font-size: 14px;
-    margin-bottom: 2px;
+    font-weight: 600;
+    margin-bottom: 4px;
 }
 
 .supplier-location {
-    font-size: 12px;
+    font-size: 11px;
     color: #7f8c8d;
     display: block;
+    line-height: 1.3;
+    font-style: italic;
 }
 
 /* Amount Styling */
@@ -993,6 +1000,17 @@ body {
         box-shadow: none;
     }
 }
+
+/* Column Width Adjustments */
+.data-table th:nth-child(1) { width: 140px; }  /* PO Number */
+.data-table th:nth-child(2) { width: 110px; }  /* PO Date */
+.data-table th:nth-child(3) { width: 200px; }  /* Supplier (WIDER) */
+.data-table th:nth-child(4) { width: 120px; }  /* Delivery Date */
+.data-table th:nth-child(5) { width: 120px; }  /* Grand Total */
+.data-table th:nth-child(6) { width: 140px; }  /* Department */
+.data-table th:nth-child(7) { width: 100px; }  /* Status */
+.data-table th:nth-child(8) { width: 120px; }  /* Admin Status */
+.data-table th:nth-child(9) { width: 140px; }  /* Actions */
 </style>
 
 <script>

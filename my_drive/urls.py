@@ -20,4 +20,12 @@ urlpatterns = [
     path("subfolder/<int:pk>/delete/", views.subfolder_delete, name="subfolder_delete"),
     path("files/<int:pk>/edit_name/", views.file_edit_page, name="file_edit_page"),
 
+
+    
+
+    path("drives/share/gen/<int:pk>/", views.generate_share_code, name="generate_share_code"),
+    path("drives/share/<int:pk>/", views.verify_share_code, name="drive_share"),
+
+
+
 ]

@@ -69,6 +69,20 @@
                     </div>
                 </div>
 
+                <!-- ✅ NEW: Section Field -->
+                <div class="form-row">
+                    <div class="form-group full-width">
+                        <label for="section">Section <span class="required">*</span></label>
+                        <select id="section" name="section" required class="form-control">
+                            <option value="">Select Section</option>
+                            <option value="GENERAL" {% if item.section == 'GENERAL' %}selected{% endif %}>General</option>
+                            <option value="SERVICE" {% if item.section == 'SERVICE' %}selected{% endif %}>Service Items</option>
+                            <option value="SOFTWARE" {% if item.section == 'SOFTWARE' %}selected{% endif %}>Softwares</option>
+                        </select>
+                        <small class="help-text">Categorize this item by section</small>
+                    </div>
+                </div>
+
                 <div class="form-row">
                     <div class="form-group">
                         <label for="unit_of_measure">Unit of Measure <span class="required">*</span></label>
@@ -183,35 +197,10 @@
                             <option value="False" {% if not item.is_active %}selected{% endif %}>Inactive</option>
                         </select>
                     </div>
-
                 </div>
             </div>
 
-            <div class="price-summary">
-                <h4><i class="fas fa-calculator"></i> Price Summary</h4>
-                <div class="summary-grid">
-                    <div class="summary-item">
-                        <span class="summary-label">MRP:</span>
-                        <span class="summary-value" id="displayMRP">₹{{ item.mrp|floatformat:2 }}</span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="summary-label">Purchase Price:</span>
-                        <span class="summary-value" id="displayPurchase">₹{{ item.purchase_price|floatformat:2 }}</span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="summary-label">Cost:</span>
-                        <span class="summary-value" id="displayCost">₹{{ item.cost|floatformat:2 }}</span>
-                    </div>
-                    <div class="summary-item highlight">
-                        <span class="summary-label">Profit Margin:</span>
-                        <span class="summary-value" id="displayMargin">
-                            {% widthratio item.purchase_price|add:0|add:"-"|add:item.cost item.purchase_price 100 %}%
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Show metadata for update form -->
+            <!-- Metadata Section -->
             {% if action == 'Edit' %}
             <div class="form-section metadata-section">
                 <h3 class="section-title">
@@ -445,86 +434,15 @@ textarea.form-control {
     margin-top: 5px;
 }
 
-.price-summary {
-    background: linear-gradient(135deg, #E3F2FD 100%);
-    padding: 25px;
-    border-radius: 8px;
-    margin-bottom: 30px;
-    color: black;
-}
-
-.price-summary h4 {
-    margin: 0 0 20px 0;
-    font-size: 18px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.summary-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 15px;
-}
-
-.summary-item {
-    background: rgba(255, 255, 255, 0.37);
-    padding: 15px;
-    border-radius: 6px;
-    backdrop-filter: blur(10px);
-}
-
-.summary-item.highlight {
-    background: rgba(255, 255, 255, 0.37);
-    border: 2px solid rgba(255,255,255,0.3);
-}
-
-.summary-label {
-    display: block;
-    font-size: 13px;
-    opacity: 0.9;
-    margin-bottom: 5px;
-}
-
-.summary-value {
-    display: block;
-    font-size: 20px;
-    font-weight: 700;
-}
-
 .form-actions {
     display: flex;
+    justify-content: flex-end;
+    align-items: center;
     gap: 15px;
-    justify-content: flex-start;
     padding-top: 20px;
+    border-top: 2px solid #ecf0f1;
 }
 
-@media (max-width: 768px) {
-    .form-row, .summary-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .page-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 15px;
-    }
-
-    .metadata-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .form-actions {
-        flex-direction: column;
-    }
-    
-    .btn-lg {
-        width: 100%;
-        justify-content: center;
-    }
-}
-
-/* Metadata Section Styling */
 .metadata-section {
     background: #f8f9fa;
     padding: 20px;
@@ -568,6 +486,31 @@ textarea.form-control {
 .metadata-value i {
     color: #3498db;
 }
+
+@media (max-width: 768px) {
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+
+    .metadata-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .btn-lg {
+        width: 100%;
+        justify-content: center;
+    }
+}
 </style>
 
 <script>
@@ -576,25 +519,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const mrpInput = document.getElementById('mrp');
     const purchaseInput = document.getElementById('purchase_price');
     const costInput = document.getElementById('cost');
-    
-    // Update price summary
-    function updateSummary() {
-        const mrp = parseFloat(mrpInput.value) || 0;
-        const purchase = parseFloat(purchaseInput.value) || 0;
-        const cost = parseFloat(costInput.value) || 0;
-        
-        document.getElementById('displayMRP').textContent = '₹' + mrp.toFixed(2);
-        document.getElementById('displayPurchase').textContent = '₹' + purchase.toFixed(2);
-        document.getElementById('displayCost').textContent = '₹' + cost.toFixed(2);
-        
-        // Calculate profit margin
-        const margin = purchase > 0 ? ((purchase - cost) / purchase * 100) : 0;
-        document.getElementById('displayMargin').textContent = margin.toFixed(2) + '%';
-    }
-    
-    mrpInput.addEventListener('input', updateSummary);
-    purchaseInput.addEventListener('input', updateSummary);
-    costInput.addEventListener('input', updateSummary);
     
     // Form validation
     form.addEventListener('submit', function(e) {
@@ -628,14 +552,9 @@ document.addEventListener('DOMContentLoaded', function() {
         input.addEventListener('blur', function() {
             if (this.value) {
                 this.value = parseFloat(this.value).toFixed(2);
-                updateSummary();
             }
         });
     });
-    
-    // Initialize summary on page load
-    updateSummary();
 });
 </script>
 {% endblock %}
-

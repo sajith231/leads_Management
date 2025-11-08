@@ -148,12 +148,29 @@
       white-space: nowrap;
     }
 
-    .location-text {
-      max-width: 200px;
-      font-size: 13px;
-      line-height: 1.4;
-      word-wrap: break-word;
-    }
+    /* Prevent overlap between location and coordinates */
+.location-text {
+  max-width: 220px;
+  font-size: 13px;
+  line-height: 1.4;
+  word-wrap: break-word;
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+
+.table td {
+  vertical-align: top !important;
+}
+
+@media (max-width: 768px) {
+  .location-text {
+    max-width: 160px;
+  }
+  td:nth-child(4), td:nth-child(5) {
+    display: block;
+    width: 100%;
+  }
+}
 
     .timestamp {
       font-size: 12px;
