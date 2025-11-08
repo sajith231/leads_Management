@@ -1,0 +1,21 @@
+<table class="history-table">
+<thead>
+<tr>
+  <th>Item</th><th>Qty</th><th>Rate</th><th>Total</th><th>PO No</th><th>Date</th>
+</tr>
+</thead>
+<tbody>
+{% for i in po_items %}
+<tr>
+  <td>{{ i.item.name }}</td>
+  <td>{{ i.quantity }}</td>
+  <td>{{ i.entry_rate }}</td>
+  <td>{{ i.line_total }}</td>
+  <td>{{ i.po.po_number }}</td>
+  <td>{{ i.po.po_date|date:"d M Y" }}</td>
+</tr>
+{% empty %}
+<tr><td colspan="6">No purchase history found for this supplier.</td></tr>
+{% endfor %}
+</tbody>
+</table>

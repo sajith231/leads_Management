@@ -52,20 +52,23 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label for="department">Buyer Department <span class="required">*</span></label>
-                        <select id="department" name="department" required class="form-control">
-                            <option value="">Select Department</option>
-                            {% for d in departments %}
-                            <option value="{{ d.id }}" 
-                                data-address="{{ d.address|escapejs }}"
-                                data-city="{{ d.city|escapejs }}"
-                                data-state="{{ d.state|escapejs }}"
-                                data-pincode="{{ d.pincode|escapejs }}"
-                                data-gst="{{ d.gst_number|escapejs }}"
-                                {% if po.department.id == d.id %}selected{% endif %}>
-                                {{ d.name }} - {{ d.city }}
-                            </option>
-                            {% endfor %}
-                        </select>
+                        <div class="department-searchable-wrapper">
+                            <div class="searchable-dropdown">
+                                <input 
+                                    type="text" 
+                                    id="department_search_input"
+                                    class="form-control searchable-input"
+                                    placeholder="Type to search or click to select..."
+                                    autocomplete="off"
+                                    readonly
+                                >
+                                <span class="dropdown-arrow">
+                                    <i class="fas fa-chevron-down"></i>
+                                </span>
+                                <div class="dropdown-list"></div>
+                            </div>
+                            <input type="hidden" id="department" name="department" required>
+                        </div>
                     </div>
 
                     <div class="form-group">
@@ -84,15 +87,28 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label for="supplier">Supplier <span class="required">*</span></label>
-                        <select id="supplier" name="supplier" required class="form-control">
-                            <option value="">Select Supplier</option>
-                            {% for s in suppliers %}
-                            <option value="{{ s.id }}" 
-                                {% if po.supplier.id == s.id %}selected{% endif %}>
-                                {{ s.name }} - {{ s.city }}
-                            </option>
-                            {% endfor %}
-                        </select>
+                        <div class="supplier-with-button">
+                            <div class="supplier-searchable-wrapper">
+                                <div class="searchable-dropdown">
+                                    <input 
+                                        type="text" 
+                                        id="supplier_search_input"
+                                        class="form-control searchable-input"
+                                        placeholder="Type to search or click to select..."
+                                        autocomplete="off"
+                                        readonly
+                                    >
+                                    <span class="dropdown-arrow">
+                                        <i class="fas fa-chevron-down"></i>
+                                    </span>
+                                    <div class="dropdown-list"></div>
+                                </div>
+                                <input type="hidden" id="supplier" name="supplier" required>
+                            </div>
+                            <button type="button" id="viewSupplierHistory" class="btn-view-supplier" title="View Supplier History">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label for="delivery_date">Delivery Date <span class="required">*</span></label>
@@ -285,6 +301,13 @@
                                     style="font-size: 11px; cursor: help;" 
                                     title="Auto-calculated based on Entry Rate and Calculation Method"></i>
                                 </th>
+                                <!-- ✅ NEW COLUMN -->
+                                <th style="width: 12%;">
+                                    Item Cost
+                                    <i class="fas fa-info-circle" 
+                                    style="font-size: 11px; cursor: help;" 
+                                    title="Auto-calculated as Entry Total ÷ Quantity"></i>
+                                </th>
                                 <th style="width: 10%;">Discount</th>
                                 <th style="width: 10%;">Tax %</th>
                                 <th style="width: 15%;">Entry Total</th>
@@ -296,23 +319,31 @@
                                 {% for po_item in po.po_items.all %}
                                 <tr id="row_{{ forloop.counter }}">
                                     <td>
-                                        <select name="item_id[]" class="item-select" onchange="updateItemPrice(this, {{ forloop.counter }})" required>
-                                            <option value="">Select Item</option>
-                                            {% for item in items %}
-                                            <option value="{{ item.id }}" 
-                                                data-price="{{ item.purchase_price }}"
-                                                data-tax="{{ item.tax_percentage }}"
-                                                data-unit="{{ item.unit_of_measure }}"
-                                                data-mrp="{{ item.mrp }}"
-                                                {% if po_item.item.id == item.id %}selected{% endif %}>
-                                                {{ item.name }} ({{ item.unit_of_measure }})
-                                            </option>
-                                            {% endfor %}
-                                        </select>
+                                        <div class="item-searchable-wrapper">
+                                            <div class="searchable-dropdown">
+                                                <input 
+                                                    type="text"
+                                                    class="form-control searchable-input item-input"
+                                                    placeholder="Type to search or click to select..."
+                                                    autocomplete="off"
+                                                    onclick="toggleItemDropdown(this)"
+                                                    oninput="filterItems(this)"
+                                                    value="{{ po_item.item.name }} ({{ po_item.item.unit_of_measure }})"
+                                                >
+                                                <span class="dropdown-arrow" onclick="toggleItemDropdown(this.previousElementSibling)">
+                                                    <i class="fas fa-chevron-down"></i>
+                                                </span>
+                                                <div class="dropdown-list" style="display: none;"></div>
+                                            </div>
+                                            <input type="hidden" name="item_id[]" class="hidden-item-id" value="{{ po_item.item.id }}" required>
+                                            <button type="button" class="btn-view-item" title="View Item History" onclick="viewItemHistory(this)">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </div>
                                     </td>
                                     <td>
                                         <input type="number" name="quantity[]" class="quantity" step="1" min="1" 
-                                            value="{{ po_item.quantity|floatformat:0 }}" onchange="calculateLineTotal({{ forloop.counter }})" required>
+                                            value="{{ po_item.quantity|floatformat:0 }}" onchange="calculateEntryTotal({{ forloop.counter }})" required>
                                     </td>
                                     <td>
                                         <input type="number" name="entry_rate[]" class="entry-rate" step="0.01" min="0" 
@@ -331,18 +362,29 @@
                                             readonly 
                                             title="Auto-calculated from Entry Rate" required>
                                     </td>
-                                    <!-- ✅ ADD THIS NEW COLUMN -->
+                                    <!-- ✅ NEW CELL: Item Cost -->
+                                    <td>
+                                        <input type="number" 
+                                            name="item_cost[]" 
+                                            class="item-cost numeric-input readonly-field" 
+                                            step="0.01" 
+                                            min="0" 
+                                            value="{{ po_item.item_cost|default_if_none:0|floatformat:2 }}" 
+                                            readonly 
+                                            style="text-align: right; font-weight: 600; color: #2c3e50; background: #f8f9fa;"
+                                            title="Auto-calculated as Entry Total ÷ Quantity">
+                                    </td>
                                     <td>
                                         <input type="number" name="discount[]" class="discount" step="0.01" min="0" 
-                                            value="{{ po_item.discount }}" onchange="calculateLineTotal({{ forloop.counter }})">
+                                            value="{{ po_item.discount }}" onchange="calculateEntryTotal({{ forloop.counter }})">
                                     </td>
                                     <td>
                                         <input type="number" name="tax_percent[]" class="tax-percent readonly-field" step="0.01" min="0" max="100" 
-                                            value="{{ po_item.tax_percent }}" onchange="calculateLineTotal({{ forloop.counter }})" 
+                                            value="{{ po_item.tax_percent }}" onchange="calculateEntryTotal({{ forloop.counter }})" 
                                             readonly>
                                     </td>
                                     <td>
-                                        <input type="text" class="line-total" value="₹{{ po_item.line_total }}" readonly>
+                                        <input type="text" class="entry-total" value="₹{{ po_item.entry_total }}" readonly>
                                     </td>
                                     <td>
                                         <button type="button" class="btn-remove" onclick="removeRow({{ forloop.counter }})">
@@ -356,10 +398,10 @@
                     </table>
                 </div>
 
-                <div class="items-help">
+                {% comment %} <div class="items-help">
                     <i class="fas fa-info-circle"></i>
                     <span id="itemsHelpText">Add multiple items to this purchase order. Prices and tax will be auto-filled from item master.</span>
-                </div>
+                </div> {% endcomment %}
             </div>
 
             <!-- Totals Section -->
@@ -386,9 +428,9 @@
                 <button type="button" class="btn btn-warning" id="resetFormBtn">Refresh</button>
                 <button type="submit" class="btn btn-primary">
                     {% if action == 'Create' %}
-                        Save Purchase Order
+                        Save 
                     {% else %}
-                        Update Purchase Order
+                        Update
                     {% endif %}
                 </button>
             </div>
@@ -429,6 +471,64 @@
         </div>
         <div class="success-text" id="successText">Success!</div>
         <div class="success-subtext" id="successSubtext">Operation completed successfully</div>
+    </div>
+
+    <div id="supplierHistoryModal" class="confirmation-modal">
+        <div class="confirmation-content" style="max-width: 900px;">
+            <div class="confirmation-header" style="background: #6f42c1;">
+            <i class="fas fa-history"></i>
+            <h2>Supplier Purchase History</h2>
+            </div>
+            <div class="confirmation-body" style="max-height: 450px; overflow-y: auto;">
+            <table id="supplierHistoryTable" class="styled-table">
+                <thead>
+                <tr>
+                    <th>PO Number</th>
+                    <th>Date</th>
+                    <th>Item</th>
+                    <th>Quantity</th>
+                    <th>Rate</th>
+                    <th>Total</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr><td colspan="6" class="no-data">Loading...</td></tr>
+                </tbody>
+            </table>
+            </div>
+            <div class="confirmation-footer">
+            <button type="button" class="btn-cancel" onclick="closeSupplierHistory()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="itemHistoryModal" class="confirmation-modal">
+        <div class="confirmation-content" style="max-width: 900px;">
+            <div class="confirmation-header" style="background:  #6f42c1;">
+            <i class="fas fa-history"></i>
+            <h2>Item Purchase History</h2>
+            </div>
+            <div class="confirmation-body" style="max-height: 450px; overflow-y: auto;">
+            <table id="itemHistoryTable" class="styled-table">
+                <thead>
+                <tr>
+                    <th>PO Number</th>
+                    <th>Date</th>
+                    <th>Supplier</th>
+                    <th>Quantity</th>
+                    <th>Rate</th>
+                    <th>Total</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr><td colspan="6" class="no-data">Loading...</td></tr>
+                </tbody>
+            </table>
+            </div>
+            <div class="confirmation-footer">
+               <button type="button" class="btn-cancel" onclick="closeItemHistory()">Close</button>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -574,7 +674,7 @@ label {
 }
 
 .table-wrapper {
-    overflow-x: auto;
+    overflow: visible !important; /* Changed from overflow-x: auto */
     margin-bottom: 15px;
 }
 
@@ -656,6 +756,8 @@ label {
     border-radius: 4px;
     font-size: 14px;
     color: #1976d2;
+    position: relative; /* ✅ ADD THIS */
+    z-index: 1; /* ✅ ADD THIS - LOWER THAN DROPDOWN */
 }
 
 .totals-section {
@@ -1076,6 +1178,7 @@ label {
 
 /* ✅ Right-align all numeric inputs in the PO form */
 .numeric-input,
+.quantity, /* ✅ added this */
 .line-total,
 .entry-rate,
 .unit-price,
@@ -1084,6 +1187,671 @@ label {
 .tax-percent,
 input[type="number"].numeric-input {
     text-align: right !important;
+}
+
+.btn-view-supplier {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: purple;
+    font-size: 20px;
+    transition: transform 0.2s ease;
+}
+
+.btn-view-supplier:hover {
+    transform: scale(1.1);
+}
+
+/* Supplier History Modal Table Styling */
+.styled-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  background: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.styled-table thead tr {
+  background-color: #6f42c1;
+  color: #ffffff;
+  text-align: left;
+}
+
+.styled-table th,
+.styled-table td {
+  padding: 12px 15px;
+  text-align: center;
+  border-bottom: 1px solid #dddddd;
+}
+
+.styled-table tbody tr:nth-of-type(even) {
+  background-color: #f3f3f3;
+}
+
+.styled-table tbody tr:hover {
+  background-color: #ede7f6;
+}
+
+.no-data {
+  text-align: center;
+  padding: 20px;
+  font-style: italic;
+  color: #666;
+}
+
+/* ✅ Compact and clean Select Item dropdown */
+.line-items-table .item-select {
+  width: 160px !important;          /* Reduced width for tighter layout */
+  min-width: 120px;
+  height: 30px;
+  padding: 4px 6px;
+  font-size: 13px;
+  border: 1.4px solid #ccc;
+  border-radius: 5px;
+  background-color: #fff;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+  display: inline-block;
+  vertical-align: middle;
+  transition: border-color 0.2s ease;
+}
+
+.line-items-table .item-select:focus {
+  border-color: #28a745; /* Subtle green highlight on focus */
+  outline: none;
+}
+
+/* ✅ Purple circular eye button for items — matches supplier style */
+.line-items-table .btn-view-item {
+  background-color: #6f42c1;       /* Same purple as supplier */
+  border: none;
+  border-radius: 50%;              /* Perfect circle */
+  color: white;                    /* White eye icon */
+  font-size: 14px;
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 5px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15); /* Subtle depth */
+}
+
+.line-items-table .btn-view-item:hover {
+  background-color: #5a32a3;       /* Darker purple on hover */
+  transform: scale(1.1);
+}
+/* ✅ Universal purple circular eye button style (used for both Supplier & Item) */
+.btn-view-supplier,
+.line-items-table .btn-view-item {
+  background-color: #6f42c1;       /* Solid purple fill */
+  border: none;
+  border-radius: 50%;              /* Perfect circle */
+  color: white;                    /* White icon */
+  font-size: 14px;
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+/* ✅ Hover animation for both buttons */
+.btn-view-supplier:hover,
+.line-items-table .btn-view-item:hover {
+  background-color: #5a32a3;       /* Slightly darker purple */
+  transform: scale(1.1);
+}
+
+/* ✅ Compact item dropdown beside purple eye button */
+.line-items-table .item-select {
+  width: 220px !important;
+  min-width: 120px;
+  height: 30px;
+  padding: 4px 6px;
+  font-size: 13px;
+  border: 1.4px solid #ccc;
+  border-radius: 5px;
+  background-color: #fff;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+  display: inline-block;
+  vertical-align: middle;
+  transition: border-color 0.2s ease;
+}
+
+.line-items-table .item-select:focus {
+  border-color: #6f42c1; /* Matches purple theme */
+  outline: none;
+}
+
+.item-cost {
+    text-align: right;
+    font-weight: 600;
+    color: #2c3e50;
+    background: #f8f9fa;
+}
+
+/* ==================== SEARCHABLE DROPDOWN STYLES ==================== */
+
+/* Generic searchable dropdown container */
+.searchable-select-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.searchable-select-input {
+    width: 100%;
+    padding: 12px 35px 12px 15px;
+    border: 2px solid #e9ecef;
+    border-radius: 6px;
+    font-size: 15px;
+    cursor: pointer;
+    background: white;
+    transition: all 0.3s ease;
+}
+
+.searchable-select-input:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+.searchable-select-input.has-value {
+    background: #f0f8ff;
+    font-weight: 500;
+}
+
+.searchable-select-arrow {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #7f8c8d;
+    pointer-events: none;
+    transition: transform 0.3s ease;
+}
+
+.searchable-select-wrapper.open .searchable-select-arrow {
+    transform: translateY(-50%) rotate(180deg);
+}
+
+.searchable-select-dropdown {
+    position: absolute;
+    top: calc(100% + 5px);
+    left: 0;
+    right: 0;
+    max-height: 300px;
+    overflow-y: auto;
+    background: white;
+    border: 2px solid #3498db;
+    border-radius: 6px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    display: none;
+}
+
+.searchable-select-wrapper.open .searchable-select-dropdown {
+    display: block;
+    animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.searchable-select-option {
+    padding: 12px 15px;
+    cursor: pointer;
+    transition: background 0.2s;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.searchable-select-option:last-child {
+    border-bottom: none;
+}
+
+.searchable-select-option:hover {
+    background: #ecf0f1;
+}
+
+.searchable-select-option.selected {
+    background: #3498db;
+    color: white;
+    font-weight: 600;
+}
+
+.searchable-select-option.hidden {
+    display: none;
+}
+
+.searchable-select-no-results {
+    padding: 20px;
+    text-align: center;
+    color: #7f8c8d;
+    font-style: italic;
+}
+
+/* ==================== ITEM SEARCHABLE DROPDOWN STYLES ==================== */
+
+.item-searchable-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.item-searchable-wrapper .searchable-dropdown {
+    flex: 1;
+    position: relative;
+}
+
+.item-searchable-wrapper .searchable-input {
+    width: 100%;
+    padding: 8px 30px 8px 10px !important;
+    font-size: 13px;
+    border: 1.5px solid #d1d5db;
+    border-radius: 6px;
+    background: white;
+    transition: all 0.2s ease;
+}
+
+.item-searchable-wrapper .searchable-input:focus {
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+    outline: none;
+}
+
+.item-searchable-wrapper .searchable-input.has-value {
+    background: #f0f8ff;
+    font-weight: 500;
+}
+
+.item-searchable-wrapper .dropdown-arrow {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6b7280;
+    cursor: pointer;
+    pointer-events: auto;
+    z-index: 2;
+    padding: 5px;
+}
+
+.item-searchable-wrapper .dropdown-arrow:hover {
+    color: #3498db;
+}
+
+.item-searchable-wrapper .dropdown-list {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    max-height: 280px;
+    overflow-y: auto;
+    background: white;
+    border: 2px solid #3498db;
+    border-top: none;
+    border-radius: 0 0 6px 6px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 1000;
+    margin-top: -2px;
+}
+
+.item-searchable-wrapper .dropdown-item {
+    padding: 10px 12px;
+    cursor: pointer;
+    font-size: 13px;
+    border-bottom: 1px solid #f0f0f0;
+    transition: background 0.2s;
+}
+
+.item-searchable-wrapper .dropdown-item:last-child {
+    border-bottom: none;
+}
+
+.item-searchable-wrapper .dropdown-item:hover {
+    background: #f5f5f5;
+}
+
+.item-searchable-wrapper .dropdown-item.selected {
+    background: #e3f2fd;
+    font-weight: 500;
+}
+
+.item-searchable-wrapper .dropdown-item .item-name {
+    font-weight: 500;
+    color: #1f2937;
+}
+
+.item-searchable-wrapper .dropdown-item .item-details {
+    fontSize: 11px;
+    color: #6b7280;
+    marginTop: 2px;
+}
+
+.item-searchable-wrapper .dropdown-item.no-results {
+    text-align: center;
+    padding: 20px;
+    color: #6b7280;
+    font-style: italic;
+}
+
+/* Add to your <style> section */
+
+/* Fix dropdown container z-index */
+.item-searchable-wrapper {
+    position: relative;
+    z-index: 100;
+}
+
+/* Ensure dropdown appears above table cells */
+.item-searchable-wrapper .searchable-dropdown {
+    position: relative;
+    z-index: 101;
+}
+
+/* Fix dropdown list positioning and visibility */
+.item-searchable-wrapper .dropdown-list {
+    position: absolute;
+    top: calc(100% + 2px) !important;
+    left: 0;
+    right: 0;
+    max-height: 250px;
+    overflow-y: auto;
+    background: white;
+    border: 2px solid #3498db;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    z-index: 9999 !important; /* Very high z-index */
+    display: none;
+}
+
+/* Show dropdown when active */
+.item-searchable-wrapper .dropdown-list.show {
+    display: block !important;
+}
+
+/* Fix table cell overflow */
+.line-items-table td {
+    position: relative;
+    overflow: visible !important;
+}
+
+/* Ensure dropdown items are clickable */
+.item-searchable-wrapper .dropdown-item {
+    position: relative;
+    z-index: 10000;
+    pointer-events: auto;
+    background: white;
+}
+
+/* ==================== FORCE ITEM DROPDOWN VISIBILITY ==================== */
+
+/* Make table cells allow overflow */
+.line-items-table tbody td {
+    position: relative !important;
+    overflow: visible !important;
+}
+
+/* Item wrapper positioning */
+.line-items-table .item-searchable-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 100;
+}
+
+/* Searchable dropdown container */
+.line-items-table .item-searchable-wrapper .searchable-dropdown {
+    flex: 1;
+    position: relative;
+    z-index: 101;
+}
+
+/* Dropdown list - FORCE VISIBILITY */
+.line-items-table .item-searchable-wrapper .dropdown-list {
+    position: absolute !important;
+    top: calc(100% + 2px) !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    min-width: 300px !important;
+    max-height: 280px !important;
+    overflow-y: auto !important;
+    background: white !important;
+    border: 2px solid #3498db !important;
+    border-radius: 6px !important;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.3) !important;
+    z-index: 999999 !important; /* ✅ HIGHEST POSSIBLE */
+    display: none !important;
+    margin: 0 !important;
+}
+
+.line-items-table .item-searchable-wrapper .dropdown-list.show {
+    display: block !important;
+}
+
+/* ✅ MAKE SURE BANNER HAS LOWER Z-INDEX */
+.items-help {
+    position: relative;
+    z-index: 1; /* ✅ LOWER than dropdown */
+}
+
+/* Dropdown items */
+.line-items-table .item-searchable-wrapper .dropdown-item {
+    padding: 10px 12px !important;
+    cursor: pointer !important;
+    font-size: 13px !important;
+    border-bottom: 1px solid #f0f0f0 !important;
+    transition: background 0.2s !important;
+    background: white !important;
+    display: block !important;
+    position: relative !important;
+    z-index: 100000 !important;
+}
+
+.line-items-table .item-searchable-wrapper .dropdown-item:hover {
+    background: #f5f5f5 !important;
+}
+
+.line-items-table .item-searchable-wrapper .dropdown-item:last-child {
+    border-bottom: none !important;
+}
+
+.line-items-table .item-searchable-wrapper .dropdown-item.selected {
+    background: #e3f2fd !important;
+    font-weight: 500 !important;
+}
+
+/* No results message */
+.line-items-table .item-searchable-wrapper .dropdown-item.no-results {
+    text-align: center !important;
+    padding: 20px !important;
+    color: #6b7280 !important;
+    font-style: italic !important;
+}
+
+/* ✅ CRITICAL: Allow table to overflow */
+
+.form-section {
+    overflow: visible !important;
+}
+
+.form-container {
+    overflow: visible !important;
+}
+
+/* ✅ NUCLEAR OPTION - FORCE DROPDOWN TO SHOW */
+.line-items-table .item-searchable-wrapper .dropdown-list.show {
+    display: block !important;
+    position: fixed !important;
+    z-index: 2147483647 !important; /* Maximum z-index value */
+    background: white !important;
+    border: 2px solid #3498db !important;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4) !important;
+}
+
+/* Ensure table wrapper doesn't clip */
+.table-wrapper {
+    overflow: visible !important;
+    position: relative !important;
+    z-index: 1 !important;
+}
+
+/* Make sure form sections allow overflow */
+.form-section,
+.form-container,
+.content-wrapper {
+    overflow: visible !important;
+}
+
+/* Make table row positions relative */
+.line-items-table tr {
+    position: relative !important;
+}
+
+/* Force table cells to allow overflow */
+.line-items-table td {
+    overflow: visible !important;
+    position: relative !important;
+}
+
+/* ==================== SUPPLIER & DEPARTMENT SEARCHABLE DROPDOWN ==================== */
+
+.supplier-searchable-wrapper,
+.department-searchable-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.supplier-searchable-wrapper .searchable-dropdown,
+.department-searchable-wrapper .searchable-dropdown {
+    position: relative;
+    width: 100%;
+}
+
+.supplier-searchable-wrapper .searchable-input,
+.department-searchable-wrapper .searchable-input {
+    width: 100%;
+    padding: 12px 40px 12px 15px;
+    border: 2px solid #e9ecef;
+    border-radius: 6px;
+    font-size: 15px;
+    background: white;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.supplier-searchable-wrapper .searchable-input:focus,
+.department-searchable-wrapper .searchable-input:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+.supplier-searchable-wrapper .searchable-input.has-value,
+.department-searchable-wrapper .searchable-input.has-value {
+    background: #f0f8ff;
+    font-weight: 500;
+}
+
+.supplier-searchable-wrapper .dropdown-arrow,
+.department-searchable-wrapper .dropdown-arrow {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #7f8c8d;
+    cursor: pointer;
+    pointer-events: auto;
+    z-index: 2;
+    padding: 5px;
+}
+
+.supplier-searchable-wrapper .dropdown-arrow:hover,
+.department-searchable-wrapper .dropdown-arrow:hover {
+    color: #3498db;
+}
+
+.supplier-searchable-wrapper .dropdown-list,
+.department-searchable-wrapper .dropdown-list {
+    position: fixed;
+    max-height: 300px;
+    overflow-y: auto;
+    background: white;
+    border: 2px solid #3498db;
+    border-radius: 6px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+    z-index: 2147483647;
+    display: none;
+}
+
+.supplier-searchable-wrapper .dropdown-list.show,
+.department-searchable-wrapper .dropdown-list.show {
+    display: block !important;
+}
+
+.supplier-searchable-wrapper .dropdown-item,
+.department-searchable-wrapper .dropdown-item {
+    padding: 12px 15px;
+    cursor: pointer;
+    transition: background 0.2s;
+    font-size: 14px;
+    color: #2c3e50;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.supplier-searchable-wrapper .dropdown-item:last-child,
+.department-searchable-wrapper .dropdown-item:last-child {
+    border-bottom: none;
+}
+
+.supplier-searchable-wrapper .dropdown-item:hover,
+.department-searchable-wrapper .dropdown-item:hover {
+    background: #ecf0f1;
+}
+
+.supplier-searchable-wrapper .dropdown-item.selected,
+.department-searchable-wrapper .dropdown-item.selected {
+    background: #e3f2fd;
+    font-weight: 500;
+}
+
+.supplier-searchable-wrapper .dropdown-item.no-results,
+.department-searchable-wrapper .dropdown-item.no-results {
+    text-align: center;
+    padding: 20px;
+    color: #999;
+    font-style: italic;
+}
+
+/* Wrapper with eye button */
+.supplier-with-button {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.supplier-with-button .supplier-searchable-wrapper {
+    flex: 1;
 }
 
 </style>
@@ -1110,8 +1878,9 @@ let allClients = [];
 let dropdownVisible = false;
 let clientMode = 'select';
 let confirmCallback = null;
+const PREFILLED_CLIENT = "{{ po.client_details|escapejs|default:'' }}";
 
-const PREFILLED_CLIENT = "{{ po.client_details|escapejs|default:'' }}"; 
+console.log('Items loaded:', items.length);
 
 // ==================== UTILITY FUNCTIONS ====================
 
@@ -1128,81 +1897,75 @@ function loadDepartmentInfo() {
 // ==================== INITIALIZATION ====================
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Fallback: If dates are still empty, set to today
+    console.log('Form initializing...');
+    
+    // Set dates
     const today = new Date().toISOString().split('T')[0];
     const poDateInput = document.getElementById('po_date');
     const deliveryDateInput = document.getElementById('delivery_date');
     
-    if (poDateInput && !poDateInput.value) {
-        poDateInput.value = today;
-    }
-    if (deliveryDateInput && !deliveryDateInput.value) {
-        deliveryDateInput.value = today;
-    }
+    if (poDateInput && !poDateInput.value) poDateInput.value = today;
+    if (deliveryDateInput && !deliveryDateInput.value) deliveryDateInput.value = today;
     
-    {% if action == 'Create' %}
-    if (rowCounter === 0) {
-        addItemRow();
-    }
-    {% endif %}
-    
-    // Initialize department select
+    // Initialize department
     const deptSelect = document.getElementById('department');
     if (deptSelect) {
-        if (deptSelect.value) {
-            loadDepartmentInfo();
-        }
-        // Add change event listener
+        if (deptSelect.value) loadDepartmentInfo();
         deptSelect.addEventListener('change', loadDepartmentInfo);
     }
+    
+    // ✅ CRITICAL: Initialize ALL existing item rows
+    console.log('Initializing item dropdowns...');
+    initializeAllItemDropdowns();
     
     // Initialize other components
     loadClientsFromAPI();
     handleCalculationMethodChange();
     updateTotals();
     
-    // Initialize date validation
-    const deliveryDateInput2 = document.getElementById('delivery_date');
-    if (deliveryDateInput2) {
-        deliveryDateInput2.addEventListener('change', function() {
-            const poDate = document.getElementById('po_date').value;
+    // Date validation
+    if (deliveryDateInput) {
+        deliveryDateInput.addEventListener('change', function() {
+            const poDate = poDateInput.value;
             if (poDate && this.value && new Date(this.value) < new Date(poDate)) {
                 alert('Delivery date cannot be before PO date');
                 this.value = '';
             }
         });
     }
+    
+    // Add first row if empty
+    {% if action == 'Create' %}
+    const tbody = document.getElementById('itemsTableBody');
+    if (tbody && tbody.children.length === 0) {
+        addItemRow();
+    }
+    {% endif %}
 });
 
-// ==================== CALCULATION METHOD HANDLING ====================
 
 function handleCalculationMethodChange() {
-    const method = document.getElementById('calculation_method').value;
+    const methodSelect = document.getElementById('calculation_method');
     const description = document.getElementById('methodDescription');
-    const helpText = document.getElementById('itemsHelpText');
+    
+    if (!methodSelect || !description) return;
+    
+    const method = methodSelect.value;
     
     if (method === 'PLUS_TAX') {
-        description.innerHTML = '<strong>Plus Tax:</strong> Enter base price in Entry Rate (copies to Unit Price)';
+        description.innerHTML = '<strong>Plus Tax:</strong> Tax will be added on top of base price';
         description.style.color = '#27ae60';
-        
-        helpText.innerHTML = '<i class="fas fa-info-circle"></i> <strong>Entry Rate = Unit Price.</strong> Tax will be calculated and added on top.';
-    } else {
-        description.innerHTML = '<strong>Reverse Tax:</strong> Enter base price in Entry Rate (calculates inclusive Unit Price)';
+    } else if (method === 'REVERSE_TAX') {
+        description.innerHTML = '<strong>Reverse Tax:</strong> Tax is extracted from inclusive price';
         description.style.color = '#e67e22';
-        
-        helpText.innerHTML = '<i class="fas fa-calculator"></i>  <strong>Unit Price = (Entry Rate / (100 + Tax%)) × 100</strong>.';
     }
     
     const rows = document.querySelectorAll('#itemsTableBody tr');
     rows.forEach((row) => {
         const rowId = row.id.split('_')[1];
-        if (rowId) {
-            calculateLineTotal(parseInt(rowId));
-        }
+        if (rowId) calculateEntryTotal(parseInt(rowId));
     });
 }
-
-// ==================== ENTRY RATE CHANGE HANDLER ====================
 
 function handleEntryRateChange(rowId) {
     const row = document.getElementById(`row_${rowId}`);
@@ -1221,9 +1984,86 @@ function handleEntryRateChange(rowId) {
         unitPriceInput.value = exclusivePrice.toFixed(2);
     }
     
-    calculateLineTotal(rowId);
+    calculateEntryTotal(rowId);
 }
 
+function calculateEntryTotal(rowId) {
+    const row = document.getElementById(`row_${rowId}`);
+    if (!row) return;
+
+    const qty = parseFloat(row.querySelector('.quantity').value) || 0;
+    const unitPrice = parseFloat(row.querySelector('.unit-price').value) || 0;
+    const taxPercent = parseFloat(row.querySelector('.tax-percent').value) || 0;
+    const discount = parseFloat(row.querySelector('.discount').value) || 0;
+    
+    const taxableValue = (qty * unitPrice) - discount;
+    const taxAmount = taxableValue * (taxPercent / 100);
+    const entryTotal = taxableValue + taxAmount;
+
+    const entryTotalField = row.querySelector('.line-total') || row.querySelector('.entry-total');
+    if (entryTotalField) {
+        entryTotalField.value = `₹${entryTotal.toFixed(2)}`;
+    }
+
+    calculateItemCost(row);
+    updateTotals();
+}
+
+function calculateItemCost(row) {
+    const qty = parseFloat(row.querySelector('.quantity').value) || 0;
+    const entryTotalField = row.querySelector('.line-total') || row.querySelector('.entry-total');
+    const itemCostField = row.querySelector('.item-cost');
+
+    if (!entryTotalField || !itemCostField) return;
+
+    const entryTotal = parseFloat(entryTotalField.value.replace(/[₹,]/g, '')) || 0;
+
+    if (qty > 0) {
+        const cost = entryTotal / qty;
+        itemCostField.value = cost.toFixed(2);
+    } else {
+        itemCostField.value = "0.00";
+    }
+}
+
+function updateTotals() {
+    let subtotal = 0;
+    let totalTax = 0;
+
+    const rows = document.querySelectorAll('#itemsTableBody tr');
+    rows.forEach(row => {
+        const qty = parseFloat(row.querySelector('.quantity')?.value) || 0;
+        const unitPrice = parseFloat(row.querySelector('.unit-price')?.value) || 0;
+        const discount = parseFloat(row.querySelector('.discount')?.value) || 0;
+        const taxPercent = parseFloat(row.querySelector('.tax-percent')?.value) || 0;
+
+        const taxableValue = (qty * unitPrice) - discount;
+        const taxAmount = taxableValue * (taxPercent / 100);
+
+        subtotal += taxableValue;
+        totalTax += taxAmount;
+    });
+
+    const grandTotal = subtotal + totalTax;
+
+    const subtotalDisplay = document.getElementById('subtotalDisplay');
+    const taxDisplay = document.getElementById('taxDisplay');
+    const grandTotalDisplay = document.getElementById('grandTotalDisplay');
+
+    if (subtotalDisplay) subtotalDisplay.textContent = `₹${subtotal.toFixed(2)}`;
+    if (taxDisplay) taxDisplay.textContent = `₹${totalTax.toFixed(2)}`;
+    if (grandTotalDisplay) grandTotalDisplay.textContent = `₹${grandTotal.toFixed(2)}`;
+}
+
+function loadDepartmentInfo() {
+    const deptSelect = document.getElementById('department');
+    if (!deptSelect) return;
+    
+    const selectedOption = deptSelect.options[deptSelect.selectedIndex];
+    if (selectedOption && selectedOption.value) {
+        console.log('Department selected:', selectedOption.text);
+    }
+}
 // ==================== LINE ITEM FUNCTIONS ====================
 
 function addItemRow() {
@@ -1233,35 +2073,46 @@ function addItemRow() {
     row.id = `row_${rowCounter}`;
     
     row.innerHTML = `
-        <td>
-            <select name="item_id[]" class="item-select" onchange="updateItemPrice(this, ${rowCounter})" required>
-                <option value="">Select Item</option>
-                ${items.map(item => `<option value="${item.id}" data-price="${item.price}" data-tax="${item.tax}" data-unit="${item.unit}" data-mrp="${item.mrp}">${item.name} (${item.unit})</option>`).join('')}
-            </select>
+        <td style="overflow: visible; position: relative;">
+            <div class="item-searchable-wrapper">
+                <div class="searchable-dropdown">
+                    <input 
+                        type="text"
+                        class="form-control searchable-input item-input"
+                        placeholder="Type to search..."
+                        autocomplete="off"
+                    >
+                    <span class="dropdown-arrow">
+                        <i class="fas fa-chevron-down"></i>
+                    </span>
+                    <div class="dropdown-list"></div>
+                </div>
+                <input type="hidden" name="item_id[]" class="hidden-item-id" required>
+                <button type="button" class="btn-view-item" title="View Item History" onclick="viewItemHistory(this)">
+                    <i class="fas fa-eye"></i>
+                </button>
+            </div>
         </td>
         <td>
-            <input type="number" name="quantity[]" class="quantity" step="1" min="1" value="1" onchange="calculateLineTotal(${rowCounter})" required>
+            <input type="number" name="quantity[]" class="quantity" step="1" min="1" value="1" onchange="calculateEntryTotal(${rowCounter})" required>
         </td>
         <td>
-            <input type="number" name="entry_rate[]" class="entry-rate" step="0.01" min="0" 
-                value="0.00" onchange="handleEntryRateChange(${rowCounter})" required 
-                placeholder="Enter price">
+            <input type="number" name="entry_rate[]" class="entry-rate" step="0.01" min="0" value="0.00" onchange="handleEntryRateChange(${rowCounter})" required placeholder="Enter price">
         </td>
         <td>
-            <input type="number" name="sales_price[]" class="sales-price" step="0.01" min="0" value="0.00" 
-                title="Editable Sales Price (MRP)">
+            <input type="number" name="sales_price[]" class="sales-price" step="0.01" min="0" value="0.00" title="Editable Sales Price (MRP)">
         </td>
         <td>
-            <input type="number" name="unit_price[]" class="unit-price readonly-field" step="0.01" min="0" value="0" 
-                readonly title="Auto-calculated" required>
-        </td>
-        <!-- ✅ ADD THIS NEW COLUMN -->
-        <td>
-            <input type="number" name="discount[]" class="discount" step="0.01" min="0" value="0" onchange="calculateLineTotal(${rowCounter})">
+            <input type="number" name="unit_price[]" class="unit-price readonly-field" step="0.01" min="0" value="0" readonly title="Auto-calculated" required>
         </td>
         <td>
-            <input type="number" name="tax_percent[]" class="tax-percent readonly-field" step="0.01" min="0" max="100" value="18" 
-                onchange="calculateLineTotal(${rowCounter})" readonly>
+            <input type="number" name="item_cost[]" class="item-cost numeric-input readonly-field" step="0.01" min="0" value="0.00" readonly style="text-align: right; font-weight: 600; color: #2c3e50; background: #f8f9fa;" title="Auto-calculated as Entry Total ÷ Quantity">
+        </td>
+        <td>
+            <input type="number" name="discount[]" class="discount" step="0.01" min="0" value="0" onchange="calculateEntryTotal(${rowCounter})">
+        </td>
+        <td>
+            <input type="number" name="tax_percent[]" class="tax-percent readonly-field" step="0.01" min="0" max="100" value="18" onchange="calculateEntryTotal(${rowCounter})" readonly>
         </td>
         <td>
             <input type="text" class="line-total" value="₹0.00" readonly>
@@ -1274,6 +2125,39 @@ function addItemRow() {
     `;
     
     tbody.appendChild(row);
+    
+    // Initialize new row's dropdown
+    const newRow = tbody.lastElementChild;
+    const input = newRow.querySelector('.item-input');
+    const arrow = newRow.querySelector('.dropdown-arrow');
+    
+    if (input) {
+        input.addEventListener('click', function(e) {
+            e.stopPropagation();
+            toggleItemDropdown(this);
+        });
+        
+        input.addEventListener('input', function() {
+            filterItems(this);
+        });
+    }
+    
+    if (arrow) {
+        arrow.addEventListener('click', function(e) {
+            e.stopPropagation();
+            toggleItemDropdown(this.previousElementSibling);
+        });
+    }
+    
+    console.log('New row added:', rowCounter);
+}
+
+function removeRow(rowId) {
+    const row = document.getElementById(`row_${rowId}`);
+    if (row) {
+        row.remove();
+        updateTotals();
+    }
 }
 
 function updateItemPrice(selectElement, rowId) {
@@ -1303,10 +2187,10 @@ function updateItemPrice(selectElement, rowId) {
     priceInput.setAttribute('readonly', true);
     taxInput.setAttribute('readonly', true);
     
-    calculateLineTotal(rowId);
+    calculateEntryTotal(rowId);
 }
 
-function calculateLineTotal(rowId) {
+function calculateEntryTotal(rowId) {
     const row = document.getElementById(`row_${rowId}`);
     if (!row) return;
 
@@ -1319,34 +2203,60 @@ function calculateLineTotal(rowId) {
     const taxAmount = taxableValue * (taxPercent / 100);
     const entryTotal = taxableValue + taxAmount;
 
-    row.querySelector('.line-total').value = `₹${entryTotal.toFixed(2)}`;
+    const entryTotalField = row.querySelector('.line-total') || row.querySelector('.entry-total');
+    if (entryTotalField) {
+        entryTotalField.value = `₹${entryTotal.toFixed(2)}`;
+    }
 
+    // ✅ ADD THIS - calculate item cost (Entry Total ÷ Qty)
+    calculateItemCost(row);
+
+    // ✅ Keep existing total update
     updateTotals();
+}
+
+function calculateItemCost(row) {
+    const qty = parseFloat(row.querySelector('.quantity').value) || 0;
+    const entryTotalField = row.querySelector('.line-total') || row.querySelector('.entry-total');
+    const itemCostField = row.querySelector('.item-cost');
+
+    if (!entryTotalField || !itemCostField) return;
+
+    const entryTotal = parseFloat(entryTotalField.value.replace(/[₹,]/g, '')) || 0;
+
+    if (qty > 0) {
+        const cost = entryTotal / qty;
+        itemCostField.value = cost.toFixed(2);
+    } else {
+        itemCostField.value = "0.00";
+    }
 }
 
 function updateTotals() {
     let subtotal = 0;
-    let taxTotal = 0;
+    let totalTax = 0;
 
     const rows = document.querySelectorAll('#itemsTableBody tr');
-
     rows.forEach(row => {
         const qty = parseFloat(row.querySelector('.quantity').value) || 0;
         const unitPrice = parseFloat(row.querySelector('.unit-price').value) || 0;
         const discount = parseFloat(row.querySelector('.discount').value) || 0;
         const taxPercent = parseFloat(row.querySelector('.tax-percent').value) || 0;
 
+        // Recalculate per-row totals safely
         const taxableValue = (qty * unitPrice) - discount;
         const taxAmount = taxableValue * (taxPercent / 100);
+        const rowTotal = taxableValue + taxAmount;
 
         subtotal += taxableValue;
-        taxTotal += taxAmount;
+        totalTax += taxAmount;
     });
 
-    const grandTotal = subtotal + taxTotal;
+    const grandTotal = subtotal + totalTax;
 
+    // ✅ Update display
     document.getElementById('subtotalDisplay').textContent = `₹${subtotal.toFixed(2)}`;
-    document.getElementById('taxDisplay').textContent = `₹${taxTotal.toFixed(2)}`;
+    document.getElementById('taxDisplay').textContent = `₹${totalTax.toFixed(2)}`;
     document.getElementById('grandTotalDisplay').textContent = `₹${grandTotal.toFixed(2)}`;
 }
 
@@ -1636,6 +2546,20 @@ document.getElementById('poForm').addEventListener('submit', function(e) {
         return false;
     }
     
+    // ✅ ADD THIS: Validate all items are selected
+    let allItemsSelected = true;
+    rows.forEach(row => {
+        const hiddenItemId = row.querySelector('.hidden-item-id');
+        if (!hiddenItemId || !hiddenItemId.value) {
+            allItemsSelected = false;
+        }
+    });
+    
+    if (!allItemsSelected) {
+        alert('Please select an item for all rows!');
+        return false;
+    }
+    
     const clientDetails = document.getElementById('client_details');
     if (!clientDetails || !clientDetails.value) {
         alert('Please select a client!');
@@ -1644,11 +2568,8 @@ document.getElementById('poForm').addEventListener('submit', function(e) {
     
     // Show simple confirmation
     if (confirm('Are you sure you want to submit this Purchase Order?')) {
-        // Show loader
         const loader = document.getElementById('loaderOverlay');
         if (loader) loader.classList.add('active');
-        
-        // Submit form
         this.submit();
     }
     
@@ -1752,6 +2673,892 @@ if (resetFormBtn) {
         }
     });
 }
+
+// ==================== SUPPLIER HISTORY POPUP ====================
+document.getElementById("viewSupplierHistory").addEventListener("click", async () => {
+  const supplierId = document.getElementById("supplier").value;
+  const tableBody = document.querySelector("#supplierHistoryTable tbody");
+  tableBody.innerHTML = `<tr><td colspan="6" class="no-data">Loading...</td></tr>`;
+
+  if (!supplierId) {
+    alert("Please select a supplier first.");
+    return;
+  }
+
+  try {
+    const response = await fetch(`/po/supplier-history/${supplierId}/`);
+    const data = await response.json();
+
+    if (data.history && data.history.length > 0) {
+      tableBody.innerHTML = data.history
+        .map(
+          (row) => `
+            <tr>
+              <td>${row.po_number}</td>
+              <td>${row.date}</td>
+              <td>${row.item_name}</td>
+              <td>${row.quantity || '-'}</td>
+              <td>${row.rate}</td>
+              <td>${row.total || '-'}</td>
+            </tr>`
+        )
+        .join("");
+    } else {
+      tableBody.innerHTML = `<tr><td colspan="6" class="no-data">No purchase history found.</td></tr>`;
+    }
+
+    document.getElementById("supplierHistoryModal").classList.add("active");
+  } catch (error) {
+    tableBody.innerHTML = `<tr><td colspan="6" class="no-data">Error loading history.</td></tr>`;
+    console.error("Error fetching supplier history:", error);
+  }
+});
+
+function closeSupplierHistory() {
+  document.getElementById("supplierHistoryModal").classList.remove("active");
+}
+
+// ==================== ITEM HISTORY POPUP ====================
+function initializeAllItemDropdowns() {
+    document.querySelectorAll('#itemsTableBody tr').forEach(row => {
+        const input = row.querySelector('.item-input');
+        const arrow = row.querySelector('.dropdown-arrow');
+        
+        if (input) {
+            // Remove any existing listeners
+            input.replaceWith(input.cloneNode(true));
+            const newInput = row.querySelector('.item-input');
+            
+            // Click to open
+            newInput.addEventListener('click', function(e) {
+                e.stopPropagation();
+                console.log('Input clicked');
+                toggleItemDropdown(this);
+            });
+            
+            // Type to filter
+            newInput.addEventListener('input', function(e) {
+                console.log('Input changed:', this.value);
+                filterItems(this);
+            });
+            
+            // Prevent dropdown from closing on focus
+            newInput.addEventListener('focus', function(e) {
+                console.log('Input focused');
+            });
+        }
+        
+        if (arrow) {
+            arrow.replaceWith(arrow.cloneNode(true));
+            const newArrow = row.querySelector('.dropdown-arrow');
+            
+            newArrow.addEventListener('click', function(e) {
+                e.stopPropagation();
+                console.log('Arrow clicked');
+                const inputElement = this.previousElementSibling;
+                toggleItemDropdown(inputElement);
+            });
+        }
+        
+        const rowId = row.id.split('_')[1];
+        if (rowId) rowCounter = Math.max(rowCounter, parseInt(rowId));
+    });
+    
+    console.log('Item dropdowns initialized, rowCounter:', rowCounter);
+}
+
+// ==================== ITEM HISTORY POPUP ====================
+
+async function viewItemHistory(button) {
+    const row = button.closest('tr');
+    const hiddenItemId = row.querySelector('.hidden-item-id');
+    const itemId = hiddenItemId ? hiddenItemId.value : null;
+    
+    const tableBody = document.querySelector("#itemHistoryTable tbody");
+    tableBody.innerHTML = `<tr><td colspan="6" class="no-data">Loading...</td></tr>`;
+
+    if (!itemId) {
+        alert("Please select an item first.");
+        return;
+    }
+
+    try {
+        const response = await fetch(`/po/item-history/${itemId}/`);
+        const data = await response.json();
+
+        if (data.history && data.history.length > 0) {
+            tableBody.innerHTML = data.history
+                .map(
+                    (row) => `
+                        <tr>
+                            <td>${row.po_number}</td>
+                            <td>${row.date}</td>
+                            <td>${row.supplier_name}</td>
+                            <td>${row.quantity || '-'}</td>
+                            <td>${row.rate}</td>
+                            <td>${row.total || '-'}</td>
+                        </tr>`
+                )
+                .join("");
+        } else {
+            tableBody.innerHTML = `<tr><td colspan="6" class="no-data">No purchase history found for this item.</td></tr>`;
+        }
+
+        document.getElementById("itemHistoryModal").classList.add("active");
+    } catch (error) {
+        tableBody.innerHTML = `<tr><td colspan="6" class="no-data">Error loading history.</td></tr>`;
+        console.error("Error fetching item history:", error);
+    }
+}
+
+function closeItemHistory() {
+    document.getElementById("itemHistoryModal").classList.remove("active");
+}
+
+// Close modals on Escape key
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        closeConfirmationModal();
+        closeSupplierHistory();
+        closeItemHistory();
+    }
+});
+
+// Close modals on outside click
+window.addEventListener('click', function(event) {
+    const confirmModal = document.getElementById('confirmationModal');
+    const supplierModal = document.getElementById('supplierHistoryModal');
+    const itemModal = document.getElementById('itemHistoryModal');
+    
+    if (event.target === confirmModal) closeConfirmationModal();
+    if (event.target === supplierModal) closeSupplierHistory();
+    if (event.target === itemModal) closeItemHistory();
+});
+
+// ==================== ITEM SEARCHABLE DROPDOWN (COMPLETE FIX) ====================
+
+function toggleItemDropdown(input) {
+    console.log('=== toggleItemDropdown called ===');
+    
+    const wrapper = input.closest('.searchable-dropdown');
+    if (!wrapper) {
+        console.error('Wrapper not found');
+        return;
+    }
+    
+    const dropdown = wrapper.querySelector('.dropdown-list');
+    if (!dropdown) {
+        console.error('Dropdown not found');
+        return;
+    }
+    
+    console.log('Current dropdown display:', dropdown.style.display);
+    console.log('Current dropdown class:', dropdown.className);
+    
+    // Close other dropdowns
+    document.querySelectorAll('.dropdown-list').forEach(list => {
+        if (list !== dropdown) {
+            list.classList.remove('show');
+            list.style.display = 'none';
+        }
+    });
+    
+    // Toggle current
+    const isShowing = dropdown.classList.contains('show');
+    console.log('Is currently showing:', isShowing);
+    
+    if (isShowing) {
+        dropdown.classList.remove('show');
+        dropdown.style.display = 'none';
+        console.log('Hiding dropdown');
+    } else {
+        populateItemDropdown(input, items);
+        dropdown.classList.add('show');
+        dropdown.style.display = 'block';
+        console.log('Showing dropdown - display:', dropdown.style.display);
+    }
+}
+
+// Filter items as user types
+function filterItems(input) {
+    const query = input.value.trim().toLowerCase();
+    console.log('=== filterItems called with query:', query, '===');
+    
+    const wrapper = input.closest('.searchable-dropdown');
+    const dropdown = wrapper.querySelector('.dropdown-list');
+    
+    // Always show dropdown when typing
+    if (!dropdown.classList.contains('show')) {
+        dropdown.classList.add('show');
+        dropdown.style.display = 'block';
+        console.log('Dropdown was hidden, now showing');
+    }
+    
+    const filteredItems = items.filter(item =>
+        item.name.toLowerCase().includes(query) ||
+        item.unit.toLowerCase().includes(query)
+    );
+    
+    console.log('Filtered', filteredItems.length, 'items');
+    populateItemDropdown(input, filteredItems);
+}
+
+// Populate dropdown with items
+function populateItemDropdown(input, itemsList) {
+    console.log('=== populateItemDropdown called with', itemsList.length, 'items ===');
+    
+    const wrapper = input.closest('.searchable-dropdown');
+    const dropdown = wrapper.querySelector('.dropdown-list');
+    
+    const rect = input.getBoundingClientRect();
+    console.log('Input position:', rect);
+    
+    // ✅ FORCE VISIBILITY WITH INLINE STYLES
+    dropdown.style.cssText = `
+        position: fixed !important;
+        top: ${rect.bottom + 2}px !important;
+        left: ${rect.left}px !important;
+        width: ${Math.max(rect.width, 300)}px !important;
+        max-height: 250px !important;
+        overflow-y: auto !important;
+        background: white !important;
+        border: 2px solid #3498db !important;
+        border-radius: 6px !important;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.4) !important;
+        z-index: 2147483647 !important;
+        display: block !important;
+    `;
+    
+    dropdown.innerHTML = '';
+    
+    if (!itemsList || itemsList.length === 0) {
+        dropdown.innerHTML = `
+            <div style="padding: 20px; text-align: center; color: #999;">
+                <i class="fas fa-search"></i><br>
+                No items found
+            </div>
+        `;
+        console.log('No items to display');
+        return;
+    }
+    
+    itemsList.forEach((item, index) => {
+        const div = document.createElement('div');
+        div.className = 'dropdown-item';
+        
+        div.style.cssText = `
+            padding: 10px 12px !important;
+            cursor: pointer !important;
+            border-bottom: 1px solid #f0f0f0 !important;
+            background: white !important;
+            display: block !important;
+            position: relative !important;
+        `;
+        
+        div.innerHTML = `
+            <div style="font-weight: 500; color: #1f2937; font-size: 13px;">
+                ${item.name} (${item.unit})
+            </div>
+            <div style="font-size: 11px; color: #6b7280; margin-top: 2px;">
+                Price: ₹${parseFloat(item.price).toFixed(2)} | 
+                Tax: ${item.tax}% | 
+                MRP: ₹${parseFloat(item.mrp).toFixed(2)}
+            </div>
+        `;
+        
+        div.dataset.id = item.id;
+        div.dataset.price = item.price;
+        div.dataset.tax = item.tax;
+        div.dataset.mrp = item.mrp;
+        div.dataset.name = item.name;
+        div.dataset.unit = item.unit;
+        
+        // ✅ Use mousedown to prevent input blur
+        div.addEventListener('mousedown', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('Item clicked:', item.name);
+            selectItemOption(this, input);
+        });
+        
+        div.addEventListener('mouseenter', function() {
+            this.style.background = '#f5f5f5';
+        });
+        
+        div.addEventListener('mouseleave', function() {
+            this.style.background = 'white';
+        });
+        
+        dropdown.appendChild(div);
+        console.log('Added item', index + 1, ':', item.name);
+    });
+    
+    console.log('Dropdown populated. Final display:', dropdown.style.display);
+    console.log('Dropdown position:', dropdown.style.top, dropdown.style.left);
+}
+
+// Select item from dropdown
+function selectItemOption(option, input) {
+    console.log('=== selectItemOption called ===');
+    
+    const row = input.closest('tr');
+    const rowId = row.id.split('_')[1];
+    
+    const displayText = `${option.dataset.name} (${option.dataset.unit})`;
+    input.value = displayText;
+    input.classList.add('has-value');
+    
+    const hiddenInput = row.querySelector('.hidden-item-id');
+    if (hiddenInput) {
+        hiddenInput.value = option.dataset.id;
+        console.log('Set item ID:', option.dataset.id);
+    }
+    
+    // Auto-fill prices
+    const price = parseFloat(option.dataset.price) || 0;
+    const tax = parseFloat(option.dataset.tax) || 0;
+    const mrp = parseFloat(option.dataset.mrp) || 0;
+    
+    const entryRateInput = row.querySelector('.entry-rate');
+    const unitPriceInput = row.querySelector('.unit-price');
+    const salesPriceInput = row.querySelector('.sales-price');
+    const taxInput = row.querySelector('.tax-percent');
+    
+    if (entryRateInput) entryRateInput.value = price.toFixed(2);
+    if (unitPriceInput) unitPriceInput.value = price.toFixed(2);
+    if (salesPriceInput) salesPriceInput.value = mrp.toFixed(2);
+    if (taxInput) taxInput.value = tax.toFixed(2);
+    
+    if (rowId) handleEntryRateChange(parseInt(rowId));
+    
+    // Hide dropdown
+    const dropdown = input.closest('.searchable-dropdown').querySelector('.dropdown-list');
+    dropdown.classList.remove('show');
+    dropdown.style.display = 'none';
+    
+    console.log('Item selection complete');
+}
+
+// ==================== CLOSE DROPDOWNS ON OUTSIDE CLICK ====================
+
+document.addEventListener('mousedown', function(e) {
+    // Don't close if clicking dropdown or input
+    if (e.target.closest('.dropdown-list') || e.target.closest('.item-searchable-wrapper')) {
+        return;
+    }
+    
+    // Close all dropdowns
+    document.querySelectorAll('.dropdown-list').forEach(list => {
+        list.classList.remove('show');
+        list.style.display = 'none';
+    });
+});
+
+// ==================== SCROLL/RESIZE HANDLERS ====================
+
+window.addEventListener('scroll', function() {
+    document.querySelectorAll('.dropdown-list.show').forEach(dropdown => {
+        const wrapper = dropdown.closest('.searchable-dropdown');
+        if (!wrapper) return;
+        
+        const input = wrapper.querySelector('.item-input');
+        if (!input) return;
+        
+        const rect = input.getBoundingClientRect();
+        dropdown.style.top = (rect.bottom + 2) + 'px';
+        dropdown.style.left = rect.left + 'px';
+    });
+}, true);
+
+window.addEventListener('resize', function() {
+    document.querySelectorAll('.dropdown-list.show').forEach(dropdown => {
+        const wrapper = dropdown.closest('.searchable-dropdown');
+        if (!wrapper) return;
+        
+        const input = wrapper.querySelector('.item-input');
+        if (!input) return;
+        
+        const rect = input.getBoundingClientRect();
+        dropdown.style.top = (rect.bottom + 2) + 'px';
+        dropdown.style.left = rect.left + 'px';
+        dropdown.style.width = Math.max(rect.width, 300) + 'px';
+    });
+});
+
+// ==================== UPDATED addItemRow FUNCTION ====================
+
+function addItemRow() {
+    rowCounter++;
+    const tbody = document.getElementById('itemsTableBody');
+    const row = document.createElement('tr');
+    row.id = `row_${rowCounter}`;
+    
+    row.innerHTML = `
+        <td style="overflow: visible; position: relative;">
+            <div class="item-searchable-wrapper">
+                <div class="searchable-dropdown">
+                    <input 
+                        type="text"
+                        class="form-control searchable-input item-input"
+                        placeholder="Type to search or click to select..."
+                        autocomplete="off"
+                        value="{{ po_item.item.name }} ({{ po_item.item.unit_of_measure }})"
+                    >
+                    <span class="dropdown-arrow">
+                        <i class="fas fa-chevron-down"></i>
+                    </span>
+                    <div class="dropdown-list"></div>
+                </div>
+                <input type="hidden" name="item_id[]" class="hidden-item-id" required>
+                <button type="button" class="btn-view-item" title="View Item History" onclick="viewItemHistory(this)">
+                    <i class="fas fa-eye"></i>
+                </button>
+            </div>
+        </td>
+        <td>
+            <input type="number" name="quantity[]" class="quantity" step="1" min="1" value="1" onchange="calculateEntryTotal(${rowCounter})" required>
+        </td>
+        <td>
+            <input type="number" name="entry_rate[]" class="entry-rate" step="0.01" min="0" 
+                value="0.00" onchange="handleEntryRateChange(${rowCounter})" required 
+                placeholder="Enter price">
+        </td>
+        <td>
+            <input type="number" name="sales_price[]" class="sales-price" step="0.01" min="0" value="0.00" 
+                title="Editable Sales Price (MRP)">
+        </td>
+        <td>
+            <input type="number" name="unit_price[]" class="unit-price readonly-field" step="0.01" min="0" value="0" 
+                readonly title="Auto-calculated" required>
+        </td>
+        <td>
+            <input type="number" 
+                name="item_cost[]" 
+                class="item-cost numeric-input readonly-field" 
+                step="0.01" 
+                min="0" 
+                value="0.00" 
+                readonly 
+                style="text-align: right; font-weight: 600; color: #2c3e50; background: #f8f9fa;"
+                title="Auto-calculated as Entry Total ÷ Quantity">
+        </td>
+        <td>
+            <input type="number" name="discount[]" class="discount" step="0.01" min="0" value="0" onchange="calculateEntryTotal(${rowCounter})">
+        </td>
+        <td>
+            <input type="number" name="tax_percent[]" class="tax-percent readonly-field" step="0.01" min="0" max="100" value="18" 
+                onchange="calculateEntryTotal(${rowCounter})" readonly>
+        </td>
+        <td>
+            <input type="text" class="line-total" value="₹0.00" readonly>
+        </td>
+        <td>
+            <button type="button" class="btn-remove" onclick="removeRow(${rowCounter})">
+                <i class="fas fa-trash"></i>
+            </button>
+        </td>
+    `;
+    
+    tbody.appendChild(row);
+    
+    // ✅ ADD EVENT LISTENERS AFTER ROW IS ADDED
+    const newInput = row.querySelector('.item-input');
+    const newArrow = row.querySelector('.dropdown-arrow');
+    
+    // Input click - open dropdown
+    newInput.addEventListener('click', function(e) {
+        e.stopPropagation();
+        toggleItemDropdown(this);
+    });
+    
+    // Input typing - filter items
+    newInput.addEventListener('input', function() {
+        filterItems(this);
+    });
+    
+    // Arrow click - toggle dropdown
+    newArrow.addEventListener('click', function(e) {
+        e.stopPropagation();
+        const input = this.previousElementSibling;
+        toggleItemDropdown(input);
+    });
+}
+
+// ==================== REPOSITION DROPDOWN ON SCROLL/RESIZE ====================
+
+// ✅ Reposition dropdowns on scroll
+
+window.addEventListener('scroll', function() {
+    document.querySelectorAll('.dropdown-list.show').forEach(dropdown => {
+        const wrapper = dropdown.closest('.searchable-dropdown');
+        if (!wrapper) return;
+        
+        const input = wrapper.querySelector('.item-input');
+        if (!input) return;
+        
+        const rect = input.getBoundingClientRect();
+        
+        // Update fixed position based on new scroll position
+        dropdown.style.top = (rect.bottom + window.scrollY + 2) + 'px';
+        dropdown.style.left = (rect.left + window.scrollX) + 'px';
+    });
+}, true);
+
+// ✅ Reposition dropdowns on window resize
+window.addEventListener('resize', function() {
+    document.querySelectorAll('.dropdown-list.show').forEach(dropdown => {
+        const wrapper = dropdown.closest('.searchable-dropdown');
+        if (!wrapper) return;
+        
+        const input = wrapper.querySelector('.item-input');
+        if (!input) return;
+        
+        const rect = input.getBoundingClientRect();
+        
+        dropdown.style.top = (rect.bottom + 2) + 'px';
+        dropdown.style.left = rect.left + 'px';
+        dropdown.style.width = rect.width + 'px';
+    });
+});
+
+// ✅ Close dropdown on scroll (alternative - if repositioning feels janky)
+/*
+window.addEventListener('scroll', function() {
+    document.querySelectorAll('.dropdown-list.show').forEach(dropdown => {
+        dropdown.classList.remove('show');
+        dropdown.style.display = 'none';
+    });
+}, true);
+*/
+
+// ==================== SUPPLIER & DEPARTMENT SEARCHABLE DROPDOWNS ====================
+
+// Data arrays
+const suppliers = [
+    {% for s in suppliers %}
+    {
+        id: {{ s.id }},
+        name: "{{ s.name|escapejs }}",
+        city: "{{ s.city|escapejs }}",
+        display: "{{ s.name|escapejs }} - {{ s.city|escapejs }}"
+    }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+];
+
+const departments = [
+    {% for d in departments %}
+    {
+        id: {{ d.id }},
+        name: "{{ d.name|escapejs }}",
+        city: "{{ d.city|escapejs }}",
+        address: "{{ d.address|escapejs }}",
+        state: "{{ d.state|escapejs }}",
+        pincode: "{{ d.pincode|escapejs }}",
+        gst: "{{ d.gst_number|escapejs }}",
+        display: "{{ d.name|escapejs }} - {{ d.city|escapejs }}"
+    }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+];
+
+// Initialize dropdowns on page load
+function initializeSupplierAndDepartmentDropdowns() {
+    // Initialize Supplier
+    initializeSupplierDropdown();
+    
+    // Initialize Department
+    initializeDepartmentDropdown();
+}
+
+// ==================== SUPPLIER DROPDOWN ====================
+
+function initializeSupplierDropdown() {
+    const input = document.getElementById('supplier_search_input');
+    const arrow = input.nextElementSibling;
+    const hiddenInput = document.getElementById('supplier');
+    
+    // Prefill if editing
+    {% if po.supplier.id %}
+    const prefilledSupplier = suppliers.find(s => s.id === {{ po.supplier.id }});
+    if (prefilledSupplier) {
+        input.value = prefilledSupplier.display;
+        input.classList.add('has-value');
+        hiddenInput.value = prefilledSupplier.id;
+    }
+    {% endif %}
+    
+    // Click input to toggle
+    input.addEventListener('click', function(e) {
+        e.stopPropagation();
+        toggleSupplierDropdown();
+    });
+    
+    // Type to filter
+    input.addEventListener('input', function() {
+        filterSupplierDropdown(this.value);
+    });
+    
+    // Arrow click
+    arrow.addEventListener('click', function(e) {
+        e.stopPropagation();
+        toggleSupplierDropdown();
+    });
+}
+
+function toggleSupplierDropdown() {
+    const wrapper = document.querySelector('.supplier-searchable-wrapper');
+    const input = document.getElementById('supplier_search_input');
+    const dropdown = wrapper.querySelector('.dropdown-list');
+    
+    // Close other dropdowns
+    document.querySelectorAll('.dropdown-list').forEach(list => {
+        if (list !== dropdown) {
+            list.classList.remove('show');
+        }
+    });
+    
+    const isShowing = dropdown.classList.contains('show');
+    
+    if (isShowing) {
+        dropdown.classList.remove('show');
+    } else {
+        populateSupplierDropdown(suppliers);
+        dropdown.classList.add('show');
+        
+        // Position dropdown
+        const rect = input.getBoundingClientRect();
+        dropdown.style.top = (rect.bottom + 2) + 'px';
+        dropdown.style.left = rect.left + 'px';
+        dropdown.style.width = rect.width + 'px';
+    }
+}
+
+function filterSupplierDropdown(query) {
+    const wrapper = document.querySelector('.supplier-searchable-wrapper');
+    const dropdown = wrapper.querySelector('.dropdown-list');
+    
+    if (!dropdown.classList.contains('show')) {
+        dropdown.classList.add('show');
+    }
+    
+    const filtered = suppliers.filter(s =>
+        s.name.toLowerCase().includes(query.toLowerCase()) ||
+        s.city.toLowerCase().includes(query.toLowerCase())
+    );
+    
+    populateSupplierDropdown(filtered);
+    
+    // Reposition
+    const input = document.getElementById('supplier_search_input');
+    const rect = input.getBoundingClientRect();
+    dropdown.style.top = (rect.bottom + 2) + 'px';
+    dropdown.style.left = rect.left + 'px';
+    dropdown.style.width = rect.width + 'px';
+}
+
+function populateSupplierDropdown(suppliersList) {
+    const wrapper = document.querySelector('.supplier-searchable-wrapper');
+    const dropdown = wrapper.querySelector('.dropdown-list');
+    
+    dropdown.innerHTML = '';
+    
+    if (!suppliersList || suppliersList.length === 0) {
+        dropdown.innerHTML = `
+            <div class="dropdown-item no-results">
+                No suppliers found
+            </div>
+        `;
+        return;
+    }
+    
+    suppliersList.forEach(supplier => {
+        const div = document.createElement('div');
+        div.className = 'dropdown-item';
+        div.textContent = supplier.display;
+        div.dataset.id = supplier.id;
+        div.dataset.name = supplier.name;
+        div.dataset.display = supplier.display;
+        
+        div.addEventListener('mousedown', function(e) {
+            e.preventDefault();
+            selectSupplier(this);
+        });
+        
+        dropdown.appendChild(div);
+    });
+}
+
+function selectSupplier(option) {
+    const input = document.getElementById('supplier_search_input');
+    const hiddenInput = document.getElementById('supplier');
+    const wrapper = document.querySelector('.supplier-searchable-wrapper');
+    const dropdown = wrapper.querySelector('.dropdown-list');
+    
+    input.value = option.dataset.display;
+    input.classList.add('has-value');
+    hiddenInput.value = option.dataset.id;
+    
+    dropdown.classList.remove('show');
+    
+    console.log('Supplier selected:', option.dataset.name);
+}
+
+// ==================== DEPARTMENT DROPDOWN ====================
+
+function initializeDepartmentDropdown() {
+    const input = document.getElementById('department_search_input');
+    const arrow = input.nextElementSibling;
+    const hiddenInput = document.getElementById('department');
+    
+    // Prefill if editing
+    {% if po.department.id %}
+    const prefilledDept = departments.find(d => d.id === {{ po.department.id }});
+    if (prefilledDept) {
+        input.value = prefilledDept.display;
+        input.classList.add('has-value');
+        hiddenInput.value = prefilledDept.id;
+    }
+    {% endif %}
+    
+    // Click input to toggle
+    input.addEventListener('click', function(e) {
+        e.stopPropagation();
+        toggleDepartmentDropdown();
+    });
+    
+    // Type to filter
+    input.addEventListener('input', function() {
+        filterDepartmentDropdown(this.value);
+    });
+    
+    // Arrow click
+    arrow.addEventListener('click', function(e) {
+        e.stopPropagation();
+        toggleDepartmentDropdown();
+    });
+}
+
+function toggleDepartmentDropdown() {
+    const wrapper = document.querySelector('.department-searchable-wrapper');
+    const input = document.getElementById('department_search_input');
+    const dropdown = wrapper.querySelector('.dropdown-list');
+    
+    // Close other dropdowns
+    document.querySelectorAll('.dropdown-list').forEach(list => {
+        if (list !== dropdown) {
+            list.classList.remove('show');
+        }
+    });
+    
+    const isShowing = dropdown.classList.contains('show');
+    
+    if (isShowing) {
+        dropdown.classList.remove('show');
+    } else {
+        populateDepartmentDropdown(departments);
+        dropdown.classList.add('show');
+        
+        // Position dropdown
+        const rect = input.getBoundingClientRect();
+        dropdown.style.top = (rect.bottom + 2) + 'px';
+        dropdown.style.left = rect.left + 'px';
+        dropdown.style.width = rect.width + 'px';
+    }
+}
+
+function filterDepartmentDropdown(query) {
+    const wrapper = document.querySelector('.department-searchable-wrapper');
+    const dropdown = wrapper.querySelector('.dropdown-list');
+    
+    if (!dropdown.classList.contains('show')) {
+        dropdown.classList.add('show');
+    }
+    
+    const filtered = departments.filter(d =>
+        d.name.toLowerCase().includes(query.toLowerCase()) ||
+        d.city.toLowerCase().includes(query.toLowerCase())
+    );
+    
+    populateDepartmentDropdown(filtered);
+    
+    // Reposition
+    const input = document.getElementById('department_search_input');
+    const rect = input.getBoundingClientRect();
+    dropdown.style.top = (rect.bottom + 2) + 'px';
+    dropdown.style.left = rect.left + 'px';
+    dropdown.style.width = rect.width + 'px';
+}
+
+function populateDepartmentDropdown(departmentsList) {
+    const wrapper = document.querySelector('.department-searchable-wrapper');
+    const dropdown = wrapper.querySelector('.dropdown-list');
+    
+    dropdown.innerHTML = '';
+    
+    if (!departmentsList || departmentsList.length === 0) {
+        dropdown.innerHTML = `
+            <div class="dropdown-item no-results">
+                No departments found
+            </div>
+        `;
+        return;
+    }
+    
+    departmentsList.forEach(dept => {
+        const div = document.createElement('div');
+        div.className = 'dropdown-item';
+        div.textContent = dept.display;
+        div.dataset.id = dept.id;
+        div.dataset.name = dept.name;
+        div.dataset.display = dept.display;
+        
+        div.addEventListener('mousedown', function(e) {
+            e.preventDefault();
+            selectDepartment(this);
+        });
+        
+        dropdown.appendChild(div);
+    });
+}
+
+function selectDepartment(option) {
+    const input = document.getElementById('department_search_input');
+    const hiddenInput = document.getElementById('department');
+    const wrapper = document.querySelector('.department-searchable-wrapper');
+    const dropdown = wrapper.querySelector('.dropdown-list');
+    
+    input.value = option.dataset.display;
+    input.classList.add('has-value');
+    hiddenInput.value = option.dataset.id;
+    
+    dropdown.classList.remove('show');
+    
+    console.log('Department selected:', option.dataset.name);
+    loadDepartmentInfo();
+}
+
+// ==================== CLOSE DROPDOWNS ON OUTSIDE CLICK ====================
+
+document.addEventListener('mousedown', function(e) {
+    if (!e.target.closest('.supplier-searchable-wrapper') && 
+        !e.target.closest('.department-searchable-wrapper') &&
+        !e.target.closest('.item-searchable-wrapper') &&
+        !e.target.closest('.searchable-dropdown')) {
+        
+        document.querySelectorAll('.dropdown-list').forEach(list => {
+            list.classList.remove('show');
+        });
+    }
+});
+
+// ==================== INITIALIZE ON PAGE LOAD ====================
+
+// Call this in your existing DOMContentLoaded
+document.addEventListener('DOMContentLoaded', function() {
+    // ... your existing code ...
+    
+    // Add this line
+    initializeSupplierAndDepartmentDropdowns();
+});
 
 </script>
 {% endblock %}

@@ -172,12 +172,13 @@ class PurchaseOrderItemInline(admin.TabularInline):
         'department', 
         'quantity', 
         'unit_price', 
-        'entry_rate',      # ✅ NEW - Shows base price after tax extraction
+        'entry_rate',
+        'item_cost',            # ✅ NEW - Shows base price after tax extraction
         'discount', 
         'tax_percent', 
         'line_total'
     )
-    readonly_fields = ('line_total', 'entry_rate')  # ✅ UPDATED
+    readonly_fields = ('line_total','item_cost','entry_rate')  # ✅ UPDATED
 
 
 @admin.register(PurchaseOrder)

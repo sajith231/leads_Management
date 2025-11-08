@@ -143,10 +143,16 @@
             {% endif %}
 
             <div class="info-card">
-                <h3 class="card-title">
-                    <i class="fas fa-building"></i> Supplier Information
-                </h3>
-                <div class="card-content">
+                <h3 class="card-title" style="display: flex; justify-content: space-between; align-items: center;">
+                <span><i class="fas fa-building"></i> Supplier Information</span>
+                <button type="button" id="viewSupplierHistoryDetail"
+                    class="btn-view-supplier"
+                    title="View Supplier History"
+                    data-supplier-id="{{ po.supplier.id }}">
+                    <i class="fas fa-eye"></i>
+                </button>
+            </h3>
+            <div class="card-content">
                     <div class="info-row">
                         <span class="info-label">Supplier Name:</span>
                         <span class="info-value">{{ po.supplier.name }}</span>
@@ -192,6 +198,12 @@
             {% endif %}
         </div>
 
+        {% if po.pdf_format == "FORMAT_2" and po.client_details %}
+            <div class="client-details-print">
+            <strong>Client Details:</strong> {{ po.client_details }}
+            </div>
+        {% endif %}
+
         <!-- Line Items Section -->
         <div class="items-section">
             <h3 class="section-title screen-only">
@@ -207,11 +219,14 @@
                             <th class="packing-col">Packing</th>
                             <th class="qty-col">QTY</th>
                             <th class="discount-col">Discount</th>
-                            <th class="rate-col">Entry Rate</th>  <!-- ✅ CHANGED from "Rate" -->
+                            <th class="rate-col">Entry Rate</th>
                             <th class="tax-col">Tax %</th>
-                            <th class="mrp-col">Sales Price (MRP)</th>  <!-- ✅ CHANGED from "MRP" -->
+                            <th class="mrp-col">Sales Price (MRP)</th>
+                            <!-- ✅ ADD THIS NEW COLUMN -->
+                            <th class="cost-col">Item Cost</th>
                             <th class="total-col">Total Amount</th>
                             <th class="remark-col">Remark</th>
+                            <th class="action-col screen-only">Action</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -220,36 +235,56 @@
                             <td class="center-align">{{ forloop.counter }}</td>
                             <td>
                                 <div class="item-name">{{ item.item.name }}</div>
+                                <div class="client-details-format2" style="display: none;">
+                                    {% if po.client_details %}
+                                    <span style="font-size: 9px; color: #666; font-style: italic;">
+                                        ({{ po.client_details }})
+                                    </span>
+                                    {% endif %}
+                                </div>
                             </td>
                             <td class="center-align">{{ item.item.unit_of_measure }}</td>
                             <td class="right-align">{{ item.quantity }}</td>
                             <td class="right-align">{{ item.discount|floatformat:2 }}</td>
-                            <td class="right-align">{{ item.entry_rate|floatformat:2 }}</td>  <!-- ✅ Changed from unit_price -->
+                            <td class="right-align">{{ item.entry_rate|floatformat:2 }}</td>
                             <td class="center-align">{{ item.tax_percent }}</td>
-                            <td class="right-align">{{ item.sales_price|default:0|floatformat:2 }}</td>  <!-- ✅ Changed from unit_price -->
+                            <td class="right-align">{{ item.sales_price|default:0|floatformat:2 }}</td>
+                            <!-- ✅ ADD THIS NEW CELL -->
+                            <td class="right-align item-cost-cell">{{ item.item_cost|floatformat:2 }}</td>
                             <td class="right-align line-total">{{ item.line_total|floatformat:2 }}</td>
                             <td></td>
+                            <td class="center-align action-cell screen-only">
+                                <button type="button" class="btn-view-item"
+                                        title="View Item History"
+                                        data-item-id="{{ item.item.id }}">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>
                     <tfoot class="print-table-footer">
                         <tr class="total-row">
-                            <td colspan="8" class="right-align"><strong>Total</strong></td>
+                            <!-- ✅ CHANGE: colspan from 8 to 9 -->
+                            <td colspan="9" class="right-align"><strong>Total</strong></td>
                             <td class="right-align"><strong>{{ po.total_amount|floatformat:2 }}</strong></td>
                             <td></td>
                         </tr>
                         <tr class="total-row">
-                            <td colspan="8" class="right-align"><strong>Discount</strong></td>
+                            <!-- ✅ CHANGE: colspan from 8 to 9 -->
+                            <td colspan="9" class="right-align"><strong>Discount</strong></td>
                             <td class="right-align"><strong>0.00</strong></td>
                             <td></td>
                         </tr>
                         <tr class="total-row">
-                            <td colspan="8" class="right-align"><strong>Tax</strong></td>
+                            <!-- ✅ CHANGE: colspan from 8 to 9 -->
+                            <td colspan="9" class="right-align"><strong>Tax</strong></td>
                             <td class="right-align"><strong>{{ po.tax_amount|floatformat:2 }}</strong></td>
                             <td></td>
                         </tr>
                         <tr class="grand-total-row-print">
-                            <td colspan="8" class="right-align"><strong>Grand Total</strong></td>
+                            <!-- ✅ CHANGE: colspan from 8 to 9 -->
+                            <td colspan="9" class="right-align"><strong>Grand Total</strong></td>
                             <td class="right-align grand-total-value"><strong>{{ po.grand_total|floatformat:2 }}</strong></td>
                             <td></td>
                         </tr>
@@ -360,17 +395,6 @@
                 <span class="status-badge admin-status-{{ po.admin_status|lower }}">
                     {{ po.get_admin_status_display }}
                 </span>
-                {% comment %} {% if po.admin_approved_by %}
-                <div class="approval-info-readonly">
-                    <p><i class="fas fa-user"></i> <strong>By:</strong> {{ po.admin_approved_by }}</p>
-                    {% if po.admin_approved_at %}
-                    <p><i class="fas fa-calendar"></i> <strong>Date:</strong> {{ po.admin_approved_at|date:"d M, Y H:i" }}</p>
-                    {% endif %}
-                    {% if po.admin_rejection_reason %}
-                    <p><i class="fas fa-comment"></i> <strong>Reason:</strong> {{ po.admin_rejection_reason }}</p>
-                    {% endif %}
-                </div>
-                {% endif %} {% endcomment %}
             </div>
         </div>
         {% endif %}
@@ -390,25 +414,100 @@
             </div>
         </div>
 
-        <!-- Action Buttons (screen only) -->
-        <div class="detail-actions no-print">
+        <!-- ✅ ADD THIS ENTIRE SECTION -->
+        <div class="pdf-format-section screen-only no-print">
+            <div class="format-selector">
+                <label for="pdfFormatSelect">
+                    <i class="fas fa-file-pdf"></i> PDF Format:
+                </label>
+                <select id="pdfFormatSelect" class="format-select">
+                    <option value="FORMAT_1" {% if po.pdf_format == 'FORMAT_1' %}selected{% endif %}>
+                        📄 FORM 1
+                    </option>
+                    <option value="FORMAT_2" {% if po.pdf_format == 'FORMAT_2' %}selected{% endif %}>
+                        📋 FORM 2
+                    </option>
+                </select>
+            </div>
+        </div>
+
+        <div class="detail-actions no-print d-flex justify-content-end align-items-center mt-3 gap-2">
+            <a href="{% url 'purchase_order:po_list' %}" class="btn btn-secondary btn-lg">
+                <i class="fas fa-arrow-left"></i> Back
+            </a>
             <a href="{% url 'purchase_order:po_update' po.pk %}" class="btn btn-primary btn-lg">
-                <i class="fas fa-edit"></i> Edit Purchase Order
+                <i class="fas fa-edit"></i> Edit
             </a>
             <a href="{% url 'purchase_order:po_delete' po.pk %}" class="btn btn-danger btn-lg">
-                <i class="fas fa-trash"></i> Delete
+                <i class="fas fa-trash"></i> Remove
             </a>
-            <button onclick="window.print()" class="btn btn-info btn-lg">
+            <button onclick="printWithFormat()" class="btn btn-info btn-lg">
                 <i class="fas fa-print"></i> Print
             </button>
             <button id="whatsappShareBtn" class="btn btn-success btn-lg">
                 <i class="fab fa-whatsapp"></i> WhatsApp Share
-            </button> 
-            <a href="{% url 'purchase_order:po_list' %}" class="btn btn-secondary">
-                <i class="fas fa-arrow-left"></i> Back
-            </a>
+            </button>
         </div>
     </div>
+</div>
+<!-- Supplier Purchase History Modal -->
+<div id="supplierHistoryModalDetail" class="history-modal">
+  <div class="history-modal-content">
+    <div class="history-modal-header">
+      <i class="fas fa-history"></i>
+      <h2>Supplier Purchase History</h2>
+    </div>
+    <div class="history-modal-body">
+      <table id="supplierHistoryTableDetail" class="history-table">
+        <thead>
+          <tr>
+            <th>PO Number</th>
+            <th>Date</th>
+            <th>Item</th>
+            <th>Quantity</th>
+            <th>Total</th>
+            <th>Rate</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td colspan="6" class="no-data">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="history-modal-footer">
+      <button type="button" class="btn-close" onclick="closeSupplierHistoryDetail()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ✅ ITEM PURCHASE HISTORY MODAL -->
+<div id="itemHistoryModalDetail" class="confirmation-modal">
+  <div class="confirmation-content" style="max-width: 900px;">
+    <div class="confirmation-header" style="background: #6f42c1;">
+      <i class="fas fa-history"></i>
+      <h2>Item Purchase History</h2>
+    </div>
+    <div class="confirmation-body" style="max-height: 450px; overflow-y: auto;">
+      <table id="itemHistoryTableDetail" class="styled-table">
+        <thead>
+          <tr>
+            <th>PO Number</th>
+            <th>Date</th>
+            <th>Supplier</th>
+            <th>Quantity</th>
+            <th>Total</th>
+            <th>Rate</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td colspan="6" class="no-data">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="confirmation-footer">
+      <button type="button" class="btn-cancel" onclick="closeItemHistoryDetail()">Close</button>
+    </div>
+  </div>
 </div>
 
 <style>
@@ -773,7 +872,83 @@
 }
 
 .items-table-wrapper {
-    overflow-x: auto;
+    overflow-x: auto;   /* keep for screen */
+}
+
+/* ===== PRINT FIXES: no horizontal scroll, fit to A4, hide Action column ===== */
+@page {
+  size: A4 portrait;
+  margin: 12mm;               /* keep content inside printable area */
+}
+
+/* ========= PRINT / PDF FIX ========= */
+@page {
+  size: A4 portrait;
+  margin: 10mm 10mm 12mm 10mm;
+}
+
+@media print {
+  /* Hide screen-only controls */
+  .screen-only, .no-print {
+    display: none !important;
+  }
+
+  /* Show print headers/footers */
+  .print-header, .print-footer {
+    display: block !important;
+  }
+
+  /* Remove horizontal scroll bar */
+  .items-table-wrapper {
+    overflow-x: visible !important;
+    width: 100% !important;
+  }
+
+  /* Force table to fit A4 width */
+  .items-table {
+    width: 100% !important;
+    table-layout: fixed !important;
+    border-collapse: collapse !important;
+  }
+
+  /* Let text wrap instead of stretching */
+  .items-table th,
+  .items-table td {
+    white-space: normal !important;
+    word-wrap: break-word !important;
+    overflow-wrap: anywhere !important;
+    font-size: 11px !important;
+    padding: 4px !important;
+  }
+
+  /* Hide Action column in PDF/print */
+  .action-col,
+  .action-cell {
+    display: none !important;
+  }
+
+  /* Keep columns proportional */
+  .sl-col      { width: 5%  !important; }
+  .item-col    { width: 25% !important; }
+  .packing-col { width: 8%  !important; }
+  .qty-col     { width: 8%  !important; }
+  .discount-col{ width: 8%  !important; }
+  .rate-col    { width: 10% !important; }
+  .tax-col     { width: 6%  !important; }
+  .mrp-col     { width: 12% !important; }
+  .total-col   { width: 10% !important; }
+  .remark-col  { width: 8%  !important; }
+
+  /* Ensure totals rows line up */
+  tfoot td {
+    font-weight: bold;
+  }
+
+  /* Client details styling */
+  .client-details-print {
+    margin-bottom: 10px;
+    font-size: 12px;
+  }
 }
 
 .items-table {
@@ -1393,6 +1568,414 @@
         max-width: 100%;
     }
 }
+
+/* ✅ Supplier History Modal Styling (Match PO Form Look) */
+.history-modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+}
+
+.history-modal-content {
+  background: #fff;
+  border-radius: 12px;
+  max-width: 900px;
+  width: 90%;
+  overflow: hidden;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+  animation: popupFadeIn 0.3s ease-in-out;
+}
+
+.history-modal-header {
+  background: #6f42c1;
+  color: white;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.history-modal-header i {
+  font-size: 20px;
+}
+
+.history-modal-header h2 {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.history-modal-body {
+  max-height: 450px;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.history-table thead {
+  background: #6f42c1;
+  color: white;
+}
+
+.history-table th,
+.history-table td {
+  padding: 10px;
+  text-align: center;
+  border-bottom: 1px solid #ddd;
+}
+
+.no-data {
+  text-align: center;
+  color: #7f8c8d;
+  font-style: italic;
+  padding: 20px;
+}
+
+.history-modal-footer {
+  background: #f8f9fa;
+  padding: 15px;
+  text-align: right;
+}
+
+.btn-close {
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s;
+}
+
+.btn-close:hover {
+  background: #5a6268;
+}
+
+@keyframes popupFadeIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* ✅ Styled modal - matches po_form.html */
+.confirmation-modal {
+  display: none;
+  position: fixed;
+  z-index: 9998;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  animation: fadeIn 0.3s ease;
+}
+
+.confirmation-modal.active {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.confirmation-content {
+  background-color: white;
+  padding: 0;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 900px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  animation: slideIn 0.3s ease;
+}
+
+.confirmation-header {
+  padding: 25px 30px;
+  background: #6f42c1;
+  color: white;
+  border-radius: 12px 12px 0 0;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.confirmation-header i {
+  font-size: 24px;
+}
+
+.confirmation-header h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.confirmation-body {
+  padding: 20px;
+}
+
+.styled-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  background: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.styled-table thead tr {
+  background-color: #6f42c1;
+  color: #ffffff;
+  text-align: center;
+}
+
+.styled-table th,
+.styled-table td {
+  padding: 12px 15px;
+  text-align: center;
+  border-bottom: 1px solid #dddddd;
+}
+
+.styled-table tbody tr:nth-of-type(even) {
+  background-color: #f3f3f3;
+}
+
+.styled-table tbody tr:hover {
+  background-color: #ede7f6;
+}
+
+.no-data {
+  text-align: center;
+  padding: 20px;
+  font-style: italic;
+  color: #666;
+}
+
+.confirmation-footer {
+  padding: 15px 30px;
+  background: #f8f9fa;
+  border-radius: 0 0 12px 12px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.btn-cancel {
+  background: #95a5a6;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-cancel:hover {
+  background: #7f8c8d;
+}
+
+/* ✅ Final adjustment: make Supplier & Item eye buttons identical */
+.btn-view-supplier,
+.btn-view-item {
+  background-color: #6f42c1 !important;
+  border: none !important;
+  border-radius: 50% !important;
+  color: #6da9c5ff !important;
+  font-size: 14px !important;
+  width: 32px !important;
+  height: 32px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15) !important;
+  vertical-align: middle !important;
+  margin-left: 6px !important;
+  padding: 0 !important;
+}
+
+/* ✅ Hover and click effects unified */
+.btn-view-supplier:hover,
+.btn-view-item:hover {
+  background-color: #5a32a3 !important;
+  transform: scale(1.1);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25);
+}
+
+.btn-view-supplier:active,
+.btn-view-item:active {
+  transform: scale(0.95);
+  background-color: #4b278f !important;
+}
+
+/* ✅ Icon alignment and size (identical for both) */
+.btn-view-supplier i,
+.btn-view-item i {
+  font-size: 15px !important;
+  line-height: 1 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* ✅ Optional: subtle glow on hover (modern look) */
+.btn-view-supplier:hover,
+.btn-view-item:hover {
+  box-shadow: 0 0 10px rgba(111, 66, 193, 0.5);
+}
+/* ✅ Blue eye icon inside purple button */
+.btn-view-supplier i,
+.btn-view-item i {
+  color: #ffffffff !important;   /* Bright Material Blue */
+  font-size: 15px;
+  line-height: 1;
+}
+
+/* ✅ ADD THESE STYLES */
+.pdf-format-section {
+    background: linear-gradient(135deg, #E3F2FD 100%);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.format-selector {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.format-selector label {
+    font-weight: 600;
+    color: #000000ff;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.format-select {
+    padding: 10px 15px;
+    border-radius: 6px;
+    border: 2px solid #007b94ff;
+    font-size: 14px;
+    font-weight: 500;
+    background: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 250px;
+}
+
+.format-select:hover {
+    border-color: #F57C00;
+    box-shadow: 0 2px 8px rgba(255, 152, 0, 0.2);
+}
+
+.format-select:focus {
+    outline: none;
+    border-color: #E65100;
+    box-shadow: 0 0 0 3px rgba(255, 152, 0, 0.1);
+}
+
+.btn-sm {
+    padding: 8px 16px;
+    font-size: 14px;
+}
+
+.client-details-format2 {
+    margin-top: 4px;
+    display: none;
+}
+
+@media print {
+    .pdf-format-section {
+        display: none !important;
+    }
+    
+    body.format-2 .client-details-format2 {
+        display: block !important;
+    }
+}
+
+.action-buttons {
+  display: flex;
+  justify-content: flex-end; /* Push all buttons to the right */
+  gap: 10px; /* Adds space between buttons */
+  margin-top: 15px;
+}
+
+/* Item Cost Column Styling */
+.items-table th.cost-col,
+.items-table td.item-cost-cell {
+    text-align: right;
+    font-weight: 600;
+    color: #201f1fff; /* Orange color to distinguish from other columns */
+}
+
+.item-cost-cell {
+    background: #ffffffff; /* Light orange background */
+}
+
+/* Print Styles */
+@media print {
+    .print-items-table .cost-col { 
+        width: 10%; 
+    }
+    
+    .item-cost-cell {
+        background: none !important;
+        font-weight: 600;
+    }
+}
+
+@media print {
+    .print-items-table .sl-col { width: 4%; }
+    .print-items-table .item-col { width: 18%; }
+    .print-items-table .packing-col { width: 7%; }
+    .print-items-table .qty-col { width: 6%; }
+    .print-items-table .discount-col { width: 7%; }
+    .print-items-table .rate-col { width: 8%; }
+    .print-items-table .tax-col { width: 6%; }
+    .print-items-table .mrp-col { width: 9%; }
+    .print-items-table .cost-col { width: 10%; }  /* ✅ NEW */
+    .print-items-table .total-col { width: 10%; }
+    .print-items-table .remark-col { width: 15%; }
+}
+
+/* ✅ ADD THIS CSS */
+.department-info-section {
+    animation: slideInDown 0.5s ease-out;
+}
+
+@keyframes slideInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.alert-info {
+    transition: all 0.3s ease;
+}
+
+.alert-info:hover {
+    box-shadow: 0 4px 12px rgba(0, 191, 165, 0.2);
+    transform: translateY(-2px);
+}
+
 </style>
 
 <script>
@@ -1409,14 +1992,21 @@ function toggleRejectionReason() {
     // Update select styling based on status
     select.className = 'approval-select status-' + select.value.toLowerCase();
 }
-</script>
 
-<script>
+// Update the WhatsApp button click handler
 document.getElementById("whatsappShareBtn").addEventListener("click", function () {
+    const format = document.getElementById('pdfFormatSelect').value;
     const csrfToken = "{{ csrf_token }}";
     const sendUrl = "{% url 'purchase_order:send_whatsapp_po' po.id %}";
+    
+    const urlWithFormat = `${sendUrl}?format=${format}`;
 
-    fetch(sendUrl, {
+    const btn = this;
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+
+    fetch(urlWithFormat, {
         method: "POST",
         headers: {
             "X-CSRFToken": csrfToken,
@@ -1426,8 +2016,9 @@ document.getElementById("whatsappShareBtn").addEventListener("click", function (
         const text = await response.text();
         try {
             const data = JSON.parse(text);
-            if (data.status === "success") {
-                alert("✅ WhatsApp message sent successfully!");
+            if (data.success) {
+                const formatName = format === 'FORMAT_2' ? 'Format 2 (with client details)' : 'Format 1 (standard)';
+                alert(`✅ WhatsApp message sent successfully!`);
             } else {
                 alert("⚠️ Failed: " + (data.error || data.message || "Unknown error"));
             }
@@ -1438,6 +2029,10 @@ document.getElementById("whatsappShareBtn").addEventListener("click", function (
     })
     .catch(err => {
         alert("❌ Network error: " + err);
+    })
+    .finally(() => {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
     });
 });
 
@@ -1486,6 +2081,127 @@ function getCookie(name) {
     return cookieValue;
 }
 
+// ==================== SUPPLIER HISTORY POPUP ====================
+document.getElementById('viewSupplierHistoryDetail')?.addEventListener('click', function() {
+  const supplierId = this.getAttribute('data-supplier-id');
+  const modal = document.getElementById('supplierHistoryModalDetail');
+  const tableBody = document.querySelector('#supplierHistoryTableDetail tbody');
+
+  tableBody.innerHTML = '<tr><td colspan="6" class="no-data">Loading...</td></tr>';
+  modal.style.display = 'flex';
+
+  fetch(`/po/supplier-history/${supplierId}/`)
+    .then(response => response.json())
+    .then(data => {
+      if (data.history && data.history.length > 0) {
+        tableBody.innerHTML = data.history.map(row => `
+          <tr>
+            <td>${row.po_number}</td>
+            <td>${row.date}</td>
+            <td>${row.item_name}</td>
+            <td>${row.quantity}</td>
+            <td>${row.rate}</td>
+            <td>${row.total}</td>
+          </tr>
+        `).join('');
+      } else {
+        tableBody.innerHTML = '<tr><td colspan="6" class="no-data">No purchase history found.</td></tr>';
+      }
+    })
+    .catch(() => {
+      tableBody.innerHTML = '<tr><td colspan="6" class="no-data">Error loading data.</td></tr>';
+    });
+});
+
+function closeSupplierHistoryDetail() {
+  document.getElementById('supplierHistoryModalDetail').style.display = 'none';
+}
+
+// ==================== ITEM HISTORY POPUP ====================
+document.querySelectorAll(".btn-view-item").forEach(button => {
+  button.addEventListener("click", async function() {
+    const itemId = this.getAttribute("data-item-id");
+    const modal = document.getElementById("itemHistoryModalDetail");
+    const tableBody = document.querySelector("#itemHistoryTableDetail tbody");
+
+    tableBody.innerHTML = `<tr><td colspan="6" class="no-data">Loading...</td></tr>`;
+    modal.classList.add("active"); // ✅ SHOW MODAL
+
+    try {
+      const response = await fetch(`/po/item-history/${itemId}/`);
+      const data = await response.json();
+
+      if (data.history && data.history.length > 0) {
+        tableBody.innerHTML = data.history.map(row => `
+          <tr>
+            <td>${row.po_number}</td>
+            <td>${row.date}</td>
+            <td>${row.supplier}</td>
+            <td>${row.quantity}</td>
+            <td>${parseFloat(row.rate).toFixed(2)}</td>
+            <td>${parseFloat(row.total).toFixed(2)}</td>
+          </tr>
+        `).join('');
+      } else {
+        tableBody.innerHTML = `<tr><td colspan="6" class="no-data">No purchase history found.</td></tr>`;
+      }
+    } catch (error) {
+      console.error("Error loading item history:", error);
+      tableBody.innerHTML = `<tr><td colspan="6" class="no-data">Error loading data.</td></tr>`;
+    }
+  });
+});
+
+function closeItemHistoryDetail() {
+  document.getElementById("itemHistoryModalDetail").classList.remove("active");
+}
+
+// ✅ ADD THESE FUNCTIONS
+function savePdfFormat() {
+    const format = document.getElementById('pdfFormatSelect').value;
+    const poId = {{ po.id }};
+    
+    fetch(`/po/purchase-orders/${poId}/update-pdf-format/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ pdf_format: format })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('✅ PDF format saved successfully!');
+        } else {
+            alert('❌ Error saving format: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('❌ Network error: ' + error);
+    });
+}
+
+function printWithFormat() {
+    const format = document.getElementById('pdfFormatSelect').value;
+    
+    document.body.classList.remove('format-1', 'format-2');
+    document.body.classList.add(format === 'FORMAT_2' ? 'format-2' : 'format-1');
+    
+    const clientDetails = document.querySelectorAll('.client-details-format2');
+    clientDetails.forEach(el => {
+        el.style.display = format === 'FORMAT_2' ? 'block' : 'none';
+    });
+    
+    window.print();
+    
+    setTimeout(() => {
+        document.body.classList.remove('format-1', 'format-2');
+        clientDetails.forEach(el => {
+            el.style.display = 'none';
+        });
+    }, 1000);
+}
 </script>
 
 {% endblock %}

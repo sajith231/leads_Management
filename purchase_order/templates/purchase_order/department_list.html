@@ -34,6 +34,7 @@
                     <tr>
                         <th>ID</th>
                         <th>Department Name</th>
+                        <th>Logo</th>
                         <th>City</th>
                         <th>State</th>
                         <th>Contact</th>
@@ -50,6 +51,13 @@
                             <div class="department-name">{{ department.name }}</div>
                             {% if department.email %}
                             <div class="department-email">{{ department.email }}</div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if department.logo %}
+                                <img src="{{ department.logo.url }}" alt="Logo" height="40" style="border-radius: 4px;">
+                            {% else %}
+                                <span class="text-muted">No Logo</span>
                             {% endif %}
                         </td>
                         <td title="{{ department.city }}">{{ department.city }}</td>
@@ -283,51 +291,58 @@
 .data-table {
     width: 100%;
     border-collapse: collapse;
-    table-layout: fixed;
-    min-width: 1200px;
+    table-layout: auto; /* Let the browser auto-adjust column widths */
+    min-width: unset;   /* Remove hardcoded width constraint */
 }
 
 /* Define fixed widths for each column */
+/* 🔧 Balanced and Responsive Column Widths */
 .data-table th:nth-child(1),
 .data-table td:nth-child(1) {
-    width: 5%;  /* ID */
+    width: 6%;  /* ID */
     text-align: center;
 }
 
 .data-table th:nth-child(2),
 .data-table td:nth-child(2) {
-    width: 25%;  /* Department Name */
+    width: 20%;  /* Department Name */
 }
 
 .data-table th:nth-child(3),
 .data-table td:nth-child(3) {
-    width: 15%;  /* City */
+    width: 10%;  /* Logo */
+    text-align: center;
 }
 
 .data-table th:nth-child(4),
 .data-table td:nth-child(4) {
-    width: 12%;  /* State */
+    width: 12%;  /* City */
 }
 
 .data-table th:nth-child(5),
 .data-table td:nth-child(5) {
-    width: 15%;  /* Contact */
+    width: 12%;  /* State */
 }
 
 .data-table th:nth-child(6),
 .data-table td:nth-child(6) {
-    width: 15%;  /* GSTIN */
+    width: 12%;  /* Contact */
 }
 
 .data-table th:nth-child(7),
 .data-table td:nth-child(7) {
-    width: 8%;  /* Status */
-    text-align: center;
+    width: 12%;  /* GSTIN */
 }
 
 .data-table th:nth-child(8),
 .data-table td:nth-child(8) {
-    width: 8%;  /* Actions */
+    width: 10%;  /* Status */
+    text-align: center;
+}
+
+.data-table th:nth-child(9),
+.data-table td:nth-child(9) {
+    width: 6%;  /* Actions */
     text-align: center;
 }
 
@@ -651,6 +666,17 @@
 .modern-pagination li:last-child span {
     border-top-right-radius: 8px;
     border-bottom-right-radius: 8px;
+}
+
+@media (max-width: 1200px) {
+    .data-table th, .data-table td {
+        white-space: normal;
+        word-wrap: break-word;
+    }
+}
+
+.table-scroll {
+    overflow-x: hidden !important;
 }
 
 </style>
