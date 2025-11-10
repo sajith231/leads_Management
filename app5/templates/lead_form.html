@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Job Card List{% endblock %}
+{% block title %}Lead Creation Form{% endblock %}
 
 {% block content %}
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,13 +15,14 @@
         }
         
         body {
-           
+            background: #f0f2f5;
         }
         
         .container {
             max-width: 1400px;
             width: 100%;
             margin: 0 auto;
+            padding: 20px;
         }
         
         .form-container {
@@ -61,8 +62,8 @@
         
         /* Communication Details Section Styling */
         #communication-details {
-            background-color:#dbf5dd; /* Light blue background */
-            border: 2px solid #0ec33f; /* Blue border */
+            background-color:#dbf5dd;
+            border: 2px solid #0ec33f;
             border-radius: 10px;
             padding: 20px;
             box-shadow: 0 3px 10px rgba(37, 117, 252, 0.15);
@@ -92,7 +93,7 @@
 
         /* Status Select Styling */
         .status-select {
-            width: 100% !important;      /* full width */
+            width: 100% !important;
             padding: 10px 12px;
             font-size: 14px;
             font-weight: 600;
@@ -112,26 +113,6 @@
 
         .status-select:hover {
             background: #eef6ff;
-        }
-
-        /* Status Legend Styling */
-        .status-legend {
-            font-size: 13px;
-            font-weight: 600;
-            margin-bottom: 6px;
-            opacity: 0.9;
-        }
-
-        .st-active {
-            color: #0a8f2f;
-        }
-
-        .st-inactive {
-            color: #c21d1d;
-        }
-
-        .st-installed {
-            color: #0d66d0;
         }
         
         .form-group {
@@ -153,7 +134,7 @@
         }
         
         input, select, textarea {
-            width: 60%;
+            width: 100%;
             padding: 8px 10px;
             border: 1px solid #ddd;
             border-radius: 6px;
@@ -268,7 +249,7 @@
         }
         
         .date-field-compact {
-            min-width: 180px; /* Increased width for better date display */
+            min-width: 180px;
         }
         
         .date-field-compact label {
@@ -282,55 +263,8 @@
             background: white;
             border: 1px solid black;
             font-weight: 500;
-            width: 100%; /* Ensure date input takes full width of container */
-            min-width: 150px; /* Minimum width to ensure date is fully visible */
-        }
-        
-        .status-field-compact {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            background: white;
-            padding: 8px 15px;
-            border-radius: 6px;
-            border: 2px solid #2575fc;
-            box-shadow: 0 2px 6px rgba(37, 117, 252, 0.2);
-            min-width: 130px;
-        }
-        
-        .status-field-compact label {
-            margin: 0;
-            font-size: 13px;
-            color: #2575fc;
-            font-weight: 600;
-            white-space: nowrap;
-        }
-        
-        .status-field-compact input {
-            width: 18px;
-            height: 18px;
-            accent-color: #2575fc;
-        }
-        
-        /* Active status styling */
-        .active-status {
-            background: linear-gradient(135deg, #4CAF50, #45a049);
-            border-color: #2E7D32;
-            color: white;
-        }
-        
-        .active-status label {
-            color: white;
-        }
-        
-        .inactive-status {
-            background: linear-gradient(135deg, #ff6b6b, #ee5a52);
-            border-color: #c62828;
-            color: white;
-        }
-        
-        .inactive-status label {
-            color: white;
+            width: 100%;
+            min-width: 150px;
         }
 
         /* Navigation Menu */
@@ -404,7 +338,7 @@
             padding: 6px 8px;
             font-size: 12px;
             height: 32px;
-            width: 60%; /* Ensure consistent width */
+            width: 60%;
         }
         
         /* Toggle Switch Styling */
@@ -669,11 +603,6 @@
                 width: 100%;
             }
             
-            .status-field-compact {
-                width: 100%;
-                justify-content: center;
-            }
-            
             .nav-item {
                 flex: 1 0 100%;
             }
@@ -703,7 +632,6 @@
                         </a>
                     </li>
                    <li class="nav-item">
-                        <!-- Updated Requirements Link -->
                         <a href="{% url 'app5:requirements_list' %}" class="nav-link">
                         <i class="fas fa-clipboard-list"></i>
                          Requirements
@@ -906,30 +834,31 @@
                                 </select>
                             </div>
                             
+                            <!-- ✅ FIXED: Changed from assigned_user to marketedBy -->
                             <div class="compact-form-group">
                                 <label for="marketedBy">Marketed By</label>
-                                <select name="marketedBy" class="form-select" required>
-                                    <option value="">-- Select Marketed By --</option>
+                                <select id="marketedBy" name="marketedBy" class="form-select">
+                                    <option value="">-- Select Active User --</option>
                                     {% for user in active_users %}
-                                        <option value="{{ user.name }}">{{ user.name }}</option>
+                                        <option value="{{ user.id }}">{{ user.name }}</option>
                                     {% endfor %}
                                 </select>
                             </div>
                             
                             <div class="compact-form-group">
                                 <label for="Consultant">Consultant</label>
-                                <input type="text" id="Consultant" name="Consultant">
+                                <input type="text" id="Consultant" name="Consultant" placeholder="Enter consultant name">
                             </div>
                             
-                            <div class="compact-form-group">
-                                <label for="requirement">Branch</label>
-                                <select id="requirement" name="requirement">
-                                    <option value="">Select Branch</option>
-                                    {% for department in departments %}
-                                    <option value="{{ department.id }}">{{ department.name }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
+                                                    <div class="compact-form-group">
+    <label for="requirement">Branch</label>
+    <select id="requirement" name="requirement">
+        <option value="">Select Branch</option>
+        {% for department in departments %}
+        <option value="{{ department.id }}">{{ department.name }}</option>
+        {% endfor %}
+    </select>
+</div>
                             
                             <div class="compact-form-group">
                                 <label for="details">Notes</label>
@@ -1138,7 +1067,7 @@
             }, 5000);
         }
         
-        // Form submission handler - FIXED VERSION
+        // Form submission handler
         const form = document.getElementById('customerForm');
         form.addEventListener('submit', function(e) {
             e.preventDefault();
@@ -1172,9 +1101,8 @@
                     navLinks.forEach(l => l.classList.remove('active'));
                     this.classList.add('active');
                 }
-                // Allow external links (like Requirements) to work normally
             });
         });
     });
-</script>
+    </script>
 {% endblock %}

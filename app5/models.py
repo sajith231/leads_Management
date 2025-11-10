@@ -542,20 +542,9 @@ class Lead(models.Model):
     date = models.DateField(default=timezone.now)
 
     # Assignment fields
-    assigned_to = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='assigned_leads'
-    )
-    assigned_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='assigned_by_leads'
-    )
+    
+    assigned_to_name = models.CharField(max_length=150, blank=True, null=True)
+    assigned_by_name = models.CharField(max_length=150, blank=True, null=True)
     assigned_date = models.DateField(null=True, blank=True)
     assigned_time = models.TimeField(null=True, blank=True)
 

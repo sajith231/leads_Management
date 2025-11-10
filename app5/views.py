@@ -3140,88 +3140,357 @@ def api_jobcard_status(request, ticket_no):
 
 
 # lead
+# app5/views.py
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.utils import timezone
 from django.db.models import Q
 from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
+from django.urls import reverse
+from django.apps import apps
+
 from .models import Lead, RequirementItem
 from django.db.models import Sum
-from app1.models import District 
 
-# In views.py, update the lead_form_view function:
+# Import user model and District (custom app1)
+from app1.models import User, District
 
-from app1.models import User   # ✅ Make sure User model is imported
+# Optional imports (defensive)
+try:
+    from app1.models import BusinessNature
+except Exception:
+    BusinessNature = None
 
+try:
+    from app1.models import StateMaster
+except Exception:
+    StateMaster = None
+
+try:
+    from purchase_order.models import Department
+except Exception:
+    Department = None
+
+
+# -----------------------
+# Helper utilities
+# -----------------------
+def resolve_active_user(val):
+    """
+    Try to resolve a user value (pk, userid, email) to an active User instance.
+    Returns User or None.
+    """
+    if not val:
+        return None
+
+    # try pk
+    try:
+        return User.objects.get(pk=int(val), is_active=True)
+    except Exception:
+        pass
+
+    # try userid
+    try:
+        return User.objects.get(userid=val, is_active=True)
+    except Exception:
+        pass
+
+    # try email
+    try:
+        return User.objects.get(email__iexact=val, is_active=True)
+    except Exception:
+        pass
+
+    return None
+
+
+def user_display_name(u):
+    """
+    Return a friendly display name for a user object.
+    Prefer get_full_name(), then name attribute, then username, then pk.
+    """
+    if not u:
+        return ""
+    try:
+        full = u.get_full_name()
+    except Exception:
+        full = ""
+    if full:
+        return full
+    return getattr(u, "name", "") or getattr(u, "username", "") or str(getattr(u, "pk", ""))
+
+
+# -----------------------
+# Lead form view (create)
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from django.contrib.auth import get_user_model
+from django.contrib.auth.decorators import login_required
+from purchase_order.models import Department
+
+
+# optionally import LeadForm if present; keep views import-safe when forms.py is missing
+try:
+    from .forms import LeadForm
+except Exception:
+    LeadForm = None
+
+# Ensure these model imports exist in your file scope
+from .models import Lead
+# (District, BusinessNature, StateMaster, Department are used below; they will be referenced inside try/except)
+
+@login_required
 def lead_form_view(request):
+    """
+    GET: show form
+    POST: create Lead with proper saving of marketedBy, consultant, branch, and
+          support for firm-name toggle (existing firm select OR free-text name).
+    """
+    import logging
+    from django.shortcuts import render, redirect, get_object_or_404
+    from django.contrib import messages
+    from django.contrib.auth import get_user_model
+    from django.apps import apps
+    from django.utils import timezone
+    from django.db import transaction
+
+    logger = logging.getLogger(__name__)
+
+    # Resolve user model
+    try:
+        from app1.models import User as AppUser
+        UserModel = AppUser
+    except Exception:
+        UserModel = get_user_model()
+
+    # Resolve Lead model defensively
+    try:
+        from .models import Lead
+    except Exception:
+        try:
+            Lead = apps.get_model('app5', 'Lead')  # adjust app label if needed
+        except Exception:
+            Lead = None
+
+    # Determine active users safely
+    try:
+        user_field_names = [f.name for f in UserModel._meta.fields]
+    except Exception:
+        user_field_names = []
+
+    if 'status' in user_field_names:
+        active_users = UserModel.objects.filter(status='active').only('id', 'name').order_by('name')
+    elif 'is_active' in user_field_names:
+        active_users = UserModel.objects.filter(is_active=True).only('id', 'first_name', 'last_name', 'username').order_by('first_name', 'username')
+    else:
+        active_users = UserModel.objects.all().only('id').order_by('id')
+
+    # Prepare existing firms for dropdown (used on GET and on re-render after failed POST)
+    existing_firms = []
+    try:
+        if Lead:
+            existing_firms_qs = Lead.objects.values_list('name', flat=True).distinct().order_by('name')
+            # filter out empty / null
+            existing_firms = [n for n in existing_firms_qs if n]
+    except Exception as e:
+        logger.debug(f"Could not fetch existing firms: {e}")
+        existing_firms = []
+
     if request.method == "POST":
         data = request.POST
 
-        # Get assignment type
         assignment_type = data.get("assignmentType", "unassigned")
-        
-        # Detect customer type toggle (Business = checked)
+        # Customer type toggle logic kept as before (Business vs Individual)
         customer_type = "Business" if data.get("customerTypeToggle") else "Individual"
-        
+
+        # ✅ FIXED: Properly resolve marketedBy to user name
+        marketed_by_val = data.get("marketedBy")  # This gets the user ID from form or free text
+        marketed_by_name = None
+
+        if marketed_by_val:
+            try:
+                # Try to get user by ID
+                user = UserModel.objects.filter(id=marketed_by_val).first()
+                if user:
+                    # Get the user's name
+                    marketed_by_name = getattr(user, 'name', None) or \
+                                      getattr(user, 'username', None) or \
+                                      str(user)
+                else:
+                    # If not found by ID, use the value as-is
+                    marketed_by_name = marketed_by_val
+            except Exception as e:
+                logger.warning(f"Error resolving marketedBy user: {e}")
+                marketed_by_name = marketed_by_val
+
+        # ✅ Get consultant name (direct text input)
+        consultant_name = data.get("Consultant", "").strip()
+
+        # ✅ FIXED: Get branch/requirement - resolve department name if ID provided
+        requirement_val = data.get("requirement", "").strip()
+        branch_name = None
+
+        if requirement_val:
+            try:
+                # Check if it's a department ID
+                if requirement_val.isdigit():
+                    try:
+                        from purchase_order.models import Department
+                        dept = Department.objects.filter(id=requirement_val).first()
+                        if dept:
+                            branch_name = dept.name
+                        else:
+                            branch_name = requirement_val
+                    except Exception:
+                        # if import fails or model not found, fall back to raw value
+                        branch_name = requirement_val
+                else:
+                    # It's already a name
+                    branch_name = requirement_val
+            except Exception as e:
+                logger.warning(f"Error resolving department: {e}")
+                branch_name = requirement_val
+
+        # -----------------------
+        # Firm name handling
+        # The form may submit:
+        # - 'existing_name' (select from dropdown) OR
+        # - 'name' (free-text input) OR
+        # - 'name_hidden' (if JS copied value here)
+        # Prefer existing_name if present and non-empty; otherwise use name/name_hidden.
+        # -----------------------
+        posted_existing_name = (data.get('existing_name') or '').strip()
+        posted_name_text = (data.get('name') or data.get('name_hidden') or '').strip()
+
+        if posted_existing_name:
+            final_name = posted_existing_name
+        else:
+            final_name = posted_name_text
+
+        # Build the lead data
+        lead_kwargs = {
+            "ownerName": data.get("ownerName"),
+            "phoneNo": data.get("phoneNo"),
+            "email": data.get("email"),
+            "customerType": customer_type,
+            # Save 'name' only when Business (as in your original logic); otherwise None
+            "name": final_name if customer_type == "Business" else None,
+            "address": data.get("address") if customer_type == "Business" else None,
+            "place": data.get("place") if customer_type == "Business" else None,
+            "District": data.get("District") if customer_type == "Business" else None,
+            "State": data.get("State") if customer_type == "Business" else None,
+            "pinCode": data.get("pinCode") if customer_type == "Business" else None,
+            "firstName": data.get("firstName") if customer_type == "Individual" else None,
+            "lastName": data.get("lastName") if customer_type == "Individual" else None,
+            "individualAddress": data.get("individualAddress") if customer_type == "Individual" else None,
+            "individualPlace": data.get("individualPlace") if customer_type == "Individual" else None,
+            "individualDistrict": data.get("individualDistrict") if customer_type == "Individual" else None,
+            "individualState": data.get("individualState") if customer_type == "Individual" else None,
+            "individualPinCode": data.get("individualPinCode") if customer_type == "Individual" else None,
+            "date": data.get("date") or None,
+            "status": data.get("status") or None,
+            "refFrom": data.get("refFrom"),
+            "business": data.get("business"),
+            "details": data.get("details"),
+            # ✅ SAVE AS TEXT/NAME (not FK)
+            "marketedBy": marketed_by_name,  # Save the user's name, not ID
+            "Consultant": consultant_name,    # Save consultant name
+            "requirement": branch_name,       # Save department/branch name
+            "assignment_type": assignment_type,
+        }
+
+        # ✅ Handle assignment if self-assigned
+        if assignment_type == "self_assigned":
+            try:
+                current_user = None
+                if request.session.get('custom_user_id'):
+                    try:
+                        current_user = UserModel.objects.get(id=request.session['custom_user_id'])
+                    except Exception:
+                        current_user = None
+                elif request.user and request.user.is_authenticated:
+                    current_user = request.user
+
+                if current_user:
+                    # Store assigned user name
+                    assigned_name = getattr(current_user, 'name', None) or \
+                                  getattr(current_user, 'username', None) or \
+                                  str(current_user)
+
+                    lead_kwargs["assigned_to_name"] = assigned_name
+                    lead_kwargs["assigned_date"] = timezone.now().date()
+                    lead_kwargs["assigned_time"] = timezone.now().time()
+
+                    # If your model has FK fields, set them too
+                    if Lead and hasattr(Lead, 'assigned_to') and current_user:
+                        lead_kwargs["assigned_to"] = current_user
+
+            except Exception as e:
+                logger.warning(f"Error setting self-assignment: {e}")
+
+        # Save the lead (defensive: check Lead model exists and handle field mismatch)
+        if not Lead:
+            messages.error(request, "Lead model not available; cannot save.")
+            return redirect("app5:lead")
 
         try:
-            lead = Lead.objects.create(
-                ownerName=data.get("ownerName"),
-                phoneNo=data.get("phoneNo"),
-                email=data.get("email"),
-                customerType=customer_type,
-                assignment_type=assignment_type,
-                    # Add this field to your model
+            with transaction.atomic():
+                # If your Lead model uses different field names than provided above,
+                # protect against unexpected kwargs by filtering lead_kwargs to model fields.
+                model_field_names = {f.name for f in Lead._meta.get_fields()}
 
-                # Business fields
-                name=data.get("name") if customer_type == "Business" else None,
-                address=data.get("address") if customer_type == "Business" else None,
-                place=data.get("place") if customer_type == "Business" else None,
-                District=data.get("District") if customer_type == "Business" else None,
-                State=data.get("State") if customer_type == "Business" else None,
-                pinCode=data.get("pinCode") if customer_type == "Business" else None,
+                safe_kwargs = {}
+                for k, v in lead_kwargs.items():
+                    if k in model_field_names:
+                        safe_kwargs[k] = v
+                    else:
+                        # Try common alternate mappings
+                        if k == 'ownerName' and 'owner_name' in model_field_names:
+                            safe_kwargs['owner_name'] = v
+                        elif k == 'phoneNo' and 'phone_no' in model_field_names:
+                            safe_kwargs['phone_no'] = v
+                        elif k == 'marketedBy' and 'marketed_by' in model_field_names:
+                            safe_kwargs['marketed_by'] = v
+                        elif k == 'assigned_to_name' and 'assigned_to_name' in model_field_names:
+                            safe_kwargs['assigned_to_name'] = v
+                        # add other aliases here as needed
 
-                # Individual fields
-                firstName=data.get("firstName") if customer_type == "Individual" else None,
-                lastName=data.get("lastName") if customer_type == "Individual" else None,
-                individualAddress=data.get("individualAddress") if customer_type == "Individual" else None,
-                individualPlace=data.get("individualPlace") if customer_type == "Individual" else None,
-                individualDistrict=data.get("individualDistrict") if customer_type == "Individual" else None,
-                individualState=data.get("individualState") if customer_type == "Individual" else None,
-                individualPinCode=data.get("individualPinCode") if customer_type == "Individual" else None,
+                lead = Lead.objects.create(**safe_kwargs)
 
-                # Lead Info
-                date=data.get("date"),
-                status=data.get("status"),
-                refFrom=data.get("refFrom"),
-                business=data.get("business"),
-                marketedBy=data.get("marketedBy"),
-                Consultant=data.get("Consultant"),
-                requirement=data.get("requirement"),
-                details=data.get("details"),
-                
-            )
-
-            # Add success message based on assignment type
             assignment_msg = "self-assigned" if assignment_type == "self_assigned" else "submitted for assignment"
-            messages.success(request, f"Lead saved successfully and {assignment_msg}! Ticket Number: {lead.ticket_number}")
+            ticket_info = getattr(lead, "ticket_number", getattr(lead, "id", ""))
+
+            messages.success(
+                request,
+                f"Lead saved successfully and {assignment_msg}! Ticket Number: {ticket_info}"
+            )
             return redirect("app5:lead_report")
 
         except Exception as e:
+            logger.error(f"Error saving lead: {e}")
             messages.error(request, f"Error saving lead: {str(e)}")
-            return redirect("app5:lead")
+            # fall through to re-render form with previously entered values
 
-    # GET request - show empty form
-    districts = District.objects.all().order_by('name')
-    business_natures = BusinessNature.objects.all().order_by('name')
-    states = StateMaster.objects.all().order_by('name')
-    active_users = User.objects.filter(status='active').order_by('name')
-    
+    # GET: prepare dropdowns (safe: try/except if not imported)
+    try:
+        districts = District.objects.all().order_by('name')
+    except Exception:
+        districts = []
+
+    try:
+        business_natures = BusinessNature.objects.all().order_by('name')
+    except Exception:
+        business_natures = []
+
+    try:
+        states = StateMaster.objects.all().order_by('name')
+    except Exception:
+        states = []
+
     try:
         from purchase_order.models import Department
         departments = Department.objects.filter(is_active=True).order_by('name')
-    except ImportError:
+    except Exception:
         departments = []
 
     context = {
@@ -3230,86 +3499,72 @@ def lead_form_view(request):
         'districts': districts,
         'active_users': active_users,
         'departments': departments,
+        # pass existing firms for the searchable dropdown
+        'existing_firms': existing_firms,
     }
-
     return render(request, "lead_form.html", context)
 
 
+
+
+
+# -----------------------
+# Lead report view
+# -----------------------
 def lead_report_view(request):
-    """
-    Display lead report with filtering and search capabilities
-    """
-    # Get all leads
-    leads = Lead.objects.all().order_by("-created_at")
-    
-    # Get filter parameters
-    status_filter = request.GET.get('status', '')
-    customer_type_filter = request.GET.get('customer_type', '')
+    LeadModel = Lead
+    leads = LeadModel.objects.all().order_by("-created_at") if hasattr(LeadModel, "created_at") else LeadModel.objects.all()
+
+    status_filter = request.GET.get('status', '').strip()
+    customer_type_filter = request.GET.get('customer_type', '').strip()
     search_query = request.GET.get('search', '').strip()
-    start_date = request.GET.get('start_date', '')
-    end_date = request.GET.get('end_date', '')
-    
-    # Status filter
+    start_date = request.GET.get('start_date', '').strip()
+    end_date = request.GET.get('end_date', '').strip()
+
     if status_filter:
         leads = leads.filter(status=status_filter)
-    
-    # Customer type filter
+
     if customer_type_filter:
         leads = leads.filter(customerType=customer_type_filter)
-    
-    # Search filter (searches across multiple fields including ticket number)
+
     if search_query:
         leads = leads.filter(
             Q(ownerName__icontains=search_query) |
             Q(phoneNo__icontains=search_query) |
             Q(email__icontains=search_query) |
             Q(ticket_number__icontains=search_query) |
-            Q(name__icontains=search_query) |  # Firm name for Business
+            Q(name__icontains=search_query) |
             Q(firstName__icontains=search_query) |
             Q(lastName__icontains=search_query) |
             Q(place__icontains=search_query) |
             Q(individualPlace__icontains=search_query) |
             Q(refFrom__icontains=search_query)
         )
-    
-    # Date range filter
+
     if start_date:
         try:
-            start_date_obj = timezone.datetime.strptime(start_date, '%Y-%m-%d').date()
-            leads = leads.filter(created_at__date__gte=start_date_obj)
+            s = timezone.datetime.strptime(start_date, "%Y-%m-%d").date()
+            leads = leads.filter(created_at__date__gte=s)
         except ValueError:
-            # Handle invalid date format
             pass
-    
+
     if end_date:
         try:
-            end_date_obj = timezone.datetime.strptime(end_date, '%Y-%m-%d').date()
-            # Include the entire end date (up to 23:59:59)
-            end_date_obj = end_date_obj + timezone.timedelta(days=1) - timezone.timedelta(seconds=1)
-            leads = leads.filter(created_at__date__lte=end_date_obj)
+            e = timezone.datetime.strptime(end_date, "%Y-%m-%d").date()
+            leads = leads.filter(created_at__date__lte=e)
         except ValueError:
-            # Handle invalid date format
             pass
-    
-    # Calculate statistics
-    total_leads = Lead.objects.count()
-    active_leads = Lead.objects.filter(status="Active").count()
-    inactive_leads = Lead.objects.filter(status="Inactive").count()
-    installed_leads = Lead.objects.filter(status="Installed").count()
-    business_leads = Lead.objects.filter(customerType="Business").count()
-    individual_leads = Lead.objects.filter(customerType="Individual").count()
-    
-    # Calculate today's leads
-    today_leads = Lead.objects.filter(
-        created_at__date=timezone.now().date()
-    ).count()
-    
-    # Count filtered results
+
+    total_leads = LeadModel.objects.count()
+    active_leads = LeadModel.objects.filter(status="Active").count()
+    inactive_leads = LeadModel.objects.filter(status="Inactive").count()
+    installed_leads = LeadModel.objects.filter(status="Installed").count()
+    business_leads = LeadModel.objects.filter(customerType="Business").count()
+    individual_leads = LeadModel.objects.filter(customerType="Individual").count()
+    today_leads = LeadModel.objects.filter(created_at__date=timezone.now().date()).count()
     filtered_count = leads.count()
-    
-    # Check if any filters are active
     has_filters = bool(status_filter or customer_type_filter or search_query or start_date or end_date)
-    
+
     context = {
         "leads": leads,
         "total_leads": total_leads,
@@ -3330,11 +3585,14 @@ def lead_report_view(request):
     return render(request, "lead_report.html", context)
 
 
+# -----------------------
+# Lead detail API
+# -----------------------
 def lead_detail_api(request, lead_id):
     lead = get_object_or_404(Lead, id=lead_id)
     return JsonResponse({
         "id": lead.id,
-        "ticket_number": lead.ticket_number,
+        "ticket_number": getattr(lead, "ticket_number", None),
         "owner_name": lead.ownerName,
         "phone_number": lead.phoneNo,
         "email": lead.email,
@@ -3346,9 +3604,9 @@ def lead_detail_api(request, lead_id):
         "individual_address": lead.individualAddress,
         "place": lead.place,
         "individual_place": lead.individualPlace,
-        "district": lead.District,
+        "district": getattr(lead, "District", None),
         "individual_district": lead.individualDistrict,
-        "state": lead.State,
+        "state": getattr(lead, "State", None),
         "individual_state": lead.individualState,
         "pin_code": lead.pinCode,
         "individual_pin_code": lead.individualPinCode,
@@ -3359,19 +3617,19 @@ def lead_detail_api(request, lead_id):
         "consultant": lead.Consultant,
         "branch": lead.requirement,
         "notes": lead.details,
-        "date": lead.date.strftime('%Y-%m-%d') if lead.date else None,
-        "created_at": lead.created_at.strftime('%Y-%m-%d %H:%M:%S') if lead.created_at else None,
-        "updated_at": lead.updated_at.strftime('%Y-%m-%d %H:%M:%S') if lead.updated_at else None
+        "date": lead.date.strftime('%Y-%m-%d') if getattr(lead, "date", None) else None,
+        "created_at": lead.created_at.strftime('%Y-%m-%d %H:%M:%S') if getattr(lead, "created_at", None) else None,
+        "updated_at": lead.updated_at.strftime('%Y-%m-%d %H:%M:%S') if getattr(lead, "updated_at", None) else None
     })
 
 
-from app1.models import User   # ✅ Make sure User model is imported
-
+# -----------------------
+# Lead edit (view + save)
+# -----------------------
 def lead_edit(request, lead_id):
     lead = get_object_or_404(Lead, id=lead_id)
-    
+
     if request.method == 'POST':
-        # Update lead data
         lead.ownerName = request.POST.get('ownerName')
         lead.phoneNo = request.POST.get('phoneNo')
         lead.email = request.POST.get('email')
@@ -3381,11 +3639,10 @@ def lead_edit(request, lead_id):
         lead.business = request.POST.get('business')
         lead.marketedBy = request.POST.get('marketedBy')
         lead.Consultant = request.POST.get('Consultant')
-        lead.requirement = request.POST.get('requirement')  # Department ID
+        lead.requirement = request.POST.get('requirement')
         lead.details = request.POST.get('details')
         lead.date = request.POST.get('date') or lead.date
-        
-        # Update fields based on customer type
+
         if lead.customerType == 'Business':
             lead.name = request.POST.get('name')
             lead.address = request.POST.get('address')
@@ -3393,7 +3650,6 @@ def lead_edit(request, lead_id):
             lead.District = request.POST.get('District')
             lead.State = request.POST.get('State')
             lead.pinCode = request.POST.get('pinCode')
-            
             # Clear individual fields
             lead.firstName = None
             lead.lastName = None
@@ -3410,7 +3666,6 @@ def lead_edit(request, lead_id):
             lead.individualDistrict = request.POST.get('individualDistrict')
             lead.individualState = request.POST.get('individualState')
             lead.individualPinCode = request.POST.get('individualPinCode')
-            
             # Clear business fields
             lead.name = None
             lead.address = None
@@ -3418,25 +3673,24 @@ def lead_edit(request, lead_id):
             lead.District = None
             lead.State = None
             lead.pinCode = None
-        
-        lead.save()
-        messages.success(request, f"Lead updated successfully! Ticket Number: {lead.ticket_number}")
-        return redirect('app5:lead_report')
-    
-    # GET request - Load dropdown data
-    business_natures = BusinessNature.objects.all().order_by('name')
-    states = StateMaster.objects.all().order_by('name')
-    districts = District.objects.all().order_by('name')
 
-    # ✅ Fetch ACTIVE users for dropdown
-    active_users = User.objects.filter(status='active').order_by('name')
-    
-    # ✅ NEW: Fetch all active departments for branch field
-    try:
-        from purchase_order.models import Department
-        departments = Department.objects.filter(is_active=True).order_by('name')
-    except ImportError:
-        departments = []
+        lead.save()
+        messages.success(request, f"Lead updated successfully! Ticket Number: {getattr(lead, 'ticket_number', lead.id)}")
+        return redirect('app5:lead_report')
+
+    # GET: prepare dropdowns for edit form
+    business_natures = BusinessNature.objects.all().order_by('name') if BusinessNature is not None else []
+    states = StateMaster.objects.all().order_by('name') if StateMaster is not None else []
+    districts = District.objects.all().order_by('name') if District is not None else []
+
+    # Active users for dropdown (robust)
+    active_users = (
+        User.objects.filter(is_active=True)
+        .order_by('first_name', 'username')
+        .only('id', 'first_name', 'last_name', 'username')
+    )
+
+    departments = Department.objects.filter(is_active=True).order_by('name') if Department is not None else []
 
     context = {
         'lead': lead,
@@ -3444,10 +3698,11 @@ def lead_edit(request, lead_id):
         'states': states,
         'districts': districts,
         'active_users': active_users,
-        'departments': departments,  # ✅ Added
+        'departments': departments,
     }
-    
     return render(request, 'lead_form_edit.html', context)
+
+
 
 
 
@@ -3464,128 +3719,694 @@ def lead_delete(request, lead_id):
     return redirect('app5:lead_report')
 
 
+# --- Top-level imports for app5/views.py (one place only) ---
+from django.apps import apps
+from django.shortcuts import render, redirect, get_object_or_404, reverse
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth import get_user_model
+from django.utils import timezone
+from django.db import transaction
+import logging
+
+logger = logging.getLogger(__name__)
+User = get_user_model()
+
+
+# --- lead list view (safe select_related) ---
+@login_required
 def lead_assign_list_view(request):
-    leads = Lead.objects.select_related('assigned_to').all()  # or your actual queryset/filtering
-    leads_display = []
-    for lead in leads:
-        if lead.assigned_to:
-            assigned_name = lead.assigned_to.get_full_name() or lead.assigned_to.username
+    """
+    Robust list view for lead assignments.
+    - Uses select_related only when assigned_to/assigned_by are real FK fields.
+    - Never accesses attributes without a safe check to avoid AttributeError.
+    - Adds `display_assigned_to` and `display_assigned_by` attributes to each lead
+      for the template to use (works for FK or string/snapshot fields).
+    """
+    LeadModel = apps.get_model('app5', 'Lead')
+
+    # Detect many-to-one FK names on the model (safe at runtime)
+    fk_names = {f.name for f in LeadModel._meta.get_fields() if getattr(f, "many_to_one", False)}
+    related_fields = [name for name in ("assigned_to", "assigned_by") if name in fk_names]
+
+    try:
+        if related_fields:
+            leads_qs = LeadModel.objects.select_related(*related_fields).all().order_by("-id")
         else:
-            assigned_name = "Unassigned"
-        # you can pass the whole lead and a computed field together
-        leads_display.append({
-            'lead': lead,
-            'assigned_name': assigned_name,
-        })
+            leads_qs = LeadModel.objects.all().order_by("-id")
+    except Exception as e:
+        logger.warning("lead_assign_list_view - queryset exception: %s", e)
+        leads_qs = LeadModel.objects.all().order_by("-id")
 
-    return render(request, "lead_assign_list.html", {'leads_display': leads_display})
+    # build safe display names for template
+    def _user_display_from_obj(u):
+        """Return best display name for a user-like object (fk instance)."""
+        if not u:
+            return None
+        # try get_full_name()
+        try:
+            if hasattr(u, "get_full_name"):
+                full = u.get_full_name()
+                if full and full.strip():
+                    return full.strip()
+        except Exception:
+            pass
+        # try first+last
+        first = getattr(u, "first_name", "") or ""
+        last = getattr(u, "last_name", "") or ""
+        if (first or last):
+            name = (first + " " + last).strip()
+            if name:
+                return name
+        # fallback to other common fields
+        return getattr(u, "name", None) or getattr(u, "username", None) or getattr(u, "email", None) or None
+
+    safe_leads = []
+    for lead in leads_qs:
+        # Assigned To (try FK object first, then snapshot fields)
+        assigned_to_display = None
+        if hasattr(lead, "assigned_to"):
+            try:
+                at_obj = getattr(lead, "assigned_to", None)
+                assigned_to_display = _user_display_from_obj(at_obj)
+            except Exception:
+                assigned_to_display = None
+
+        if not assigned_to_display:
+            # fallback snapshot/string fields you might have on the model
+            assigned_to_display = (
+                getattr(lead, "assigned_to_name", None) or
+                getattr(lead, "assigned_to_str", None) or
+                getattr(lead, "assigned_to_username", None) or
+                None
+            )
+
+        # Assigned By (try FK object first, then snapshot fields)
+        assigned_by_display = None
+        if hasattr(lead, "assigned_by"):
+            try:
+                ab_obj = getattr(lead, "assigned_by", None)
+                assigned_by_display = _user_display_from_obj(ab_obj)
+            except Exception:
+                assigned_by_display = None
+
+        if not assigned_by_display:
+            assigned_by_display = (
+                getattr(lead, "assigned_by_name", None) or
+                getattr(lead, "assigned_by_str", None) or
+                None
+            )
+
+        # Final fallbacks
+        if not assigned_to_display:
+            assigned_to_display = "Not Assigned"
+        if not assigned_by_display:
+            assigned_by_display = "System"
+
+        # Attach to object for template usage
+        # (we can attach new attributes to the instance safely at runtime)
+        setattr(lead, "display_assigned_to", assigned_to_display)
+        setattr(lead, "display_assigned_by", assigned_by_display)
+
+        safe_leads.append(lead)
+
+    context = {"leads": safe_leads}
+    return render(request, "lead_assign_list.html", context)
 
 
+
+
+# --- assign view ---
+@login_required
 def assign_lead_view(request):
     """
-    View to assign leads to users - SHOWS ONLY UNASSIGNED LEADS
+    GET: show assignment form (unassigned leads + users)
+    POST: assign selected lead to selected user and save snapshot names (if model has fields).
+    Defensive: uses apps.get_model, checks for fields before setting, and wraps save in a transaction.
     """
-    users = User.objects.filter(status='active')  # Get active users for assignment
-    
-    if request.method == 'POST':
-        ticket_no = request.POST.get('ticket_no')
-        assign_to_id = request.POST.get('assign_to')
+    # Resolve models dynamically to avoid circular imports
+    LeadModel = apps.get_model('app5', 'Lead')
+    try:
+        UserModel = apps.get_model('app1', 'User')
+    except Exception:
+        # fallback: try to import directly (if configured differently)
+        try:
+            from app1.models import User as UserModel  # type: ignore
+        except Exception:
+            UserModel = None
+
+    def _display_name(u):
+        """Return a readable display name for a user object."""
+        if not u:
+            return "Unknown"
+        try:
+            # prefer custom model's name, then get_full_name, then username/email
+            if hasattr(u, 'name') and getattr(u, 'name'):
+                return getattr(u, 'name')
+            if hasattr(u, 'get_full_name'):
+                full = u.get_full_name()
+                if full:
+                    return full
+        except Exception:
+            pass
+        first = getattr(u, 'first_name', '') or ''
+        last = getattr(u, 'last_name', '') or ''
+        if first or last:
+            return (first + ' ' + last).strip()
+        return getattr(u, 'username', None) or getattr(u, 'email', None) or f'User #{getattr(u, "id", "?" )}'
+
+    # --------------------
+    # GET: render form
+    # --------------------
+    if request.method == "GET":
+        # Find unassigned leads - IMPROVED FILTERING LOGIC
+        unassigned_leads = LeadModel.objects.none()
         
         try:
-            # Get the lead by ticket number
-            lead = Lead.objects.get(ticket_number=ticket_no)
-            
-            # Get current user (assigner)
-            current_user = None
-            if request.session.get('custom_user_id'):
-                try:
-                    current_user = User.objects.get(id=request.session['custom_user_id'])
-                except User.DoesNotExist:
-                    pass
-            
-            # Update lead assignment
-            lead.assigned_to_id = assign_to_id
-            lead.assigned_by = current_user
-            lead.assigned_date = timezone.now().date()
-            lead.assigned_time = timezone.now().time()
-            lead.status = 'assigned'
-            lead.assignment_type = 'assigned'  # Update assignment type
-            lead.save()
-            
-            messages.success(request, f'Lead {ticket_no} assigned successfully!')
-            return redirect('app5:lead_assign_list')
-            
-        except Lead.DoesNotExist:
-            messages.error(request, f'Lead with ticket number {ticket_no} not found!')
-        except Exception as e:
-            messages.error(request, f'Error assigning lead: {str(e)}')
-    
-    # GET request - show form
-    # ✅ GET ONLY UNASSIGNED LEADS
-    unassigned_leads = Lead.objects.filter(
-        assignment_type='unassigned'
-    ).order_by('-created_at')
-    
-    # Get lead_id from URL parameter for pre-selection
-    lead_id = request.GET.get('lead_id')
-    lead = None
-    
-    if lead_id:
-        try:
-            lead = Lead.objects.get(id=lead_id, assignment_type='unassigned')
-        except Lead.DoesNotExist:
-            messages.error(request, 'Lead not found or already assigned!')
-    
-    context = {
-        'users': users,
-        'lead': lead,
-        'unassigned_leads': unassigned_leads,  # Pass unassigned leads to template
-    }
-    return render(request, "lead_assign_form.html", context)
+            # Order preference: created_at, id
+            order_by_created = '-created_at' if hasattr(LeadModel, 'created_at') else '-id'
 
+            # STRATEGY 1: Check for FK assignment fields (most reliable)
+            fk_assignment_fields = ['assigned_to', 'user', 'assigned_user', 'assigned']
+            for fld in fk_assignment_fields:
+                if hasattr(LeadModel, fld):
+                    # Check if field exists and is a ForeignKey or similar
+                    field = LeadModel._meta.get_field(fld)
+                    if getattr(field, 'is_relation', False):
+                        unassigned_leads = LeadModel.objects.filter(**{f"{fld}__isnull": True})
+                        logger.info(f"Found unassigned leads using FK field '{fld}': {unassigned_leads.count()}")
+                        break
+
+            # STRATEGY 2: If no FK fields found, check string/snapshot fields
+            if not unassigned_leads.exists():
+                string_assignment_fields = ['assigned_to_str', 'assigned_to_name', 'assigned_user_name']
+                for fld in string_assignment_fields:
+                    if hasattr(LeadModel, fld):
+                        unassigned_leads = LeadModel.objects.filter(
+                            models.Q(**{f"{fld}__isnull": True}) | 
+                            models.Q(**{f"{fld}": ""}) |
+                            models.Q(**{f"{fld}__iexact": "not assigned"}) |
+                            models.Q(**{f"{fld}__iexact": "unassigned"})
+                        )
+                        if unassigned_leads.exists():
+                            logger.info(f"Found unassigned leads using string field '{fld}': {unassigned_leads.count()}")
+                            break
+
+            # STRATEGY 3: Check status field for unassigned status
+            if not unassigned_leads.exists() and hasattr(LeadModel, 'status'):
+                unassigned_leads = LeadModel.objects.filter(
+                    models.Q(status__isnull=True) |
+                    models.Q(status='') |
+                    models.Q(status__iexact='unassigned') |
+                    models.Q(status__iexact='new') |
+                    models.Q(status__iexact='pending')
+                )
+                if unassigned_leads.exists():
+                    logger.info(f"Found unassigned leads using status field: {unassigned_leads.count()}")
+
+            # STRATEGY 4: Check assignment_type field
+            if not unassigned_leads.exists() and hasattr(LeadModel, 'assignment_type'):
+                unassigned_leads = LeadModel.objects.filter(
+                    models.Q(assignment_type__isnull=True) |
+                    models.Q(assignment_type='') |
+                    models.Q(assignment_type__iexact='unassigned')
+                )
+                if unassigned_leads.exists():
+                    logger.info(f"Found unassigned leads using assignment_type: {unassigned_leads.count()}")
+
+            # FINAL FALLBACK: If still no results, show recent leads with debug info
+            if not unassigned_leads.exists():
+                all_leads = LeadModel.objects.all().order_by(order_by_created)[:50]
+                logger.warning(f"No unassigned leads found with standard filters. Showing {all_leads.count()} recent leads for debugging.")
+                
+                # Debug: log field information for first few leads
+                for i, lead in enumerate(all_leads[:5]):
+                    logger.debug(f"Lead {i+1}: ID={lead.id}, Ticket={getattr(lead, 'ticket_number', 'N/A')}")
+                    logger.debug(f"  - assigned_to: {getattr(lead, 'assigned_to', 'N/A')}")
+                    logger.debug(f"  - assigned_to_name: {getattr(lead, 'assigned_to_name', 'N/A')}")
+                    logger.debug(f"  - status: {getattr(lead, 'status', 'N/A')}")
+                    logger.debug(f"  - assignment_type: {getattr(lead, 'assignment_type', 'N/A')}")
+                
+                unassigned_leads = all_leads
+
+            # Apply ordering
+            unassigned_leads = unassigned_leads.order_by(order_by_created)
+
+        except Exception as e:
+            logger.error(f"Error filtering unassigned leads: {e}", exc_info=True)
+            try:
+                unassigned_leads = LeadModel.objects.all().order_by('-id')[:50]
+            except Exception:
+                unassigned_leads = LeadModel.objects.all() if hasattr(LeadModel, 'objects') else []
+
+        # Users — try to use your custom User model and sensible filters
+        try:
+            if UserModel is not None:
+                # try common active/status fields
+                if hasattr(UserModel, 'status'):
+                    users = UserModel.objects.filter(status='active').order_by('name')
+                elif hasattr(UserModel, 'is_active'):
+                    users = UserModel.objects.filter(is_active=True).order_by('name')
+                else:
+                    users = UserModel.objects.all().order_by('name')
+            else:
+                users = []
+        except Exception as e:
+            logger.warning("Could not fetch users from app1.User: %s", e)
+            # fallback to any model named User in installed apps (Django's)
+            from django.contrib.auth import get_user_model
+            AuthUser = get_user_model()
+            try:
+                users = AuthUser.objects.filter(is_active=True).order_by('username')
+            except Exception:
+                users = AuthUser.objects.all().order_by('id')
+
+        # Final debug logging
+        logger.info(f"Final unassigned leads count: {unassigned_leads.count()}")
+        logger.info(f"Available users count: {len(users)}")
+
+        return render(request, "lead_assign_form.html", {
+            "unassigned_leads": unassigned_leads, 
+            "users": users
+        })
+
+    # --------------------
+    # POST: perform assignment
+    # --------------------
+    if request.method == "POST":
+        lead_identifier = (
+            request.POST.get("lead_id")
+            or request.POST.get("lead")
+            or request.POST.get("lead_pk")
+            or request.POST.get("ticket_no")
+            or request.POST.get("ticket")
+        )
+        assigned_to_id = request.POST.get("assigned_to") or request.POST.get("user")
+
+        if not lead_identifier:
+            messages.error(request, "Please select a lead.")
+            return redirect(reverse('app5:assign_lead'))
+
+        # Resolve lead: try PK first (if numeric), else ticket_number when available
+        lead = None
+        try:
+            if str(lead_identifier).isdigit():
+                lead = get_object_or_404(LeadModel, pk=int(lead_identifier))
+            else:
+                # attempt ticket_number fallback
+                if hasattr(LeadModel, 'ticket_number'):
+                    lead = get_object_or_404(LeadModel, ticket_number=lead_identifier)
+                else:
+                    lead = get_object_or_404(LeadModel, pk=lead_identifier)
+        except Exception as e:
+            messages.error(request, f"Selected lead not found: {e}")
+            return redirect(reverse('app5:assign_lead'))
+
+        # Check if lead is already assigned (prevent reassignment through URL manipulation)
+        if hasattr(lead, 'assigned_to') and getattr(lead, 'assigned_to') is not None:
+            messages.warning(request, f"This lead is already assigned to {_display_name(getattr(lead, 'assigned_to'))}.")
+            return redirect(reverse('app5:assign_lead'))
+        
+        if hasattr(lead, 'assigned_to_name') and getattr(lead, 'assigned_to_name'):
+            messages.warning(request, f"This lead is already assigned to {getattr(lead, 'assigned_to_name')}.")
+            return redirect(reverse('app5:assign_lead'))
+
+        if not assigned_to_id:
+            messages.error(request, "Please select a user to assign.")
+            return redirect(reverse('app5:assign_lead'))
+
+        # Resolve assigned user using custom User model if possible, else Django user
+        assigned_user = None
+        try:
+            if UserModel is not None:
+                # try numeric pk
+                if str(assigned_to_id).isdigit():
+                    assigned_user = UserModel.objects.filter(pk=int(assigned_to_id)).first()
+                else:
+                    # try userid / username / email
+                    lookup = { 'userid': assigned_to_id } if hasattr(UserModel, 'userid') else { 'username': assigned_to_id }
+                    assigned_user = UserModel.objects.filter(**lookup).first()
+            # fallback to Django auth user
+            if not assigned_user:
+                from django.contrib.auth import get_user_model
+                AuthUser = get_user_model()
+                if str(assigned_to_id).isdigit():
+                    assigned_user = AuthUser.objects.filter(pk=int(assigned_to_id)).first()
+                else:
+                    assigned_user = AuthUser.objects.filter(username=assigned_to_id).first()
+        except Exception as e:
+            logger.exception("Error resolving assigned user: %s", e)
+            messages.error(request, f"Selected user not found: {e}")
+            return redirect(reverse('app5:assign_lead'))
+
+        if not assigned_user:
+            messages.error(request, "Selected user not found.")
+            return redirect(reverse('app5:assign_lead'))
+
+        now = timezone.now()
+
+        # Try to resolve an appropriate 'assigned_by' object from your custom User model if possible
+        assigned_by_obj = None
+        try:
+            if UserModel is not None and request.user and getattr(request.user, 'is_authenticated', False):
+                # prefer matching by userid == request.user.username if present
+                if hasattr(UserModel, 'userid'):
+                    assigned_by_obj = UserModel.objects.filter(userid=request.user.username).first()
+                # else try by username
+                if not assigned_by_obj and hasattr(UserModel, 'username'):
+                    assigned_by_obj = UserModel.objects.filter(username=request.user.username).first()
+        except Exception:
+            assigned_by_obj = None
+
+        # Start atomic transaction to avoid partial saves
+        try:
+            with transaction.atomic():
+                # Attempt to set FK fields if present (try several possible fk-names)
+                fk_field_set = False
+                for fk_field in ('assigned_to', 'user', 'assigned_user', 'assigned'):
+                    if hasattr(lead, fk_field):
+                        try:
+                            setattr(lead, fk_field, assigned_user)
+                            fk_field_set = True
+                            logger.info(f"Set FK field '{fk_field}' to user {assigned_user.id}")
+                        except Exception as e:
+                            logger.debug("Could not set %s FK: %s", fk_field, e)
+
+                # Attempt to set assigned_by FK (if model has)
+                for by_field in ('assigned_by', 'assigned_by_user', 'assigned_by_id'):
+                    if hasattr(lead, by_field):
+                        try:
+                            # prefer assigned_by_obj (custom User), else use request.user if it's compatible
+                            if assigned_by_obj:
+                                setattr(lead, by_field, assigned_by_obj)
+                            else:
+                                setattr(lead, by_field, request.user)
+                            logger.info(f"Set assigned_by field '{by_field}'")
+                        except Exception as e:
+                            logger.debug("Could not set %s FK: %s", by_field, e)
+
+                # Also write snapshot name/string fields if they exist (safer for audit)
+                try:
+                    if hasattr(lead, "assigned_to_name"):
+                        lead.assigned_to_name = _display_name(assigned_user)
+                        logger.info(f"Set assigned_to_name to '{_display_name(assigned_user)}'")
+                except Exception as e:
+                    logger.debug("Could not set assigned_to_name: %s", e)
+
+                try:
+                    if hasattr(lead, "assigned_to_str"):
+                        lead.assigned_to_str = _display_name(assigned_user)
+                except Exception as e:
+                    logger.debug("Could not set assigned_to_str: %s", e)
+
+                try:
+                    if hasattr(lead, "assigned_by_name"):
+                        lead.assigned_by_name = _display_name(assigned_by_obj or request.user)
+                except Exception as e:
+                    logger.debug("Could not set assigned_by_name: %s", e)
+
+                # set assigned date/time fields if they exist (try date then datetime)
+                if hasattr(lead, 'assigned_date'):
+                    try:
+                        # if assigned_date is a DateField, set date()
+                        field_val = now.date()
+                        setattr(lead, 'assigned_date', field_val)
+                    except Exception:
+                        try:
+                            setattr(lead, 'assigned_date', now)
+                        except Exception as e2:
+                            logger.debug("Could not set assigned_date: %s", e2)
+
+                if hasattr(lead, 'assigned_time'):
+                    try:
+                        setattr(lead, 'assigned_time', now.time())
+                    except Exception as e:
+                        logger.debug("Could not set assigned_time: %s", e)
+
+                # Optional status/assignment_type updates
+                if hasattr(lead, 'status'):
+                    try:
+                        # only update status if blank or not already 'assigned'
+                        current = getattr(lead, 'status', None)
+                        if not current or str(current).lower() != 'assigned':
+                            lead.status = 'assigned'
+                    except Exception as e:
+                        logger.debug("Could not update status field: %s", e)
+                if hasattr(lead, 'assignment_type'):
+                    try:
+                        lead.assignment_type = 'assigned'
+                    except Exception as e:
+                        logger.debug("Could not update assignment_type field: %s", e)
+
+                # Save the lead
+                lead.save()
+                logger.info(f"Successfully assigned lead {getattr(lead, 'ticket_number', lead.id)} to {_display_name(assigned_user)}")
+                
+        except Exception as e:
+            logger.exception("Error while assigning lead: %s", e)
+            messages.error(request, f"Failed to assign lead: {e}")
+            return redirect(reverse('app5:assign_lead'))
+
+        # Success message: prefer ticket_number if available
+        lead_label = getattr(lead, 'ticket_number', None) or getattr(lead, 'firm_name', None) or getattr(lead, 'id', None)
+        messages.success(request, f"Lead #{lead_label} assigned to {_display_name(assigned_user)}.")
+        return redirect(reverse('app5:lead_assign_list'))
+
+
+# ------- edit lead view -------
+@login_required
 def edit_lead_view(request, lead_id):
     """
-    View to edit lead assignment
+    Edit an existing lead assignment.
     """
-    lead = get_object_or_404(Lead, id=lead_id)
-    users = User.objects.filter(status='active')
-    
+    LeadModel = apps.get_model('app5', 'Lead')
+
+    # load lead (support either numeric id or ticket number)
+    try:
+        if str(lead_id).isdigit():
+            lead = get_object_or_404(LeadModel, id=int(lead_id))
+        else:
+            if hasattr(LeadModel, 'ticket_number'):
+                lead = get_object_or_404(LeadModel, ticket_number=lead_id)
+            else:
+                lead = get_object_or_404(LeadModel, id=lead_id)
+    except Exception as e:
+        messages.error(request, f"Lead not found: {e}")
+        return redirect('app5:lead_assign_list')
+
+    logger.debug("Editing lead %s - %s", lead_id, getattr(lead, 'ticket_number', lead.pk))
+
+    # Build users list for template
+    users_qs = User.objects.filter(is_active=True).order_by('id')
+    users = []
+
+    for u in users_qs:
+        # Safe way to get display name
+        display_name = getattr(u, 'name', None)
+        if not display_name:
+            display_name = getattr(u, 'full_name', None)
+        if not display_name and hasattr(u, 'get_full_name'):
+            display_name = u.get_full_name()
+        if not display_name:
+            display_name = getattr(u, 'email', 'Unknown User')
+
+        users.append({'id': u.id, 'name': display_name})
+        logger.debug("Available user for edit - ID: %s, Name: %s", u.id, display_name)
+
     if request.method == 'POST':
+        assign_to_id = request.POST.get('assign_to') or request.POST.get('assigned_to') or request.POST.get('user')
+        logger.debug("Edit form - assign_to_id: %s", assign_to_id)
+
+        if not assign_to_id:
+            messages.error(request, "Please select a user to assign.")
+            return redirect('app5:edit_lead', lead_id=lead_id)
+
         try:
-            assign_to_id = request.POST.get('assign_to')
-            
-            # Get current user (assigner)
-            current_user = None
-            if request.session.get('custom_user_id'):
+            assigned_to_user = User.objects.get(id=int(assign_to_id))
+            user_name = getattr(assigned_to_user, 'name', f'User {assigned_to_user.id}')
+            logger.debug("Edit - Found user: ID %s, Name: %s", assigned_to_user.id, user_name)
+        except (User.DoesNotExist, ValueError) as e:
+            logger.debug("Edit - User lookup failed: %s", e)
+            messages.error(request, "Selected assignee not found or inactive.")
+            return redirect('app5:edit_lead', lead_id=lead_id)
+
+        # assigned_by: try session custom_user_id else request.user
+        assigned_by_user = None
+        custom_user_id = request.session.get('custom_user_id')
+        if custom_user_id:
+            try:
+                assigned_by_user = User.objects.get(id=int(custom_user_id))
+            except (User.DoesNotExist, ValueError):
+                assigned_by_user = None
+
+        try:
+            # Use the User instance directly if model supports it
+            try:
+                lead.assigned_to = assigned_to_user
+            except Exception:
+                pass
+
+            try:
+                lead.assigned_by = assigned_by_user or request.user
+            except Exception:
+                pass
+
+            now = timezone.now()
+            if hasattr(lead, 'assigned_date'):
                 try:
-                    current_user = User.objects.get(id=request.session['custom_user_id'])
-                except User.DoesNotExist:
+                    lead.assigned_date = now.date()
+                except Exception:
+                    lead.assigned_date = now
+            if hasattr(lead, 'assigned_time'):
+                try:
+                    lead.assigned_time = now.time()
+                except Exception:
                     pass
-            
-            lead.assigned_to_id = assign_to_id
-            lead.assigned_by = current_user
-            lead.assigned_date = timezone.now().date()
-            lead.assigned_time = timezone.now().time()
-            lead.status = 'assigned'
+            if hasattr(lead, 'status'):
+                lead.status = 'assigned'
+            if hasattr(lead, 'assignment_type'):
+                lead.assignment_type = 'assigned'
+
+            # Also set snapshot name fields if present
+            if hasattr(lead, "assigned_to_name"):
+                lead.assigned_to_name = getattr(assigned_to_user, 'name', str(assigned_to_user.pk))
+            if hasattr(lead, "assigned_by_name"):
+                lead.assigned_by_name = getattr(assigned_by_user or request.user, 'name', str((assigned_by_user or request.user).pk))
+
             lead.save()
-            
-            messages.success(request, 'Lead assignment updated successfully!')
+            logger.debug("Lead edit successful")
+            messages.success(request, "Lead assignment updated successfully!")
             return redirect('app5:lead_assign_list')
         except Exception as e:
-            messages.error(request, f'Error updating lead assignment: {str(e)}')
-    
-    context = {
-        'users': users,
-        'lead': lead
-    }
+            logger.exception("Error updating lead assignment: %s", e)
+            messages.error(request, f"Error updating lead assignment: {str(e)}")
+            return redirect('app5:edit_lead', lead_id=lead_id)
+
+    context = {'users': users, 'lead': lead}
+    # Render the same lead_assign_form but now with context for editing
     return render(request, 'lead_assign_form.html', context)
+
+
+# ------- delete lead view -------
+@login_required
+def delete_lead_view(request, lead_id):
+    """View to delete a lead assignment - handles both POST and GET"""
+    LeadModel = apps.get_model('app5', 'Lead')
+    try:
+        # support numeric pk or ticket_number
+        if str(lead_id).isdigit():
+            lead = get_object_or_404(LeadModel, id=int(lead_id))
+        else:
+            if hasattr(LeadModel, 'ticket_number'):
+                lead = get_object_or_404(LeadModel, ticket_number=lead_id)
+            else:
+                lead = get_object_or_404(LeadModel, id=lead_id)
+
+        ticket_number = getattr(lead, 'ticket_number', lead.pk)
+        customer_name = getattr(lead, 'ownerName', getattr(lead, 'customer', 'Unknown'))
+        lead.delete()
+
+        messages.success(request, f'Lead assignment {ticket_number} for {customer_name} deleted successfully!')
+        return redirect('app5:lead_assign_list')
+
+    except Exception as e:
+        logger.exception("Error deleting lead: %s", e)
+        messages.error(request, f'Error deleting lead: {str(e)}')
+        return redirect('app5:lead_assign_list')
+
+
+def lead_assign_edit(request, lead_id):
+    """
+    Edit lead assignment - matches the URL name used in template
+    """
+    LeadModel = apps.get_model('app5', 'Lead')
+    
+    # Load lead
+    try:
+        if str(lead_id).isdigit():
+            lead = get_object_or_404(LeadModel, id=int(lead_id))
+        else:
+            if hasattr(LeadModel, 'ticket_number'):
+                lead = get_object_or_404(LeadModel, ticket_number=lead_id)
+            else:
+                lead = get_object_or_404(LeadModel, id=lead_id)
+    except Exception as e:
+        messages.error(request, f"Lead not found: {e}")
+        return redirect('app5:lead_assign_list')
+
+    # Get active users for dropdown
+    try:
+        from app1.models import User as AppUser
+        users = AppUser.objects.filter(status='active').order_by('name')
+    except Exception:
+        from django.contrib.auth import get_user_model
+        UserModel = get_user_model()
+        users = UserModel.objects.filter(is_active=True).order_by('username')
+
+    if request.method == 'POST':
+        assigned_to_id = request.POST.get('assigned_to')
+        status = request.POST.get('status', 'assigned')
+        
+        if not assigned_to_id:
+            messages.error(request, "Please select a user to assign.")
+            return redirect('app5:lead_assign_edit', lead_id=lead_id)
+
+        try:
+            # Get the user to assign
+            assigned_user = users.get(id=int(assigned_to_id))
+            
+            # Update lead assignment
+            lead.assigned_to = assigned_user
+            lead.assigned_to_name = getattr(assigned_user, 'name', 
+                                          getattr(assigned_user, 'username', 
+                                                  f'User {assigned_user.id}'))
+            
+            # Set assigned_by to current user
+            if request.session.get('custom_user_id'):
+                try:
+                    current_user = users.get(id=request.session['custom_user_id'])
+                    lead.assigned_by = current_user
+                    lead.assigned_by_name = getattr(current_user, 'name', 
+                                                  getattr(current_user, 'username', 
+                                                          f'User {current_user.id}'))
+                except Exception:
+                    pass
+            
+            # Update dates
+            now = timezone.now()
+            lead.assigned_date = now.date()
+            lead.assigned_time = now.time()
+            
+            # Update status if provided
+            if status:
+                lead.status = status
+            
+            lead.save()
+            
+            messages.success(request, f"Lead assignment updated successfully!")
+            return redirect('app5:lead_assign_list')
+            
+        except Exception as e:
+            logger.error(f"Error updating lead assignment: {e}")
+            messages.error(request, f"Error updating assignment: {str(e)}")
+            return redirect('app5:lead_assign_edit', lead_id=lead_id)
+
+    # GET request - show edit form
+    context = {
+        'lead': lead,
+        'users': users,
+    }
+    return render(request, 'lead_assign_edit.html', context)
+
+
+
 
 
 
 # ------------------------------
 # Requirement Views
 # ------------------------------
-
+from .models import RequirementItem 
 @csrf_exempt
 def requirement_form(request):
     """Handles adding new requirement items"""
@@ -3664,6 +4485,73 @@ def requirements_list_view(request):
         "items": items,
         "grand_total": grand_total
     })
+
+
+from django.views.decorators.csrf import csrf_exempt
+
+@csrf_exempt
+@csrf_exempt
+def requirement_edit(request, requirement_id=None, pk=None, *args, **kwargs):
+    """
+    Accepts either requirement_id (URL pattern) or pk.
+    URL may be defined as <int:requirement_id> or <int:pk>.
+    """
+    # decide id from whichever kwarg is provided
+    rid = requirement_id if requirement_id is not None else pk
+    if rid is None:
+        messages.error(request, "No requirement id provided.")
+        return redirect('app5:requirement_list')  # Redirect to requirement list
+
+    # ✅ FIXED: Use RequirementItem model instead of Requirement
+    requirement = get_object_or_404(RequirementItem, pk=rid)
+
+    if request.method == "POST":
+        item_name = request.POST.get("item_name", "").strip()
+        unit = request.POST.get("unit", "").strip()
+        price_raw = request.POST.get("price", "").strip()
+
+        # validate / normalize price
+        try:
+            from decimal import Decimal, InvalidOperation
+            price = Decimal(price_raw) if price_raw != "" else Decimal("0.00")
+        except (InvalidOperation, TypeError):
+            messages.error(request, "Price must be a valid number.")
+            return render(request, "requirement_edit.html", {"item": requirement, "is_edit": True})
+
+        # Update fields
+        requirement.item_name = item_name or requirement.item_name
+        requirement.unit = unit
+        requirement.price = price
+        # If you compute total in model, update total here (optional)
+        try:
+            # If you keep `total` field, update it; otherwise remove this
+            requirement.total = getattr(requirement, "total", price)
+        except Exception:
+            pass
+
+        requirement.save()
+        messages.success(request, "Requirement item updated successfully.")
+        return redirect('app5:requirement_list')
+
+    # GET: show form
+    context = {
+        "item": requirement,
+        "is_edit": True
+    }
+    return render(request, "requirement_edit.html", context)
+
+def requirement_delete(request, item_id):
+    """Delete a requirement item"""
+    item = get_object_or_404(RequirementItem, id=item_id)
+    
+    if request.method == "POST":
+        item_name = item.item_name
+        item.delete()
+        messages.success(request, f'Requirement item "{item_name}" deleted successfully!')
+        return redirect('app5:requirement_list')
+    
+    # If accessed via GET, redirect back to list
+    return redirect('app5:requirement_list')
 
 
 
