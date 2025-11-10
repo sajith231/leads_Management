@@ -4,7 +4,6 @@ from . import views
 
 
 
-app_name = "image_capture"
 
 urlpatterns = [
     
