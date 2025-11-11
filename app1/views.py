@@ -5966,45 +5966,55 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from .models import User, Attendance  # or BreakTime model if different
 
+from datetime import datetime
+from django.utils import timezone
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
+from .models import User, Attendance  # use your real attendance model
+
 @login_required
 def break_time_management(request):
-    # Get filters
+    # Get filter inputs
     start_date_str = request.GET.get('start_date')
     end_date_str = request.GET.get('end_date')
     selected_user_id = request.GET.get('user')
 
-    # Default: today
     today = timezone.localdate()
 
+    # Default to today
     if start_date_str:
-        start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+        start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
     else:
         start_date = today
 
     if end_date_str:
-        end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+        end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
     else:
-        end_date = today
+        end_date = start_date
 
-    # Active users only
-    active_users = User.objects.filter(status='active')
+    # Only active users
+    active_users = User.objects.filter(status="active")
 
-    # Fetch break/attendance records
-    break_times = Attendance.objects.filter(date__range=[start_date, end_date])
+    # Get attendance entries (main punch in)
+    punched_in = Attendance.objects.filter(
+        punch_in__isnull=False,
+        date__range=[start_date, end_date]
+    ).select_related("employee").order_by("date", "employee__name")
 
-    # If user filter selected
+    # If filtering by user
     if selected_user_id:
-        break_times = break_times.filter(employee_id=selected_user_id)
+        punched_in = punched_in.filter(employee_id=selected_user_id)
 
     context = {
-        'break_times': break_times.order_by('date'),
-        'active_users': active_users,
-        'start_date': start_date,
-        'end_date': end_date,
-        'selected_user_id': selected_user_id,
+        "punched_in": punched_in,
+        "active_users": active_users,
+        "start_date": start_date,
+        "end_date": end_date,
+        "selected_user_id": selected_user_id,
     }
 
-    return render(request, 'break_time_management.html', context)
+    return render(request, "break_time_management.html", context)
+
 
 
 

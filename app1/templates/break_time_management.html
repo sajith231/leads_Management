@@ -1,24 +1,22 @@
 {% extends 'base.html' %}
 {% block content %}
 <div class="container">
-    <h2 class="my-4">Break Time Management</h2>
+    <h2 class="my-4">Punch-In Summary</h2>
 
     <!-- Filters -->
     <div class="row mb-3">
         <div class="col-md-3">
-            <label for="start-date">From Date:</label>
+            <label>From Date:</label>
             <input type="date" id="start-date" class="form-control"
-                   value="{{ start_date|date:'Y-m-d' }}"
-                   onchange="applyFilters()">
+                   value="{{ start_date|date:'Y-m-d' }}" onchange="applyFilters()">
         </div>
         <div class="col-md-3">
-            <label for="end-date">To Date:</label>
+            <label>To Date:</label>
             <input type="date" id="end-date" class="form-control"
-                   value="{{ end_date|date:'Y-m-d' }}"
-                   onchange="applyFilters()">
+                   value="{{ end_date|date:'Y-m-d' }}" onchange="applyFilters()">
         </div>
         <div class="col-md-4">
-            <label for="filter-user">Select User:</label>
+            <label>User:</label>
             <select id="filter-user" class="form-control" onchange="applyFilters()">
                 <option value="">All Active Users</option>
                 {% for user in active_users %}
@@ -33,41 +31,39 @@
     <!-- Table -->
     <div style="overflow: scroll;">
         <table class="table table-bordered">
-            <thead>
+            <thead class="table-light">
                 <tr>
                     <th>Employee</th>
                     <th>Date</th>
-                    <th>Break Punch In</th>
-                    <th>Break Punch Out</th>
-                    <th>Duration</th>
+                    <th>Punch In</th>
+                    <th>Punch Out</th>
                     <th>Status</th>
                 </tr>
             </thead>
             <tbody>
-                {% for break_time in break_times %}
+                {% for record in punched_in %}
                 <tr>
-                    <td>{{ break_time.employee.name }}</td>
-                    <td>{{ break_time.date|date:"d-m-Y" }}</td>
-                    <td>{{ break_time.break_punch_in|date:"d-m-Y H:i:s" }}</td>
-                    <td>{{ break_time.break_punch_out|date:"d-m-Y H:i:s" }}</td>
+                    <td>{{ record.employee.name }}</td>
+                    <td>{{ record.date|date:"d-m-Y" }}</td>
+                    <td>{{ record.punch_in|date:"H:i:s" }}</td>
                     <td>
-                        {% if break_time.break_punch_out %}
-                            {{ break_time.break_punch_out|timeuntil:break_time.break_punch_in }}
+                        {% if record.punch_out %}
+                            {{ record.punch_out|date:"H:i:s" }}
                         {% else %}
-                            In Progress
+                            Not punched out
                         {% endif %}
                     </td>
                     <td>
-                        {% if break_time.is_active and not break_time.break_punch_out %}
-                            <span class="badge bg-warning">Active</span>
-                        {% else %}
+                        {% if record.punch_out %}
                             <span class="badge bg-success">Completed</span>
+                        {% else %}
+                            <span class="badge bg-warning">Working</span>
                         {% endif %}
                     </td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="6" class="text-center">No break time data available for this range.</td>
+                    <td colspan="5" class="text-center">No punch-in data available for this date or user.</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -85,7 +81,6 @@ function applyFilters() {
     if (startDate) url += 'start_date=' + startDate + '&';
     if (endDate) url += 'end_date=' + endDate + '&';
     if (user) url += 'user=' + user;
-
     window.location.href = url;
 }
 </script>
