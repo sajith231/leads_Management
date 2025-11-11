@@ -1,17 +1,36 @@
 {% extends 'base.html' %}
-
 {% block content %}
 <div class="container">
     <h2 class="my-4">Break Time Management</h2>
 
-    <!-- Date Filter -->
-    <div class="mb-3">
-        <label for="filter-date">Select Date:</label>
-        <input type="date" id="filter-date" class="form-control" 
-               value="{{ selected_date|date:'Y-m-d' }}" 
-               onchange="filterByDate(this.value)">
+    <!-- Filters -->
+    <div class="row mb-3">
+        <div class="col-md-3">
+            <label for="start-date">From Date:</label>
+            <input type="date" id="start-date" class="form-control"
+                   value="{{ start_date|date:'Y-m-d' }}"
+                   onchange="applyFilters()">
+        </div>
+        <div class="col-md-3">
+            <label for="end-date">To Date:</label>
+            <input type="date" id="end-date" class="form-control"
+                   value="{{ end_date|date:'Y-m-d' }}"
+                   onchange="applyFilters()">
+        </div>
+        <div class="col-md-4">
+            <label for="filter-user">Select User:</label>
+            <select id="filter-user" class="form-control" onchange="applyFilters()">
+                <option value="">All Active Users</option>
+                {% for user in active_users %}
+                    <option value="{{ user.id }}" {% if user.id|stringformat:"s" == selected_user_id|stringformat:"s" %}selected{% endif %}>
+                        {{ user.name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
     </div>
 
+    <!-- Table -->
     <div style="overflow: scroll;">
         <table class="table table-bordered">
             <thead>
@@ -33,7 +52,7 @@
                     <td>{{ break_time.break_punch_out|date:"d-m-Y H:i:s" }}</td>
                     <td>
                         {% if break_time.break_punch_out %}
-                            {{ break_time.break_punch_in|timesince:break_time.break_punch_out }}
+                            {{ break_time.break_punch_out|timeuntil:break_time.break_punch_in }}
                         {% else %}
                             In Progress
                         {% endif %}
@@ -48,7 +67,7 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="6" class="text-center">No break time data available for this date.</td>
+                    <td colspan="6" class="text-center">No break time data available for this range.</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -57,8 +76,17 @@
 </div>
 
 <script>
-function filterByDate(date) {
-    window.location.href = '?date=' + date;
+function applyFilters() {
+    const startDate = document.getElementById('start-date').value;
+    const endDate = document.getElementById('end-date').value;
+    const user = document.getElementById('filter-user').value;
+
+    let url = '?';
+    if (startDate) url += 'start_date=' + startDate + '&';
+    if (endDate) url += 'end_date=' + endDate + '&';
+    if (user) url += 'user=' + user;
+
+    window.location.href = url;
 }
 </script>
 {% endblock %}

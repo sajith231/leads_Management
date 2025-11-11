@@ -5960,32 +5960,52 @@ def handle_break_punch(request, action):
 
     return JsonResponse({'success': False, 'error': 'Invalid request'})
 
+from datetime import datetime
+from django.utils import timezone
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
+from .models import User, Attendance  # or BreakTime model if different
 
 @login_required
 def break_time_management(request):
-    # Get selected date from request, default to today's date
-    selected_date = request.GET.get('date')
-    indian_tz = pytz.timezone('Asia/Kolkata')
+    # Get filters
+    start_date_str = request.GET.get('start_date')
+    end_date_str = request.GET.get('end_date')
+    selected_user_id = request.GET.get('user')
 
-    if selected_date:
-        date_filter = datetime.strptime(selected_date, '%Y-%m-%d').date()
+    # Default: today
+    today = timezone.localdate()
+
+    if start_date_str:
+        start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
     else:
-        date_filter = datetime.now(indian_tz).date()
+        start_date = today
 
-    # Filter break times based on the selected date
-    break_times = BreakTime.objects.filter(date=date_filter).order_by('-date', '-break_punch_in')
+    if end_date_str:
+        end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+    else:
+        end_date = today
 
-    for bt in break_times:
-        if bt.break_punch_in and bt.break_punch_out:
-            duration = bt.break_punch_out - bt.break_punch_in
-            bt.duration = str(duration).split('.')[0]  # format as HH:MM:SS
-        else:
-            bt.duration = None
+    # Active users only
+    active_users = User.objects.filter(status='active')
 
-    return render(request, 'break_time_management.html', {
-        'break_times': break_times,
-        'selected_date': date_filter,
-    })
+    # Fetch break/attendance records
+    break_times = Attendance.objects.filter(date__range=[start_date, end_date])
+
+    # If user filter selected
+    if selected_user_id:
+        break_times = break_times.filter(employee_id=selected_user_id)
+
+    context = {
+        'break_times': break_times.order_by('date'),
+        'active_users': active_users,
+        'start_date': start_date,
+        'end_date': end_date,
+        'selected_user_id': selected_user_id,
+    }
+
+    return render(request, 'break_time_management.html', context)
+
 
 
 
