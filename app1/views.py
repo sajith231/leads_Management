@@ -5976,6 +5976,11 @@ from django.utils import timezone
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from .models import User, Attendance, BreakTime  # adjust model names if different
+from datetime import datetime
+from django.utils import timezone
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
+from .models import User, Attendance, BreakTime  # adjust if model names differ
 
 @login_required
 def break_time_management(request):
@@ -5986,7 +5991,7 @@ def break_time_management(request):
 
     today = timezone.localdate()
 
-    # Handle date range (default: today)
+    # Handle date range
     if start_date_str:
         start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
     else:
@@ -6000,33 +6005,24 @@ def break_time_management(request):
     # Active users only
     active_users = User.objects.filter(status="active")
 
-    # Get main punch-in users (those who punched in that day)
+    # Get main punch-in users (Attendance)
     punched_users = Attendance.objects.filter(
         punch_in__isnull=False,
         date__range=[start_date, end_date]
     ).select_related("employee").order_by("date", "employee__name")
 
-    # Filter by user if selected
     if selected_user_id:
         punched_users = punched_users.filter(employee_id=selected_user_id)
 
-    # Get all break records for those employees & dates
-    breaks = BreakTime.objects.filter(
-        employee__in=[p.employee for p in punched_users],
-        date__range=[start_date, end_date]
-    ).select_related("employee")
-
-    # Group breaks by employee and date
-    break_map = {}
-    for b in breaks:
-        key = (b.employee_id, b.date)
-        if key not in break_map:
-            break_map[key] = []
-        break_map[key].append(b)
+    # Attach break records directly to each attendance object
+    for record in punched_users:
+        record.breaks = BreakTime.objects.filter(
+            employee=record.employee,
+            date=record.date
+        ).order_by("break_punch_in")
 
     context = {
         "punched_users": punched_users,
-        "break_map": break_map,
         "active_users": active_users,
         "start_date": start_date,
         "end_date": end_date,
@@ -6034,8 +6030,6 @@ def break_time_management(request):
     }
 
     return render(request, "break_time_management.html", context)
-
-
 
 
 
