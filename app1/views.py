@@ -5971,17 +5971,22 @@ from django.utils import timezone
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from .models import User, Attendance  # use your real attendance model
+from datetime import datetime
+from django.utils import timezone
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
+from .models import User, Attendance, BreakTime  # adjust model names if different
 
 @login_required
 def break_time_management(request):
-    # Get filter inputs
+    # Get filters
     start_date_str = request.GET.get('start_date')
     end_date_str = request.GET.get('end_date')
     selected_user_id = request.GET.get('user')
 
     today = timezone.localdate()
 
-    # Default to today
+    # Handle date range (default: today)
     if start_date_str:
         start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
     else:
@@ -5992,21 +5997,36 @@ def break_time_management(request):
     else:
         end_date = start_date
 
-    # Only active users
+    # Active users only
     active_users = User.objects.filter(status="active")
 
-    # Get attendance entries (main punch in)
-    punched_in = Attendance.objects.filter(
+    # Get main punch-in users (those who punched in that day)
+    punched_users = Attendance.objects.filter(
         punch_in__isnull=False,
         date__range=[start_date, end_date]
     ).select_related("employee").order_by("date", "employee__name")
 
-    # If filtering by user
+    # Filter by user if selected
     if selected_user_id:
-        punched_in = punched_in.filter(employee_id=selected_user_id)
+        punched_users = punched_users.filter(employee_id=selected_user_id)
+
+    # Get all break records for those employees & dates
+    breaks = BreakTime.objects.filter(
+        employee__in=[p.employee for p in punched_users],
+        date__range=[start_date, end_date]
+    ).select_related("employee")
+
+    # Group breaks by employee and date
+    break_map = {}
+    for b in breaks:
+        key = (b.employee_id, b.date)
+        if key not in break_map:
+            break_map[key] = []
+        break_map[key].append(b)
 
     context = {
-        "punched_in": punched_in,
+        "punched_users": punched_users,
+        "break_map": break_map,
         "active_users": active_users,
         "start_date": start_date,
         "end_date": end_date,
@@ -6014,6 +6034,7 @@ def break_time_management(request):
     }
 
     return render(request, "break_time_management.html", context)
+
 
 
 

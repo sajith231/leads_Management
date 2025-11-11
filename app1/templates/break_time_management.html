@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% block content %}
 <div class="container">
-    <h2 class="my-4">Punch-In Summary</h2>
+    <h2 class="my-4">Break Time Management</h2>
 
     <!-- Filters -->
     <div class="row mb-3">
@@ -35,35 +35,55 @@
                 <tr>
                     <th>Employee</th>
                     <th>Date</th>
-                    <th>Punch In</th>
-                    <th>Punch Out</th>
+                    <th>Main Punch In</th>
+                    <th>Main Punch Out</th>
+                    <th>Break Punch In</th>
+                    <th>Break Punch Out</th>
+                    <th>Duration</th>
                     <th>Status</th>
                 </tr>
             </thead>
             <tbody>
-                {% for record in punched_in %}
-                <tr>
-                    <td>{{ record.employee.name }}</td>
-                    <td>{{ record.date|date:"d-m-Y" }}</td>
-                    <td>{{ record.punch_in|date:"H:i:s" }}</td>
-                    <td>
-                        {% if record.punch_out %}
-                            {{ record.punch_out|date:"H:i:s" }}
-                        {% else %}
-                            Not punched out
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if record.punch_out %}
-                            <span class="badge bg-success">Completed</span>
-                        {% else %}
-                            <span class="badge bg-warning">Working</span>
-                        {% endif %}
-                    </td>
-                </tr>
+                {% for record in punched_users %}
+                {% with breaks=break_map|get_item:(record.employee.id, record.date) %}
+                {% if breaks %}
+                    {% for b in breaks %}
+                    <tr>
+                        <td>{{ record.employee.name }}</td>
+                        <td>{{ record.date|date:"d-m-Y" }}</td>
+                        <td>{{ record.punch_in|date:"H:i:s" }}</td>
+                        <td>{{ record.punch_out|date:"H:i:s"|default:"-" }}</td>
+                        <td>{{ b.break_punch_in|date:"H:i:s" }}</td>
+                        <td>{{ b.break_punch_out|date:"H:i:s"|default:"-" }}</td>
+                        <td>
+                            {% if b.break_punch_out %}
+                                {{ b.break_punch_out|timeuntil:b.break_punch_in }}
+                            {% else %}
+                                In Progress
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if b.break_punch_out %}
+                                <span class="badge bg-success">Completed</span>
+                            {% else %}
+                                <span class="badge bg-warning">Active</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td>{{ record.employee.name }}</td>
+                        <td>{{ record.date|date:"d-m-Y" }}</td>
+                        <td>{{ record.punch_in|date:"H:i:s" }}</td>
+                        <td>{{ record.punch_out|date:"H:i:s"|default:"-" }}</td>
+                        <td colspan="4" class="text-center">No Breaks Recorded</td>
+                    </tr>
+                {% endif %}
+                {% endwith %}
                 {% empty %}
                 <tr>
-                    <td colspan="5" class="text-center">No punch-in data available for this date or user.</td>
+                    <td colspan="8" class="text-center">No main punch-in data found for this date or user.</td>
                 </tr>
                 {% endfor %}
             </tbody>
