@@ -2,26 +2,106 @@
 {% block content %}
 <title>Edit Wallet Item</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
 <style>
-/* copy the same styles as add_wallet (kept concise here for brevity) */
-... /* you can re-use CSS from add_wallet.html (paste the same <style> block) */
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial; color: #222; }
+
+    .page-center {
+        min-height: calc(100vh - 160px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        background: transparent;
+    }
+
+    .form-container {
+        background: #fff;
+        border-radius: 8px;
+        padding: 28px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+        border: 1px solid #e6e6e6;
+        max-width: 680px;
+        width: 100%;
+    }
+
+    .form-header { margin-bottom: 20px; text-align: center; }
+    .upload-icon { font-size: 36px; color: #4a5568; margin-bottom: 8px; display:block; }
+    .form-header h2 { font-size: 22px; margin: 6px 0; color:#222; }
+    .form-header p { color: #6b7280; margin:0; font-size: 13px; }
+
+    label.form-label { display:block; margin-bottom:6px; font-weight:600; color:#333; font-size:14px; }
+    .required { color:#e63946; margin-left:4px; }
+
+    .form-row { margin-bottom:16px; }
+    input[type="text"], input[type="file"], select, textarea {
+        width:100%;
+        padding:10px 12px;
+        border-radius:6px;
+        border:1px solid #e6e6e6;
+        font-size:14px;
+        outline: none;
+        background: #fff;
+        transition: box-shadow .12s, border-color .12s;
+    }
+    input[type="text"]:focus, select:focus, textarea:focus {
+        border-color: #4a5568;
+        box-shadow: 0 0 0 4px rgba(74,85,104,0.06);
+    }
+    textarea { resize: vertical; min-height: 90px; }
+
+    .info-text { font-size:12px; color:#6b7280; margin-top:6px; }
+
+    .field-group { background:#f8fafb; border:1px solid #eef2f7; padding:14px; border-radius:6px; margin-bottom:14px; }
+    .field-group-title { display:flex; align-items:center; gap:8px; font-weight:600; color:#325065; margin-bottom:10px; font-size:15px; }
+
+    .btn { display:inline-flex; align-items:center; gap:8px; justify-content:center; cursor:pointer; border-radius:6px; padding:8px 14px; font-weight:600; font-size:14px; border:1px solid transparent; }
+    .btn-submit { width:100%; background:#4a5568; color:#fff; border-color:#4a5568; padding:12px 14px; }
+    .btn-submit:hover { background:#2f3a42; border-color:#2f3a42; }
+
+    .btn-back { display:inline-block; background:#eef2f3; color:#394046; padding:8px 14px; text-decoration:none; border-radius:6px; border:1px solid #e1e6e9; }
+    .btn-back:hover { background:#e4eaed; }
+
+    .image-preview-container { margin-top:10px; display:none; }
+    .image-preview { max-width:100%; max-height:250px; border-radius:6px; border:1px solid #e6e6e6; box-shadow:0 1px 6px rgba(0,0,0,0.04); }
+
+    .current-image-container { margin-top:10px; }
+    .current-image { max-width:100%; max-height:200px; border-radius:6px; border:1px solid #e6e6e6; }
+
+    .alert { position: relative; padding:10px 12px; border-radius:6px; margin-bottom:12px; border:1px solid transparent; display:flex; align-items:center; justify-content:space-between; gap:10px; }
+    .alert .message-text { flex:1; margin-right:10px; }
+    .alert .close-btn { background:transparent; border:none; font-size:16px; cursor:pointer; color:inherit; padding:6px; border-radius:4px; }
+    .alert-info { background:#eef2f8; color:#083b6b; border-color:#cfe7ff; }
+    .alert-success { background:#ecfdf5; color:#064e3b; border-color:#bbf7d0; }
+    .alert-danger { background:#fff1f2; color:#701a1a; border-color:#fecaca; }
 </style>
 
 <div class="page-center">
   <div class="form-container">
     <div class="form-header">
-      <i class="fas fa-wallet upload-icon"></i>
+      <i class="fas fa-edit upload-icon"></i>
       <h2>Edit Wallet Item</h2>
-      <p>Update bank details, QR codes, or documents</p>
+      <p>Update wallet details</p>
     </div>
 
     {% if messages %}
       {% for message in messages %}
-        <div class="alert alert-info">
-          <div class="message-text">{{ message }}</div>
-          <button type="button" class="close-btn" aria-label="Close">&times;</button>
-        </div>
+        {% if 'error' in message.tags or 'danger' in message.tags %}
+          <div class="alert alert-danger" role="alert">
+            <div class="message-text">{{ message }}</div>
+            <button type="button" class="close-btn" aria-label="Close">&times;</button>
+          </div>
+        {% elif 'success' in message.tags %}
+          <div class="alert alert-success" role="alert">
+            <div class="message-text">{{ message }}</div>
+            <button type="button" class="close-btn" aria-label="Close">&times;</button>
+          </div>
+        {% else %}
+          <div class="alert alert-info" role="alert">
+            <div class="message-text">{{ message }}</div>
+            <button type="button" class="close-btn" aria-label="Close">&times;</button>
+          </div>
+        {% endif %}
       {% endfor %}
     {% endif %}
 
@@ -42,11 +122,9 @@
           <option value="document" {% if wallet.upload_type == 'document' %}selected{% endif %}>Documentation Image</option>
           <option value="other" {% if wallet.upload_type == 'other' %}selected{% endif %}>Other Wallet</option>
         </select>
-        <div class="info-text">Select the category for this wallet item</div>
       </div>
 
-      <!-- Bank Fields -->
-      <div id="bankFields" class="dynamic-fields" aria-hidden="true">
+      <div id="bankFields" class="dynamic-fields">
         <div class="field-group">
           <div class="field-group-title"><i class="fas fa-university"></i> Bank Account Details</div>
           <div class="form-row">
@@ -68,21 +146,20 @@
         </div>
 
         <div class="form-row">
-          <label class="form-label" for="bank_image"><i class="fas fa-image"></i> Bank Image (replace)</label>
+          <label class="form-label" for="bank_image"><i class="fas fa-image"></i> Bank Image</label>
+          {% if wallet.image %}
+            <div class="current-image-container">
+              <small style="color:#6b7280; display:block; margin-bottom:6px;">Current Image:</small>
+              <img src="{{ wallet.image.url }}" class="current-image" alt="Current">
+            </div>
+          {% endif %}
           <input id="bank_image" name="image_bank" type="file" accept="image/png, image/jpeg, image/jpg">
-          <div class="info-text">Upload bank card or document image (optional — leave empty to keep existing)</div>
-          <div id="bankImagePreview" class="image-preview-container" style="display:{{ wallet.image|yesno:'block,none' }}">
-            {% if wallet.image %}
-              <img id="bankPreviewImg" class="image-preview" src="{{ wallet.image.url }}" alt="Preview">
-            {% else %}
-              <img id="bankPreviewImg" class="image-preview" src="" alt="Preview" style="display:none">
-            {% endif %}
-          </div>
+          <div class="info-text">Upload new image to replace current one</div>
+          <div id="bankImagePreview" class="image-preview-container"><img id="bankPreviewImg" class="image-preview" src="" alt="Preview"></div>
         </div>
       </div>
 
-      <!-- QR Fields -->
-      <div id="qrFields" class="dynamic-fields" aria-hidden="true">
+      <div id="qrFields" class="dynamic-fields">
         <div class="field-group">
           <div class="field-group-title"><i class="fas fa-qrcode"></i> QR Details</div>
           <div class="form-row">
@@ -92,37 +169,35 @@
         </div>
 
         <div class="form-row">
-          <label class="form-label" for="qr_image"><i class="fas fa-image"></i> QR Code Image (replace)</label>
+          <label class="form-label" for="qr_image"><i class="fas fa-image"></i> QR Code Image</label>
+          {% if wallet.image %}
+            <div class="current-image-container">
+              <small style="color:#6b7280; display:block; margin-bottom:6px;">Current Image:</small>
+              <img src="{{ wallet.image.url }}" class="current-image" alt="Current">
+            </div>
+          {% endif %}
           <input id="qr_image" name="image_qr" type="file" accept="image/png, image/jpeg, image/jpg">
-          <div class="info-text">Upload the QR code image (optional — leave empty to keep existing)</div>
-          <div id="qrImagePreview" class="image-preview-container" style="display:{{ wallet.image|yesno:'block,none' }}">
-            {% if wallet.image %}
-              <img id="qrPreviewImg" class="image-preview" src="{{ wallet.image.url }}" alt="Preview">
-            {% else %}
-              <img id="qrPreviewImg" class="image-preview" src="" alt="Preview" style="display:none">
-            {% endif %}
-          </div>
+          <div class="info-text">Upload new image to replace current one</div>
+          <div id="qrImagePreview" class="image-preview-container"><img id="qrPreviewImg" class="image-preview" src="" alt="Preview"></div>
         </div>
       </div>
 
-      <!-- Document Fields -->
-      <div id="documentFields" class="dynamic-fields" aria-hidden="true">
+      <div id="documentFields" class="dynamic-fields">
         <div class="form-row">
-          <label class="form-label" for="document_image"><i class="fas fa-image"></i> Document Image (replace)</label>
+          <label class="form-label" for="document_image"><i class="fas fa-image"></i> Document Image</label>
+          {% if wallet.image %}
+            <div class="current-image-container">
+              <small style="color:#6b7280; display:block; margin-bottom:6px;">Current Image:</small>
+              <img src="{{ wallet.image.url }}" class="current-image" alt="Current">
+            </div>
+          {% endif %}
           <input id="document_image" name="image_document" type="file" accept="image/png, image/jpeg, image/jpg">
-          <div class="info-text">Upload the documentation image (optional — leave empty to keep existing)</div>
-          <div id="documentImagePreview" class="image-preview-container" style="display:{{ wallet.image|yesno:'block,none' }}">
-            {% if wallet.image %}
-              <img id="documentPreviewImg" class="image-preview" src="{{ wallet.image.url }}" alt="Preview">
-            {% else %}
-              <img id="documentPreviewImg" class="image-preview" src="" alt="Preview" style="display:none">
-            {% endif %}
-          </div>
+          <div class="info-text">Upload new image to replace current one</div>
+          <div id="documentImagePreview" class="image-preview-container"><img id="documentPreviewImg" class="image-preview" src="" alt="Preview"></div>
         </div>
       </div>
 
-      <!-- Other Fields -->
-      <div id="otherFields" class="dynamic-fields" aria-hidden="true">
+      <div id="otherFields" class="dynamic-fields">
         <div class="field-group">
           <div class="field-group-title"><i class="fas fa-wallet"></i> Wallet Details</div>
           <div class="form-row">
@@ -132,16 +207,16 @@
         </div>
 
         <div class="form-row">
-          <label class="form-label" for="other_image"><i class="fas fa-image"></i> Image (replace)</label>
+          <label class="form-label" for="other_image"><i class="fas fa-image"></i> Image</label>
+          {% if wallet.image %}
+            <div class="current-image-container">
+              <small style="color:#6b7280; display:block; margin-bottom:6px;">Current Image:</small>
+              <img src="{{ wallet.image.url }}" class="current-image" alt="Current">
+            </div>
+          {% endif %}
           <input id="other_image" name="image_other" type="file" accept="image/png, image/jpeg, image/jpg">
-          <div class="info-text">Upload an image (optional — leave empty to keep existing)</div>
-          <div id="otherImagePreview" class="image-preview-container" style="display:{{ wallet.image|yesno:'block,none' }}">
-            {% if wallet.image %}
-              <img id="otherPreviewImg" class="image-preview" src="{{ wallet.image.url }}" alt="Preview">
-            {% else %}
-              <img id="otherPreviewImg" class="image-preview" src="" alt="Preview" style="display:none">
-            {% endif %}
-          </div>
+          <div class="info-text">Upload new image to replace current one</div>
+          <div id="otherImagePreview" class="image-preview-container"><img id="otherPreviewImg" class="image-preview" src="" alt="Preview"></div>
         </div>
       </div>
 
@@ -153,7 +228,6 @@
           <option value="admin" {% if wallet.visibility_priority == 'admin' %}selected{% endif %}>Admin</option>
           <option value="user" {% if wallet.visibility_priority == 'user' %}selected{% endif %}>User</option>
         </select>
-        <div class="info-text">Who can view this wallet item</div>
       </div>
 
       <div class="form-row">
@@ -173,80 +247,82 @@
 </div>
 
 <script>
-// reuse show/hide logic from add_wallet.html
-function hideAllDynamic() {
-  document.querySelectorAll('.dynamic-fields').forEach(el => {
-    el.style.display = 'none';
-    el.setAttribute('aria-hidden', 'true');
+  document.querySelectorAll('.alert .close-btn').forEach(btn => {
+    btn.addEventListener('click', function () {
+      const alert = this.closest('.alert');
+      if (alert) alert.remove();
+    });
   });
-}
-function showSection(id) {
-  hideAllDynamic();
-  const el = document.getElementById(id);
-  if (el) {
-    el.style.display = 'block';
-    el.setAttribute('aria-hidden', 'false');
+
+  function hideAllDynamic() {
+    document.querySelectorAll('.dynamic-fields').forEach(el => {
+      el.style.display = 'none';
+    });
   }
-}
+  
+  function showSection(id) {
+    hideAllDynamic();
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'block';
+  }
 
-const uploadTypeEl = document.getElementById('upload_type');
-function initSections() {
-  const val = uploadTypeEl.value;
-  if (!val) { hideAllDynamic(); return; }
-  showSection(val + 'Fields');
-}
-if (uploadTypeEl) {
-  initSections();
-  uploadTypeEl.addEventListener('change', function () {
-    const val = this.value;
-    if (!val) { hideAllDynamic(); return; }
-    showSection(val + 'Fields');
-  });
-}
-
-// image preview setup (reads file input and updates image src)
-function setupImagePreview(inputId, previewContainerId, previewImgId) {
-  const input = document.getElementById(inputId);
-  const container = document.getElementById(previewContainerId);
-  const img = document.getElementById(previewImgId);
-  if (!input || !container || !img) return;
-
-  input.addEventListener('change', function (e) {
-    const file = e.target.files && e.target.files[0];
-    if (!file) {
-      // keep existing preview if present
-      return;
+  const uploadTypeEl = document.getElementById('upload_type');
+  if (uploadTypeEl) {
+    if (uploadTypeEl.value) {
+      showSection(uploadTypeEl.value + 'Fields');
     }
-    const allowed = ['image/jpeg','image/jpg','image/png'];
-    if (!allowed.includes(file.type)) {
-      alert('Only JPG, JPEG, and PNG images are allowed.');
-      input.value = '';
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      alert('Image file size should not exceed 5MB.');
-      input.value = '';
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = function (ev) {
-      img.src = ev.target.result;
-      container.style.display = 'block';
-    };
-    reader.readAsDataURL(file);
-  });
-}
+    uploadTypeEl.addEventListener('change', function () {
+      const val = this.value;
+      if (!val) { hideAllDynamic(); return; }
+      showSection(val + 'Fields');
+    });
+  }
 
-setupImagePreview('bank_image','bankImagePreview','bankPreviewImg');
-setupImagePreview('qr_image','qrImagePreview','qrPreviewImg');
-setupImagePreview('document_image','documentImagePreview','documentPreviewImg');
-setupImagePreview('other_image','otherImagePreview','otherPreviewImg');
+  function setupImagePreview(inputId, previewContainerId, previewImgId) {
+    const input = document.getElementById(inputId);
+    const container = document.getElementById(previewContainerId);
+    const img = document.getElementById(previewImgId);
+    if (!input || !container || !img) return;
 
-// IFSC uppercase enforcement
-(function () {
+    input.addEventListener('change', function (e) {
+      const file = e.target.files && e.target.files[0];
+      if (!file) {
+        container.style.display = 'none';
+        img.src = '';
+        return;
+      }
+
+      const allowed = ['image/jpeg','image/jpg','image/png'];
+      if (!allowed.includes(file.type)) {
+        alert('Only JPG, JPEG, and PNG images are allowed.');
+        input.value = '';
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Image file size should not exceed 5MB.');
+        input.value = '';
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = function (ev) {
+        img.src = ev.target.result;
+        container.style.display = 'block';
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  setupImagePreview('bank_image','bankImagePreview','bankPreviewImg');
+  setupImagePreview('qr_image','qrImagePreview','qrPreviewImg');
+  setupImagePreview('document_image','documentImagePreview','documentPreviewImg');
+  setupImagePreview('other_image','otherImagePreview','otherPreviewImg');
+
   const ifsc = document.getElementById('ifsc_code');
-  if (!ifsc) return;
-  ifsc.addEventListener('input', function () { this.value = this.value.toUpperCase(); });
-})();
+  if (ifsc) {
+    ifsc.addEventListener('input', function () {
+      this.value = this.value.toUpperCase();
+    });
+  }
 </script>
 {% endblock %}
