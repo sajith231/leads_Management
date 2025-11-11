@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
-from purchase_order.models import Department          #  <── NEW
+from purchase_order.models import Department
+
 
 class Claim(models.Model):
     EXPENSE_TYPES = [
@@ -18,12 +19,22 @@ class Claim(models.Model):
         ('rejected', 'Rejected'),
     ]
 
-    # --- client / purpose (unchanged) ---------------------------------
-    client = models.CharField(max_length=255, blank=True, null=True)
-    client_name = models.CharField(max_length=255, blank=True, null=True)
+    # --- client / purpose ---------------------------------------------
+    client = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text="Optional client code or identifier"
+    )
+    client_name = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text="Optional client name (can be blank)"
+    )
     purpose = models.TextField(blank=True, null=True)
 
-    # --- department is now a FK to the master table --------------------
+    # --- department is now a FK to master Department table -------------
     department = models.ForeignKey(
         Department,
         on_delete=models.SET_NULL,
@@ -39,12 +50,20 @@ class Claim(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='claimed')
 
     created_by = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name='claims', null=True, blank=True
+        User,
+        on_delete=models.CASCADE,
+        related_name='claims',
+        null=True,
+        blank=True
     )
     created_at = models.DateTimeField(auto_now_add=True)
+
     updated_by = models.ForeignKey(
-        User, on_delete=models.SET_NULL, related_name='claims_updated',
-        null=True, blank=True
+        User,
+        on_delete=models.SET_NULL,
+        related_name='claims_updated',
+        null=True,
+        blank=True
     )
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -55,3 +74,5 @@ class Claim(models.Model):
 
     class Meta:
         ordering = ['-created_at']
+        verbose_name = "Claim"
+        verbose_name_plural = "Claims"

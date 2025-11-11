@@ -5529,6 +5529,7 @@ def configure_user_menu(request, user_id):
         {'id': 'collections_list', 'name': 'Collections', 'icon': 'fas fa-coins'},
         {'id': 'image_capture', 'name': 'Image Capture', 'icon': 'fas fa-camera'},
         {'id': 'purchase_order', 'name': 'Purchase Order', 'icon': 'fas fa-file-invoice'},
+        {'id': 'wallet_list', 'name': 'Wallet', 'icon': 'fas fa-wallet'},
     
         
     ]
