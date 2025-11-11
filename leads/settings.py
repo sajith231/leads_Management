@@ -42,7 +42,6 @@ LOGIN_REDIRECT_URL = 'admin_dashboard'
 LOGIN_URL = 'login'
 # Application definition
 
-
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -50,28 +49,31 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    # Third-party apps
     'ckeditor',
     'rest_framework',
+    'django.contrib.humanize',
+    'django_extensions',
+
+    # Your custom apps
     'app1',
-    'app2',  # 👈 Add this line
+    'app2',
     'app3',
     'app4',
-    'flutter',
     'app5',
+    'flutter',
     'sim_card',
     'my_drive',
     'fuel_management',
-    'django.contrib.humanize',
-    "wfh_Request",
-    # "punchout_reminder",
-    "image_capture",
+    'wfh_Request',
+    'image_capture',
     'software_master',
     'purchase_order',
     'claims',
-    "django_extensions",
-    
     'wallet',
 ]
+
 
 
 
@@ -153,7 +155,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'leading_management',
         'USER': 'postgres',
-        'PASSWORD': 'info@imc',
+        'PASSWORD': 'sajith@2003',
         'HOST': 'localhost',
         'PORT': '5432',
     }
