@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block title %}Rating Details{% endblock %}
+{% block header %}Candidate Rating Details{% endblock %}
+
+{% block content %}
+<style>
+  .stars {
+    color: gold;
+    font-size: 1.2rem;
+  }
+</style>
+
+<div class="container mt-4">
+  <div class="card shadow p-4">
+    <h4 class="mb-4 text-primary">{{ interview.name }} - Rating Details</h4>
+
+    {% if rating %}
+    <ul class="list-group mb-4">
+
+      <li class="list-group-item">
+        <strong>Appearance:</strong>
+        <span class="stars">{% for i in "12345"|make_list %}{% if forloop.counter <= rating.appearance %}★{% else %}☆{% endif %}{% endfor %}</span>
+      </li>
+      <li class="list-group-item">
+        <strong>Knowledge:</strong>
+        <span class="stars">{% for i in "12345"|make_list %}{% if forloop.counter <= rating.knowledge %}★{% else %}☆{% endif %}{% endfor %}</span>
+      </li>
+      <li class="list-group-item">
+        <strong>Confidence:</strong>
+        <span class="stars">{% for i in "12345"|make_list %}{% if forloop.counter <= rating.confidence %}★{% else %}☆{% endif %}{% endfor %}</span>
+      </li>
+      <li class="list-group-item">
+        <strong>Attitude:</strong>
+        <span class="stars">{% for i in "12345"|make_list %}{% if forloop.counter <= rating.attitude %}★{% else %}☆{% endif %}{% endfor %}</span>
+      </li>
+      <li class="list-group-item">
+        <strong>Communication:</strong>
+        <span class="stars">{% for i in "12345"|make_list %}{% if forloop.counter <= rating.communication %}★{% else %}☆{% endif %}{% endfor %}</span>
+      </li>
+
+      <li class="list-group-item"><strong>Languages:</strong> {{ rating.languages }}</li>
+      <li class="list-group-item"><strong>Expected Salary:</strong> {{ rating.expected_salary }}</li>
+      <li class="list-group-item"><strong>Experience:</strong> {{ rating.experience }}</li>
+      <li class="list-group-item"><strong>Remarks:</strong> {{ rating.remark }}</li>
+    </ul>
+    {% else %}
+      <div class="alert alert-warning">No rating available for this candidate.</div>
+    {% endif %}
+
+    <a href="{% url 'interview_management' %}" class="btn btn-secondary">Back</a>
+  </div>
+</div>
+{% endblock %}

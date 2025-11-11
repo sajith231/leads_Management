@@ -1,0 +1,517 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .container {
+        max-width: 800px;
+        margin: 20px auto;
+        padding: 20px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    }
+
+    .header {
+        background: linear-gradient(135deg, #3e83c9 0%, #34495e 100%);
+        color: white;
+        padding: 25px;
+        border-radius: 8px;
+        margin-bottom: 30px;
+    }
+
+    .header h1 {
+        font-size: 28px;
+        font-weight: 600;
+        margin-bottom: 10px;
+    }
+
+    .back-btn {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 8px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 15px;
+        transition: all 0.3s ease;
+    }
+
+    .back-btn:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: translateY(-2px);
+    }
+
+    .item-info {
+        background: #f4f9da;
+        border: 2px solid #828602;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 30px;
+    }
+
+    .customer-info {
+        background: #e3f2fd;
+        border: 2px solid #2196f3;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 30px;
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin-top: 15px;
+    }
+
+    .info-item {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .info-label {
+        font-weight: bold;
+        color: #ef6006;
+        font-size: 12px;
+        margin-bottom: 4px;
+    }
+
+    .info-value {
+        font-weight: 500;
+        color: #2c3e50;
+        font-size: 14px;
+    }
+
+    .customer-label {
+        font-weight: bold;
+        color: #1976d2;
+        font-size: 12px;
+        margin-bottom: 4px;
+    }
+
+    .customer-value {
+        font-weight: 500;
+        color: #2c3e50;
+        font-size: 14px;
+    }
+
+    .form-section {
+        background: #f6e2f5db;
+        padding: 25px;
+        border-radius: 8px;
+        border: 2px solid #d5058c;
+        margin-top: 20px;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 8px;
+        display: block;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #e3e6f0;
+        border-radius: 6px;
+        font-size: 14px;
+        transition: all 0.3s ease;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #007bff;
+        box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+    }
+
+    textarea.form-control {
+        min-height: 100px;
+        resize: vertical;
+    }
+
+    .file-input {
+        padding: 8px;
+    }
+
+    .image-preview {
+        display: flex;
+        gap: 10px;
+        margin-top: 10px;
+        flex-wrap: wrap;
+    }
+
+    .image-preview-item {
+        position: relative;
+        width: 100px;
+        height: 100px;
+        border: 2px solid #e3e6f0;
+        border-radius: 6px;
+        overflow: hidden;
+    }
+
+    .image-preview-item img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .remove-image {
+        position: absolute;
+        top: 2px;
+        right: 2px;
+        background: rgba(255, 0, 0, 0.7);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        font-size: 12px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .btn {
+        padding: 12px 24px;
+        border: none;
+        border-radius: 6px;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 14px;
+    }
+
+    .btn-primary {
+        background: #28a745;
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background: #218838;
+        transform: translateY(-2px);
+    }
+
+    .btn-secondary {
+        background: #6c757d;
+        color: white;
+    }
+
+    .btn-secondary:hover {
+        background: #545b62;
+        transform: translateY(-2px);
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 15px;
+        margin-top: 30px;
+        flex-wrap: wrap;
+    }
+
+    /* NEW STYLES FOR SIDE-BY-SIDE LAYOUT */
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+
+    .form-grid .form-group {
+        margin-bottom: 0;
+    }
+
+    .form-grid-full {
+        grid-column: 1 / -1;
+    }
+
+    /* NEW: Side by side layout for images and notes */
+    .images-notes-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        align-items: start;
+    }
+
+    .images-notes-grid .form-group {
+        margin-bottom: 0;
+        height: 50%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .images-notes-grid textarea.form-control {
+        min-height: 50px;
+        height: 50%;
+    }
+
+    @media (max-width: 768px) {
+        .container {
+            margin: 10px;
+            padding: 15px;
+        }
+
+        .action-buttons {
+            flex-direction: column;
+        }
+
+        .info-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .images-notes-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="container">
+    <div class="header">
+        <a href="{% url 'item_list' %}" class="back-btn">
+            <i class="fas fa-arrow-left"></i> Back to Standby Items
+        </a>
+        <h1><i class="fas fa-undo"></i> Return Standby Item</h1>
+        <p>Mark standby item as returned to stock</p>
+    </div>
+
+    <!-- Customer Information -->
+    <div class="customer-info">
+        <h3><i class="fas fa-user"></i> Customer Information</h3>
+        <div class="info-grid">
+            <div class="info-item">
+                <span class="customer-label">Customer Name</span>
+                <span class="customer-value">
+                    {% if item.customer_name %}
+                        {{ item.customer_name }}
+                    {% else %}
+                        <span style="color: #6c757d; font-style: italic;">No customer information available</span>
+                    {% endif %}
+                </span>
+            </div>
+            <div class="info-item">
+                <span class="customer-label">Place</span>
+                <span class="customer-value">
+                    {% if item.customer_place %}
+                        {{ item.customer_place }}
+                    {% else %}
+                        <span style="color: #6c757d; font-style: italic;">Not specified</span>
+                    {% endif %}
+                </span>
+            </div>
+            <div class="info-item">
+                <span class="customer-label">Phone</span>
+                <span class="customer-value">
+                    {% if item.customer_phone %}
+                        {{ item.customer_phone }}
+                    {% else %}
+                        <span style="color: #6c757d; font-style: italic;">Not specified</span>
+                    {% endif %}
+                </span>
+            </div>
+            <div class="info-item">
+                <span class="customer-label">Issued Date</span>
+                <span class="customer-value">
+                    {% if item.issued_date %}
+                        {{ item.issued_date|date:"d/m/Y" }}
+                    {% else %}
+                        <span style="color: #6c757d; font-style: italic;">Not specified</span>
+                    {% endif %}
+                </span>
+            </div>
+            <div class="info-item">
+                <span class="customer-label">Current Status</span>
+                <span class="customer-value">
+                    <span style="color: #dc3545; font-weight: bold;">
+                        <i class="fas fa-exclamation-triangle"></i> With Customer
+                    </span>
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Item Information -->
+    <div class="item-info">
+        <h3><i class="fas fa-box"></i> Item Information</h3>
+        <div class="info-grid">
+            <div class="info-item">
+                <span class="info-label">Item Name</span>
+                <span class="info-value">{{ item.name }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Serial Number</span>
+                <span class="info-value">{{ item.serial_number }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Current Status</span>
+                <span class="info-value">{{ item.get_status_display }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Current Stock</span>
+                <span class="info-value">{{ item.stock }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Return Form -->
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+        <div class="form-section">
+            <h3 style="color: #2c3e50; margin-bottom: 20px;">
+                <i class="fas fa-clipboard-check"></i> Return Details
+            </h3>
+
+            <!-- NEW SIDE-BY-SIDE LAYOUT -->
+            <div class="form-grid">
+                <!-- Return Date -->
+                <div class="form-group">
+                    <label class="form-label" for="return_date">
+                        <i class="fas fa-calendar-alt"></i> Return Date *
+                    </label>
+                    <input type="date" 
+                           class="form-control" 
+                           id="return_date" 
+                           name="return_date" 
+                           value="{{ today|date:'Y-m-d' }}" 
+                           required>
+                </div>
+
+                <!-- Stock Update -->
+                <div class="form-group">
+                    <label class="form-label" for="stock">
+                        <i class="fas fa-boxes"></i> Stock Quantity *
+                    </label>
+                    <input type="number" 
+                           class="form-control" 
+                           id="stock" 
+                           name="stock" 
+                           value="{{ item.stock }}" 
+                           min="0" 
+                           required>
+                    <small class="text-muted">Update the stock quantity after return</small>
+                </div>
+
+                <!-- Return Images and Notes Side by Side -->
+                <div class="form-grid-full">
+                    <div class="images-notes-grid">
+                        <!-- Return Images -->
+                        <div class="form-group">
+                            <label class="form-label" for="return_images">
+                                <i class="fas fa-camera"></i> Return Condition Images
+                            </label>
+                            <input type="file" 
+                                   class="form-control file-input" 
+                                   id="return_images" 
+                                   name="return_images" 
+                                   multiple 
+                                   accept="image/*">
+                            <small class="text-muted">Upload images showing the condition of the item upon return</small>
+                            
+                            <!-- Image preview container -->
+                            <div class="image-preview" id="imagePreview"></div>
+                        </div>
+
+                        <!-- Return Notes -->
+                        <div class="form-group">
+                            <label class="form-label" for="return_notes">
+                                <i class="fas fa-sticky-note"></i> Return Notes
+                            </label>
+                            <textarea class="form-control" 
+                                      id="return_notes" 
+                                      name="return_notes" 
+                                      placeholder="Add any notes about the return condition"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-check-circle"></i> Confirm Return to Stock
+            </button>
+            <a href="{% url 'item_list' %}" class="btn btn-secondary">
+                <i class="fas fa-times"></i> Cancel
+            </a>
+        </div>
+    </form>
+</div>
+
+<script>
+    // Set maximum date for return date to today
+    document.addEventListener('DOMContentLoaded', function() {
+        const returnDateInput = document.getElementById('return_date');
+        const today = new Date().toISOString().split('T')[0];
+        returnDateInput.max = today;
+
+        // Image preview functionality
+        const imageInput = document.getElementById('return_images');
+        const imagePreview = document.getElementById('imagePreview');
+
+        imageInput.addEventListener('change', function() {
+            imagePreview.innerHTML = '';
+            
+            if (this.files) {
+                Array.from(this.files).forEach(file => {
+                    if (file.type.startsWith('image/')) {
+                        const reader = new FileReader();
+                        
+                        reader.onload = function(e) {
+                            const previewItem = document.createElement('div');
+                            previewItem.className = 'image-preview-item';
+                            
+                            const img = document.createElement('img');
+                            img.src = e.target.result;
+                            img.alt = 'Preview';
+                            
+                            const removeBtn = document.createElement('button');
+                            removeBtn.type = 'button';
+                            removeBtn.className = 'remove-image';
+                            removeBtn.innerHTML = '×';
+                            removeBtn.onclick = function() {
+                                previewItem.remove();
+                                // Create a new FileList without the removed file
+                                const dt = new DataTransfer();
+                                Array.from(imageInput.files).forEach(f => {
+                                    if (f !== file) {
+                                        dt.items.add(f);
+                                    }
+                                });
+                                imageInput.files = dt.files;
+                            };
+                            
+                            previewItem.appendChild(img);
+                            previewItem.appendChild(removeBtn);
+                            imagePreview.appendChild(previewItem);
+                        };
+                        
+                        reader.readAsDataURL(file);
+                    }
+                });
+            }
+        });
+    });
+
+    // Form submission confirmation
+    document.querySelector('form').addEventListener('submit', function(e) {
+        if (!confirm('Are you sure you want to return this item to stock? This will clear the customer information.')) {
+            e.preventDefault();
+        }
+    });
+</script>
+{% endblock %}

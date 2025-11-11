@@ -1,0 +1,777 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Item Master{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+    <div class="page-header">
+        <h1 class="page-title">Item Master</h1>
+        <a href="{% url 'purchase_order:item_add' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Add Item
+        </a>
+    </div>
+
+    <!-- Search & Department Filter Section -->
+    <div class="search-section" style="display:flex; gap:10px; flex-wrap:wrap;">
+        <!-- Search Box -->
+        <div class="search-box" style="flex:1;">
+            <i class="fas fa-search"></i>
+            <input 
+                type="text" 
+                id="searchInput"
+                placeholder="Search by item name, description, or HSN code..." 
+                class="search-input"
+            >
+        </div>
+
+        <!-- Department Filter -->
+        <div class="filter-box">
+            <form method="get" id="departmentFilterForm">
+                <select 
+                    name="department" 
+                    id="departmentSelect" 
+                    class="filter-select"
+                    onchange="document.getElementById('departmentFilterForm').submit()"
+                >
+                    <option value="all">All Departments</option>
+                    {% for dept in departments %}
+                        <option value="{{ dept.id }}" {% if selected_department|default:'all' == dept.id|stringformat:"s" %}selected{% endif %}>
+                            {{ dept.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </form>
+        </div>
+    </div>
+
+    <!-- Items Table -->
+    <div class="table-container">
+        {% if items %}
+        <div class="table-scroll">
+            <table class="data-table" id="itemTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>ITEM NAME</th>
+                        <th>TAX %</th>
+                        <th>DEPARTMENT</th>
+                        <th>SECTION</th>
+                        <th class="amount">MRP</th>
+                        <th class="amount">PURCHASE PRICE</th>
+                        <th class="amount">COST</th>
+                        <th class="hsn-code">HSN CODE</th>
+                        <th>STATUS</th>
+                        <th class="actions">ACTIONS</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                    <tr>
+                        <td><span class="id-badge">{{ forloop.counter }}</span></td>
+                        <td>
+                            <div class="item-info">
+                                <div class="item-name">{{ item.name }}</div>
+                                <div class="item-unit">{{ item.unit_of_measure }}</div>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="tax-badge">{{ item.tax_percentage }}%</span>
+                        </td>
+                        <td>
+                            {% if item.department %}
+                                <span class="dept-badge">{{ item.department.name }}</span>
+                            {% else %}
+                                <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="section-badge section-{{ item.section|lower }}">
+                                {{ item.get_section_display }}
+                            </span>
+                        </td>
+                        <td class="amount">₹{{ item.mrp|floatformat:2 }}</td>
+                        <td class="amount">₹{{ item.purchase_price|floatformat:2 }}</td>
+                        <td class="amount">₹{{ item.cost|floatformat:2 }}</td>
+                        <td>
+                            <span class="hsn-code">{{ item.hsn_code|default:"-" }}</span>
+                        </td>
+                        <td>
+                            {% if item.is_active %}
+                                <span class="badge badge-success">Active</span>
+                            {% else %}
+                                <span class="badge badge-danger">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="action-buttons">
+                                <a href="{% url 'purchase_order:item_edit' item.pk %}" 
+                                   class="btn-icon btn-edit" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <button type="button" 
+                                        class="btn-icon btn-delete" 
+                                        title="Delete"
+                                        onclick="confirmDelete({{ item.id }}, '{{ item.name|escapejs }}')">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="no-data">
+            <i class="fas fa-box-open"></i>
+            <p>No items found</p>
+            <a href="{% url 'purchase_order:item_add' %}" class="btn btn-primary">Add First Item</a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Updated Modern Pagination -->
+    {% if items.has_other_pages %}
+    <div class="pagination-wrapper">
+        <ul class="modern-pagination">
+            {% if items.has_previous %}
+                <li>
+                    <a href="?page={{ items.previous_page_number }}{% if selected_department %}&department={{ selected_department }}{% endif %}">«</a>
+                </li>
+            {% else %}
+                <li class="disabled"><span>«</span></li>
+            {% endif %}
+
+            {% for num in items.paginator.page_range %}
+                {% if items.number == num %}
+                    <li class="active"><span>{{ num }}</span></li>
+                {% elif num > items.number|add:'-3' and num < items.number|add:'3' %}
+                    <li><a href="?page={{ num }}{% if selected_department %}&department={{ selected_department }}{% endif %}">{{ num }}</a></li>
+                {% endif %}
+            {% endfor %}
+
+            {% if items.has_next %}
+                <li>
+                    <a href="?page={{ items.next_page_number }}{% if selected_department %}&department={{ selected_department }}{% endif %}">»</a>
+                </li>
+            {% else %}
+                <li class="disabled"><span>»</span></li>
+            {% endif %}
+        </ul>
+    </div>
+    {% endif %}
+        
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <i class="fas fa-exclamation-triangle"></i>
+            <h2>Confirm Delete</h2>
+        </div>
+        <div class="modal-body">
+            <p>Are you sure you want to delete <strong id="itemName"></strong>?</p>
+            <p class="warning-text">This action cannot be undone.</p>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+            <form id="deleteForm" method="POST" style="display: inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger">
+                    <i class="fas fa-trash-alt"></i> Delete
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.content-wrapper {
+    padding: 20px;
+    max-width: 100%;
+    margin: 0 auto;
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.page-title {
+    font-size: 28px;
+    font-weight: 600;
+    color: #2c3e50;
+    margin: 0;
+}
+
+.btn {
+    padding: 10px 20px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-primary {
+    background: #3498db;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #2980b9;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+}
+
+.btn-secondary {
+    background: #95a5a6;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #7f8c8d;
+}
+
+.btn-danger {
+    background: #e74c3c;
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #c0392b;
+}
+
+.search-section {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+
+.search-box {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #f8f9fa;
+    padding: 12px 20px;
+    border-radius: 8px;
+    border: 2px solid #e9ecef;
+}
+
+.search-box i {
+    color: #7f8c8d;
+}
+
+.search-input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-size: 15px;
+    outline: none;
+    color: #2c3e50;
+}
+
+.table-container {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.table-scroll {
+    overflow-x: auto;
+    overflow-y: visible;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    min-width: 1400px;
+}
+
+.data-table thead {
+    background: #34495e;
+    color: white;
+}
+
+.data-table th {
+    padding: 15px 8px;
+    text-align: center !important;
+    vertical-align: middle;
+    font-weight: 600;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+}
+
+/* RESPONSIVE COLUMN WIDTHS */
+.data-table th:nth-child(1), .data-table td:nth-child(1) { width: 5%; text-align: center !important; }
+.data-table th:nth-child(2), .data-table td:nth-child(2) { width: 13%; text-align: left !important; }
+.data-table th:nth-child(3), .data-table td:nth-child(3) { width: 7%; text-align: center !important; }
+.data-table th:nth-child(4), .data-table td:nth-child(4) { width: 10%; text-align: center !important; }
+.data-table th:nth-child(5), .data-table td:nth-child(5) { width: 10%; text-align: center !important; }
+.data-table th:nth-child(6), .data-table td:nth-child(6) { width: 9%; text-align: right !important; }
+.data-table th:nth-child(7), .data-table td:nth-child(7) { width: 11%; text-align: right !important; }
+.data-table th:nth-child(8), .data-table td:nth-child(8) { width: 9%; text-align: right !important; }
+.data-table th:nth-child(9), .data-table td:nth-child(9) { width: 9%; text-align: center !important; }
+.data-table th:nth-child(10), .data-table td:nth-child(10) { width: 8%; text-align: center !important; }
+.data-table th:nth-child(11), .data-table td:nth-child(11) { width: 9%; text-align: center !important; }
+
+.data-table tbody tr {
+    border-bottom: 1px solid #ecf0f1;
+    transition: all 0.3s ease;
+}
+
+.data-table tbody tr:hover {
+    background: #f8f9fa;
+}
+
+.data-table td {
+    padding: 12px 8px;
+    color: #2c3e50;
+    vertical-align: middle;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.id-badge {
+    background: #ecf0f1;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 11px;
+    color: #555;
+    display: inline-block;
+}
+
+.item-info {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    overflow: hidden;
+}
+
+.item-name {
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.item-unit {
+    font-size: 10px;
+    color: #7f8c8d;
+    text-transform: uppercase;
+}
+
+.tax-badge {
+    background: #e8f5e9;
+    color: #2e7d32;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 11px;
+    display: inline-block;
+}
+
+.dept-badge {
+    background: #e3f2fd;
+    color: #1565c0;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 11px;
+    display: inline-block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+/* Section Badge Styles */
+.section-badge {
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 11px;
+    display: inline-block;
+    white-space: nowrap;
+    text-transform: uppercase;
+}
+
+.section-general {
+    background: #fff3e0;
+    color: #e65100;
+}
+
+.section-service {
+    background: #f3e5f5;
+    color: #6a1b9a;
+}
+
+.section-software {
+    background: #e1f5fe;
+    color: #01579b;
+}
+
+td.amount {
+    font-weight: 600;
+    color: #000000;
+    font-size: 13px;
+    white-space: nowrap;
+    padding-right: 12px !important;
+}
+
+td .hsn-code {
+    font-family: 'Courier New', monospace;
+    color: #7f8c8d;
+    font-size: 12px;
+    font-weight: bold;
+    display: block;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.badge {
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 11px;
+    display: inline-block;
+}
+
+.badge-success {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.badge-danger {
+    background: #ffebee;
+    color: #c62828;
+}
+
+td .action-buttons {
+    display: flex;
+    gap: 5px;
+    justify-content: center;
+    align-items: center;
+}
+
+.btn-icon {
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 5px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.btn-edit {
+    background: #3498db;
+    color: white;
+}
+
+.btn-edit:hover {
+    background: #2980b9;
+    transform: scale(1.1);
+}
+
+.btn-delete {
+    background: #e74c3c;
+    color: white;
+}
+
+.btn-delete:hover {
+    background: #c0392b;
+    transform: scale(1.1);
+}
+
+.no-data {
+    text-align: center;
+    padding: 60px 20px;
+    color: #7f8c8d;
+}
+
+.no-data i {
+    font-size: 64px;
+    margin-bottom: 20px;
+    opacity: 0.3;
+}
+
+.no-data p {
+    font-size: 18px;
+    margin-bottom: 20px;
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    animation: fadeIn 0.3s;
+}
+
+.modal-content {
+    background-color: white;
+    margin: 10% auto;
+    padding: 0;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    animation: slideIn 0.3s;
+}
+
+.modal-header {
+    padding: 25px 30px;
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    color: white;
+    border-radius: 12px 12px 0 0;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.modal-header i {
+    font-size: 28px;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 600;
+}
+
+.modal-body {
+    padding: 30px;
+}
+
+.modal-body p {
+    margin: 0 0 15px 0;
+    font-size: 16px;
+    color: #2c3e50;
+}
+
+.modal-body strong {
+    color: #e74c3c;
+}
+
+.warning-text {
+    color: #7f8c8d;
+    font-size: 14px;
+    font-style: italic;
+}
+
+.modal-footer {
+    padding: 20px 30px;
+    background: #f8f9fa;
+    border-radius: 0 0 12px 12px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateY(-50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.pagination-wrapper {
+    display: flex;
+    justify-content: center;
+    margin: 30px 0;
+}
+
+.modern-pagination {
+    display: flex;
+    list-style: none;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    padding: 0;
+}
+
+.modern-pagination li {
+    margin: 0;
+}
+
+.modern-pagination a,
+.modern-pagination span {
+    display: block;
+    padding: 10px 18px;
+    text-decoration: none;
+    color: #34495e;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.modern-pagination a:hover {
+    background: #3498db;
+    color: #fff;
+}
+
+.modern-pagination .active span {
+    background: #3498db;
+    color: #fff;
+    font-weight: 600;
+}
+
+.modern-pagination .disabled span {
+    color: #aaa;
+    cursor: not-allowed;
+    background: #f4f4f4;
+}
+
+.filter-box {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.filter-select {
+    padding: 10px 15px;
+    border: 2px solid #e9ecef;
+    border-radius: 6px;
+    font-size: 14px;
+    background: white;
+    cursor: pointer;
+    min-width: 200px;
+}
+
+.filter-select:focus {
+    outline: none;
+    border-color: #3498db;
+}
+
+@media (max-width: 1400px) {
+    .data-table th,
+    .data-table td {
+        padding: 10px 6px;
+        font-size: 10px;
+    }
+    
+    .item-name {
+        font-size: 12px;
+    }
+    
+    td.amount {
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 768px) {
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+
+    .search-section {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .search-box {
+        min-width: 100%;
+    }
+    
+    .filter-box {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .filter-select {
+        width: 100%;
+    }
+
+    .modal-content {
+        width: 95%;
+        margin: 20% auto;
+    }
+}
+</style>
+
+<script>
+// Real-time search functionality
+document.getElementById('searchInput').addEventListener('keyup', function() {
+    const searchValue = this.value.toLowerCase();
+    const table = document.getElementById('itemTable');
+    const rows = table.getElementsByTagName('tr');
+
+    for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(searchValue) ? '' : 'none';
+    }
+});
+
+// Delete confirmation modal
+function confirmDelete(itemId, itemName) {
+    const modal = document.getElementById('deleteModal');
+    const deleteForm = document.getElementById('deleteForm');
+    const itemNameElement = document.getElementById('itemName');
+    
+    itemNameElement.textContent = itemName;
+    deleteForm.action = "{% url 'purchase_order:item_delete' 0 %}".replace('0', itemId);
+    modal.style.display = 'block';
+}
+
+function closeModal() {
+    const modal = document.getElementById('deleteModal');
+    modal.style.display = 'none';
+}
+
+window.onclick = function(event) {
+    const modal = document.getElementById('deleteModal');
+    if (event.target === modal) {
+        closeModal();
+    }
+}
+
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        closeModal();
+    }
+});
+</script>
+{% endblock %}

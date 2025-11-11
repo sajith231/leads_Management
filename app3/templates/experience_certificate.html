@@ -1,0 +1,203 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Experience Certificate</title>
+
+  <!-- FontAwesome & HTML2PDF -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+  <style>
+    body {
+      margin: 0;
+      padding: 40px 0;
+      background-color: #f4f4f4;
+      font-family: Arial, sans-serif;
+    }
+
+    .wrapper {
+      display: flex;
+      justify-content: center;
+    }
+
+    .certificate-container {
+      width: 210mm;
+      min-height: 297mm;
+      background-color: #fff;
+      padding: 25mm;
+      margin: 0 auto;
+      box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
+      box-sizing: border-box;
+      position: relative;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 3px solid rgba(0, 0, 0, 0.559);
+      padding-bottom: 10px;
+      margin-bottom: 2cm;
+    }
+
+    .logo img {
+      max-width: 110px;
+      object-fit: contain;
+    }
+
+    .company-info h1 {
+      font-size: 18px;
+      margin: 0;
+      text-align: left;
+    }
+
+    .company-info p {
+      font-size: 14px;
+      margin: 4% 0 0;
+      color: #333;
+      text-align: left;
+    }
+
+    .date {
+      text-align: right;
+      font-size: 14px;
+      margin-bottom: 1cm;
+    }
+
+    h1.title {
+      font-size: 20px;
+      text-align: center;
+      margin-bottom: 1cm;
+      text-decoration: underline;
+    }
+
+    .main-text {
+      font-size: 18px;
+      line-height: 25px;
+      margin-bottom: 1cm;
+      text-align: justify;
+    }
+
+    .signature {
+      text-align: right;
+      margin-top: 2cm;
+    }
+
+    .signature p {
+      margin: 5px 0;
+      font-size: 14px;
+    }
+
+    .download-button {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      padding: 10px 20px;
+      background-color: #007bff;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    .download-button:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="certificate-container" id="certificate">
+      <!-- Header -->
+      <div class="header">
+        <!-- <div class="logo">
+          <img src="{% static 'images/imclogo2.png' %}" alt="Logo" class="img-fluid">
+        </div> -->
+        <div class="company-info">
+          <h1>IMCB SOLUTIONS LLP</h1>
+          <p><i class="fa fa-map-marker"></i> Palakkunnummal Building, Kalpetta, Wayanad-673121</p>
+          <p><i class="fa fa-phone"></i> 7593820007, 7593820005, 7306197537</p>
+          <p>
+            <i class="fa fa-globe"></i> www.imcbs.com
+            <span style="margin-left: 2%;"><i class="fa fa-envelope"></i> info@imcbs.com</span><br>
+           <div style="margin-top: 4%;"><div>GST NO : 32AALFI5227N1Z4</div>
+           <div>TAN NO : CHN104318G</div></div>
+          </p>
+        </div>
+      </div>
+
+      <!-- Body -->
+      <div class="content">
+        <p class="date">Date: {{ certificate_date }}</p>
+        <h1 class="title">TO WHOMSOEVER IT MAY CONCERN</h1>
+
+        <p class="main-text">
+          This is to certify that Mr/Ms. {{ employee.name }}, {{ employee.address }}, worked as a {{ employee.job_title }} at IMCB SOLUTIONS LLP from {{ experience_certificate.start_date|date:"d-m-Y" }} to {{ experience_certificate.end_date|date:"d-m-Y" }}.
+        </p>
+
+        <p class="main-text">
+          It was noted that Mr/Ms. {{ employee.name }} is capable of taking up any level of responsibility with the right sense of attitude and seriousness required for the job. His/Her level of dedication and sincerity towards his/her work were found to be good.
+        </p>
+
+        <p class="main-text">
+          He/She is leaving our organization on his/her own account. We wish all success in his/her future career.
+        </p>
+
+        <!-- Signature -->
+        <div class="signature">
+          <p>For IMCB SOLUTIONS LLP</p>
+          <p style="margin-top: 25px;">Arun Kumar KN</p>
+          <p>Chief executive officer</p>
+    
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Download Button -->
+  <button class="download-button" onclick="downloadAsPDF()">Download as PDF</button>
+
+  <script>
+  function downloadAsPDF() {
+    const element = document.getElementById("certificate");
+
+    const opt = {
+      margin: 0,
+      filename: "Experience_Certificate.pdf",
+      image: { type: "jpeg", quality: 1 },
+      html2canvas: {
+        scale: 2,
+        useCORS: true,
+        scrollX: 0,
+        scrollY: 0,
+      },
+      jsPDF: {
+        unit: "mm",
+        format: "a4",
+        orientation: "portrait",
+      },
+    };
+
+    html2pdf()
+      .set(opt)
+      .from(element)
+      .toPdf()
+      .get("pdf")
+      .then(function (pdf) {
+        const totalPages = pdf.internal.getNumberOfPages();
+        for (let i = 1; i <= totalPages; i++) {
+          pdf.setPage(i);
+          pdf.internal.pageSize.width = 210; // fit exactly A4 width
+          pdf.internal.pageSize.height = 297; // fit exactly A4 height
+        }
+        pdf.save("Experience_Certificate.pdf");
+      });
+  }
+</script>
+
+</body>
+</html>

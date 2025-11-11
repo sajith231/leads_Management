@@ -1,0 +1,1182 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<style>
+    /* Filter Styles */
+    body {
+        background-color: black;
+    }
+    .filter-container {
+        margin-bottom: 10px;
+        background-color: black;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    .filter-form {
+        width: 100%;
+    }
+
+    .filter-row {
+        display: flex;
+        gap: 15px;
+        align-items: flex-end;
+    }
+
+    .filter-group {
+        flex: 1;
+    }
+
+    .filter-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 500;
+        color: #495057;
+        font-size: 0.9rem;
+    }
+
+    .filter-select {
+        width: 100%;
+        padding: 10px 15px;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        font-size: 0.95rem;
+        background-color: #fff;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23495057' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 10px center;
+        background-size: 16px;
+        cursor: pointer;
+    }
+
+    .reset-btn {
+        display: inline-block;
+        padding: 10px 15px;
+        background-color: #f8f9fa;
+        color: #495057;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        text-decoration: none;
+        font-size: 0.9rem;
+        transition: all 0.2s;
+    }
+
+    .reset-btn:hover {
+        background-color: #e9ecef;
+    }
+
+    .search-container {
+        margin-right: 15px;
+    }
+
+    .search-input {
+        padding: 10px;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        font-size: 0.95rem;
+        width: 300px;
+        transition: width 0.3s ease;
+    }
+
+    .search-input:focus {
+        width: 400px;
+    }
+
+    /* Main Container Styles */
+    .information-center {
+        width: 100%;
+        padding: 20px 0;
+        background-color: black;
+    }
+
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 15px;
+    }
+
+    /* Header Styles */
+    .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .title {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #212529;
+        margin: 0;
+    }
+
+    .add-btn {
+        display: flex;
+        align-items: center;
+        background-color: #007bff;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 4px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: background-color 0.2s;
+        margin-right: 10px;
+    }
+
+    .add-btn:hover {
+        background-color: #0069d9;
+    }
+
+    .add-btn .icon {
+        margin-right: 8px;
+    }
+
+    /* Category Section Styles */
+    .category-section {
+        margin-bottom: 40px;
+        background-color: black;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        overflow: hidden;
+    }
+
+    .category-header {
+        background: linear-gradient(135deg, red 0%, rgb(83, 0, 0) 100%);
+        color: white;
+        padding: 10px 15px;
+        border-bottom: 3px solid rgba(255, 255, 255, 0.1);
+    }
+    .whatsnew-header{
+        background: linear-gradient(135deg, rgb(0, 170, 255) 0%, rgb(0, 120, 212) 100%);
+        color: white;
+        padding: 10px 15px;
+        border-bottom: 3px solid rgba(255, 255, 255, 0.1);
+
+    }
+
+    .category-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin: 0;
+        display: flex;
+        align-items: center;
+    }
+
+    .category-icon {
+        margin-right: 10px;
+        width: 24px;
+        height: 24px;
+    }
+
+    /* Gallery Styles */
+    .gallery-container {
+        position: relative;
+        padding: 20px 0;
+    }
+
+    .gallery-wrapper {
+        overflow-x: auto;
+        scroll-behavior: smooth;
+        white-space: nowrap;
+        padding: 0 20px;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .gallery-track {
+        display: inline-flex;
+        transition: transform 0.3s ease;
+        gap: 20px;
+    }
+
+    .gallery-item {
+        width: 300px;
+        background: linear-gradient(red, rgb(128, 0, 0));
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s, box-shadow 0.2s;
+        margin: 1% 0;
+        display: inline-block;
+        vertical-align: top;
+        white-space: normal;
+    }
+    .whats-new-gallery{
+        width: 300px;
+        background: linear-gradient(#007bff, #007bff);
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s, box-shadow 0.2s;
+        margin: 1% 0;
+        display: inline-block;
+        vertical-align: top;
+        white-space: normal;
+
+    }
+
+    .gallery-item:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    .thumbnail-container {
+        position: relative;
+        height: 160px;
+        overflow: hidden;
+    }
+
+    .thumbnail-link {
+        display: block;
+        width: 100%;
+        height: 100%;
+    }
+
+    .thumbnail {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s;
+    }
+
+    .gallery-item:hover .thumbnail {
+        transform: scale(1.1);
+    }
+
+    .play-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.4);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+
+    .gallery-item:hover .play-overlay {
+        opacity: 1;
+    }
+
+    .play-icon {
+        color: white;
+        filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+    }
+
+    .item-content {
+        padding: 15px;
+    }
+
+    .item-title {
+        font-size: 20px;
+        font-weight: 600;
+        color: white;
+        margin: 0 0 8px 0;
+        line-height: 1.4;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .item-remark {
+        color: white;
+        font-size: 0.875rem;
+        margin: 0 0 12px 0;
+        line-height: 1.5;
+    }
+
+    .description.clamp {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .description {
+        white-space: normal;
+        overflow: visible;
+    }
+
+    .more-btn {
+        background-color: red;
+        color: white;
+        border: none;
+        padding: 4px 8px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.75rem;
+        transition: background-color 0.2s ease;
+        margin-top: 5px;
+    }
+
+    .more-btn:hover {
+        background-color: rgb(75, 1, 1);
+    }
+
+    .item-meta {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        color: white;
+        font-size: 0.75rem;
+    }
+
+    .item-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .action-btn {
+        background: none;
+        border: none;
+        padding: 4px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 4px;
+        transition: background-color 0.2s;
+    }
+
+    .action-btn:hover {
+        background-color: #f1f3f5;
+    }
+
+    .action-btn.edit {
+        color: #007bff;
+        background-color: whitesmoke;
+    }
+
+    .action-btn.delete {
+        color: #dc3545;
+        background-color: whitesmoke;
+    }
+
+    /* Navigation Buttons */
+    .nav-btn {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        background-color: rgba(255, 255, 255, 0.9);
+        border: none;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        transition: all 0.2s;
+        z-index: 10;
+    }
+
+    .nav-btn:hover {
+        background-color: white;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .nav-btn.prev {
+        left: 0;
+    }
+
+    .nav-btn.next {
+        right: 0;
+    }
+
+    .nav-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .nav-btn svg {
+        width: 18px;
+        height: 18px;
+        color: #495057;
+    }
+
+    /* No Items Message */
+    .no-items {
+        text-align: center;
+        padding: 60px 20px;
+        color: #6c757d;
+    }
+
+    .no-items h3 {
+        font-size: 1.25rem;
+        margin-bottom: 10px;
+        color: #495057;
+    }
+
+    .no-items p {
+        font-size: 1rem;
+        margin: 0;
+    }
+
+    /* Modal Styles */
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .modal-content {
+        background-color: white;
+        padding: 25px;
+        border-radius: 8px;
+        width: 90%;
+        max-width: 400px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    .modal-content h3 {
+        margin-top: 0;
+        color: #343a40;
+    }
+
+    .modal-content p {
+        margin-bottom: 20px;
+        color: #6c757d;
+    }
+
+    .modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+
+    .btn-secondary {
+        background-color: #f8f9fa;
+        color: #495057;
+        border: 1px solid #ced4da;
+        padding: 8px 16px;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+    .btn-secondary:hover {
+        background-color: #e9ecef;
+    }
+
+    .btn-danger {
+        background-color: #dc3545;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+    .btn-danger:hover {
+        background-color: #c82333;
+    }
+    .additional-info {
+    color: white;             /* text color */
+    font-size: 15px;
+    font-weight: 500;
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;          /* allow wrapping on small screens */
+    padding: 5px 0px;         /* optional padding for better spacing */
+    margin: 5px;              /* optional margin for better spacing */
+    white-space: normal;      /* allow text to wrap */
+}
+
+.additional-info p {
+    margin: 0;                /* remove default margin */
+    white-space: normal;      /* allow text to wrap */
+    background-color: rgba(255, 255, 255, 0.193);
+    padding: 5px;             /* keep individual items in one line */
+    border-radius: 100px;
+    flex: 1 1 auto;           /* allow paragraphs to grow and shrink */
+}
+
+
+    /* Responsive Styles */
+    @media (max-width: 768px) {
+        .filter-row {
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .filter-group {
+            width: 100%;
+        }
+
+        .search-input {
+            width: 100%;
+        }
+
+        .search-input:focus {
+            width: 100%;
+        }
+
+        .header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 15px;
+            padding-top: 10%;
+        }
+
+        .gallery-item {
+            min-width: 240px;
+        }
+
+        .nav-btn {
+            width: 35px;
+            height: 35px;
+        }
+
+        .nav-btn.prev {
+            left: 0;
+        }
+
+        .nav-btn.next {
+            right: 0;
+        }
+
+        .category-header {
+            padding: 15px 20px;
+        }
+
+        .product-type-section {
+            padding: 20px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .gallery-item {
+            min-width: 200px;
+        }
+
+        .thumbnail-container {
+            height: 120px;
+        }
+        
+    }
+</style>
+<style>
+    .explore-button-container {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        margin-left: auto;
+        padding-left: 20px;
+    }
+
+    .explore-btn {
+        background: linear-gradient(rgb(61, 1, 1), rgb(122, 5, 5));
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        text-decoration: none;
+        white-space: nowrap;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+    }
+
+    .explore-btn:hover {
+        background: linear-gradient(rgb(82, 2, 2), rgb(143, 6, 6));
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Mobile Responsive Styles */
+    @media (max-width: 768px) {
+        .category-title {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 15px;
+        }
+
+        .explore-button-container {
+            width: 100%;
+            justify-content: center;
+            padding-left: 0;
+            margin-left: 0;
+        }
+
+        .explore-btn {
+            width: 100%;
+            text-align: center;
+            padding: 12px 20px;
+            font-size: 1rem;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .explore-btn {
+            padding: 10px 15px;
+            font-size: 0.9rem;
+        }
+    }
+</style>
+<div class="header" style="margin-top: 3.5%; display: flex;">
+    {% if request.user.is_superuser or 'product_type_list' in request.session.allowed_menus %}
+    <a href="{% url 'product_type_list' %}" class="add-btn" style="background:linear-gradient(red,rgb(128, 0, 0))">
+        Product Type
+    </a>
+    {% endif %}
+    <h1 class="title" style="color: white;">IMC CONNECT</h1>
+    {% if request.user.is_superuser or 'product_category_list' in request.session.allowed_menus %}
+    <a href="{% url 'product_category_list' %}" class="add-btn" style="background:linear-gradient(red,rgb(128, 0, 0))">
+        Category
+    </a>
+    {% endif %}
+</div>
+
+<!-- Filter Section -->
+<div class="filter-container">
+    <form method="get" class="filter-form">
+        <div class="filter-row">
+            <div class="filter-group">
+                <label for="product_type" style="color: white;">Product Type</label>
+                <select id="product_type" name="product_type" class="filter-select" onchange="this.form.submit()">
+                    <option value="">All Types</option>
+                    {% for type in product_types %}
+                    <option value="{{ type.id }}" {% if request.GET.product_type == type.id|stringformat:"s" %}selected{% endif %}>
+                        {{ type.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label for="product_category" style="color: white;">Product Category</label>
+                <select id="product_category" name="product_category" class="filter-select" onchange="this.form.submit()">
+                    <option value="">All Categories</option>
+                    {% for category in product_categories %}
+                    <option value="{{ category.id }}" {% if request.GET.product_category == category.id|stringformat:"s" %}selected{% endif %}>
+                        {{ category.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="search-container">
+                <input type="text" id="search-title" class="search-input" placeholder="Search by title..." value="{{ request.GET.search }}">
+            </div>
+            
+            <div class="filter-group">
+                <a href="{% url 'information_center' %}" class="reset-btn">Reset Filters</a>
+            </div>
+            {% if request.user.is_superuser or 'add_information_center' in request.session.allowed_menus %}
+            <a href="{% url 'add_information_center' %}" class="add-btn" style="background:linear-gradient(red,rgb(128, 0, 0))">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                Add New
+            </a>
+            {% endif %}
+            {% if request.user.is_superuser or 'product_type_list' in request.session.allowed_menus %}
+    <a href="{% url 'information_center_table' %}" class="add-btn" style="background:linear-gradient(red,rgb(128, 0, 0))">
+        All Videos List
+    </a>
+    {% endif %}
+        </div>
+    </form>
+</div>
+
+<div class="information-center">
+    <div class="container-fluid">
+        <div class="header">
+        </div>
+
+        <!-- What's New Section -->
+<div class="category-section">
+    <div class="whatsnew-header">
+        <h2 class="category-title">
+            <svg class="category-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+            </svg>
+            <span>What's New</span>
+        </h2>
+    </div>
+    
+    <div class="gallery-container" data-gallery="whats-new-gallery">
+        <button class="nav-btn prev" onclick="moveGallery('whats-new-gallery', -1)">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+        </button>
+        
+        <div class="gallery-wrapper">
+            <div class="gallery-track" id="whats-new-gallery">
+                {% for item in whats_new_items %}
+                <div class="whats-new-gallery" >
+                    <div class="thumbnail-container"> 
+                        <a href="{{ item.url }}" target="_blank" class="thumbnail-link">
+                            {% if item.thumbnail %}
+                                <img src="{{ item.thumbnail.url }}" alt="{{ item.title }}" class="thumbnail">
+                            {% else %}
+                                <img src="{% static 'default-thumbnail.jpg' %}" alt="No Thumbnail" class="thumbnail">
+                            {% endif %}
+                            <div class="play-overlay">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="play-icon">
+                                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                                </svg>
+                            </div>
+                        </a>
+                    </div>
+                    
+                    <div class="item-content" style="background-color: #007bff;">
+                        <h4 class="item-title">{{ item.title }}</h4>
+                        <div class="item-remark">
+                            <p class="description" data-full="{{ item.remark }}">{{ item.remark|truncatewords:8 }}</p>
+                            {% if item.remark|wordcount > 8 %}
+                            <button class="more-btn" onclick="toggleDescription(this)">More</button>
+                            {% endif %}
+                        </div>
+                        <div class="additional-info">
+                            <p style> {{ item.language }}</p>
+                            <p> {{ item.duration }}</p>
+                            <p>{{ item.host }}</p>
+                        </div>
+                        <div class="item-meta">
+                            <span class="date">{{ item.added_date|date:"M d" }}</span>
+                            <div class="item-actions">
+                                {% if request.user.is_superuser or 'edit_information_center' in request.session.allowed_menus %}
+                                <a href="{% url 'edit_information_center' item.id %}" class="action-btn edit">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                    </svg>
+                                </a>
+                                {% endif %}
+                                {% if request.user.is_superuser or 'delete_information_center' in request.session.allowed_menus %}
+                                <button class="action-btn delete" onclick="openDeleteModal({{ item.id }})">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="3 6 5 6 21 6"></polyline>
+                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                        <line x1="10" y1="11" x2="10" y2="17"></line>
+                                        <line x1="14" y1="11" x2="14" y2="17"></line>
+                                    </svg>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <button class="nav-btn next" onclick="moveGallery('whats-new-gallery', 1)">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+        </button>
+    </div>
+</div>
+        
+        <!-- Categorized Content -->
+        <!-- information_center.html -->
+{% regroup information_items by product_category as category_list %}
+{% if category_list %}
+    {% for category_group in category_list %}
+        <div class="category-section">
+            <div class="category-header">
+                <h2 class="category-title">
+                    <svg class="category-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                    </svg>
+                    <span>{{ category_group.grouper.name|default:"Uncategorized" }}</span>
+                    <div class="explore-button-container">
+                        <a href="{% url 'category_detail' category_group.grouper.id %}" class="explore-btn">
+                            Explore More
+                        </a>
+                    </div>
+                </h2>
+            </div>
+            
+            <div class="gallery-container" data-gallery="gallery-{{ category_group.grouper.id }}">
+                <button class="nav-btn prev" onclick="moveGallery('gallery-{{ category_group.grouper.id }}', -1)">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
+                </button>
+                
+                <div class="gallery-wrapper">
+                    <div class="gallery-track" id="gallery-{{ category_group.grouper.id }}">
+                        {% for item in category_group.list|dictsort:"position" %}
+                        <div class="gallery-item">
+                            <div class="thumbnail-container"> 
+                                <a href="{{ item.url }}" target="_blank" class="thumbnail-link">
+                                    {% if item.thumbnail %}
+                                        <img src="{{ item.thumbnail.url }}" alt="{{ item.title }}" class="thumbnail">
+                                    {% else %}
+                                        <img src="{% static 'default-thumbnail.jpg' %}" alt="No Thumbnail" class="thumbnail">
+                                    {% endif %}
+                                    <div class="play-overlay">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="play-icon">
+                                            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                                        </svg>
+                                    </div>
+                                </a>
+                            </div>
+                            
+                            <div class="item-content">
+                                <h4 class="item-title">{{ item.title }}</h4>
+                                <div class="item-remark">
+                                    <p class="description" data-full="{{ item.remark }}">{{ item.remark|truncatewords:8 }}</p>
+                                    {% if item.remark|wordcount > 8 %}
+                                    <button class="more-btn" onclick="toggleDescription(this)">More</button>
+                                    {% endif %}
+                                </div>
+                                <div class="additional-info">
+                                    <p> {{ item.language }}</p>
+                                    <p> {{ item.duration }}</p>
+                                    <p>{{ item.host }}</p>
+                                </div>
+                                <div class="item-meta">
+                                    <span class="date">{{ item.added_date|date:"M d" }}</span>
+                                    <div class="item-actions">
+                                        {% if request.user.is_superuser or 'edit_information_center' in request.session.allowed_menus %}
+                                        <a href="{% url 'edit_information_center' item.id %}" class="action-btn edit">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                            </svg>
+                                        </a>
+                                        {% endif %}
+                                        {% if request.user.is_superuser or 'delete_information_center' in request.session.allowed_menus %}
+                                        <button class="action-btn delete" onclick="openDeleteModal({{ item.id }})">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <polyline points="3 6 5 6 21 6"></polyline>
+                                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                                <line x1="10" y1="11" x2="10" y2="17"></line>
+                                                <line x1="14" y1="11" x2="14" y2="17"></line>
+                                            </svg>
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <button class="nav-btn next" onclick="moveGallery('gallery-{{ category_group.grouper.id }}', 1)">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    {% endfor %}
+{% else %}
+    <div class="no-items">
+        <h3>No Information Items Found</h3>
+        <p>Add your first item to get started!</p>
+    </div>
+{% endif %}
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" class="modal">
+    <div class="modal-content">
+        <h3>Confirm Deletion</h3>
+        <p>Are you sure you want to delete this information item?</p>
+        <div class="modal-actions">
+            <button onclick="closeDeleteModal()" class="btn-secondary">Cancel</button>
+            <form id="deleteForm" method="post" action="{% url 'delete_information_center' 0 %}">
+                {% csrf_token %}
+                <button type="submit" class="btn-danger">Delete</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Gallery Navigation
+    const galleryPositions = {};
+
+    function moveGallery(galleryId, direction) {
+        const track = document.getElementById(galleryId);
+        const container = track.parentElement;
+        const items = track.children;
+        const itemWidth = items[0].offsetWidth + 20; // item width + gap
+        const containerWidth = container.offsetWidth;
+        const visibleItems = Math.floor(containerWidth / itemWidth);
+        const maxPosition = Math.max(0, items.length - visibleItems);
+        
+        if (!galleryPositions[galleryId]) {
+            galleryPositions[galleryId] = 0;
+        }
+        
+        galleryPositions[galleryId] += direction;
+        galleryPositions[galleryId] = Math.max(0, Math.min(galleryPositions[galleryId], maxPosition));
+        
+        const translateX = -galleryPositions[galleryId] * itemWidth;
+        track.style.transform = `translateX(${translateX}px)`;
+        
+        updateNavigationButtons(galleryId, maxPosition);
+    }
+
+    function updateNavigationButtons(galleryId, maxPosition) {
+        const container = document.querySelector(`[data-gallery="${galleryId}"]`);
+        const prevBtn = container.querySelector('.nav-btn.prev');
+        const nextBtn = container.querySelector('.nav-btn.next');
+        
+        prevBtn.disabled = galleryPositions[galleryId] <= 0;
+        nextBtn.disabled = galleryPositions[galleryId] >= maxPosition;
+    }
+
+    // Initialize navigation buttons
+    document.addEventListener('DOMContentLoaded', function() {
+        const galleries = document.querySelectorAll('[data-gallery]');
+        galleries.forEach(container => {
+            const galleryId = container.getAttribute('data-gallery');
+            const track = document.getElementById(galleryId);
+            const items = track.children;
+            const itemWidth = items[0] ? items[0].offsetWidth + 20 : 300;
+            const containerWidth = container.querySelector('.gallery-wrapper').offsetWidth;
+            const visibleItems = Math.floor(containerWidth / itemWidth);
+            const maxPosition = Math.max(0, items.length - visibleItems);
+            
+            galleryPositions[galleryId] = 0;
+            updateNavigationButtons(galleryId, maxPosition);
+        });
+    });
+
+    // Handle window resize
+    window.addEventListener('resize', function() {
+        Object.keys(galleryPositions).forEach(galleryId => {
+            galleryPositions[galleryId] = 0;
+            const track = document.getElementById(galleryId);
+            if (track) {
+                track.style.transform = 'translateX(0px)';
+                
+                const container = document.querySelector(`[data-gallery="${galleryId}"]`);
+                const items = track.children;
+                const itemWidth = items[0] ? items[0].offsetWidth + 20 : 300;
+                const containerWidth = container.querySelector('.gallery-wrapper').offsetWidth;
+                const visibleItems = Math.floor(containerWidth / itemWidth);
+                const maxPosition = Math.max(0, items.length - visibleItems);
+                
+                updateNavigationButtons(galleryId, maxPosition);
+            }
+        });
+    });
+
+    // Delete Modal Functions
+    function openDeleteModal(itemId) {
+        const modal = document.getElementById('deleteModal');
+        const form = document.getElementById('deleteForm');
+        
+        // Set the form action URL using the URL template tag
+        form.action = `{% url 'delete_information_center' 0 %}`.replace('0', itemId);
+        
+        // Show the modal
+        modal.style.display = 'flex';
+    }
+    
+    function closeDeleteModal() {
+        const modal = document.getElementById('deleteModal');
+        modal.style.display = 'none';
+    }
+    
+    // Close modal when clicking outside the content
+    window.onclick = function(event) {
+        const modal = document.getElementById('deleteModal');
+        if (event.target === modal) {
+            closeDeleteModal();
+        }
+    }
+
+    // Toggle Description Function
+    function toggleDescription(button) {
+        const descriptionEl = button.previousElementSibling;
+        const fullText = descriptionEl.getAttribute('data-full')?.trim();
+        const isExpanded = button.getAttribute('data-expanded') === 'true';
+
+        if (!fullText) return;
+
+        if (isExpanded) {
+            // Collapse
+            const words = fullText.split(/\s+/);
+            const truncated = words.slice(0, 8).join(' ') + (words.length > 8 ? '...' : '');
+            descriptionEl.textContent = truncated;
+            descriptionEl.classList.add('clamp'); // add clamp class back
+            button.textContent = 'More';
+            button.setAttribute('data-expanded', 'false');
+        } else {
+            // Expand
+            descriptionEl.textContent = fullText;
+            descriptionEl.classList.remove('clamp'); // remove line-clamping
+            button.textContent = 'Less';
+            button.setAttribute('data-expanded', 'true');
+        }
+    }
+
+    // Search functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('search-title');
+        let debounceTimer;
+
+        searchInput.addEventListener('input', function() {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(function() {
+                const searchQuery = searchInput.value.trim();
+                
+                if (searchQuery) {
+                    // Clear other filters and only search by title
+                    const url = new URL(window.location.origin + window.location.pathname);
+                    url.searchParams.set('search', searchQuery);
+                    window.location.href = url.toString();
+                } else {
+                    // If search is empty, go back to base URL without any parameters
+                    window.location.href = window.location.origin + window.location.pathname;
+                }
+            }, 2000); // 2-second delay
+        });
+
+        // Touch/swipe support for mobile
+        let startX = 0;
+        let currentX = 0;
+        let isDragging = false;
+
+        document.querySelectorAll('.gallery-wrapper').forEach(wrapper => {
+            const galleryId = wrapper.parentElement.getAttribute('data-gallery');
+            
+            wrapper.addEventListener('touchstart', function(e) {
+                startX = e.touches[0].clientX;
+                isDragging = true;
+            });
+
+            wrapper.addEventListener('touchmove', function(e) {
+                if (!isDragging) return;
+                e.preventDefault();
+                currentX = e.touches[0].clientX;
+            });
+
+            wrapper.addEventListener('touchend', function(e) {
+                if (!isDragging) return;
+                isDragging = false;
+                
+                const diffX = startX - currentX;
+                const threshold = 50;
+                
+                if (Math.abs(diffX) > threshold) {
+                    if (diffX > 0) {
+                        moveGallery(galleryId, 1); // Swipe left - move next
+                    } else {
+                        moveGallery(galleryId, -1); // Swipe right - move previous
+                    }
+                }
+            });
+
+            // Mouse drag support for desktop
+            let mouseStartX = 0;
+            let mouseCurrentX = 0;
+            let isMouseDragging = false;
+
+            wrapper.addEventListener('mousedown', function(e) {
+                mouseStartX = e.clientX;
+                isMouseDragging = true;
+                wrapper.style.cursor = 'grabbing';
+            });
+
+            wrapper.addEventListener('mousemove', function(e) {
+                if (!isMouseDragging) return;
+                e.preventDefault();
+                mouseCurrentX = e.clientX;
+            });
+
+            wrapper.addEventListener('mouseup', function(e) {
+                if (!isMouseDragging) return;
+                isMouseDragging = false;
+                wrapper.style.cursor = 'grab';
+                
+                const diffX = mouseStartX - mouseCurrentX;
+                const threshold = 50;
+                
+                if (Math.abs(diffX) > threshold) {
+                    if (diffX > 0) {
+                        moveGallery(galleryId, 1); // Drag left - move next
+                    } else {
+                        moveGallery(galleryId, -1); // Drag right - move previous
+                    }
+                }
+            });
+
+            wrapper.addEventListener('mouseleave', function() {
+                isMouseDragging = false;
+                wrapper.style.cursor = 'grab';
+            });
+
+            // Set initial cursor
+            wrapper.style.cursor = 'grab';
+        });
+
+        // Keyboard navigation
+        document.addEventListener('keydown', function(e) {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+            
+            const galleries = document.querySelectorAll('[data-gallery]');
+            const focusedGallery = document.querySelector('[data-gallery]:hover');
+            
+            if (focusedGallery) {
+                const galleryId = focusedGallery.getAttribute('data-gallery');
+                
+                if (e.key === 'ArrowLeft') {
+                    e.preventDefault();
+                    moveGallery(galleryId, -1);
+                } else if (e.key === 'ArrowRight') {
+                    e.preventDefault();
+                    moveGallery(galleryId, 1);
+                }
+            }
+        });
+    });
+
+    // Auto-scroll functionality (optional)
+    function autoScrollGallery(galleryId, interval = 5000) {
+        setInterval(() => {
+            const container = document.querySelector(`[data-gallery="${galleryId}"]`);
+            const nextBtn = container.querySelector('.nav-btn.next');
+            
+            if (!nextBtn.disabled) {
+                moveGallery(galleryId, 1);
+            } else {
+                // Reset to beginning
+                galleryPositions[galleryId] = 0;
+                const track = document.getElementById(galleryId);
+                track.style.transform = 'translateX(0px)';
+                
+                const items = track.children;
+                const itemWidth = items[0] ? items[0].offsetWidth + 20 : 300;
+                const containerWidth = container.querySelector('.gallery-wrapper').offsetWidth;
+                const visibleItems = Math.floor(containerWidth / itemWidth);
+                const maxPosition = Math.max(0, items.length - visibleItems);
+                
+                updateNavigationButtons(galleryId, maxPosition);
+            }
+        }, interval);
+    }
+</script>
+{% endblock %}
