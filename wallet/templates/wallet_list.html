@@ -65,7 +65,6 @@
             color:#6b7280;
         }
 
-        /* Filter Section */
         .filter-section {
             background: #fff;
             border-radius: 8px;
@@ -256,7 +255,6 @@
         }
         .empty-state i { font-size:48px; color:#d1d5db; margin-bottom:12px; display:block; }
 
-        /* Pagination Styles */
         .pagination-container {
             background: #fff;
             border-radius: 8px;
@@ -515,6 +513,157 @@
         .detail-row-content {
             flex: 1;
         }
+
+        /* WhatsApp Modal Styles */
+        .whatsapp-input-group {
+            margin-bottom: 20px;
+        }
+
+        .whatsapp-input-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        /* Phone Input Container with Prefix */
+        .phone-input-container {
+            display: flex;
+            align-items: center;
+            border: 2px solid #d1d5db;
+            border-radius: 8px;
+            background: #fff;
+            transition: all 0.2s;
+            overflow: hidden;
+        }
+
+        .phone-input-container:focus-within {
+            border-color: #25D366;
+            box-shadow: 0 0 0 3px rgba(37, 211, 102, 0.1);
+        }
+
+        .phone-input-container.error {
+            border-color: #ef4444;
+        }
+
+        .phone-prefix {
+            padding: 12px 0 12px 14px;
+            font-size: 15px;
+            font-weight: 600;
+            color: #374151;
+            background: #f9fafb;
+            border-right: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .whatsapp-phone-input {
+            flex: 1;
+            padding: 12px 14px;
+            border: none;
+            font-size: 15px;
+            font-family: inherit;
+            background: transparent;
+        }
+
+        .whatsapp-phone-input:focus {
+            outline: none;
+        }
+
+        .input-hint {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .error-message {
+            color: #ef4444;
+            font-size: 13px;
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 24px;
+        }
+
+        .btn-send-whatsapp {
+            flex: 1;
+            background: #25D366;
+            color: #fff;
+            padding: 12px 20px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 15px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .btn-send-whatsapp:hover {
+            filter: brightness(0.95);
+        }
+
+        .btn-send-whatsapp:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-cancel {
+            background: #6b7280;
+            color: #fff;
+            padding: 12px 20px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 15px;
+            transition: all 0.2s;
+        }
+
+        .btn-cancel:hover {
+            filter: brightness(0.95);
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #fff;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spinner 0.6s linear infinite;
+        }
+
+        @keyframes spinner {
+            to { transform: rotate(360deg); }
+        }
+
+        .success-message {
+            background: #d1fae5;
+            color: #065f46;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            font-weight: 500;
+        }
     </style>
 
     <div class="container">
@@ -539,7 +688,6 @@
             </div>
         {% endif %}
 
-        <!-- Filter Section -->
         <div class="filter-section">
             <div class="filter-grid">
                 <div class="filter-group">
@@ -584,7 +732,6 @@
             </div>
         </div>
 
-        <!-- Results Info -->
         <div class="results-info" id="resultsInfo">
             <div class="results-info-left">
                 <i class="fas fa-info-circle"></i>
@@ -669,7 +816,7 @@
                             <div class="small-muted"><i class="fas fa-clock"></i> {{ wallet.created_at|date:"M d, Y" }}</div>
                             <div class="action-btns">
                                 <button class="btn btn-view" onclick="openViewModal({{ wallet.id }})"><i class="fas fa-eye"></i></button>
-                                <button class="btn btn-wa" onclick="handleWhatsAppShare({{ wallet.id }})"><i class="fab fa-whatsapp"></i></button>
+                                <button class="btn btn-wa" onclick="openWhatsAppModal({{ wallet.id }})"><i class="fab fa-whatsapp"></i></button>
                                 <a class="btn btn-edit" href="{% url 'edit_wallet' wallet.id %}"><i class="fas fa-edit"></i></a>
                                 <form method="post" action="{% url 'delete_wallet' wallet.id %}" style="display:inline;" onsubmit="return confirm('Delete this wallet?');">
                                     {% csrf_token %}
@@ -692,25 +839,22 @@
             </div>
         {% endif %}
 
-        <!-- No Results Message -->
         <div class="empty-state" id="noResultsMessage" style="display:none; margin-top:20px;">
             <i class="fas fa-search"></i>
             <div style="font-weight:700; margin-bottom:6px;">No wallets found</div>
             <div style="color:#6b7280; font-size:13px;">Try adjusting your search or filters.</div>
         </div>
 
-        <!-- Pagination -->
         <div class="pagination-container" id="paginationContainer">
             <div class="pagination-info" id="paginationInfo">
                 Showing <strong>1-12</strong> of <strong>{{ wallets|length }}</strong> wallets
             </div>
             <div class="pagination-controls" id="paginationControls">
-                <!-- Pagination buttons will be generated here -->
             </div>
         </div>
     </div>
 
-    <!-- Modal -->
+    <!-- View Details Modal -->
     <div class="modal-overlay" id="viewModal" onclick="closeModalOnOverlay(event)">
         <div class="modal-content" onclick="event.stopPropagation()">
             <div class="modal-header">
@@ -718,525 +862,613 @@
                 <button class="modal-close" onclick="closeViewModal()">&times;</button>
             </div>
             <div class="modal-body" id="modalBody">
-                <!-- Content will be dynamically inserted here -->
             </div>
         </div>
     </div>
 
-    <script>
-      // Get CSRF token
-      function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie) {
-          const cookies = document.cookie.split(';');
-          for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-              cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-              break;
-            }
-          }
+    <!-- WhatsApp Modal -->
+    <div class="modal-overlay" id="whatsappModal" onclick="closeModalOnOverlay(event)">
+        <div class="modal-content" onclick="event.stopPropagation()" style="max-width: 450px;">
+            <div class="modal-header">
+                <h2><i class="fab fa-whatsapp"></i> Send via WhatsApp</h2>
+                <button class="modal-close" onclick="closeWhatsAppModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="successMessageContainer"></div>
+                
+                <div class="whatsapp-input-group">
+                    <label class="whatsapp-input-label" for="whatsappPhone">
+                        <i class="fas fa-phone"></i> Recipient Phone Number
+                    </label>
+                    <div class="phone-input-container" id="phoneInputContainer">
+                        <div class="phone-prefix">
+                            <i class="fas fa-flag" style="font-size: 12px;"></i> +91
+                        </div>
+                        <input 
+                            type="tel" 
+                            id="whatsappPhone" 
+                            class="whatsapp-phone-input" 
+                            placeholder="Enter 10-digit number (e.g., 9876543210)"
+                            maxlength="10"
+                        >
+                    </div>
+                    <div class="input-hint">
+                        <i class="fas fa-info-circle"></i>
+                        Default country code is +91 (India). Enter 10-digit mobile number.
+                    </div>
+                    <div id="phoneError" class="error-message" style="display: none;">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span id="phoneErrorText"></span>
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button class="btn-cancel" onclick="closeWhatsAppModal()">
+                        Cancel
+                    </button>
+                    <button class="btn-send-whatsapp" id="sendWhatsAppBtn" onclick="sendWhatsAppMessage()">
+                        <i class="fab fa-whatsapp"></i>
+                        <span id="sendBtnText">Send Message</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+  <script>
+  // Helper: read CSRF cookie
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie) {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
         }
-        return cookieValue;
       }
-      const csrftoken = getCookie('csrftoken');
+    }
+    return cookieValue;
+  }
+  const csrftoken = getCookie('csrftoken');
 
-      // Pagination state
-      let currentPage = 1;
-      let itemsPerPage = 12;
-      let filteredWallets = [];
-      let currentTypeFilter = '';
+  // State
+  let currentPage = 1;
+  let itemsPerPage = 12;
+  let filteredWallets = [];
+  let currentTypeFilter = '';
+  let currentWalletId = null;
+  let allWalletCards = [];
 
-      // Get all wallet cards and store them
-      const allWalletCards = Array.from(document.querySelectorAll('.wallet-card'));
+  // Run when DOM is ready
+  document.addEventListener('DOMContentLoaded', () => {
+    // Collect wallet cards lazily (guard if none)
+    allWalletCards = Array.from(document.querySelectorAll('.wallet-card'));
 
-      // Initialize
-      function init() {
+    // Wire up input listeners (guard existence)
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) searchInput.addEventListener('input', applyFilters);
+
+    const dateFrom = document.getElementById('dateFrom');
+    if (dateFrom) dateFrom.addEventListener('change', applyFilters);
+
+    const dateTo = document.getElementById('dateTo');
+    if (dateTo) dateTo.addEventListener('change', applyFilters);
+
+    const itemsPerPageSelect = document.getElementById('itemsPerPage');
+    if (itemsPerPageSelect) itemsPerPageSelect.addEventListener('change', changeItemsPerPage);
+
+    const phoneInput = document.getElementById('whatsappPhone');
+    if (phoneInput) {
+      // Only allow digits in the phone input
+      phoneInput.addEventListener('input', function(e) {
+        this.value = this.value.replace(/\D/g, '');
+      });
+      
+      phoneInput.addEventListener('keypress', function(e) {
+        // Only allow digits
+        if (!/\d/.test(e.key) && e.key !== 'Enter') {
+          e.preventDefault();
+        }
+        if (e.key === 'Enter') sendWhatsAppMessage();
+      });
+    }
+
+    // Escape key closes modals
+    document.addEventListener('keydown', function(event) {
+      if (event.key === 'Escape') {
+        closeViewModal();
+        closeWhatsAppModal();
+      }
+    });
+
+    // Ribbon filters
+    document.querySelectorAll('.ribbon').forEach(ribbon => {
+      ribbon.addEventListener('click', function() {
+        const type = this.getAttribute('data-type');
+        document.querySelectorAll('.ribbon').forEach(r => r.classList.remove('active'));
+        this.classList.add('active');
+        currentTypeFilter = type;
         applyFilters();
+      });
+    });
+
+    init();
+  });
+
+  // Initialize filter state & display
+  function init() {
+    applyFilters();
+  }
+
+  // Apply filters to wallet cards
+  function applyFilters() {
+    const searchTermElem = document.getElementById('searchInput');
+    const dateFromElem = document.getElementById('dateFrom');
+    const dateToElem = document.getElementById('dateTo');
+
+    const searchTerm = searchTermElem ? searchTermElem.value.toLowerCase() : '';
+    const dateFrom = dateFromElem ? dateFromElem.value : '';
+    const dateTo = dateToElem ? dateToElem.value : '';
+
+    filteredWallets = [];
+    let typeCounts = { '': 0, 'bank': 0, 'qr': 0, 'document': 0, 'other': 0 };
+
+    allWalletCards.forEach(card => {
+      const cardType = card.getAttribute('data-type') || 'other';
+      const title = (card.getAttribute('data-title') || '').toLowerCase();
+      const description = (card.getAttribute('data-description') || '').toLowerCase();
+      const createdDate = card.getAttribute('data-created-iso') || '';
+
+      const typeMatch = currentTypeFilter === '' || cardType === currentTypeFilter;
+      const searchMatch = searchTerm === '' || title.includes(searchTerm) || description.includes(searchTerm);
+
+      let dateMatch = true;
+      if (dateFrom && createdDate < dateFrom) dateMatch = false;
+      if (dateTo && createdDate > dateTo) dateMatch = false;
+
+      if (typeMatch && searchMatch && dateMatch) {
+        filteredWallets.push(card);
+        typeCounts['']++;
+        if (typeCounts[cardType] !== undefined) typeCounts[cardType]++; else typeCounts[cardType] = 1;
       }
+    });
 
-      // Filter functionality - searches ALL wallets, not just current page
-      function applyFilters() {
-        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-        const dateFrom = document.getElementById('dateFrom').value;
-        const dateTo = document.getElementById('dateTo').value;
-        
-        filteredWallets = [];
-        let typeCounts = { '': 0, 'bank': 0, 'qr': 0, 'document': 0, 'other': 0 };
-        
-        // Filter through ALL wallets
-        allWalletCards.forEach(card => {
-          const cardType = card.getAttribute('data-type');
-          const title = card.getAttribute('data-title').toLowerCase();
-          const description = card.getAttribute('data-description').toLowerCase();
-          const createdDate = card.getAttribute('data-created-iso');
-          
-          // Check type filter
-          const typeMatch = currentTypeFilter === '' || cardType === currentTypeFilter;
-          
-          // Check search filter
-          const searchMatch = searchTerm === '' || 
-                             title.includes(searchTerm) || 
-                             description.includes(searchTerm);
-          
-          // Check date filters
-          let dateMatch = true;
-          if (dateFrom && createdDate < dateFrom) {
-            dateMatch = false;
-          }
-          if (dateTo && createdDate > dateTo) {
-            dateMatch = false;
-          }
-          
-          // If all filters match, add to filtered results
-          if (typeMatch && searchMatch && dateMatch) {
-            filteredWallets.push(card);
-            typeCounts['']++;
-            typeCounts[cardType]++;
-          }
-        });
-        
-        // Update counts
-        updateRibbonCounts(typeCounts);
-        
-        // Reset to page 1 when filters change
-        currentPage = 1;
-        
-        // Update display
-        updateDisplay();
+    updateRibbonCounts(typeCounts);
+    currentPage = 1;
+    updateDisplay();
+  }
+
+  function updateDisplay() {
+    const grid = document.getElementById('walletGrid');
+    const noResults = document.getElementById('noResultsMessage');
+    const paginationContainer = document.getElementById('paginationContainer');
+
+    // Hide all first
+    allWalletCards.forEach(card => {
+      card.style.display = 'none';
+    });
+
+    if (!filteredWallets || filteredWallets.length === 0) {
+      if (noResults) noResults.style.display = 'block';
+      if (grid) grid.style.display = 'none';
+      if (paginationContainer) paginationContainer.style.display = 'none';
+      updateResultsInfo(0, 0, 0);
+      return;
+    }
+
+    if (noResults) noResults.style.display = 'none';
+    if (grid) grid.style.display = 'grid';
+
+    const totalItems = filteredWallets.length;
+    const showAll = itemsPerPage === 'all';
+    const itemsToShow = showAll ? totalItems : itemsPerPage;
+    const totalPages = showAll ? 1 : Math.ceil(totalItems / itemsPerPage);
+
+    if (currentPage > totalPages) currentPage = totalPages;
+    if (currentPage < 1) currentPage = 1;
+
+    const startIndex = showAll ? 0 : (currentPage - 1) * itemsPerPage;
+    const endIndex = showAll ? totalItems : Math.min(startIndex + itemsPerPage, totalItems);
+
+    // Append visible cards to grid in order
+    for (let i = startIndex; i < endIndex; i++) {
+      const card = filteredWallets[i];
+      card.style.display = 'flex';
+      if (grid && grid.contains(card) === false) {
+        grid.appendChild(card);
+      } else if (grid) {
+        // ensure it's positioned (appendChild will move it to end)
+        grid.appendChild(card);
       }
+    }
 
-      function updateDisplay() {
-        const grid = document.getElementById('walletGrid');
-        const noResults = document.getElementById('noResultsMessage');
-        const paginationContainer = document.getElementById('paginationContainer');
-        
-        // Hide all cards first
-        allWalletCards.forEach(card => {
-          card.style.display = 'none';
-        });
-        
-        if (filteredWallets.length === 0) {
-          noResults.style.display = 'block';
-          grid.style.display = 'none';
-          paginationContainer.style.display = 'none';
-          updateResultsInfo(0, 0, 0);
-          return;
-        }
-        
-        noResults.style.display = 'none';
-        grid.style.display = 'grid';
-        
-        // Calculate pagination
-        const totalItems = filteredWallets.length;
-        const showAll = itemsPerPage === 'all';
-        const itemsToShow = showAll ? totalItems : itemsPerPage;
-        const totalPages = showAll ? 1 : Math.ceil(totalItems / itemsPerPage);
-        
-        // Ensure current page is valid
-        if (currentPage > totalPages) {
-          currentPage = totalPages;
-        }
-        if (currentPage < 1) {
-          currentPage = 1;
-        }
-        
-        // Calculate start and end indices
-        const startIndex = showAll ? 0 : (currentPage - 1) * itemsPerPage;
-        const endIndex = showAll ? totalItems : Math.min(startIndex + itemsPerPage, totalItems);
-        
-        // Show only the cards for current page
-        for (let i = startIndex; i < endIndex; i++) {
-          filteredWallets[i].style.display = 'flex';
-          grid.appendChild(filteredWallets[i]);
-        }
-        
-        // Update pagination info and controls
-        updatePaginationInfo(startIndex + 1, endIndex, totalItems);
-        renderPaginationControls(totalPages);
-        
-        // Show/hide pagination
-        paginationContainer.style.display = showAll ? 'none' : 'flex';
-        
-        // Update results info
-        updateResultsInfo(totalItems, startIndex + 1, endIndex);
+    updatePaginationInfo(startIndex + 1, endIndex, totalItems);
+    renderPaginationControls(totalPages);
+
+    if (paginationContainer) paginationContainer.style.display = showAll ? 'none' : 'flex';
+    updateResultsInfo(totalItems, startIndex + 1, endIndex);
+  }
+
+  function updateRibbonCounts(counts) {
+    const setText = (id, val) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = val || 0;
+    };
+    setText('count-all', counts[''] || 0);
+    setText('count-bank', counts['bank'] || 0);
+    setText('count-qr', counts['qr'] || 0);
+    setText('count-document', counts['document'] || 0);
+    setText('count-other', counts['other'] || 0);
+  }
+
+  function updateResultsInfo(total, start, end) {
+    const resultsText = document.getElementById('resultsText');
+    if (!resultsText) return;
+    const searchTerm = document.getElementById('searchInput') ? document.getElementById('searchInput').value : '';
+    const dateFrom = document.getElementById('dateFrom') ? document.getElementById('dateFrom').value : '';
+    const dateTo = document.getElementById('dateTo') ? document.getElementById('dateTo').value : '';
+
+    let text = '';
+    if (itemsPerPage === 'all') {
+      text = `Showing all ${total} wallet${total !== 1 ? 's' : ''}`;
+    } else {
+      text = `Showing ${start}-${end} of ${total} wallet${total !== 1 ? 's' : ''}`;
+    }
+
+    const filters = [];
+    if (searchTerm) filters.push('search');
+    if (dateFrom || dateTo) filters.push('date range');
+    if (currentTypeFilter) filters.push('type');
+
+    if (filters.length > 0) {
+      text += ` (filtered by ${filters.join(', ')})`;
+    }
+
+    resultsText.textContent = text;
+  }
+
+  function updatePaginationInfo(start, end, total) {
+    const paginationInfo = document.getElementById('paginationInfo');
+    if (!paginationInfo) return;
+    paginationInfo.innerHTML = `Showing <strong>${start}-${end}</strong> of <strong>${total}</strong> wallets`;
+  }
+
+  function renderPaginationControls(totalPages) {
+    const controls = document.getElementById('paginationControls');
+    if (!controls) return;
+    controls.innerHTML = '';
+
+    if (totalPages <= 1) return;
+
+    const createBtn = (html, disabled, onClick) => {
+      const btn = document.createElement('button');
+      btn.className = 'page-btn';
+      btn.innerHTML = html;
+      btn.disabled = !!disabled;
+      if (!disabled) btn.addEventListener('click', onClick);
+      return btn;
+    };
+
+    const prevBtn = createBtn('<i class="fas fa-chevron-left"></i> Previous', currentPage === 1, () => goToPage(currentPage - 1));
+    controls.appendChild(prevBtn);
+
+    const pageButtons = getPageButtons(currentPage, totalPages);
+    pageButtons.forEach(page => {
+      const btn = document.createElement('button');
+      btn.className = 'page-btn';
+      if (page === '...') {
+        btn.className += ' ellipsis';
+        btn.textContent = '...';
+      } else {
+        btn.textContent = page;
+        if (page === currentPage) btn.className += ' active';
+        btn.addEventListener('click', () => goToPage(page));
       }
+      controls.appendChild(btn);
+    });
 
-      function updateRibbonCounts(counts) {
-        document.getElementById('count-all').textContent = counts[''];
-        document.getElementById('count-bank').textContent = counts['bank'];
-        document.getElementById('count-qr').textContent = counts['qr'];
-        document.getElementById('count-document').textContent = counts['document'];
-        document.getElementById('count-other').textContent = counts['other'];
-      }
+    const nextBtn = createBtn('Next <i class="fas fa-chevron-right"></i>', currentPage === totalPages, () => goToPage(currentPage + 1));
+    controls.appendChild(nextBtn);
+  }
 
-      function updateResultsInfo(total, start, end) {
-        const resultsText = document.getElementById('resultsText');
-        const searchTerm = document.getElementById('searchInput').value;
-        const dateFrom = document.getElementById('dateFrom').value;
-        const dateTo = document.getElementById('dateTo').value;
-        
-        let text = '';
-        if (itemsPerPage === 'all') {
-          text = `Showing all ${total} wallet${total !== 1 ? 's' : ''}`;
-        } else {
-          text = `Showing ${start}-${end} of ${total} wallet${total !== 1 ? 's' : ''}`;
-        }
-        
-        const filters = [];
-        if (searchTerm) filters.push('search');
-        if (dateFrom || dateTo) filters.push('date range');
-        if (currentTypeFilter) filters.push('type');
-        
-        if (filters.length > 0) {
-          text += ` (filtered by ${filters.join(', ')})`;
-        }
-        
-        resultsText.textContent = text;
-      }
+  function getPageButtons(current, total) {
+    const pages = [];
+    const maxButtons = 7;
 
-      function updatePaginationInfo(start, end, total) {
-        const paginationInfo = document.getElementById('paginationInfo');
-        paginationInfo.innerHTML = `Showing <strong>${start}-${end}</strong> of <strong>${total}</strong> wallets`;
-      }
+    if (total <= maxButtons) {
+      for (let i = 1; i <= total; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      if (current > 3) pages.push('...');
+      const start = Math.max(2, current - 1);
+      const end = Math.min(total - 1, current + 1);
+      for (let i = start; i <= end; i++) pages.push(i);
+      if (current < total - 2) pages.push('...');
+      pages.push(total);
+    }
+    return pages;
+  }
 
-      function renderPaginationControls(totalPages) {
-        const controls = document.getElementById('paginationControls');
-        controls.innerHTML = '';
-        
-        if (totalPages <= 1) {
-          return;
-        }
-        
-        // Previous button
-        const prevBtn = document.createElement('button');
-        prevBtn.className = 'page-btn';
-        prevBtn.innerHTML = '<i class="fas fa-chevron-left"></i> Previous';
-        prevBtn.disabled = currentPage === 1;
-        prevBtn.onclick = () => goToPage(currentPage - 1);
-        controls.appendChild(prevBtn);
-        
-        // Page number buttons
-        const pageButtons = getPageButtons(currentPage, totalPages);
-        pageButtons.forEach(page => {
-          const btn = document.createElement('button');
-          btn.className = 'page-btn';
-          
-          if (page === '...') {
-            btn.className += ' ellipsis';
-            btn.textContent = '...';
-          } else {
-            btn.textContent = page;
-            if (page === currentPage) {
-              btn.className += ' active';
-            }
-            btn.onclick = () => goToPage(page);
-          }
-          
-          controls.appendChild(btn);
-        });
-        
-        // Next button
-        const nextBtn = document.createElement('button');
-        nextBtn.className = 'page-btn';
-        nextBtn.innerHTML = 'Next <i class="fas fa-chevron-right"></i>';
-        nextBtn.disabled = currentPage === totalPages;
-        nextBtn.onclick = () => goToPage(currentPage + 1);
-        controls.appendChild(nextBtn);
-      }
+  function goToPage(page) {
+    currentPage = page;
+    updateDisplay();
+    const grid = document.getElementById('walletGrid');
+    if (grid) grid.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
 
-      function getPageButtons(current, total) {
-        const pages = [];
-        const maxButtons = 7; // Show max 7 page buttons
-        
-        if (total <= maxButtons) {
-          // Show all pages if total is small
-          for (let i = 1; i <= total; i++) {
-            pages.push(i);
-          }
-        } else {
-          // Always show first page
-          pages.push(1);
-          
-          if (current > 3) {
-            pages.push('...');
-          }
-          
-          // Show pages around current page
-          const start = Math.max(2, current - 1);
-          const end = Math.min(total - 1, current + 1);
-          
-          for (let i = start; i <= end; i++) {
-            pages.push(i);
-          }
-          
-          if (current < total - 2) {
-            pages.push('...');
-          }
-          
-          // Always show last page
-          pages.push(total);
-        }
-        
-        return pages;
-      }
+  function changeItemsPerPage() {
+    const select = document.getElementById('itemsPerPage');
+    if (!select) return;
+    itemsPerPage = select.value === 'all' ? 'all' : parseInt(select.value);
+    currentPage = 1;
+    updateDisplay();
+  }
 
-      function goToPage(page) {
-        currentPage = page;
-        updateDisplay();
-        
-        // Scroll to top of wallet grid
-        document.getElementById('walletGrid').scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
+  function clearAllFilters() {
+    if (document.getElementById('searchInput')) document.getElementById('searchInput').value = '';
+    if (document.getElementById('dateFrom')) document.getElementById('dateFrom').value = '';
+    if (document.getElementById('dateTo')) document.getElementById('dateTo').value = '';
+    applyFilters();
+  }
 
-      function changeItemsPerPage() {
-        const select = document.getElementById('itemsPerPage');
-        itemsPerPage = select.value === 'all' ? 'all' : parseInt(select.value);
-        currentPage = 1;
-        updateDisplay();
-      }
+  function openViewModal(walletId) {
+    const card = document.querySelector(`[data-id="${walletId}"]`);
+    if (!card) return;
 
-      function clearAllFilters() {
-        document.getElementById('searchInput').value = '';
-        document.getElementById('dateFrom').value = '';
-        document.getElementById('dateTo').value = '';
-        applyFilters();
-      }
+    const modal = document.getElementById('viewModal');
+    const modalBody = document.getElementById('modalBody');
 
-      // Add event listeners for filters
-      document.getElementById('searchInput').addEventListener('input', applyFilters);
-      document.getElementById('dateFrom').addEventListener('change', applyFilters);
-      document.getElementById('dateTo').addEventListener('change', applyFilters);
+    if (!modal || !modalBody) return;
 
-      // Modal Functions
-      function openViewModal(walletId) {
-        const card = document.querySelector(`[data-id="${walletId}"]`);
-        if (!card) return;
+    const title = card.getAttribute('data-title') || '';
+    const description = card.getAttribute('data-description') || '';
+    const uploadType = card.getAttribute('data-upload-type') || '';
+    const visibility = card.getAttribute('data-visibility') || '';
+    const created = card.getAttribute('data-created') || '';
+    const imageUrl = card.getAttribute('data-image-url') || '';
 
-        const modal = document.getElementById('viewModal');
-        const modalBody = document.getElementById('modalBody');
+    const accountHolder = card.getAttribute('data-account-holder') || '';
+    const accountNumber = card.getAttribute('data-account-number') || '';
+    const ifsc = card.getAttribute('data-ifsc') || '';
+    const bankAddress = card.getAttribute('data-bank-address') || '';
+    const qrName = card.getAttribute('data-qr-name') || '';
+    const otherName = card.getAttribute('data-other-name') || '';
 
-        const title = card.getAttribute('data-title');
-        const description = card.getAttribute('data-description');
-        const uploadType = card.getAttribute('data-upload-type');
-        const visibility = card.getAttribute('data-visibility');
-        const created = card.getAttribute('data-created');
-        const imageUrl = card.getAttribute('data-image-url');
+    let typeLabel = 'Other';
+    let typeIcon = 'fas fa-wallet';
+    if (uploadType === 'bank') { typeLabel = 'Bank'; typeIcon = 'fas fa-university'; }
+    else if (uploadType === 'qr') { typeLabel = 'QR'; typeIcon = 'fas fa-qrcode'; }
+    else if (uploadType === 'document') { typeLabel = 'Document'; typeIcon = 'fas fa-file-alt'; }
 
-        // Type-specific data
-        const accountHolder = card.getAttribute('data-account-holder');
-        const accountNumber = card.getAttribute('data-account-number');
-        const ifsc = card.getAttribute('data-ifsc');
-        const bankAddress = card.getAttribute('data-bank-address');
-        const qrName = card.getAttribute('data-qr-name');
-        const otherName = card.getAttribute('data-other-name');
+    let content = '';
 
-        let typeLabel = 'Other';
-        let typeIcon = 'fas fa-wallet';
-        if (uploadType === 'bank') {
-          typeLabel = 'Bank';
-          typeIcon = 'fas fa-university';
-        } else if (uploadType === 'qr') {
-          typeLabel = 'QR';
-          typeIcon = 'fas fa-qrcode';
-        } else if (uploadType === 'document') {
-          typeLabel = 'Document';
-          typeIcon = 'fas fa-file-alt';
-        }
+    if (imageUrl) {
+      content += `
+        <div class="modal-image-container">
+          <img src="${imageUrl}" alt="${title}" class="modal-image">
+        </div>
+      `;
+    } else {
+      content += `
+        <div class="modal-image-container">
+          <div class="modal-no-image"><i class="fas fa-image"></i></div>
+        </div>
+      `;
+    }
 
-        let content = '';
+    content += `
+      <div class="detail-section">
+        <div class="detail-label"><i class="fas fa-heading"></i> Title</div>
+        <div class="detail-value">${title}</div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-label"><i class="${typeIcon}"></i> Type</div>
+        <div class="detail-value">${typeLabel}</div>
+      </div>
+    `;
 
-        // Image section
-        if (imageUrl) {
-          content += `
-            <div class="modal-image-container">
-              <img src="${imageUrl}" alt="${title}" class="modal-image">
-            </div>
-          `;
-        } else {
-          content += `
-            <div class="modal-image-container">
-              <div class="modal-no-image"><i class="fas fa-image"></i></div>
-            </div>
-          `;
-        }
+    if (uploadType === 'bank') {
+      content += `<div class="detail-section"><div class="detail-label"><i class="fas fa-university"></i> Bank Details</div><div class="bank-details-grid">`;
+      if (accountHolder) content += `<div class="detail-row"><i class="fas fa-user"></i><div class="detail-row-content"><div style="font-size:11px; color:#6b7280; font-weight:600; margin-bottom:4px;">ACCOUNT HOLDER</div><div class="detail-value">${accountHolder}</div></div></div>`;
+      if (accountNumber) content += `<div class="detail-row"><i class="fas fa-hashtag"></i><div class="detail-row-content"><div style="font-size:11px; color:#6b7280; font-weight:600; margin-bottom:4px;">ACCOUNT NUMBER</div><div class="detail-value">${accountNumber}</div></div></div>`;
+      if (ifsc) content += `<div class="detail-row"><i class="fas fa-code"></i><div class="detail-row-content"><div style="font-size:11px; color:#6b7280; font-weight:600; margin-bottom:4px;">IFSC CODE</div><div class="detail-value">${ifsc}</div></div></div>`;
+      if (bankAddress) content += `<div class="detail-row"><i class="fas fa-map-marker-alt"></i><div class="detail-row-content"><div style="font-size:11px; color:#6b7280; font-weight:600; margin-bottom:4px;">BANK ADDRESS</div><div class="detail-value">${bankAddress}</div></div></div>`;
+      content += `</div></div>`;
+    } else if (uploadType === 'qr' && qrName) {
+      content += `<div class="detail-section"><div class="detail-label"><i class="fas fa-qrcode"></i> QR Name</div><div class="detail-value">${qrName}</div></div>`;
+    } else if (uploadType === 'other' && otherName) {
+      content += `<div class="detail-section"><div class="detail-label"><i class="fas fa-wallet"></i> Wallet Name</div><div class="detail-value">${otherName}</div></div>`;
+    }
 
-        // Title section
-        content += `
-          <div class="detail-section">
-            <div class="detail-label"><i class="fas fa-heading"></i> Title</div>
-            <div class="detail-value">${title}</div>
-          </div>
-        `;
+    if (description) {
+      content += `<div class="detail-section"><div class="detail-label"><i class="fas fa-align-left"></i> Description</div><div class="detail-value long-text">${description}</div></div>`;
+    }
 
-        // Type section
-        content += `
-          <div class="detail-section">
-            <div class="detail-label"><i class="${typeIcon}"></i> Type</div>
-            <div class="detail-value">${typeLabel}</div>
-          </div>
-        `;
+    content += `
+      <div class="detail-section">
+        <div class="detail-label"><i class="fas fa-eye"></i> Visibility</div>
+        <div class="detail-value">${visibility}</div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-label"><i class="fas fa-calendar"></i> Created Date</div>
+        <div class="detail-value">${created}</div>
+      </div>
+    `;
 
-        // Type-specific details
-        if (uploadType === 'bank') {
-          content += `<div class="detail-section"><div class="detail-label"><i class="fas fa-university"></i> Bank Details</div><div class="bank-details-grid">`;
-          
-          if (accountHolder) {
-            content += `
-              <div class="detail-row">
-                <i class="fas fa-user"></i>
-                <div class="detail-row-content">
-                  <div style="font-size:11px; color:#6b7280; font-weight:600; margin-bottom:4px;">ACCOUNT HOLDER</div>
-                  <div class="detail-value">${accountHolder}</div>
-                </div>
-              </div>
-            `;
-          }
-          
-          if (accountNumber) {
-            content += `
-              <div class="detail-row">
-                <i class="fas fa-hashtag"></i>
-                <div class="detail-row-content">
-                  <div style="font-size:11px; color:#6b7280; font-weight:600; margin-bottom:4px;">ACCOUNT NUMBER</div>
-                  <div class="detail-value">${accountNumber}</div>
-                </div>
-              </div>
-            `;
-          }
-          
-          if (ifsc) {
-            content += `
-              <div class="detail-row">
-                <i class="fas fa-code"></i>
-                <div class="detail-row-content">
-                  <div style="font-size:11px; color:#6b7280; font-weight:600; margin-bottom:4px;">IFSC CODE</div>
-                  <div class="detail-value">${ifsc}</div>
-                </div>
-              </div>
-            `;
-          }
-          
-          if (bankAddress) {
-            content += `
-              <div class="detail-row">
-                <i class="fas fa-map-marker-alt"></i>
-                <div class="detail-row-content">
-                  <div style="font-size:11px; color:#6b7280; font-weight:600; margin-bottom:4px;">BANK ADDRESS</div>
-                  <div class="detail-value">${bankAddress}</div>
-                </div>
-              </div>
-            `;
-          }
-          
-          content += `</div></div>`;
-        } else if (uploadType === 'qr' && qrName) {
-          content += `
-            <div class="detail-section">
-              <div class="detail-label"><i class="fas fa-qrcode"></i> QR Name</div>
-              <div class="detail-value">${qrName}</div>
-            </div>
-          `;
-        } else if (uploadType === 'other' && otherName) {
-          content += `
-            <div class="detail-section">
-              <div class="detail-label"><i class="fas fa-wallet"></i> Wallet Name</div>
-              <div class="detail-value">${otherName}</div>
-            </div>
-          `;
-        }
+    modalBody.innerHTML = content;
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
 
-        // Description section
-        if (description) {
-          content += `
-            <div class="detail-section">
-              <div class="detail-label"><i class="fas fa-align-left"></i> Description</div>
-              <div class="detail-value long-text">${description}</div>
-            </div>
-          `;
-        }
+  function closeViewModal() {
+    const modal = document.getElementById('viewModal');
+    if (!modal) return;
+    modal.classList.remove('active');
+    document.body.style.overflow = '';
+  }
 
-        // Visibility section
-        content += `
-          <div class="detail-section">
-            <div class="detail-label"><i class="fas fa-eye"></i> Visibility</div>
-            <div class="detail-value">${visibility}</div>
-          </div>
-        `;
+  function openWhatsAppModal(walletId) {
+    currentWalletId = walletId;
+    const modal = document.getElementById('whatsappModal');
+    const phoneInput = document.getElementById('whatsappPhone');
+    const phoneInputContainer = document.getElementById('phoneInputContainer');
+    const errorDiv = document.getElementById('phoneError');
+    const successContainer = document.getElementById('successMessageContainer');
 
-        // Created date section
-        content += `
-          <div class="detail-section">
-            <div class="detail-label"><i class="fas fa-calendar"></i> Created Date</div>
-            <div class="detail-value">${created}</div>
-          </div>
-        `;
+    if (!modal || !phoneInput) return;
 
-        modalBody.innerHTML = content;
-        modal.classList.add('active');
-        document.body.style.overflow = 'hidden';
-      }
+    phoneInput.value = '';
+    if (phoneInputContainer) phoneInputContainer.classList.remove('error');
+    if (errorDiv) errorDiv.style.display = 'none';
+    if (successContainer) successContainer.innerHTML = '';
 
-      function closeViewModal() {
-        const modal = document.getElementById('viewModal');
-        modal.classList.remove('active');
-        document.body.style.overflow = '';
-      }
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
 
-      function closeModalOnOverlay(event) {
-        if (event.target.id === 'viewModal') {
-          closeViewModal();
-        }
-      }
+    setTimeout(() => {
+      phoneInput.focus();
+    }, 300);
+  }
 
-      // Close modal on ESC key
-      document.addEventListener('keydown', function(event) {
-        if (event.key === 'Escape') {
-          closeViewModal();
-        }
+  function closeWhatsAppModal() {
+    const modal = document.getElementById('whatsappModal');
+    if (!modal) return;
+    modal.classList.remove('active');
+    document.body.style.overflow = '';
+    currentWalletId = null;
+  }
+
+  function closeModalOnOverlay(event) {
+    if (!event || !event.target) return;
+    if (event.target.id === 'viewModal') closeViewModal();
+    else if (event.target.id === 'whatsappModal') closeWhatsAppModal();
+  }
+
+  // Send WhatsApp Message with +91 prefix
+  async function sendWhatsAppMessage() {
+    const phoneInput = document.getElementById('whatsappPhone');
+    const phoneInputContainer = document.getElementById('phoneInputContainer');
+    const phoneError = document.getElementById('phoneError');
+    const phoneErrorText = document.getElementById('phoneErrorText');
+    const sendBtn = document.getElementById('sendWhatsAppBtn');
+    const sendBtnText = document.getElementById('sendBtnText');
+    const successContainer = document.getElementById('successMessageContainer');
+
+    if (!phoneInput || !phoneError || !phoneErrorText || !sendBtn || !sendBtnText || !successContainer) {
+      console.error('[sendWhatsAppMessage] missing DOM elements');
+      return;
+    }
+
+    // Guard: current wallet id must be set
+    if (!currentWalletId) {
+      if (phoneInputContainer) phoneInputContainer.classList.add('error');
+      phoneErrorText.textContent = 'Internal error: wallet id not available. Close and reopen the modal.';
+      phoneError.style.display = 'flex';
+      return;
+    }
+
+    const phoneNumber = phoneInput.value.trim();
+    // Clear previous
+    if (phoneInputContainer) phoneInputContainer.classList.remove('error');
+    phoneError.style.display = 'none';
+    successContainer.innerHTML = '';
+
+    if (!phoneNumber) {
+      if (phoneInputContainer) phoneInputContainer.classList.add('error');
+      phoneErrorText.textContent = 'Please enter a phone number';
+      phoneError.style.display = 'flex';
+      phoneInput.focus();
+      return;
+    }
+
+    const cleanPhone = phoneNumber.replace(/\D/g, '');
+    if (cleanPhone.length !== 10) {
+      if (phoneInputContainer) phoneInputContainer.classList.add('error');
+      phoneErrorText.textContent = 'Please enter a valid 10-digit mobile number';
+      phoneError.style.display = 'flex';
+      phoneInput.focus();
+      return;
+    }
+
+    // Prepend +91 to the phone number
+    const fullPhoneNumber = '91' + cleanPhone;
+
+    sendBtn.disabled = true;
+    sendBtnText.innerHTML = '<span class="loading-spinner"></span> Sending...';
+
+    const url = `/wallet/whatsapp/${currentWalletId}/`;
+    console.log('[sendWhatsAppMessage] URL ->', url, 'payload ->', { phone_number: fullPhoneNumber });
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrftoken
+        },
+        body: JSON.stringify({ phone_number: fullPhoneNumber })
       });
 
-      // WhatsApp share - builds message from wallet data
-      function handleWhatsAppShare(walletId) {
-        const card = document.querySelector(`[data-id="${walletId}"]`);
-        if (!card) {
-          alert('Wallet not found');
+      let data = null;
+      try {
+        const contentType = response.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+          data = await response.json();
+        } else {
+          const text = await response.text().catch(() => '');
+          console.error('[sendWhatsAppMessage] Non-JSON response', response.status, text);
+          if (phoneInputContainer) phoneInputContainer.classList.add('error');
+          if (response.status === 404) phoneErrorText.textContent = 'Server returned 404 (URL not found). Check backend URL pattern and request path.';
+          else if (response.status >= 500) phoneErrorText.textContent = 'Server error (5xx). Check server logs for stack trace.';
+          else phoneErrorText.textContent = `Server returned status ${response.status}. Check server logs.`;
+          phoneError.style.display = 'flex';
           return;
         }
-
-        const title = card.querySelector('.wallet-title')?.textContent || 'Wallet';
-        const description = card.querySelector('.wallet-desc')?.textContent || '';
-        const typeText = card.querySelector('.wallet-type-badge')?.textContent.trim() || '';
-        const imageUrl = card.querySelector('.wallet-image')?.src || '';
-
-        let msg = '*' + title + '*\n\n';
-        msg += '📋 Type: ' + typeText + '\n';
-        
-        if (description) {
-          msg += '\n📝 Description: ' + description + '\n';
-        }
-        
-        if (imageUrl) {
-          msg += '\n🖼️ Image: ' + imageUrl + '\n';
-        }
-
-        window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
+      } catch (parseErr) {
+        const text = await response.text().catch(() => '');
+        console.error('[sendWhatsAppMessage] Failed to parse JSON:', parseErr, text);
+        if (phoneInputContainer) phoneInputContainer.classList.add('error');
+        phoneErrorText.textContent = 'Server returned invalid JSON. Check server logs.';
+        phoneError.style.display = 'flex';
+        return;
       }
 
-      // Ribbon filtering
-      document.querySelectorAll('.ribbon').forEach(ribbon => {
-        ribbon.addEventListener('click', function() {
-          const type = this.getAttribute('data-type');
-          
-          document.querySelectorAll('.ribbon').forEach(r => r.classList.remove('active'));
-          this.classList.add('active');
-          
-          currentTypeFilter = type;
-          applyFilters();
-        });
-      });
+      console.log('[sendWhatsAppMessage] response.ok, status, data ->', response.ok, response.status, data);
 
-      // Initialize on page load
-      init();
-    </script>
+      if (response.ok && data && data.success) {
+        successContainer.innerHTML = `
+          <div class="success-message">
+            <i class="fas fa-check-circle"></i>
+            <div>
+              <div><strong>Message sent successfully to +91 ${cleanPhone}!</strong></div>
+              ${data.text_sent ? '<div style="font-size:12px; margin-top:2px;">✓ Text message sent</div>' : '<div style="font-size:12px; margin-top:2px;">✓ Text message sent</div>'}
+              ${data.image_sent ? '<div style="font-size:12px; margin-top:2px;">✓ Image sent</div>' : ''}
+              ${data.pdf_sent ? '<div style="font-size:12px; margin-top:2px;">✓ PDF sent</div>' : ''}
+            </div>
+          </div>
+        `;
+        phoneInput.value = '';
+        setTimeout(() => closeWhatsAppModal(), 2000);
+      } else {
+        if (phoneInputContainer) phoneInputContainer.classList.add('error');
+        const serverError = (data && (data.error || data.details)) ? (data.error || JSON.stringify(data.details)) : `Failed to send (status ${response.status})`;
+        phoneErrorText.textContent = serverError;
+        phoneError.style.display = 'flex';
+        console.error('[sendWhatsAppMessage] API error ->', response.status, data);
+      }
+    } catch (err) {
+      console.error('[sendWhatsAppMessage] Network error ->', err);
+      if (phoneInputContainer) phoneInputContainer.classList.add('error');
+      phoneErrorText.textContent = 'Connection error. Please check your internet and try again.';
+      phoneError.style.display = 'flex';
+    } finally {
+      sendBtn.disabled = false;
+      sendBtnText.innerHTML = '<i class="fab fa-whatsapp"></i> Send Message';
+    }
+  }
+  </script>
+
 {% endblock %}

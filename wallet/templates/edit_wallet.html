@@ -68,6 +68,17 @@
     .current-image-container { margin-top:10px; }
     .current-image { max-width:100%; max-height:200px; border-radius:6px; border:1px solid #e6e6e6; }
 
+    .pdf-preview-container { margin-top:10px; display:none; background:#f9fafb; padding:12px; border-radius:6px; border:1px solid #e6e6e6; }
+    .pdf-preview-info { display:flex; align-items:center; gap:10px; color:#374151; font-size:13px; }
+    .pdf-icon { font-size:32px; color:#dc2626; }
+    .pdf-details { flex:1; }
+    .pdf-name { font-weight:600; margin-bottom:4px; }
+    .pdf-size { color:#6b7280; font-size:12px; }
+
+    .current-pdf-container { margin-top:10px; background:#fef2f2; padding:12px; border-radius:6px; border:1px solid #fecaca; }
+    .current-pdf-link { display:inline-flex; align-items:center; gap:8px; color:#dc2626; text-decoration:none; font-weight:600; }
+    .current-pdf-link:hover { text-decoration:underline; }
+
     .alert { position: relative; padding:10px 12px; border-radius:6px; margin-bottom:12px; border:1px solid transparent; display:flex; align-items:center; justify-content:space-between; gap:10px; }
     .alert .message-text { flex:1; margin-right:10px; }
     .alert .close-btn { background:transparent; border:none; font-size:16px; cursor:pointer; color:inherit; padding:6px; border-radius:4px; }
@@ -120,6 +131,7 @@
           <option value="bank" {% if wallet.upload_type == 'bank' %}selected{% endif %}>Bank/Details wallet</option>
           <option value="qr" {% if wallet.upload_type == 'qr' %}selected{% endif %}>QR</option>
           <option value="document" {% if wallet.upload_type == 'document' %}selected{% endif %}>Documentation Image</option>
+          <option value="pdf" {% if wallet.upload_type == 'pdf' %}selected{% endif %}>PDF Document</option>
           <option value="other" {% if wallet.upload_type == 'other' %}selected{% endif %}>Other Wallet</option>
         </select>
       </div>
@@ -194,6 +206,53 @@
           <input id="document_image" name="image_document" type="file" accept="image/png, image/jpeg, image/jpg">
           <div class="info-text">Upload new image to replace current one</div>
           <div id="documentImagePreview" class="image-preview-container"><img id="documentPreviewImg" class="image-preview" src="" alt="Preview"></div>
+        </div>
+      </div>
+
+      <div id="pdfFields" class="dynamic-fields">
+        <div class="field-group">
+          <div class="field-group-title"><i class="fas fa-file-pdf"></i> PDF Details</div>
+          <div class="form-row">
+            <label class="form-label" for="pdf_name">PDF Name</label>
+            <input id="pdf_name" name="pdf_name" type="text" value="{{ wallet.pdf_name }}">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <label class="form-label" for="pdf_file"><i class="fas fa-file-pdf"></i> PDF File</label>
+          {% if wallet.pdf_file %}
+            <div class="current-pdf-container">
+              <small style="color:#6b7280; display:block; margin-bottom:6px;">Current PDF:</small>
+              <a href="{{ wallet.pdf_file.url }}" target="_blank" class="current-pdf-link">
+                <i class="fas fa-file-pdf"></i>
+                <span>View Current PDF</span>
+              </a>
+            </div>
+          {% endif %}
+          <input id="pdf_file" name="pdf_file" type="file" accept="application/pdf">
+          <div class="info-text">Upload new PDF to replace current one (Max 10MB)</div>
+          <div id="pdfPreview" class="pdf-preview-container">
+            <div class="pdf-preview-info">
+              <i class="fas fa-file-pdf pdf-icon"></i>
+              <div class="pdf-details">
+                <div class="pdf-name" id="pdfFileName"></div>
+                <div class="pdf-size" id="pdfFileSize"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <label class="form-label" for="pdf_thumbnail"><i class="fas fa-image"></i> Thumbnail Image (Optional)</label>
+          {% if wallet.image %}
+            <div class="current-image-container">
+              <small style="color:#6b7280; display:block; margin-bottom:6px;">Current Thumbnail:</small>
+              <img src="{{ wallet.image.url }}" class="current-image" alt="Current">
+            </div>
+          {% endif %}
+          <input id="pdf_thumbnail" name="image_pdf" type="file" accept="image/png, image/jpeg, image/jpg">
+          <div class="info-text">Upload new thumbnail to replace current one</div>
+          <div id="pdfImagePreview" class="image-preview-container"><img id="pdfPreviewImg" class="image-preview" src="" alt="Preview"></div>
         </div>
       </div>
 
@@ -313,10 +372,56 @@
     });
   }
 
+  function setupPDFPreview() {
+    const input = document.getElementById('pdf_file');
+    const container = document.getElementById('pdfPreview');
+    const fileName = document.getElementById('pdfFileName');
+    const fileSize = document.getElementById('pdfFileSize');
+    
+    if (!input || !container) return;
+
+    input.addEventListener('change', function (e) {
+      const file = e.target.files && e.target.files[0];
+      if (!file) {
+        container.style.display = 'none';
+        return;
+      }
+
+      if (file.type !== 'application/pdf') {
+        alert('Only PDF files are allowed.');
+        input.value = '';
+        return;
+      }
+      
+      if (file.size > 10 * 1024 * 1024) {
+        alert('PDF file size should not exceed 10MB.');
+        input.value = '';
+        return;
+      }
+
+      fileName.textContent = file.name;
+      
+      let size = file.size;
+      let sizeStr = '';
+      if (size < 1024) {
+        sizeStr = size + ' B';
+      } else if (size < 1024 * 1024) {
+        sizeStr = (size / 1024).toFixed(1) + ' KB';
+      } else {
+        sizeStr = (size / (1024 * 1024)).toFixed(1) + ' MB';
+      }
+      fileSize.textContent = sizeStr;
+      
+      container.style.display = 'block';
+    });
+  }
+
   setupImagePreview('bank_image','bankImagePreview','bankPreviewImg');
   setupImagePreview('qr_image','qrImagePreview','qrPreviewImg');
   setupImagePreview('document_image','documentImagePreview','documentPreviewImg');
+  setupImagePreview('pdf_thumbnail','pdfImagePreview','pdfPreviewImg');
   setupImagePreview('other_image','otherImagePreview','otherPreviewImg');
+  setupPDFPreview();
 
   const ifsc = document.getElementById('ifsc_code');
   if (ifsc) {

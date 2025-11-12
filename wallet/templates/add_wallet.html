@@ -1,24 +1,20 @@
 {% extends "base.html" %}
 {% block content %}
-<!-- Page-level styles (no Bootstrap) -->
 <title>Add Wallet Item</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
-    /* Reset-ish */
     *, *::before, *::after { box-sizing: border-box; }
     body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial; color: #222; }
 
-    /* Page container alignment */
     .page-center {
-        min-height: calc(100vh - 160px); /* allow for header/footer from base */
+        min-height: calc(100vh - 160px);
         display: flex;
         align-items: center;
         justify-content: center;
         padding: 20px;
-        background: transparent; /* base.html body background will show */
+        background: transparent;
     }
 
-    /* Card / form container */
     .form-container {
         background: #fff;
         border-radius: 8px;
@@ -34,7 +30,6 @@
     .form-header h2 { font-size: 22px; margin: 6px 0; color:#222; }
     .form-header p { color: #6b7280; margin:0; font-size: 13px; }
 
-    /* Form fields */
     label.form-label { display:block; margin-bottom:6px; font-weight:600; color:#333; font-size:14px; }
     .required { color:#e63946; margin-left:4px; }
 
@@ -55,14 +50,11 @@
     }
     textarea { resize: vertical; min-height: 90px; }
 
-    /* helper text */
     .info-text { font-size:12px; color:#6b7280; margin-top:6px; }
 
-    /* Field groups */
     .field-group { background:#f8fafb; border:1px solid #eef2f7; padding:14px; border-radius:6px; margin-bottom:14px; }
     .field-group-title { display:flex; align-items:center; gap:8px; font-weight:600; color:#325065; margin-bottom:10px; font-size:15px; }
 
-    /* Buttons */
     .btn { display:inline-flex; align-items:center; gap:8px; justify-content:center; cursor:pointer; border-radius:6px; padding:8px 14px; font-weight:600; font-size:14px; border:1px solid transparent; }
     .btn-submit { width:100%; background:#4a5568; color:#fff; border-color:#4a5568; padding:12px 14px; }
     .btn-submit:hover { background:#2f3a42; border-color:#2f3a42; }
@@ -70,20 +62,22 @@
     .btn-back { display:inline-block; background:#eef2f3; color:#394046; padding:8px 14px; text-decoration:none; border-radius:6px; border:1px solid #e1e6e9; }
     .btn-back:hover { background:#e4eaed; }
 
-    /* Image previews */
     .image-preview-container { margin-top:10px; display:none; }
     .image-preview { max-width:100%; max-height:250px; border-radius:6px; border:1px solid #e6e6e6; box-shadow:0 1px 6px rgba(0,0,0,0.04); }
 
-    /* Alerts (dismissible) */
+    .pdf-preview-container { margin-top:10px; display:none; background:#f9fafb; padding:12px; border-radius:6px; border:1px solid #e6e6e6; }
+    .pdf-preview-info { display:flex; align-items:center; gap:10px; color:#374151; font-size:13px; }
+    .pdf-icon { font-size:32px; color:#dc2626; }
+    .pdf-details { flex:1; }
+    .pdf-name { font-weight:600; margin-bottom:4px; }
+    .pdf-size { color:#6b7280; font-size:12px; }
+
     .alert { position: relative; padding:10px 12px; border-radius:6px; margin-bottom:12px; border:1px solid transparent; display:flex; align-items:center; justify-content:space-between; gap:10px; }
     .alert .message-text { flex:1; margin-right:10px; }
     .alert .close-btn { background:transparent; border:none; font-size:16px; cursor:pointer; color:inherit; padding:6px; border-radius:4px; }
     .alert-info { background:#eef2f8; color:#083b6b; border-color:#cfe7ff; }
     .alert-success { background:#ecfdf5; color:#064e3b; border-color:#bbf7d0; }
     .alert-danger { background:#fff1f2; color:#701a1a; border-color:#fecaca; }
-
-    /* small helpers */
-    .muted { color:#6b7280; font-size:13px; }
 </style>
 
 <div class="page-center">
@@ -91,13 +85,11 @@
     <div class="form-header">
       <i class="fas fa-wallet upload-icon"></i>
       <h2>Add New Wallet Item</h2>
-      <p>Upload bank details, QR codes, or documents</p>
+      <p>Upload bank details, QR codes, documents or PDFs</p>
     </div>
 
-    <!-- Django messages converted to simple dismissible alerts -->
     {% if messages %}
       {% for message in messages %}
-        {% comment %} message.tags may be like 'success', 'error', etc. map to classes below {% endcomment %}
         {% if 'error' in message.tags or 'danger' in message.tags %}
           <div class="alert alert-danger" role="alert">
             <div class="message-text">{{ message }}</div>
@@ -130,8 +122,9 @@
         <select id="upload_type" name="upload_type" required>
           <option value="">Select upload type</option>
           <option value="bank">Bank/Details wallet</option>
-          <option value="qr">QR </option>
+          <option value="qr">QR</option>
           <option value="document">Documentation Image</option>
+          <option value="pdf">PDF Document</option>
           <option value="other">Other Wallet</option>
         </select>
         <div class="info-text">Select the category for this wallet item</div>
@@ -200,6 +193,40 @@
         </div>
       </div>
 
+      <!-- PDF Specific Fields -->
+      <div id="pdfFields" class="dynamic-fields" aria-hidden="true">
+        <div class="field-group">
+          <div class="field-group-title"><i class="fas fa-file-pdf"></i> PDF Details</div>
+          <div class="form-row">
+            <label class="form-label" for="pdf_name">PDF Name</label>
+            <input id="pdf_name" name="pdf_name" type="text" placeholder="Enter PDF document name">
+            <div class="info-text">Enter a descriptive name for this PDF document</div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <label class="form-label" for="pdf_file"><i class="fas fa-file-pdf"></i> PDF File <span class="required">*</span></label>
+          <input id="pdf_file" name="pdf_file" type="file" accept="application/pdf">
+          <div class="info-text">Upload the PDF document (Max 10MB)</div>
+          <div id="pdfPreview" class="pdf-preview-container">
+            <div class="pdf-preview-info">
+              <i class="fas fa-file-pdf pdf-icon"></i>
+              <div class="pdf-details">
+                <div class="pdf-name" id="pdfFileName"></div>
+                <div class="pdf-size" id="pdfFileSize"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <label class="form-label" for="pdf_thumbnail"><i class="fas fa-image"></i> Thumbnail Image (Optional)</label>
+          <input id="pdf_thumbnail" name="image_pdf" type="file" accept="image/png, image/jpeg, image/jpg">
+          <div class="info-text">Upload a thumbnail image for the PDF</div>
+          <div id="pdfImagePreview" class="image-preview-container"><img id="pdfPreviewImg" class="image-preview" src="" alt="Preview"></div>
+        </div>
+      </div>
+
       <!-- Other Wallet Specific Fields -->
       <div id="otherFields" class="dynamic-fields" aria-hidden="true">
         <div class="field-group">
@@ -247,9 +274,7 @@
   </div>
 </div>
 
-<!-- Page scripts (no Bootstrap JS) -->
 <script>
-  /* Dismissible alerts */
   document.querySelectorAll('.alert .close-btn').forEach(btn => {
     btn.addEventListener('click', function () {
       const alert = this.closest('.alert');
@@ -262,13 +287,13 @@
     });
   });
 
-  /* Show/hide type-specific sections */
   function hideAllDynamic() {
     document.querySelectorAll('.dynamic-fields').forEach(el => {
       el.style.display = 'none';
       el.setAttribute('aria-hidden', 'true');
     });
   }
+  
   function showSection(id) {
     hideAllDynamic();
     const el = document.getElementById(id);
@@ -280,7 +305,6 @@
 
   const uploadTypeEl = document.getElementById('upload_type');
   if (uploadTypeEl) {
-    // initialize
     if (uploadTypeEl.value) {
       showSection(uploadTypeEl.value + 'Fields');
     } else {
@@ -293,7 +317,6 @@
     });
   }
 
-  /* Image preview helper (file input -> img preview container) */
   function setupImagePreview(inputId, previewContainerId, previewImgId) {
     const input = document.getElementById(inputId);
     const container = document.getElementById(previewContainerId);
@@ -329,12 +352,58 @@
     });
   }
 
+  // PDF Preview Handler
+  function setupPDFPreview() {
+    const input = document.getElementById('pdf_file');
+    const container = document.getElementById('pdfPreview');
+    const fileName = document.getElementById('pdfFileName');
+    const fileSize = document.getElementById('pdfFileSize');
+    
+    if (!input || !container) return;
+
+    input.addEventListener('change', function (e) {
+      const file = e.target.files && e.target.files[0];
+      if (!file) {
+        container.style.display = 'none';
+        return;
+      }
+
+      if (file.type !== 'application/pdf') {
+        alert('Only PDF files are allowed.');
+        input.value = '';
+        return;
+      }
+      
+      if (file.size > 10 * 1024 * 1024) {
+        alert('PDF file size should not exceed 10MB.');
+        input.value = '';
+        return;
+      }
+
+      fileName.textContent = file.name;
+      
+      let size = file.size;
+      let sizeStr = '';
+      if (size < 1024) {
+        sizeStr = size + ' B';
+      } else if (size < 1024 * 1024) {
+        sizeStr = (size / 1024).toFixed(1) + ' KB';
+      } else {
+        sizeStr = (size / (1024 * 1024)).toFixed(1) + ' MB';
+      }
+      fileSize.textContent = sizeStr;
+      
+      container.style.display = 'block';
+    });
+  }
+
   setupImagePreview('bank_image','bankImagePreview','bankPreviewImg');
   setupImagePreview('qr_image','qrImagePreview','qrPreviewImg');
   setupImagePreview('document_image','documentImagePreview','documentPreviewImg');
+  setupImagePreview('pdf_thumbnail','pdfImagePreview','pdfPreviewImg');
   setupImagePreview('other_image','otherImagePreview','otherPreviewImg');
+  setupPDFPreview();
 
-  /* IFSC uppercase enforcement */
   (function () {
     const ifsc = document.getElementById('ifsc_code');
     if (!ifsc) return;
