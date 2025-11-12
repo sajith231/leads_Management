@@ -3134,14 +3134,52 @@ def get_current_employee_id(request):
         return JsonResponse({'error': str(e)}, status=500)
 from django.utils import timezone
 # views.py
-
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
 from django.utils import timezone
-from .models import Attendance, Employee
+from datetime import datetime
+from .models import Attendance, Employee, BreakTime
 from django.contrib.auth.decorators import login_required
+import requests
+from urllib.parse import quote_plus
 
+
+# ✅ WhatsApp message function (same API as used elsewhere)
+def send_whatsapp_message(phone, message):
+    """Send WhatsApp message via DX API"""
+    if not phone or not message:
+        print("❌ Missing phone or message")
+        return
+
+    phone = str(phone).strip()
+    if not phone.startswith("91"):
+        phone = "91" + phone
+
+    try:
+        encoded_msg = quote_plus(message)
+        url = (
+            f"https://app.dxing.in/api/send/whatsapp"
+            f"?secret=7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
+            f"&account=1761365422812b4ba287f5ee0bc9d43bbf5bbe87fb68fc4daea92d8"
+            f"&recipient={phone}"
+            f"&type=text"
+            f"&message={encoded_msg}"
+            f"&priority=1"
+        )
+        response = requests.get(url, timeout=10)
+        print(f"✅ WhatsApp sent to {phone} | Response: {response.text}")
+    except Exception as e:
+        print("❌ WhatsApp send error:", e)
+
+
+# ✅ Helper: check holidays
+def is_holiday(date):
+    # Replace this with your own holiday logic if exists
+    return False
+
+
+# ✅ Punch In
 @csrf_exempt
 @login_required
 def punch_in(request):
@@ -3151,27 +3189,27 @@ def punch_in(request):
             custom_user_id = request.session.get('custom_user_id')
             if not custom_user_id:
                 return JsonResponse({'success': False, 'error': 'User session not found'})
-            
+
             custom_user = User.objects.get(id=custom_user_id)
             employee = Employee.objects.get(user=custom_user)
             now = timezone.now()
             today = now.date()
-            
-            # Check if today is a holiday
+
+            # Holiday check
             if is_holiday(today):
                 return JsonResponse({'success': False, 'error': 'Cannot punch in on a holiday'})
-            
-            # Check if the employee has already punched in today
+
+            # Already punched in today
             existing_attendance = Attendance.objects.filter(
                 employee=employee,
                 date=today,
                 day=today.day,
                 punch_in__isnull=False
             ).exists()
-            
+
             if existing_attendance:
                 return JsonResponse({'success': False, 'error': 'You have already punched in today'})
-            
+
             attendance, created = Attendance.objects.get_or_create(
                 employee=employee,
                 date=today,
@@ -3184,7 +3222,7 @@ def punch_in(request):
                     'status': 'half'
                 }
             )
-            
+
             if not created:
                 attendance.punch_in = now
                 attendance.punch_in_location = data.get('location_name')
@@ -3192,7 +3230,15 @@ def punch_in(request):
                 attendance.punch_in_longitude = data.get('longitude')
                 attendance.status = 'half'
                 attendance.save()
-            
+
+            # ✅ WhatsApp message for Punch In
+            phone = getattr(employee, 'phone_personal', None) or getattr(employee, 'phone_residential', None)
+            if phone:
+                punch_time = timezone.localtime(now).strftime("%I:%M %p")
+                punch_date = timezone.localdate().strftime("%d-%m-%Y")
+                message = f"👋 You have successfully punched in at {punch_time} on {punch_date}."
+                send_whatsapp_message(phone, message)
+
             return JsonResponse({
                 'success': True,
                 'status': 'half',
@@ -3204,6 +3250,8 @@ def punch_in(request):
             return JsonResponse({'success': False, 'error': str(e)})
     return JsonResponse({'success': False, 'error': 'Invalid request'})
 
+
+# ✅ Punch Out
 @csrf_exempt
 @login_required
 def punch_out(request):
@@ -3213,17 +3261,17 @@ def punch_out(request):
             custom_user_id = request.session.get('custom_user_id')
             if not custom_user_id:
                 return JsonResponse({'success': False, 'error': 'User session not found'})
-            
+
             custom_user = User.objects.get(id=custom_user_id)
             employee = Employee.objects.get(user=custom_user)
-            now = datetime.now()
+            now = timezone.now()
             today = now.date()
-            
-            # Check if today is a holiday
+
+            # Holiday check
             if is_holiday(today):
                 return JsonResponse({'success': False, 'error': 'Cannot punch out on a holiday'})
-            
-            # Check if the employee has an active break
+
+            # Active break check
             active_break = BreakTime.objects.filter(
                 employee=employee,
                 date=today,
@@ -3231,39 +3279,42 @@ def punch_out(request):
                 break_punch_in__isnull=False,
                 break_punch_out__isnull=True
             ).first()
-            
+
             if active_break:
                 return JsonResponse({'success': False, 'error': 'You have an active break. Please finish your break before punching out.'})
-            
-            # Check if the employee has already punched out today
+
+            # Check attendance
             try:
-                attendance = Attendance.objects.get(
-                    employee=employee,
-                    date=today,
-                    day=today.day
-                )
-                
-                # Check if already punched out
+                attendance = Attendance.objects.get(employee=employee, date=today, day=today.day)
+
                 if attendance.punch_out is not None:
                     return JsonResponse({'success': False, 'error': 'You have already punched out today'})
-                
-                # Check if not punched in yet
+
                 if attendance.punch_in is None:
                     return JsonResponse({'success': False, 'error': 'You must punch in before punching out'})
-                
+
                 attendance.punch_out = now
                 attendance.punch_out_location = data.get('location_name')
                 attendance.punch_out_latitude = data.get('latitude')
                 attendance.punch_out_longitude = data.get('longitude')
                 attendance.status = 'full'
                 attendance.save()
-                
+
+                # ✅ WhatsApp message for Punch Out
+                phone = getattr(employee, 'phone_personal', None) or getattr(employee, 'phone_residential', None)
+                if phone:
+                    punch_time = timezone.localtime(now).strftime("%I:%M %p")
+                    punch_date = timezone.localdate().strftime("%d-%m-%Y")
+                    message = f"✅ You have successfully punched out at {punch_time} on {punch_date}."
+                    send_whatsapp_message(phone, message)
+
                 return JsonResponse({'success': True})
             except Attendance.DoesNotExist:
                 return JsonResponse({'success': False, 'error': 'No punch-in record found for today'})
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)})
     return JsonResponse({'success': False, 'error': 'Invalid request'})
+
 
 # views.py
 from django.http import JsonResponse
