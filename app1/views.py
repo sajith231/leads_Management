@@ -23,6 +23,7 @@ from django.db import transaction
 from django.db import models
 from .models import Employee, Attendance, LeaveRequest, Holiday,LateRequest,DefaultSettings,EarlyRequest
 from .utils import is_holiday
+from Cancel_Requestes.models import CancelRequest
 
 import requests
 
@@ -3014,6 +3015,7 @@ def attendance(request):
     current_month_for_input = f"{current_year:04d}-{current_month_num:02d}"  # e.g., "2025-10"
     current_month_two_digit = f"{current_month_num:02d}"                     # e.g., "10"
     days_of_month = list(range(1, days_in_month + 1))
+    pending_cancel_count = CancelRequest.objects.filter(status='pending').count()
 
     context = {
         'employees': employees,
@@ -3034,6 +3036,7 @@ def attendance(request):
         'today': today_day,
         'is_superuser': request.user.is_superuser,
         'status_filter': status_filter,   # so the template can keep the dropdown selection
+        'pending_cancel_count': pending_cancel_count,
     }
 
     return render(request, 'attendance.html', context)

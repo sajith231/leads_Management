@@ -72,6 +72,7 @@ INSTALLED_APPS = [
     'purchase_order',
     'claims',
     'wallet',
+    'Cancel_Requestes',
 ]
 
 
