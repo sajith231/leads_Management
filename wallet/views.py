@@ -326,13 +326,12 @@ import os
 import json
 import time
 import requests
-import urllib.parse
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from dotenv import load_dotenv
 from .models import Wallet
 
-# Load .env
+# Load environment variables
 load_dotenv()
 
 WHATSAPP_API_URL = os.getenv("WHATSAPP_API_URL", "https://app.dxing.in/api/send/whatsapp")
@@ -341,10 +340,7 @@ WHATSAPP_API_ACCOUNT = os.getenv("WHATSAPP_API_ACCOUNT", "1761365422812b4ba287f5
 
 
 def wallet_whatsapp_share(request, wallet_id):
-    """
-    Send wallet details to WhatsApp via DXing API.
-    Sends: 1️⃣ Text → 2️⃣ Image (if any) → 3️⃣ PDF (if any)
-    """
+    """Send wallet details (text, image, PDF) via WhatsApp using DXing API."""
     if request.method != 'POST':
         return JsonResponse({'success': False, 'error': 'Method not allowed'}, status=405)
 
@@ -373,7 +369,7 @@ def wallet_whatsapp_share(request, wallet_id):
             print("[DXing] Exception:", e)
         return False
 
-    # 1️⃣ TEXT MESSAGE
+    # 1️⃣ TEXT MESSAGE (plain readable format)
     lines = [f"*{wallet.title}*"]
 
     if wallet.upload_type == 'bank':
@@ -396,14 +392,13 @@ def wallet_whatsapp_share(request, wallet_id):
         lines.append(f"📝 {wallet.description}")
 
     message_text = "\n".join(lines)
-    encoded_msg = urllib.parse.quote(message_text)
 
     text_ok = _send({
         "secret": WHATSAPP_API_SECRET,
         "account": WHATSAPP_API_ACCOUNT,
         "recipient": phone,
         "type": "text",
-        "message": encoded_msg,
+        "message": message_text,  # ✅ No URL encoding now
         "priority": 1
     })
     print("✅ Text sent:", text_ok)
@@ -439,7 +434,7 @@ def wallet_whatsapp_share(request, wallet_id):
                 "document_type": "pdf",
                 "document_url": pdf_url,
                 "document_name": wallet.pdf_name or "wallet.pdf",
-                "message": urllib.parse.quote("📎 Please check attached document."),
+                "message": "📎 Please check attached document.",
                 "priority": 1
             })
             print("✅ PDF sent:", pdf_ok)
