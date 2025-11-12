@@ -36,6 +36,17 @@ CSRF_TRUSTED_ORIGINS = [
 
 
 
+import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
+WHATSAPP_API_SECRET = os.getenv("WHATSAPP_API_SECRET")
+WHATSAPP_API_ACCOUNT = os.getenv("WHATSAPP_API_ACCOUNT")
+WHATSAPP_API_BASE_URL = os.getenv("WHATSAPP_API_BASE_URL")
+
+
 ALLOWED_HOSTS = ['88.222.215.20','myimc.in','www.myimc.in','127.0.0.1','localhost']
 
 LOGIN_REDIRECT_URL = 'admin_dashboard'

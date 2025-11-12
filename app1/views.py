@@ -697,19 +697,57 @@ from .models import Lead, LeadRequirementAmount, LeadHardwarePrice, Requirement,
 from django.utils import timezone
 
 # WhatsApp API credentials
-WHATSAPP_API_SECRET = '7b8ae820ecb39f8d173d57b51e1fce4c023e359e'
-WHATSAPP_API_ACCOUNT = '1756959119812b4ba287f5ee0bc9d43bbf5bbe87fb68b9118fcf1af'
-
+import os
+import requests
 import urllib.parse
+from dotenv import load_dotenv
+
+# Load .env variables
+load_dotenv()
+
+WHATSAPP_API_URL = os.getenv("WHATSAPP_API_URL")
+WHATSAPP_API_SECRET = os.getenv("WHATSAPP_API_SECRET")
+WHATSAPP_API_ACCOUNT = os.getenv("WHATSAPP_API_ACCOUNT")
 
 def send_whatsapp_message(phone_number, message):
-    message = urllib.parse.quote(message)
-    url = f"https://app.dxing.in/api/send/whatsapp?secret={WHATSAPP_API_SECRET}&account={WHATSAPP_API_ACCOUNT}&recipient={phone_number}&type=text&message={message}&priority=1"
-    response = requests.get(url)
-    if response.status_code == 200:
-        print(f"WhatsApp message sent successfully to {phone_number}")
-    else:
-        print(f"Failed to send WhatsApp message to {phone_number}. Status code: {response.status_code}, Response: {response.text}")
+    """Send WhatsApp message using DX API and credentials from .env"""
+
+    if not phone_number or not message:
+        print("❌ Missing phone number or message")
+        return
+
+    # Ensure number starts with country code
+    phone_number = str(phone_number).strip()
+    if not phone_number.startswith("91"):
+        phone_number = "91" + phone_number
+
+    try:
+        encoded_message = urllib.parse.quote(message)
+        url = (
+            f"{WHATSAPP_API_URL}"
+            f"?secret={WHATSAPP_API_SECRET}"
+            f"&account={WHATSAPP_API_ACCOUNT}"
+            f"&recipient={phone_number}"
+            f"&type=text"
+            f"&message={encoded_message}"
+            f"&priority=1"
+        )
+
+        print("📤 Sending WhatsApp to:", phone_number)
+        response = requests.get(url, timeout=10)
+
+        print("🔗 URL:", url)
+        print("🟢 Status:", response.status_code)
+        print("🟡 Response:", response.text)
+
+        if response.status_code == 200:
+            print(f"✅ WhatsApp message sent successfully to {phone_number}")
+        else:
+            print(f"❌ Failed to send WhatsApp message ({response.status_code}) → {response.text}")
+
+    except Exception as e:
+        print("❌ WhatsApp send error:", e)
+
 
 @login_required
 def add_lead(request):
@@ -4264,28 +4302,55 @@ def process_leave_request(request):
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
 
+import os
+import requests
+from urllib.parse import quote_plus
+from dotenv import load_dotenv
+
+# Load .env values
+load_dotenv()
+
+WHATSAPP_API_URL = os.getenv("WHATSAPP_API_URL")
+WHATSAPP_API_SECRET = os.getenv("WHATSAPP_API_SECRET")
+WHATSAPP_API_ACCOUNT = os.getenv("WHATSAPP_API_ACCOUNT")
+
+# ✅ Admin/HR notification numbers (you can change here)
+ADMIN_NUMBERS = ["9946545535"]
+
 
 def send_whatsapp_message_status_update(leave_request, action, approver_name=None):
-    """Send WhatsApp message with detailed leave request information"""
-    secret = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
-    account = "1756959119812b4ba287f5ee0bc9d43bbf5bbe87fb68b9118fcf1af"
+    """Send WhatsApp message with detailed leave request info"""
+    if not (WHATSAPP_API_URL and WHATSAPP_API_SECRET and WHATSAPP_API_ACCOUNT):
+        print("❌ Missing WhatsApp API credentials in .env")
+        return False
 
     approver_name = (approver_name or "").strip() or "Admin"
 
+    # ✅ Get employee details safely
     emp = getattr(leave_request, 'employee', None)
-    emp_first_last = f"{getattr(emp, 'first_name', '')} {getattr(emp, 'last_name', '')}".strip() if emp else ''
+    emp_first_last = (
+        f"{getattr(emp, 'first_name', '')} {getattr(emp, 'last_name', '')}".strip()
+        if emp else ''
+    )
+
     employee_name = (
-        (getattr(emp, 'name', None) if emp else None)
-        or (getattr(emp, 'employee_name', None) if emp else None)
-        or (emp_first_last if emp_first_last else None)
-        or (getattr(emp, 'userid', None) if emp else None)
+        getattr(emp, 'name', None)
+        or getattr(emp, 'employee_name', None)
+        or emp_first_last
+        or getattr(emp, 'userid', None)
         or "Employee"
     )
-    employee_possessive = (employee_name + "'" if str(employee_name).strip().lower().endswith('s') else employee_name + "'s")
 
+    # Handle possessive names like "James'"
+    employee_possessive = (
+        employee_name + "'" if str(employee_name).strip().lower().endswith('s')
+        else employee_name + "'s"
+    )
+
+    # ✅ Create message based on action type
     if action == 'approve':
         message = (
-            f"✅ {employee_possessive} leave request has been approved.\n"
+            f"✅ {employee_possessive} leave request has been *approved*.\n"
             f"📅 Start Date: {leave_request.start_date.strftime('%d-%m-%Y')}\n"
             f"📅 End Date: {leave_request.end_date.strftime('%d-%m-%Y')}\n"
             f"📝 Reason: {leave_request.reason}\n"
@@ -4293,7 +4358,7 @@ def send_whatsapp_message_status_update(leave_request, action, approver_name=Non
         )
     elif action == 'reject':
         message = (
-            f"❌ {employee_possessive} leave request has been rejected.\n"
+            f"❌ {employee_possessive} leave request has been *rejected*.\n"
             f"📅 Start Date: {leave_request.start_date.strftime('%d-%m-%Y')}\n"
             f"📅 End Date: {leave_request.end_date.strftime('%d-%m-%Y')}\n"
             f"📝 Reason: {leave_request.reason}\n"
@@ -4301,7 +4366,7 @@ def send_whatsapp_message_status_update(leave_request, action, approver_name=Non
         )
     else:
         message = (
-            f"ℹ️ {employee_possessive} leave request status updated.\n"
+            f"ℹ️ {employee_possessive} leave request status *updated*.\n"
             f"📅 Start Date: {leave_request.start_date.strftime('%d-%m-%Y')}\n"
             f"📅 End Date: {leave_request.end_date.strftime('%d-%m-%Y')}\n"
             f"📝 Reason: {leave_request.reason}\n"
@@ -4309,37 +4374,60 @@ def send_whatsapp_message_status_update(leave_request, action, approver_name=Non
             f"👤 Reviewed By: {approver_name}"
         )
 
+    # ✅ Collect recipient numbers
     recipients = []
-    employee_number = getattr(leave_request.employee, 'phone_personal', None) or getattr(leave_request.employee, 'phone_number', None)
+    employee_number = getattr(emp, 'phone_personal', None) or getattr(emp, 'phone_number', None)
     if employee_number:
         recipients.append(str(employee_number))
-    if action == 'approve':
-        recipients += ["9946545535"]
+
+    if action == 'approve':  # notify admin too
+        recipients += ADMIN_NUMBERS
 
     if not recipients:
         print("⚠️ No recipients found to send WhatsApp message.")
         return False
 
-    encoded_message = requests.utils.quote(message)
+    encoded_message = quote_plus(message)
     all_ok = True
+
+    # ✅ Send to all recipients
     for phone in recipients:
+        phone = str(phone).strip()
+        if not phone.startswith("91"):
+            phone = "91" + phone
+
         url = (
-            f"https://app.dxing.in/api/send/whatsapp?"
-            f"secret={secret}&account={account}"
+            f"{WHATSAPP_API_URL}"
+            f"?secret={WHATSAPP_API_SECRET}"
+            f"&account={WHATSAPP_API_ACCOUNT}"
             f"&recipient={phone}"
-            f"&type=text&message={encoded_message}&priority=1"
+            f"&type=text"
+            f"&message={encoded_message}"
+            f"&priority=1"
         )
+
+        print("\n=======================")
+        print(f"📤 Sending WhatsApp message to {phone}")
+        print("🧾 Message:", message)
+        print("=======================")
+
         try:
             response = requests.get(url, timeout=10)
+            print("🔗 API URL:", url)
+            print("🟢 Response Code:", response.status_code)
+            print("🟡 Response:", response.text)
+
             if response.status_code == 200:
-                print(f"✅ WhatsApp message sent successfully to {phone}")
+                print(f"✅ Message sent successfully to {phone}")
             else:
                 all_ok = False
-                print(f"❌ Failed (status {response.status_code}) to {phone}: {response.text}")
+                print(f"❌ Failed ({response.status_code}) to {phone}: {response.text}")
         except requests.exceptions.RequestException as e:
             all_ok = False
             print(f"⚠️ Error sending WhatsApp message to {phone}: {e}")
+
     return all_ok
+
 
 
 
@@ -4440,30 +4528,65 @@ def create_late_request(request):
         return JsonResponse({'success': False, 'error': str(e)})
 
 
+import os
+import requests
+from urllib.parse import quote_plus
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
+# ✅ WhatsApp API credentials from .env
+WHATSAPP_API_URL = os.getenv("WHATSAPP_API_URL", "https://app.dxing.in/api/send/whatsapp")
+WHATSAPP_API_SECRET = os.getenv("WHATSAPP_API_SECRET")
+WHATSAPP_API_ACCOUNT = os.getenv("WHATSAPP_API_ACCOUNT")
+
 
 def send_whatsapp_message_new(phone_number, message):
-    secret = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
-    account = "1756959119812b4ba287f5ee0bc9d43bbf5bbe87fb68b9118fcf1af"
+    """Send WhatsApp message using DX API (credentials from .env)."""
 
-    encoded_message = requests.utils.quote(message)
+    if not phone_number or not message:
+        print("❌ Missing phone number or message.")
+        return False
+
+    # ✅ Ensure phone number format
+    phone_number = str(phone_number).strip()
+    if not phone_number.startswith("91"):
+        phone_number = "91" + phone_number
+
+    # ✅ Encode the message
+    encoded_message = quote_plus(message)
+
+    # ✅ Construct URL
     url = (
-        f"https://app.dxing.in/api/send/whatsapp?"
-        f"secret={secret}&account={account}"
+        f"{WHATSAPP_API_URL}?secret={WHATSAPP_API_SECRET}"
+        f"&account={WHATSAPP_API_ACCOUNT}"
         f"&recipient={phone_number}"
         f"&type=text&message={encoded_message}&priority=1"
     )
+
     try:
+        print("\n=======================")
+        print(f"📤 Sending WhatsApp message to {phone_number}")
+        print("🧾 Message:", message)
+        print("=======================")
+
         response = requests.get(url, timeout=10)
+        print("🔗 API URL:", url)
+        print("🟢 Status:", response.status_code)
+        print("🟡 Response:", response.text)
+
         if response.status_code == 200:
             print(f"✅ WhatsApp message sent successfully to {phone_number}")
             return True
         else:
-            print(f"❌ Failed to send WhatsApp message to {phone_number}. "
-                  f"Status code: {response.status_code}, Response: {response.text}")
+            print(f"❌ Failed to send message ({response.status_code}) → {response.text}")
             return False
+
     except requests.exceptions.RequestException as e:
         print(f"⚠️ Error sending WhatsApp message: {e}")
         return False
+
 
 
 

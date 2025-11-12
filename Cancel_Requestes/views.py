@@ -12,20 +12,24 @@ from .models import CancelRequest
 
 
 # ✅ WhatsApp API details
+import os
+import requests
+from urllib.parse import quote_plus
+from dotenv import load_dotenv
+
+load_dotenv()
+
+WA_API = os.getenv("WA_API")
+WA_SECRET = os.getenv("WA_SECRET")
+WA_ACCOUNT = os.getenv("WA_ACCOUNT")
+
 PHONE_NUMBERS = [
     "9946545535", "7593820007", "7593820005",
     "9846754998", "8129191379", "9061947005", "7306197537"
 ]
 
-WA_API = "https://app.dxing.in/api/send/whatsapp"
-WA_SECRET = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
-WA_ACCOUNT = "1761365422812b4ba287f5ee0bc9d43bbf5bbe87fb68fc4daea92d8"
-
-import requests
-from urllib.parse import quote_plus
-
 def send_whatsapp_message(phone, message):
-    """Send WhatsApp message via DX API using same format as browser test"""
+    """Send WhatsApp message via DX API using credentials from .env"""
     if not phone or not message:
         print("❌ Missing phone or message")
         return
@@ -35,26 +39,34 @@ def send_whatsapp_message(phone, message):
         phone = "91" + phone
 
     try:
-        encoded_msg = quote_plus(message)  # ✅ identical to browser encoding
+        encoded_msg = quote_plus(message)
         url = (
-            f"https://app.dxing.in/api/send/whatsapp"
-            f"?secret=7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
-            f"&account=1761365422812b4ba287f5ee0bc9d43bbf5bbe87fb68fc4daea92d8"
+            f"{WA_API}?secret={WA_SECRET}"
+            f"&account={WA_ACCOUNT}"
             f"&recipient={phone}"
             f"&type=text"
             f"&message={encoded_msg}"
             f"&priority=1"
         )
 
+        print("\n=======================")
+        print("📤 Sending WhatsApp message...")
+        print("➡️ URL:", url)
+        print("=======================")
+
         response = requests.get(url, timeout=10)
-        print("✅ WhatsApp URL:", url)
-        print("✅ WhatsApp Response:", response.text)
+        print("✅ Response code:", response.status_code)
+        print("✅ Response text:", response.text)
+
         if response.status_code == 200:
-            print("✅ WhatsApp message sent successfully to", phone)
+            print(f"✅ Message sent successfully to {phone}")
         else:
-            print("❌ WhatsApp error:", response.status_code, response.text)
+            print(f"❌ WhatsApp error ({response.status_code}): {response.text}")
+
     except Exception as e:
         print("❌ WhatsApp send error:", e)
+
+
 
 
 
