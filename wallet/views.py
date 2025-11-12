@@ -323,56 +323,68 @@ def delete_wallet(request, wallet_id):
     return redirect('wallet_list')
 
 
-# ------------------------------------------------------------------
-# views.py  (replace the old wallet_whatsapp_share completely)
-# ------------------------------------------------------------------
+import os
+import json
+import time
+import requests
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+from dotenv import load_dotenv
+
+from .models import Wallet  # make sure this import matches your app structure
+
+# ✅ Load environment variables
+load_dotenv()
+
+# ✅ WhatsApp API credentials from .env
+WHATSAPP_API_URL = os.getenv("WHATSAPP_API_URL", "https://app.dxing.in/api/send/whatsapp")
+WHATSAPP_API_SECRET = os.getenv("WHATSAPP_API_SECRET")
+WHATSAPP_API_ACCOUNT = os.getenv("WHATSAPP_API_ACCOUNT")
+
+
 def wallet_whatsapp_share(request, wallet_id):
     """
     Send wallet details to WhatsApp via DXing API.
-    Order:  1. text  2. image (if any)  3. PDF (if any)
+    Order: 1. text  2. image (if any)  3. PDF (if any)
     """
     if request.method != 'POST':
         return JsonResponse({'success': False, 'error': 'Method not allowed'}, status=405)
 
     try:
-        data        = json.loads(request.body)
-        phone_raw   = data.get('phone_number', '')
-        phone       = ''.join(filter(str.isdigit, phone_raw))
+        data = json.loads(request.body)
+        phone_raw = data.get('phone_number', '')
+        phone = ''.join(filter(str.isdigit, phone_raw))
         if len(phone) < 10:
-            return JsonResponse({'success': False, 'error': 'Bad phone number'}, status=400)
+            return JsonResponse({'success': False, 'error': 'Invalid phone number'}, status=400)
 
         wallet = get_object_or_404(Wallet, id=wallet_id)
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=400)
 
     # ----------------------------------------------------------
-    # DXing credentials
-    # ----------------------------------------------------------
-    API_URL  = "https://app.dxing.in/api/send/whatsapp"
-    API_SECRET = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
-    API_ACCOUNT = "1761365422812b4ba287f5ee0bc9d43bbf5bbe87fb68fc4daea92d8"
-
-    # ----------------------------------------------------------
-    # Helper – send a single payload
+    # Helper: Send one message payload
     # ----------------------------------------------------------
     def _send(payload: dict) -> bool:
         try:
-            print('[DXing] sending ->', payload)
-            r = requests.get(API_URL, params=payload, timeout=30)
-            print('[DXing] response', r.status_code, r.text[:200])
+            print('[DXing] Sending ->', payload)
+            r = requests.get(WHATSAPP_API_URL, params=payload, timeout=30)
+            print('[DXing] Response:', r.status_code, r.text[:200])
+
             if r.status_code == 200:
                 try:
-                    return r.json().get('status') == 200
+                    res = r.json()
+                    return str(res.get('status', '')).lower() in ['true', '200', 'success']
                 except Exception:
-                    return True          # non-json 200 is still OK
+                    return True  # non-JSON 200 is still considered success
         except Exception as e:
-            print('[DXing] exception', e)
+            print('[DXing] Exception:', e)
         return False
 
     # ----------------------------------------------------------
-    # 1.  TEXT
+    # 1️⃣ TEXT MESSAGE
     # ----------------------------------------------------------
     lines = [f"*{wallet.title}*"]
+
     if wallet.upload_type == 'bank':
         lines += [
             "*🏦 Bank details*",
@@ -392,8 +404,8 @@ def wallet_whatsapp_share(request, wallet_id):
         lines += ["", f"📝 {wallet.description}"]
 
     text_ok = _send({
-        'secret': API_SECRET,
-        'account': API_ACCOUNT,
+        'secret': WHATSAPP_API_SECRET,
+        'account': WHATSAPP_API_ACCOUNT,
         'recipient': phone,
         'type': 'text',
         'message': '\n'.join(lines),
@@ -401,38 +413,44 @@ def wallet_whatsapp_share(request, wallet_id):
     })
 
     # ----------------------------------------------------------
-    # 2.  IMAGE
+    # 2️⃣ IMAGE (if any)
     # ----------------------------------------------------------
     image_ok = False
     if wallet.image:
-        image_url = request.build_absolute_uri(wallet.image.url)
-        image_ok = _send({
-            'secret': API_SECRET,
-            'account': API_ACCOUNT,
-            'recipient': phone,
-            'type': 'image',
-            'message': image_url,
-            'priority': '1'
-        })
-        time.sleep(1)
+        try:
+            image_url = request.build_absolute_uri(wallet.image.url)
+            image_ok = _send({
+                'secret': WHATSAPP_API_SECRET,
+                'account': WHATSAPP_API_ACCOUNT,
+                'recipient': phone,
+                'type': 'image',
+                'message': image_url,
+                'priority': '1'
+            })
+            time.sleep(1)
+        except Exception as e:
+            print(f"[DXing] Image send error: {e}")
 
     # ----------------------------------------------------------
-    # 3.  PDF
+    # 3️⃣ PDF (if any)
     # ----------------------------------------------------------
     pdf_ok = False
     if hasattr(wallet, 'pdf_file') and wallet.pdf_file:
-        pdf_url = request.build_absolute_uri(wallet.pdf_file.url)
-        pdf_ok = _send({
-            'secret': API_SECRET,
-            'account': API_ACCOUNT,
-            'recipient': phone,
-            'type': 'file',
-            'message': pdf_url,
-            'priority': '1'
-        })
+        try:
+            pdf_url = request.build_absolute_uri(wallet.pdf_file.url)
+            pdf_ok = _send({
+                'secret': WHATSAPP_API_SECRET,
+                'account': WHATSAPP_API_ACCOUNT,
+                'recipient': phone,
+                'type': 'file',
+                'message': pdf_url,
+                'priority': '1'
+            })
+        except Exception as e:
+            print(f"[DXing] PDF send error: {e}")
 
     # ----------------------------------------------------------
-    # Final answer to AJAX caller
+    # ✅ Final Response to AJAX Caller
     # ----------------------------------------------------------
     if any([text_ok, image_ok, pdf_ok]):
         return JsonResponse({
@@ -441,6 +459,7 @@ def wallet_whatsapp_share(request, wallet_id):
             'image_sent': image_ok,
             'pdf_sent': pdf_ok
         })
+
     return JsonResponse({
         'success': False,
         'error': 'Nothing could be delivered – check server logs'
