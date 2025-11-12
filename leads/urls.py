@@ -46,6 +46,7 @@ urlpatterns = [
     path('po/', include('purchase_order.urls')),
     path('claims/', include('claims.urls')),
     path('wallet/', include('wallet.urls')),
+    path('cancel_requestes/', include('Cancel_Requestes.urls')),
 
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

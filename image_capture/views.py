@@ -233,29 +233,63 @@ def _get_location_name(latitude, longitude):
 # ------------------------------------------------------------------
 # Helper: send OTP via WhatsApp
 # ------------------------------------------------------------------
+import os
 import threading
+import logging
+import requests
+from urllib.parse import quote_plus
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
+WHATSAPP_API_URL = os.getenv("WHATSAPP_API_URL", "https://app.dxing.in/api/send/whatsapp")
+WHATSAPP_API_SECRET = os.getenv("WHATSAPP_API_SECRET")
+WHATSAPP_API_ACCOUNT = os.getenv("WHATSAPP_API_ACCOUNT")
+
 
 def _send_otp_via_whatsapp(phone: str, otp: str) -> None:
     """
-    Send OTP via DxIng WhatsApp in background thread (non-blocking)
+    Send OTP via DxIng WhatsApp in a background thread (non-blocking)
     """
+
     def send():
-        message = f"Your verification code is {otp}. Valid for 5 minutes."
-        url = (
-            "https://app.dxing.in/api/send/whatsapp"
-            "?secret=7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
-            "&account=1761365422812b4ba287f5ee0bc9d43bbf5bbe87fb68fc4daea92d8"
-            f"&recipient={phone}"
-            "&type=text"
-            f"&message={message}"
-            "&priority=1"
-        )
         try:
-            requests.get(url, timeout=5)
+            # ✅ Clean and format phone number
+            phone_number = str(phone).strip()
+            if not phone_number.startswith("91"):
+                phone_number = "91" + phone_number
+
+            # ✅ Encode message for URL safety
+            message = f"Your verification code is {otp}. Valid for 5 minutes."
+            encoded_message = quote_plus(message)
+
+            # ✅ Construct the API URL
+            url = (
+                f"{WHATSAPP_API_URL}"
+                f"?secret={WHATSAPP_API_SECRET}"
+                f"&account={WHATSAPP_API_ACCOUNT}"
+                f"&recipient={phone_number}"
+                f"&type=text"
+                f"&message={encoded_message}"
+                f"&priority=1"
+            )
+
+            # ✅ Send WhatsApp message
+            response = requests.get(url, timeout=10)
+            if response.status_code == 200:
+                print(f"✅ OTP sent successfully to {phone_number}")
+            else:
+                print(f"❌ Failed to send OTP ({response.status_code}): {response.text}")
+                logging.error(f"WhatsApp OTP failed for {phone_number}: {response.text}")
+
         except Exception as e:
-            logging.error(f"WhatsApp send failed for {phone}: {e}")
-    
+            logging.error(f"⚠️ WhatsApp send failed for {phone}: {e}")
+            print(f"⚠️ WhatsApp send failed for {phone}: {e}")
+
+    # ✅ Run sending in background
     threading.Thread(target=send, daemon=True).start()
+
 
 # ------------------------------------------------------------------
 # 1. Agent-facing link-generator page

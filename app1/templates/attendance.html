@@ -159,6 +159,19 @@
     </div>
 </div>
 
+
+
+<button class="btn btn-warning ms-2 position-relative"
+        onclick="window.location.href='{% url 'admin_cancel_requestes' %}'">
+  Cancel Requestes
+  {% if pending_cancel_count > 0 %}
+    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+      {{ pending_cancel_count }}
+      <span class="visually-hidden">unread messages</span>
+    </span>
+  {% endif %}
+</button>
+
     <!-- Attendance Details Modal -->
     <!-- Attendance Details Modal -->
 <div class="modal fade" id="attendanceDetailsModal" tabindex="-1" aria-labelledby="attendanceDetailsModalLabel" aria-hidden="true">
