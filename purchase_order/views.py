@@ -12,25 +12,75 @@ from django.core.paginator import Paginator
 from django.core.paginator import EmptyPage, PageNotAnInteger
 from django.db.models import ProtectedError
 import requests
+import os
+import requests
+import urllib.parse
+import logging
+from dotenv import load_dotenv
+
+# ✅ Load environment variables
+load_dotenv()
+
+logger = logging.getLogger(__name__)
+
+# ✅ WhatsApp API credentials from .env
+WHATSAPP_API_URL = os.getenv("WHATSAPP_API_URL", "https://app.dxing.in/api/send/whatsapp")
+WHATSAPP_SECRET = os.getenv("WHATSAPP_API_SECRET")
+WHATSAPP_ACCOUNT = os.getenv("WHATSAPP_API_ACCOUNT")
+
 
 def send_whatsapp_message(recipient, message):
-    """Send WhatsApp message via dxing.in API."""
+    """Send WhatsApp message via dxing.in API using .env credentials."""
     try:
-        base_url = "https://app.dxing.in/api/send/whatsapp"
-        secret = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
-        account = "1761365422812b4ba287f5ee0bc9d43bbf5bbe87fb68fc4daea92d8"
-        payload = {
-            "secret": secret,
-            "account": account,
-            "recipient": str(recipient),
+        if not recipient or not message:
+            print("❌ Missing recipient or message")
+            return False
+
+        # ✅ Ensure recipient format (add +91 if needed)
+        recipient = str(recipient).strip()
+        if len(recipient) == 10 and recipient.isdigit():
+            recipient = "91" + recipient
+
+        # ✅ URL encode the message safely
+        encoded_message = urllib.parse.quote(str(message))
+
+        # ✅ Construct the API request
+        params = {
+            "secret": WHATSAPP_SECRET,
+            "account": WHATSAPP_ACCOUNT,
+            "recipient": recipient,
             "type": "text",
-            "message": message,
+            "message": encoded_message,
             "priority": 1
         }
-        response = requests.get(base_url, params=payload, timeout=10)
-        print(f"📨 WhatsApp API Status: {response.status_code}")
+
+        response = requests.get(WHATSAPP_API_URL, params=params, timeout=10)
+
+        print("\n=======================")
+        print(f"📤 Sending WhatsApp to: {recipient}")
+        print("🧾 Message:", message)
+        print("🟢 Status Code:", response.status_code)
+        print("🟡 Response Text:", response.text)
+        print("=======================")
+
+        if response.status_code == 200:
+            print(f"✅ WhatsApp message sent successfully to {recipient}")
+            logger.info(f"WhatsApp sent successfully to {recipient}")
+            return True
+        else:
+            print(f"❌ Failed to send WhatsApp ({response.status_code}): {response.text}")
+            logger.error(f"WhatsApp failed for {recipient}: {response.text}")
+            return False
+
+    except requests.exceptions.RequestException as e:
+        print(f"⚠️ Network error sending WhatsApp to {recipient}: {e}")
+        logger.error(f"Network error sending WhatsApp: {e}")
+        return False
     except Exception as e:
-        print(f"❌ WhatsApp send failed: {e}")
+        print(f"⚠️ Unexpected error sending WhatsApp: {e}")
+        logger.error(f"Unexpected error: {e}")
+        return False
+
 
 # ==================== SUPPLIER VIEWS (UPDATED) ====================
 
@@ -1774,46 +1824,59 @@ def download_po_pdf(request, pk):
         return redirect('purchase_order:po_detail', pk=pk)
     
 #  ==================== WHATSAPP PDF SEND ====================
+import os
+import requests
+import urllib.parse
+import traceback
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+from dotenv import load_dotenv
+from datetime import datetime
+
+from .models import PurchaseOrder
+from .utils import generate_and_save_po_pdf_file  # adjust if needed
+
+# ✅ Load environment variables
+load_dotenv()
+
+# ✅ WhatsApp API credentials
+WHATSAPP_API_URL = os.getenv("WHATSAPP_API_URL", "https://app.dxing.in/api/send/whatsapp")
+WHATSAPP_SECRET = os.getenv("WHATSAPP_API_SECRET")
+WHATSAPP_ACCOUNT = os.getenv("WHATSAPP_API_ACCOUNT")
+
+
 def send_whatsapp_po(request, pk):
-    """Generate PO PDF and send via WhatsApp"""
-    po = get_object_or_404(PurchaseOrder, pk=pk)
-    supplier = po.supplier
-    
-    # ✅ Check for department
-    if not po.department:
-        return JsonResponse({
-            'success': False,
-            'error': 'Department not assigned to PO'
-        }, status=400)
-    
-    # Validate phone number
-    phone = (supplier.mobile_no or '').strip()
-    if not phone:
-        return JsonResponse({
-            'success': False,
-            'error': 'Supplier has no mobile number'
-        }, status=400)
-    
-    # Clean phone number
-    phone = ''.join(filter(str.isdigit, phone))
-    if not phone.startswith('91') and len(phone) == 10:
-        phone = '91' + phone
-    
+    """Generate Purchase Order PDF and send via WhatsApp"""
     try:
-        # ✅ Get format from request (always use FORMAT_2 for WhatsApp)
-        pdf_format = request.GET.get('format', 'FORMAT_2')
-        po.pdf_format = pdf_format
-        
-        # 1. Generate PDF
+        po = get_object_or_404(PurchaseOrder, pk=pk)
+        supplier = po.supplier
+
+        # ✅ Check department
+        if not po.department:
+            return JsonResponse({'success': False, 'error': 'Department not assigned to PO'}, status=400)
+
+        # ✅ Validate supplier phone
+        phone = (supplier.mobile_no or '').strip()
+        if not phone:
+            return JsonResponse({'success': False, 'error': 'Supplier has no mobile number'}, status=400)
+
+        # ✅ Clean phone number
+        phone = ''.join(filter(str.isdigit, phone))
+        if len(phone) == 10:
+            phone = '91' + phone
+
+        print(f"📱 Sending to: {phone}")
+
+        # ✅ Select PO format and generate PDF
+        po.pdf_format = request.GET.get('format', 'FORMAT_2')
         file_path = generate_and_save_po_pdf_file(po)
-        
+
         if not os.path.exists(file_path) or os.path.getsize(file_path) == 0:
             return JsonResponse({'success': False, 'error': 'PDF generation failed'}, status=500)
-        
+
         print(f"📄 PDF File: {file_path}")
-        print(f"📱 Sending to: {phone}")
-        
-        # 2. Upload to tmpfiles.org
+
+        # ✅ Upload PDF to tmpfiles.org
         supplier_name = (po.supplier.name or "SUPPLIER").strip().replace(" ", "_").replace("/", "_")
         pdf_filename = f"{supplier_name}_{po.po_number}.pdf"
 
@@ -1823,44 +1886,39 @@ def send_whatsapp_po(request, pk):
                 files={'file': (pdf_filename, pdf_file, 'application/pdf')},
                 timeout=30
             )
-        
+
         if upload_response.status_code != 200:
             return JsonResponse({
-                'success': False, 
+                'success': False,
                 'error': f'PDF upload failed: {upload_response.text}'
             }, status=500)
-        
+
         upload_data = upload_response.json()
-        
+
         if upload_data.get('status') != 'success':
             return JsonResponse({
-                'success': False, 
+                'success': False,
                 'error': f'Upload failed: {upload_data}'
             }, status=500)
-        
-        # Get direct download link
+
+        # ✅ Create direct download link
         file_url = upload_data['data']['url']
         pdf_url = file_url.replace('tmpfiles.org/', 'tmpfiles.org/dl/')
-        
         print(f"📤 Uploaded to: {pdf_url}")
-        
-        # 3. Send via WhatsApp
-        base_url = "https://app.dxing.in/api/send/whatsapp"
-        secret = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
-        account = "1761365422812b4ba287f5ee0bc9d43bbf5bbe87fb68fc4daea92d8"
-        
+
+        # ✅ WhatsApp message
         message = (
             f"📋 *Purchase Order {po.po_number}*\n\n"
             f"Dear {supplier.name},\n\n"
-            f"📅 PO Date: {po.po_date}\n"
+            f"📅 PO Date: {po.po_date.strftime('%d-%m-%Y') if po.po_date else 'N/A'}\n"
             f"💰 Total Amount: ₹{po.grand_total}\n\n"
             f"Thank you for your business! 🙏"
         )
 
         payload = {
-            "secret": secret,
-            "account": account,
-            "recipient": str(phone),
+            "secret": WHATSAPP_SECRET,
+            "account": WHATSAPP_ACCOUNT,
+            "recipient": phone,
             "type": "document",
             "document_type": "pdf",
             "document_url": pdf_url,
@@ -1868,33 +1926,27 @@ def send_whatsapp_po(request, pk):
             "message": message,
             "priority": 1
         }
-        
-        response = requests.get(base_url, params=payload, timeout=30)
-        
-        print(f"📱 Status: {response.status_code}")
-        print(f"📱 Response: {response.text}")
-        
+
+        response = requests.get(WHATSAPP_API_URL, params=payload, timeout=30)
+
+        print(f"📱 API Status: {response.status_code}")
+        print(f"📱 API Response: {response.text}")
+
         try:
             response_data = response.json()
-        except:
+        except Exception:
             response_data = {'raw_text': response.text}
-        
+
         api_status = str(response_data.get('status', '')).lower()
         api_message = str(response_data.get('message', '')).lower()
 
+        # ✅ Success conditions
         if (
             response.status_code == 200 and
-            (
-                'queued' in api_message or
-                'success' in api_message or
-                api_status in ['200', 'success', 'true']
-            )
+            ('queued' in api_message or 'success' in api_message or api_status in ['200', 'success', 'true'])
         ):
             print("✅ WhatsApp message sent successfully")
-            return JsonResponse({
-                'success': True,
-                'response': response_data
-            })
+            return JsonResponse({'success': True, 'response': response_data})
         else:
             print("⚠️ WhatsApp send failed")
             return JsonResponse({
@@ -1903,15 +1955,12 @@ def send_whatsapp_po(request, pk):
                 'pdf_url': pdf_url,
                 'response': response_data
             }, status=400)
-    
+
     except Exception as e:
-        import traceback
         print(f"❌ ERROR: {e}")
         print(traceback.format_exc())
-        return JsonResponse({
-            'success': False,
-            'error': str(e)
-        }, status=500)
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
     
 from django.views.decorators.http import require_http_methods
 import json
