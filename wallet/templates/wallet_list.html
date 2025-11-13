@@ -767,7 +767,7 @@
                 <div class="ribbon-count" id="count-document">{{ document_wallets|length }}</div>
             </div>
             <div class="ribbon" data-type="other">
-                <div class="ribbon-title"><i class="fas fa-wallet"></i> Other wallets</div>
+                <div class="ribbon-title"><i class="fas fa-address-book"></i> Address Book</div>
                 <div class="ribbon-count" id="count-other">{{ other_wallets|length }}</div>
             </div>
         </div>
@@ -804,6 +804,8 @@
                                 <i class="fas fa-qrcode"></i> QR
                             {% elif wallet.upload_type == 'document' %}
                                 <i class="fas fa-file-alt"></i> Document
+                            {% elif wallet.upload_type == 'other' %}
+                                <i class="fas fa-address-book"></i> Address Book
                             {% else %}
                                 <i class="fas fa-wallet"></i> Other
                             {% endif %}
@@ -943,10 +945,8 @@
 
   // Run when DOM is ready
   document.addEventListener('DOMContentLoaded', () => {
-    // Collect wallet cards lazily (guard if none)
     allWalletCards = Array.from(document.querySelectorAll('.wallet-card'));
 
-    // Wire up input listeners (guard existence)
     const searchInput = document.getElementById('searchInput');
     if (searchInput) searchInput.addEventListener('input', applyFilters);
 
@@ -961,13 +961,11 @@
 
     const phoneInput = document.getElementById('whatsappPhone');
     if (phoneInput) {
-      // Only allow digits in the phone input
       phoneInput.addEventListener('input', function(e) {
         this.value = this.value.replace(/\D/g, '');
       });
       
       phoneInput.addEventListener('keypress', function(e) {
-        // Only allow digits
         if (!/\d/.test(e.key) && e.key !== 'Enter') {
           e.preventDefault();
         }
@@ -975,7 +973,6 @@
       });
     }
 
-    // Escape key closes modals
     document.addEventListener('keydown', function(event) {
       if (event.key === 'Escape') {
         closeViewModal();
@@ -983,7 +980,6 @@
       }
     });
 
-    // Ribbon filters
     document.querySelectorAll('.ribbon').forEach(ribbon => {
       ribbon.addEventListener('click', function() {
         const type = this.getAttribute('data-type');
@@ -997,12 +993,10 @@
     init();
   });
 
-  // Initialize filter state & display
   function init() {
     applyFilters();
   }
 
-  // Apply filters to wallet cards
   function applyFilters() {
     const searchTermElem = document.getElementById('searchInput');
     const dateFromElem = document.getElementById('dateFrom');
@@ -1045,7 +1039,6 @@
     const noResults = document.getElementById('noResultsMessage');
     const paginationContainer = document.getElementById('paginationContainer');
 
-    // Hide all first
     allWalletCards.forEach(card => {
       card.style.display = 'none';
     });
@@ -1072,14 +1065,12 @@
     const startIndex = showAll ? 0 : (currentPage - 1) * itemsPerPage;
     const endIndex = showAll ? totalItems : Math.min(startIndex + itemsPerPage, totalItems);
 
-    // Append visible cards to grid in order
     for (let i = startIndex; i < endIndex; i++) {
       const card = filteredWallets[i];
       card.style.display = 'flex';
       if (grid && grid.contains(card) === false) {
         grid.appendChild(card);
       } else if (grid) {
-        // ensure it's positioned (appendChild will move it to end)
         grid.appendChild(card);
       }
     }
@@ -1241,6 +1232,7 @@
     if (uploadType === 'bank') { typeLabel = 'Bank'; typeIcon = 'fas fa-university'; }
     else if (uploadType === 'qr') { typeLabel = 'QR'; typeIcon = 'fas fa-qrcode'; }
     else if (uploadType === 'document') { typeLabel = 'Document'; typeIcon = 'fas fa-file-alt'; }
+    else if (uploadType === 'other') { typeLabel = 'Address Book'; typeIcon = 'fas fa-address-book'; }
 
     let content = '';
 
@@ -1279,7 +1271,7 @@
     } else if (uploadType === 'qr' && qrName) {
       content += `<div class="detail-section"><div class="detail-label"><i class="fas fa-qrcode"></i> QR Name</div><div class="detail-value">${qrName}</div></div>`;
     } else if (uploadType === 'other' && otherName) {
-      content += `<div class="detail-section"><div class="detail-label"><i class="fas fa-wallet"></i> Wallet Name</div><div class="detail-value">${otherName}</div></div>`;
+      content += `<div class="detail-section"><div class="detail-label"><i class="fas fa-user"></i> Name</div><div class="detail-value">${otherName}</div></div>`;
     }
 
     if (description) {
@@ -1346,7 +1338,6 @@
     else if (event.target.id === 'whatsappModal') closeWhatsAppModal();
   }
 
-  // Send WhatsApp Message with +91 prefix
   async function sendWhatsAppMessage() {
     const phoneInput = document.getElementById('whatsappPhone');
     const phoneInputContainer = document.getElementById('phoneInputContainer');
@@ -1361,7 +1352,6 @@
       return;
     }
 
-    // Guard: current wallet id must be set
     if (!currentWalletId) {
       if (phoneInputContainer) phoneInputContainer.classList.add('error');
       phoneErrorText.textContent = 'Internal error: wallet id not available. Close and reopen the modal.';
@@ -1370,7 +1360,6 @@
     }
 
     const phoneNumber = phoneInput.value.trim();
-    // Clear previous
     if (phoneInputContainer) phoneInputContainer.classList.remove('error');
     phoneError.style.display = 'none';
     successContainer.innerHTML = '';
@@ -1392,14 +1381,12 @@
       return;
     }
 
-    // Prepend +91 to the phone number
     const fullPhoneNumber = '91' + cleanPhone;
 
     sendBtn.disabled = true;
     sendBtnText.innerHTML = '<span class="loading-spinner"></span> Sending...';
 
     const url = `/wallet/whatsapp/${currentWalletId}/`;
-    console.log('[sendWhatsAppMessage] URL ->', url, 'payload ->', { phone_number: fullPhoneNumber });
 
     try {
       const response = await fetch(url, {
@@ -1435,8 +1422,6 @@
         phoneError.style.display = 'flex';
         return;
       }
-
-      console.log('[sendWhatsAppMessage] response.ok, status, data ->', response.ok, response.status, data);
 
       if (response.ok && data && data.success) {
         successContainer.innerHTML = `

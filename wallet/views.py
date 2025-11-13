@@ -8,6 +8,15 @@ from django.db.models import Q
 import requests
 import json
 import time
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
+WHATSAPP_API_URL = os.getenv("WHATSAPP_API_URL", "https://app.dxing.in/api/send/whatsapp")
+WHATSAPP_API_SECRET = os.getenv("WHATSAPP_API_SECRET", "7b8ae820ecb39f8d173d57b51e1fce4c023e359e")
+WHATSAPP_API_ACCOUNT = os.getenv("WHATSAPP_API_ACCOUNT", "1761365422812b4ba287f5ee0bc9d43bbf5bbe87fb68fc4daea92d8")
+
 
 def is_admin_user(request):
     """Determine whether the current request should be treated as admin/superadmin."""
@@ -58,63 +67,75 @@ def wallet_list(request):
 
 
 def add_wallet(request):
-    """Add new wallet item"""
+    """Add new wallet item with validation - Image OR PDF required for all types"""
     if request.method == 'POST':
         title = request.POST.get('title')
         upload_type = request.POST.get('upload_type')
         visibility_priority = request.POST.get('visibility_priority')
         description = request.POST.get('description', '')
 
-        image = None
-        pdf_file = None
-        
-        if upload_type == 'bank':
-            image = request.FILES.get('image_bank')
-        elif upload_type == 'qr':
-            image = request.FILES.get('image_qr')
-        elif upload_type == 'document':
-            image = request.FILES.get('image_document')
-        elif upload_type == 'pdf':
-            pdf_file = request.FILES.get('pdf_file')
-            image = request.FILES.get('image_pdf')
-        elif upload_type == 'other':
-            image = request.FILES.get('image_other')
-
+        # Validate required fields
         if not title or not upload_type or not visibility_priority:
             messages.error(request, 'Please fill all required fields (Title, Upload Type, Visibility).')
             return render(request, 'add_wallet.html')
 
-        if image:
+        # Validate upload_type is in allowed choices
+        valid_types = ['bank', 'qr', 'document', 'pdf', 'other']
+        if upload_type not in valid_types:
+            messages.error(request, f'Invalid upload type. Must be one of: {", ".join(valid_types)}')
+            return render(request, 'add_wallet.html')
+
+        # Get common files (image and PDF)
+        wallet_image = request.FILES.get('wallet_image')
+        wallet_pdf = request.FILES.get('wallet_pdf')
+        
+        # At least one file (image OR PDF) must be provided
+        if not wallet_image and not wallet_pdf:
+            messages.error(request, 'Please upload at least one file (Image OR PDF).')
+            return render(request, 'add_wallet.html')
+
+        # Validate Address Book requirements
+        if upload_type == 'other':
+            other_name = request.POST.get('other_name', '').strip()
+            if not other_name or not description:
+                messages.error(request, 'Address Book requires both name and description.')
+                return render(request, 'add_wallet.html')
+
+        # Validate image if provided
+        if wallet_image:
             allowed_extensions = ['jpg', 'jpeg', 'png']
-            file_extension = image.name.split('.')[-1].lower()
+            file_extension = wallet_image.name.split('.')[-1].lower()
 
             if file_extension not in allowed_extensions:
                 messages.error(request, 'Only JPG, JPEG, and PNG images are allowed.')
                 return render(request, 'add_wallet.html')
 
-            if image.size > 5 * 1024 * 1024:
+            if wallet_image.size > 5 * 1024 * 1024:
                 messages.error(request, 'Image file size should not exceed 5MB.')
                 return render(request, 'add_wallet.html')
 
-        if pdf_file:
-            file_extension = pdf_file.name.split('.')[-1].lower()
+        # Validate PDF if provided
+        if wallet_pdf:
+            file_extension = wallet_pdf.name.split('.')[-1].lower()
             if file_extension != 'pdf':
                 messages.error(request, 'Only PDF files are allowed.')
                 return render(request, 'add_wallet.html')
 
-            if pdf_file.size > 10 * 1024 * 1024:
+            if wallet_pdf.size > 10 * 1024 * 1024:
                 messages.error(request, 'PDF file size should not exceed 10MB.')
                 return render(request, 'add_wallet.html')
 
+        # Create wallet instance
         wallet = Wallet(
             title=title,
             upload_type=upload_type,
             visibility_priority=visibility_priority,
             description=description,
-            image=image,
-            pdf_file=pdf_file
+            image=wallet_image,
+            pdf_file=wallet_pdf
         )
 
+        # Set type-specific fields
         if upload_type == 'bank':
             wallet.account_holder_name = request.POST.get('account_holder_name', '')
             wallet.account_number = request.POST.get('account_number', '')
@@ -127,6 +148,7 @@ def add_wallet(request):
         elif upload_type == 'other':
             wallet.other_name = request.POST.get('other_name', '')
 
+        # Set created_by if user is authenticated
         if request.user.is_authenticated:
             wallet.created_by = request.user
 
@@ -169,21 +191,32 @@ def edit_wallet(request, wallet_id):
             messages.error(request, 'Please fill all required fields.')
             return render(request, 'edit_wallet.html', {'wallet': wallet})
 
-        new_image = None
-        new_pdf = None
-        
-        if upload_type == 'bank':
-            new_image = request.FILES.get('image_bank')
-        elif upload_type == 'qr':
-            new_image = request.FILES.get('image_qr')
-        elif upload_type == 'document':
-            new_image = request.FILES.get('image_document')
-        elif upload_type == 'pdf':
-            new_pdf = request.FILES.get('pdf_file')
-            new_image = request.FILES.get('image_pdf')
-        elif upload_type == 'other':
-            new_image = request.FILES.get('image_other')
+        # Validate upload_type
+        valid_types = ['bank', 'qr', 'document', 'pdf', 'other']
+        if upload_type not in valid_types:
+            messages.error(request, f'Invalid upload type. Must be one of: {", ".join(valid_types)}')
+            return render(request, 'edit_wallet.html', {'wallet': wallet})
 
+        # Validate Address Book requirements
+        if upload_type == 'other':
+            other_name = request.POST.get('other_name', '').strip()
+            if not other_name or not description:
+                messages.error(request, 'Address Book requires both name and description.')
+                return render(request, 'edit_wallet.html', {'wallet': wallet})
+
+        # Get new files if provided (common fields for all types)
+        new_image = request.FILES.get('wallet_image')
+        new_pdf = request.FILES.get('wallet_pdf')
+
+        # Check if at least one file exists (either existing or new)
+        will_have_image = new_image or wallet.image
+        will_have_pdf = new_pdf or wallet.pdf_file
+        
+        if not will_have_image and not will_have_pdf:
+            messages.error(request, 'Please upload at least one file (Image OR PDF). You cannot remove both files.')
+            return render(request, 'edit_wallet.html', {'wallet': wallet})
+
+        # Validate new image if provided
         if new_image:
             allowed_extensions = ['jpg', 'jpeg', 'png']
             file_extension = new_image.name.split('.')[-1].lower()
@@ -194,6 +227,7 @@ def edit_wallet(request, wallet_id):
                 messages.error(request, 'Image file size should not exceed 5MB.')
                 return render(request, 'edit_wallet.html', {'wallet': wallet})
 
+        # Validate new PDF if provided
         if new_pdf:
             file_extension = new_pdf.name.split('.')[-1].lower()
             if file_extension != 'pdf':
@@ -203,11 +237,13 @@ def edit_wallet(request, wallet_id):
                 messages.error(request, 'PDF file size should not exceed 10MB.')
                 return render(request, 'edit_wallet.html', {'wallet': wallet})
 
+        # Update basic fields
         wallet.title = title
         wallet.upload_type = upload_type
         wallet.visibility_priority = visibility_priority
         wallet.description = description
 
+        # Update type-specific fields and clear others
         if upload_type == 'bank':
             wallet.account_holder_name = request.POST.get('account_holder_name', '')
             wallet.account_number = request.POST.get('account_number', '')
@@ -249,6 +285,7 @@ def edit_wallet(request, wallet_id):
             wallet.qr_name = ''
             wallet.pdf_name = ''
 
+        # Update image if new one provided
         if new_image:
             try:
                 if wallet.image and hasattr(wallet.image, 'path'):
@@ -259,6 +296,7 @@ def edit_wallet(request, wallet_id):
                 pass
             wallet.image = new_image
 
+        # Update PDF if new one provided
         if new_pdf:
             try:
                 if wallet.pdf_file and hasattr(wallet.pdf_file, 'path'):
@@ -322,22 +360,6 @@ def delete_wallet(request, wallet_id):
 
     return redirect('wallet_list')
 
-import os
-import json
-import time
-import requests
-from django.http import JsonResponse
-from django.shortcuts import get_object_or_404
-from dotenv import load_dotenv
-from .models import Wallet
-
-# Load environment variables
-load_dotenv()
-
-WHATSAPP_API_URL = os.getenv("WHATSAPP_API_URL", "https://app.dxing.in/api/send/whatsapp")
-WHATSAPP_API_SECRET = os.getenv("WHATSAPP_API_SECRET", "7b8ae820ecb39f8d173d57b51e1fce4c023e359e")
-WHATSAPP_API_ACCOUNT = os.getenv("WHATSAPP_API_ACCOUNT", "1761365422812b4ba287f5ee0bc9d43bbf5bbe87fb68fc4daea92d8")
-
 
 def wallet_whatsapp_share(request, wallet_id):
     """Send wallet details (text, image, PDF) via WhatsApp using DXing API."""
@@ -385,7 +407,7 @@ def wallet_whatsapp_share(request, wallet_id):
     elif wallet.upload_type == 'pdf' and wallet.pdf_name:
         lines.append(f"📄 PDF name: {wallet.pdf_name}")
     elif wallet.upload_type == 'other' and wallet.other_name:
-        lines.append(f"💼 Wallet name: {wallet.other_name}")
+        lines.append(f"📇 Name: {wallet.other_name}")
 
     if wallet.description:
         lines.append("")
@@ -398,16 +420,18 @@ def wallet_whatsapp_share(request, wallet_id):
         "account": WHATSAPP_API_ACCOUNT,
         "recipient": phone,
         "type": "text",
-        "message": message_text,  # ✅ No URL encoding now
+        "message": message_text,
         "priority": 1
     })
     print("✅ Text sent:", text_ok)
+    time.sleep(1)  # Add delay between messages
 
     # 2️⃣ IMAGE MESSAGE
     image_ok = False
     if wallet.image:
         try:
             image_url = request.build_absolute_uri(wallet.image.url)
+            print(f"[DXing] Attempting to send image: {image_url}")
             image_ok = _send({
                 "secret": WHATSAPP_API_SECRET,
                 "account": WHATSAPP_API_ACCOUNT,
@@ -421,23 +445,25 @@ def wallet_whatsapp_share(request, wallet_id):
         except Exception as e:
             print("[DXing] Image send error:", e)
 
-    # 3️⃣ PDF MESSAGE
+    # 3️⃣ PDF MESSAGE - FIXED: Use type=file instead of type=document
     pdf_ok = False
     if wallet.pdf_file:
         try:
             pdf_url = request.build_absolute_uri(wallet.pdf_file.url)
+            print(f"[DXing] Attempting to send PDF: {pdf_url}")
+            
+            # ✅ FIXED: DXing API uses type=file for PDFs/documents
             pdf_ok = _send({
                 "secret": WHATSAPP_API_SECRET,
                 "account": WHATSAPP_API_ACCOUNT,
                 "recipient": phone,
-                "type": "document",
-                "document_type": "pdf",
-                "document_url": pdf_url,
-                "document_name": wallet.pdf_name or "wallet.pdf",
-                "message": "📎 Please check attached document.",
+                "type": "file",  # Changed from "document" to "file"
+                "message": pdf_url,
                 "priority": 1
             })
             print("✅ PDF sent:", pdf_ok)
+            time.sleep(1)
+                
         except Exception as e:
             print("[DXing] PDF send error:", e)
 
@@ -447,10 +473,11 @@ def wallet_whatsapp_share(request, wallet_id):
             "success": True,
             "text_sent": text_ok,
             "image_sent": image_ok,
-            "pdf_sent": pdf_ok
+            "pdf_sent": pdf_ok,
+            "message": "Wallet details sent successfully!"
         })
     else:
         return JsonResponse({
             "success": False,
-            "error": "Nothing could be delivered – check server logs"
+            "error": "Nothing could be delivered – check server logs and verify URLs are publicly accessible"
         }, status=500)
