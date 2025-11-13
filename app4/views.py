@@ -274,9 +274,10 @@ load_dotenv()
 logger = logging.getLogger(__name__)
 
 # ✅ WhatsApp API details from .env
-WHATSAPP_API_URL = os.getenv("WHATSAPP_API_URL", "https://app.dxing.in/api/send/whatsapp")
-WHATSAPP_API_SECRET = os.getenv("WHATSAPP_API_SECRET")
-WHATSAPP_API_ACCOUNT = os.getenv("WHATSAPP_API_ACCOUNT")
+WHATSAPP_API_URL = os.getenv("WA_API", "https://app.dxing.in/api/send/whatsapp")
+WHATSAPP_API_SECRET = os.getenv("WA_SECRET")
+WHATSAPP_API_ACCOUNT = os.getenv("WA_ACCOUNT")
+
 
 # ✅ Fixed recipient number (not stored in .env)
 DEFAULT_RECIPIENT = "919946545535"  # Include country code
