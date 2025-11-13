@@ -1,262 +1,731 @@
 {% extends "base.html" %}
 
-{% block title %}Requirements List{% endblock %}
+{% block title %}Requirements Management{% endblock %}
 
 {% block content %}
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Requirements List</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Requirements Management</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { background: #f0f2f5; min-height: 100vh; }
+    .container { max-width: 1600px; width: 100%; margin: 0 auto; padding: 20px; }
+    .main-content { display: flex; gap: 20px; align-items: stretch; width: 100%; min-height: 80vh; }
+    .directory-column { flex: 0 0 320px; width: 320px; display: flex; flex-direction: column; }
+    .form-column { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+    .form-container { background-color:#dcd9f3; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.15); overflow: hidden; width: 100%; flex: 1; display: flex; flex-direction: column; }
+    .form-header { background:#a095f6; color:black; padding: 15px 20px; text-align: center; }
+    .form-header h1 { font-size: 22px; margin-bottom: 5px; font-weight: 700; }
+    .form-header p { font-size: 13px; opacity: 0.9; }
+    .form-body { padding: 20px; flex: 1; display: flex; flex-direction: column; }
+    .form-section { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px dashed #e0e0e0; }
+    #communication-details { background-color:#dbf5dd; border: 2px solid #0ec33f; border-radius: 10px; padding: 20px; box-shadow: 0 3px 10px rgba(37,117,252,0.15); }
+    .section-title { font-size: 16px; color: #14ad09; font-weight: bold; margin-bottom: 15px; padding-bottom: 5px; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; }
+    .section-title i { margin-right: 8px; font-size: 16px; }
+    .form-row { display: flex; flex-wrap: wrap; margin: 0 -5px; width: 100%; }
+    .form-group { flex: 1; min-width: 180px; padding: 0 5px; margin-bottom: 15px; }
+    label { display: block; margin-bottom: 5px; font-weight: 600; color: #444; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    input, select, textarea { width: 100%; padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; transition: all 0.2s; background-color: #f9f9f9; }
+    input:focus, select:focus, textarea:focus { border-color: #6a11cb; box-shadow: 0 0 0 2px rgba(106,17,203,0.1); outline: none; background-color: white; }
+    .form-navigation { display: flex; justify-content: center; margin-bottom: 20px; background: white; border-radius: 10px; padding: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); width: 100%; }
+    .nav-menu { display: flex; list-style: none; gap: 5px; width: 100%; justify-content: center; flex-wrap: wrap; }
+    .nav-item { flex: 1; text-align: center; min-width: 120px; }
+    .nav-link { display: block; padding: 12px 15px; text-decoration: none; color: #666; font-weight: 600; border-radius: 8px; transition: all 0.3s ease; border: 2px solid transparent; font-size: 14px; white-space: nowrap; }
+    .nav-link:hover { background: linear-gradient(135deg, #f8f9ff, #e8f0ff); color: #4CAF50; border-color: #4CAF50; }
+    .nav-link.active { background: linear-gradient(135deg, #4CAF50, #45a049); color: white; border-color: #4CAF50; box-shadow: 0 4px 12px rgba(37,117,252,0.3); transform: translateY(-2px); }
+    .nav-link i { margin-right: 8px; font-size: 16px; }
+    .requirements-section { background-color: #ffe9cc; border: 2px solid #f8861b; border-radius: 10px; padding: 20px; margin-bottom: 20px; box-shadow: 0 3px 10px rgba(0,0,0,0.08); }
+    .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #e5bc08; width: 100%; }
+    .section-title-compact { display: flex; align-items: center; font-size: 16px; color: #d29105; font-weight: 700; margin: 0; white-space: nowrap; }
+    .section-title-compact i { margin-right: 10px; font-size: 18px; color: #d29105; }
+    .add-btn { background: linear-gradient(135deg, #4CAF50, #45a049); color: white; padding: 10px 20px; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s; display: flex; align-items: center; justify-content: center; }
+    .add-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 10px rgba(37,117,252,0.4); }
+    .table-container { overflow-x: auto; border: 1px solid #f18d0a; border-radius: 8px; background: white; margin-top: 15px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { background-color: #ffe9cc; padding: 12px 10px; text-align: left; font-weight: 600; color: #444; border: 1px solid #f18d0a; }
+    td { padding: 10px; border: 1px solid #f18d0a; background: white; }
+    tr:hover { background-color: #f9fafb; }
+    .total-row { font-weight: bold; background-color: #ffe9cc; }
+    .total-row td { border-top: 2px solid #f18d0a; font-size: 14px; }
+    .delete-btn { background: #dc3545; color: white; padding: 6px 10px; border: none; border-radius: 4px; font-size: 12px; cursor: pointer; width: 100%; }
+    .delete-btn:hover { background: #c82333; }
+    .btn-group { display: flex; justify-content: center; margin-top: auto; gap: 10px; width: 100%; padding-top: 20px; }
+    button { padding: 10px 20px; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
+    .submit-btn { background: linear-gradient(135deg, #4CAF50, #45a049); color: white; box-shadow: 0 3px 8px rgba(37,117,252,0.3); }
+    .submit-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 10px rgba(37,117,252,0.4); }
+    .back-btn { background-color: #f5f5f5; color: #666; border: 1px solid #ddd; text-decoration: none; display: flex; align-items: center; justify-content: center; }
+    .back-btn:hover { background-color: #e9e9e9; }
+    .lead-directory-container { background: white; border-radius: 10px; box-shadow: 0 3px 10px rgba(0,0,0,0.08); overflow: hidden; height: 100%; display: flex; flex-direction: column; }
+    .directory-header { background: #4a6fdc; color: white; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; }
+    .directory-header h2 { font-size: 16px; font-weight: 600; }
+    .directory-info { font-size: 12px; opacity: 0.9; }
+    .directory-tabs { display: flex; background: #f8f9fa; border-bottom: 1px solid #e9ecef; }
+    .directory-tab { flex: 1; padding: 10px 12px; text-align: center; background: transparent; border: none; font-weight: 600; font-size: 13px; color: #6c757d; cursor: pointer; transition: all 0.3s; border-bottom: 3px solid transparent; }
+    .directory-tab.active { color: #4a6fdc; border-bottom-color: #4a6fdc; background: white; }
+    .directory-tab:hover { background: #e9ecef; }
+    .search-container { padding: 12px 15px; background: #f8f9fa; border-bottom: 1px solid #e9ecef; }
+    .search-box { position: relative; width: 100%; }
+    .search-box input { padding: 8px 12px 8px 35px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; width: 100%; background: white; }
+    .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #6c757d; font-size: 13px; }
+    .employee-list, .lead-list { flex: 1; overflow-y: auto; padding: 8px 0; display: none; }
+    .employee-list.active, .lead-list.active { display: block; }
+    .employee-item, .lead-item { display: flex; align-items: center; padding: 12px 15px; border-bottom: 1px solid #f0f0f0; transition: all 0.2s; cursor: pointer; }
+    .employee-item:hover, .lead-item:hover { background: #f8f9fa; transform: translateX(5px); }
+    .employee-avatar, .lead-avatar { width: 32px; height: 32px; border-radius: 50%; background: #4a6fdc; color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 12px; margin-right: 12px; flex-shrink: 0; }
+    .lead-avatar { background: #28a745; }
+    .employee-details, .lead-details { flex: 1; min-width: 0; }
+    .employee-name, .lead-name { font-weight: 600; color: #333; margin-bottom: 2px; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .employee-role, .lead-info { font-size: 12px; color: #6c757d; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .lead-phone { font-size: 11px; color: #495057; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .lead-ticket { font-size: 10px; color: #6c757d; background: #f8f9fa; padding: 2px 5px; border-radius: 4px; display: inline-block; margin-top: 2px; }
+    .assign-btn { padding: 5px 10px; background: #4CAF50; color: white; border: none; border-radius: 4px; font-size: 11px; cursor: pointer; transition: all 0.2s; flex-shrink: 0; }
+    .assign-btn:hover { background: #45a049; }
+    .assign-btn.assigned { background: #6c757d; }
+    .no-results { padding: 20px 15px; text-align: center; color: #6c757d; font-size: 13px; }
 
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #f4f6f9;
-            margin: 0;
-            padding: 30px;
-        }
+    /* Message styles */
+    .success-message { background-color: #d4edda; color: #155724; padding: 12px; border-radius: 6px; margin-bottom: 20px; border: 1px solid #c3e6cb; }
+    .error-message { background-color: #f8d7da; color: #721c24; padding: 12px; border-radius: 6px; margin-bottom: 20px; border: 1px solid #f5c6cb; }
+    .warning-message { background-color: #fff3cd; color: #856404; padding: 12px; border-radius: 6px; margin-bottom: 20px; border: 1px solid #ffeaa7; }
 
-        .container {
-            max-width: 1100px;
-            margin: auto;
-            background: white;
-            padding: 20px 25px;
-            border-radius: 6px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
+    /* Lead selection styles */
+    .lead-item.selected {
+        background-color: #e8f5e8 !important;
+        border-left: 4px solid #4CAF50 !important;
+        transform: translateX(5px);
+    }
+    .lead-selection-hint {
+        background: #e3f2fd;
+        color: #1976d2;
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        margin-bottom: 10px;
+        border-left: 4px solid #2196f3;
+    }
 
-        h2 {
-            margin: 0 0 15px;
-            color: #333;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-        }
-
-        th, td {
-            border: 1px solid #ddd;
-            padding: 10px;
-            font-size: 14px;
-        }
-
-        th {
-            background: #d7eafc;
-            text-align: left;
-        }
-
-        tr:nth-child(even) {
-            background: #fafafa;
-        }
-
-        a {
-            text-decoration: none;
-            color: #007bff;
-            font-weight: bold;
-        }
-
-        a:hover {
-            text-decoration: underline;
-        }
-
-        .btn {
-            padding: 8px 15px;
-            background: #007bff;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            display: inline-block;
-            margin-bottom: 15px;
-        }
-
-        .btn:hover {
-            background: #0067d6;
-        }
-
-        tfoot th {
-            background: #f5f5f5;
-            font-size: 15px;
-        }
-
-        .message {
-            padding: 10px 15px;
-            margin-bottom: 15px;
-            border-radius: 4px;
-        }
-
-        .success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-
-        .error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-
-        .action-buttons {
-            display: flex;
-            gap: 8px;
-            justify-content: center;
-        }
-
-        .btn-edit {
-            padding: 6px 12px;
-            background: #28a745;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            text-decoration: none;
-            font-size: 12px;
-        }
-
-        .btn-edit:hover {
-            background: #218838;
-        }
-
-        .btn-delete {
-            padding: 6px 12px;
-            background: #dc3545;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            text-decoration: none;
-            font-size: 12px;
-        }
-
-        .btn-delete:hover {
-            background: #c82333;
-        }
-
-        .text-center {
-            text-align: center;
-        }
-        
-        /* New styles for icon buttons */
-        .icon-btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 32px;
-            height: 32px;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-        
-        .edit-icon {
-            background-color: #28a745;
-            color: white;
-        }
-        
-        .edit-icon:hover {
-            background-color: #218838;
-        }
-        
-        .delete-icon {
-            background-color: #dc3545;
-            color: white;
-        }
-        
-        .delete-icon:hover {
-            background-color: #c82333;
-        }
-        
-        .icon-btn svg {
-            width: 16px;
-            height: 16px;
-        }
-        
-        .icon-form {
-            display: inline;
-            margin: 0;
-        }
-    </style>
-</head>
-<body>
+    @media (max-width: 1200px) {
+        .main-content { flex-direction: column; }
+        .directory-column { flex: 0 0 auto; width: 100%; margin-bottom: 20px; }
+        .lead-directory-container { height: 300px; }
+    }
+    @media (max-width: 768px) {
+        .container { padding: 10px; }
+        .form-row { flex-direction: column; }
+        .form-group { min-width: 100%; }
+        .nav-menu { flex-direction: column; }
+        .nav-item { min-width: 100%; }
+    }
+</style>
 
 <div class="container">
+    <div class="main-content">
+        <!-- Left Column - Lead Directory -->
+        <div class="directory-column">
+            <div class="lead-directory-container">
+                <div class="directory-header">
+                    <h2>Marketing Directory</h2>
+                    <div class="directory-info">Showing <span id="activeTabCount">0</span> items</div>
+                </div>
 
-    <h2>Requirements List</h2>
+                <!-- Directory Tabs -->
+                <div class="directory-tabs">
+                    <button class="directory-tab active" data-tab="employees">Employees</button>
+                    <button class="directory-tab" data-tab="leads">Recent Leads</button>
+                </div>
 
-    {% if messages %}
-        {% for message in messages %}
-            <div class="message {{ message.tags }}">
-                {{ message }}
-            </div>
-        {% endfor %}
-    {% endif %}
+                <div class="search-container">
+                    <div class="search-box">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" id="directorySearch" placeholder="Search by Name/Phone/Ticket...">
+                    </div>
+                </div>
 
-    <a href="{% url 'app5:requirement_form' %}" class="btn">+ Add New</a>
-
-    <table border="1" width="100%" cellspacing="0" cellpadding="8">
-        <thead>
-            <tr>
-                <th>Sl.No</th>
-                <th>Created Date</th>
-                <th>Item Name</th>
-                <th>Unit</th>
-                <th>Price</th>
-                <th>Total</th>
-              
-                <th class="text-center">Actions</th>
-            </tr>
-        </thead>
-
-        <tbody>
-            {% for row in items %}
-            <tr>
-                <td>{{ forloop.counter }}</td>
-                <td>{{ row.created_at|date:"M d, Y" }}</td>
-                <td>{{ row.item_name }}</td>
-                <td>{{ row.unit }}</td>
-                <td>{{ row.price }}</td>
-                <td>{{ row.total }}</td>
-               
-                <td class="text-center">
-                    <div class="action-buttons">
-                        <!-- Edit Button with Icon -->
-                        <a href="{% url 'app5:requirement_edit' requirement_id=row.id %}" class="icon-btn edit-icon" title="Edit">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M21.731 2.269a2.625 2.625 0 00-3.712 0l-1.157 1.157 3.712 3.712 1.157-1.157a2.625 2.625 0 000-3.712zM19.513 8.199l-3.712-3.712-12.15 12.15a5.25 5.25 0 00-1.32 2.214l-.8 2.685a.75.75 0 00.933.933l2.685-.8a5.25 5.25 0 002.214-1.32L19.513 8.2z" />
-                            </svg>
-                        </a>
-                        
-                        <!-- Delete Button with Icon -->
-                        <form method="post" action="{% url 'app5:requirement_delete' row.id %}" class="icon-form" onsubmit="return confirm('Are you sure you want to delete this requirement?');">
-                            {% csrf_token %}
-                            <button type="submit" class="icon-btn delete-icon" title="Delete">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                                    <path fill-rule="evenodd" d="M16.5 4.478v.227a48.816 48.816 0 013.878.512.75.75 0 11-.256 1.478l-.209-.035-1.005 13.07a3 3 0 01-2.991 2.77H8.084a3 3 0 01-2.991-2.77L4.087 6.66l-.209.035a.75.75 0 01-.256-1.478A48.567 48.567 0 017.5 4.705v-.227c0-1.564 1.213-2.9 2.816-2.951a52.662 52.662 0 013.369 0c1.603.051 2.815 1.387 2.815 2.951zm-6.136-1.452a51.196 51.196 0 013.273 0C14.39 3.05 15 3.684 15 4.478v.113a49.488 49.488 0 00-6 0v-.113c0-.794.609-1.428 1.364-1.452zm-.355 5.945a.75.75 0 10-1.5.058l.347 9a.75.75 0 101.499-.058l-.346-9zm5.48.058a.75.75 0 10-1.498-.058l-.347 9a.75.75 0 001.5.058l.345-9z" clip-rule="evenodd" />
-                                </svg>
+                <!-- Employee List -->
+                <div class="employee-list active" id="employeeList">
+                    {% if active_users %}
+                        {% for user in active_users %}
+                        <div class="employee-item" 
+                             data-id="{{ user.id }}" 
+                             data-name="{{ user.name|escapejs }}" 
+                             data-phone="{{ user.phone|default:'' }}">
+                            <div class="employee-avatar">
+                                {{ user.name|slice:":2"|upper }}
+                            </div>
+                            <div class="employee-details">
+                                <div class="employee-name">{{ user.name }}</div>
+                                <div class="employee-role">
+                                    {% if user.branch %}{{ user.branch }}{% endif %}
+                                    {% if user.department %} - {{ user.department }}{% endif %}
+                                    {% if user.designation %} - {{ user.designation }}{% endif %}
+                                    {% if not user.branch and not user.department and not user.designation %}Employee{% endif %}
+                                </div>
+                            </div>
+                            <button class="assign-btn" 
+                                    data-id="{{ user.id }}" 
+                                    data-name="{{ user.name|escapejs }}"
+                                    data-phone="{{ user.phone|default:'' }}">
+                                Assign
                             </button>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="no-results">
+                            <i class="fas fa-users"></i>
+                            No active users found
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Lead List -->
+                <div class="lead-list" id="leadList">
+                    <div class="lead-selection-hint">
+                        <i class="fas fa-mouse-pointer"></i> Click on any lead to auto-fill the form
+                    </div>
+
+                    {% if active_leads %}
+                        {% for lead in active_leads %}
+                            <div class="lead-item"
+                                 data-name="{{ lead.name|default:'' }}"
+                                 data-phone="{{ lead.phone|default:'' }}"
+                                 data-ticket="{{ lead.ticket_number|default:'' }}"
+                                 onclick="selectLead(this)">
+                                <div class="lead-avatar">{{ lead.name|default:''|first|upper }}</div>
+                                <div class="lead-details">
+                                    <div class="lead-name">{{ lead.name|default:"Unknown" }}</div>
+                                    <div class="lead-info">{{ lead.business|default:"" }}</div>
+                                    <div class="lead-phone">{{ lead.phone|default:"" }}</div>
+                                    <div class="lead-ticket">#{{ lead.ticket_number|default:lead.id }}</div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% elif active_leads_qs %}
+                        {% for lead in active_leads_qs %}
+                            <div class="lead-item"
+                                 data-name="{% if lead.ownerName %}{{ lead.ownerName }}{% elif lead.name %}{{ lead.name }}{% else %}Unknown{% endif %}"
+                                 data-phone="{{ lead.phoneNo|default:lead.phone|default:'' }}"
+                                 data-ticket="{{ lead.ticket_number|default:lead.ticket_no|default:lead.id }}"
+                                 onclick="selectLead(this)">
+                                <div class="lead-avatar">
+                                    {% if lead.ownerName %}{{ lead.ownerName|first|upper }}{% elif lead.name %}{{ lead.name|first|upper }}{% else %}L{% endif %}
+                                </div>
+                                <div class="lead-details">
+                                    <div class="lead-name">{% if lead.ownerName %}{{ lead.ownerName }}{% elif lead.name %}{{ lead.name }}{% else %}Unknown{% endif %}</div>
+                                    <div class="lead-info">{{ lead.business|default:"" }}</div>
+                                    <div class="lead-phone">{{ lead.phoneNo|default:lead.phone|default:"" }}</div>
+                                    <div class="lead-ticket">#{{ lead.ticket_number|default:lead.ticket_no|default:lead.id }}</div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="no-results">
+                            <i class="fas fa-list"></i>
+                            No active leads
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column - Requirements Form -->
+        <div class="form-column">
+            <div class="form-container">
+                <div class="form-header">
+                    <h1>Requirements Management</h1>
+                    <p>Manage your project requirements and items</p>
+                </div>
+
+                <!-- Navigation Menu -->
+                <div class="form-navigation">
+                    <ul class="nav-menu">
+                        <li class="nav-item">
+                            <a href="{% url 'app5:lead' %}" class="nav-link">
+                                <i class="fas fa-phone-alt"></i>
+                                Lead Form
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#requirements-section" class="nav-link active">
+                                <i class="fas fa-clipboard-list"></i>
+                                Requirements
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#business-info" class="nav-link">
+                                <i class="fas fa-briefcase"></i>
+                                Event
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="form-body">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="{{ message.tags|default:'info' }}-message">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <!-- Communication Details Section -->
+                    <div class="form-section" id="communication-details">
+                        <div class="section-title">
+                            <i class="fas fa-phone-alt"></i>
+                            <span>Communication Details</span>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="ticketnumber">Ticket Number</label>
+                                <input type="text" id="ticketnumber" name="ticket" placeholder="Enter ticket number" autocomplete="off">
+                            </div>
+                            <div class="form-group">
+                                <label for="ownerName">Owner Name *</label>
+                                <input type="text" id="ownerName" name="ownerName" placeholder="Enter owner name" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="phoneNo">Phone Number *</label>
+                                <input type="tel" id="phoneNo" name="phoneNo" placeholder="Enter phone number" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ===== Requirements Section (MRP used for price) ===== -->
+                    <div class="requirements-section" id="requirements-section">
+                        <div class="section-header">
+                            <div class="section-title-compact">
+                                <i class="fas fa-clipboard-list"></i>
+                                <span>Requirements</span>
+                            </div>
+                            <button type="button" class="add-btn" id="add-item-btn">
+                                <i class="fas fa-plus"></i> Add Item
+                            </button>
+                        </div>
+
+                        <form id="requirements-form" method="POST" action="{% url 'app5:requirement_form' %}">
+                            {% csrf_token %}
+
+                            <!-- Hidden fields for communication details -->
+                            <input type="hidden" name="owner_name" id="hiddenOwnerName">
+                            <input type="hidden" name="phone_no" id="hiddenPhoneNo">
+
+                            <!-- server-rendered options for JS (single source of truth) -->
+                            <template id="item-options">
+                                {% for it in items %}
+                                    <option value="{{ it.id }}"
+                                            data-unit="{{ it.unit_of_measure|default_if_none:'' }}"
+                                            data-price="{{ it.mrp|default_if_none:'0.00'|floatformat:2 }}">
+                                        {{ it.name }}
+                                    </option>
+                                {% endfor %}
+                            </template>
+
+                            <div class="table-container">
+                                <table id="requirements-table">
+                                    <thead>
+                                        <tr>
+                                            <th width="5%">Sl.No:</th>
+                                            <th width="50%">Item Name</th>
+                                            <th width="15%">Unit</th>
+                                            <th width="20%">Price</th>
+                                            <th width="10%">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="table-body">
+                                        <!-- rows are dynamically added -->
+                                    </tbody>
+                                    <tfoot>
+                                        <tr class="total-row">
+                                            <td colspan="3" style="text-align: right; font-weight:700;">Grand Total:</td>
+                                            <td id="grand-total" style="font-weight:700;">0.00</td>
+                                            <td></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+
+                            <!-- Form Actions -->
+                            <div class="btn-group">
+                                <button type="submit" class="submit-btn">
+                                    <i class="fas fa-paper-plane"></i> Submit Requirements
+                                </button>
+                                <a href="#" class="back-btn">Cancel</a>
+                            </div>
                         </form>
                     </div>
-                </td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="7" style="text-align:center;">No requirements found. <a href="{% url 'app5:requirement_form' %}">Add your first requirement</a></td>
-            </tr>
-            {% endfor %}
-        </tbody>
+                    <!-- ===== end Requirements Section ===== -->
 
-        <tfoot>
-            <tr>
-                <th colspan="5" style="text-align:right;">Grand Total:</th>
-                <th>{{ grand_total }}</th>
-                <th></th>
-            </tr>
-        </tfoot>
-    </table>
-
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
+<script>
+    // TOP-LEVEL state
+    let selectedLead = null;
+
+    function selectLead(leadItem) {
+        // clear any previous selection
+        clearLeadSelection();
+
+        const leadName  = (leadItem.dataset.name || '').trim();
+        const leadPhone = (leadItem.dataset.phone || '').trim();
+        let leadTicket  = (leadItem.dataset.ticket || '').trim();
+
+        // If ticket starts with '#', remove it
+        if (leadTicket.startsWith('#')) leadTicket = leadTicket.slice(1);
+
+        // Put ticket into visible and hidden fields
+        const elTicket = document.getElementById('ticketnumber');
+        if (elTicket) elTicket.value = leadTicket;
+
+        const elOwner = document.getElementById('ownerName');
+        if (elOwner) elOwner.value = leadName;
+
+        const elPhone = document.getElementById('phoneNo');
+        if (elPhone) elPhone.value = leadPhone;
+
+        // hidden fields used on submit
+        const hiddenOwner = document.getElementById('hiddenOwnerName');
+        const hiddenPhone = document.getElementById('hiddenPhoneNo');
+        if (hiddenOwner) hiddenOwner.value = leadName;
+        if (hiddenPhone) hiddenPhone.value = leadPhone;
+
+        // mark selected visually & store reference
+        leadItem.classList.add('selected');
+        selectedLead = leadItem;
+
+        // trigger input events (optional)
+        [elTicket, elOwner, elPhone].forEach(el => {
+            if (!el) return;
+            el.dispatchEvent(new Event('input', { bubbles: true }));
+        });
+    }
+
+    function clearLeadSelection() {
+        // Remove selection from all lead items
+        document.querySelectorAll('.lead-item').forEach(item => {
+            item.classList.remove('selected');
+        });
+        selectedLead = null;
+    }
+
+    function clearFormFields() {
+        const t = document.getElementById('ticketnumber');
+        const o = document.getElementById('ownerName');
+        const p = document.getElementById('phoneNo');
+        if (t) t.value = '';
+        if (o) o.value = '';
+        if (p) p.value = '';
+        clearLeadSelection();
+    }
+
+    function showTemporaryMessage(message, type = 'info') {
+        // Remove any existing temporary messages
+        const existingMsg = document.querySelector('.temp-message');
+        if (existingMsg) {
+            existingMsg.remove();
+        }
+
+        // Create new message
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `temp-message ${type}-message`;
+        messageDiv.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            padding: 12px 20px;
+            border-radius: 6px;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            animation: slideIn 0.3s ease;
+        `;
+
+        if (type === 'success') {
+            messageDiv.style.backgroundColor = '#d4edda';
+            messageDiv.style.color = '#155724';
+            messageDiv.style.border = '1px solid #c3e6cb';
+        } else {
+            messageDiv.style.backgroundColor = '#d1ecf1';
+            messageDiv.style.color = '#0c5460';
+            messageDiv.style.border = '1px solid #bee5eb';
+        }
+
+        messageDiv.textContent = message;
+        document.body.appendChild(messageDiv);
+
+        // Auto-remove after 3 seconds
+        setTimeout(() => {
+            if (messageDiv.parentNode) {
+                messageDiv.remove();
+            }
+        }, 3000);
+    }
+
+    // Add CSS for animations (if not already added)
+    if (!document.querySelector('#lead-selection-styles')) {
+        const style = document.createElement('style');
+        style.id = 'lead-selection-styles';
+        style.textContent = `
+            @keyframes slideIn {
+                from {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    // Directory tab switching
+    document.querySelectorAll('.directory-tab').forEach(btn => {
+        btn.addEventListener('click', function () {
+            document.querySelectorAll('.directory-tab').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+
+            const tab = this.dataset.tab;
+            if (tab === 'employees') {
+                document.getElementById('employeeList').classList.add('active');
+                document.getElementById('leadList').classList.remove('active');
+            } else {
+                document.getElementById('leadList').classList.add('active');
+                document.getElementById('employeeList').classList.remove('active');
+            }
+            updateCount();
+        });
+    });
+
+    // Search filter
+    const searchInput = document.getElementById('directorySearch');
+    if (searchInput) {
+        searchInput.addEventListener('input', function () {
+            const q = this.value.trim().toLowerCase();
+            const activeEmployees = document.querySelectorAll('#employeeList .employee-item');
+            const activeLeads = document.querySelectorAll('#leadList .lead-item');
+
+            const filterList = (nodes) => {
+                let visible = 0;
+                nodes.forEach(node => {
+                    const name = (node.dataset.name || '').toLowerCase();
+                    const phone = (node.dataset.phone || '').toLowerCase();
+                    const ticket = (node.dataset.ticket || '').toLowerCase();
+                    if (!q || name.includes(q) || phone.includes(q) || ticket.includes(q)) {
+                        node.style.display = '';
+                        visible++;
+                    } else {
+                        node.style.display = 'none';
+                        // Clear selection if selected item is hidden
+                        if (node.classList.contains('selected')) {
+                            clearFormFields();
+                        }
+                    }
+                });
+                return visible;
+            };
+
+            // decide which tab is visible
+            if (document.getElementById('employeeList').classList.contains('active')) {
+                filterList(activeEmployees);
+            } else {
+                filterList(activeLeads);
+            }
+            updateCount();
+        });
+    }
+
+    // Update the counter based on visible items
+    function updateCount() {
+        let list;
+        if (document.getElementById('employeeList').classList.contains('active')) {
+            list = document.querySelectorAll('#employeeList .employee-item');
+        } else {
+            list = document.querySelectorAll('#leadList .lead-item');
+        }
+        const visible = Array.from(list).filter(n => n.style.display !== 'none').length;
+        document.getElementById('activeTabCount').innerText = visible;
+    }
+
+    // initialize counter
+    updateCount();
+
+    // Employee assignment functionality
+    document.addEventListener('click', function(e) {
+        // Handle employee assignment
+        if (e.target.closest('.employee-item') || e.target.closest('.assign-btn')) {
+            const employeeItem = e.target.closest('.employee-item');
+            if (employeeItem) {
+                const name = employeeItem.dataset.name || '';
+                const phone = employeeItem.dataset.phone || '';
+                
+                if (name) {
+                    document.getElementById('ownerName').value = name;
+                    document.getElementById('hiddenOwnerName').value = name;
+                }
+                if (phone) {
+                    document.getElementById('phoneNo').value = phone;
+                    document.getElementById('hiddenPhoneNo').value = phone;
+                }
+                
+                // Clear any lead selection when employee is used
+                clearLeadSelection();
+                
+                showTemporaryMessage(`Assigned ${name} to form`, 'success');
+            }
+        }
+    });
+
+    // ===== Requirements table logic (Price only, no Qty) =====
+    document.addEventListener('DOMContentLoaded', function () {
+        const templateOptionsHtml = document.getElementById('item-options').innerHTML;
+        const tbody = document.getElementById('table-body');
+        const addBtn = document.getElementById('add-item-btn');
+        const grandEl = document.getElementById('grand-total');
+
+        function formatNumber(n) {
+            n = parseFloat(n) || 0;
+            return n.toFixed(2);
+        }
+
+        function createRow() {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td class="sl-no"></td>
+                <td>
+                    <select name="item_id[]" class="form-control item-select" required>
+                        <option value="">-- Select Item --</option>
+                        ${templateOptionsHtml}
+                    </select>
+                </td>
+                <td><input type="text" name="unit[]" class="item-unit" readonly placeholder="Unit"></td>
+                <td><input type="number" name="price[]" class="item-price" min="0" step="0.01" placeholder="0.00" required></td>
+                <td><button type="button" class="delete-row delete-btn"><i class="fas fa-trash"></i></button></td>
+            `;
+            attachRowEvents(tr);
+            tbody.appendChild(tr);
+            refreshSlNos();
+        }
+
+        function refreshSlNos() {
+            document.querySelectorAll('#table-body tr').forEach((row, idx) => {
+                const cell = row.querySelector('.sl-no');
+                if (cell) cell.textContent = idx + 1;
+            });
+        }
+
+        function recalcRow(row) {
+            const priceInput = row.querySelector('.item-price');
+            const totalCell = row.querySelector('.item-total');
+
+            const price = parseFloat(priceInput.value || 0);
+            
+            // Since there's no quantity, the total is just the price
+            if (totalCell) {
+                totalCell.textContent = formatNumber(price);
+            }
+            recalcGrandTotal();
+        }
+
+        function recalcGrandTotal() {
+            let grand = 0;
+            document.querySelectorAll('#table-body .item-price').forEach(input => {
+                grand += parseFloat(input.value || 0);
+            });
+            grandEl.textContent = formatNumber(grand);
+        }
+
+        function attachRowEvents(row) {
+            const itemSelect = row.querySelector('.item-select');
+            const unitInput = row.querySelector('.item-unit');
+            const priceInput = row.querySelector('.item-price');
+            const deleteBtn = row.querySelector('.delete-row');
+
+            if (itemSelect) {
+                itemSelect.addEventListener('change', function () {
+                    const opt = this.selectedOptions[0];
+                    if (opt && opt.value !== '') {
+                        const unit = opt.dataset.unit || '';
+                        // data-price contains MRP (floatformat:2)
+                        const price = opt.dataset.price || '0.00';
+                        if (unitInput) unitInput.value = unit;
+                        if (priceInput) priceInput.value = parseFloat(price || 0).toFixed(2);
+                    } else {
+                        if (unitInput) unitInput.value = '';
+                        if (priceInput) priceInput.value = '';
+                    }
+                    recalcGrandTotal();
+                });
+            }
+
+            if (priceInput) {
+                priceInput.addEventListener('input', () => recalcGrandTotal());
+            }
+
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', function () {
+                    row.remove();
+                    refreshSlNos();
+                    recalcGrandTotal();
+                    if (document.querySelectorAll('#table-body tr').length === 0) createRow();
+                });
+            }
+        }
+
+        // create initial row
+        createRow();
+
+        // add new row button
+        if (addBtn) {
+            addBtn.addEventListener('click', function () {
+                createRow();
+            });
+        }
+
+        // Before submit: copy visible communication fields into hidden fields
+        const reqForm = document.getElementById('requirements-form');
+        if (reqForm) {
+            reqForm.addEventListener('submit', function (e) {
+                const owner = document.getElementById('ownerName');
+                const phone = document.getElementById('phoneNo');
+                if (document.getElementById('hiddenOwnerName')) document.getElementById('hiddenOwnerName').value = owner ? owner.value : '';
+                if (document.getElementById('hiddenPhoneNo')) document.getElementById('hiddenPhoneNo').value = phone ? phone.value : '';
+            });
+        }
+    });
+
+    // Clear lead selection if user edits fields
+    const ticketEl = document.getElementById('ticketnumber');
+    if (ticketEl) ticketEl.addEventListener('input', function() {
+        if (selectedLead && this.value !== (selectedLead.dataset.ticket || '').replace(/^#/, '')) {
+            clearLeadSelection();
+        }
+    });
+    const ownerEl = document.getElementById('ownerName');
+    if (ownerEl) ownerEl.addEventListener('input', function() {
+        if (selectedLead && this.value !== (selectedLead.dataset.name || '')) {
+            clearLeadSelection();
+        }
+    });
+    const phoneEl = document.getElementById('phoneNo');
+    if (phoneEl) phoneEl.addEventListener('input', function() {
+        if (selectedLead && this.value !== (selectedLead.dataset.phone || '')) {
+            clearLeadSelection();
+        }
+    });
+
+    // initial count update (for directory)
+    (function(){ 
+        const ev = new Event('input'); 
+        const s = document.getElementById('directorySearch');
+        if (s) s.dispatchEvent(ev);
+        updateCount();
+    })();
+</script>
 {% endblock %}

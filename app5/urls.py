@@ -87,21 +87,22 @@ urlpatterns = [
     path("lead/", views.lead_form_view, name="lead"),
     path("lead-report/", views.lead_report_view, name="lead_report"),
     # app5/urls.py
-   path('requirement-form/', views.requirement_form, name='requirement_form'),
-   path('requirements-list/', views.requirements_list_view, name='requirements_list'),
-   path('requirement-items/edit/<int:requirement_id>/', views.requirement_edit, name='requirement_edit'),
-   path('requirement/delete/<int:item_id>/', views.requirement_delete, name='requirement_delete'),
-
-
    path('lead/<int:lead_id>/edit/', views.lead_edit, name='lead_edit'),  
    path('lead/delete/<int:lead_id>/', views.lead_delete, name='lead_delete'),
    path('api/lead/<int:lead_id>/', views.lead_detail_api, name='lead_detail_api'),
-   path('requirement-form/', views.requirement_form, name='requirement_form'),
-   path('requirement-list/', views.requirement_list, name='requirement_list'),
+   path('requirements-list/', views.requirement_list, name='requirement_list'),
+   path('requirements/save/', views.requirement_form, name='requirement_form'),
    # Lead Assignment URLs
     path('lead-assign-list/', views.lead_assign_list_view, name='lead_assign_list'),
     path('assign-lead/', views.assign_lead_view, name='assign_lead'),
+    path('requirements-list/', views.requirement_list, name='requirements_list'),
+    path("get-item-details/", views.get_item_details, name="get_item_details"),
 
+    # endpoint for saving the form
+    path('requirements/save/', views.requirement_form, name='requirement_form'),
+
+    # your lead form view (adjust if function name differs)
+    path('lead/', views.lead_form_view, name='lead'),
     path('lead/assign/edit/<lead_id>/', views.lead_assign_edit, name='lead_assign_edit'),  # <-- this name fixes your template reverse() cal),
     path('delete-lead/<int:lead_id>/', views.delete_lead_view, name='delete_lead'),
    

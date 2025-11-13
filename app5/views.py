@@ -20,6 +20,7 @@ import requests
 from django.core.paginator import Paginator
 from django.utils import timezone
 from app1.models import User 
+from decimal import Decimal, InvalidOperation
 
 def jobcard_list(request):
     jobcards = JobCard.objects.all().order_by('-created_at')
@@ -3222,22 +3223,7 @@ def user_display_name(u):
 
 # -----------------------
 # Lead form view (create)
-from django.shortcuts import render, redirect
-from django.contrib import messages
-from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
-from purchase_order.models import Department
-
-
-# optionally import LeadForm if present; keep views import-safe when forms.py is missing
-try:
-    from .forms import LeadForm
-except Exception:
-    LeadForm = None
-
-# Ensure these model imports exist in your file scope
-from .models import Lead
-# (District, BusinessNature, StateMaster, Department are used below; they will be referenced inside try/except)
 
 @login_required
 def lead_form_view(request):
@@ -3253,6 +3239,8 @@ def lead_form_view(request):
     from django.apps import apps
     from django.utils import timezone
     from django.db import transaction
+  
+
 
     logger = logging.getLogger(__name__)
 
@@ -3272,18 +3260,74 @@ def lead_form_view(request):
         except Exception:
             Lead = None
 
-    # Determine active users safely
+    # ✅ ADDED: Get active leads for directory
+    active_leads_data = []
+    if Lead:
+        try:
+            active_leads_data = Lead.objects.filter(status__iexact='Active').order_by('-created_at')[:25]
+            logger.info(f"Found {len(active_leads_data)} active leads for directory")
+        except Exception as e:
+            logger.debug(f"Could not fetch active leads: {e}")
+            active_leads_data = []
+
+    # -------------------------
+    # Determine active users robustly
+    # Build a list of dicts: {'id', 'name', 'department'}
+    # -------------------------
+    active_users = []
     try:
-        user_field_names = [f.name for f in UserModel._meta.fields]
+       active_users = User.objects.filter(status='active').values('id', 'name', 'department', 'designation').order_by('name')
     except Exception:
         user_field_names = []
 
-    if 'status' in user_field_names:
-        active_users = UserModel.objects.filter(status='active').only('id', 'name').order_by('name')
-    elif 'is_active' in user_field_names:
-        active_users = UserModel.objects.filter(is_active=True).only('id', 'first_name', 'last_name', 'username').order_by('first_name', 'username')
-    else:
-        active_users = UserModel.objects.all().only('id').order_by('id')
+    try:
+        # choose filter predicate
+        if 'status' in user_field_names:
+            users_qs = UserModel.objects.filter(status__iexact='active').order_by('name')
+        elif 'is_active' in user_field_names:
+            users_qs = UserModel.objects.filter(is_active=True).order_by('first_name', 'username')
+        else:
+            users_qs = UserModel.objects.all().order_by('id')
+
+        # Build portable display name & department/role
+        for u in users_qs:
+            # determine display name
+            display_name = None
+            # common attributes in different user models
+            for attr in ('name', 'full_name', 'get_full_name', 'first_name', 'username', 'email'):
+                try:
+                    if attr == 'get_full_name' and hasattr(u, 'get_full_name'):
+                        val = u.get_full_name()
+                    else:
+                        val = getattr(u, attr, None)
+                    if val:
+                        display_name = val
+                        break
+                except Exception:
+                    continue
+            if not display_name:
+                display_name = str(u)
+
+            # determine department/role/designation
+            role = ''
+            for rattr in ('department', 'dept', 'designation', 'role', 'position'):
+                try:
+                    val = getattr(u, rattr, None)
+                    if val:
+                        role = str(val)
+                        break
+                except Exception:
+                    continue
+
+            active_users.append({
+                'id': getattr(u, 'id', None),
+                'name': display_name,
+                'department': role  # template / JS expects .department
+            })
+
+    except Exception as e:
+        logger.warning(f"Could not build active_users list: {e}")
+        active_users = []
 
     # Prepare existing firms for dropdown (used on GET and on re-render after failed POST)
     existing_firms = []
@@ -3501,8 +3545,37 @@ def lead_form_view(request):
         'departments': departments,
         # pass existing firms for the searchable dropdown
         'existing_firms': existing_firms,
+        # ✅ ADDED: Active leads data for directory
+        'active_leads_data': active_leads_data,
+        
     }
     return render(request, "lead_form.html", context)
+
+
+
+
+@login_required
+def lead_creation_view(request):
+    """
+    Show Lead Creation Form with active leads listed in directory (left column)
+    """
+    from .models import Lead, District, BusinessNature, StateMaster
+    from purchase_order.models import Department
+    from app1.models import User
+
+    # ✅ Get only active leads for the directory
+    active_leads_data = Lead.objects.filter(status__iexact='Active').order_by('-created_at')[:25]
+
+    context = {
+        'districts': District.objects.all().order_by('name'),
+        'states': StateMaster.objects.all().order_by('name'),
+        'business_natures': BusinessNature.objects.all().order_by('name'),
+        'active_users': User.objects.filter(is_active=True).order_by('name'),
+        'departments': Department.objects.filter(is_active=True).order_by('name'),
+        'active_leads_data': active_leads_data,  # passed to template
+    }
+    return render(request, 'lead_form.html', context)
+
 
 
 
@@ -3701,22 +3774,48 @@ def lead_edit(request, lead_id):
         'departments': departments,
     }
     return render(request, 'lead_form_edit.html', context)
+from django.shortcuts import get_object_or_404, redirect
+from django.http import JsonResponse, HttpResponseNotAllowed
+from django.contrib import messages
+from django.views.decorators.http import require_POST
+from .models import Lead  # adjust if your model name or import path differs
+import logging
 
+logger = logging.getLogger(__name__)
 
-
-
-
-
+@require_POST
 def lead_delete(request, lead_id):
-    print(f"Delete request received for lead ID: {lead_id}")  # Debug
-    lead = get_object_or_404(Lead, id=lead_id)
-    if request.method == 'POST':
-        ticket_number = lead.ticket_number
+    """
+    Delete a Lead by ID.
+    Works for both normal form POST and AJAX (fetch/XHR) requests.
+    """
+    try:
+        logger.debug("Delete request received for lead ID: %s", lead_id)
+        lead = get_object_or_404(Lead, id=lead_id)
+        ticket_number = getattr(lead, "ticket_number", str(lead.id))
         lead.delete()
-        print(f"Lead {ticket_number} deleted successfully")  # Debug
+        logger.info("Lead %s (ID %s) deleted successfully", ticket_number, lead_id)
+
+        # Message for UI (non-AJAX request)
         messages.success(request, f"Lead with Ticket Number {ticket_number} deleted successfully!")
+
+        # If AJAX, return JSON
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({"success": True, "message": f"Lead {ticket_number} deleted."})
+
+        # Fallback for normal POST
         return redirect('app5:lead_report')
-    return redirect('app5:lead_report')
+
+    except Exception as e:
+        logger.exception("Error deleting lead ID %s: %s", lead_id, e)
+        # AJAX -> JSON error
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({"success": False, "error": str(e)}, status=500)
+
+        # Non-AJAX fallback
+        messages.error(request, f"Error deleting lead: {e}")
+        return redirect('app5:lead_report')
+
 
 
 # --- Top-level imports for app5/views.py (one place only) ---
@@ -4398,166 +4497,298 @@ def lead_assign_edit(request, lead_id):
     }
     return render(request, 'lead_assign_edit.html', context)
 
+# app5/views.py
+# app5/views.py
+from django.shortcuts import render, redirect
+from django.urls import reverse
+from django.contrib import messages
+from django.contrib.auth import get_user_model
+from django.db import transaction
+import logging
+
+logger = logging.getLogger(__name__)
+
+from .models import Item, RequirementItem, Lead
+
+User = get_user_model()
+
+import logging
+from django.shortcuts import render
+from django.db.models import Q
+
+logger = logging.getLogger(__name__)
+
+# adjust imports to match your project structure
+try:
+    # prefer purchase_order Item if available (earlier code used this)
+    from purchase_order.models import Item as PurchaseItem
+except Exception:
+    PurchaseItem = None
+
+from .models import Item as App5Item, Lead  # your app5 models
+from app1.models import User  # user model used in your project
 
 
+# place near the top of views.py with your other imports
+import json
+import logging
 
+from django.shortcuts import render
+from django.db.models import Q
+from django.utils import timezone
 
-
-# ------------------------------
-# Requirement Views
-# ------------------------------
-from .models import RequirementItem 
-@csrf_exempt
-def requirement_form(request):
-    """Handles adding new requirement items"""
-    if request.method == "POST":
-        items = request.POST.getlist('item_name')
-        units = request.POST.getlist('unit')
-        prices = request.POST.getlist('price')
-
-        items_created = 0
-        for i in range(len(items)):
-            item_name = items[i].strip()
-            unit = units[i] if i < len(units) else ""
-            try:
-                price = float(prices[i]) if i < len(prices) and prices[i] else 0.0
-            except (ValueError, TypeError):
-                price = 0.0
-            
-            total = price  # total column currently same as price
-            
-            if item_name:  # Only create if item name is not empty
-                RequirementItem.objects.create(
-                    item_name=item_name,
-                    unit=unit,
-                    price=price,
-                    total=total
-                )
-                items_created += 1
-
-        if items_created > 0:
-            messages.success(request, f'Successfully added {items_created} requirement item(s)!')
-        else:
-            messages.warning(request, 'No valid items were added.')
-        
-        return redirect('app5:requirement_list')
-
-    # GET request - show the form
-    return render(request, 'requirement_form.html')
-
+logger = logging.getLogger(__name__)
 
 def requirement_list(request):
-    """Show all saved requirement items"""
-    items = RequirementItem.objects.all().order_by('-created_at')
-    grand_total = sum(item.total for item in items)
-    context = {
-        'items': items,
-        'grand_total': grand_total,
-    }
-    return render(request, 'requirement_list.html', context)
-
-
-def requirement_form_view(request):
-    if request.method == "POST":
-        item_names = request.POST.getlist("item_name")
-        units = request.POST.getlist("unit")
-        prices = request.POST.getlist("price")
-
-        for name, unit, price in zip(item_names, units, prices):
-            if name and unit and price:
-                RequirementItem.objects.create(
-                    item_name=name,
-                    unit=unit,
-                    price=price,
-                    total=price   # or calculate here
-                )
-
-        messages.success(request, "Items saved successfully!")
-        return redirect("app5:requirements_list")
-
-    return render(request, "requirement_form.html")
-
-
-def requirements_list_view(request):
-    items = RequirementItem.objects.all()
-    grand_total = RequirementItem.objects.aggregate(total=Sum('total'))['total'] or 0
-    return render(request, "requirement_list.html", {
-        "items": items,
-        "grand_total": grand_total
-    })
-
-
-from django.views.decorators.csrf import csrf_exempt
-
-@csrf_exempt
-@csrf_exempt
-def requirement_edit(request, requirement_id=None, pk=None, *args, **kwargs):
     """
-    Accepts either requirement_id (URL pattern) or pk.
-    URL may be defined as <int:requirement_id> or <int:pk>.
+    Robust requirement_list view:
+    - Prefer PurchaseItem (purchase_order app) if available, else fallback to local Item.
+    - Load active users using common field patterns.
+    - Load recent/active leads using common field patterns.
+    - Provide both QuerySets (for template iteration) and serialized lists (for JS).
     """
-    # decide id from whichever kwarg is provided
-    rid = requirement_id if requirement_id is not None else pk
-    if rid is None:
-        messages.error(request, "No requirement id provided.")
-        return redirect('app5:requirement_list')  # Redirect to requirement list
-
-    # ✅ FIXED: Use RequirementItem model instead of Requirement
-    requirement = get_object_or_404(RequirementItem, pk=rid)
-
-    if request.method == "POST":
-        item_name = request.POST.get("item_name", "").strip()
-        unit = request.POST.get("unit", "").strip()
-        price_raw = request.POST.get("price", "").strip()
-
-        # validate / normalize price
+    # ---------- Items (for dropdown) ----------
+    items_qs = None
+    try:
+        # try to import PurchaseItem from purchase_order app
         try:
-            from decimal import Decimal, InvalidOperation
-            price = Decimal(price_raw) if price_raw != "" else Decimal("0.00")
-        except (InvalidOperation, TypeError):
-            messages.error(request, "Price must be a valid number.")
-            return render(request, "requirement_edit.html", {"item": requirement, "is_edit": True})
-
-        # Update fields
-        requirement.item_name = item_name or requirement.item_name
-        requirement.unit = unit
-        requirement.price = price
-        # If you compute total in model, update total here (optional)
-        try:
-            # If you keep `total` field, update it; otherwise remove this
-            requirement.total = getattr(requirement, "total", price)
+            from purchase_order.models import Item as PurchaseItem
         except Exception:
-            pass
+            PurchaseItem = None
 
-        requirement.save()
-        messages.success(request, "Requirement item updated successfully.")
-        return redirect('app5:requirement_list')
+        # app5's own Item model (fallback)
+        try:
+            from .models import Item as App5Item
+        except Exception:
+            App5Item = None
 
-    # GET: show form
+        if PurchaseItem:
+            # prefer filtering by is_active if available
+            try:
+                items_qs = PurchaseItem.objects.filter(is_active=True).order_by("name")
+            except Exception:
+                items_qs = PurchaseItem.objects.all().order_by("name")
+        elif App5Item:
+            try:
+                items_qs = App5Item.objects.filter(is_active=True).order_by("name")
+            except Exception:
+                items_qs = App5Item.objects.all().order_by("name")
+        else:
+            items_qs = []
+    except Exception as e:
+        logger.exception("Failed to fetch items: %s", e)
+        items_qs = []
+
+    # ---------- Active Users (employees) ----------
+    active_users_qs = None
+    try:
+        # prefer local User model import
+        try:
+            from .models import User
+        except Exception:
+            # fallback to app1.models used elsewhere in project
+            from app1.models import User
+
+        # try common patterns for active users
+        try:
+            active_users_qs = User.objects.filter(is_active=True).order_by("first_name", "last_name")
+        except Exception:
+            try:
+                active_users_qs = User.objects.filter(status__iexact="active").order_by("first_name", "last_name")
+            except Exception:
+                # last resort: return all users ordered by name-ish fields
+                try:
+                    active_users_qs = User.objects.all().order_by("name")
+                except Exception:
+                    active_users_qs = User.objects.all()
+    except Exception as e:
+        logger.exception("Failed to load User model or query users: %s", e)
+        active_users_qs = User.objects.none() if 'User' in locals() else []
+
+    # serialize active users for JS/template use (defensive)
+    active_users = []
+    try:
+        for u in active_users_qs:
+            # build a friendly display name
+            display_name = None
+            if getattr(u, "name", None):
+                display_name = u.name
+            elif hasattr(u, "get_full_name"):
+                try:
+                    display_name = u.get_full_name()
+                except Exception:
+                    display_name = None
+            if not display_name:
+                first = getattr(u, "first_name", "") or ""
+                last = getattr(u, "last_name", "") or ""
+                display_name = (f"{first} {last}").strip() or getattr(u, "username", None) or getattr(u, "email", "") or "Unknown"
+
+            phone = getattr(u, "phone_number", None) or getattr(u, "phone", None) or getattr(u, "mobile", None) or ""
+            branch = getattr(u, "branch", "")
+            userid = getattr(u, "userid", getattr(u, "username", ""))
+
+            active_users.append({
+                "id": getattr(u, "id", None),
+                "name": display_name,
+                "first_name": getattr(u, "first_name", "") or "",
+                "last_name": getattr(u, "last_name", "") or "",
+                "username": userid,
+                "phone": phone,
+                "branch": str(branch) if branch is not None else "",
+            })
+    except Exception as e:
+        logger.exception("Failed to serialize active users: %s", e)
+        active_users = []
+
+    # ---------- Active / Recent Leads ----------
+    active_leads_qs = None
+    try:
+        try:
+            from .models import Lead
+        except Exception:
+            from app1.models import Lead
+
+        # try to select active/open leads first, otherwise recent leads
+        try:
+            active_leads_qs = Lead.objects.filter(Q(status__iexact="active") | Q(status__iexact="open")).order_by("-created_at")[:25]
+        except Exception:
+            try:
+                active_leads_qs = Lead.objects.filter(is_active=True).order_by("-created_at")[:25]
+            except Exception:
+                # fallback: most recent leads
+                if hasattr(Lead, "created_at"):
+                    active_leads_qs = Lead.objects.all().order_by("-created_at")[:25]
+                else:
+                    active_leads_qs = Lead.objects.all().order_by("-id")[:25]
+    except Exception as e:
+        logger.exception("Failed to load Lead model or query leads: %s", e)
+        active_leads_qs = Lead.objects.none() if 'Lead' in locals() else []
+
+    # serialize active leads safely
+    active_leads = []
+    try:
+        for l in active_leads_qs:
+            lead_name = getattr(l, "ownerName", None) or getattr(l, "owner_name", None) or getattr(l, "name", None) or getattr(l, "firm_name", None) or ""
+            phone = getattr(l, "phoneNo", None) or getattr(l, "phone", None) or getattr(l, "phone_number", None) or ""
+            ticket = getattr(l, "ticket_number", None) or getattr(l, "ticket_no", None) or getattr(l, "id", None)
+            business = getattr(l, "business", "") or getattr(l, "firm_name", "") or ""
+
+            active_leads.append({
+                "id": getattr(l, "id", None),
+                "name": lead_name,
+                "phone": phone,
+                "ticket_number": ticket,
+                "business": business,
+            })
+    except Exception as e:
+        logger.exception("Failed to serialize active leads: %s", e)
+        active_leads = []
+
+    # ---------- Context & render ----------
     context = {
-        "item": requirement,
-        "is_edit": True
+        "items": items_qs,
+        "active_users_qs": active_users_qs,   # template-friendly queryset (if template wants ORM features)
+        "active_users": active_users,         # JS-friendly list of dicts
+        "active_leads_qs": active_leads_qs,
+        "active_leads": active_leads,
+        # JSON strings convenient for embedding into JS (use safe|json_script or |safe in template)
+        "active_users_json": json.dumps(active_users),
+        "active_leads_json": json.dumps(active_leads),
+        # optional: server timestamp
+        "server_time": timezone.now(),
     }
-    return render(request, "requirement_edit.html", context)
 
-def requirement_delete(request, item_id):
-    """Delete a requirement item"""
-    item = get_object_or_404(RequirementItem, id=item_id)
-    
-    if request.method == "POST":
-        item_name = item.item_name
-        item.delete()
-        messages.success(request, f'Requirement item "{item_name}" deleted successfully!')
-        return redirect('app5:requirement_list')
-    
-    # If accessed via GET, redirect back to list
-    return redirect('app5:requirement_list')
+    return render(request, "requirement_list.html", context)
 
 
 
-# Replace the business nature views in your views.py with these fixed versions
 
-# app5/views.py - Business Nature Views
+@transaction.atomic
+def requirement_form(request):
+    if request.method != "POST":
+        return redirect(reverse('app5:requirements_list'))
+
+    owner_name = request.POST.get('owner_name', '').strip()
+    phone_no = request.POST.get('phone_no', '').strip()
+    email_address = request.POST.get('email_address', '').strip()
+
+    item_ids = request.POST.getlist('item_id[]') or request.POST.getlist('item_id')
+    units = request.POST.getlist('unit[]') or request.POST.getlist('unit')
+    prices = request.POST.getlist('price[]') or request.POST.getlist('price')
+
+    if not item_ids:
+        messages.error(request, "No items were submitted. Please add at least one item.")
+        return redirect(reverse('app5:requirements_list'))
+
+    created = 0
+    errors = []
+
+    for idx, item_id in enumerate(item_ids):
+        if not item_id:
+            errors.append(f"Row {idx+1}: no item selected.")
+            continue
+
+        try:
+            item_obj = Item.objects.get(pk=item_id)
+        except Item.DoesNotExist:
+            errors.append(f"Row {idx+1}: selected item not found (id={item_id}).")
+            continue
+
+        raw_price = prices[idx] if idx < len(prices) else ''
+        try:
+            price = float(raw_price) if raw_price not in (None, '') else 0.0
+        except (ValueError, TypeError):
+            price = 0.0
+            errors.append(f"Row {idx+1}: invalid price value.")
+
+        unit = units[idx] if idx < len(units) else getattr(item_obj, 'unit', '')
+
+        try:
+            RequirementItem.objects.create(
+                item=item_obj,
+                owner_name=owner_name or None,
+                phone_no=phone_no or None,
+                email=email_address or None,
+                unit=unit,
+                price=price,
+            )
+            created += 1
+        except Exception as e:
+            logger.exception("Failed to save RequirementItem for item_id=%s: %s", item_id, e)
+            errors.append(f"Row {idx+1}: server error saving item.")
+
+    if created:
+        messages.success(request, f"Saved {created} requirement item(s).")
+    if errors:
+        messages.warning(request, "Some rows had issues: " + "; ".join(errors[:5]))
+        if len(errors) > 5:
+            logger.warning("Additional errors when saving requirement items: %s", errors[5:])
+
+    return redirect(reverse('app5:requirements_list'))
+
+
+from django.http import JsonResponse
+from purchase_order.models import Item as POItem
+
+def get_item_details(request):
+    item_name = request.GET.get("item_name", "")
+
+    try:
+        item = POItem.objects.get(name=item_name, is_active=True)
+        return JsonResponse({
+            "success": True,
+            "unit": item.unit_of_measure,
+            "price": float(item.purchase_price),
+        })
+    except POItem.DoesNotExist:
+        return JsonResponse({"success": False})
+
+
+
+
+
+
+
 # Add these imports at the top if not present
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
