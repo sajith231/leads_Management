@@ -21,9 +21,9 @@ from dotenv import load_dotenv
 # ✅ Load environment variables
 load_dotenv()
 
-WHATSAPP_API_URL = os.getenv("WHATSAPP_API_URL", "https://app.dxing.in/api/send/whatsapp")
-WHATSAPP_API_SECRET = os.getenv("WHATSAPP_API_SECRET")
-WHATSAPP_API_ACCOUNT = os.getenv("WHATSAPP_API_ACCOUNT")
+WHATSAPP_API_URL = os.getenv("WA_API")
+WHATSAPP_API_SECRET = os.getenv("WA_SECRET")
+WHATSAPP_API_ACCOUNT = os.getenv("WA_ACCOUNT")
 
 
 def send_whatsapp(phone, message):
