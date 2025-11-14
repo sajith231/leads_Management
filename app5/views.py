@@ -3239,8 +3239,6 @@ def lead_form_view(request):
     from django.apps import apps
     from django.utils import timezone
     from django.db import transaction
-  
-
 
     logger = logging.getLogger(__name__)
 
@@ -3276,7 +3274,7 @@ def lead_form_view(request):
     # -------------------------
     active_users = []
     try:
-       active_users = User.objects.filter(status='active').values('id', 'name', 'department', 'designation').order_by('name')
+        active_users = User.objects.filter(status='active').values('id', 'name', 'department', 'designation').order_by('name')
     except Exception:
         user_field_names = []
 
@@ -3464,10 +3462,16 @@ def lead_form_view(request):
                     lead_kwargs["assigned_to_name"] = assigned_name
                     lead_kwargs["assigned_date"] = timezone.now().date()
                     lead_kwargs["assigned_time"] = timezone.now().time()
+                    
+                    # ✅ ADDED: Set assigned_by_name for self-assigned leads (same user)
+                    lead_kwargs["assigned_by_name"] = assigned_name
 
                     # If your model has FK fields, set them too
                     if Lead and hasattr(Lead, 'assigned_to') and current_user:
                         lead_kwargs["assigned_to"] = current_user
+                        
+                    if Lead and hasattr(Lead, 'assigned_by') and current_user:
+                        lead_kwargs["assigned_by"] = current_user
 
             except Exception as e:
                 logger.warning(f"Error setting self-assignment: {e}")
@@ -3497,6 +3501,8 @@ def lead_form_view(request):
                             safe_kwargs['marketed_by'] = v
                         elif k == 'assigned_to_name' and 'assigned_to_name' in model_field_names:
                             safe_kwargs['assigned_to_name'] = v
+                        elif k == 'assigned_by_name' and 'assigned_by_name' in model_field_names:
+                            safe_kwargs['assigned_by_name'] = v
                         # add other aliases here as needed
 
                 lead = Lead.objects.create(**safe_kwargs)
@@ -4242,20 +4248,15 @@ def assign_lead_view(request):
                     except Exception as e:
                         logger.debug("Could not set assigned_time: %s", e)
 
-                # Optional status/assignment_type updates
-                if hasattr(lead, 'status'):
-                    try:
-                        # only update status if blank or not already 'assigned'
-                        current = getattr(lead, 'status', None)
-                        if not current or str(current).lower() != 'assigned':
-                            lead.status = 'assigned'
-                    except Exception as e:
-                        logger.debug("Could not update status field: %s", e)
+                # ✅ FIXED: Only update assignment_type, NOT the main status
+                # This keeps the lead status as "Active" even after assignment
                 if hasattr(lead, 'assignment_type'):
                     try:
                         lead.assignment_type = 'assigned'
                     except Exception as e:
                         logger.debug("Could not update assignment_type field: %s", e)
+
+                # ✅ STATUS REMAINS UNCHANGED - No code here to modify lead.status
 
                 # Save the lead
                 lead.save()
@@ -4498,203 +4499,158 @@ def lead_assign_edit(request, lead_id):
     return render(request, 'lead_assign_edit.html', context)
 
 # app5/views.py
-# app5/views.py
-from django.shortcuts import render, redirect
-from django.urls import reverse
-from django.contrib import messages
-from django.contrib.auth import get_user_model
-from django.db import transaction
-import logging
-
-logger = logging.getLogger(__name__)
-
-from .models import Item, RequirementItem, Lead
-
-User = get_user_model()
-
-import logging
-from django.shortcuts import render
-from django.db.models import Q
-
-logger = logging.getLogger(__name__)
-
-# adjust imports to match your project structure
-try:
-    # prefer purchase_order Item if available (earlier code used this)
-    from purchase_order.models import Item as PurchaseItem
-except Exception:
-    PurchaseItem = None
-
-from .models import Item as App5Item, Lead  # your app5 models
-from app1.models import User  # user model used in your project
-
-
-# place near the top of views.py with your other imports
+# Add these imports near the top of your views.py (if not already present)
 import json
 import logging
-
-from django.shortcuts import render
 from django.db.models import Q
 from django.utils import timezone
+from django.shortcuts import render
 
 logger = logging.getLogger(__name__)
 
 def requirement_list(request):
-    """
-    Robust requirement_list view:
-    - Prefer PurchaseItem (purchase_order app) if available, else fallback to local Item.
-    - Load active users using common field patterns.
-    - Load recent/active leads using common field patterns.
-    - Provide both QuerySets (for template iteration) and serialized lists (for JS).
-    """
-    # ---------- Items (for dropdown) ----------
-    items_qs = None
+    from django.db.models import Q
+    from django.utils import timezone
+    import json
+
+    # ------------------------------
+    # ITEMS (PurchaseItem → fallback to App5Item)
+    # ------------------------------
     try:
-        # try to import PurchaseItem from purchase_order app
         try:
             from purchase_order.models import Item as PurchaseItem
+            items_qs = PurchaseItem.objects.filter(is_active=True).order_by("name")
         except Exception:
-            PurchaseItem = None
-
-        # app5's own Item model (fallback)
-        try:
             from .models import Item as App5Item
-        except Exception:
-            App5Item = None
-
-        if PurchaseItem:
-            # prefer filtering by is_active if available
-            try:
-                items_qs = PurchaseItem.objects.filter(is_active=True).order_by("name")
-            except Exception:
-                items_qs = PurchaseItem.objects.all().order_by("name")
-        elif App5Item:
-            try:
-                items_qs = App5Item.objects.filter(is_active=True).order_by("name")
-            except Exception:
-                items_qs = App5Item.objects.all().order_by("name")
-        else:
-            items_qs = []
-    except Exception as e:
-        logger.exception("Failed to fetch items: %s", e)
+            items_qs = App5Item.objects.filter(is_active=True).order_by("name")
+    except Exception:
         items_qs = []
 
-    # ---------- Active Users (employees) ----------
-    active_users_qs = None
+    # ------------------------------
+    # ACTIVE USERS
+    # ------------------------------
     try:
-        # prefer local User model import
         try:
             from .models import User
-        except Exception:
-            # fallback to app1.models used elsewhere in project
+        except:
             from app1.models import User
 
-        # try common patterns for active users
-        try:
+        # detect fields
+        fields = [f.name for f in User._meta.get_fields()]
+
+        if "status" in fields:
+            active_users_qs = User.objects.filter(status__iexact="active").order_by("name")
+        elif "is_active" in fields:
             active_users_qs = User.objects.filter(is_active=True).order_by("first_name", "last_name")
-        except Exception:
-            try:
-                active_users_qs = User.objects.filter(status__iexact="active").order_by("first_name", "last_name")
-            except Exception:
-                # last resort: return all users ordered by name-ish fields
-                try:
-                    active_users_qs = User.objects.all().order_by("name")
-                except Exception:
-                    active_users_qs = User.objects.all()
-    except Exception as e:
-        logger.exception("Failed to load User model or query users: %s", e)
-        active_users_qs = User.objects.none() if 'User' in locals() else []
+        else:
+            active_users_qs = User.objects.all().order_by("name")
 
-    # serialize active users for JS/template use (defensive)
-    active_users = []
-    try:
-        for u in active_users_qs:
-            # build a friendly display name
-            display_name = None
-            if getattr(u, "name", None):
-                display_name = u.name
-            elif hasattr(u, "get_full_name"):
-                try:
-                    display_name = u.get_full_name()
-                except Exception:
-                    display_name = None
-            if not display_name:
-                first = getattr(u, "first_name", "") or ""
-                last = getattr(u, "last_name", "") or ""
-                display_name = (f"{first} {last}").strip() or getattr(u, "username", None) or getattr(u, "email", "") or "Unknown"
+    except Exception:
+        active_users_qs = []
 
-            phone = getattr(u, "phone_number", None) or getattr(u, "phone", None) or getattr(u, "mobile", None) or ""
-            branch = getattr(u, "branch", "")
-            userid = getattr(u, "userid", getattr(u, "username", ""))
+    # Process users for template - create a consistent structure
+    active_users_list = []
+    for u in active_users_qs:
+        # Get name
+        name = (
+            getattr(u, "name", None)
+            or getattr(u, "get_full_name", lambda: "")()
+            or f"{getattr(u,'first_name','')} {getattr(u,'last_name','')}".strip()
+            or getattr(u, "username", "Unknown")
+        )
 
-            active_users.append({
-                "id": getattr(u, "id", None),
-                "name": display_name,
-                "first_name": getattr(u, "first_name", "") or "",
-                "last_name": getattr(u, "last_name", "") or "",
-                "username": userid,
-                "phone": phone,
-                "branch": str(branch) if branch is not None else "",
-            })
-    except Exception as e:
-        logger.exception("Failed to serialize active users: %s", e)
-        active_users = []
+        # Get phone
+        phone = (
+            getattr(u, "phone_number", None)
+            or getattr(u, "phone", None)
+            or getattr(u, "mobile", None)
+            or ""
+        )
 
-    # ---------- Active / Recent Leads ----------
-    active_leads_qs = None
+        # Get department/designation
+        department = (
+            getattr(u, "department", None)
+            or getattr(u, "branch", None)
+            or ""
+        )
+
+        designation = getattr(u, "designation", "") or ""
+
+        active_users_list.append({
+            "id": u.id,
+            "name": name,
+            "phone": phone,
+            "department": department,
+            "designation": designation,
+            "username": getattr(u, "username", ""),
+            "email": getattr(u, "email", ""),
+        })
+
+    # ------------------------------
+    # LOAD ACTIVE LEADS
+    # ------------------------------
     try:
         try:
             from .models import Lead
-        except Exception:
+        except:
             from app1.models import Lead
 
-        # try to select active/open leads first, otherwise recent leads
-        try:
-            active_leads_qs = Lead.objects.filter(Q(status__iexact="active") | Q(status__iexact="open")).order_by("-created_at")[:25]
-        except Exception:
-            try:
-                active_leads_qs = Lead.objects.filter(is_active=True).order_by("-created_at")[:25]
-            except Exception:
-                # fallback: most recent leads
-                if hasattr(Lead, "created_at"):
-                    active_leads_qs = Lead.objects.all().order_by("-created_at")[:25]
-                else:
-                    active_leads_qs = Lead.objects.all().order_by("-id")[:25]
-    except Exception as e:
-        logger.exception("Failed to load Lead model or query leads: %s", e)
-        active_leads_qs = Lead.objects.none() if 'Lead' in locals() else []
+        if hasattr(Lead, "status"):
+            leads_qs = Lead.objects.filter(
+                Q(status__iexact="active") | Q(status__iexact="open")
+            ).order_by("-created_at")[:25]
+        else:
+            leads_qs = Lead.objects.all().order_by("-id")[:25]
 
-    # serialize active leads safely
-    active_leads = []
-    try:
-        for l in active_leads_qs:
-            lead_name = getattr(l, "ownerName", None) or getattr(l, "owner_name", None) or getattr(l, "name", None) or getattr(l, "firm_name", None) or ""
-            phone = getattr(l, "phoneNo", None) or getattr(l, "phone", None) or getattr(l, "phone_number", None) or ""
-            ticket = getattr(l, "ticket_number", None) or getattr(l, "ticket_no", None) or getattr(l, "id", None)
-            business = getattr(l, "business", "") or getattr(l, "firm_name", "") or ""
+    except:
+        leads_qs = []
 
-            active_leads.append({
-                "id": getattr(l, "id", None),
-                "name": lead_name,
-                "phone": phone,
-                "ticket_number": ticket,
-                "business": business,
-            })
-    except Exception as e:
-        logger.exception("Failed to serialize active leads: %s", e)
-        active_leads = []
+    # Process leads for template
+    active_leads_list = []
+    for l in leads_qs:
+        name = (
+            getattr(l, "ownerName", None)
+            or getattr(l, "name", None)
+            or getattr(l, "owner_name", None)
+            or ""
+        )
 
-    # ---------- Context & render ----------
+        phone = (
+            getattr(l, "phoneNo", None)
+            or getattr(l, "phone", None)
+            or ""
+        )
+
+        ticket = (
+            getattr(l, "ticket_number", None)
+            or getattr(l, "ticket_no", None)
+            or l.id
+        )
+
+        business = getattr(l, "business", "") or ""
+
+        active_leads_list.append({
+            "id": l.id,
+            "name": name,
+            "phone": phone,
+            "ticket_number": ticket,
+            "business": business,
+        })
+
+    # ------------------------------
+    # CONTEXT
+    # ------------------------------
     context = {
         "items": items_qs,
-        "active_users_qs": active_users_qs,   # template-friendly queryset (if template wants ORM features)
-        "active_users": active_users,         # JS-friendly list of dicts
-        "active_leads_qs": active_leads_qs,
-        "active_leads": active_leads,
-        # JSON strings convenient for embedding into JS (use safe|json_script or |safe in template)
-        "active_users_json": json.dumps(active_users),
-        "active_leads_json": json.dumps(active_leads),
-        # optional: server timestamp
+
+        # Use the processed lists for template
+        "active_users": active_users_list,
+        "active_leads": active_leads_list,
+
+        # JSON for JS if needed
+        "active_users_json": json.dumps(active_users_list),
+        "active_leads_json": json.dumps(active_leads_list),
+
         "server_time": timezone.now(),
     }
 
@@ -4703,7 +4659,9 @@ def requirement_list(request):
 
 
 
-@transaction.atomic
+
+
+
 def requirement_form(request):
     if request.method != "POST":
         return redirect(reverse('app5:requirements_list'))
@@ -4728,12 +4686,28 @@ def requirement_form(request):
             errors.append(f"Row {idx+1}: no item selected.")
             continue
 
+        item_name = "Unknown Item"
+        item_obj = None
+        
+        # Try to get item name from PurchaseItem
         try:
-            item_obj = Item.objects.get(pk=item_id)
-        except Item.DoesNotExist:
-            errors.append(f"Row {idx+1}: selected item not found (id={item_id}).")
-            continue
+            from purchase_order.models import Item as PurchaseItem
+            item_obj = PurchaseItem.objects.get(pk=item_id, is_active=True)
+            item_name = item_obj.name
+        except Exception:
+            pass
+        
+        # If not found, try App5 Item
+        if not item_obj:
+            try:
+                from .models import Item as App5Item
+                item_obj = App5Item.objects.get(pk=item_id, is_active=True)
+                item_name = item_obj.name
+            except Exception:
+                errors.append(f"Row {idx+1}: selected item not found (id={item_id}).")
+                continue
 
+        # Process price
         raw_price = prices[idx] if idx < len(prices) else ''
         try:
             price = float(raw_price) if raw_price not in (None, '') else 0.0
@@ -4741,28 +4715,38 @@ def requirement_form(request):
             price = 0.0
             errors.append(f"Row {idx+1}: invalid price value.")
 
-        unit = units[idx] if idx < len(units) else getattr(item_obj, 'unit', '')
+        # Process unit
+        unit = units[idx] if idx < len(units) else ''
+        if not unit and item_obj:
+            unit = getattr(item_obj, 'unit_of_measure', '') or getattr(item_obj, 'unit', '') or ''
 
+        # ✅ FIXED: Now using the correct fields that match the model
         try:
             RequirementItem.objects.create(
-                item=item_obj,
-                owner_name=owner_name or None,
-                phone_no=phone_no or None,
-                email=email_address or None,
-                unit=unit,
-                price=price,
+                item_name=item_name,  # This field exists
+                owner_name=owner_name or None,  # This field now exists
+                phone_no=phone_no or None,  # This field now exists
+                email=email_address or None,  # This field now exists
+                unit=unit or None,  # This field exists
+                price=price,  # This field exists
+                total=price,  # Simple total calculation
             )
             created += 1
+            logger.info(f"Successfully created requirement: {item_name}")
+            
         except Exception as e:
-            logger.exception("Failed to save RequirementItem for item_id=%s: %s", item_id, e)
-            errors.append(f"Row {idx+1}: server error saving item.")
+            error_msg = f"Row {idx+1}: server error saving item: {str(e)}"
+            errors.append(error_msg)
+            logger.error(f"Error creating RequirementItem: {e}", exc_info=True)
 
     if created:
-        messages.success(request, f"Saved {created} requirement item(s).")
+        messages.success(request, f"✅ Successfully saved {created} requirement item(s)!")
+    
     if errors:
-        messages.warning(request, "Some rows had issues: " + "; ".join(errors[:5]))
-        if len(errors) > 5:
-            logger.warning("Additional errors when saving requirement items: %s", errors[5:])
+        error_display = "; ".join(errors[:3])
+        if len(errors) > 3:
+            error_display += f" ... and {len(errors) - 3} more errors"
+        messages.warning(request, f"Some items had issues: {error_display}")
 
     return redirect(reverse('app5:requirements_list'))
 

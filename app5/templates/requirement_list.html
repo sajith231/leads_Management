@@ -1,3 +1,4 @@
+
 {% extends "base.html" %}
 
 {% block title %}Requirements Management{% endblock %}
@@ -53,8 +54,8 @@
     button { padding: 10px 20px; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
     .submit-btn { background: linear-gradient(135deg, #4CAF50, #45a049); color: white; box-shadow: 0 3px 8px rgba(37,117,252,0.3); }
     .submit-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 10px rgba(37,117,252,0.4); }
-    .back-btn { background-color: #f5f5f5; color: #666; border: 1px solid #ddd; text-decoration: none; display: flex; align-items: center; justify-content: center; }
-    .back-btn:hover { background-color: #e9e9e9; }
+    .back-btn { background-color: #4CAF50; color: #faf9f9; border: 1px solid #ddd; text-decoration: none; display: flex; align-items: center; justify-content: center; }
+    .back-btn:hover { background-color: #4CAF50; }
     .lead-directory-container { background: white; border-radius: 10px; box-shadow: 0 3px 10px rgba(0,0,0,0.08); overflow: hidden; height: 100%; display: flex; flex-direction: column; }
     .directory-header { background: #4a6fdc; color: white; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; }
     .directory-header h2 { font-size: 16px; font-weight: 600; }
@@ -80,7 +81,7 @@
     .lead-ticket { font-size: 10px; color: #6c757d; background: #f8f9fa; padding: 2px 5px; border-radius: 4px; display: inline-block; margin-top: 2px; }
     .assign-btn { padding: 5px 10px; background: #4CAF50; color: white; border: none; border-radius: 4px; font-size: 11px; cursor: pointer; transition: all 0.2s; flex-shrink: 0; }
     .assign-btn:hover { background: #45a049; }
-    .assign-btn.assigned { background: #6c757d; }
+    .assign-btn.assigned { background: #6c757d; cursor: not-allowed; }
     .no-results { padding: 20px 15px; text-align: center; color: #6c757d; font-size: 13px; }
 
     /* Message styles */
@@ -102,6 +103,12 @@
         font-size: 12px;
         margin-bottom: 10px;
         border-left: 4px solid #2196f3;
+    }
+
+    /* Employee highlight */
+    .employee-item.highlight {
+        background-color: #e8f5e8 !important;
+        border-left: 4px solid #4CAF50 !important;
     }
 
     @media (max-width: 1200px) {
@@ -143,39 +150,29 @@
 
                 <!-- Employee List -->
                 <div class="employee-list active" id="employeeList">
-                    {% if active_users %}
-                        {% for user in active_users %}
-                        <div class="employee-item" 
-                             data-id="{{ user.id }}" 
-                             data-name="{{ user.name|escapejs }}" 
-                             data-phone="{{ user.phone|default:'' }}">
-                            <div class="employee-avatar">
-                                {{ user.name|slice:":2"|upper }}
-                            </div>
-                            <div class="employee-details">
-                                <div class="employee-name">{{ user.name }}</div>
-                                <div class="employee-role">
-                                    {% if user.branch %}{{ user.branch }}{% endif %}
-                                    {% if user.department %} - {{ user.department }}{% endif %}
-                                    {% if user.designation %} - {{ user.designation }}{% endif %}
-                                    {% if not user.branch and not user.department and not user.designation %}Employee{% endif %}
+                        {% if active_users %}
+                            {% for u in active_users %}
+                            <div class="employee-item" data-id="{{ u.id }}" data-name="{{ u.name|escapejs }}">
+                                <div class="employee-avatar">
+                                    {{ u.name|slice:":2"|upper }}
                                 </div>
+
+                                <div class="employee-details">
+                                    <div class="employee-name">{{ u.name }}</div>
+                                    <div class="employee-role">
+                                        {{ u.department }}{% if u.designation %} - {{ u.designation }}{% endif %}
+                                    </div>
+                                </div>
+
+                                <button class="assign-btn" data-id="{{ u.id }}" data-name="{{ u.name|escapejs }}" data-role="employee-assign">
+                                    Assign
+                                </button>
                             </div>
-                            <button class="assign-btn" 
-                                    data-id="{{ user.id }}" 
-                                    data-name="{{ user.name|escapejs }}"
-                                    data-phone="{{ user.phone|default:'' }}">
-                                Assign
-                            </button>
-                        </div>
-                        {% endfor %}
-                    {% else %}
-                        <div class="no-results">
-                            <i class="fas fa-users"></i>
-                            No active users found
-                        </div>
-                    {% endif %}
-                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="no-results">No active users found</div>
+                        {% endif %}
+                    </div>
 
                 <!-- Lead List -->
                 <div class="lead-list" id="leadList">
@@ -196,24 +193,6 @@
                                     <div class="lead-info">{{ lead.business|default:"" }}</div>
                                     <div class="lead-phone">{{ lead.phone|default:"" }}</div>
                                     <div class="lead-ticket">#{{ lead.ticket_number|default:lead.id }}</div>
-                                </div>
-                            </div>
-                        {% endfor %}
-                    {% elif active_leads_qs %}
-                        {% for lead in active_leads_qs %}
-                            <div class="lead-item"
-                                 data-name="{% if lead.ownerName %}{{ lead.ownerName }}{% elif lead.name %}{{ lead.name }}{% else %}Unknown{% endif %}"
-                                 data-phone="{{ lead.phoneNo|default:lead.phone|default:'' }}"
-                                 data-ticket="{{ lead.ticket_number|default:lead.ticket_no|default:lead.id }}"
-                                 onclick="selectLead(this)">
-                                <div class="lead-avatar">
-                                    {% if lead.ownerName %}{{ lead.ownerName|first|upper }}{% elif lead.name %}{{ lead.name|first|upper }}{% else %}L{% endif %}
-                                </div>
-                                <div class="lead-details">
-                                    <div class="lead-name">{% if lead.ownerName %}{{ lead.ownerName }}{% elif lead.name %}{{ lead.name }}{% else %}Unknown{% endif %}</div>
-                                    <div class="lead-info">{{ lead.business|default:"" }}</div>
-                                    <div class="lead-phone">{{ lead.phoneNo|default:lead.phone|default:"" }}</div>
-                                    <div class="lead-ticket">#{{ lead.ticket_number|default:lead.ticket_no|default:lead.id }}</div>
                                 </div>
                             </div>
                         {% endfor %}
@@ -273,6 +252,7 @@
                         <div class="section-title">
                             <i class="fas fa-phone-alt"></i>
                             <span>Communication Details</span>
+                            
                         </div>
 
                         <div class="form-row">
@@ -351,7 +331,9 @@
                                 <button type="submit" class="submit-btn">
                                     <i class="fas fa-paper-plane"></i> Submit Requirements
                                 </button>
-                                <a href="#" class="back-btn">Cancel</a>
+                                <button type="button" class="back-btn" onclick="goBack()">
+                                    <i class="fas fa-arrow-left"></i> Back
+                                </button>
                             </div>
                         </form>
                     </div>
@@ -364,12 +346,19 @@
 </div>
 
 <script>
+    // Back button function
+    function goBack() {
+        window.history.back();
+    }
+
     // TOP-LEVEL state
     let selectedLead = null;
+    let selectedEmployee = null;
 
     function selectLead(leadItem) {
         // clear any previous selection
         clearLeadSelection();
+        clearEmployeeSelection();
 
         const leadName  = (leadItem.dataset.name || '').trim();
         const leadPhone = (leadItem.dataset.phone || '').trim();
@@ -403,6 +392,8 @@
             if (!el) return;
             el.dispatchEvent(new Event('input', { bubbles: true }));
         });
+
+        showTemporaryMessage(`Lead "${leadName}" selected`, 'success');
     }
 
     function clearLeadSelection() {
@@ -413,6 +404,20 @@
         selectedLead = null;
     }
 
+    function clearEmployeeSelection() {
+        // Remove selection from all employee items
+        document.querySelectorAll('.employee-item').forEach(item => {
+            item.classList.remove('highlight');
+        });
+        // Reset all assign buttons
+        document.querySelectorAll('.assign-btn').forEach(btn => {
+            btn.textContent = 'Assign';
+            btn.classList.remove('assigned');
+            btn.disabled = false;
+        });
+        selectedEmployee = null;
+    }
+
     function clearFormFields() {
         const t = document.getElementById('ticketnumber');
         const o = document.getElementById('ownerName');
@@ -421,6 +426,7 @@
         if (o) o.value = '';
         if (p) p.value = '';
         clearLeadSelection();
+        clearEmployeeSelection();
     }
 
     function showTemporaryMessage(message, type = 'info') {
@@ -449,6 +455,10 @@
             messageDiv.style.backgroundColor = '#d4edda';
             messageDiv.style.color = '#155724';
             messageDiv.style.border = '1px solid #c3e6cb';
+        } else if (type === 'error') {
+            messageDiv.style.backgroundColor = '#f8d7da';
+            messageDiv.style.color = '#721c24';
+            messageDiv.style.border = '1px solid #f5c6cb';
         } else {
             messageDiv.style.backgroundColor = '#d1ecf1';
             messageDiv.style.color = '#0c5460';
@@ -517,13 +527,15 @@
                     const name = (node.dataset.name || '').toLowerCase();
                     const phone = (node.dataset.phone || '').toLowerCase();
                     const ticket = (node.dataset.ticket || '').toLowerCase();
-                    if (!q || name.includes(q) || phone.includes(q) || ticket.includes(q)) {
+                    const email = (node.dataset.email || '').toLowerCase();
+                    
+                    if (!q || name.includes(q) || phone.includes(q) || ticket.includes(q) || email.includes(q)) {
                         node.style.display = '';
                         visible++;
                     } else {
                         node.style.display = 'none';
                         // Clear selection if selected item is hidden
-                        if (node.classList.contains('selected')) {
+                        if (node.classList.contains('selected') || node.classList.contains('highlight')) {
                             clearFormFields();
                         }
                     }
@@ -553,18 +565,18 @@
         document.getElementById('activeTabCount').innerText = visible;
     }
 
-    // initialize counter
-    updateCount();
-
     // Employee assignment functionality
     document.addEventListener('click', function(e) {
-        // Handle employee assignment
-        if (e.target.closest('.employee-item') || e.target.closest('.assign-btn')) {
-            const employeeItem = e.target.closest('.employee-item');
+        // Handle employee assignment via assign button
+        if (e.target.closest('.assign-btn')) {
+            const assignBtn = e.target.closest('.assign-btn');
+            const employeeItem = assignBtn.closest('.employee-item');
+            
             if (employeeItem) {
-                const name = employeeItem.dataset.name || '';
-                const phone = employeeItem.dataset.phone || '';
+                const name = assignBtn.dataset.name || employeeItem.dataset.name || '';
+                const phone = assignBtn.dataset.phone || employeeItem.dataset.phone || '';
                 
+                // Fill the form fields
                 if (name) {
                     document.getElementById('ownerName').value = name;
                     document.getElementById('hiddenOwnerName').value = name;
@@ -576,8 +588,27 @@
                 
                 // Clear any lead selection when employee is used
                 clearLeadSelection();
+                clearEmployeeSelection();
+                
+                // Visual feedback for assignment
+                employeeItem.classList.add('highlight');
+                assignBtn.textContent = 'Assigned';
+                assignBtn.classList.add('assigned');
+                assignBtn.disabled = true;
+                selectedEmployee = employeeItem;
                 
                 showTemporaryMessage(`Assigned ${name} to form`, 'success');
+            }
+        }
+        
+        // Handle clicking anywhere on employee item (optional)
+        if (e.target.closest('.employee-item') && !e.target.closest('.assign-btn')) {
+            const employeeItem = e.target.closest('.employee-item');
+            const assignBtn = employeeItem.querySelector('.assign-btn');
+            
+            if (assignBtn) {
+                // Trigger the assign button click
+                assignBtn.click();
             }
         }
     });
@@ -700,11 +731,14 @@
         }
     });
 
-    // Clear lead selection if user edits fields
+    // Clear selections if user edits fields manually
     const ticketEl = document.getElementById('ticketnumber');
     if (ticketEl) ticketEl.addEventListener('input', function() {
         if (selectedLead && this.value !== (selectedLead.dataset.ticket || '').replace(/^#/, '')) {
             clearLeadSelection();
+        }
+        if (selectedEmployee) {
+            clearEmployeeSelection();
         }
     });
     const ownerEl = document.getElementById('ownerName');
@@ -712,11 +746,17 @@
         if (selectedLead && this.value !== (selectedLead.dataset.name || '')) {
             clearLeadSelection();
         }
+        if (selectedEmployee && this.value !== (selectedEmployee.dataset.name || '')) {
+            clearEmployeeSelection();
+        }
     });
     const phoneEl = document.getElementById('phoneNo');
     if (phoneEl) phoneEl.addEventListener('input', function() {
         if (selectedLead && this.value !== (selectedLead.dataset.phone || '')) {
             clearLeadSelection();
+        }
+        if (selectedEmployee && this.value !== (selectedEmployee.dataset.phone || '')) {
+            clearEmployeeSelection();
         }
     });
 

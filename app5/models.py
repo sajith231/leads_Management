@@ -601,14 +601,36 @@ class Lead(models.Model):
 from django.db import models
 
 class RequirementItem(models.Model):
-    item_name = models.CharField(max_length=200)
-    unit = models.CharField(max_length=50)
-    price = models.DecimalField(max_digits=10, decimal_places=2)
-    total = models.DecimalField(max_digits=12, decimal_places=2)
+    # Basic item information
+    item_name = models.CharField(max_length=200, verbose_name="Item Name")
+    
+    # Customer/owner information (ADDED THESE FIELDS)
+    owner_name = models.CharField(max_length=255, blank=True, null=True, verbose_name="Owner Name")
+    phone_no = models.CharField(max_length=20, blank=True, null=True, verbose_name="Phone Number")
+    email = models.EmailField(blank=True, null=True, verbose_name="Email Address")
+    
+    # Item details
+    unit = models.CharField(max_length=50, blank=True, null=True, verbose_name="Unit")
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name="Price")
+    total = models.DecimalField(max_digits=12, decimal_places=2, default=0.00, verbose_name="Total")
+    
+    # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Requirement Item"
+        verbose_name_plural = "Requirement Items"
+        ordering = ['-created_at']
 
     def __str__(self):
-        return self.item_name
+        return f"{self.item_name} - {self.owner_name or 'No Owner'}"
+    
+    def save(self, *args, **kwargs):
+        # Auto-calculate total if needed, or you can remove this
+        if not self.total:
+            self.total = self.price
+        super().save(*args, **kwargs)
     
 # bussiness nature
 
