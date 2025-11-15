@@ -29,7 +29,7 @@
 
   .results-info{background:#fff;padding:10px 20px;border-radius:4px;margin-bottom:15px;color:#2c3e50;font-size:.9em}
   .table-wrapper{overflow-x:auto;overflow-y:auto;max-height:calc(100vh - 450px);background:#fff;border-radius:4px;box-shadow:0 2px 4px rgba(0,0,0,.1)}
-  table{width:100%;border-collapse:collapse;background:transparent;min-width:1800px}
+  table{width:100%;border-collapse:collapse;background:transparent;min-width:2000px}
   thead{background:#34495e;color:#fff;position:sticky;top:0;z-index:10}
   th{padding:14px 12px;text-align:left;font-weight:600;font-size:.85em;text-transform:uppercase;letter-spacing:.5px;border:none;white-space:nowrap}
   td{padding:12px;border:none;background:transparent;vertical-align:middle;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -60,26 +60,27 @@
   .pagination .current{background:#2c3e50;color:#fff;border-color:#2c3e50;font-weight:bold}
   .pagination .disabled{color:#bdc3c7;cursor:not-allowed;border-color:#ecf0f1}
 
-  /* Fixed column widths to prevent overlap */
   th:nth-child(1), td:nth-child(1){width:50px;text-align:center}
   th:nth-child(2), td:nth-child(2){width:200px}
   th:nth-child(3), td:nth-child(3){width:120px}
   th:nth-child(4), td:nth-child(4){width:150px}
-  th:nth-child(5), td:nth-child(5){width:110px}
-  th:nth-child(6), td:nth-child(6){width:100px}
+  th:nth-child(5), td:nth-child(5){width:200px}
+  th:nth-child(6), td:nth-child(6){width:110px}
   th:nth-child(7), td:nth-child(7){width:100px}
   th:nth-child(8), td:nth-child(8){width:100px}
   th:nth-child(9), td:nth-child(9){width:100px}
-  th:nth-child(10), td:nth-child(10){width:110px}
-  th:nth-child(11), td:nth-child(11){width:120px}
+  th:nth-child(10), td:nth-child(10){width:100px}
+  th:nth-child(11), td:nth-child(11){width:110px}
   th:nth-child(12), td:nth-child(12){width:120px}
   th:nth-child(13), td:nth-child(13){width:120px}
-  th:nth-child(14), td:nth-child(14){width:150px}
+  th:nth-child(14), td:nth-child(14){width:120px}
+  th:nth-child(15), td:nth-child(15){width:150px}
 
   .action-buttons{display:flex;gap:8px;flex-wrap:nowrap;justify-content:flex-start}
   .action-buttons form{display:inline-block;margin:0}
   
   .no-traveler{color:#95a5a6;font-style:italic}
+  .purpose-cell{max-width:200px;white-space:normal;word-wrap:break-word}
 </style>
 
 <div class="fuel-management-container">
@@ -140,6 +141,7 @@
               <th>Status / Action</th>
               <th>Vehicle</th>
               <th>Traveled By</th>
+              <th>Purpose</th>
               <th>Date</th>
               <th>Start Time</th>
               <th>End Time</th>
@@ -155,10 +157,8 @@
           <tbody id="tableBody">
             {% for entry in page_obj %}
             <tr>
-              <!-- 1-based index across pages -->
               <td>{{ forloop.counter|add:page_obj.start_index|add:"-1" }}</td>
 
-              <!-- Status cell: ONLY badge and End Trip (if open). No Edit/Delete here -->
               <td class="status-cell">
                 {% if not entry.end_time or entry.odo_end_reading == entry.odo_start_reading %}
                   <span class="status-badge status-open">Started</span>
@@ -174,7 +174,15 @@
                 {% if entry.travelled_by %}
                   {{ entry.travelled_by.username }}
                 {% else %}
-                  <span class="no-traveler">—</span>
+                  <span class="no-traveler">–</span>
+                {% endif %}
+              </td>
+
+              <td class="purpose-cell">
+                {% if entry.purpose %}
+                  {{ entry.purpose }}
+                {% else %}
+                  <span class="no-traveler">–</span>
                 {% endif %}
               </td>
 
@@ -215,7 +223,6 @@
                 </div>
               </td>
 
-              <!-- MORE: ONLY Edit & Delete live here -->
               <td>
                 <div class="action-buttons">
                   <a href="{% url 'fuel_edit' entry.id %}" class="btn btn-info btn-small">Edit</a>
@@ -268,7 +275,6 @@
   </div>
 </div>
 
-<!-- Image Modal -->
 <div id="imageModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:1000;justify-content:center;align-items:center;">
   <div style="position:relative;max-width:90%;max-height:90%;display:flex;flex-direction:column;align-items:center;">
     <div style="background:#fff;padding:10px 20px;border-radius:5px 5px 0 0;width:100%;display:flex;justify-content:space-between;align-items:center;">
