@@ -14,7 +14,7 @@ from PIL import Image
 from PIL.ExifTags import TAGS, GPSTAGS
 import io
 import piexif
-
+from app1.models import Branch
 # ------------------------------------------------------------------
 # Helper: Convert decimal coordinates to GPS EXIF format
 # ------------------------------------------------------------------
@@ -267,16 +267,31 @@ def image_capture_form(request):
     customer_name = None
     phone_number = None
 
+    # Get user's branch if logged in
+    user_branch = None
+    if request.user.is_authenticated and hasattr(request.user, 'userprofile'):
+        user_branch = request.user.userprofile.branch.name
+    elif request.user.is_authenticated and hasattr(request.user, 'branch'):
+        user_branch = request.user.branch.name
+
     try:
         api_url = "https://accmaster.imcbs.com/api/sync/rrc-clients/"
         response = requests.get(api_url, timeout=10)
         if response.status_code == 200:
             customers = response.json()
+            
+            # Filter customers by user's branch if user has a specific branch
+            if user_branch:
+                customers = [c for c in customers if c.get('branch') == user_branch]
+            
             customers.sort(key=lambda x: x.get("name", "").lower())
         else:
             logging.error(f"Failed to fetch clients: {response.status_code}")
     except Exception as e:
         logging.error(f"API fetch error: {e}")
+
+    # Get all branches
+    branches = Branch.objects.all().order_by('name')
 
     if request.method == "POST":
         customer_name_dropdown = request.POST.get("customer_name", "").strip()
@@ -311,8 +326,106 @@ def image_capture_form(request):
             "phone_number": phone_number,
             "error": error,
             "customers": customers,
+            "branches": branches,
+            "user_branch": user_branch,  # Pass user's branch to template
         },
     )
+
+def manual_capture_form(request):
+    """
+    Page to manually select or enter customer and directly upload image
+    """
+    customers = []
+    error = None
+
+    # Get user's branch if logged in
+    user_branch = None
+    if request.user.is_authenticated and hasattr(request.user, 'userprofile'):
+        user_branch = request.user.userprofile.branch.name
+    elif request.user.is_authenticated and hasattr(request.user, 'branch'):
+        user_branch = request.user.branch.name
+
+    # Fetch customer list
+    try:
+        api_url = "https://accmaster.imcbs.com/api/sync/rrc-clients/"
+        response = requests.get(api_url, timeout=10)
+        if response.status_code == 200:
+            customers = response.json()
+            
+            # Filter customers by user's branch if user has a specific branch
+            if user_branch:
+                customers = [c for c in customers if c.get('branch') == user_branch]
+            
+            customers.sort(key=lambda x: x.get("name", "").lower())
+    except Exception as e:
+        logging.error(f"Error fetching customer list: {e}")
+
+    # Get all branches
+    branches = Branch.objects.all().order_by('name')
+
+    if request.method == "POST":
+        customer_name_dropdown = request.POST.get("customer_name", "").strip()
+        customer_name_manual = request.POST.get("customer_name_manual", "").strip()
+
+        if customer_name_manual:
+            customer_name = customer_name_manual
+        else:
+            customer_name = customer_name_dropdown
+
+        if not customer_name:
+            error = "Please enter or select a customer name"
+        else:
+            # Create object directly as verified (no OTP)
+            obj = ImageCapture.objects.create(
+                customer_name=customer_name,
+                verified=True
+            )
+            return redirect("manual_image_upload", unique_id=obj.unique_id)
+
+    return render(request, "manual_capture_form.html", {
+        "customers": customers,
+        "error": error,
+        "branches": branches,
+        "user_branch": user_branch,  # Pass user's branch to template
+    })
+
+def manual_image_upload(request, unique_id):
+    """
+    Handle image upload and location detection for manual capture
+    """
+    data = get_object_or_404(ImageCapture, unique_id=unique_id)
+
+    if request.method == "POST":
+        image_data = request.POST.get("image_data")
+        client_lat = request.POST.get("latitude", "").strip()
+        client_lon = request.POST.get("longitude", "").strip()
+        source = request.POST.get("location_source", "unknown")
+
+        if image_data:
+            latitude, longitude = extract_gps_from_image(image_data)
+
+            if not latitude or not longitude:
+                latitude = client_lat or None
+                longitude = client_lon or None
+
+            # Reverse geocode
+            location_name = _get_location_name(latitude, longitude) if latitude and longitude else None
+
+            imgstr = image_data.split(';base64,')[1]
+            image_bytes = base64.b64decode(imgstr)
+
+            # Save image
+            data.image.save(f"{data.customer_name}_capture.jpg", ContentFile(image_bytes))
+            data.latitude = latitude
+            data.longitude = longitude
+            data.location_name = location_name
+            data.location_source = source
+            data.verified = True
+            data.save()
+
+            return render(request, "success_page.html", {"data": data})
+
+    return render(request, "manual_image_upload.html", {"data": data})
 
 # ------------------------------------------------------------------
 # 2. Customer landing page
@@ -489,3 +602,27 @@ def delete_customer(request):
             messages.error(request, f'Error deleting customer: {str(e)}')
     
     return redirect('index')
+
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.shortcuts import get_object_or_404
+from .models import ImageCapture
+
+def update_status(request, pk):
+    """Update the manual status of a customer"""
+    if request.method == "POST":
+        try:
+            obj = get_object_or_404(ImageCapture, id=pk)
+            new_status = request.POST.get("status")
+            
+            if new_status in ["Pending", "Verified"]:
+                obj.status = new_status
+                obj.save()
+                return JsonResponse({"success": True, "status": new_status})
+            else:
+                return JsonResponse({"success": False, "error": "Invalid status"}, status=400)
+                
+        except Exception as e:
+            return JsonResponse({"success": False, "error": str(e)}, status=500)
+    
+    return JsonResponse({"success": False, "error": "Invalid method"}, status=405)

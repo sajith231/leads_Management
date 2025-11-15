@@ -78,47 +78,67 @@
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
-    
-    .retry-button {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      border: none;
-      color: white;
-      padding: 10px 20px;
-      border-radius: 10px;
+
+    /* ✅ Loader overlay styling */
+    .loader-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255,255,255,0.9);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      z-index: 9999;
+    }
+    .loader-circle {
+      border: 6px solid #f3f3f3;
+      border-top: 6px solid #667eea;
+      border-radius: 50%;
+      width: 60px;
+      height: 60px;
+      animation: spin 1s linear infinite;
+    }
+    .loader-text {
+      margin-top: 15px;
+      color: #667eea;
       font-weight: 600;
-      cursor: pointer;
-      margin-top: 10px;
-      transition: all 0.3s ease;
+      font-size: 16px;
     }
-    .retry-button:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-    }
-    
+
+    /* Location note styling */
     .enable-location-guide {
       background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%);
       padding: 20px;
       border-radius: 12px;
       margin-top: 15px;
       text-align: left;
-      display: none;
+      display: block;
+      transition: all 0.5s ease;
+    }
+    .enable-location-guide.hidden {
+      opacity: 0;
+      transform: scale(0.98);
+      height: 0;
+      padding: 0;
+      margin: 0;
+      overflow: hidden;
     }
     .enable-location-guide h5 {
       color: #856404;
       font-weight: 700;
-      margin-bottom: 15px;
+      margin-bottom: 10px;
       display: flex;
       align-items: center;
       gap: 10px;
     }
-    .enable-location-guide ol {
+    .enable-location-guide p {
       color: #856404;
-      margin-bottom: 15px;
-      padding-left: 20px;
-    }
-    .enable-location-guide li {
-      margin-bottom: 8px;
-      line-height: 1.5;
+      font-size: 14px;
+      margin: 0;
+      line-height: 1.6;
     }
     .pulse-animation {
       animation: pulse 2s infinite;
@@ -160,28 +180,27 @@
         </p>
       </div>
 
-      <!-- Enable Location Guide -->
+      <!-- Location Note -->
       <div id="locationGuide" class="enable-location-guide">
         <h5>
           <i class="fas fa-map-marker-alt pulse-animation"></i>
-          Please Enable Location Services
+          Important: Enable Location Services
         </h5>
-        <ol>
-          <li><strong>Open Settings</strong> on your device</li>
-          <li>Go to <strong>Location</strong> or <strong>Privacy & Security</strong></li>
-          <li>Turn on <strong>Location Services</strong></li>
-          <li>Allow location access for your <strong>Browser</strong></li>
-          <li>Click the button below to continue</li>
-        </ol>
-        <button type="button" class="retry-button" onclick="retryLocationDetection()">
-          <i class="fas fa-redo"></i> I've Enabled Location - Try Again
-        </button>
+        <p><strong>Android:</strong> Turn ON GPS and allow location access for your browser (e.g., Chrome).</p>
+        <p><strong>iOS (iPhone/iPad):</strong> Go to <em>Settings → Privacy & Security → Location Services</em>, enable it, and allow Safari to access location.</p>
+        <p><strong>Note:</strong> Keep location active before capturing the image.</p>
       </div>
 
       <button type="submit" class="btn btn-success mt-3" id="submitBtn" style="display:none;">
         <i class="fas fa-upload"></i> Submit Image
       </button>
     </form>
+  </div>
+
+  <!-- ✅ Loader Overlay -->
+  <div class="loader-overlay" id="loaderOverlay">
+    <div class="loader-circle"></div>
+    <div class="loader-text">Processing your image, please wait...</div>
   </div>
 
 <script>
@@ -193,12 +212,18 @@ const longitudeInput = document.getElementById('longitude');
 const locationSourceInput = document.getElementById('location_source');
 const locationStatus = document.getElementById('locationStatus');
 const submitBtn = document.getElementById('submitBtn');
+const locationGuide = document.getElementById('locationGuide');
+const loaderOverlay = document.getElementById('loaderOverlay');
 
 let locationDisplay = document.createElement('div');
 locationDisplay.classList.add('mt-2', 'p-2', 'border', 'rounded');
 locationDisplay.style.display = 'none';
 locationDisplay.style.background = '#f8f9fa';
 previewImage.insertAdjacentElement('afterend', locationDisplay);
+
+function hideLocationGuide() {
+  locationGuide.classList.add('hidden');
+}
 
 function showLocation(latitude, longitude, locationName, source) {
   locationDisplay.style.display = 'block';
@@ -208,9 +233,9 @@ function showLocation(latitude, longitude, locationName, source) {
     <strong>Location:</strong> ${locationName || 'Fetching...'}<br>
     <span class="badge bg-info text-dark">Source: ${source}</span>
   `;
+  hideLocationGuide();
 }
 
-// Convert DMS (Degrees, Minutes, Seconds) to Decimal
 function convertDMSToDD(dms, ref) {
   const [deg, min, sec] = dms;
   let dd = deg + min / 60 + sec / 3600;
@@ -218,7 +243,6 @@ function convertDMSToDD(dms, ref) {
   return dd;
 }
 
-// Fetch human-readable address from coordinates
 async function reverseGeocode(lat, lon) {
   try {
     const response = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`);
@@ -229,7 +253,6 @@ async function reverseGeocode(lat, lon) {
   }
 }
 
-// Live location (for iOS/EXIF missing)
 function getLiveLocation() {
   if (!navigator.geolocation) {
     locationStatus.innerHTML = 'Live location not supported';
@@ -249,6 +272,7 @@ function getLiveLocation() {
 
     const locationName = await reverseGeocode(lat, lon);
     showLocation(lat, lon, locationName, 'live');
+    hideLocationGuide();
 
     locationStatus.className = 'alert alert-success';
     locationStatus.innerHTML = `✅ Live location detected`;
@@ -259,7 +283,6 @@ function getLiveLocation() {
   }, { enableHighAccuracy: true, timeout: 10000 });
 }
 
-// Handle camera input
 cameraInput.addEventListener('change', function(event) {
   const file = event.target.files[0];
   if (!file) return;
@@ -272,7 +295,6 @@ cameraInput.addEventListener('change', function(event) {
   };
   reader.readAsDataURL(file);
 
-  // Try reading EXIF metadata
   EXIF.getData(file, async function() {
     const lat = EXIF.getTag(this, "GPSLatitude");
     const lon = EXIF.getTag(this, "GPSLongitude");
@@ -288,30 +310,30 @@ cameraInput.addEventListener('change', function(event) {
 
       const locationName = await reverseGeocode(latitude, longitude);
       showLocation(latitude, longitude, locationName, 'exif');
+      hideLocationGuide();
       locationStatus.className = 'alert alert-success';
       locationStatus.innerHTML = '✅ Location extracted from image';
       submitBtn.style.display = 'inline-block';
     } else {
-      getLiveLocation(); // fallback for iPhone or no EXIF
+      getLiveLocation();
     }
   });
 });
-// Warn the user before leaving the page if image not submitted
-let isSubmitted = false;
 
+let isSubmitted = false;
 document.getElementById("uploadForm").addEventListener("submit", function() {
   isSubmitted = true;
+  loaderOverlay.style.display = "flex"; // ✅ Show loader
 });
 
 window.addEventListener("beforeunload", function (e) {
   if (!isSubmitted) {
     const confirmationMessage = "⚠️ The image is not submitted yet. Do you really want to go back?";
     e.preventDefault();
-    e.returnValue = confirmationMessage; // for most browsers
-    return confirmationMessage; // for older ones
+    e.returnValue = confirmationMessage;
+    return confirmationMessage;
   }
 });
-
 </script>
 </body>
 </html>
