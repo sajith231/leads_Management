@@ -1757,12 +1757,28 @@ def get_display_name(user):
     if first.strip():
         return f"{first.strip()} {last.strip()}".strip()
     return getattr(user, 'username', 'System')
+
+
+import os
 import requests
 import urllib.parse
 import logging
 from datetime import datetime
+from dotenv import load_dotenv
+
+# ✅ Load environment variables
+load_dotenv()
 
 logger = logging.getLogger(__name__)
+
+# ✅ WhatsApp API details (from .env)
+WHATSAPP_API_URL = os.getenv("WHATSAPP_API_URL", "https://app.dxing.in/api/send/whatsapp")
+WHATSAPP_SECRET = os.getenv("WHATSAPP_API_SECRET")
+WHATSAPP_ACCOUNT = os.getenv("WHATSAPP_API_ACCOUNT")
+
+# ✅ Fixed recipient (not in .env)
+RECIPIENT = "919946545535"  # include country code
+
 
 def send_whatsapp_notification(name, installation_date, software_amount, created_by=None):
     """
@@ -1775,15 +1791,8 @@ def send_whatsapp_notification(name, installation_date, software_amount, created
     Returns:
         bool: True if message sent successfully, False otherwise
     """
-
-    # ✅ New WhatsApp API configuration
-    WHATSAPP_API_URL = "https://app.dxing.in/api/send/whatsapp"
-    SECRET = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
-    ACCOUNT = "1761365422812b4ba287f5ee0bc9d43bbf5bbe87fb68fc4daea92d8"
-    RECIPIENT = "919946545535"  # include country code, e.g., 91XXXXXXXXXX
-
     try:
-        # Format installation date
+        # ✅ Format installation date safely
         if installation_date:
             try:
                 formatted_date = installation_date.strftime("%d-%m-%Y")
@@ -1796,54 +1805,66 @@ def send_whatsapp_notification(name, installation_date, software_amount, created
         else:
             formatted_date = "Not specified"
 
-        # Format software amount
+        # ✅ Format software amount
         try:
             amt_val = float(software_amount) if software_amount not in (None, '') else 0.0
             formatted_amount = f"₹{amt_val:,.2f}"
         except Exception:
             formatted_amount = str(software_amount or "₹0.00")
 
-        created_by_text = f"\nCreated By: {created_by}" if created_by else "\nCreated By: -"
+        created_by_text = f"\n👤 Created By: {created_by}" if created_by else "\n👤 Created By: -"
 
-        # ✅ Message format
+        # ✅ Build message content
         message = (
-            f"🏪 NEW FEEDER CREATED\n\n"
-            f"Shop Name: {name}\n"
-            f"Installation Date: {formatted_date}\n"
-            f"Software Amount: {formatted_amount}\n"
+            f"🏪 *NEW FEEDER CREATED*\n\n"
+            f"🏷️ Shop Name: {name}\n"
+            f"📅 Installation Date: {formatted_date}\n"
+            f"💰 Software Amount: {formatted_amount}\n"
             f"{created_by_text}\n\n"
-            f"Created at: {datetime.now().strftime('%d-%m-%Y %H:%M')}"
+            f"🕒 Created at: {datetime.now().strftime('%d-%m-%Y %H:%M')}"
         )
 
-        # URL encode the message
+        # ✅ URL encode the message
         encoded_message = urllib.parse.quote(message)
 
-        # ✅ Build the new API URL
+        # ✅ Construct API URL
         api_url = (
-            f"{WHATSAPP_API_URL}?secret={SECRET}"
-            f"&account={ACCOUNT}"
+            f"{WHATSAPP_API_URL}?secret={WHATSAPP_SECRET}"
+            f"&account={WHATSAPP_ACCOUNT}"
             f"&recipient={RECIPIENT}"
             f"&type=text"
             f"&message={encoded_message}"
             f"&priority=1"
         )
 
-        # Send the request
+        # ✅ Send request
+        print("\n=======================")
+        print(f"📤 Sending Feeder WhatsApp Notification to {RECIPIENT}")
+        print("🧾 Message:", message)
+        print("=======================")
+
         response = requests.get(api_url, timeout=10)
+        print("🟢 Response Code:", response.status_code)
+        print("🟡 Response Text:", response.text)
 
         if response.status_code == 200:
             logger.info(f"✅ WhatsApp notification sent successfully for feeder: {name}")
+            print(f"✅ WhatsApp notification sent successfully for feeder: {name}")
             return True
         else:
             logger.error(f"❌ Failed to send WhatsApp notification. Status: {response.status_code}, Response: {response.text}")
+            print(f"❌ Failed to send WhatsApp notification. Status: {response.status_code}, Response: {response.text}")
             return False
 
     except requests.exceptions.RequestException as e:
         logger.error(f"🌐 Network error while sending WhatsApp notification: {str(e)}")
+        print(f"🌐 Network error while sending WhatsApp notification: {str(e)}")
         return False
     except Exception as e:
         logger.error(f"⚠️ Unexpected error while sending WhatsApp notification: {str(e)}")
+        print(f"⚠️ Unexpected error while sending WhatsApp notification: {str(e)}")
         return False
+
 
 
 # Modified feeder view with created_by included in message

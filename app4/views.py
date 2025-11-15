@@ -261,56 +261,89 @@ def get_branch_by_name(branch_name):
     except Exception as e:
         logger.error(f"Error finding branch '{branch_name}': {str(e)}")
         return None
+import os
 import urllib.parse
 from datetime import datetime
 import requests
 import logging
+from dotenv import load_dotenv
+
+# ✅ Load environment variables
+load_dotenv()
 
 logger = logging.getLogger(__name__)
+
+# ✅ WhatsApp API details from .env
+WHATSAPP_API_URL = os.getenv("WA_API", "https://app.dxing.in/api/send/whatsapp")
+WHATSAPP_API_SECRET = os.getenv("WA_SECRET")
+WHATSAPP_API_ACCOUNT = os.getenv("WA_ACCOUNT")
+
+
+# ✅ Fixed recipient number (not stored in .env)
+DEFAULT_RECIPIENT = "919946545535"  # Include country code
+
 
 def send_key_request_whatsapp_notification(client_name, key_type, location, branch_name, amount=None, created_by=None):
     """
     Send WhatsApp notification when a new key request is created.
-    'created_by' should be the display name of the user who created the request.
+    'created_by' is the display name of the user who created the request.
     """
-    # ✅ Updated WhatsApp API credentials
-    WHATSAPP_API_URL = "https://app.dxing.in/api/send/whatsapp"
-    SECRET = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
-    ACCOUNT = "1761365422812b4ba287f5ee0bc9d43bbf5bbe87fb68fc4daea92d8"
-    RECIPIENT = "919946545535"  # include country code
-
     try:
-        amount_text = f"\nAmount: ₹{amount}" if amount and str(amount).strip() else ""
-        created_by_text = f"\nRequested By: {created_by}" if created_by else "\nRequested By: -"
+        # ✅ Construct message text
+        amount_text = f"\n💰 Amount: ₹{amount}" if amount and str(amount).strip() else ""
+        created_by_text = f"\n👤 Requested By: {created_by}" if created_by else "\n👤 Requested By: -"
 
         message = (
-            f"🔑 NEW KEY REQUEST\n\n"
-            f"Client Info: {client_name}\n"
-            f"Request Type: {key_type}\n"
-            f"Location: {location}\n"
-            f"Branch: {branch_name}{amount_text}\n"
+            f"🔑 *NEW KEY REQUEST*\n\n"
+            f"🏢 Client Info: {client_name}\n"
+            f"📦 Request Type: {key_type}\n"
+            f"📍 Location: {location}\n"
+            f"🏬 Branch: {branch_name}{amount_text}"
             f"{created_by_text}\n\n"
-            f"Created at: {datetime.now().strftime('%d-%m-%Y %H:%M')}"
+            f"🕒 Created at: {datetime.now().strftime('%d-%m-%Y %H:%M')}"
         )
 
         encoded_message = urllib.parse.quote(message)
 
-        api_url = f"{WHATSAPP_API_URL}?secret={SECRET}&account={ACCOUNT}&recipient={RECIPIENT}&type=text&message={encoded_message}&priority=1"
+        # ✅ Construct WhatsApp API URL
+        api_url = (
+            f"{WHATSAPP_API_URL}"
+            f"?secret={WHATSAPP_API_SECRET}"
+            f"&account={WHATSAPP_API_ACCOUNT}"
+            f"&recipient={DEFAULT_RECIPIENT}"
+            f"&type=text"
+            f"&message={encoded_message}"
+            f"&priority=1"
+        )
 
-        resp = requests.get(api_url, timeout=10)
-        if resp.status_code == 200:
-            logger.info("WhatsApp notification sent successfully for key request: %s", client_name)
+        # ✅ Send request
+        print("\n=======================")
+        print("📤 Sending Key Request WhatsApp Notification")
+        print("🔗 URL:", api_url)
+        print("=======================")
+
+        response = requests.get(api_url, timeout=10)
+        print("🟢 Response Code:", response.status_code)
+        print("🟡 Response Text:", response.text)
+
+        if response.status_code == 200:
+            logger.info(f"✅ WhatsApp notification sent successfully for key request: {client_name}")
+            print(f"✅ WhatsApp notification sent successfully for key request: {client_name}")
             return True
         else:
-            logger.error("WhatsApp API returned non-200 for key request: %s - %s", resp.status_code, resp.text)
+            logger.error(f"❌ WhatsApp API returned non-200 ({response.status_code}): {response.text}")
+            print(f"❌ WhatsApp API returned non-200 ({response.status_code}): {response.text}")
             return False
 
     except requests.exceptions.RequestException as e:
-        logger.error("Network error sending WhatsApp for key request: %s", e)
+        logger.error(f"⚠️ Network error sending WhatsApp for key request: {e}")
+        print(f"⚠️ Network error sending WhatsApp for key request: {e}")
         return False
     except Exception as e:
-        logger.error("Unexpected error sending WhatsApp for key request: %s", e)
+        logger.error(f"⚠️ Unexpected error sending WhatsApp for key request: {e}")
+        print(f"⚠️ Unexpected error sending WhatsApp for key request: {e}")
         return False
+
 
 
 
@@ -692,41 +725,81 @@ def _load_clients() -> list:
 # -------------------------------------------------
 # NEW: WhatsApp helper for COLLECTION added message
 # -------------------------------------------------
+import os
 import urllib.parse
 from datetime import datetime
 import requests
 import logging
+from dotenv import load_dotenv
+
+# ✅ Load .env values
+load_dotenv()
+
 logger = logging.getLogger(__name__)
 
-# ✅ Updated WhatsApp API configuration
-WHATSAPP_API_URL = "https://app.dxing.in/api/send/whatsapp"
-WHATSAPP_SECRET   = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
-WHATSAPP_ACCOUNT  = "1761365422812b4ba287f5ee0bc9d43bbf5bbe87fb68fc4daea92d8"
-COLLECTION_RECIPIENTS = ["919946545535","916282351770","917593820007","917593820005","919562477819","917593820733","919061947005"]  # include country code
+# ✅ WhatsApp API credentials
+WHATSAPP_API_URL = os.getenv("WA_API", "https://app.dxing.in/api/send/whatsapp")
+WHATSAPP_SECRET = os.getenv("WA_SECRET")
+WHATSAPP_ACCOUNT = os.getenv("WA_ACCOUNT")
+
+# ✅ Fixed recipients (not in .env)
+COLLECTION_RECIPIENTS = [
+    "919946545535", "916282351770", "917593820007",
+    "917593820005", "919562477819", "917593820733",
+    "919061947005"
+]
+
 
 def send_collection_whatsapp(client_name, branch, created_by, amount, created_at: datetime):
     """
-    Fire identical WhatsApp alert to every number in COLLECTION_RECIPIENTS
+    Send WhatsApp notification about a new collection
+    to every number in COLLECTION_RECIPIENTS.
     """
     for recipient in COLLECTION_RECIPIENTS:
         try:
-            msg = (
-                f"💰 NEW COLLECTION ADDED\n\n"
-                f"Client Name : {client_name}\n"
-                f"Branch      : {branch}\n"
-                f"Created By  : {created_by}\n"
-                f"Amount      : ₹{amount}\n"
-                f"Date Created: {created_at.strftime('%d-%m-%Y %H:%M')}"
+            # ✅ Build message
+            message = (
+                f"💰 *NEW COLLECTION ADDED*\n\n"
+                f"🏢 Client Name : {client_name}\n"
+                f"🏬 Branch      : {branch}\n"
+                f"👤 Created By  : {created_by}\n"
+                f"💵 Amount      : ₹{amount}\n"
+                f"🕒 Date Created: {created_at.strftime('%d-%m-%Y %H:%M')}"
             )
-            encoded = urllib.parse.quote(msg)
-            url = (f"{WHATSAPP_API_URL}?secret={WHATSAPP_SECRET}"
-                   f"&account={WHATSAPP_ACCOUNT}&recipient={recipient}"
-                   f"&type=text&message={encoded}&priority=1")
-            resp = requests.get(url, timeout=10)
-            resp.raise_for_status()
-            logger.info("Collection WhatsApp sent to %s", recipient)
+
+            encoded = urllib.parse.quote(message)
+
+            # ✅ Build full API URL
+            url = (
+                f"{WHATSAPP_API_URL}?secret={WHATSAPP_SECRET}"
+                f"&account={WHATSAPP_ACCOUNT}"
+                f"&recipient={recipient}"
+                f"&type=text&message={encoded}&priority=1"
+            )
+
+            print("\n=======================")
+            print(f"📤 Sending Collection WhatsApp to {recipient}")
+            print("🧾 Message:", message)
+            print("=======================")
+
+            response = requests.get(url, timeout=10)
+            print("🟢 Response Code:", response.status_code)
+            print("🟡 Response Text:", response.text)
+
+            if response.status_code == 200:
+                logger.info("✅ Collection WhatsApp sent to %s", recipient)
+                print(f"✅ WhatsApp message sent successfully to {recipient}")
+            else:
+                logger.error("❌ Failed for %s - %s", recipient, response.text)
+                print(f"❌ Failed for {recipient}: {response.text}")
+
+        except requests.exceptions.RequestException as e:
+            logger.error("⚠️ Network error for %s : %s", recipient, e)
+            print(f"⚠️ Network error for {recipient}: {e}")
         except Exception as e:
-            logger.error("WhatsApp failed for %s : %s", recipient, e)
+            logger.error("⚠️ Unexpected error for %s : %s", recipient, e)
+            print(f"⚠️ Unexpected error for {recipient}: {e}")
+
 
 # -------------------------------------------------
 # -------------------------------------------------

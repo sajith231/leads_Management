@@ -36,12 +36,22 @@ CSRF_TRUSTED_ORIGINS = [
 
 
 
+import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
+WHATSAPP_API_SECRET = os.getenv("WHATSAPP_API_SECRET")
+WHATSAPP_API_ACCOUNT = os.getenv("WHATSAPP_API_ACCOUNT")
+WHATSAPP_API_BASE_URL = os.getenv("WHATSAPP_API_BASE_URL")
+
+
 ALLOWED_HOSTS = ['88.222.215.20','myimc.in','www.myimc.in','127.0.0.1','localhost']
 
 LOGIN_REDIRECT_URL = 'admin_dashboard'
 LOGIN_URL = 'login'
 # Application definition
-
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -50,28 +60,32 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    # Third-party apps
     'ckeditor',
     'rest_framework',
+    'django.contrib.humanize',
+    'django_extensions',
+
+    # Your custom apps
     'app1',
-    'app2',  # 👈 Add this line
+    'app2',
     'app3',
     'app4',
-    'flutter',
     'app5',
+    'flutter',
     'sim_card',
     'my_drive',
     'fuel_management',
-    'django.contrib.humanize',
-    "wfh_Request",
-    # "punchout_reminder",
-    "image_capture",
+    'wfh_Request',
+    'image_capture',
     'software_master',
     'purchase_order',
     'claims',
-    "django_extensions",
-    
     'wallet',
+    'Cancel_Requestes',
 ]
+
 
 
 

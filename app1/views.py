@@ -23,6 +23,7 @@ from django.db import transaction
 from django.db import models
 from .models import Employee, Attendance, LeaveRequest, Holiday,LateRequest,DefaultSettings,EarlyRequest
 from .utils import is_holiday
+from Cancel_Requestes.models import CancelRequest
 
 import requests
 
@@ -696,19 +697,57 @@ from .models import Lead, LeadRequirementAmount, LeadHardwarePrice, Requirement,
 from django.utils import timezone
 
 # WhatsApp API credentials
-WHATSAPP_API_SECRET = '7b8ae820ecb39f8d173d57b51e1fce4c023e359e'
-WHATSAPP_API_ACCOUNT = '1756959119812b4ba287f5ee0bc9d43bbf5bbe87fb68b9118fcf1af'
-
+import os
+import requests
 import urllib.parse
+from dotenv import load_dotenv
+
+# Load .env variables
+load_dotenv()
+
+WHATSAPP_API_URL = os.getenv("WHATSAPP_API_URL")
+WHATSAPP_API_SECRET = os.getenv("WHATSAPP_API_SECRET")
+WHATSAPP_API_ACCOUNT = os.getenv("WHATSAPP_API_ACCOUNT")
 
 def send_whatsapp_message(phone_number, message):
-    message = urllib.parse.quote(message)
-    url = f"https://app.dxing.in/api/send/whatsapp?secret={WHATSAPP_API_SECRET}&account={WHATSAPP_API_ACCOUNT}&recipient={phone_number}&type=text&message={message}&priority=1"
-    response = requests.get(url)
-    if response.status_code == 200:
-        print(f"WhatsApp message sent successfully to {phone_number}")
-    else:
-        print(f"Failed to send WhatsApp message to {phone_number}. Status code: {response.status_code}, Response: {response.text}")
+    """Send WhatsApp message using DX API and credentials from .env"""
+
+    if not phone_number or not message:
+        print("❌ Missing phone number or message")
+        return
+
+    # Ensure number starts with country code
+    phone_number = str(phone_number).strip()
+    if not phone_number.startswith("91"):
+        phone_number = "91" + phone_number
+
+    try:
+        encoded_message = urllib.parse.quote(message)
+        url = (
+            f"{WHATSAPP_API_URL}"
+            f"?secret={WHATSAPP_API_SECRET}"
+            f"&account={WHATSAPP_API_ACCOUNT}"
+            f"&recipient={phone_number}"
+            f"&type=text"
+            f"&message={encoded_message}"
+            f"&priority=1"
+        )
+
+        print("📤 Sending WhatsApp to:", phone_number)
+        response = requests.get(url, timeout=10)
+
+        print("🔗 URL:", url)
+        print("🟢 Status:", response.status_code)
+        print("🟡 Response:", response.text)
+
+        if response.status_code == 200:
+            print(f"✅ WhatsApp message sent successfully to {phone_number}")
+        else:
+            print(f"❌ Failed to send WhatsApp message ({response.status_code}) → {response.text}")
+
+    except Exception as e:
+        print("❌ WhatsApp send error:", e)
+
 
 @login_required
 def add_lead(request):
@@ -3014,6 +3053,7 @@ def attendance(request):
     current_month_for_input = f"{current_year:04d}-{current_month_num:02d}"  # e.g., "2025-10"
     current_month_two_digit = f"{current_month_num:02d}"                     # e.g., "10"
     days_of_month = list(range(1, days_in_month + 1))
+    pending_cancel_count = CancelRequest.objects.filter(status='pending').count()
 
     context = {
         'employees': employees,
@@ -3034,6 +3074,7 @@ def attendance(request):
         'today': today_day,
         'is_superuser': request.user.is_superuser,
         'status_filter': status_filter,   # so the template can keep the dropdown selection
+        'pending_cancel_count': pending_cancel_count,
     }
 
     return render(request, 'attendance.html', context)
@@ -3131,14 +3172,52 @@ def get_current_employee_id(request):
         return JsonResponse({'error': str(e)}, status=500)
 from django.utils import timezone
 # views.py
-
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
 from django.utils import timezone
-from .models import Attendance, Employee
+from datetime import datetime
+from .models import Attendance, Employee, BreakTime
 from django.contrib.auth.decorators import login_required
+import requests
+from urllib.parse import quote_plus
 
+
+# ✅ WhatsApp message function (same API as used elsewhere)
+def send_whatsapp_message(phone, message):
+    """Send WhatsApp message via DX API"""
+    if not phone or not message:
+        print("❌ Missing phone or message")
+        return
+
+    phone = str(phone).strip()
+    if not phone.startswith("91"):
+        phone = "91" + phone
+
+    try:
+        encoded_msg = quote_plus(message)
+        url = (
+            f"https://app.dxing.in/api/send/whatsapp"
+            f"?secret=7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
+            f"&account=1761365422812b4ba287f5ee0bc9d43bbf5bbe87fb68fc4daea92d8"
+            f"&recipient={phone}"
+            f"&type=text"
+            f"&message={encoded_msg}"
+            f"&priority=1"
+        )
+        response = requests.get(url, timeout=10)
+        print(f"✅ WhatsApp sent to {phone} | Response: {response.text}")
+    except Exception as e:
+        print("❌ WhatsApp send error:", e)
+
+
+# ✅ Helper: check holidays
+def is_holiday(date):
+    # Replace this with your own holiday logic if exists
+    return False
+
+
+# ✅ Punch In
 @csrf_exempt
 @login_required
 def punch_in(request):
@@ -3148,27 +3227,27 @@ def punch_in(request):
             custom_user_id = request.session.get('custom_user_id')
             if not custom_user_id:
                 return JsonResponse({'success': False, 'error': 'User session not found'})
-            
+
             custom_user = User.objects.get(id=custom_user_id)
             employee = Employee.objects.get(user=custom_user)
             now = timezone.now()
             today = now.date()
-            
-            # Check if today is a holiday
+
+            # Holiday check
             if is_holiday(today):
                 return JsonResponse({'success': False, 'error': 'Cannot punch in on a holiday'})
-            
-            # Check if the employee has already punched in today
+
+            # Already punched in today
             existing_attendance = Attendance.objects.filter(
                 employee=employee,
                 date=today,
                 day=today.day,
                 punch_in__isnull=False
             ).exists()
-            
+
             if existing_attendance:
                 return JsonResponse({'success': False, 'error': 'You have already punched in today'})
-            
+
             attendance, created = Attendance.objects.get_or_create(
                 employee=employee,
                 date=today,
@@ -3181,7 +3260,7 @@ def punch_in(request):
                     'status': 'half'
                 }
             )
-            
+
             if not created:
                 attendance.punch_in = now
                 attendance.punch_in_location = data.get('location_name')
@@ -3189,7 +3268,15 @@ def punch_in(request):
                 attendance.punch_in_longitude = data.get('longitude')
                 attendance.status = 'half'
                 attendance.save()
-            
+
+            # ✅ WhatsApp message for Punch In
+            phone = getattr(employee, 'phone_personal', None) or getattr(employee, 'phone_residential', None)
+            if phone:
+                punch_time = timezone.localtime(now).strftime("%I:%M %p")
+                punch_date = timezone.localdate().strftime("%d-%m-%Y")
+                message = f"👋 You have successfully punched in at {punch_time} on {punch_date}."
+                send_whatsapp_message(phone, message)
+
             return JsonResponse({
                 'success': True,
                 'status': 'half',
@@ -3201,6 +3288,8 @@ def punch_in(request):
             return JsonResponse({'success': False, 'error': str(e)})
     return JsonResponse({'success': False, 'error': 'Invalid request'})
 
+
+# ✅ Punch Out
 @csrf_exempt
 @login_required
 def punch_out(request):
@@ -3210,17 +3299,17 @@ def punch_out(request):
             custom_user_id = request.session.get('custom_user_id')
             if not custom_user_id:
                 return JsonResponse({'success': False, 'error': 'User session not found'})
-            
+
             custom_user = User.objects.get(id=custom_user_id)
             employee = Employee.objects.get(user=custom_user)
-            now = datetime.now()
+            now = timezone.now()
             today = now.date()
-            
-            # Check if today is a holiday
+
+            # Holiday check
             if is_holiday(today):
                 return JsonResponse({'success': False, 'error': 'Cannot punch out on a holiday'})
-            
-            # Check if the employee has an active break
+
+            # Active break check
             active_break = BreakTime.objects.filter(
                 employee=employee,
                 date=today,
@@ -3228,39 +3317,42 @@ def punch_out(request):
                 break_punch_in__isnull=False,
                 break_punch_out__isnull=True
             ).first()
-            
+
             if active_break:
                 return JsonResponse({'success': False, 'error': 'You have an active break. Please finish your break before punching out.'})
-            
-            # Check if the employee has already punched out today
+
+            # Check attendance
             try:
-                attendance = Attendance.objects.get(
-                    employee=employee,
-                    date=today,
-                    day=today.day
-                )
-                
-                # Check if already punched out
+                attendance = Attendance.objects.get(employee=employee, date=today, day=today.day)
+
                 if attendance.punch_out is not None:
                     return JsonResponse({'success': False, 'error': 'You have already punched out today'})
-                
-                # Check if not punched in yet
+
                 if attendance.punch_in is None:
                     return JsonResponse({'success': False, 'error': 'You must punch in before punching out'})
-                
+
                 attendance.punch_out = now
                 attendance.punch_out_location = data.get('location_name')
                 attendance.punch_out_latitude = data.get('latitude')
                 attendance.punch_out_longitude = data.get('longitude')
                 attendance.status = 'full'
                 attendance.save()
-                
+
+                # ✅ WhatsApp message for Punch Out
+                phone = getattr(employee, 'phone_personal', None) or getattr(employee, 'phone_residential', None)
+                if phone:
+                    punch_time = timezone.localtime(now).strftime("%I:%M %p")
+                    punch_date = timezone.localdate().strftime("%d-%m-%Y")
+                    message = f"✅ You have successfully punched out at {punch_time} on {punch_date}."
+                    send_whatsapp_message(phone, message)
+
                 return JsonResponse({'success': True})
             except Attendance.DoesNotExist:
                 return JsonResponse({'success': False, 'error': 'No punch-in record found for today'})
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)})
     return JsonResponse({'success': False, 'error': 'Invalid request'})
+
 
 # views.py
 from django.http import JsonResponse
@@ -4210,28 +4302,55 @@ def process_leave_request(request):
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
 
+import os
+import requests
+from urllib.parse import quote_plus
+from dotenv import load_dotenv
+
+# Load .env values
+load_dotenv()
+
+WHATSAPP_API_URL = os.getenv("WHATSAPP_API_URL")
+WHATSAPP_API_SECRET = os.getenv("WHATSAPP_API_SECRET")
+WHATSAPP_API_ACCOUNT = os.getenv("WHATSAPP_API_ACCOUNT")
+
+# ✅ Admin/HR notification numbers (you can change here)
+ADMIN_NUMBERS = ["9946545535"]
+
 
 def send_whatsapp_message_status_update(leave_request, action, approver_name=None):
-    """Send WhatsApp message with detailed leave request information"""
-    secret = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
-    account = "1756959119812b4ba287f5ee0bc9d43bbf5bbe87fb68b9118fcf1af"
+    """Send WhatsApp message with detailed leave request info"""
+    if not (WHATSAPP_API_URL and WHATSAPP_API_SECRET and WHATSAPP_API_ACCOUNT):
+        print("❌ Missing WhatsApp API credentials in .env")
+        return False
 
     approver_name = (approver_name or "").strip() or "Admin"
 
+    # ✅ Get employee details safely
     emp = getattr(leave_request, 'employee', None)
-    emp_first_last = f"{getattr(emp, 'first_name', '')} {getattr(emp, 'last_name', '')}".strip() if emp else ''
+    emp_first_last = (
+        f"{getattr(emp, 'first_name', '')} {getattr(emp, 'last_name', '')}".strip()
+        if emp else ''
+    )
+
     employee_name = (
-        (getattr(emp, 'name', None) if emp else None)
-        or (getattr(emp, 'employee_name', None) if emp else None)
-        or (emp_first_last if emp_first_last else None)
-        or (getattr(emp, 'userid', None) if emp else None)
+        getattr(emp, 'name', None)
+        or getattr(emp, 'employee_name', None)
+        or emp_first_last
+        or getattr(emp, 'userid', None)
         or "Employee"
     )
-    employee_possessive = (employee_name + "'" if str(employee_name).strip().lower().endswith('s') else employee_name + "'s")
 
+    # Handle possessive names like "James'"
+    employee_possessive = (
+        employee_name + "'" if str(employee_name).strip().lower().endswith('s')
+        else employee_name + "'s"
+    )
+
+    # ✅ Create message based on action type
     if action == 'approve':
         message = (
-            f"✅ {employee_possessive} leave request has been approved.\n"
+            f"✅ {employee_possessive} leave request has been *approved*.\n"
             f"📅 Start Date: {leave_request.start_date.strftime('%d-%m-%Y')}\n"
             f"📅 End Date: {leave_request.end_date.strftime('%d-%m-%Y')}\n"
             f"📝 Reason: {leave_request.reason}\n"
@@ -4239,7 +4358,7 @@ def send_whatsapp_message_status_update(leave_request, action, approver_name=Non
         )
     elif action == 'reject':
         message = (
-            f"❌ {employee_possessive} leave request has been rejected.\n"
+            f"❌ {employee_possessive} leave request has been *rejected*.\n"
             f"📅 Start Date: {leave_request.start_date.strftime('%d-%m-%Y')}\n"
             f"📅 End Date: {leave_request.end_date.strftime('%d-%m-%Y')}\n"
             f"📝 Reason: {leave_request.reason}\n"
@@ -4247,7 +4366,7 @@ def send_whatsapp_message_status_update(leave_request, action, approver_name=Non
         )
     else:
         message = (
-            f"ℹ️ {employee_possessive} leave request status updated.\n"
+            f"ℹ️ {employee_possessive} leave request status *updated*.\n"
             f"📅 Start Date: {leave_request.start_date.strftime('%d-%m-%Y')}\n"
             f"📅 End Date: {leave_request.end_date.strftime('%d-%m-%Y')}\n"
             f"📝 Reason: {leave_request.reason}\n"
@@ -4255,37 +4374,60 @@ def send_whatsapp_message_status_update(leave_request, action, approver_name=Non
             f"👤 Reviewed By: {approver_name}"
         )
 
+    # ✅ Collect recipient numbers
     recipients = []
-    employee_number = getattr(leave_request.employee, 'phone_personal', None) or getattr(leave_request.employee, 'phone_number', None)
+    employee_number = getattr(emp, 'phone_personal', None) or getattr(emp, 'phone_number', None)
     if employee_number:
         recipients.append(str(employee_number))
-    if action == 'approve':
-        recipients += ["9946545535"]
+
+    if action == 'approve':  # notify admin too
+        recipients += ADMIN_NUMBERS
 
     if not recipients:
         print("⚠️ No recipients found to send WhatsApp message.")
         return False
 
-    encoded_message = requests.utils.quote(message)
+    encoded_message = quote_plus(message)
     all_ok = True
+
+    # ✅ Send to all recipients
     for phone in recipients:
+        phone = str(phone).strip()
+        if not phone.startswith("91"):
+            phone = "91" + phone
+
         url = (
-            f"https://app.dxing.in/api/send/whatsapp?"
-            f"secret={secret}&account={account}"
+            f"{WHATSAPP_API_URL}"
+            f"?secret={WHATSAPP_API_SECRET}"
+            f"&account={WHATSAPP_API_ACCOUNT}"
             f"&recipient={phone}"
-            f"&type=text&message={encoded_message}&priority=1"
+            f"&type=text"
+            f"&message={encoded_message}"
+            f"&priority=1"
         )
+
+        print("\n=======================")
+        print(f"📤 Sending WhatsApp message to {phone}")
+        print("🧾 Message:", message)
+        print("=======================")
+
         try:
             response = requests.get(url, timeout=10)
+            print("🔗 API URL:", url)
+            print("🟢 Response Code:", response.status_code)
+            print("🟡 Response:", response.text)
+
             if response.status_code == 200:
-                print(f"✅ WhatsApp message sent successfully to {phone}")
+                print(f"✅ Message sent successfully to {phone}")
             else:
                 all_ok = False
-                print(f"❌ Failed (status {response.status_code}) to {phone}: {response.text}")
+                print(f"❌ Failed ({response.status_code}) to {phone}: {response.text}")
         except requests.exceptions.RequestException as e:
             all_ok = False
             print(f"⚠️ Error sending WhatsApp message to {phone}: {e}")
+
     return all_ok
+
 
 
 
@@ -4386,30 +4528,65 @@ def create_late_request(request):
         return JsonResponse({'success': False, 'error': str(e)})
 
 
+import os
+import requests
+from urllib.parse import quote_plus
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
+# ✅ WhatsApp API credentials from .env
+WHATSAPP_API_URL = os.getenv("WHATSAPP_API_URL", "https://app.dxing.in/api/send/whatsapp")
+WHATSAPP_API_SECRET = os.getenv("WHATSAPP_API_SECRET")
+WHATSAPP_API_ACCOUNT = os.getenv("WHATSAPP_API_ACCOUNT")
+
 
 def send_whatsapp_message_new(phone_number, message):
-    secret = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
-    account = "1756959119812b4ba287f5ee0bc9d43bbf5bbe87fb68b9118fcf1af"
+    """Send WhatsApp message using DX API (credentials from .env)."""
 
-    encoded_message = requests.utils.quote(message)
+    if not phone_number or not message:
+        print("❌ Missing phone number or message.")
+        return False
+
+    # ✅ Ensure phone number format
+    phone_number = str(phone_number).strip()
+    if not phone_number.startswith("91"):
+        phone_number = "91" + phone_number
+
+    # ✅ Encode the message
+    encoded_message = quote_plus(message)
+
+    # ✅ Construct URL
     url = (
-        f"https://app.dxing.in/api/send/whatsapp?"
-        f"secret={secret}&account={account}"
+        f"{WHATSAPP_API_URL}?secret={WHATSAPP_API_SECRET}"
+        f"&account={WHATSAPP_API_ACCOUNT}"
         f"&recipient={phone_number}"
         f"&type=text&message={encoded_message}&priority=1"
     )
+
     try:
+        print("\n=======================")
+        print(f"📤 Sending WhatsApp message to {phone_number}")
+        print("🧾 Message:", message)
+        print("=======================")
+
         response = requests.get(url, timeout=10)
+        print("🔗 API URL:", url)
+        print("🟢 Status:", response.status_code)
+        print("🟡 Response:", response.text)
+
         if response.status_code == 200:
             print(f"✅ WhatsApp message sent successfully to {phone_number}")
             return True
         else:
-            print(f"❌ Failed to send WhatsApp message to {phone_number}. "
-                  f"Status code: {response.status_code}, Response: {response.text}")
+            print(f"❌ Failed to send message ({response.status_code}) → {response.text}")
             return False
+
     except requests.exceptions.RequestException as e:
         print(f"⚠️ Error sending WhatsApp message: {e}")
         return False
+
 
 
 
@@ -5529,6 +5706,7 @@ def configure_user_menu(request, user_id):
         {'id': 'collections_list', 'name': 'Collections', 'icon': 'fas fa-coins'},
         {'id': 'image_capture', 'name': 'Image Capture', 'icon': 'fas fa-camera'},
         {'id': 'purchase_order', 'name': 'Purchase Order', 'icon': 'fas fa-file-invoice'},
+        {'id': 'wallet_list', 'name': 'Wallet', 'icon': 'fas fa-wallet'},
     
         
     ]
@@ -5960,32 +6138,77 @@ def handle_break_punch(request, action):
 
     return JsonResponse({'success': False, 'error': 'Invalid request'})
 
+from datetime import datetime
+from django.utils import timezone
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
+from .models import User, Attendance  # or BreakTime model if different
+
+from datetime import datetime
+from django.utils import timezone
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
+from .models import User, Attendance  # use your real attendance model
+from datetime import datetime
+from django.utils import timezone
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
+from .models import User, Attendance, BreakTime  # adjust model names if different
+from datetime import datetime
+from django.utils import timezone
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
+from .models import User, Attendance, BreakTime  # adjust if model names differ
 
 @login_required
 def break_time_management(request):
-    # Get selected date from request, default to today's date
-    selected_date = request.GET.get('date')
-    indian_tz = pytz.timezone('Asia/Kolkata')
+    # Get filters
+    start_date_str = request.GET.get('start_date')
+    end_date_str = request.GET.get('end_date')
+    selected_user_id = request.GET.get('user')
 
-    if selected_date:
-        date_filter = datetime.strptime(selected_date, '%Y-%m-%d').date()
+    today = timezone.localdate()
+
+    # Handle date range
+    if start_date_str:
+        start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
     else:
-        date_filter = datetime.now(indian_tz).date()
+        start_date = today
 
-    # Filter break times based on the selected date
-    break_times = BreakTime.objects.filter(date=date_filter).order_by('-date', '-break_punch_in')
+    if end_date_str:
+        end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
+    else:
+        end_date = start_date
 
-    for bt in break_times:
-        if bt.break_punch_in and bt.break_punch_out:
-            duration = bt.break_punch_out - bt.break_punch_in
-            bt.duration = str(duration).split('.')[0]  # format as HH:MM:SS
-        else:
-            bt.duration = None
+    # Active users only
+    active_users = User.objects.filter(status="active")
 
-    return render(request, 'break_time_management.html', {
-        'break_times': break_times,
-        'selected_date': date_filter,
-    })
+    # Get main punch-in users (Attendance)
+    punched_users = Attendance.objects.filter(
+        punch_in__isnull=False,
+        date__range=[start_date, end_date]
+    ).select_related("employee").order_by("date", "employee__name")
+
+    if selected_user_id:
+        punched_users = punched_users.filter(employee_id=selected_user_id)
+
+    # Attach break records directly to each attendance object
+    for record in punched_users:
+        record.breaks = BreakTime.objects.filter(
+            employee=record.employee,
+            date=record.date
+        ).order_by("break_punch_in")
+
+    context = {
+        "punched_users": punched_users,
+        "active_users": active_users,
+        "start_date": start_date,
+        "end_date": end_date,
+        "selected_user_id": selected_user_id,
+    }
+
+    return render(request, "break_time_management.html", context)
+
 
 
 
