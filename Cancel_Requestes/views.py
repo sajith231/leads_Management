@@ -25,7 +25,7 @@ WA_ACCOUNT = os.getenv("WA_ACCOUNT")
 
 PHONE_NUMBERS = [
     "9946545535", "7593820007", "7593820005",
-    "9846754998", "8129191379", "9061947005", "7306197537"
+    "8129191379", "9061947005", "7306197537"
 ]
 
 def send_whatsapp_message(phone, message):

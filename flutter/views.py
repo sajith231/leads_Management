@@ -459,7 +459,7 @@ def create_leave_request(request):
             )
 
             # WhatsApp (now includes NOTE)
-            phones = ["9946545535", "7593820007", "7593820005", "9846754998", "8129191379", "9061947005"]
+            phones = ["9946545535", "7593820007", "7593820005", "8129191379", "9061947005"]
             msg = (
                 f"New leave request from {employee.name}.\n"
                 f"Type: {leave_request.get_leave_type_display()}\n"
@@ -565,7 +565,7 @@ def create_late_request(request):
     late = LateRequest.objects.create(employee=emp, date=data['date'],
                                       delay_time=data['delay_time'], reason=data['reason'], status='pending')
 
-    phones = ["9946545535", "7593820007", "7593820005", "9846754998","8129191379","9061947005"]
+    phones = ["9946545535", "7593820007", "7593820005","8129191379","9061947005"]
     msg = f"New late request from {emp.name}. Date: {late.date:%d-%m-%Y}, Delay: {late.delay_time}, Reason: {late.reason}"
     for p in phones:
         send_whatsapp(p, msg)
@@ -634,7 +634,7 @@ def create_early_request(request):
     early = EarlyRequest.objects.create(employee=emp, date=data['date'],
                                         early_time=data['early_time'], reason=data['reason'], status='pending')
 
-    phones = ["9946545535", "7593820007", "7593820005", "9846754998","8129191379","9061947005"]
+    phones = ["9946545535", "7593820007", "7593820005","8129191379","9061947005"]
     msg = f"New early request from {emp.name}. Date: {early.date:%d-%m-%Y}, Early Time: {early.early_time}, Reason: {early.reason}"
     for p in phones:
         send_whatsapp(p, msg)
