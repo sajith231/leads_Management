@@ -4101,7 +4101,7 @@ def create_leave_request(request):
                 status='pending'
             )
 
-            phone_numbers = ["9946545535", "7593820007", "7593820005","9846754998","8129191379","9061947005","7306197537"]
+            phone_numbers = ["9946545535", "7593820007", "7593820005","8129191379","9061947005","7306197537"]
             
             formatted_start = start_date.strftime('%d-%m-%Y')
             formatted_end   = end_date.strftime('%d-%m-%Y')
@@ -4286,7 +4286,7 @@ def process_leave_request(request):
         if emp_phone:
             recipients.append(str(emp_phone))
         if action == 'approve':
-            recipients += ["9946545535","7593820007","7593820005","9846754998","8129191379","9061947005","7306197537"]
+            recipients += ["9946545535","7593820007","7593820005","8129191379","9061947005","7306197537"]
 
         for r in recipients:
             send_whatsapp_message_new_request(r, msg)
@@ -4513,7 +4513,7 @@ def create_late_request(request):
         )
 
         # WhatsApp (same helper/account as leave-create)
-        phone_numbers = ["9946545535","7593820007","7593820005","9846754998","8129191379","9061947005","7306197537"]
+        phone_numbers = ["9946545535","7593820007","7593820005","8129191379","9061947005","7306197537"]
         message = (
             f"New late request from {employee.name}.\n"
             f"Date: {date_obj.strftime('%d-%m-%Y')}\n"
@@ -4679,7 +4679,7 @@ def process_late_request(request):
         if emp_phone:
             recipients.append(str(emp_phone))
         if action == 'approve':
-            recipients += ["9946545535","7593820007","7593820005","9846754998","8129191379","9061947005","7306197537"]
+            recipients += ["9946545535","7593820007","7593820005","8129191379","9061947005","7306197537"]
 
         for r in recipients:
             send_whatsapp_message_new_request(r, msg)
@@ -6319,7 +6319,7 @@ def create_early_request(request):
         )
 
         # WhatsApp (same helper/account as leave-create)
-        phone_numbers = ["9946545535","7593820007","7593820005","9846754998","8129191379","9061947005","7306197537"]
+        phone_numbers = ["9946545535","7593820007","7593820005","8129191379","9061947005","7306197537"]
         message = (
             f"New early request from {employee.name}.\n"
             f"Date: {date_obj.strftime('%d-%m-%Y')}\n"
@@ -6429,7 +6429,7 @@ def process_early_request(request):
         if emp_phone:
             recipients.append(str(emp_phone))
         if action == 'approve':
-            recipients += ["9946545535","7593820007","7593820005","9846754998","8129191379","9061947005","7306197537"]
+            recipients += ["9946545535","7593820007","7593820005","8129191379","9061947005","7306197537"]
 
         for r in recipients:
             send_whatsapp_message_new_request(r, msg)
