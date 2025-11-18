@@ -1,8 +1,5 @@
-{% extends "base.html" %}
-
-{% block title %}Lead Creation Form{% endblock %}
-
-{% block content %}
+<html>
+<head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Compact Customer Information Form</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -959,8 +956,8 @@
                     
                     <!-- Directory Tabs -->
                     <div class="directory-tabs">
-                        <button class="directory-tab active" data-tab="employees">Employees</button>
-                        <button class="directory-tab" data-tab="leads">Active Leads</button>
+                        <button class="directory-tab active" data-tab="leads">Active Leads</button>
+                        <button class="directory-tab" data-tab="employees">Employees</button>
                     </div>
                     
                     <div class="search-container">
@@ -970,8 +967,31 @@
                         </div>
                     </div>
                     
-                    <!-- Employee List (server-rendered from active_users) -->
-                    <div class="employee-list active" id="employeeList">
+                    <!-- Lead List (shown by default) -->
+                    <div class="lead-list active" id="leadList">
+                        {% if active_leads_data %}
+                            {% for lead in active_leads_data %}
+                            <div class="lead-item" data-id="{{ lead.id }}">
+                                <div class="lead-avatar">
+                                    {{ lead.ownerName|default:""|slice:":2"|upper }}
+                                </div>
+
+                                <div class="lead-details">
+                                    <div class="lead-name">{{ lead.ownerName }}</div>
+                                    <div class="lead-phone">{{ lead.phoneNo }}</div>
+                                    <div class="lead-ticket">{{ lead.ticket_number }}</div>
+                                    <div class="lead-status">Status: {{ lead.status }}</div>
+                                </div>
+                                <!-- <button class="assign-btn" data-lead-id="{{ lead.id }}" data-role="lead-view">View</button> -->
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="no-results">No active leads found</div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Employee List (hidden by default) -->
+                    <div class="employee-list" id="employeeList">
                         {% if active_users %}
                             {% for u in active_users %}
                             <div class="employee-item" data-id="{{ u.id }}" data-name="{{ u.name|escapejs }}">
@@ -993,29 +1013,6 @@
                             {% endfor %}
                         {% else %}
                             <div class="no-results">No active users found</div>
-                        {% endif %}
-                    </div>
-                    
-                    <!-- Lead List -->
-                    <div class="lead-list" id="leadList">
-                        {% if active_leads_data %}
-                            {% for lead in active_leads_data %}
-                            <div class="lead-item" data-id="{{ lead.id }}">
-                                <div class="lead-avatar">
-    {{ lead.ownerName|default:""|slice:":2"|upper }}
-</div>
-
-                                <div class="lead-details">
-                                    <div class="lead-name">{{ lead.ownerName }}</div>
-                                    <div class="lead-phone">{{ lead.phoneNo }}</div>
-                                    <div class="lead-ticket">{{ lead.ticket_number }}</div>
-                                    <div class="lead-status">Status: {{ lead.status }}</div>
-                                </div>
-                                <!-- <button class="assign-btn" data-lead-id="{{ lead.id }}" data-role="lead-view">View</button> -->
-                            </div>
-                            {% endfor %}
-                        {% else %}
-                            <div class="no-results">No active leads found</div>
                         {% endif %}
                     </div>
                 </div>
@@ -1281,10 +1278,10 @@
                                     <i class="fas fa-paper-plane"></i>
                                     &nbsp; Submit Form
                                 </button>
-                                <button type="button" class="reset-btn" onclick="window.history.back()">
-                                    <i class="fas fa-arrow-left"></i>
-                                    &nbsp; Back
-                                </button>
+                                <button type="button" class="reset-btn" onclick="window.location.href='{% url 'app5:lead_report' %}'">
+    <i class="fas fa-arrow-left"></i>
+    &nbsp; Back
+</button>
                             </div>
                         </form>
                     </div>
@@ -1359,26 +1356,25 @@
         }
 
         // Add event listeners to employee assign buttons (server-rendered)
-        // Add event listeners to employee assign buttons (server-rendered)
-function setupEmployeeAssignButtons() {
-    const employeeAssignButtons = document.querySelectorAll('#employeeList .assign-btn[data-role="employee-assign"]');
-    employeeAssignButtons.forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            const empId = this.getAttribute('data-id');
-            const empName = this.getAttribute('data-name');
+        function setupEmployeeAssignButtons() {
+            const employeeAssignButtons = document.querySelectorAll('#employeeList .assign-btn[data-role="employee-assign"]');
+            employeeAssignButtons.forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const empId = this.getAttribute('data-id');
+                    const empName = this.getAttribute('data-name');
 
-            // Redirect to lead assignment list page with employee data
-            const url = "{% url 'app5:lead_assign_list' %}";
-            
-            // You can pass the employee data as URL parameters or use session storage
-            window.location.href = url;
-            
-            // Alternative: If you want to pass the employee data to the assignment page
-            // window.location.href = `${url}?assigned_to=${empId}&assigned_to_name=${encodeURIComponent(empName)}`;
-        });
-    });
-}
+                    // Redirect to lead assignment list page with employee data
+                    const url = "{% url 'app5:lead_assign_list' %}";
+                    
+                    // You can pass the employee data as URL parameters or use session storage
+                    window.location.href = url;
+                    
+                    // Alternative: If you want to pass the employee data to the assignment page
+                    // window.location.href = `${url}?assigned_to=${empId}&assigned_to_name=${encodeURIComponent(empName)}`;
+                });
+            });
+        }
 
         // Add event listeners to lead view buttons
         function setupLeadViewButtons() {
@@ -1652,4 +1648,5 @@ function setupEmployeeAssignButtons() {
         });
     });
     </script>
-{% endblock %}
+</body>
+</html>

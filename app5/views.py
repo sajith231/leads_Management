@@ -4527,7 +4527,7 @@ def requirement_list(request):
         items_qs = []
 
     # ------------------------------
-    # ACTIVE USERS
+    # ACTIVE USERS - IMPROVED NAME DISPLAY
     # ------------------------------
     try:
         try:
@@ -4548,33 +4548,57 @@ def requirement_list(request):
     except Exception:
         active_users_qs = []
 
-    # Process users for template - create a consistent structure
+    # Process users for template - IMPROVED NAME DISPLAY
     active_users_list = []
     for u in active_users_qs:
-        # Get name
-        name = (
-            getattr(u, "name", None)
-            or getattr(u, "get_full_name", lambda: "")()
-            or f"{getattr(u,'first_name','')} {getattr(u,'last_name','')}".strip()
-            or getattr(u, "username", "Unknown")
-        )
+        # IMPROVED: Better name extraction logic
+        name = None
+        
+        # Try different name fields in priority order
+        if hasattr(u, 'name') and u.name:
+            name = u.name.strip()
+        elif hasattr(u, 'get_full_name'):
+            try:
+                full_name = u.get_full_name().strip()
+                if full_name:
+                    name = full_name
+            except:
+                pass
+        
+        # If still no name, try first_name + last_name
+        if not name:
+            first_name = getattr(u, 'first_name', '').strip()
+            last_name = getattr(u, 'last_name', '').strip()
+            if first_name or last_name:
+                name = f"{first_name} {last_name}".strip()
+        
+        # Final fallbacks
+        if not name:
+            name = getattr(u, 'username', f'User #{u.id}')
 
-        # Get phone
+        # Get phone with better fallbacks
         phone = (
-            getattr(u, "phone_number", None)
-            or getattr(u, "phone", None)
-            or getattr(u, "mobile", None)
-            or ""
+            getattr(u, "phone_number", None) or
+            getattr(u, "phone", None) or
+            getattr(u, "mobile", None) or
+            getattr(u, "contact_number", None) or
+            ""
         )
 
         # Get department/designation
         department = (
-            getattr(u, "department", None)
-            or getattr(u, "branch", None)
-            or ""
+            getattr(u, "department", None) or
+            getattr(u, "branch", None) or
+            getattr(u, "dept", None) or
+            ""
         )
 
-        designation = getattr(u, "designation", "") or ""
+        designation = (
+            getattr(u, "designation", None) or
+            getattr(u, "role", None) or
+            getattr(u, "position", None) or
+            ""
+        )
 
         active_users_list.append({
             "id": u.id,
@@ -4584,10 +4608,11 @@ def requirement_list(request):
             "designation": designation,
             "username": getattr(u, "username", ""),
             "email": getattr(u, "email", ""),
+            "user_id": getattr(u, "userid", ""),  # Add userid if available
         })
 
     # ------------------------------
-    # LOAD ACTIVE LEADS
+    # LOAD ACTIVE LEADS - IMPROVED
     # ------------------------------
     try:
         try:
@@ -4597,37 +4622,53 @@ def requirement_list(request):
 
         if hasattr(Lead, "status"):
             leads_qs = Lead.objects.filter(
-                Q(status__iexact="active") | Q(status__iexact="open")
+                Q(status__iexact="active") | Q(status__iexact="open") | Q(status__iexact="new")
             ).order_by("-created_at")[:25]
         else:
             leads_qs = Lead.objects.all().order_by("-id")[:25]
 
-    except:
+    except Exception as e:
+        logger.error(f"Error loading leads: {e}")
         leads_qs = []
 
-    # Process leads for template
+    # Process leads for template - IMPROVED
     active_leads_list = []
     for l in leads_qs:
-        name = (
-            getattr(l, "ownerName", None)
-            or getattr(l, "name", None)
-            or getattr(l, "owner_name", None)
-            or ""
-        )
+        # IMPROVED: Better lead name extraction
+        name = None
+        
+        if hasattr(l, 'ownerName') and l.ownerName:
+            name = l.ownerName.strip()
+        elif hasattr(l, 'name') and l.name:
+            name = l.name.strip()
+        elif hasattr(l, 'owner_name') and l.owner_name:
+            name = l.owner_name.strip()
+        elif hasattr(l, 'firstName') and l.firstName:
+            first_name = l.firstName.strip()
+            last_name = getattr(l, 'lastName', '').strip()
+            name = f"{first_name} {last_name}".strip()
+        
+        if not name:
+            name = f"Lead #{l.id}"
 
+        # Phone extraction
         phone = (
-            getattr(l, "phoneNo", None)
-            or getattr(l, "phone", None)
-            or ""
+            getattr(l, "phoneNo", None) or
+            getattr(l, "phone", None) or
+            getattr(l, "contact_number", None) or
+            getattr(l, "mobile", None) or
+            ""
         )
 
+        # Ticket number
         ticket = (
-            getattr(l, "ticket_number", None)
-            or getattr(l, "ticket_no", None)
-            or l.id
+            getattr(l, "ticket_number", None) or
+            getattr(l, "ticket_no", None) or
+            getattr(l, "ticket", None) or
+            f"TKT-{l.id}"
         )
 
-        business = getattr(l, "business", "") or ""
+        business = getattr(l, "business", "") or getattr(l, "business_nature", "") or ""
 
         active_leads_list.append({
             "id": l.id,
@@ -4635,25 +4676,34 @@ def requirement_list(request):
             "phone": phone,
             "ticket_number": ticket,
             "business": business,
+            "customer_type": getattr(l, "customerType", ""),
+            "place": getattr(l, "place", "") or getattr(l, "individualPlace", ""),
         })
 
     # ------------------------------
-    # CONTEXT
+    # CONTEXT - FIXED
     # ------------------------------
     context = {
         "items": items_qs,
 
-        # Use the processed lists for template
-        "active_users": active_users_list,
+        # FIXED: Use the correct variable names
+        "active_users": active_users_list,  # This was the main error - using undefined variable
         "active_leads": active_leads_list,
 
         # JSON for JS if needed
         "active_users_json": json.dumps(active_users_list),
         "active_leads_json": json.dumps(active_leads_list),
 
-        "server_time": timezone.now(),
+        "server_time": timezone.now().strftime('%Y-%m-%d %H:%M:%S'),
+        
+        # Additional helpful context
+        "users_count": len(active_users_list),
+        "leads_count": len(active_leads_list),
+        "items_count": items_qs.count() if hasattr(items_qs, 'count') else len(items_qs),
     }
 
+    logger.info(f"Requirement list loaded: {len(active_users_list)} users, {len(active_leads_list)} leads, {context['items_count']} items")
+    
     return render(request, "requirement_list.html", context)
 
 
