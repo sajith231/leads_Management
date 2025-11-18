@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from django.http import JsonResponse
+from django.http import JsonResponse, FileResponse, HttpResponse
 from .models import Wallet
 from urllib.parse import quote
 import os
@@ -9,6 +9,7 @@ import requests
 import json
 import time
 from dotenv import load_dotenv
+import mimetypes
 
 # Load environment variables
 load_dotenv()
@@ -361,6 +362,71 @@ def delete_wallet(request, wallet_id):
     return redirect('wallet_list')
 
 
+# ✅ NEW: Download endpoint for wallet images
+def download_wallet_image(request, wallet_id):
+    """Serve wallet image with download headers"""
+    wallet = get_object_or_404(Wallet, id=wallet_id)
+    
+    if not wallet.image:
+        return HttpResponse("No image available for this wallet", status=404)
+    
+    try:
+        # Get the file path
+        file_path = wallet.image.path
+        
+        if not os.path.exists(file_path):
+            return HttpResponse("Image file not found", status=404)
+        
+        # Determine the content type
+        content_type, _ = mimetypes.guess_type(file_path)
+        if not content_type:
+            content_type = 'application/octet-stream'
+        
+        # Create a safe filename
+        original_filename = os.path.basename(file_path)
+        safe_filename = f"{wallet.title.replace(' ', '_')}_{original_filename}"
+        
+        # Open and serve the file with download headers
+        response = FileResponse(open(file_path, 'rb'), content_type=content_type)
+        response['Content-Disposition'] = f'attachment; filename="{safe_filename}"'
+        response['Content-Length'] = os.path.getsize(file_path)
+        
+        return response
+        
+    except Exception as e:
+        return HttpResponse(f"Error serving image: {str(e)}", status=500)
+
+
+# ✅ NEW: Download endpoint for wallet PDFs
+def download_wallet_pdf(request, wallet_id):
+    """Serve wallet PDF with download headers"""
+    wallet = get_object_or_404(Wallet, id=wallet_id)
+    
+    if not wallet.pdf_file:
+        return HttpResponse("No PDF available for this wallet", status=404)
+    
+    try:
+        # Get the file path
+        file_path = wallet.pdf_file.path
+        
+        if not os.path.exists(file_path):
+            return HttpResponse("PDF file not found", status=404)
+        
+        # Create a safe filename
+        original_filename = os.path.basename(file_path)
+        safe_filename = f"{wallet.title.replace(' ', '_')}_{original_filename}"
+        
+        # Open and serve the file with download headers
+        response = FileResponse(open(file_path, 'rb'), content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="{safe_filename}"'
+        response['Content-Length'] = os.path.getsize(file_path)
+        
+        return response
+        
+    except Exception as e:
+        return HttpResponse(f"Error serving PDF: {str(e)}", status=500)
+
+
 def wallet_whatsapp_share(request, wallet_id):
     """Send wallet details (text, image, PDF) via WhatsApp using DXing API."""
     if request.method != 'POST':
@@ -413,6 +479,16 @@ def wallet_whatsapp_share(request, wallet_id):
         lines.append("")
         lines.append(f"📝 {wallet.description}")
 
+    # ✅ Add download links to the text message
+    if wallet.image:
+        download_image_url = request.build_absolute_uri(f'/wallet/download/image/{wallet.id}/')
+        lines.append("")
+        lines.append(f"📥 Download Image: {download_image_url}")
+    
+    if wallet.pdf_file:
+        download_pdf_url = request.build_absolute_uri(f'/wallet/download/pdf/{wallet.id}/')
+        lines.append(f"📥 Download PDF: {download_pdf_url}")
+
     message_text = "\n".join(lines)
 
     text_ok = _send({
@@ -424,41 +500,26 @@ def wallet_whatsapp_share(request, wallet_id):
         "priority": 1
     })
     print("✅ Text sent:", text_ok)
-    time.sleep(1)  # Add delay between messages
+    time.sleep(1)
 
-    # 2️⃣ IMAGE MESSAGE
-    image_ok = False
-    if wallet.image:
-        try:
-            image_url = request.build_absolute_uri(wallet.image.url)
-            print(f"[DXing] Attempting to send image: {image_url}")
-            image_ok = _send({
-                "secret": WHATSAPP_API_SECRET,
-                "account": WHATSAPP_API_ACCOUNT,
-                "recipient": phone,
-                "type": "image",
-                "message": image_url,
-                "priority": 1
-            })
-            print("✅ Image sent:", image_ok)
-            time.sleep(1)
-        except Exception as e:
-            print("[DXing] Image send error:", e)
+    # 2️⃣ IMAGE MESSAGE - Skip sending separate image link (already in text message)
+    image_ok = True  # Mark as success since link is in the text message
 
-    # 3️⃣ PDF MESSAGE - FIXED: Use type=file instead of type=document
+    # 3️⃣ PDF MESSAGE - Use download link
     pdf_ok = False
     if wallet.pdf_file:
         try:
-            pdf_url = request.build_absolute_uri(wallet.pdf_file.url)
-            print(f"[DXing] Attempting to send PDF: {pdf_url}")
+            # Use the download endpoint URL
+            pdf_download_url = request.build_absolute_uri(f'/wallet/download/pdf/{wallet.id}/')
+            print(f"[DXing] Attempting to send PDF download link: {pdf_download_url}")
             
-            # ✅ FIXED: DXing API uses type=file for PDFs/documents
+            # Send the file using the download URL
             pdf_ok = _send({
                 "secret": WHATSAPP_API_SECRET,
                 "account": WHATSAPP_API_ACCOUNT,
                 "recipient": phone,
-                "type": "file",  # Changed from "document" to "file"
-                "message": pdf_url,
+                "type": "file",
+                "message": pdf_download_url,
                 "priority": 1
             })
             print("✅ PDF sent:", pdf_ok)

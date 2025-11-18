@@ -7,4 +7,7 @@ urlpatterns = [
     path('edit/<int:wallet_id>/', views.edit_wallet, name='edit_wallet'),
     path('delete/<int:wallet_id>/', views.delete_wallet, name='delete_wallet'),
     path('whatsapp/<int:wallet_id>/', views.wallet_whatsapp_share, name='wallet_whatsapp_share'),
+    # NEW: Download endpoints for images and PDFs
+    path('download/image/<int:wallet_id>/', views.download_wallet_image, name='download_wallet_image'),
+    path('download/pdf/<int:wallet_id>/', views.download_wallet_pdf, name='download_wallet_pdf'),
 ]
