@@ -162,6 +162,17 @@
     </div>
     {% endif %}
         
+                {% if items.has_next %}
+                    <li>
+                        <a href="?page={{ items.next_page_number }}{% if selected_department %}&department={{ selected_department }}{% endif %}">»</a>
+                    </li>
+                {% else %}
+                    <li class="disabled"><span>»</span></li>
+                {% endif %}
+            </ul>
+        </div>
+        {% endif %}
+      
 </div>
 
 <!-- Delete Confirmation Modal -->
