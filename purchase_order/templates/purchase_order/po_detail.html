@@ -36,9 +36,6 @@
             <!-- PO Title and Details -->
             <div class="print-po-title">
                 <h1>PURCHASE ORDER</h1>
-                <div class="print-po-info">
-                    <span class="page-number">Page 1 of 1</span>
-                </div>
             </div>
 
             <!-- To and PO Number Section -->
@@ -56,14 +53,18 @@
                     </div>
                 </div>
                 <div class="print-to-right">
-                    <table class="print-info-table">
+                    <table class="print-info-table modern-info-table">
                         <tr>
                             <td class="info-label-cell">No</td>
-                            <td class="info-value-cell">{{ po.po_number }}</td>
+                            <td class="info-value-cell highlight-yellow">{{ po.po_number }}</td>
                         </tr>
                         <tr>
                             <td class="info-label-cell">Date</td>
-                            <td class="info-value-cell">{{ po.po_date|date:"d/m/Y" }}</td>
+                            <td class="info-value-cell highlight-yellow">{{ po.po_date|date:"d/m/Y" }}</td>
+                        </tr>
+                        <tr>
+                            <td class="info-label-cell">Expected Delivery</td>
+                            <td class="info-value-cell highlight-yellow">{{ po.delivery_date|date:"d/m/Y" }}</td>
                         </tr>
                     </table>
                 </div>
@@ -183,7 +184,7 @@
                     {% endif %}
                 </div>
             </div>
-            {% if po.client_details %}
+            {% if po.client_details and po.client_details.strip %}
             <div class="info-card">
                 <h3 class="card-title">
                     <i class="fas fa-user-tie"></i> Client Details
@@ -191,7 +192,7 @@
                 <div class="card-content">
                     <div class="info-row">
                         <span class="info-label">Client Name:</span>
-                        <span class="info-value">{{ po.client_details }}</span>
+                        <span class="info-value">{{ po.client_details|linebreaksbr }}</span>
                     </div>
                 </div>
             </div>
@@ -222,8 +223,8 @@
                             <th class="rate-col">Entry Rate</th>
                             <th class="tax-col">Tax %</th>
                             <th class="mrp-col">Sales Price (MRP)</th>
-                            <!-- ✅ ADD THIS NEW COLUMN -->
                             <th class="cost-col">Item Cost</th>
+                            <th class="margin-col">Margin</th>
                             <th class="total-col">Total Amount</th>
                             <th class="remark-col">Remark</th>
                             <th class="action-col screen-only">Action</th>
@@ -249,8 +250,12 @@
                             <td class="right-align">{{ item.entry_rate|floatformat:2 }}</td>
                             <td class="center-align">{{ item.tax_percent }}</td>
                             <td class="right-align">{{ item.sales_price|default:0|floatformat:2 }}</td>
-                            <!-- ✅ ADD THIS NEW CELL -->
                             <td class="right-align item-cost-cell">{{ item.item_cost|floatformat:2 }}</td>
+                            <!-- ✅ ADD THIS NEW CELL -->
+                            <!-- ✅ MARGIN COLUMN -->
+                            <td class="right-align margin-cell" data-margin="{{ item.margin }}">
+                                {{ item.margin|floatformat:2 }}
+                            </td>
                             <td class="right-align line-total">{{ item.line_total|floatformat:2 }}</td>
                             <td></td>
                             <td class="center-align action-cell screen-only">
@@ -265,26 +270,23 @@
                     </tbody>
                     <tfoot class="print-table-footer">
                         <tr class="total-row">
-                            <!-- ✅ CHANGE: colspan from 8 to 9 -->
-                            <td colspan="9" class="right-align"><strong>Total</strong></td>
+                            <!-- ✅ CHANGE: colspan from 9 to 10 -->
+                            <td colspan="10" class="right-align"><strong>Total</strong></td>
                             <td class="right-align"><strong>{{ po.total_amount|floatformat:2 }}</strong></td>
                             <td></td>
                         </tr>
                         <tr class="total-row">
-                            <!-- ✅ CHANGE: colspan from 8 to 9 -->
-                            <td colspan="9" class="right-align"><strong>Discount</strong></td>
+                            <td colspan="10" class="right-align"><strong>Discount</strong></td>
                             <td class="right-align"><strong>0.00</strong></td>
                             <td></td>
                         </tr>
                         <tr class="total-row">
-                            <!-- ✅ CHANGE: colspan from 8 to 9 -->
-                            <td colspan="9" class="right-align"><strong>Tax</strong></td>
+                            <td colspan="10" class="right-align"><strong>Tax</strong></td>
                             <td class="right-align"><strong>{{ po.tax_amount|floatformat:2 }}</strong></td>
                             <td></td>
                         </tr>
                         <tr class="grand-total-row-print">
-                            <!-- ✅ CHANGE: colspan from 8 to 9 -->
-                            <td colspan="9" class="right-align"><strong>Grand Total</strong></td>
+                            <td colspan="10" class="right-align"><strong>Grand Total</strong></td>
                             <td class="right-align grand-total-value"><strong>{{ po.grand_total|floatformat:2 }}</strong></td>
                             <td></td>
                         </tr>
@@ -414,68 +416,87 @@
             </div>
         </div>
 
-        <!-- ✅ ADD THIS ENTIRE SECTION -->
-        <div class="pdf-format-section screen-only no-print">
-            <div class="format-selector">
-                <label for="pdfFormatSelect">
-                    <i class="fas fa-file-pdf"></i> PDF Format:
-                </label>
-                <select id="pdfFormatSelect" class="format-select">
-                    <option value="FORMAT_1" {% if po.pdf_format == 'FORMAT_1' %}selected{% endif %}>
-                        📄 FORM 1
-                    </option>
-                    <option value="FORMAT_2" {% if po.pdf_format == 'FORMAT_2' %}selected{% endif %}>
-                        📋 FORM 2
-                    </option>
-                </select>
+        <!-- PDF Format Selector -->
+            <div class="pdf-format-section screen-only no-print">
+                <div class="format-selector">
+                    <label for="pdfFormatSelect">
+                        <i class="fas fa-file-pdf"></i> PDF Format:
+                    </label>
+                    <select id="pdfFormatSelect" class="format-select">
+                        <option value="FORMAT_1" {% if po.pdf_format == 'FORMAT_1' %}selected{% endif %}>
+                            📄 Format 1
+                        </option>
+                        <option value="FORMAT_2" {% if po.pdf_format == 'FORMAT_2' %}selected{% endif %}>
+                            📋 Format 2
+                        </option>
+                    </select>
+                </div>
             </div>
-        </div>
 
-        <div class="detail-actions no-print d-flex justify-content-end align-items-center mt-3 gap-2">
-            <a href="{% url 'purchase_order:po_list' %}" class="btn btn-secondary btn-lg">
-                <i class="fas fa-arrow-left"></i> Back
-            </a>
-            <a href="{% url 'purchase_order:po_update' po.pk %}" class="btn btn-primary btn-lg">
-                <i class="fas fa-edit"></i> Edit
-            </a>
-            <a href="{% url 'purchase_order:po_delete' po.pk %}" class="btn btn-danger btn-lg">
-                <i class="fas fa-trash"></i> Remove
-            </a>
-            <button onclick="printWithFormat()" class="btn btn-info btn-lg">
-                <i class="fas fa-print"></i> Print
-            </button>
-            <button id="whatsappShareBtn" class="btn btn-success btn-lg">
-                <i class="fab fa-whatsapp"></i> WhatsApp Share
-            </button>
-        </div>
+        <!-- Action Buttons -->
+            <div class="detail-actions no-print d-flex justify-content-end align-items-center mt-3 gap-2">
+                <a href="{% url 'purchase_order:po_list' %}" class="btn btn-secondary btn-lg">
+                    <i class="fas fa-arrow-left"></i> Back
+                </a>
+                <a href="{% url 'purchase_order:po_update' po.pk %}" class="btn btn-primary btn-lg">
+                    <i class="fas fa-edit"></i> Edit
+                </a>
+                <a href="{% url 'purchase_order:po_delete' po.pk %}" class="btn btn-danger btn-lg">
+                    <i class="fas fa-trash"></i> Remove
+                </a>
+                <button onclick="printWithFormat()" class="btn btn-warning btn-lg">
+                    <i class="fas fa-print"></i> Print
+                </button>
+                <button id="whatsappShareBtn" class="btn btn-success btn-lg">
+                    <i class="fab fa-whatsapp"></i> WhatsApp Share
+                </button>
+            </div>
     </div>
 </div>
-<!-- Supplier Purchase History Modal -->
-<div id="supplierHistoryModalDetail" class="history-modal">
-  <div class="history-modal-content">
-    <div class="history-modal-header">
+
+<!-- ✅ Supplier Purchase History Modal (Full View, No Scrollbar) -->
+<div id="supplierHistoryModalDetail" class="confirmation-modal">
+  <div class="confirmation-content" style="max-width: 1100px;">
+    <div class="confirmation-header" style="background: #6f42c1;">
       <i class="fas fa-history"></i>
       <h2>Supplier Purchase History</h2>
     </div>
-    <div class="history-modal-body">
-      <table id="supplierHistoryTableDetail" class="history-table">
+
+    <!-- ✅ Removed max-height and overflow -->
+    <div class="confirmation-body popup-no-scroll">
+        <!-- 🔎 Supplier history search (detail page) -->
+        <div class="history-searchbar">
+            <input
+            type="text"
+            id="supplierHistorySearchDetail"
+            class="history-search-input"
+            placeholder="Search PO no, date, item, client, qty, rate, total..."
+            autocomplete="off">
+            <button type="button" class="history-clear-btn" data-target="#supplierHistorySearchDetail">×</button>
+        </div>
+
+        <table id="supplierHistoryTableDetail" class="styled-table">
         <thead>
           <tr>
             <th>PO Number</th>
             <th>Date</th>
             <th>Item</th>
-            <th>Quantity</th>
-            <th>Total</th>
-            <th>Rate</th>
+            <th>Client</th>
+            <th class="right-align">Quantity</th>
+            <th class="right-align">Rate</th>
+            <th class="right-align">Total</th>
           </tr>
         </thead>
         <tbody>
-          <tr><td colspan="6" class="no-data">Loading...</td></tr>
+          <tr>
+            <td colspan="7" class="no-data">Loading...</td>
+          </tr>
         </tbody>
       </table>
     </div>
-    <div class="history-modal-footer">
-      <button type="button" class="btn-close" onclick="closeSupplierHistoryDetail()">Close</button>
+
+    <div class="confirmation-footer">
+      <button type="button" class="btn-cancel" onclick="closeSupplierHistoryDetail()">Close</button>
     </div>
   </div>
 </div>
@@ -488,15 +509,26 @@
       <h2>Item Purchase History</h2>
     </div>
     <div class="confirmation-body" style="max-height: 450px; overflow-y: auto;">
-      <table id="itemHistoryTableDetail" class="styled-table">
+        <!-- 🔎 Item history search (detail page) -->
+        <div class="history-searchbar">
+            <input
+            type="text"
+            id="itemHistorySearchDetail"
+            class="history-search-input"
+            placeholder="Search PO no, date, supplier, qty, rate, total..."
+            autocomplete="off">
+            <button type="button" class="history-clear-btn" data-target="#itemHistorySearchDetail">×</button>
+        </div>
+
+        <table id="itemHistoryTableDetail" class="styled-table">
         <thead>
           <tr>
             <th>PO Number</th>
             <th>Date</th>
             <th>Supplier</th>
             <th>Quantity</th>
-            <th>Total</th>
             <th>Rate</th>
+            <th>Total</th>
           </tr>
         </thead>
         <tbody>
@@ -633,7 +665,6 @@
     font-size: 13px;
     font-weight: 600;
     display: inline-block;
-    text-transform: uppercase;
 }
 
 .status-draft {
@@ -968,7 +999,6 @@
     color: #2c3e50;
     border-bottom: 2px solid #e9ecef;
     font-size: 13px;
-    text-transform: uppercase;
 }
 
 .items-table td {
@@ -990,7 +1020,6 @@
 .item-unit {
     font-size: 12px;
     color: #7f8c8d;
-    text-transform: uppercase;
 }
 
 .line-total {
@@ -1937,18 +1966,51 @@
     }
 }
 
+/* Margin Column Styling */
+.items-table th.margin-col,
+.items-table td.margin-cell {
+    text-align: right;
+    font-weight: 600;
+}
+
+.margin-cell {
+    background: #ffffffff; /* Light green background */
+    color: #2e7d32; /* Dark green text */
+}
+
+/* Positive margin (profit) */
+.margin-cell.positive {
+    color: #ffffffff;
+}
+
+/* Negative margin (loss) */
+.margin-cell.negative {
+    color: #000000ff;
+    background: #ffffffff;
+}
+
 @media print {
+    .print-items-table .margin-col { 
+        width: 9%; 
+    }
+    
+    .margin-cell {
+        background: none !important;
+        font-weight: 600;
+    }
+
     .print-items-table .sl-col { width: 4%; }
-    .print-items-table .item-col { width: 18%; }
-    .print-items-table .packing-col { width: 7%; }
+    .print-items-table .item-col { width: 17%; }
+    .print-items-table .packing-col { width: 6%; }
     .print-items-table .qty-col { width: 6%; }
-    .print-items-table .discount-col { width: 7%; }
+    .print-items-table .discount-col { width: 6%; }
     .print-items-table .rate-col { width: 8%; }
     .print-items-table .tax-col { width: 6%; }
     .print-items-table .mrp-col { width: 9%; }
-    .print-items-table .cost-col { width: 10%; }  /* ✅ NEW */
+    .print-items-table .cost-col { width: 9%; }
+    .print-items-table .margin-col { width: 9%; }  /* ✅ NEW */
     .print-items-table .total-col { width: 10%; }
-    .print-items-table .remark-col { width: 15%; }
+    .print-items-table .remark-col { width: 10%; }
 }
 
 /* ✅ ADD THIS CSS */
@@ -1974,6 +2036,285 @@
 .alert-info:hover {
     box-shadow: 0 4px 12px rgba(0, 191, 165, 0.2);
     transform: translateY(-2px);
+}
+
+/* Supplier History Modal Table Styling */
+.styled-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  background: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.styled-table thead tr {
+  background-color: #6f42c1;
+  color: #ffffff;
+  text-align: left;
+}
+
+.styled-table th,
+.styled-table td {
+  padding: 12px 15px;
+  text-align: left;  /* 👈 Changed from center to left */
+  border-bottom: 1px solid #dddddd;
+}
+
+.styled-table td:nth-child(5),
+.styled-table td:nth-child(6),
+.styled-table td:nth-child(7) {
+  text-align: right;
+}
+
+.styled-table th:nth-child(5),
+.styled-table th:nth-child(6),
+.styled-table th:nth-child(7) {
+  text-align: right;
+}
+
+.styled-table tbody tr:nth-of-type(even) {
+  background-color: #f3f3f3;
+}
+
+.styled-table tbody tr:hover {
+  background-color: #ede7f6;
+}
+
+.no-data {
+  text-align: center;
+  padding: 20px;
+  font-style: italic;
+  color: #666;
+}
+
+/* ✅ POPUP STYLES */
+.popup-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(2px);
+  z-index: 10000;
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+.popup-content {
+  background: #fff;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 850px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  animation: slideUp 0.3s ease-out;
+}
+
+.popup-header {
+  background: #6f42c1;
+  color: #fff;
+  padding: 15px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.popup-header h2 {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.popup-header i {
+  font-size: 20px;
+}
+
+.popup-close {
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 22px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.popup-close:hover {
+  color: #ffdddd;
+  transform: scale(1.1);
+}
+
+.popup-body {
+  padding: 20px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.popup-footer {
+  background: #f8f9fa;
+  padding: 15px 20px;
+  text-align: right;
+  border-top: 1px solid #ddd;
+}
+
+.popup-modal.active {
+  display: flex;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* ✅ Centered Supplier History Popup (No Scrollbar) */
+.confirmation-modal {
+  display: none;
+  position: fixed;
+  z-index: 9999;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  justify-content: center;   /* ✅ Center horizontally */
+  align-items: center;       /* ✅ Center vertically */
+  overflow-y: auto;          /* allow page scroll only if needed */
+  backdrop-filter: blur(2px);
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+.confirmation-modal.active {
+  display: flex;
+}
+
+.confirmation-content {
+  background: #fff;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 1100px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  animation: slideUp 0.3s ease-out;
+}
+
+.confirmation-body {
+  padding: 20px;
+  overflow: visible !important; /* ✅ No inner scrollbar */
+  max-height: none !important;
+}
+
+.confirmation-footer {
+  background: #f8f9fa;
+  padding: 15px 20px;
+  text-align: right;
+  border-top: 1px solid #ddd;
+}
+
+.btn-cancel {
+  background: #95a5a6;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-cancel:hover {
+  background: #7f8c8d;
+}
+
+/* ✅ Table remains consistent */
+.styled-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  background: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.styled-table thead tr {
+  background-color: #6f42c1;
+  color: #ffffff;
+  text-align: left;
+}
+
+.styled-table th,
+.styled-table td {
+  padding: 12px 15px;
+  border-bottom: 1px solid #dddddd;
+}
+
+/* Right-align quantity, rate, and total */
+.styled-table th:nth-child(5),
+.styled-table th:nth-child(6),
+.styled-table th:nth-child(7),
+.styled-table td:nth-child(5),
+.styled-table td:nth-child(6),
+.styled-table td:nth-child(7) {
+  text-align: right;
+}
+
+.styled-table tbody tr:nth-of-type(even) {
+  background-color: #f3f3f3;
+}
+
+.styled-table tbody tr:hover {
+  background-color: #ede7f6;
+}
+
+#itemHistoryTableDetail th:nth-child(4),
+#itemHistoryTableDetail th:nth-child(5),
+#itemHistoryTableDetail th:nth-child(6),
+#itemHistoryTableDetail td:nth-child(4),
+#itemHistoryTableDetail td:nth-child(5),
+#itemHistoryTableDetail td:nth-child(6) {
+  text-align: right;
+}
+
+/* 🔎 History popup search bar */
+.history-searchbar{
+  display:flex; gap:8px; align-items:center;
+  padding:8px 12px; background:#f8f9fa; border:1px solid #e9ecef; border-radius:8px;
+  margin:0 12px 12px 12px; position:sticky; top:0; z-index:5;
+}
+.history-search-input{
+  flex:1; padding:10px 12px; border:2px solid #e9ecef; border-radius:6px; font-size:14px;
+}
+.history-search-input:focus{ outline:none; border-color:#3498db; box-shadow:0 0 0 3px rgba(52,152,219,.1); }
+.history-clear-btn{
+  width:34px; height:34px; border:none; border-radius:50%; background:#e74c3c; color:#fff; font-size:18px;
+  cursor:pointer; line-height:1; display:flex; align-items:center; justify-content:center;
+}
+.history-clear-btn:hover{ background:#c0392b; }
+
+/* Freeze ITEM column while scrolling */
+.items-table th:nth-child(2),
+.items-table td:nth-child(2) {
+    position: sticky;
+    left: 0;
+    z-index: 20;
+    background: #f8f9fa;       /* SAME header color */
+    box-shadow: 2px 0 4px rgba(0,0,0,0.08);
+}
+
+/* Ensure ITEM header keeps exact header color */
+.items-table thead th:nth-child(2) {
+    background: #f8f9fa !important;
+    color: #2c3e50 !important;
+    border-bottom: 2px solid #e9ecef !important;
 }
 
 </style>
@@ -2087,29 +2428,34 @@ document.getElementById('viewSupplierHistoryDetail')?.addEventListener('click', 
   const modal = document.getElementById('supplierHistoryModalDetail');
   const tableBody = document.querySelector('#supplierHistoryTableDetail tbody');
 
-  tableBody.innerHTML = '<tr><td colspan="6" class="no-data">Loading...</td></tr>';
+  // 7 columns now (PO, Date, Client, Item, Qty, Rate, Total)
+  tableBody.innerHTML = '<tr><td colspan="7" class="no-data">Loading...</td></tr>';
   modal.style.display = 'flex';
 
   fetch(`/po/supplier-history/${supplierId}/`)
     .then(response => response.json())
     .then(data => {
-      if (data.history && data.history.length > 0) {
-        tableBody.innerHTML = data.history.map(row => `
-          <tr>
-            <td>${row.po_number}</td>
-            <td>${row.date}</td>
-            <td>${row.item_name}</td>
-            <td>${row.quantity}</td>
-            <td>${row.rate}</td>
-            <td>${row.total}</td>
-          </tr>
-        `).join('');
+      const history = Array.isArray(data) ? data : data.history || [];
+
+      if (history.length > 0) {
+        tableBody.innerHTML = history.map(row => `
+            <tr>
+                <td>${row.po_number || ''}</td>
+                <td>${row.date || ''}</td>
+                <td>${row.client_details || '—'}</td>
+                <td>${row.item_name || ''}</td>
+                <td class="right-align">${row.quantity || 0}</td>
+                <td class="right-align">${row.rate ? parseFloat(row.rate).toFixed(2) : '0.00'}</td>
+                <td class="right-align">${row.total ? parseFloat(row.total).toFixed(2) : '0.00'}</td>
+            </tr>
+            `).join('');
       } else {
-        tableBody.innerHTML = '<tr><td colspan="6" class="no-data">No purchase history found.</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="7" class="no-data">No purchase history found.</td></tr>';
       }
     })
-    .catch(() => {
-      tableBody.innerHTML = '<tr><td colspan="6" class="no-data">Error loading data.</td></tr>';
+    .catch((error) => {
+      console.error('Error loading supplier history:', error);
+      tableBody.innerHTML = '<tr><td colspan="7" class="no-data">Error loading data.</td></tr>';
     });
 });
 
@@ -2131,18 +2477,18 @@ document.querySelectorAll(".btn-view-item").forEach(button => {
       const response = await fetch(`/po/item-history/${itemId}/`);
       const data = await response.json();
 
-      if (data.history && data.history.length > 0) {
-        tableBody.innerHTML = data.history.map(row => `
-          <tr>
-            <td>${row.po_number}</td>
-            <td>${row.date}</td>
-            <td>${row.supplier}</td>
-            <td>${row.quantity}</td>
-            <td>${parseFloat(row.rate).toFixed(2)}</td>
-            <td>${parseFloat(row.total).toFixed(2)}</td>
-          </tr>
-        `).join('');
-      } else {
+        if (data.history && data.history.length > 0) {
+            tableBody.innerHTML = data.history.map(row => `
+            <tr>
+                <td>${row.po_number}</td>
+                <td>${row.date}</td>
+                <td>${row.supplier_name || 'N/A'}</td>  
+                <td>${row.quantity}</td>
+                <td>${parseFloat(row.rate).toFixed(2)}</td>
+                <td>${parseFloat(row.total).toFixed(2)}</td>
+            </tr>
+            `).join('');
+        } else {
         tableBody.innerHTML = `<tr><td colspan="6" class="no-data">No purchase history found.</td></tr>`;
       }
     } catch (error) {
@@ -2202,6 +2548,154 @@ function printWithFormat() {
         });
     }, 1000);
 }
+
+(function(){
+  function filterTable(inputEl, tableSelector){
+    const q = (inputEl.value || '').toLowerCase().trim();
+    const tbody = document.querySelector(tableSelector + ' tbody');
+    if(!tbody) return;
+
+    let anyVisible = false;
+    [...tbody.rows].forEach((tr) => {
+      if(tr.classList.contains('no-data-row')) return;
+      const txt = tr.textContent.toLowerCase();
+      const hit = txt.indexOf(q) !== -1;
+      tr.style.display = hit ? '' : 'none';
+      if (hit) anyVisible = true;
+    });
+
+    let noRow = tbody.querySelector('.no-results-row');
+    if(!anyVisible){
+      if(!noRow){
+        noRow = document.createElement('tr');
+        noRow.className = 'no-results-row';
+        const cols = document.querySelectorAll(tableSelector + ' thead th').length;
+        noRow.innerHTML = `<td colspan="${cols}" class="no-data">No matching records</td>`;
+        tbody.appendChild(noRow);
+      }
+    }else if(noRow){
+      noRow.remove();
+    }
+  }
+
+  function wireSearch(inputSel, tableSel){
+    const input = document.querySelector(inputSel);
+    if(!input) return;
+    let t;
+    input.addEventListener('input', function(){
+      clearTimeout(t);
+      t = setTimeout(() => filterTable(input, tableSel), 200);
+    });
+
+    document.querySelectorAll('.history-clear-btn').forEach(btn=>{
+      btn.addEventListener('click', function(){
+        const target = document.querySelector(this.getAttribute('data-target'));
+        if(target){
+          target.value = '';
+          filterTable(target, tableSel);
+          target.focus();
+        }
+      });
+    });
+  }
+
+  // Detail page hooks
+  wireSearch('#supplierHistorySearchDetail', '#supplierHistoryTableDetail');
+  wireSearch('#itemHistorySearchDetail', '#itemHistoryTableDetail');
+
+  // Optional: call after you populate via AJAX
+  window._reapplyHistoryFiltersDetail = function(){
+    const s1 = document.querySelector('#supplierHistorySearchDetail');
+    if(s1) filterTable(s1, '#supplierHistoryTableDetail');
+    const s2 = document.querySelector('#itemHistorySearchDetail');
+    if(s2) filterTable(s2, '#itemHistoryTableDetail');
+  };
+})();
+
+// Get CSRF token
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Update PDF format preference
+document.getElementById('pdfFormatSelect').addEventListener('change', function() {
+    const format = this.value;
+    const poId = {{ po.pk }};
+    
+    fetch(`/purchase_order/po/${poId}/update-format/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ pdf_format: format })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('✅ PDF format updated to ' + format);
+        }
+    })
+    .catch(error => {
+        console.error('Error updating format:', error);
+    });
+});
+
+// Download PDF with selected format
+function downloadPDF() {
+    const format = document.getElementById('pdfFormatSelect').value;
+    const poId = {{ po.pk }};
+    const url = `/purchase_order/po/${poId}/download/?format=${format}`;
+    
+    alert('📥 Starting download...');
+    window.location.href = url;
+}
+
+// Print with selected format
+function printWithFormat() {
+    const format = document.getElementById('pdfFormatSelect').value;
+    
+    document.body.classList.remove('format-1', 'format-2');
+    document.body.classList.add(format === 'FORMAT_2' ? 'format-2' : 'format-1');
+    
+    const clientDetails = document.querySelectorAll('.client-details-format2');
+    clientDetails.forEach(el => {
+        el.style.display = format === 'FORMAT_2' ? 'block' : 'none';
+    });
+    
+    window.print();
+    
+    setTimeout(() => {
+        document.body.classList.remove('format-1', 'format-2');
+        clientDetails.forEach(el => {
+            el.style.display = 'none';
+        });
+    }, 1000);
+}
+
+// Add this script at the bottom of your template
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.margin-cell').forEach(cell => {
+        const value = parseFloat(cell.textContent);
+        if (value > 0) {
+            cell.classList.add('positive');
+        } else if (value < 0) {
+            cell.classList.add('negative');
+        }
+    });
+});
+
 </script>
 
 {% endblock %}

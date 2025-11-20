@@ -29,7 +29,7 @@ urlpatterns = [
     path('purchase-orders/<int:pk>/edit/', views.purchase_order_update, name='po_update'),
     path('purchase-orders/<int:pk>/delete/', views.purchase_order_delete, name='po_delete'),
     path('purchase-order/<int:pk>/approve/', views.approve_purchase_order, name='po_approve'),
-    path('purchase-orders/<int:pk>/send-whatsapp/', views.send_whatsapp_po, name='send_whatsapp_po'),
+
 
     # ========== AJAX API ENDPOINTS ==========
     path('api/items/<int:item_id>/', views.get_item_details, name='get_item_details'),
@@ -38,9 +38,24 @@ urlpatterns = [
 
 
     path('supplier-history/<int:supplier_id>/', views.get_supplier_history, name='get_supplier_history'),
-    # path('item-history/<int:item_id>/', views.get_item_history, name='get_item_history'),
-    path('item-history/<int:item_id>/', views.item_history, name='item_history'),
-    path('download-pdf/<int:pk>/', views.download_po_pdf, name='download_po_pdf'),
-    path('purchase-orders/<int:pk>/update-pdf-format/', views.update_po_pdf_format,name='update_po_pdf_format'),
+    path('item-history/<int:item_id>/', views.get_item_history, name='get_item_history'),
+
+
+    # Download PDF
+    path('po/<int:pk>/download/', views.download_po_pdf, name='download_po_pdf'),
+    
+    # Send via WhatsApp
+    path('po/<int:pk>/whatsapp/', views.send_whatsapp_po, name='send_whatsapp_po'),
+    
+    # Update PDF format preference
+    path('po/<int:pk>/update-format/', views.update_po_pdf_format, name='update_po_pdf_format'),
+    
+    # ==================== OPTIONAL URLs ====================
+    
+    # Preview PDF template in browser (for testing)
+    path('po/<int:pk>/preview/', views.preview_pdf_template, name='preview_pdf_template'),
+    
+    # Bulk download PDFs
+    path('po/bulk-download/', views.bulk_download_pdfs, name='bulk_download_pdfs'),
 ]
 

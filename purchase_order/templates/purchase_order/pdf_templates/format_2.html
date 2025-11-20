@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Purchase Order - {{ po.po_number }}</title>
+
+    <style>
+        @page {
+            size: A4;
+            margin: 2.2cm 1.5cm 1cm 1.5cm;
+        }
+
+        body {
+            font-family: 'Helvetica', Arial, sans-serif;
+            font-size: 10pt;
+            color: #333;
+            line-height: 1.4;
+        }
+
+        table { border-collapse: collapse; }
+
+        /* ===== HEADER ===== */
+        .header-table {
+            width: 100%;
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+
+        .header-logo {
+            width: 150px;
+            height: auto;
+            object-fit: contain;
+        }
+
+        .company-name {
+            font-size: 16pt;
+            font-weight: bold;
+        }
+
+        .company-details {
+            font-size: 9pt;
+            color: #444;
+            line-height: 1.4;
+        }
+
+        /* TITLE */
+        .title {
+            font-size: 22pt;
+            font-weight: bold;
+            color: #0eb69e;
+            margin: 15px 0;
+        }
+
+        /* SIR section */
+        .sir-section {
+            background: #fffacd;
+            padding: 10px 12px;
+            margin: 15px 0 8px 0;
+            font-size: 9pt;
+        }
+
+        /* ITEMS */
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 25px;
+            font-size: 8.5pt;
+        }
+        .items-table th {
+            background: #e8e8e8;
+            border: 0.5px solid #666;
+            padding: 6px 4px;
+            font-size: 8pt;
+            text-align: center;
+        }
+        .items-table td {
+            border: 0.5px solid #666;
+            padding: 4px;
+            font-size: 8pt;
+        }
+        .items-table tr:nth-child(even) {
+            background: #fafafa;
+        }
+        .text-right { text-align:right; }
+        .text-left { text-align:left; }
+        .text-center { text-align:center; }
+
+        /* FOOTER */
+        .footer-item {
+            margin-bottom: 25px;
+            font-size: 9pt;
+        }
+
+        .signature-section {
+            margin-top: 40px;
+            text-align: right;
+        }
+    </style>
+</head>
+
+<body>
+
+<!-- HEADER -->
+<table class="header-table">
+    <tr>
+        <!-- LEFT: LOGO -->
+        <td style="width:40%; vertical-align:top;">
+            {% if logo_path %}
+                <img src="file:///{{ logo_path }}" class="header-logo">
+            {% endif %}
+        </td>
+
+        <!-- RIGHT: COMPANY DETAILS -->
+        <td style="width:60%; text-align:right; vertical-align:top;">
+            <div class="company-name">{{ department.name|upper }}</div>
+            <div class="company-details">
+                {% if department.address %}<div>{{ department.address }}</div>{% endif %}
+                {% if location %}<div>{{ location }}</div>{% endif %}
+                {% if department.contact_number %}<div>{{ department.contact_number }}</div>{% endif %}
+                {% if department.gst_number %}
+                    <div>GSTIN: {{ department.gst_number }}</div>
+                {% endif %}
+            </div>
+        </td>
+    </tr>
+</table>
+
+<!-- TITLE -->
+<div class="title">PURCHASE ORDER</div>
+
+<!-- PO INFO -->
+<table style="width:100%; margin-bottom:15px;">
+    <tr>
+
+        <!-- LEFT: Supplier -->
+        <td style="width:50%; vertical-align:top; padding-right:10px;">
+            <div><b>To,</b></div>
+            <div><b>{{ supplier.name|upper }}</b></div>
+
+            <div class="supplier-address">
+                {% if supplier.address %}<div>{{ supplier.address }}</div>{% endif %}
+                {% if supplier.places %}<div>{{ supplier.places }}</div>{% endif %}
+                {% if supplier.city %}<div>{{ supplier.city }}</div>{% endif %}
+                {% if supplier.state %}<div>{{ supplier.state }}</div>{% endif %}
+            </div>
+        </td>
+
+        <!-- RIGHT: PO DETAILS -->
+        <td style="width:50%; vertical-align:top;">
+            <table style="width:100%; border:1px solid #333;">
+                <tr>
+                    <td style="background:#f5f5f5; width:40%; padding:6px; border:1px solid #333;"><b>PO No</b></td>
+                    <td style="padding:6px; border:1px solid #333;">{{ po.po_number }}</td>
+                </tr>
+
+                <tr>
+                    <td style="background:#f5f5f5; padding:6px; border:1px solid #333;"><b>PO Date</b></td>
+                    <td style="padding:6px; border:1px solid #333;">{{ po.po_date|date:"d/m/Y" }}</td>
+                </tr>
+
+                <tr>
+                    <td style="background:#f5f5f5; padding:6px; border:1px solid #333;"><b>Expected Delivery</b></td>
+                    <td style="padding:6px; border:1px solid #333;">{{ po.delivery_date|date:"d/m/Y" }}</td>
+                </tr>
+            </table>
+        </td>
+
+    </tr>
+</table>
+
+<!-- SIR -->
+<div class="sir-section">Sir,</div>
+
+<!-- ITEMS -->
+<table class="items-table">
+    <thead>
+        <tr>
+            <th style="width:6%;">SL NO</th>
+            <th style="width:28%;">Item</th>
+            <th style="width:8%;">Packing</th>
+            <th style="width:8%;">Qty</th>
+            <th style="width:10%;">Rate</th>
+            <th style="width:10%;">Discount</th>
+            <th style="width:8%;">Tax %</th>
+            <th style="width:13%;">Total</th>
+            <th style="width:10%;">Remarks</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for item in items %}
+        <tr>
+            <td class="text-center">{{ item.sl_no }}</td>
+
+            <!-- ITEM NAME + CLIENT NAME BELOW (BRACKETS) -->
+            <td class="text-left">
+                {{ item.item.name }}
+                {% if po.client_details %}
+                    <br><span style="font-size:7pt; color:#0eb69e;">({{ po.client_details }})</span>
+                {% endif %}
+            </td>
+
+            <td class="text-left">{{ item.packing }}</td>
+            <td class="text-right">{{ item.quantity|floatformat:2 }}</td>
+            <td class="text-right">{{ item.unit_price|floatformat:2 }}</td>
+            <td class="text-right">{{ item.discount|floatformat:2 }}</td>
+            <td class="text-right">{{ item.tax_percent|floatformat:2 }}</td>
+            <td class="text-right">{{ item.line_total|floatformat:2 }}</td>
+            <td class="text-left">{{ item.remarks }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+
+    <tfoot>
+        <tr>
+            <td colspan="8" class="text-right">Total</td>
+            <td class="text-right">{{ po.total_amount|floatformat:2 }}</td>
+        </tr>
+        <tr>
+            <td colspan="8" class="text-right">Tax</td>
+            <td class="text-right">{{ po.tax_amount|floatformat:2 }}</td>
+        </tr>
+        <tr>
+            <td colspan="8" class="text-right">Grand Total</td>
+            <td class="text-right">{{ po.grand_total|floatformat:2 }}</td>
+        </tr>
+    </tfoot>
+</table>
+
+<!-- FOOTER -->
+<div class="footer-item"><b>Mode of Transport</b></div>
+<div class="footer-item"><b>Enclosures</b></div>
+
+<!-- SIGNATURE -->
+<div class="signature-section">
+    <div>Yours Faithfully</div>
+    <div>Authorised Signatory</div>
+</div>
+
+</body>
+</html>

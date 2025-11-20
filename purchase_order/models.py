@@ -341,7 +341,9 @@ class Item(models.Model):
         ('GENERAL', 'General'),
         ('SERVICE', 'Service Items'),
         ('SOFTWARE', 'Softwares'),
+        ('PAPER_ROLLS', 'Paper Rolls'),
     ]
+    section = models.CharField(max_length=50, choices=SECTION_CHOICES, default='GENERAL')
 
     TAX_CHOICES = [
         (Decimal('5.00'), '5%'),
@@ -538,6 +540,13 @@ class PurchaseOrderItem(models.Model):
         verbose_name="Item Cost (Entry Total ÷ Qty)"
     )
 
+    margin = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=0.00,
+        verbose_name="Margin (Sales Price - Item Cost)"
+    )
+
     sales_price = models.DecimalField(
         max_digits=12, 
         decimal_places=2, 
@@ -566,6 +575,14 @@ class PurchaseOrderItem(models.Model):
         default=0,
         verbose_name="Line Total"
     )
+
+    remarks = models.CharField(
+        max_length=255,
+        blank=True,
+        default='',
+        verbose_name="Remarks"
+    )
+
 
     def save(self, *args, **kwargs):
         """
@@ -597,10 +614,12 @@ class PurchaseOrderItem(models.Model):
         else:
             self.item_cost = Decimal('0.00')
         
+        # ✅ NEW: Calculate margin (Sales Price - Item Cost)
+        self.margin = (self.sales_price - self.item_cost).quantize(Decimal('0.01'))
+        
         super().save(*args, **kwargs)
-
-    def __str__(self):
-        return f"{self.item.name} ({self.quantity})"
+        def __str__(self):
+            return f"{self.item.name} ({self.quantity})"
     
     class Meta:
         verbose_name = "Purchase Order Item"
