@@ -159,6 +159,19 @@
     </div>
 </div>
 
+
+
+<button class="btn btn-warning ms-2 position-relative"
+        onclick="window.location.href='{% url 'admin_cancel_requestes' %}'">
+  Cancel Requestes
+  {% if pending_cancel_count > 0 %}
+    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+      {{ pending_cancel_count }}
+      <span class="visually-hidden">unread messages</span>
+    </span>
+  {% endif %}
+</button>
+
     <!-- Attendance Details Modal -->
     <!-- Attendance Details Modal -->
 <div class="modal fade" id="attendanceDetailsModal" tabindex="-1" aria-labelledby="attendanceDetailsModalLabel" aria-hidden="true">
@@ -293,7 +306,7 @@
     {% for employee in employees|dictsort:"name" %}
     <tr class="employee-row" data-employee-id="{{ employee.id }}" data-name="{{ employee.name }}" data-status="{{ employee.user.status }}">
 
-        <td>{{ forloop.counter }}</td>
+        <td class="serial-number"></td>
         <td class="sticky-data" style="background-color: white;">{{ employee.name }}</td>
         <td>{{ employee.user.userid|default:'' }}</td>
         <td>{{ employee.duty_time_start|time:"H:i" }}</td>  <!-- New column -->
@@ -2233,6 +2246,22 @@ function filterByStatus() {
 document.addEventListener("DOMContentLoaded", function() {
     filterByStatus();
 });
+
+</script>
+<script>
+function updateSerialNumbers() {
+    let rows = document.querySelectorAll(".employee-row");
+    let count = 1;
+
+    rows.forEach(row => {
+        if (row.style.display !== "none") {
+            row.querySelector(".serial-number").textContent = count++;
+        }
+    });
+}
+document.addEventListener("DOMContentLoaded", updateSerialNumbers);
+document.getElementById("nameFilter").addEventListener("keyup", updateSerialNumbers);
+document.getElementById("statusFilter").addEventListener("change", updateSerialNumbers);
 </script>
 
 

@@ -106,11 +106,15 @@ def drive_delete(request, pk):
     folder.delete()
     return redirect("drive_detail", pk=parent.pk) if parent else redirect("drive_list")
 
+
+from django.db.models import Count, Q
+
+
 @require_http_methods(["GET", "POST"])
 def drive_detail(request, pk):
     folder = get_object_or_404(DriveFolder, pk=pk)
 
-    # Handle file upload
+    # Handle file upload (unchanged)
     if request.method == "POST" and request.FILES.get("fileUpload"):
         uploaded_file = request.FILES["fileUpload"]
         custom_name = (request.POST.get("file_name") or "").strip()
@@ -123,9 +127,18 @@ def drive_detail(request, pk):
         return redirect("drive_detail", pk=folder.pk)
 
     subfolders = folder.subfolders.annotate(file_count=Count("files"))
-    files_qs = folder.files.all().order_by("-uploaded_at")
 
-    # Get per_page from query params, default to 10
+    # NEW: search across ALL files in this folder
+    query = (request.GET.get("q") or "").strip()
+
+    files_qs = folder.files.all().order_by("-uploaded_at")
+    if query:
+        files_qs = files_qs.filter(
+            Q(file_name__icontains=query) |
+            Q(file__icontains=query)  # matches original filename within the stored path
+        )
+
+    # per_page (same logic you already had)
     per_page = request.GET.get("per_page", "10")
     try:
         per_page = int(per_page)
@@ -157,6 +170,8 @@ def drive_detail(request, pk):
             "page_obj": page_obj,
             "paginator": paginator,
             "breadcrumbs": crumbs,
+            "query": query,          # <-- pass it through
+            "per_page": per_page,    # <-- handy for drive_detail template
         },
     )
 
@@ -234,12 +249,13 @@ def file_preview(request, pk):
 
 
 def file_download(request, pk):
-    """Force file download with correct name + extension."""
     f = get_object_or_404(DriveFile, pk=pk)
     file_path = f.file.path
-    file_handle = open(file_path, "rb")
-    response = FileResponse(file_handle, as_attachment=True)
-    response["Content-Disposition"] = f'attachment; filename="{_response_filename(f)}"'
+
+    filename = _response_filename(f)   # ✅ Ensures extension always added
+
+    response = FileResponse(open(file_path, "rb"))
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
     return response
 
 
@@ -255,3 +271,69 @@ def drive_edit(request, pk):
             return redirect("drive_list")
 
     return render(request, "drive_add.html", {"folder": folder, "mode": "edit"})
+
+
+
+
+from django.shortcuts import render, get_object_or_404
+from django.http import JsonResponse
+from django.core.cache import cache
+import random
+
+from .models import DriveFile
+from django.utils import timezone
+import random
+
+def generate_share_code(request, pk):
+    file = get_object_or_404(DriveFile, pk=pk)
+
+    code = str(random.randint(1000, 9999))
+    expiry = timezone.now() + timezone.timedelta(minutes=1)
+
+    file.share_code = code
+    file.share_expiry = expiry
+    file.save()
+
+    share_link = request.build_absolute_uri(
+        f"/my_drive/drives/share/{file.id}/"
+    )
+
+    return JsonResponse({
+        "code": code,
+        "expires_in": "1 minute",
+        "link": share_link
+    })
+
+
+
+from django.shortcuts import render
+from django.utils import timezone
+from django.http import HttpResponseRedirect
+
+def verify_share_code(request, pk):
+    file = get_object_or_404(DriveFile, pk=pk)
+
+    # ❗ If direct open without code => show code input page
+    if request.method == "GET":
+        return render(request, "enter_code.html")
+
+    # POST --> Check code
+    entered = request.POST.get("code", "").strip()
+
+    # If expired
+    if not file.share_expiry or timezone.now() > file.share_expiry:
+        return render(request, "enter_code.html", {
+            "error": "Code expired! Generate a new one."
+        })
+
+    # Wrong code
+    if entered != file.share_code:
+        return render(request, "enter_code.html", {
+            "error": "Invalid code! Try again."
+        })
+
+    # ✅ Correct → download
+    filename = _response_filename(file)
+    response = FileResponse(open(file.file.path, "rb"))
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+    return response

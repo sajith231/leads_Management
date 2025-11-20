@@ -419,6 +419,43 @@
     text-align: center;
   }
 
+  /* Branch filter styles */
+  .branch-filter-container {
+    margin-bottom: 20px;
+  }
+
+  .branch-filter-label {
+    color: #2d3748;
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 8px;
+    display: block;
+  }
+
+  .branch-select {
+    width: 100%;
+    padding: 12px 18px;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 14px;
+    background: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .branch-select:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    outline: none;
+  }
+
+  .customer-count {
+    font-size: 12px;
+    color: #718096;
+    margin-top: 5px;
+    font-style: italic;
+  }
+
   @media (max-width: 576px) {
     .link-generator-wrapper {
       padding: 40px 15px;
@@ -471,6 +508,20 @@
     <form method="POST" class="card p-4 shadow-sm">
       {% csrf_token %}
       
+      <!-- Branch Filter -->
+      <div class="branch-filter-container">
+        <label class="branch-filter-label"><i class="fas fa-filter"></i> Filter by Branch:</label>
+        <select id="branch-filter" class="branch-select">
+          <option value="">All Branches</option>
+          {% for branch in branches %}
+            <option value="{{ branch.name }}">{{ branch.name }}</option>
+          {% endfor %}
+        </select>
+        <div class="customer-count" id="customer-count">
+          Total customers: {{ customers|length }}
+        </div>
+      </div>
+
       <div class="mb-3">
         <label><i class="fas fa-user"></i> Customer Name:</label>
         
@@ -498,15 +549,20 @@
           <select name="customer_name" id="customer_dropdown" class="form-control" required style="display: none;">
             <option value="">-- Select Customer --</option>
             {% for c in customers %}
-              <option value="{{ c.name }}">{{ c.name }} - {{ c.address }}</option>
+              <option value="{{ c.name }}" data-branch="{{ c.branch }}">
+                {{ c.name }} - {{ c.address }} - {{ c.branch }}
+              </option>
             {% endfor %}
           </select>
           
           <!-- Custom Dropdown -->
           <div id="customer-custom-dropdown" class="customer-dropdown">
             {% for c in customers %}
-              <div class="customer-option" data-value="{{ c.name }}" data-display="{{ c.name }} - {{ c.address }}">
-                {{ c.name }} - {{ c.address }}
+              <div class="customer-option"
+                   data-value="{{ c.name }}"
+                   data-branch="{{ c.branch }}"
+                   data-display="{{ c.name }} - {{ c.address }} - {{ c.branch }}">
+                {{ c.name }} - {{ c.address }} - {{ c.branch }}
               </div>
             {% endfor %}
           </div>
@@ -659,6 +715,69 @@ function copyToClipboard(text) {
   });
 }
 
+// Branch filter functionality
+function initializeBranchFilter() {
+  const branchFilter = document.getElementById('branch-filter');
+  const customerOptions = document.querySelectorAll('.customer-option');
+  const selectOptions = document.querySelectorAll('#customer_dropdown option');
+  const customerCount = document.getElementById('customer-count');
+
+  if (!branchFilter) return;
+
+  function filterCustomersByBranch(selectedBranch) {
+    let visibleCount = 0;
+    
+    // Filter custom dropdown options
+    customerOptions.forEach(option => {
+      const branch = option.getAttribute('data-branch');
+      if (!selectedBranch || branch === selectedBranch) {
+        option.style.display = 'block';
+        visibleCount++;
+      } else {
+        option.style.display = 'none';
+      }
+    });
+
+    // Filter select options
+    selectOptions.forEach(option => {
+      if (option.value === '') return; // Skip the placeholder option
+      
+      const branch = option.getAttribute('data-branch');
+      if (!selectedBranch || branch === selectedBranch) {
+        option.style.display = 'block';
+      } else {
+        option.style.display = 'none';
+      }
+    });
+
+    // Update customer count
+    customerCount.textContent = selectedBranch 
+      ? `Customers in ${selectedBranch}: ${visibleCount}`
+      : `Total customers: ${visibleCount}`;
+  }
+
+  // Initial filter
+  filterCustomersByBranch('');
+
+  // Add event listener for branch filter
+  branchFilter.addEventListener('change', function() {
+    filterCustomersByBranch(this.value);
+    
+    // Clear current selection when branch changes
+    const searchInput = document.getElementById('customer-search');
+    if (searchInput) {
+      searchInput.value = '';
+      searchInput.setAttribute('readonly', 'true');
+      searchInput.placeholder = 'Click to search customers...';
+    }
+    
+    const viewCustomerBtn = document.getElementById('viewCustomerBtn');
+    if (viewCustomerBtn) {
+      viewCustomerBtn.disabled = true;
+    }
+  });
+}
+
 // Customer search functionality
 function initializeCustomerSearch() {
   const searchInput = document.getElementById('customer-search');
@@ -683,20 +802,29 @@ function initializeCustomerSearch() {
       console.error('Error loading customers:', error);
     });
   
-  // Show all options
-  function showAllOptions() {
+  // Show all visible options
+  function showAllVisibleOptions() {
     customerOptions.forEach(option => {
-      option.style.display = 'block';
+      if (option.style.display !== 'none') {
+        option.style.display = 'block';
+      }
     });
   }
   
   // Filter options based on search input
   function filterOptions(searchTerm) {
     let hasResults = false;
+    const selectedBranch = document.getElementById('branch-filter').value;
     
     customerOptions.forEach(option => {
       const displayText = option.getAttribute('data-display').toLowerCase();
-      if (displayText.includes(searchTerm.toLowerCase())) {
+      const branch = option.getAttribute('data-branch');
+      
+      // Check if option matches both branch filter and search term
+      const matchesBranch = !selectedBranch || branch === selectedBranch;
+      const matchesSearch = displayText.includes(searchTerm.toLowerCase());
+      
+      if (matchesBranch && matchesSearch) {
         option.style.display = 'block';
         hasResults = true;
       } else {
@@ -721,7 +849,7 @@ function initializeCustomerSearch() {
   // Handle search box click - show dropdown
   searchInput.addEventListener('click', function() {
     customDropdown.style.display = 'block';
-    showAllOptions();
+    showAllVisibleOptions();
     
     // Remove readonly and focus for typing
     this.removeAttribute('readonly');
@@ -734,7 +862,7 @@ function initializeCustomerSearch() {
     const searchTerm = this.value.trim();
     
     if (searchTerm === '') {
-      showAllOptions();
+      showAllVisibleOptions();
       selectedCustomerData = null;
       viewCustomerBtn.disabled = true;
     } else {
@@ -849,6 +977,9 @@ document.addEventListener('DOMContentLoaded', function() {
   const toggleButtons = document.querySelectorAll('.toggle-btn');
   const form = document.querySelector('form');
   const viewCustomerBtn = document.getElementById('viewCustomerBtn');
+  
+  // Initialize branch filter
+  initializeBranchFilter();
   
   // Initialize search functionality
   initializeCustomerSearch();

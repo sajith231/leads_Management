@@ -1799,10 +1799,9 @@ def process_warranty_tickets(request):
                 all_suppliers = POSupplier.objects.all().values('id', 'name', 'is_active')
                 logger.error(f"❌ Supplier {supplier_id} not found. Available suppliers: {list(all_suppliers)}")
                 
-                error_msg = (
-                    f'Supplier with ID {supplier_id} not found. '
-                    f'Available suppliers: {", ".join([f"ID {s["id"]}: {s["name"]}" for s in all_suppliers[:5]])}'
-                )
+                # ✅ Fixed nested f-string issue here
+                supplier_list = ", ".join([f"ID {s['id']}: {s['name']}" for s in all_suppliers[:5]])
+                error_msg = f"Supplier with ID {supplier_id} not found. Available suppliers: {supplier_list}"
                 
                 if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                     return JsonResponse({'success': False, 'error': error_msg})
@@ -1832,7 +1831,6 @@ def process_warranty_tickets(request):
         for idx, selected_item in enumerate(selected_items):
             logger.info(f"Processing item {idx + 1}/{len(selected_items)}: {selected_item}")
             
-            # Find the selected item details from items_data
             selected_item_data = None
             item_serial = item_serials[idx] if idx < len(item_serials) else ''
             item_index = None
@@ -1849,7 +1847,7 @@ def process_warranty_tickets(request):
                 logger.warning(f"Item {selected_item} not found in jobcard items_data")
                 continue
             
-            # Check if item has warranty
+            # Check warranty
             if selected_item_data.get('warranty') != 'yes':
                 logger.warning(f"Item {selected_item} does not have warranty='yes'")
                 continue
@@ -1888,7 +1886,7 @@ def process_warranty_tickets(request):
             
             logger.info(f"Creating warranty ticket: {new_ticket_no}")
             
-            # Update warranty status in items_data
+            # Update warranty status in jobcard
             if item_index is not None and jobcard.items_data:
                 jobcard.items_data[item_index]['warranty_status'] = 'sent_to_supplier'
                 jobcard.items_data[item_index]['warranty_sent_date'] = timezone.now().isoformat()
@@ -1896,12 +1894,12 @@ def process_warranty_tickets(request):
                 jobcard.items_data[item_index]['warranty_ticket_no'] = new_ticket_no
                 jobcard.items_data[item_index]['warranty_processed'] = True
             
-            # ✅ Create warranty ticket with purchase_order supplier
+            # ✅ Create warranty ticket
             try:
                 warranty_ticket = WarrantyTicket.objects.create(
                     ticket_no=new_ticket_no,
                     jobcard=jobcard,
-                    supplier=supplier,  # This is purchase_order.Supplier
+                    supplier=supplier,
                     selected_item=selected_item,
                     item_serial=item_serial,
                     status='submitted',
@@ -1949,7 +1947,7 @@ def process_warranty_tickets(request):
             response_data['duplicate_items'] = duplicate_items
             response_data['has_duplicates'] = True
         
-        # Send WhatsApp notification
+        # WhatsApp notification
         if created_tickets:
             try:
                 items_list = "\n".join([f"• {item['name']}" for item in processed_items])
@@ -1989,8 +1987,8 @@ def process_warranty_tickets(request):
         
         if duplicate_items:
             duplicate_message = "Some items were skipped due to existing warranty tickets: " + \
-                              ", ".join([f"{item['item']} (Ticket: {', '.join(item['existing_tickets'])})" 
-                                       for item in duplicate_items])
+                ", ".join([f"{item['item']} (Ticket: {', '.join(item['existing_tickets'])})" 
+                           for item in duplicate_items])
             messages.warning(request, duplicate_message)
         
         if processed_items:
@@ -2010,6 +2008,7 @@ def process_warranty_tickets(request):
             return JsonResponse({'success': False, 'error': str(e)})
         messages.error(request, f'Error processing warranty items: {str(e)}')
         return redirect('app5:warranty_item')
+
 
 # In views.py, update the warranty_ticket_list function
 def warranty_ticket_list(request):

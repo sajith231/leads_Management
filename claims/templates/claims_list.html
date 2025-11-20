@@ -21,13 +21,19 @@
     .btn-clear:hover { background: #616161; }
     
     .table-container { background: #fff; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; min-width: 1400px; }
+    table { width: 100%; border-collapse: collapse; min-width: 1200px; }
     thead { background: #f8f9fa; }
     th { padding: 15px; text-align: left; font-weight: 600; color: #555; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #dee2e6; }
-    td { padding: 15px; border-bottom: 1px solid #dee2e6; color: #333; font-size: 14px; }
+    td { padding: 15px; border-bottom: 1px solid #dee2e6; color: #333; font-size: 14px; vertical-align: top; }
     tr:hover { background: #f8f9fa; }
+    
+    /* Multi-line cell styling */
+    .cell-content { display: flex; flex-direction: column; gap: 6px; }
+    .primary-text { font-weight: 700; color: #1a1a1a; font-size: 14px; }
+    .secondary-text { font-size: 13px; color: #666; font-style: italic; line-height: 1.4; }
+    
     .client-name { font-weight: 700; color: #1a1a1a; }
-    .purpose-text { font-style: italic; color: #666; max-width: 200px; }
+    .purpose-text { font-style: italic; color: #666; }
     .expense-badge { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500; }
     .badge-travel { background: #e3f2fd; color: #1976d2; }
     .badge-food { background: #fff3e0; color: #f57c00; }
@@ -35,11 +41,15 @@
     .badge-fuel { background: #e8f5e9; color: #388e3c; }
     .badge-self { background: #fce4ec; color: #c2185b; }
     .department-badge { display: inline-block; padding: 4px 10px; border-radius: 10px; font-size: 11px; font-weight: 500; background: #e8eaf6; color: #3f51b5; }
+    .user-info { font-size: 12px; color: #666; margin-top: 4px; }
+    
     .status-dropdown { padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; cursor: pointer; transition: border-color 0.3s; width: 120px; }
     .status-dropdown:focus { outline: none; border-color: #4CAF50; }
     .status-claimed { background: #fff3cd; color: #856404; border-color: #ffc107; }
-    .status-approved { background: #d4edda; color: #155724; border-color: #28a745; }
+    .status-paid { background: #c8e6c9; color: #1b5e20; border-color: #2e7d32; }
+    .status-approved { background: #e3f2fd; color: #0d47a1; border-color: #2196f3; }
     .status-rejected { background: #f8d7da; color: #721c24; border-color: #dc3545; }
+
     .amount { font-weight: 600; color: #2e7d32; }
     .receipt-icon { color: #1976d2; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; padding: 8px; border-radius: 4px; transition: all 0.3s; }
     .receipt-icon:hover { background: #e3f2fd; color: #1565c0; transform: scale(1.1); }
@@ -129,6 +139,7 @@
                 <select id="status" name="status" class="filter-select">
                     <option value="">All Status</option>
                     <option value="claimed" {% if request.GET.status == 'claimed' %}selected{% endif %}>Claimed</option>
+                    <option value="paid" {% if request.GET.status == 'paid' %}selected{% endif %}>Paid</option>
                     <option value="approved" {% if request.GET.status == 'approved' %}selected{% endif %}>Approved</option>
                     <option value="rejected" {% if request.GET.status == 'rejected' %}selected{% endif %}>Rejected</option>
                 </select>
@@ -176,9 +187,7 @@
                     <th>Department 🏢</th>
                     <th>Expense Category 💵</th>
                     <th>Amount ₹</th>
-                    <th>Description 📋</th>
                     <th>Receipt 📜</th>
-                    <th>Created By 👤</th>
                     <th>Status 📊</th>
                     <th>Actions ⚙️</th>
                 </tr>
@@ -188,20 +197,32 @@
                 <tr id="claim-row-{{ claim.id }}">
                     <td>{{ claim.created_at|date:"d M Y" }}</td>
                     <td>
-                        {% if claim.client_name %}
-                            <span class="client-name">{{ claim.client_name }}</span>
-                        {% elif claim.purpose %}
-                            <span class="purpose-text">{{ claim.purpose|truncatewords:8 }}</span>
-                        {% else %}
-                            <span style="color: #ccc;">N/A</span>
-                        {% endif %}
+                        <div class="cell-content">
+                            {% if claim.client_name %}
+                                <span class="primary-text">{{ claim.client_name }}</span>
+                            {% elif claim.purpose %}
+                                <span class="primary-text">{{ claim.purpose|truncatewords:8 }}</span>
+                            {% else %}
+                                <span class="primary-text" style="color: #ccc;">N/A</span>
+                            {% endif %}
+                            
+                            {% if claim.description %}
+                                <span class="secondary-text">{{ claim.description|truncatewords:15 }}</span>
+                            {% endif %}
+                        </div>
                     </td>
                     <td>
-                        {% if claim.department %}
-                            <span class="department-badge">{{ claim.department.name }}</span>
-                        {% else %}
-                            <span style="color: #ccc;">—</span>
-                        {% endif %}
+                        <div class="cell-content">
+                            {% if claim.department %}
+                                <span class="department-badge">{{ claim.department.name }}</span>
+                            {% else %}
+                                <span style="color: #ccc;">—</span>
+                            {% endif %}
+                            
+                            {% if claim.created_by %}
+                                <span class="user-info">👤 {{ claim.created_by.get_full_name|default:claim.created_by.username }}</span>
+                            {% endif %}
+                        </div>
                     </td>
                     <td>
                         {% if claim.expense_type == 'travel' %}
@@ -217,7 +238,6 @@
                         {% endif %}
                     </td>
                     <td class="amount">₹{{ claim.amount }}</td>
-                    <td>{{ claim.description|truncatewords:10 }}</td>
                     <td style="text-align: center;">
                         {% if claim.receipt %}
                             <a href="{{ claim.receipt.url }}" target="_blank" class="receipt-icon" title="View Receipt">
@@ -234,17 +254,11 @@
                         {% endif %}
                     </td>
                     <td>
-                        {% if claim.created_by %}
-                            {{ claim.created_by.get_full_name|default:claim.created_by.username }}
-                        {% else %}
-                            N/A
-                        {% endif %}
-                    </td>
-                    <td>
                         <select class="status-dropdown status-{{ claim.status }}" 
                                 onchange="updateStatus({{ claim.id }}, this.value)"
                                 data-original="{{ claim.status }}">
                             <option value="claimed" {% if claim.status == 'claimed' %}selected{% endif %}>Claimed</option>
+                            <option value="paid" {% if claim.status == 'paid' %}selected{% endif %}>Paid</option>
                             <option value="approved" {% if claim.status == 'approved' %}selected{% endif %}>Approved</option>
                             <option value="rejected" {% if claim.status == 'rejected' %}selected{% endif %}>Rejected</option>
                         </select>

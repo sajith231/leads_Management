@@ -42,25 +42,30 @@
             {% csrf_token %}
             <div class="grp">
                 <label>Vehicle Number</label>
-                <input type="text" value="{{ vehicle.vehicle_number }}" readonly style="background:#f5f5f5;">
-                <small style="color:#666;">Vehicle number cannot be changed</small>
+                <!-- Now editable -->
+                <input type="text" name="vehicle_number" value="{{ vehicle.vehicle_number }}" required>
             </div>
+
             <div class="grp">
                 <label>Vehicle Name</label>
                 <input type="text" name="vehicle_name" value="{{ vehicle.vehicle_name }}" required>
             </div>
+
             <div class="grp">
                 <label>Model Number</label>
                 <input type="text" name="model_number" value="{{ vehicle.model_number }}" required>
             </div>
+
             <div class="grp">
                 <label>Manufacture Year</label>
                 <input type="number" name="manufacture_year" value="{{ vehicle.manufacture_year }}" min="1900" max="{% now 'Y' %}" required>
             </div>
+
             <div class="grp">
                 <label>Owner Name</label>
                 <input type="text" name="owner_name" value="{{ vehicle.owner_name }}" required>
             </div>
+
             <div class="grp">
                 <label>Fuel Type</label>
                 <select name="fuel_type" required>
@@ -68,6 +73,7 @@
                     <option value="diesel" {% if vehicle.fuel_type == 'diesel' %}selected{% endif %}>Diesel</option>
                 </select>
             </div>
+
             <div class="grp">
                 <label>Average Mileage (km/l)</label>
                 <input type="number" name="avg_mileage" step="0.01" min="0" value="{{ vehicle.avg_mileage }}" required>

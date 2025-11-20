@@ -581,7 +581,12 @@
 </a>
 {% endif %}
 
-
+{% if 'wallet_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+<a href="{% url 'wallet_list' %}">
+  <i class="fas fa-wallet" style="margin-right: 5px;"></i>
+  Wallet
+</a>
+{% endif %}
 </div>
 {% endif %}
 
@@ -607,6 +612,12 @@
         <i class="fas fa-chart-line"></i> Vehicle Ledger
     </a>
     {% endif %}
+      <!-- Replace 'vehicle_challan' with your actual url name -->
+    <a href="{% url 'vehicle_details' %}">
+        <i class="fa-solid fa-car"></i> Vehicle challan
+
+    </a>
+
     <a href="{% url 'claims_list' %}">
         <i class="fas fa-briefcase"></i> Claims
     </a>
@@ -646,7 +657,7 @@
 </a>
 
 
-<a href="#">
+<a href="{% url 'app5:service_billing_list' %}">
   <i class="fas fa-file-contract"></i>Service Billing
 </a>
 
@@ -1065,7 +1076,12 @@
   Purchase Order
 </a>
 {% endif %}
-
+{% if 'wallet' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+<a href="{% url 'wallet_list' %}">
+  <i class="fas fa-wallet" style="margin-right: 5px;"></i>
+  Wallet
+</a>
+{% endif %}
 </div>
 {% endif %}
 
@@ -1094,6 +1110,13 @@
         <i class="fas fa-chart-line"></i> Vehicle Ledger
     </a>
     {% endif %}
+    
+    <!-- <- replace 'vehicle_challan' with the actual url name for challan -->
+    <a href="{% url 'vehicle_details' %}">
+        <i class="fa-solid fa- car"></i> Vehicle challan
+
+    </a>
+
     <a href="{% url 'claims_list' %}">
         <i class="fas fa-briefcase"></i> Claims
     </a>

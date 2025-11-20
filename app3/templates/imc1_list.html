@@ -367,11 +367,8 @@ document.addEventListener("DOMContentLoaded", function () {
             fetch(`/app3/get_imc1_ledger/?code=${code}`)
                 .then(response => response.json())
                 .then(data => {
-                    fullLedgerData = (data || []).sort((a, b) => {
-                        const aVoucher = a.voucher_no ? a.voucher_no.toString().toLowerCase() : '';
-                        const bVoucher = b.voucher_no ? b.voucher_no.toString().toLowerCase() : '';
-                        return aVoucher.localeCompare(bVoucher, undefined, { numeric: true });
-                    });
+                    // ✅ Default sort by earliest date first
+                    fullLedgerData = (data || []).sort((a, b) => new Date(a.entry_date) - new Date(b.entry_date));
                     renderLedgerTable(fullLedgerData);
                     modal.show();
                 })
@@ -401,6 +398,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 
+    // ✅ Render Ledger Table
     function renderLedgerTable(data) {
         const content = document.getElementById("ledgerContent");
         if (!Array.isArray(data) || data.length === 0) {
@@ -431,8 +429,14 @@ document.addEventListener("DOMContentLoaded", function () {
         const totalBalance = totalDebit - totalCredit;
 
         content.innerHTML = `
-            <div class="d-flex justify-content-end mb-2">
-                <button class="btn btn-sm btn-outline-primary" id="toggleVoucherBtn">Show Voucher</button>
+            <div class="d-flex justify-content-between mb-2">
+                <div>
+                    <button class="btn btn-sm btn-outline-primary me-2" id="sortDateBtn">Sort by Date</button>
+                    <button class="btn btn-sm btn-outline-primary me-2" id="sortVoucherBtn">Sort by Voucher</button>
+                </div>
+                <div>
+                    <button class="btn btn-sm btn-outline-primary" id="toggleVoucherBtn">Show Voucher</button>
+                </div>
             </div>
             <table class="table table-bordered table-sm align-middle">
                 <thead class="table-light">
@@ -460,7 +464,23 @@ document.addEventListener("DOMContentLoaded", function () {
                 </tfoot>
             </table>`;
 
-        // ✅ Toggle Voucher Column Visibility
+        // ✅ Sort by Date (earliest first)
+        document.getElementById("sortDateBtn").addEventListener("click", () => {
+            const sorted = [...data].sort((a, b) => new Date(a.entry_date) - new Date(b.entry_date));
+            renderLedgerTable(sorted);
+        });
+
+        // ✅ Sort by Voucher (ascending)
+        document.getElementById("sortVoucherBtn").addEventListener("click", () => {
+            const sorted = [...data].sort((a, b) => {
+                const va = a.voucher_no || "";
+                const vb = b.voucher_no || "";
+                return va.localeCompare(vb, undefined, { numeric: true, sensitivity: "base" });
+            });
+            renderLedgerTable(sorted);
+        });
+
+        // ✅ Toggle Voucher Column
         document.getElementById("toggleVoucherBtn").addEventListener("click", function () {
             document.querySelectorAll(".voucher-col").forEach(col => col.classList.toggle("d-none"));
             this.textContent = this.textContent.includes("Show") ? "Hide Voucher" : "Show Voucher";

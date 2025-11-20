@@ -11,10 +11,84 @@ from django.urls import reverse
 from django.core.files.base import ContentFile
 from .models import ImageCapture
 from PIL import Image
+from PIL.ExifTags import TAGS, GPSTAGS
 import io
+import piexif
+from app1.models import Branch
+# ------------------------------------------------------------------
+# Helper: Convert decimal coordinates to GPS EXIF format
+# ------------------------------------------------------------------
+def decimal_to_dms(decimal):
+    """
+    Convert decimal GPS coordinate to degrees, minutes, seconds format
+    Returns: ((degrees, 1), (minutes, 1), (seconds, 100))
+    """
+    decimal = float(decimal)
+    is_positive = decimal >= 0
+    decimal = abs(decimal)
+    
+    degrees = int(decimal)
+    minutes_decimal = (decimal - degrees) * 60
+    minutes = int(minutes_decimal)
+    seconds = (minutes_decimal - minutes) * 60
+    
+    # Convert to rational numbers (numerator, denominator)
+    return (
+        (degrees, 1),
+        (minutes, 1),
+        (int(seconds * 100), 100)
+    )
 
 # ------------------------------------------------------------------
-# ✅ NEW: Extract GPS from EXIF data (server-side)
+# Helper: Embed GPS data into image EXIF
+# ------------------------------------------------------------------
+def embed_gps_to_image(image_bytes, latitude, longitude):
+    """
+    Embed GPS coordinates into image EXIF data
+    Returns: modified image bytes with GPS data
+    """
+    try:
+        image = Image.open(io.BytesIO(image_bytes))
+        
+        # Prepare GPS data
+        lat_deg = decimal_to_dms(abs(latitude))
+        lon_deg = decimal_to_dms(abs(longitude))
+        
+        lat_ref = 'N' if latitude >= 0 else 'S'
+        lon_ref = 'E' if longitude >= 0 else 'W'
+        
+        # Create GPS IFD
+        gps_ifd = {
+            piexif.GPSIFD.GPSLatitudeRef: lat_ref,
+            piexif.GPSIFD.GPSLatitude: lat_deg,
+            piexif.GPSIFD.GPSLongitudeRef: lon_ref,
+            piexif.GPSIFD.GPSLongitude: lon_deg,
+        }
+        
+        # Get existing EXIF data or create new
+        try:
+            exif_dict = piexif.load(image.info.get('exif', b''))
+        except:
+            exif_dict = {"0th": {}, "Exif": {}, "GPS": {}, "1st": {}, "thumbnail": None}
+        
+        # Update GPS data
+        exif_dict['GPS'] = gps_ifd
+        
+        # Convert to bytes
+        exif_bytes = piexif.dump(exif_dict)
+        
+        # Save image with new EXIF data
+        output = io.BytesIO()
+        image.save(output, format=image.format or 'JPEG', exif=exif_bytes, quality=95)
+        
+        return output.getvalue()
+        
+    except Exception as e:
+        logging.error(f"Error embedding GPS into image: {e}")
+        return image_bytes  # Return original if embedding fails
+
+# ------------------------------------------------------------------
+# Extract GPS from EXIF data (server-side)
 # ------------------------------------------------------------------
 def extract_gps_from_image(image_data):
     """
@@ -86,15 +160,12 @@ def extract_gps_from_image(image_data):
         logging.error(f"Error extracting GPS from image: {e}")
         return None, None
 
-
 # ------------------------------------------------------------------
-# ✅ OPTIMIZED: index view - NO MORE SLOW API CALLS
+# OPTIMIZED: index view
 # ------------------------------------------------------------------
 def index(request):
-    # Get all verified image captures, ordered by most recent first
     verified_captures = ImageCapture.objects.filter(verified=True).order_by('-created_at')
     
-    # Add pagination (20 customers per page)
     paginator = Paginator(verified_captures, 20)
     page_number = request.GET.get('page', 1)
     page_obj = paginator.get_page(page_number)
@@ -105,9 +176,8 @@ def index(request):
         'total_count': verified_captures.count()
     })
 
-
 # ------------------------------------------------------------------
-# Helper: Reverse geocoding to get location name
+# Helper: Reverse geocoding
 # ------------------------------------------------------------------
 def _get_location_name(latitude, longitude):
     """
@@ -160,26 +230,17 @@ def _get_location_name(latitude, longitude):
         logging.error(f"Reverse geocoding error: {e}")
         return f"{latitude}, {longitude}"
 
-
 # ------------------------------------------------------------------
-# Helper: send OTP through DxIng WhatsApp gateway
+# Helper: send OTP via WhatsApp
 # ------------------------------------------------------------------
 import threading
-
-import threading
-import logging
-import requests
 
 def _send_otp_via_whatsapp(phone: str, otp: str) -> None:
     """
     Send OTP via DxIng WhatsApp in background thread (non-blocking)
     """
-
     def send():
-        # Prepare the message
         message = f"Your verification code is {otp}. Valid for 5 minutes."
-
-        # Construct the updated DxIng API URL
         url = (
             "https://app.dxing.in/api/send/whatsapp"
             "?secret=7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
@@ -189,16 +250,12 @@ def _send_otp_via_whatsapp(phone: str, otp: str) -> None:
             f"&message={message}"
             "&priority=1"
         )
-
         try:
             requests.get(url, timeout=5)
         except Exception as e:
-            logging.error(f"Unexpected error sending WhatsApp OTP to {phone_number}: {e}")
-
-    # Run send() in a background thread
+            logging.error(f"WhatsApp send failed for {phone}: {e}")
+    
     threading.Thread(target=send, daemon=True).start()
-
-
 
 # ------------------------------------------------------------------
 # 1. Agent-facing link-generator page
@@ -210,19 +267,31 @@ def image_capture_form(request):
     customer_name = None
     phone_number = None
 
+    # Get user's branch if logged in
+    user_branch = None
+    if request.user.is_authenticated and hasattr(request.user, 'userprofile'):
+        user_branch = request.user.userprofile.branch.name
+    elif request.user.is_authenticated and hasattr(request.user, 'branch'):
+        user_branch = request.user.branch.name
+
     try:
         api_url = "https://accmaster.imcbs.com/api/sync/rrc-clients/"
         response = requests.get(api_url, timeout=10)
         if response.status_code == 200:
             customers = response.json()
-
-            # ✅ Sort customers alphabetically by name (case-insensitive)
+            
+            # Filter customers by user's branch if user has a specific branch
+            if user_branch:
+                customers = [c for c in customers if c.get('branch') == user_branch]
+            
             customers.sort(key=lambda x: x.get("name", "").lower())
-
         else:
             logging.error(f"Failed to fetch clients: {response.status_code}")
     except Exception as e:
         logging.error(f"API fetch error: {e}")
+
+    # Get all branches
+    branches = Branch.objects.all().order_by('name')
 
     if request.method == "POST":
         customer_name_dropdown = request.POST.get("customer_name", "").strip()
@@ -257,10 +326,106 @@ def image_capture_form(request):
             "phone_number": phone_number,
             "error": error,
             "customers": customers,
+            "branches": branches,
+            "user_branch": user_branch,  # Pass user's branch to template
         },
     )
 
+def manual_capture_form(request):
+    """
+    Page to manually select or enter customer and directly upload image
+    """
+    customers = []
+    error = None
 
+    # Get user's branch if logged in
+    user_branch = None
+    if request.user.is_authenticated and hasattr(request.user, 'userprofile'):
+        user_branch = request.user.userprofile.branch.name
+    elif request.user.is_authenticated and hasattr(request.user, 'branch'):
+        user_branch = request.user.branch.name
+
+    # Fetch customer list
+    try:
+        api_url = "https://accmaster.imcbs.com/api/sync/rrc-clients/"
+        response = requests.get(api_url, timeout=10)
+        if response.status_code == 200:
+            customers = response.json()
+            
+            # Filter customers by user's branch if user has a specific branch
+            if user_branch:
+                customers = [c for c in customers if c.get('branch') == user_branch]
+            
+            customers.sort(key=lambda x: x.get("name", "").lower())
+    except Exception as e:
+        logging.error(f"Error fetching customer list: {e}")
+
+    # Get all branches
+    branches = Branch.objects.all().order_by('name')
+
+    if request.method == "POST":
+        customer_name_dropdown = request.POST.get("customer_name", "").strip()
+        customer_name_manual = request.POST.get("customer_name_manual", "").strip()
+
+        if customer_name_manual:
+            customer_name = customer_name_manual
+        else:
+            customer_name = customer_name_dropdown
+
+        if not customer_name:
+            error = "Please enter or select a customer name"
+        else:
+            # Create object directly as verified (no OTP)
+            obj = ImageCapture.objects.create(
+                customer_name=customer_name,
+                verified=True
+            )
+            return redirect("manual_image_upload", unique_id=obj.unique_id)
+
+    return render(request, "manual_capture_form.html", {
+        "customers": customers,
+        "error": error,
+        "branches": branches,
+        "user_branch": user_branch,  # Pass user's branch to template
+    })
+
+def manual_image_upload(request, unique_id):
+    """
+    Handle image upload and location detection for manual capture
+    """
+    data = get_object_or_404(ImageCapture, unique_id=unique_id)
+
+    if request.method == "POST":
+        image_data = request.POST.get("image_data")
+        client_lat = request.POST.get("latitude", "").strip()
+        client_lon = request.POST.get("longitude", "").strip()
+        source = request.POST.get("location_source", "unknown")
+
+        if image_data:
+            latitude, longitude = extract_gps_from_image(image_data)
+
+            if not latitude or not longitude:
+                latitude = client_lat or None
+                longitude = client_lon or None
+
+            # Reverse geocode
+            location_name = _get_location_name(latitude, longitude) if latitude and longitude else None
+
+            imgstr = image_data.split(';base64,')[1]
+            image_bytes = base64.b64decode(imgstr)
+
+            # Save image
+            data.image.save(f"{data.customer_name}_capture.jpg", ContentFile(image_bytes))
+            data.latitude = latitude
+            data.longitude = longitude
+            data.location_name = location_name
+            data.location_source = source
+            data.verified = True
+            data.save()
+
+            return render(request, "success_page.html", {"data": data})
+
+    return render(request, "manual_image_upload.html", {"data": data})
 
 # ------------------------------------------------------------------
 # 2. Customer landing page
@@ -295,7 +460,6 @@ def capture_link_view(request, unique_id):
 
     return render(request, "capture_link.html", {"data": data})
 
-
 # ------------------------------------------------------------------
 # 3. OTP verification page
 # ------------------------------------------------------------------
@@ -318,9 +482,8 @@ def verify_otp(request, unique_id):
             )
     return redirect("capture_link", unique_id=unique_id)
 
-
 # ------------------------------------------------------------------
-# ✅ FIXED: 4. Image + location submit handler with server-side EXIF
+# 4. ENHANCED: Image + location submit with GPS embedding
 # ------------------------------------------------------------------
 def submit_image(request, unique_id):
     data = get_object_or_404(ImageCapture, unique_id=unique_id)
@@ -333,22 +496,40 @@ def submit_image(request, unique_id):
             })
         
         image_data = request.POST.get("image_data")
-        # Client-side coordinates as fallback
-        client_latitude = request.POST.get("latitude")
-        client_longitude = request.POST.get("longitude")
+        client_latitude = request.POST.get("latitude", "").strip()
+        client_longitude = request.POST.get("longitude", "").strip()
+        location_source = request.POST.get("location_source", "unknown")
 
         if image_data:
             try:
-                # ✅ STEP 1: Extract GPS from EXIF (server-side) - PRIMARY METHOD
+                # STEP 1: Try to extract GPS from EXIF
                 latitude, longitude = extract_gps_from_image(image_data)
                 
-                # ✅ STEP 2: Fallback to client-side coordinates if EXIF fails
+                # STEP 2: Use client coordinates if EXIF fails
                 if not latitude or not longitude:
                     logging.warning("EXIF extraction failed, using client-side coordinates")
-                    latitude = client_latitude
-                    longitude = client_longitude
+                    
+                    # Validate and convert client coordinates
+                    try:
+                        if client_latitude and client_longitude and \
+                           client_latitude.lower() != 'nan' and client_longitude.lower() != 'nan':
+                            latitude = float(client_latitude)
+                            longitude = float(client_longitude)
+                            
+                            # Validate coordinate ranges
+                            if not (-90 <= latitude <= 90 and -180 <= longitude <= 180):
+                                logging.error(f"Invalid coordinate ranges: {latitude}, {longitude}")
+                                latitude = None
+                                longitude = None
+                        else:
+                            latitude = None
+                            longitude = None
+                    except (ValueError, TypeError) as e:
+                        logging.error(f"Error converting coordinates: {e}")
+                        latitude = None
+                        longitude = None
                 
-                # Extract base64 data and save image
+                # Extract base64 data
                 if ';base64,' in image_data:
                     fmt, imgstr = image_data.split(';base64,')
                     ext = fmt.split('/')[-1] if '/' in fmt else 'jpg'
@@ -356,10 +537,23 @@ def submit_image(request, unique_id):
                     imgstr = image_data
                     ext = 'jpg'
                 
+                image_bytes = base64.b64decode(imgstr)
+                
+                # STEP 3: Embed GPS into image if we have coordinates and source is "live"
+                if latitude and longitude and location_source == "live":
+                    logging.info(f"Embedding live GPS into image: {latitude}, {longitude}")
+                    image_bytes = embed_gps_to_image(
+                        image_bytes,
+                        float(latitude),
+                        float(longitude)
+                    )
+                
+                # Save the image with embedded GPS
                 image_file = ContentFile(
-                    base64.b64decode(imgstr), 
+                    image_bytes,
                     name=f"{data.customer_name}_{unique_id}.{ext}"
                 )
+                
                 data.image = image_file
                 data.latitude = latitude
                 data.longitude = longitude
@@ -391,7 +585,6 @@ def submit_image(request, unique_id):
     
     return redirect("capture_link", unique_id=unique_id)
 
-
 # ------------------------------------------------------------------
 # 5. Delete customer
 # ------------------------------------------------------------------
@@ -409,3 +602,27 @@ def delete_customer(request):
             messages.error(request, f'Error deleting customer: {str(e)}')
     
     return redirect('index')
+
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.shortcuts import get_object_or_404
+from .models import ImageCapture
+
+def update_status(request, pk):
+    """Update the manual status of a customer"""
+    if request.method == "POST":
+        try:
+            obj = get_object_or_404(ImageCapture, id=pk)
+            new_status = request.POST.get("status")
+            
+            if new_status in ["Pending", "Verified"]:
+                obj.status = new_status
+                obj.save()
+                return JsonResponse({"success": True, "status": new_status})
+            else:
+                return JsonResponse({"success": False, "error": "Invalid status"}, status=400)
+                
+        except Exception as e:
+            return JsonResponse({"success": False, "error": str(e)}, status=500)
+    
+    return JsonResponse({"success": False, "error": "Invalid method"}, status=405)

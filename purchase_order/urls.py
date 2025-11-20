@@ -35,5 +35,12 @@ urlpatterns = [
     path('api/items/<int:item_id>/', views.get_item_details, name='get_item_details'),
     path('api/suppliers/<int:supplier_id>/', views.get_supplier_details, name='get_supplier_details'),
     path('api/clients/', views.get_clients_from_api, name='get_clients_api'),
+
+
+    path('supplier-history/<int:supplier_id>/', views.get_supplier_history, name='get_supplier_history'),
+    # path('item-history/<int:item_id>/', views.get_item_history, name='get_item_history'),
+    path('item-history/<int:item_id>/', views.item_history, name='item_history'),
+    path('download-pdf/<int:pk>/', views.download_po_pdf, name='download_po_pdf'),
+    path('purchase-orders/<int:pk>/update-pdf-format/', views.update_po_pdf_format,name='update_po_pdf_format'),
 ]
 

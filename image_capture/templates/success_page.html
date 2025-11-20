@@ -142,7 +142,6 @@
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
     }
 
-    /* ✅ Enhanced Location Status Badges */
     .location-status-badge {
       display: inline-flex;
       align-items: center;
@@ -307,22 +306,23 @@
         </div>
       </div>
 
-      <div class="info-row">
-        <div class="info-icon"><i class="fas fa-phone"></i></div>
-        <div class="info-content">
-          <div class="info-label">Phone Number</div>
-          <div class="info-value">+91 {{ data.phone_number }}</div>
-        </div>
-      </div>
+      {% if data.phone_number %}
+<div class="info-row">
+  <div class="info-icon"><i class="fas fa-phone"></i></div>
+  <div class="info-content">
+    <div class="info-label">Phone Number</div>
+    <div class="info-value">+91 {{ data.phone_number }}</div>
+  </div>
+</div>
+{% endif %}
 
-      <!-- ✅ Enhanced Location Status Display -->
+
       <div class="info-row">
         <div class="info-icon"><i class="fas fa-map-marker-alt"></i></div>
         <div class="info-content">
           <div class="info-label">Location Status</div>
           
           {% if data.latitude and data.longitude %}
-            <!-- Location Detected -->
             <div class="location-status-badge location-detected">
               <i class="fas fa-check-circle"></i>
               Location Detected
@@ -346,7 +346,6 @@
               </div>
             </div>
           {% else %}
-            <!-- Location Not Available -->
             <div class="location-status-badge location-not-available">
               <i class="fas fa-exclamation-triangle"></i>
               Location Not Available
@@ -376,19 +375,22 @@
     </div>
 
     <!-- ✅ Close Button -->
-    <button class="btn-close-page mt-3" onclick="closeOrRedirect()">
+    <button class="btn-close-page mt-3" onclick="closeTab()">
       <i class="fas fa-times-circle"></i> Close
     </button>
   </div>
 
   <script>
-    function closeOrRedirect() {
+    // ✅ Close the entire tab (no redirect)
+    function closeTab() {
+      // Works for most browsers when the tab was opened via script
       window.open('', '_self');
       window.close();
 
+      // If blocked (like in iOS Safari), show message
       setTimeout(() => {
         if (!document.hidden) {
-          window.location.href = "{% url 'index' %}";
+          alert("Please close this tab manually.");
         }
       }, 500);
     }

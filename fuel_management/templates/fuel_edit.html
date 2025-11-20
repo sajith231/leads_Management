@@ -19,6 +19,7 @@
     .form-group{display:flex;flex-direction:column}
     .form-group label{font-weight:600;color:#555;margin-bottom:6px;font-size:.9em}
     .form-group input,.form-group select,.form-group textarea{padding:10px 12px;border:1px solid #ccc;border-radius:3px;font-size:.95em;background:#fff}
+    .form-group textarea{resize:vertical;min-height:80px;font-family:Arial,sans-serif}
     .form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:#2c3e50}
     .full-width{grid-column:1/-1}
     .btn-container{display:flex;gap:10px;justify-content:flex-end;margin-top:30px;padding-top:20px;border-top:1px solid #e0e0e0}
@@ -77,9 +78,13 @@
             </div>
           </div>
 
-          
-
-         
+          <div class="form-row">
+            <div class="form-group full-width">
+              <label>Purpose of Trip</label>
+              <textarea name="purpose" placeholder="Enter the purpose of this trip..." rows="3">{{ entry.purpose|default:'' }}</textarea>
+            </div>
+          </div>
+        </div>
 
         <div class="section">
           <h2 class="section-title">Odometer & Fuel</h2>
@@ -95,7 +100,7 @@
             </div>
           </div>
 
-         
+          <div class="form-row">
             <div class="form-group">
               <label>Fuel Cost (₹) *</label>
               <input type="number" name="fuel_cost" step="0.01" value="{{ entry.fuel_cost|default:'' }}" placeholder="e.g. 2500" required>
@@ -137,7 +142,6 @@
 </div>
 
 <script>
-// Calculate distance when end reading changes
 const startInput = document.querySelector('[name=odo_start_reading]');
 const endInput = document.querySelector('[name=odo_end_reading]');
 
@@ -147,7 +151,6 @@ function calculateDistance() {
     
     if (end > start) {
         const distance = end - start;
-        // You can display this somewhere if needed
         console.log('Distance traveled:', distance.toFixed(2), 'km');
     }
 }

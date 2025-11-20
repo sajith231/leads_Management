@@ -3,283 +3,492 @@
 
 {% block content %}
 <style>
+    @media (max-width: 768px) {
+        .allbody {
+            margin-top: 15%;
+        }
+    }
+
+    .add-employee-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .page-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 10px;
+        margin-bottom: 30px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .page-header h2 {
+        margin: 0;
+        font-size: 28px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .form-container {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        padding: 30px;
+    }
+
+    .cv-selection-section {
+        background: #f8f9fa;
+        padding: 25px;
+        border-radius: 8px;
+        margin-bottom: 30px;
+        border-left: 4px solid #667eea;
+    }
+
+    .cv-selection-section h4 {
+        font-size: 16px;
+        font-weight: 700;
+        color: #333;
+        margin: 0 0 20px 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .form-section {
+        margin-bottom: 35px;
+    }
+
+    .section-header {
+        background: #f8f9fa;
+        padding: 15px 20px;
+        border-radius: 8px;
+        margin-bottom: 25px;
+        border-left: 4px solid #667eea;
+    }
+
+    .section-header h4 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 700;
+        color: #333;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+    }
+
+    .form-grid-full {
+        grid-column: 1 / -1;
+    }
+
+    .form-group {
+        margin-bottom: 0;
+    }
+
+    .form-group label {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 8px;
+        display: block;
+        font-size: 14px;
+    }
+
+    .form-control,
+    .form-select {
+        width: 100%;
+        padding: 12px 15px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-size: 14px;
+        transition: all 0.3s;
+        background: white;
+    }
+
+    .form-control:focus,
+    .form-select:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    textarea.form-control {
+        min-height: 100px;
+        resize: vertical;
+    }
+
+    #cvSearch {
+        width: 100%;
+        padding: 12px 16px;
+        font-size: 14px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        background-color: #ffffff;
+        transition: all 0.3s;
+    }
+
+    #cvSearch:focus {
+        border-color: #667eea;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
     #cvSelect {
-    display: none; /* Initially hidden */
-    width: 100%;
-    max-width: 400px;
-    padding: 12px 16px;
-    font-size: 16px;
-    font-weight: 500;
-    border: 1px solid #d1d5db;
-    border-radius: 8px;
-    background-color: #ffffff;
-    color: #333;
-    appearance: none; /* Removes default OS dropdown styling */
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    cursor: pointer;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-    transition: all 0.2s ease;
-}
+        display: none;
+        width: 100%;
+        padding: 8px;
+        font-size: 14px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        background-color: #ffffff;
+        max-height: 200px;
+        overflow-y: auto;
+        margin-top: 10px;
+    }
 
-#cvSelect:focus {
-    border-color: #007bff;
-    outline: none;
-    box-shadow: 0 0 8px rgba(0, 123, 255, 0.3);
-}
+    #cvSelect option {
+        padding: 10px;
+        font-size: 14px;
+        color: #333;
+        cursor: pointer;
+    }
 
-#cvSelect option {
-    padding: 10px;
-    font-size: 15px;
-    color: #333;
-    background-color: #fff;
-}
+    #cvSelect option:hover {
+        background-color: #f0f4ff;
+    }
 
-#cvSelect option:hover {
-    background-color: #f8f9fa;
-}
+    .action-buttons {
+        display: flex;
+        gap: 15px;
+        justify-content: flex-end;
+        margin-top: 30px;
+        padding-top: 25px;
+        border-top: 2px solid #f0f0f0;
+    }
 
-#cvSelect option:checked {
-    background-color: #007bff;
-    color: #fff;
-    font-weight: bold;
-}
+    .btn-submit {
+        background: #667eea;
+        color: white;
+        padding: 12px 32px;
+        border: none;
+        border-radius: 6px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 15px;
+    }
 
-/* Custom dropdown arrow */
-#cvSelect::after {
-    content: '\25BC';
-    position: absolute;
-    top: 50%;
-    right: 10px;
-    transform: translateY(-50%);
-    pointer-events: none;
-    color: #555;
-    font-size: 12px;
-}
+    .btn-submit:hover {
+        background: #5568d3;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
 
+    .btn-cancel {
+        background: #6c757d;
+        color: white;
+        padding: 12px 32px;
+        border: none;
+        border-radius: 6px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 15px;
+        text-decoration: none;
+    }
 
+    .btn-cancel:hover {
+        background: #5a6268;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
+    }
+
+    @media (max-width: 768px) {
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .action-buttons {
+            flex-direction: column;
+        }
+
+        .btn-submit,
+        .btn-cancel {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+
+    /* Scrollbar Styling */
+    #cvSelect::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    #cvSelect::-webkit-scrollbar-track {
+        background: #f1f1f1;
+    }
+
+    #cvSelect::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 3px;
+    }
+
+    #cvSelect::-webkit-scrollbar-thumb:hover {
+        background: #555;
+    }
 </style>
-<div class="container mt-4">
-    <h2>Add New Employee</h2>
-    <form action="{% url 'add_employee' %}" method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-        
-        <!-- Add Employee from CV Dropdown -->
-        <div class="mb-3">
-            <label class="form-label">Add Employee from CV</label>
-            <!-- Searchable Dropdown -->
-            <div class="dropdown">
-                <input type="text" class="form-control" id="cvSearch" placeholder="Search CV by name" oninput="filterCVs()" onclick="showDropdown()" aria-label="Search CV">
-                <select class="form-control mt-2" id="cvSelect" onchange="fillEmployeeDetails()" size="5" style="display: none;">
-                    <option value="">Select a CV</option>
-                    {% for cv in cvs %}
-                        <option value="{{ cv.id }}" data-name="{{ cv.name }}" data-address="{{ cv.address }}" data-phone="{{ cv.phone_number }}" data-place="{{ cv.place }}" data-district="{{ cv.district }}" data-education="{{ cv.education }}" data-experience="{{ cv.experience }}" data-dob="{{ cv.dob|date:'Y-m-d' }}">
-                            {{ cv.name }}
-                        </option>
-                    {% endfor %}
-                </select>
-            </div>
-        </div>
-        
-        <script>
-            function showDropdown() {
-                document.getElementById('cvSelect').style.display = 'block';
-            }
-        
-            function filterCVs() {
-                const searchInput = document.getElementById('cvSearch').value.toLowerCase();
-                const cvSelect = document.getElementById('cvSelect');
-                const options = cvSelect.options;
-                let matchFound = false;
-        
-                for (let i = 1; i < options.length; i++) { // Skip the first option ("Select a CV")
-                    const cvName = options[i].getAttribute('data-name').toLowerCase();
-        
-                    if (cvName.includes(searchInput)) {
-                        options[i].style.display = 'block'; // Show matching CV
-                        matchFound = true;
-                    } else {
-                        options[i].style.display = 'none'; // Hide non-matching CV
-                    }
-                }
-        
-                // Show the dropdown only if there are matching results
-                cvSelect.style.display = matchFound ? 'block' : 'none';
-            }
-        
-            function fillEmployeeDetails() {
-                const cvSelect = document.getElementById('cvSelect');
-                const selectedOption = cvSelect.options[cvSelect.selectedIndex];
-        
-                if (selectedOption.value) {
-                    document.getElementById('name').value = selectedOption.getAttribute('data-name');
-                    document.getElementById('address').value = selectedOption.getAttribute('data-address');
-                    document.getElementById('phone_personal').value = selectedOption.getAttribute('data-phone');
-                    document.getElementById('place').value = selectedOption.getAttribute('data-place');
-                    document.getElementById('district').value = selectedOption.getAttribute('data-district');
-                    document.getElementById('education').value = selectedOption.getAttribute('data-education');
-                    document.getElementById('experience').value = selectedOption.getAttribute('data-experience');
-                    document.getElementById('dob').value = selectedOption.getAttribute('data-dob');
-        
-                    // Hide dropdown after selection
-                    cvSelect.style.display = 'none';
-                }
-            }
-        
-            // Hide dropdown when clicking outside
-            document.addEventListener('click', function(event) {
-                const searchInput = document.getElementById('cvSearch');
-                const cvSelect = document.getElementById('cvSelect');
-        
-                if (!searchInput.contains(event.target) && !cvSelect.contains(event.target)) {
-                    cvSelect.style.display = 'none';
-                }
-            });
-        </script>
-        
-        
-        
-        <div class="mb-3">
-            <label class="form-label">Name</label>
-            <input type="text" name="name" id="name" class="form-control" required>
-        </div>
-        
-        <div class="mb-3">
-            <label class="form-label">Photo</label>
-            <input type="file" name="photo" class="form-control" accept="image/*" required>
-        </div>
-        
-        <div class="mb-3">
-            <label class="form-label">Address</label>
-            <textarea name="address" id="address" class="form-control"></textarea>
-        </div>
-        
-        <div class="mb-3">
-            <label class="form-label">Phone (Personal)</label>
-            <input type="text" name="phone_personal" id="phone_personal" class="form-control" required>
+
+<div class="allbody">
+    <div class="add-employee-container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h2>
+                <i class="fas fa-user-plus"></i>
+                Add New Employee
+            </h2>
         </div>
 
-        <div class="mb-3">
-            <label class="form-label">Phone (Residential)</label>
-            <input type="text" name="phone_residential" class="form-control">
-        </div>
+        <!-- Form Container -->
+        <div class="form-container">
+            <form action="{% url 'add_employee' %}" method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                
+                <!-- CV Selection Section -->
+                <div class="cv-selection-section">
+                    <h4><i class="fas fa-file-alt"></i> Add Employee from CV (Optional)</h4>
+                    <div class="form-group">
+                        <label for="cvSearch">Search CV by Name</label>
+                        <input type="text" class="form-control" id="cvSearch" placeholder="Type to search existing CVs..." oninput="filterCVs()" onclick="showDropdown()" aria-label="Search CV">
+                        <select class="form-control" id="cvSelect" onchange="fillEmployeeDetails()" size="5">
+                            <option value="">Select a CV</option>
+                            {% for cv in cvs %}
+                                <option value="{{ cv.id }}" 
+                                        data-name="{{ cv.name }}" 
+                                        data-address="{{ cv.address }}" 
+                                        data-phone="{{ cv.phone_number }}" 
+                                        data-place="{{ cv.place }}" 
+                                        data-district="{{ cv.district }}" 
+                                        data-education="{{ cv.education }}" 
+                                        data-experience="{{ cv.experience }}" 
+                                        data-dob="{{ cv.dobdate|date:'Y-m-d' }}">
+                                    {{ cv.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
 
-        <div class="mb-3">
-            <label class="form-label">Place</label>
-            <input type="text" name="place" id="place" class="form-control" required>
-        </div>
+                <!-- Personal Information Section -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <h4><i class="fas fa-user"></i> Personal Information</h4>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="name">Full Name <span style="color: #dc3545;">*</span></label>
+                            <input type="text" name="name" id="name" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="dob">Date of Birth <span style="color: #dc3545;">*</span></label>
+                            <input type="date" name="dob" id="dob" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="photo">Photo <span style="color: #dc3545;">*</span></label>
+                            <input type="file" name="photo" id="photo" class="form-control" accept="image/*" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="education">Education</label>
+                            <input type="text" name="education" id="education" class="form-control">
+                        </div>
+                        <div class="form-group form-grid-full">
+                            <label for="experience">Experience</label>
+                            <input type="text" name="experience" id="experience" class="form-control">
+                        </div>
+                    </div>
+                </div>
 
-        <div class="mb-3">
-            <label class="form-label">District</label>
-            <select name="district" id="district" class="form-control" required>
-                <option value="" disabled selected>Select a District</option>
-                <option value="Thiruvananthapuram">Thiruvananthapuram</option>
-                <option value="Kollam">Kollam</option>
-                <option value="Pathanamthitta">Pathanamthitta</option>
-                <option value="Alappuzha">Alappuzha</option>
-                <option value="Kottayam">Kottayam</option>
-                <option value="Idukki">Idukki</option>
-                <option value="Ernakulam">Ernakulam</option>
-                <option value="Thrissur">Thrissur</option>
-                <option value="Palakkad">Palakkad</option>
-                <option value="Malappuram">Malappuram</option>
-                <option value="Kozhikode">Kozhikode</option>
-                <option value="Wayanad">Wayanad</option>
-                <option value="Kannur">Kannur</option>
-                <option value="Kasaragod">Kasaragod</option>
-            </select>
-        </div>
-        
+                <!-- Contact Information Section -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <h4><i class="fas fa-address-book"></i> Contact Information</h4>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="phone_personal">Phone (Personal) <span style="color: #dc3545;">*</span></label>
+                            <input type="text" name="phone_personal" id="phone_personal" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="phone_residential">Phone (Residential)</label>
+                            <input type="text" name="phone_residential" id="phone_residential" class="form-control">
+                        </div>
+                        <div class="form-group form-grid-full">
+                            <label for="address">Address</label>
+                            <textarea name="address" id="address" class="form-control"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="place">Place <span style="color: #dc3545;">*</span></label>
+                            <input type="text" name="place" id="place" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="district">District <span style="color: #dc3545;">*</span></label>
+                            <select name="district" id="district" class="form-control" required>
+                                <option value="" disabled selected>Select a District</option>
+                                <option value="Thiruvananthapuram">Thiruvananthapuram</option>
+                                <option value="Kollam">Kollam</option>
+                                <option value="Pathanamthitta">Pathanamthitta</option>
+                                <option value="Alappuzha">Alappuzha</option>
+                                <option value="Kottayam">Kottayam</option>
+                                <option value="Idukki">Idukki</option>
+                                <option value="Ernakulam">Ernakulam</option>
+                                <option value="Thrissur">Thrissur</option>
+                                <option value="Palakkad">Palakkad</option>
+                                <option value="Malappuram">Malappuram</option>
+                                <option value="Kozhikode">Kozhikode</option>
+                                <option value="Wayanad">Wayanad</option>
+                                <option value="Kannur">Kannur</option>
+                                <option value="Kasaragod">Kasaragod</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
 
-        <div class="mb-3">
-            <label class="form-label">Education</label>
-            <input type="text" name="education" id="education" class="form-control">
-        </div>
+                <!-- Job Information Section -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <h4><i class="fas fa-briefcase"></i> Job Information</h4>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="job_title">Job Title <span style="color: #dc3545;">*</span></label>
+                            <input type="text" name="job_title" id="job_title" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+  <label for="organization">Organization</label>
+  <select name="organization" id="organization" class="form-control">
+    <option value="">Select organization</option>
+    {% for dept in departments %}
+      <option value="{{ dept.id }}">{{ dept.name }}</option>
+    {% endfor %}
+  </select>
+</div>
 
-        <div class="mb-3">
-            <label class="form-label">Experience</label>
-            <input type="text" name="experience" id="experience" class="form-control">
-        </div>
+                        <div class="form-group">
+                            <label for="joining_date">Joining Date <span style="color: #dc3545;">*</span></label>
+                            <input type="date" name="joining_date" id="joining_date" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="user_id">Employee User ID <span style="color: #dc3545;">*</span></label>
+                            <select name="user_id" id="user_id" class="form-control" required>
+                                <option value="" disabled selected>Select User ID</option>
+                                {% for user in users %}
+                                    <option value="{{ user.id }}">{{ user.userid }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="duty_time_start">Duty Time Start</label>
+                            <input type="time" name="duty_time_start" id="duty_time_start" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="duty_time_end">Duty Time End</label>
+                            <input type="time" name="duty_time_end" id="duty_time_end" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="status">Status <span style="color: #dc3545;">*</span></label>
+                            <select name="status" id="status" class="form-control" required>
+                                <option value="active" selected>Active</option>
+                                <option value="inactive">Inactive</option>
+                                <option value="on_leave">On Leave</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="attachments">Attachments</label>
+                            <input type="file" name="attachments" id="attachments" class="form-control" multiple>
+                        </div>
+                    </div>
+                </div>
 
-        <div class="mb-3">
-            <label class="form-label">Job Title</label>
-            <input type="text" name="job_title" class="form-control" required>
-        </div>
-        <div class="mb-3">
-            <label class="form-label">Duty Time Start</label>
-            <input type="time" name="duty_time_start" class="form-control">
-        </div>
+                <!-- Bank Details Section -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <h4><i class="fas fa-university"></i> Bank Details</h4>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="bank_account_number">Bank Account Number</label>
+                            <input type="text" name="bank_account_number" id="bank_account_number" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="ifsc_code">IFSC Code</label>
+                            <input type="text" name="ifsc_code" id="ifsc_code" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="bank_name">Bank Name</label>
+                            <input type="text" name="bank_name" id="bank_name" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="branch">Branch</label>
+                            <input type="text" name="branch" id="branch" class="form-control">
+                        </div>
+                    </div>
+                </div>
 
-        <div class="mb-3">
-            <label class="form-label">Duty Time End</label>
-            <input type="time" name="duty_time_end" class="form-control">
+                <!-- Action Buttons -->
+                <div class="action-buttons">
+                    <a href="{% url 'employee_management' %}" class="btn-cancel">
+                        <i class="fas fa-times"></i>
+                        Cancel
+                    </a>
+                    <button type="submit" class="btn-submit">
+                        <i class="fas fa-save"></i>
+                        Save Employee
+                    </button>
+                </div>
+            </form>
         </div>
-        <div class="mb-3">
-            <label class="form-label">Organization</label>
-            <select name="organization" class="form-control">
-                <option value="" selected>Select Organization</option>
-                <option value="IMC">IMC</option>
-                <option value="SYSMAC">SYSMAC</option>
-            </select>
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label">Joining Date</label>
-            <input type="date" name="joining_date" class="form-control" required>
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label">Date of Birth</label>
-            <input type="date" name="dob" id="dob" class="form-control" required>
-        </div>
-        <div class="mb-3">
-            <label class="form-label">Select Employee User ID</label>
-            <select name="user_id" id="user_id" class="form-control" required>
-                <option value="" disabled selected>Select User ID</option>
-                {% for user in users %}
-                    <option value="{{ user.id }}">{{ user.userid }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        
-
-        <div class="mb-3">
-            <label class="form-label">Attachments</label>
-            <input type="file" name="attachments" class="form-control" multiple>
-        </div>
-        <div class="mb-3">
-            <label class="form-label">Bank Account Number</label>
-            <input type="text" name="bank_account_number" class="form-control">
-        </div>
-        
-        <div class="mb-3">
-            <label class="form-label">IFSC Code</label>
-            <input type="text" name="ifsc_code" class="form-control">
-        </div>
-        
-        <div class="mb-3">
-            <label class="form-label">Bank Name</label>
-            <input type="text" name="bank_name" class="form-control">
-        </div>
-        
-        <div class="mb-3">
-            <label class="form-label">Branch</label>
-            <input type="text" name="branch" class="form-control">
-        </div>
-        <div class="mb-3">
-            <label class="form-label">Status</label>
-            <select name="status" class="form-control" required>
-                <option value="active" selected>Active</option>
-                <option value="inactive">Inactive</option>
-                <option value="on_leave">On Leave</option>
-            </select>
-        </div>
-
-        <button type="submit" class="btn btn-success">Submit</button>
-    </form>
+    </div>
 </div>
 
 <script>
+    function showDropdown() {
+        document.getElementById('cvSelect').style.display = 'block';
+    }
+
+    function filterCVs() {
+        const searchInput = document.getElementById('cvSearch').value.toLowerCase();
+        const cvSelect = document.getElementById('cvSelect');
+        const options = cvSelect.options;
+        let matchFound = false;
+
+        for (let i = 1; i < options.length; i++) {
+            const cvName = options[i].getAttribute('data-name').toLowerCase();
+
+            if (cvName.includes(searchInput)) {
+                options[i].style.display = 'block';
+                matchFound = true;
+            } else {
+                options[i].style.display = 'none';
+            }
+        }
+
+        cvSelect.style.display = matchFound ? 'block' : 'none';
+    }
+
     function fillEmployeeDetails() {
         const cvSelect = document.getElementById('cvSelect');
         const selectedOption = cvSelect.options[cvSelect.selectedIndex];
@@ -293,17 +502,20 @@
             document.getElementById('education').value = selectedOption.getAttribute('data-education');
             document.getElementById('experience').value = selectedOption.getAttribute('data-experience');
             document.getElementById('dob').value = selectedOption.getAttribute('data-dob');
-        } else {
-            // Clear the fields if no CV is selected
-            document.getElementById('name').value = '';
-            document.getElementById('address').value = '';
-            document.getElementById('phone_personal').value = '';
-            document.getElementById('place').value = '';
-            document.getElementById('district').value = '';
-            document.getElementById('education').value = '';
-            document.getElementById('experience').value = '';
-            document.getElementById('dob').value = '';
+
+            cvSelect.style.display = 'none';
         }
     }
+
+    // Hide dropdown when clicking outside
+    document.addEventListener('click', function(event) {
+        const searchInput = document.getElementById('cvSearch');
+        const cvSelect = document.getElementById('cvSelect');
+
+        if (!searchInput.contains(event.target) && !cvSelect.contains(event.target)) {
+            cvSelect.style.display = 'none';
+        }
+    });
 </script>
+
 {% endblock %}
