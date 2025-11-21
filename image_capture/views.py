@@ -15,6 +15,7 @@ from PIL.ExifTags import TAGS, GPSTAGS
 import io
 import piexif
 from app1.models import Branch
+from django.utils import timezone
 # ------------------------------------------------------------------
 # Helper: Convert decimal coordinates to GPS EXIF format
 # ------------------------------------------------------------------
@@ -432,6 +433,13 @@ def manual_image_upload(request, unique_id):
 # ------------------------------------------------------------------
 def capture_link_view(request, unique_id):
     data = get_object_or_404(ImageCapture, unique_id=unique_id)
+    
+    # ✅ Check if link has already been used
+    if data.link_used:
+        return render(request, "link_expired.html", {
+            "data": data,
+            "message": "This link has already been used and is no longer valid."
+        })
 
     if request.method == "POST":
         entered_number = request.POST.get("phone_number", "").strip()
@@ -444,9 +452,7 @@ def capture_link_view(request, unique_id):
             request.session["otp"] = otp
             request.session["unique_id"] = str(unique_id)
 
-            ok = _send_otp_via_whatsapp(f"91{stored_ten}", otp)
-            if not ok:
-                logging.error("OTP WhatsApp failed for 91%s", stored_ten)
+            _send_otp_via_whatsapp(f"91{stored_ten}", otp)
 
             return render(
                 request, "otp_verification.html", {"data": data, "sent_otp": True}
@@ -465,6 +471,14 @@ def capture_link_view(request, unique_id):
 # ------------------------------------------------------------------
 def verify_otp(request, unique_id):
     data = get_object_or_404(ImageCapture, unique_id=unique_id)
+    
+    # ✅ Check if link has already been used
+    if data.link_used:
+        return render(request, "link_expired.html", {
+            "data": data,
+            "message": "This link has already been used and is no longer valid."
+        })
+    
     if request.method == "POST":
         entered_otp = request.POST.get("otp", "").strip()
         session_otp = request.session.get("otp")
@@ -482,11 +496,19 @@ def verify_otp(request, unique_id):
             )
     return redirect("capture_link", unique_id=unique_id)
 
+
 # ------------------------------------------------------------------
 # 4. ENHANCED: Image + location submit with GPS embedding
 # ------------------------------------------------------------------
 def submit_image(request, unique_id):
     data = get_object_or_404(ImageCapture, unique_id=unique_id)
+    
+    # ✅ Check if link has already been used
+    if data.link_used:
+        return render(request, "link_expired.html", {
+            "data": data,
+            "message": "This link has already been used and is no longer valid."
+        })
     
     if request.method == "POST":
         if not data.verified:
@@ -509,14 +531,12 @@ def submit_image(request, unique_id):
                 if not latitude or not longitude:
                     logging.warning("EXIF extraction failed, using client-side coordinates")
                     
-                    # Validate and convert client coordinates
                     try:
                         if client_latitude and client_longitude and \
                            client_latitude.lower() != 'nan' and client_longitude.lower() != 'nan':
                             latitude = float(client_latitude)
                             longitude = float(client_longitude)
                             
-                            # Validate coordinate ranges
                             if not (-90 <= latitude <= 90 and -180 <= longitude <= 180):
                                 logging.error(f"Invalid coordinate ranges: {latitude}, {longitude}")
                                 latitude = None
@@ -564,6 +584,9 @@ def submit_image(request, unique_id):
                 else:
                     data.location_name = "Location not available"
                 
+                # ✅ MARK LINK AS USED
+                data.link_used = True
+                data.link_used_at = timezone.now()
                 data.save()
                 
                 return render(request, "success_page.html", {

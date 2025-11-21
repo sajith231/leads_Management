@@ -10,13 +10,17 @@ class ImageCapture(models.Model):
     longitude = models.CharField(max_length=50, blank=True, null=True)
     location_name = models.CharField(max_length=500, blank=True, null=True)
     verified = models.BooleanField(default=False)
-
-    # ✅ NEW FIELD
+    
+    # Status field
     status = models.CharField(
         max_length=20,
         choices=[('Pending', 'Pending'), ('Verified', 'Verified')],
         default='Pending'
     )
+    
+    # ✅ NEW FIELD: Track if link has been used
+    link_used = models.BooleanField(default=False)
+    link_used_at = models.DateTimeField(blank=True, null=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
 
