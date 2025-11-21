@@ -1,6 +1,7 @@
 # app5/urls.py
-from django.urls import path
+from django.urls import path,include
 from . import views
+
 
 app_name = 'app5'        # optional but useful for the {% url %} tag
 
@@ -81,7 +82,44 @@ urlpatterns = [
     path('delete-service-invoice/<str:ticket_no>/', views.delete_service_invoice, name='delete_service_invoice'),
     path('jobcard/update-status/<int:pk>/', views.update_jobcard_status, name='update_jobcard_status'),
     path('jobcard/update-status-by-ticket/', views.update_jobcard_status_by_ticket, name='update_jobcard_status_by_ticket'),
-]
 
+# lead
+    path("lead/", views.lead_form_view, name="lead"),
+    path("lead-report/", views.lead_report_view, name="lead_report"),
+    # app5/urls.py
+   path('lead/<int:lead_id>/edit/', views.lead_edit, name='lead_edit'),  
+   path('lead/delete/<int:lead_id>/', views.lead_delete, name='lead_delete'),
+   path('api/lead/<int:lead_id>/', views.lead_detail_api, name='lead_detail_api'),
+   path('requirements-list/', views.requirement_list, name='requirement_list'),
+   path('requirements/save/', views.requirement_form, name='requirement_form'),
+   # Lead Assignment URLs
+    path('lead-assign-list/', views.lead_assign_list_view, name='lead_assign_list'),
+    path('assign-lead/', views.assign_lead_view, name='assign_lead'),
+    path('requirements-list/', views.requirement_list, name='requirements_list'),
+    path("get-item-details/", views.get_item_details, name="get_item_details"),
+
+    # endpoint for saving the form
+    path('requirements/save/', views.requirement_form, name='requirement_form'),
+
+    # your lead form view (adjust if function name differs)
+    path('lead/', views.lead_form_view, name='lead'),
+    path('lead/assign/edit/<lead_id>/', views.lead_assign_edit, name='lead_assign_edit'),  # <-- this name fixes your template reverse() cal),
+    path('delete-lead/<int:lead_id>/', views.delete_lead_view, name='delete_lead'),
+   
+
+
+
+    path('business-nature/', views.business_nature_list, name='business_nature_list'),
+    path('business-nature/create/', views.business_nature_create, name='business_nature_create'),
+    path('business-nature/edit/<int:id>/', views.business_nature_edit, name='business_nature_edit'),
+    path('business-nature/delete/<int:pk>/', views.business_nature_delete, name='business_nature_delete'),
+
+
+
+     path('state/', views.state_list, name='state_master_list'),  # Changed to state_master_list
+    path('state/create/', views.state_master_create, name='state_master_create'),
+    path('state/<int:id>/edit/', views.state_master_edit, name='state_master_edit'),
+    path('state/<int:id>/delete/', views.state_master_delete, name='state_master_delete'),
+]
 
 

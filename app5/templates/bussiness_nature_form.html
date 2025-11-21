@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+    <h2>{{ title }}</h2>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- ✅ CSRF token inside POST form -->
+    <form method="POST" action="">
+        {% csrf_token %}
+
+        <div class="mb-3">
+            <label for="id_name" class="form-label">Business Nature Name <span class="text-danger">*</span></label>
+            <input type="text" 
+                   name="name" 
+                   id="id_name" 
+                   class="form-control"
+                   value="{% if nature %}{{ nature.name }}{% endif %}" 
+                   required
+                   maxlength="255"
+                   placeholder="Enter business nature name">
+            
+        </div>
+
+        <div class="mb-3">
+            <label for="id_description" class="form-label">Description</label>
+            <textarea name="description" 
+                      id="id_description" 
+                      class="form-control" 
+                      rows="4"
+                      maxlength="500"
+                      placeholder="Enter description (optional)">{% if nature %}{{ nature.description }}{% endif %}</textarea>
+            
+        </div>
+
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-success">
+                <i class="bi bi-save"></i> {% if nature %}Update{% else %}Create{% endif %} Business Nature
+            </button>
+            <a href="{% url 'app5:business_nature_list' %}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Back
+            </a>
+            {% if nature %}
+            <a href="{% url 'app5:business_nature_delete' nature.id %}" class="btn btn-danger ms-auto" 
+               onclick="return confirm('Are you sure you want to delete this business nature?')">
+                <i class="bi bi-trash"></i> Delete
+            </a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+<!-- Add some JavaScript for better UX -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    const nameInput = document.getElementById('id_name');
+    
+    form.addEventListener('submit', function(e) {
+        const nameValue = nameInput.value.trim();
+        
+        if (!nameValue) {
+            e.preventDefault();
+            alert('Please enter a business nature name.');
+            nameInput.focus();
+            return;
+        }
+        
+        // Basic validation - ensure name is not just whitespace
+        if (nameValue.length < 2) {
+            e.preventDefault();
+            alert('Business nature name must be at least 2 characters long.');
+            nameInput.focus();
+            return;
+        }
+    });
+    
+    // Auto-capitalize first letter of each word
+    nameInput.addEventListener('blur', function() {
+        const words = this.value.split(' ');
+        const capitalizedWords = words.map(word => {
+            return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+        });
+        this.value = capitalizedWords.join(' ');
+    });
+});
+</script>
+{% endblock %}
