@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Enter Code</title>
+  <style>
+    body { font-family:sans-serif; background:#f7f7f7; }
+    .box { max-width:400px; margin:100px auto; background:#fff; padding:25px; border-radius:10px; }
+    input { width:100%; padding:12px; border:1px solid #ccc; border-radius:6px; margin-top:10px; }
+    button { margin-top:15px; padding:10px 18px; background:#2563eb; color:#fff; border:0; border-radius:8px; cursor:pointer;}
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h2>Enter Security Code</h2>
+    {% if error %}<p style="color:red">{{ error }}</p>{% endif %}
+    <form method="POST">
+      {% csrf_token %}
+      <input type="text" name="code" maxlength="4" placeholder="4-digit code">
+      <button type="submit">Verify</button>
+    </form>
+  </div>
+</body>
+</html>

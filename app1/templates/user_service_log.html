@@ -1,0 +1,317 @@
+{% extends "base.html" %}
+{% block content %}
+<div style="overflow: hidden;">
+    <h2>My Service Logs</h2>
+    <a href="{% url 'add_service_log' %}" class="btn btn-primary mb-3">Add New Log</a>
+    
+    <!-- Search Filters -->
+    <form method="get" class="mb-3" id="filterForm">
+        <div class="row">
+            <div class="col-md-3">
+                <input type="text" name="customer_search" class="form-control auto-filter" placeholder="Customer Name" value="{{ customer_search }}">
+            </div>
+            <div class="col-md-3">
+                <select name="status" class="form-select auto-filter">
+                    <option value="">All Status</option>
+                    <option value="Pending" {% if status_filter == 'Pending' %}selected{% endif %}>Pending</option>
+                    <option value="In Progress" {% if status_filter == 'In Progress' %}selected{% endif %}>In Progress</option>
+                    <option value="Completed" {% if status_filter == 'Completed' %}selected{% endif %}>Completed</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <input type="date" name="start_date" class="form-control auto-filter" placeholder="Start Date" value="{{ start_date_filter|default:today_date }}">
+            </div>
+            <div class="col-md-3">
+                <input type="date" name="end_date" class="form-control auto-filter" placeholder="End Date" value="{{ end_date_filter|default:today_date }}">
+            </div>
+        </div>
+    </form>
+
+    <div style="overflow: scroll;">
+  <nav aria-label="Page navigation" style="display: flex; justify-content: center;">
+    <ul class="pagination">
+
+      <!-- Previous -->
+      {% if page_obj.has_previous %}
+        <li class="page-item">
+          <a class="page-link"
+             href="?page={{ page_obj.previous_page_number }}
+                   {% if customer_search %}&customer_search={{ customer_search }}{% endif %}
+                   {% if status_filter %}&status={{ status_filter }}{% endif %}
+                   {% if start_date_filter %}&start_date={{ start_date_filter }}{% endif %}
+                   {% if end_date_filter %}&end_date={{ end_date_filter }}{% endif %}">
+            &laquo;
+          </a>
+        </li>
+      {% else %}
+        <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+      {% endif %}
+
+      <!-- Sliding 4 numbers -->
+      {% for num in page_obj.paginator.page_range %}
+        {% if num >= page_obj.number|add:"-1" and num <= page_obj.number|add:"2" %}
+          <li class="page-item {% if num == page_obj.number %}active{% endif %}">
+            <a class="page-link"
+               href="?page={{ num }}
+                     {% if customer_search %}&customer_search={{ customer_search }}{% endif %}
+                     {% if status_filter %}&status={{ status_filter }}{% endif %}
+                     {% if start_date_filter %}&start_date={{ start_date_filter }}{% endif %}
+                     {% if end_date_filter %}&end_date={{ end_date_filter }}{% endif %}">
+              {{ num }}
+            </a>
+          </li>
+        {% endif %}
+      {% endfor %}
+
+      <!-- Next -->
+      {% if page_obj.has_next %}
+        <li class="page-item">
+          <a class="page-link"
+             href="?page={{ page_obj.next_page_number }}
+                   {% if customer_search %}&customer_search={{ customer_search }}{% endif %}
+                   {% if status_filter %}&status={{ status_filter }}{% endif %}
+                   {% if start_date_filter %}&start_date={{ start_date_filter }}{% endif %}
+                   {% if end_date_filter %}&end_date={{ end_date_filter }}{% endif %}">
+            &raquo;
+          </a>
+        </li>
+      {% else %}
+        <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+      {% endif %}
+
+    </ul>
+  </nav>
+</div>
+    
+    <div style="overflow: scroll;">
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>No</th>
+                    <th>Date</th>
+                    <th>Ticket Number</th>
+                    <th>Customer Name</th>
+                    <th>Complaint Type</th>
+                    <th>Complaints & Notes</th>
+                    <th>Assigned Person</th>
+                    <th>Status</th>
+                    <th>Voice Note</th>
+                    <th>Remark</th> 
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in page_obj %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ log.date|date:"d-m-Y H:i" }}</td>
+                    <td>
+                        <span style="font-weight: bold; background-color: #f8d7da; color: #721c24; padding: 2px 6px; border-radius: 4px;">
+                            {{ log.ticket_number }}
+                        </span>
+                    </td>
+                    <td class="py-2">
+                        <i class="fas fa-user me-1 text-primary"></i>
+                        <span style="font-weight: bold; background-color: #e0f7fa; padding: 2px 6px; border-radius: 4px;">
+                            {{ log.customer_name }}
+                        </span><br>
+                        
+                        <i class="fas fa-phone-alt me-1 text-success"></i>{{ log.phone_number }}<br>
+                        <i class="fas fa-map-marker-alt me-1 text-danger"></i>{{ log.place }}
+                    </td>
+                    <td>{{ log.get_complaint_type_display }}</td>
+                    <td>
+    {% for complaint_log in log.servicelogcomplaint_set.all %}
+        <div class="complaint-item mb-2 p-2 border-start border-3 border-info">
+            <strong>{{ complaint_log.complaint.description }}</strong>
+            {% if complaint_log.note %}
+                <div class="text-muted small mt-1">
+                    <em>Note: {{ complaint_log.note }}</em>
+                </div>
+            {% endif %}
+            {% if complaint_log.images.all %}
+                <div class="mt-2 d-flex flex-wrap gap-2">
+                    {% for img in complaint_log.images.all %}
+                        <a href="{{ img.image.url }}" target="_blank">
+                            <img src="{{ img.image.url }}" style="height: 50px; border-radius: 4px; border: 1px solid #ccc;" alt="Complaint Image">
+                        </a>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+    {% empty %}
+        <span class="text-muted">No complaints assigned</span>
+    {% endfor %}
+
+    <!-- Show remarks icon only if remarks are available -->
+    {% if log.remarks %}
+        <!-- Icon to trigger the modal -->
+        <a href="#" data-bs-toggle="modal" data-bs-target="#remarksModal{{ log.id }}">
+            <i class="fas fa-comment-dots text-info" style="display: flex;justify-content: center;"></i>
+        </a>
+
+        <!-- Modal -->
+        <div class="modal fade" id="remarksModal{{ log.id }}" tabindex="-1" aria-labelledby="remarksModalLabel{{ log.id }}" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="remarksModalLabel{{ log.id }}">Remarks</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                {{ log.remarks|default:"No remarks available" }}
+              </div>
+            </div>
+          </div>
+        </div>
+    {% endif %}
+</td>
+                    <td>
+                        {% for user in users %}
+                            {% if user.id == log.assigned_person.id %}
+                                {{ user.name }}
+                            {% endif %}
+                        {% endfor %}
+                    </td>
+                    <td>
+                        <span class="badge 
+                            {% if log.status == 'Completed' %}bg-success
+                            {% elif log.status == 'In Progress' %}bg-warning
+                            {% elif log.status == 'Pending' %}bg-secondary
+                            {% else %}bg-info
+                            {% endif %}">
+                            {{ log.status }}
+                        </span>
+                        <button class="btn btn-sm btn-{{ log.status|lower }} status-btn" data-log-id="{{ log.id }}" data-status="{{ log.status }}">
+                            {{ log.status }}
+                        </button>
+                    </td>
+                    <td>
+                        {% if log.voice_note %}
+                            <audio controls style="width: 200px;">
+                                <source src="{{ log.voice_note.url }}" type="audio/webm">
+                            </audio>
+                        {% else %}
+                            <span class="text-muted">No Voice Note</span>
+                        {% endif %}
+                    </td>
+                    <td>
+    <!-- Icon to trigger the modal -->
+    <a href="#" data-bs-toggle="modal" data-bs-target="#remarksModal{{ log.id }}">
+        <i class="fas fa-comment-dots text-info" style="display: flex;justify-content: center;"></i>
+    </a>
+
+    <!-- Modal -->
+    <div class="modal fade" id="remarksModal{{ log.id }}" tabindex="-1" aria-labelledby="remarksModalLabel{{ log.id }}" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="remarksModalLabel{{ log.id }}">Remarks</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            {{ log.remarks|default:"No remarks available" }}
+          </div>
+        </div>
+      </div>
+    </div>
+</td>
+                    <td>
+                        <div class="btn-group" role="group">
+                            <a href="{% url 'edit_service_log' log.id %}" class="btn btn-sm btn-outline-primary">Edit</a>
+                            <a href="{% url 'delete_service_log' log.id %}" class="btn btn-sm btn-outline-danger" 
+                               onclick="return confirm('Are you sure you want to delete this service log?')">Delete</a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+.complaint-item {
+    background-color: #f8f9fa;
+    border-radius: 4px;
+}
+.complaint-item:last-child {
+    margin-bottom: 0 !important;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add tooltips for long names
+    const badges = document.querySelectorAll('.assigned-person .badge');
+    badges.forEach(badge => {
+        if (badge.scrollWidth > badge.clientWidth) {
+            badge.title = badge.textContent.trim();
+        }
+    });
+
+    // Auto-filter functionality
+    const filterForm = document.getElementById('filterForm');
+    const autoFilterElements = document.querySelectorAll('.auto-filter');
+    
+    let debounceTimer;
+    
+    function submitFilterForm() {
+        // Add loading indicator
+        const activeElement = document.activeElement;
+        if (activeElement && activeElement.classList.contains('auto-filter')) {
+            activeElement.classList.add('filter-loading');
+        }
+        
+        // Submit form
+        filterForm.submit();
+    }
+    
+    // Add event listeners for auto-filtering
+    autoFilterElements.forEach(element => {
+        if (element.type === 'text') {
+            // For text inputs, use debounce to avoid too many requests
+            element.addEventListener('input', function() {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(submitFilterForm, 500); // 500ms delay
+            });
+        } else if (element.type === 'date') {
+            // For date inputs, submit immediately on change
+            element.addEventListener('change', function() {
+                // Validate date range
+                const startDate = document.querySelector('input[name="start_date"]').value;
+                const endDate = document.querySelector('input[name="end_date"]').value;
+                
+                if (startDate && endDate && startDate > endDate) {
+                    alert('Start date cannot be later than end date');
+                    this.value = '';
+                    return;
+                }
+                
+                submitFilterForm();
+            });
+        } else {
+            // For select elements, submit immediately on change
+            element.addEventListener('change', submitFilterForm);
+        }
+        
+        // Remove loading indicator when focus is lost
+        element.addEventListener('blur', function() {
+            this.classList.remove('filter-loading');
+        });
+    });
+    
+    // Prevent form submission on Enter key for text inputs (let debounce handle it)
+    const textInputs = document.querySelectorAll('input[type="text"].auto-filter');
+    textInputs.forEach(input => {
+        input.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                clearTimeout(debounceTimer);
+                submitFilterForm();
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

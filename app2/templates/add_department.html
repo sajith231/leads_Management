@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block title %}Add Department{% endblock %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 40px auto; background-color: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);">
+    <h2 style="margin-bottom: 20px;">Add Department</h2>
+    
+    <form method="POST" style="display: flex; flex-direction: column;">
+        {% csrf_token %}
+        
+        <label for="name" style="margin-bottom: 8px; font-weight: 500;">Department Name</label>
+        <input type="text" name="name" id="name" required 
+               style="padding: 10px; border: 1px solid #ccc; border-radius: 5px; margin-bottom: 20px;">
+        
+        <button type="submit" 
+                style="padding: 10px 16px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer;">
+            <i class="fas fa-plus"></i> Add
+        </button>
+    </form>
+</div>
+{% endblock %}
