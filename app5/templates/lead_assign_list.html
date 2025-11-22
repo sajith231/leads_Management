@@ -1,0 +1,256 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+
+<style>
+/* === Lead List Table Styling === */
+.container {
+    max-width: 1200px;
+    margin: 40px auto;
+    background: #fff;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+h2 {
+    text-align: center;
+    color: #333;
+    margin-bottom: 25px;
+}
+
+/* === Header Section with Button === */
+.header-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+.header-section h2 {
+    margin-bottom: 0;
+}
+
+.btn-new-assign {
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: 0.3s;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-new-assign:hover {
+    background: #0056b3;
+    text-decoration: none;
+    color: white;
+}
+
+.table-container {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+th, td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #abaaaa;
+    border-top: 1px solid #abaaaa;
+    border-left: 1px solid #abaaaa;
+    border-right: 1px solid #abaaaa;
+}
+
+th {
+    background: #007bff;
+    color: white;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+tr:hover {
+    background-color: #f8f9fa;
+}
+
+td {
+    color: #333;
+}
+
+/* === Action Button === */
+.btn-assign {
+    background: #28a745;
+    color: white;
+    border: none;
+    padding: 6px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: 0.3s;
+    font-size: 14px;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-assign:hover {
+    background: #218838;
+    text-decoration: none;
+    color: white;
+}
+
+.btn-edit {
+    background: #ffc107;
+    color: black;
+    border: none;
+    padding: 6px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: 0.3s;
+    font-size: 14px;
+    text-decoration: none;
+    display: inline-block;
+    margin-right: 5px;
+}
+
+.btn-edit:hover {
+    background: #e0a800;
+    text-decoration: none;
+    color: black;
+}
+
+.btn-delete {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 6px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: 0.3s;
+    font-size: 14px;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-delete:hover {
+    background: #c82333;
+    text-decoration: none;
+    color: white;
+}
+
+.status-pill {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 13px;
+    color: white;
+}
+
+.status-pending {
+    background: #ffc107;
+}
+
+.status-assigned {
+    background: #17a2b8;
+}
+
+.status-closed {
+    background: #6c757d;
+}
+
+.text-muted {
+    color: #6c757d !important;
+}
+
+.debug-info {
+    background: #f8f9fa;
+    padding: 10px;
+    border-radius: 5px;
+    margin: 10px 0;
+    font-size: 12px;
+    color: #6c757d;
+    text-align: center;
+}
+</style>
+
+<div class="container">
+    <div class="header-section">
+        <h2>Lead Assignment List</h2>
+        <a href="{% url 'app5:assign_lead' %}" class="btn-new-assign">+ New Assignment</a>
+    </div>
+
+    <!-- Debug Information -->
+    <div class="debug-info">
+        <strong>Total Leads:</strong> {{ leads|length }} | 
+        <strong>Last Updated:</strong> {% now "Y-m-d H:i:s" %}
+    </div>
+
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Sl No</th>
+                    <th>Ticket No</th>
+                    <th>Customer Name</th>
+                    <th>Assign To</th>
+                    <th>Assigned By</th>
+                    <th>Date</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+{% for lead in leads %}
+<tr>
+    <td>{{ forloop.counter }}</td>
+    <td>{{ lead.ticket_number }}</td>
+    <td>{{ lead.ownerName }}</td>
+
+    <!-- ✅ CORRECTED: Assigned To - using assigned_to_name field -->
+    <td>
+        {% if lead.assigned_to_name %}
+            {{ lead.assigned_to_name }}
+        {% else %}
+            <span class="text-muted">Not Assigned</span>
+        {% endif %}
+    </td>
+
+    <!-- ✅ CORRECTED: Assigned By - using assigned_by_name field -->
+    <td>
+        {% if lead.assigned_by_name %}
+            {{ lead.assigned_by_name }}
+        {% else %}
+            <span class="text-muted">System</span>
+        {% endif %}
+    </td>
+
+    <td>
+        {% if lead.assigned_date %}
+            {{ lead.assigned_date|date:"d-m-Y" }}
+
+        {% endif %}
+    </td>
+
+    <td>
+       <a href="{% url 'app5:lead_assign_edit' lead.id %}" class="btn-edit">Edit</a>
+
+        <a href="{% url 'app5:delete_lead' lead.id %}" class="btn-delete" onclick="return confirm('Are you sure you want to delete this lead?')">Delete</a>
+    </td>
+</tr>
+{% empty %}
+<tr>
+    <td colspan="7" style="text-align:center; color:gray; padding: 20px;">
+        No leads found.
+    </td>
+</tr>
+{% endfor %}
+</tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

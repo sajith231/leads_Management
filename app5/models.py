@@ -658,7 +658,23 @@ class StateMaster(models.Model):
     
     def __str__(self):
         return self.name
+    
 
+from django.db import models
+
+class Reference(models.Model):
+    ref_name = models.CharField(max_length=255, verbose_name="Reference Name")
+    description = models.TextField(blank=True, null=True, verbose_name="Description")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'reference_master'
+        verbose_name = 'Reference'
+        verbose_name_plural = 'References'
+
+    def __str__(self):
+        return self.ref_name
 
     
          

@@ -4498,6 +4498,25 @@ def lead_assign_edit(request, lead_id):
     }
     return render(request, 'lead_assign_edit.html', context)
 
+
+def lead_detail(request, lead_id):
+    lead = get_object_or_404(Lead, id=lead_id)
+
+    data = {
+        "id": lead.id,
+        "customer_name": lead.customer_name,
+        "phone_number": lead.phone_number,
+        "email": lead.email,
+        "address": lead.address,
+        "district": lead.district,
+        "state": lead.state,
+        "business_type": lead.business_type,
+        "company_name": lead.company_name,
+        "gst_number": lead.gst_number,
+    }
+
+    return JsonResponse({"success": True, "data": data})
+
 # app5/views.py
 # Add these imports near the top of your views.py (if not already present)
 import json
@@ -4816,6 +4835,40 @@ def get_item_details(request):
         })
     except POItem.DoesNotExist:
         return JsonResponse({"success": False})
+    
+def get_lead_data(request, lead_id):
+    try:
+        lead = Lead.objects.get(id=lead_id)
+        lead_data = {
+            'id': lead.id,
+            'ownerName': lead.ownerName,
+            'phoneNo': lead.phoneNo,
+            'email': lead.email,
+            'status': lead.status,
+            'customerType': lead.customerType,
+            'name': lead.name,
+            'address': lead.address,
+            'place': lead.place,
+            'District': lead.District,
+            'State': lead.State,
+            'pinCode': lead.pinCode,
+            'firstName': lead.firstName,
+            'individualAddress': lead.individualAddress,
+            'individualPlace': lead.individualPlace,
+            'individualDistrict': lead.individualDistrict,
+            'individualState': lead.individualState,
+            'individualPinCode': lead.individualPinCode,
+            'date': lead.date.strftime('%Y-%m-%d') if lead.date else '',
+            'refFrom': lead.refFrom,
+            'business': lead.business,
+            'marketedBy': lead.marketedBy,
+            'Consultant': lead.Consultant,
+            'requirement': lead.requirement,
+            'details': lead.details,
+        }
+        return JsonResponse(lead_data)
+    except Lead.DoesNotExist:
+        return JsonResponse({'error': 'Lead not found'}, status=404)
 
 
 
@@ -5044,3 +5097,92 @@ def _generate_unique_lead_ticket():
         if not Lead.objects.filter(ticket_number=ticket_no).exists():
             return ticket_no
         counter += 1
+
+
+# views.py
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from django.db.models import Q
+from .models import Reference
+
+def reference_list(request):
+    search_query = request.GET.get('search', '')
+    
+    if search_query:
+        references = Reference.objects.filter(
+            Q(ref_name__icontains=search_query) |
+            Q(description__icontains=search_query)
+        ).order_by('id')
+        if references.exists():
+            messages.info(request, f'Found {references.count()} reference(s) matching "{search_query}"')
+        else:
+            messages.info(request, f'No references found matching "{search_query}"')
+    else:
+        references = Reference.objects.all().order_by('id')
+    
+    return render(request, 'reference_master_list.html', {# Make sure this path is correct
+        'references': references,
+        'search_query': search_query
+    })
+
+def reference_add(request):
+    if request.method == 'POST':
+        ref_name = request.POST.get('ref_name')
+        description = request.POST.get('description')
+        
+        if ref_name:
+            # Check if reference with same name already exists
+            if Reference.objects.filter(ref_name=ref_name).exists():
+                messages.error(request, f'A reference with name "{ref_name}" already exists.')
+            else:
+                reference = Reference.objects.create(
+                    ref_name=ref_name,
+                    description=description
+                )
+                messages.success(request, f'Reference "{reference.ref_name}" added successfully!')
+                return redirect('app5:reference_list')
+        else:
+            messages.error(request, 'Reference name is required.')
+    
+    # FIX: Remove 'app5/' from the template path
+    return render(request, 'reference_master_form.html', {})
+
+def reference_edit(request, id):
+    reference = get_object_or_404(Reference, id=id)
+    
+    if request.method == 'POST':
+        ref_name = request.POST.get('ref_name')
+        description = request.POST.get('description')
+        
+        if ref_name:
+            # Check if another reference with same name exists (excluding current one)
+            if Reference.objects.filter(ref_name=ref_name).exclude(id=id).exists():
+                messages.error(request, f'A reference with name "{ref_name}" already exists.')
+            else:
+                reference.ref_name = ref_name
+                reference.description = description
+                reference.save()
+                messages.success(request, f'Reference "{reference.ref_name}" updated successfully!')
+                return redirect('app5:reference_list')
+        else:
+            messages.error(request, 'Reference name is required.')
+    
+    # FIX: Remove 'app5/' from the template path
+    return render(request, 'reference_master_form.html', {'reference': reference})
+
+def reference_delete(request, id):
+    reference = get_object_or_404(Reference, id=id)
+    
+    if request.method == 'POST':
+        reference_name = reference.ref_name
+        reference.delete()
+        messages.success(request, f'Reference "{reference_name}" deleted successfully!')
+        return redirect('app5:reference_list')  # Changed from 'reference_master_list' to 'reference_list'
+    
+    messages.error(request, 'Invalid request method. Please use the delete button from the list.')
+    return redirect('app5:reference_list')  # Changed from 'reference_master_list' to 'reference_list'
+
+
+
+def event_form(request):
+    return render(request, 'event_form.html')
