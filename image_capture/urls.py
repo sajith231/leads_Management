@@ -15,7 +15,7 @@ urlpatterns = [
     path('delete-customer/', views.delete_customer, name='delete_customer'),
     path('manual-capture/', views.manual_capture_form, name='manual_capture_form'),
     path('manual-upload/<uuid:unique_id>/', views.manual_image_upload, name='manual_image_upload'),
-    path('update-status/<int:pk>/', views.update_status, name='update_status'),
+    path('update-status/<uuid:pk>/', views.update_status, name='update_status'),
 
     
 ]

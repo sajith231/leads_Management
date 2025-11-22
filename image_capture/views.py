@@ -635,7 +635,8 @@ def update_status(request, pk):
     """Update the manual status of a customer"""
     if request.method == "POST":
         try:
-            obj = get_object_or_404(ImageCapture, id=pk)
+            obj = get_object_or_404(ImageCapture, unique_id=pk)   # FIXED
+
             new_status = request.POST.get("status")
             
             if new_status in ["Pending", "Verified"]:
