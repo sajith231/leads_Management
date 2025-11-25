@@ -12,7 +12,6 @@ from django.core.paginator import Paginator
 from django.core.paginator import EmptyPage, PageNotAnInteger
 from django.db.models import ProtectedError
 import requests
-from .wkhtml_pdf_generator import WKHTMLPDFGenerator
 
 def send_whatsapp_message(recipient, message):
     """Send WhatsApp message via dxing.in API."""
@@ -1259,364 +1258,183 @@ def generate_po_pdf(request, pk):
     return buffer
 
 import os
-import requests
-from django.http import JsonResponse, FileResponse
-from django.shortcuts import get_object_or_404, redirect
-from django.contrib import messages
-from django.conf import settings
-from django.views.decorators.http import require_http_methods
 import json
+import requests
+from io import BytesIO
 
-# Import your models
+from django.http import JsonResponse, FileResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.contrib import messages
+from django.views.decorators.http import require_http_methods
+from django.conf import settings
+
 from .models import PurchaseOrder
+from .pdf_generator import generate_pdf_from_template, get_po_context
 
-# Import the new HTML-based PDF generator
-from .wkhtml_pdf_generator import WKHTMLPDFGenerator
 
-def download_po_pdf(request, pk):
-    """
-    Download PO PDF with validation
-    
-    Usage:
-    - /po/1/download/  (uses default format or saved format)
-    - /po/1/download/?format=FORMAT_1
-    - /po/1/download/?format=FORMAT_2
-    """
-    po = get_object_or_404(PurchaseOrder, pk=pk)
-    
-    # ✅ Check for department
-    if not po.department:
-        messages.error(request, 'Purchase Order must have a department assigned to generate PDF.')
-        return redirect('purchase_order:po_detail', pk=pk)
-    
-    # ✅ Get format from query parameter or use saved format
-    pdf_format = request.GET.get('format', po.pdf_format or 'FORMAT_1')
-    
-    # Update PO's preferred format
-    po.pdf_format = pdf_format
-    po.save(update_fields=['pdf_format'])
-    
-    try:
-        # Generate PDF using the HTML template generator
-        generator = WKHTMLPDFGenerator(po, pdf_format)
-        file_path = generator.generate()
-        
-        if not file_path or not os.path.exists(file_path):
-            messages.error(request, 'Failed to generate PDF.')
-            return redirect('purchase_order:po_detail', pk=pk)
-        
-        # Prepare download filename
-        supplier_name = (po.supplier.name or "SUPPLIER").strip().replace(" ", "_").replace("/", "_")
-        filename = f"{supplier_name}_{po.po_number}.pdf"
-        
-        # Return PDF as downloadable file
-        response = FileResponse(open(file_path, 'rb'), content_type='application/pdf')
-        response['Content-Disposition'] = f'attachment; filename="{filename}"'
-        return response
-        
-    except Exception as e:
-        import traceback
-        print(f"❌ PDF Generation Error: {e}")
-        print(traceback.format_exc())
-        messages.error(request, f'Error generating PDF: {str(e)}')
-        return redirect('purchase_order:po_detail', pk=pk)
-
+# ============================
+# SEND WHATSAPP WITH PDF
+# ============================
 
 def send_whatsapp_po(request, pk):
-    """
-    Generate PO PDF and send via WhatsApp
-    
-    Usage:
-    - POST /po/1/whatsapp/  (uses FORMAT_2 by default)
-    - POST /po/1/whatsapp/?format=FORMAT_1
-    """
     po = get_object_or_404(PurchaseOrder, pk=pk)
     supplier = po.supplier
-    
-    # ✅ Check for department
+
     if not po.department:
-        return JsonResponse({
-            'success': False,
-            'error': 'Department not assigned to PO'
-        }, status=400)
-    
-    # ✅ Validate phone number
+        return JsonResponse({'success': False, 'error': 'Department not assigned to PO'}, status=400)
+
     phone = (supplier.mobile_no or '').strip()
     if not phone:
-        return JsonResponse({
-            'success': False,
-            'error': 'Supplier has no mobile number'
-        }, status=400)
-    
-    # Clean phone number (remove spaces, dashes, etc.)
+        return JsonResponse({'success': False, 'error': 'Supplier has no mobile number'}, status=400)
+
     phone = ''.join(filter(str.isdigit, phone))
-    
-    # Add country code if not present
     if not phone.startswith('91') and len(phone) == 10:
         phone = '91' + phone
-    
+
+    pdf_format = request.GET.get('format', 'FORMAT_2')
+
+    template_map = {
+        'FORMAT_1': 'purchase_order/pdf_templates/format_1.html',
+        'FORMAT_2': 'purchase_order/pdf_templates/format_2.html',
+    }
+    template = template_map.get(pdf_format, template_map['FORMAT_2'])
+
     try:
-        # ✅ Get format (default to FORMAT_2 for WhatsApp)
-        pdf_format = request.GET.get('format', 'FORMAT_2')
-        
-        # Generate PDF
-        print(f"📱 Generating PDF for WhatsApp in {pdf_format} format")
-        generator = WKHTMLPDFGenerator(po, pdf_format)
-        file_path = generator.generate()
-        
-        # First ensure generator returned a valid path
-        if not file_path:
-            return JsonResponse({'success': False, 'error': 'PDF generation failed'}, status=500)
+        file_path = generate_pdf_from_template(po, template_name=template)
 
-        if not os.path.exists(file_path):
-            return JsonResponse({'success': False, 'error': 'PDF file not found'}, status=500)
-
-        if os.path.getsize(file_path) == 0:
-            return JsonResponse({'success': False, 'error': 'PDF file is empty'}, status=500)
-        
-        print(f"📄 PDF File: {file_path}")
-        print(f"📱 Sending to: {phone}")
-        
-        # ✅ Upload PDF to tmpfiles.org
-        supplier_name = (po.supplier.name or "SUPPLIER").strip().replace(" ", "_").replace("/", "_")
+        # Upload to tmpfiles.org
+        supplier_name = (po.supplier.name or "SUPPLIER").strip().replace(" ", "_")
         pdf_filename = f"{supplier_name}_{po.po_number}.pdf"
-        
-        with open(file_path, 'rb') as pdf_file:
+
+        with open(file_path, "rb") as pdf_file:
             upload_response = requests.post(
-                'https://tmpfiles.org/api/v1/upload',
+                "https://tmpfiles.org/api/v1/upload",
                 files={'file': (pdf_filename, pdf_file, 'application/pdf')},
                 timeout=30
             )
-        
-        if upload_response.status_code != 200:
-            return JsonResponse({
-                'success': False,
-                'error': f'PDF upload failed: {upload_response.text}'
-            }, status=500)
-        
+
         upload_data = upload_response.json()
-        if upload_data.get('status') != 'success':
-            return JsonResponse({
-                'success': False,
-                'error': f'Upload failed: {upload_data}'
-            }, status=500)
-        
-        # Get direct download link
+
+        if upload_data.get("status") != "success":
+            return JsonResponse({'success': False, 'error': "Upload failed"}, status=500)
+
         file_url = upload_data['data']['url']
-        pdf_url = file_url.replace('tmpfiles.org/', 'tmpfiles.org/dl/')
-        print(f"📤 Uploaded to: {pdf_url}")
-        
-        # ✅ Send via WhatsApp API
+        pdf_url = file_url.replace("tmpfiles.org/", "tmpfiles.org/dl/")
+
+        # WhatsApp payload
         base_url = "https://app.dxing.in/api/send/whatsapp"
-        secret = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
-        account = "1761365422812b4ba287f5ee0bc9d43bbf5bbe87fb68fc4daea92d8"
-        
-        message = (
-            f"📋 *Purchase Order {po.po_number}*\n\n"
-            f"Dear {supplier.name},\n\n"
-            f"📅 PO Date: {po.po_date.strftime('%d/%m/%Y')}\n"
-            f"💰 Total Amount: ₹{po.grand_total}\n\n"
-            f"Thank you for your business! 🙏"
-        )
-        
         payload = {
-            "secret": secret,
-            "account": account,
+            "secret": "7b8ae820ecb39f8d173d57b51e1fce4c023e359e",
+            "account": "1761365422812b4ba287f5ee0bc9d43bbf5bbe87fb68fc4daea92d8",
             "recipient": str(phone),
             "type": "document",
             "document_type": "pdf",
             "document_url": pdf_url,
             "document_name": pdf_filename,
-            "message": message,
+            "message": (
+                f"📋 *Purchase Order {po.po_number}*\n\n"
+                f"Dear {supplier.name},\n\n"
+                f"📅 PO Date: {po.po_date.strftime('%d/%m/%Y')}\n"
+                f"💰 Total Amount: ₹{po.grand_total}\n\n"
+                f"Thank you for your business! 🙏"
+            ),
             "priority": 1
         }
-        
-        response = requests.get(base_url, params=payload, timeout=30)
-        print(f"📱 WhatsApp API Status: {response.status_code}")
-        print(f"📱 WhatsApp API Response: {response.text}")
-        
-        try:
-            response_data = response.json()
-        except:
-            response_data = {'raw_text': response.text}
-        
-        api_status = str(response_data.get('status', '')).lower()
-        api_message = str(response_data.get('message', '')).lower()
-        
-        # Check if WhatsApp send was successful
-        if (response.status_code == 200 and 
-            ('queued' in api_message or 'success' in api_message or 
-             api_status in ['200', 'success', 'true'])):
-            print("✅ WhatsApp message sent successfully")
-            return JsonResponse({
-                'success': True,
-                'message': 'PDF sent to WhatsApp successfully',
-                'response': response_data
-            })
-        else:
-            print("⚠️ WhatsApp send failed")
-            return JsonResponse({
-                'success': False,
-                'error': response_data.get('message', 'WhatsApp send failed'),
-                'pdf_url': pdf_url,
-                'response': response_data
-            }, status=400)
-            
-    except Exception as e:
-        import traceback
-        print(f"❌ ERROR: {e}")
-        print(traceback.format_exc())
-        return JsonResponse({
-            'success': False,
-            'error': str(e)
-        }, status=500)
 
+        response = requests.get(base_url, params=payload)
+        return JsonResponse({'success': True, 'response': response.json()})
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+
+# ============================
+# UPDATE PDF FORMAT
+# ============================
 
 @require_http_methods(["POST"])
 def update_po_pdf_format(request, pk):
-    """
-    Update PDF format preference for a PO
-    
-    Usage:
-    POST /po/1/update-format/
-    Body: {"pdf_format": "FORMAT_2"}
-    """
-    try:
-        po = get_object_or_404(PurchaseOrder, pk=pk)
-        data = json.loads(request.body)
-        pdf_format = data.get('pdf_format', 'FORMAT_1')
-        
-        # Validate format
-        available_formats = WKHTMLPDFGenerator.TEMPLATES.keys()
-        if pdf_format not in available_formats:
-            return JsonResponse({
-                'success': False, 
-                'error': f'Invalid format. Available: {available_formats}'
-            }, status=400)
-        
-        # Update and save
-        po.pdf_format = pdf_format
-        po.save(update_fields=['pdf_format'])
-        
+    po = get_object_or_404(PurchaseOrder, pk=pk)
+    data = json.loads(request.body)
+    pdf_format = data.get("pdf_format", "FORMAT_1")
+
+    valid_formats = ["FORMAT_1", "FORMAT_2"]
+
+    if pdf_format not in valid_formats:
         return JsonResponse({
-            'success': True,
-            'message': f'PDF format updated to {pdf_format}'
-        })
-        
-    except Exception as e:
-        import traceback
-        print(f"❌ ERROR: {e}")
-        print(traceback.format_exc())
-        return JsonResponse({
-            'success': False,
-            'error': str(e)
-        }, status=500)
+            "success": False,
+            "error": f"Invalid format. Available: {valid_formats}"
+        }, status=400)
+
+    po.pdf_format = pdf_format
+    po.save(update_fields=["pdf_format"])
+
+    return JsonResponse({
+        "success": True,
+        "message": f"PDF format updated to {pdf_format}"
+    })
 
 
-# ==================== OPTIONAL: Preview Template in Browser ====================
+
+# ============================
+# PREVIEW TEMPLATE IN BROWSER
+# ============================
 
 def preview_pdf_template(request, pk):
-    """
-    Preview PDF template in browser (for testing/debugging)
-    
-    Usage:
-    - /po/1/preview/  (default format)
-    - /po/1/preview/?format=FORMAT_1
-    - /po/1/preview/?format=FORMAT_2
-    """
-    from django.shortcuts import render
-    
     po = get_object_or_404(PurchaseOrder, pk=pk)
-    
-    # Check for department
-    if not po.department:
-        messages.error(request, 'Purchase Order must have a department assigned.')
-        return redirect('purchase_order:po_detail', pk=pk)
-    
-    # Get format
+
     pdf_format = request.GET.get('format', po.pdf_format or 'FORMAT_1')
-    
-    try:
-        # Generate context using the generator
-        generator = WKHTMLPDFGenerator(po, pdf_format)
-        context = generator._get_context()
-        
-        # Get template path
-        template_path = generator.TEMPLATES[pdf_format]
-        
-        # Render in browser
-        return render(request, template_path, context)
-        
-    except Exception as e:
-        import traceback
-        print(f"❌ Preview Error: {e}")
-        print(traceback.format_exc())
-        messages.error(request, f'Error previewing template: {str(e)}')
-        return redirect('purchase_order:po_detail', pk=pk)
+
+    template_map = {
+        'FORMAT_1': 'purchase_order/pdf_templates/format_1.html',
+        'FORMAT_2': 'purchase_order/pdf_templates/format_2.html',
+    }
+    template = template_map.get(pdf_format, template_map['FORMAT_1'])
+
+    return render(request, template, get_po_context(po))
 
 
-# ==================== OPTIONAL: Bulk Download ====================
+
+# ============================
+# BULK ZIP DOWNLOAD
+# ============================
 
 def bulk_download_pdfs(request):
-    """
-    Download multiple POs as PDFs (zipped)
-    
-    Usage:
-    POST /po/bulk-download/
-    Body: {"po_ids": [1, 2, 3], "format": "FORMAT_1"}
-    """
     import zipfile
     from io import BytesIO
-    
+
     try:
         data = json.loads(request.body)
-        po_ids = data.get('po_ids', [])
-        pdf_format = data.get('format', 'FORMAT_1')
-        
+        po_ids = data.get("po_ids", [])
+        pdf_format = data.get("format", "FORMAT_1")
+
         if not po_ids:
-            return JsonResponse({
-                'success': False,
-                'error': 'No PO IDs provided'
-            }, status=400)
-        
-        # Create zip file in memory
+            return JsonResponse({'success': False, 'error': 'No PO IDs provided'}, status=400)
+
+        template_map = {
+            'FORMAT_1': 'purchase_order/pdf_templates/format_1.html',
+            'FORMAT_2': 'purchase_order/pdf_templates/format_2.html',
+        }
+        template = template_map.get(pdf_format, template_map['FORMAT_1'])
+
         zip_buffer = BytesIO()
-        
-        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+
+        with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zipf:
             for po_id in po_ids:
                 try:
                     po = PurchaseOrder.objects.get(pk=po_id)
-                    
-                    if not po.department:
-                        continue
-                    
-                    # Generate PDF
-                    generator = WKHTMLPDFGenerator(po, pdf_format)
-                    file_path = generator.generate()
-                    
-                    if file_path and os.path.exists(file_path):
-                        # Add to zip
-                        supplier_name = (po.supplier.name or "SUPPLIER").strip().replace(" ", "_")
-                        filename = f"{supplier_name}_{po.po_number}.pdf"
-                        zip_file.write(file_path, filename)
-                        
-                except Exception as e:
-                    print(f"⚠️ Failed to add PO {po_id}: {e}")
-                    continue
-        
-        # Prepare response
-        zip_buffer.seek(0)
-        response = FileResponse(zip_buffer, content_type='application/zip')
-        response['Content-Disposition'] = f'attachment; filename="purchase_orders_{pdf_format}.zip"'
-        return response
-        
-    except Exception as e:
-        import traceback
-        print(f"❌ Bulk Download Error: {e}")
-        print(traceback.format_exc())
-        return JsonResponse({
-            'success': False,
-            'error': str(e)
-        }, status=500) 
-    
+                    file_path = generate_pdf_from_template(po, template_name=template)
 
+                    supplier_name = (po.supplier.name or "SUPPLIER").replace(" ", "_")
+                    filename = f"{supplier_name}_{po.po_number}.pdf"
+
+                    zipf.write(file_path, filename)
+                except Exception:
+                    continue
+
+        zip_buffer.seek(0)
+        return FileResponse(zip_buffer, content_type="application/zip")
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
