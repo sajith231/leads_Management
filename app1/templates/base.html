@@ -457,8 +457,20 @@
                 {% if 'all_leads' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
                 <a href="{% url 'all_leads' %}"><i class="fas fa-user"></i> Leads</a>
                 {% endif %}
+
+                    <a href="{% url 'app5:lead' %}">
+                     <i class="fas fa-id-card"></i> Lead Form
+                    </a>
+
+            <a href="{% url 'app5:lead_report' %}">
+             <i class="fas fa-id-card"></i>Lead Reports
+            </a>
             </div>
             {% endif %}
+
+           
+
+
     
             <!-- Services Menu -->
             {% if 'Services' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
@@ -600,6 +612,12 @@
         <i class="fas fa-chart-line"></i> Vehicle Ledger
     </a>
     {% endif %}
+      <!-- Replace 'vehicle_challan' with your actual url name -->
+    <a href="{% url 'vehicle_details' %}">
+        <i class="fa-solid fa-car"></i> Vehicle challan
+
+    </a>
+
     <a href="{% url 'claims_list' %}">
         <i class="fas fa-briefcase"></i> Claims
     </a>
@@ -639,7 +657,7 @@
 </a>
 
 
-<a href="#">
+<a href="{% url 'app5:service_billing_list' %}">
   <i class="fas fa-file-contract"></i>Service Billing
 </a>
 
@@ -757,6 +775,10 @@
     <div id="company-menu" class="submenu" style="margin-left: 20px;">
         <a href="{% url 'vehicle_list' %}"><i class="fas fa-list-alt"></i> Vehicle Master</a>
         <a href="{% url 'all_districts' %}"><i class="fas fa-map"></i> District</a>
+       <!-- Change this line to match the new URL name -->
+       <a href="{% url 'app5:state_master_list' %}"><i class="fas fa-city"></i> State</a>
+
+
         <a href="{% url 'all_areas' %}"><i class="fas fa-map-marker-alt"></i> Area</a>
         <a href="{% url 'all_locations' %}"><i class="fas fa-chart-area"></i> Location</a>
         <a href="{% url 'all_branches' %}"><i class="fas fa-code-branch"></i> Offices\Locations</a>
@@ -776,6 +798,8 @@
         <a href="{% url 'job_titles' %}"><i class="fas fa-id-card"></i> Job Title</a>
         <a href="{% url 'all_department' %}"><i class="fas fa-layer-group"></i> Job Category</a>
         <a href="{% url 'business_type_list' %}"><i class="fas fa-binoculars"></i> Business Type</a>
+        <a href="{% url 'app5:business_nature_list' %}"><i class="fas fa-globe"></i> Business Nature</a>
+
         <a href="{% url 'all_requirements' %}"><i class="fas fa-tasks"></i> Requirements</a>
     </div>
 
@@ -894,8 +918,24 @@
                 {% if 'user_dashboard' in allowed_menus %}
                 <a href="{% url 'user_dashboard' %}"><i class="fas fa-user"></i> Leads</a>
                 {% endif %}
+
+            <a href="{% url 'app5:lead' %}">
+            <i class="fas fa-id-card"></i> Lead Form
+            </a>
+            <a href="{% url 'app5:lead_report' %}">
+             <i class="fas fa-folder-open"></i>Lead Report
+            </a>
+           
+            <a href="{% url 'app5:lead_assign_list' %}">
+            <i class="fas fa-user"></i></i> Assigned Leads
+            </a>
+
             </div>
+
             {% endif %}
+
+         
+
 
             {% if 'service_log' in allowed_menus or 'service_entry' in allowed_menus or 'user_service_entry' in allowed_menus or 'user_service_log' in allowed_menus %}
             <!-- Services Menu -->
@@ -1070,6 +1110,13 @@
         <i class="fas fa-chart-line"></i> Vehicle Ledger
     </a>
     {% endif %}
+    
+    <!-- <- replace 'vehicle_challan' with the actual url name for challan -->
+    <a href="{% url 'vehicle_details' %}">
+        <i class="fa-solid fa- car"></i> Vehicle challan
+
+    </a>
+
     <a href="{% url 'claims_list' %}">
         <i class="fas fa-briefcase"></i> Claims
     </a>

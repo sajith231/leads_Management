@@ -478,6 +478,188 @@ class ServiceItem(models.Model):
         return f"{self.item_name} - ₹{self.charge}"   
 
 
+# lead
+
+# Add this to your models.py
+from django.db import models
+
+
+# models.py
+import uuid
+from django.db import models
+from django.utils import timezone
+
+# app5/models.py
+from django.db import models
+from django.utils import timezone
+from django.conf import settings
+
+from django.db import models, IntegrityError, transaction
+from django.conf import settings
+from django.utils import timezone
+import uuid
+
+class Lead(models.Model):
+    ASSIGNMENT_CHOICES = [
+        ('self_assigned', 'Self Assigned'),
+        ('unassigned', 'Unassigned'),
+    ]
+
+    assignment_type = models.CharField(
+        max_length=20, choices=ASSIGNMENT_CHOICES, default='unassigned'
+    )
+    ticket_number = models.CharField(max_length=30, unique=True, blank=True)
+    ownerName = models.CharField(max_length=100)
+    phoneNo = models.CharField(max_length=15)
+    email = models.EmailField(blank=True, null=True)
+    customerType = models.CharField(max_length=20, default='Business')
+
+    # Business fields
+    name = models.CharField(max_length=100, blank=True, null=True)
+    address = models.TextField(blank=True, null=True)
+    place = models.CharField(max_length=100, blank=True, null=True)
+    District = models.CharField(max_length=100, blank=True, null=True)
+    State = models.CharField(max_length=100, blank=True, null=True)
+    pinCode = models.CharField(max_length=10, blank=True, null=True)
+
+    # Individual fields
+    firstName = models.CharField(max_length=100, blank=True, null=True)
+    lastName = models.CharField(max_length=100, blank=True, null=True)
+    individualAddress = models.TextField(blank=True, null=True)
+    individualPlace = models.CharField(max_length=100, blank=True, null=True)
+    individualDistrict = models.CharField(max_length=100, blank=True, null=True)
+    individualState = models.CharField(max_length=100, blank=True, null=True)
+    individualPinCode = models.CharField(max_length=10, blank=True, null=True)
+
+    # Business information
+    status = models.CharField(max_length=20, default='Active')
+    refFrom = models.CharField(max_length=100, blank=True, null=True)
+    business = models.CharField(max_length=100, blank=True, null=True)
+    marketedBy = models.CharField(max_length=100, blank=True, null=True)
+    Consultant = models.CharField(max_length=100, blank=True, null=True)
+    requirement = models.CharField(max_length=100, blank=True, null=True)
+    details = models.TextField(blank=True, null=True)
+    date = models.DateField(default=timezone.now)
+
+    # Assignment fields
+    
+    assigned_to_name = models.CharField(max_length=150, blank=True, null=True)
+    assigned_by_name = models.CharField(max_length=150, blank=True, null=True)
+    assigned_date = models.DateField(null=True, blank=True)
+    assigned_time = models.TimeField(null=True, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs):
+        """
+        Generate ticket if missing: TKT-YYYYMMDD-XXXX
+        Use retry loop to avoid unique constraint errors under concurrency.
+        Fall back to UUID suffix if retries exhausted.
+        """
+        if not self.ticket_number:
+            date_part = timezone.now().strftime('%Y%m%d')
+            max_attempts = 5
+
+            for attempt in range(max_attempts):
+                # compute sequential part based on how many leads exist today
+                today_count = Lead.objects.filter(created_at__date=timezone.now().date()).count()
+                seq = str(today_count + 1).zfill(4)
+                candidate = f"TKT-{date_part}-{seq}"
+                self.ticket_number = candidate
+
+                try:
+                    # Try to save within a transaction; IntegrityError means collision
+                    with transaction.atomic():
+                        super().save(*args, **kwargs)
+                    return  # saved successfully
+                except IntegrityError:
+                    # collision — try again (recompute count)
+                    if attempt == max_attempts - 1:
+                        # last attempt failed — fall back to UUID-style ticket and save once
+                        fallback_suffix = uuid.uuid4().hex[:6].upper()
+                        self.ticket_number = f"TKT-{date_part}-{fallback_suffix}"
+                        with transaction.atomic():
+                            super().save(*args, **kwargs)
+                        return
+                    # otherwise loop and retry
+
+        else:
+            # ticket already present (manual or editing) — normal save
+            super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.ticket_number} - {self.ownerName}"
+
+    @property
+    def display_name(self):
+        if self.customerType == 'Business':
+            return self.name or self.ownerName
+        return f"{self.firstName or ''} {self.lastName or ''}".strip() or self.ownerName
+
+
+from django.db import models
+
+class RequirementItem(models.Model):
+    # Basic item information
+    item_name = models.CharField(max_length=200, verbose_name="Item Name")
+    
+    # Customer/owner information (ADDED THESE FIELDS)
+    owner_name = models.CharField(max_length=255, blank=True, null=True, verbose_name="Owner Name")
+    phone_no = models.CharField(max_length=20, blank=True, null=True, verbose_name="Phone Number")
+    email = models.EmailField(blank=True, null=True, verbose_name="Email Address")
+    
+    # Item details
+    unit = models.CharField(max_length=50, blank=True, null=True, verbose_name="Unit")
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name="Price")
+    total = models.DecimalField(max_digits=12, decimal_places=2, default=0.00, verbose_name="Total")
+    
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Requirement Item"
+        verbose_name_plural = "Requirement Items"
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.item_name} - {self.owner_name or 'No Owner'}"
+    
+    def save(self, *args, **kwargs):
+        # Auto-calculate total if needed, or you can remove this
+        if not self.total:
+            self.total = self.price
+        super().save(*args, **kwargs)
+    
+# bussiness nature
+
+class BusinessNature(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    description = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return self.name
+    
+
+   
+# state model
+class StateMaster(models.Model):
+    name = models.CharField(max_length=100, unique=True, verbose_name="State Name")
+    description = models.TextField(blank=True, null=True, verbose_name="Description")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'state_master'
+        verbose_name = 'State Master'
+        verbose_name_plural = 'State Masters'
+        ordering = ['name']
+    
+    def __str__(self):
+        return self.name
+
+
     
          
 

@@ -220,17 +220,23 @@
                 </div>
             </div>
             {% else %}
-            <div class="no-data-panel">
-                <i class="fas fa-box-open"></i>
-                <h3>No items found</h3>
-                <p>Start by adding your first item to the inventory.</p>
-                <button class="btn-add-new" onclick="window.location.href='{% url 'purchase_order:item_add' %}'">
-                    <i class="fas fa-plus"></i> Add First Item
-                </button>
-            </div>
+                <li class="disabled"><span>»</span></li>
             {% endif %}
-        </div>
+        </ul>
     </div>
+    
+        
+                {% if items.has_next %}
+                    <li>
+                        <a href="?page={{ items.next_page_number }}{% if selected_department %}&department={{ selected_department }}{% endif %}">»</a>
+                    </li>
+                {% else %}
+                    <li class="disabled"><span>»</span></li>
+                {% endif %}
+            </ul>
+        </div>
+        
+      
 </div>
 
 <!-- Delete Confirmation Modal -->

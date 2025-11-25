@@ -158,6 +158,15 @@
             margin-top: 40px;
             text-align: right;
         }
+
+        .col-remarks {
+            text-align: left;
+            width: auto !important;  /* allow stretching */
+        }
+
+        .items-table {
+            table-layout: fixed;
+        }
     </style>
 </head>
 
@@ -265,19 +274,27 @@
     </tbody>
 
     <tfoot>
-    <tr>
-        <td colspan="8" style="text-align: right; padding-right: 10px; border-right: 1px solid #666;">Total</td>
-        <td class="col-remarks">{{ po.total_amount|floatformat:2 }}</td>
-    </tr>
-    <tr>
-        <td colspan="8" style="text-align: right; padding-right: 10px; border-right: 1px solid #666;">Tax</td>
-        <td class="col-remarks">{{ po.tax_amount|floatformat:2 }}</td>
-    </tr>
-    <tr>
-        <td colspan="8" style="text-align: right; padding-right: 10px; border-right: 1px solid #666;">Grand Total</td>
-        <td class="col-remarks">{{ po.grand_total|floatformat:2 }}</td>
-    </tr>
-    </tfoot>
+        <tr>
+            <td colspan="8" style="text-align: right; padding-right: 10px; border-right: 1px solid #666;">
+                Total
+            </td>
+            <td class="text-right">{{ po.total_amount|floatformat:2 }}</td>
+        </tr>
+
+        <tr>
+            <td colspan="8" style="text-align: right; padding-right: 10px; border-right: 1px solid #666;">
+                Tax
+            </td>
+            <td class="text-right">{{ po.tax_amount|floatformat:2 }}</td>
+        </tr>
+
+        <tr>
+            <td colspan="8" style="text-align: right; padding-right: 10px; border-right: 1px solid #666;">
+                Grand Total
+            </td>
+            <td class="text-right">{{ po.grand_total|floatformat:2 }}</td>
+        </tr>
+        </tfoot>
 </table>
 
 <div class="footer-item"><b>Mode of Transport</b></div>

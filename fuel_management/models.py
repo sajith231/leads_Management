@@ -18,7 +18,7 @@ class Vehicle(models.Model):
     manufacture_year = models.PositiveIntegerField(
         help_text="Year of manufacture",
         validators=[MinValueValidator(1900)],
-        default=2030  # Default value for existing records
+        default=2030
     )
     owner_name = models.CharField(max_length=100)
     fuel_type = models.CharField(
@@ -53,11 +53,10 @@ class Vehicle(models.Model):
         return reverse('vehicle_edit', kwargs={'vehicle_id': self.id})
 
     def save(self, *args, **kwargs):
-        # Auto-set fuel rate based on fuel type if not explicitly set
         if not self.fuel_rate or self.fuel_rate == Decimal('0.00'):
             if self.fuel_type == 'diesel':
                 self.fuel_rate = Decimal('95.86')
-            else:  # petrol
+            else:
                 self.fuel_rate = Decimal('106.93')
         super().save(*args, **kwargs)
 
@@ -72,9 +71,8 @@ class FuelEntry(models.Model):
         help_text="Link this fuel entry to a vehicle"
     )
 
-    # ✅ Add user tracking for logged-in user
     travelled_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,  # <-- fixed reference
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -98,6 +96,13 @@ class FuelEntry(models.Model):
         default='',
         blank=True,
         help_text="Destination point of the trip"
+    )
+
+    purpose = models.CharField(
+        max_length=200,
+        default='',
+        blank=True,
+        help_text="Purpose of the trip"
     )
 
     fuel_cost = models.DecimalField(

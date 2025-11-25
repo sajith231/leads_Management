@@ -1,7 +1,7 @@
 from django.shortcuts import redirect
 
 # Apps and paths that should not require login
-EXCLUDED_APPS = ['flutter', 'image_capture', 'my_drive']
+EXCLUDED_APPS = ['flutter', 'image_capture', 'my_drive','app4']
 EXCLUDED_PATHS = ['/login/', '/logout/', '/admin/login/', '/']
 
 class LoginRequiredMiddleware:
