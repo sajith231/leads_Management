@@ -8,15 +8,27 @@ class ImageCapture(models.Model):
     image = models.ImageField(upload_to='customer_images/', blank=True, null=True)
     latitude = models.CharField(max_length=50, blank=True, null=True)
     longitude = models.CharField(max_length=50, blank=True, null=True)
-    location_name = models.CharField(max_length=500, blank=True, null=True)  # ✅ NEW FIELD
+    location_name = models.CharField(max_length=500, blank=True, null=True)
     verified = models.BooleanField(default=False)
-    created_at = models.DateTimeField(auto_now_add=True)
     
+    # Status field
+    status = models.CharField(
+        max_length=20,
+        choices=[('Pending', 'Pending'), ('Verified', 'Verified')],
+        default='Pending'
+    )
+    
+    # ✅ NEW FIELD: Track if link has been used
+    link_used = models.BooleanField(default=False)
+    link_used_at = models.DateTimeField(blank=True, null=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
     class Meta:
         ordering = ['-created_at']
         indexes = [
-            models.Index(fields=['verified', '-created_at']),  # ✅ Performance index
+            models.Index(fields=['verified', '-created_at']),
         ]
-    
+
     def __str__(self):
         return f"{self.customer_name} - {self.phone_number}"

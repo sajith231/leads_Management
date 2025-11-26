@@ -69,6 +69,8 @@ class DriveFile(models.Model):
     )
     file = models.FileField(upload_to="uploads/")
     file_name = models.CharField(max_length=255, blank=True)  # ✅ display name
+    share_code = models.CharField(max_length=4, blank=True, null=True)
+    share_expiry = models.DateTimeField(blank=True, null=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

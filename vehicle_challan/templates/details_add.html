@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container mt-4">
+    <h2>Add Vehicle Detail</h2>
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'vehicle_details' %}">Vehicle Details</a></li>
+            <li class="breadcrumb-item active">Add New</li>
+        </ol>
+    </nav>
+
+    {% if messages %}
+        {% for msg in messages %}
+            <div class="alert alert-{{ msg.tags }} alert-dismissible fade show" role="alert">
+                {{ msg }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="card">
+        <div class="card-body">
+            <form method="POST" id="detailForm" novalidate>
+                {% csrf_token %}
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Vehicle Number *</label>
+                        <select class="form-select" id="vehicle_id" name="vehicle_id" required>
+                            <option value="">-- Select Vehicle --</option>
+                            {% for vehicle in vehicles %}
+                                <option value="{{ vehicle.id }}"
+                                    {% if form_data.vehicle_id == vehicle.id|stringformat:"s" %}selected{% endif %}
+                                    data-vehicle-name="{{ vehicle.vehicle_name }}"
+                                    data-owner-name="{{ vehicle.owner_name }}"
+                                    data-model-number="{{ vehicle.model_number }}"
+                                    data-manufacture-year="{{ vehicle.manufacture_year }}">
+                                    {{ vehicle.vehicle_number }} - {{ vehicle.vehicle_name }}
+                                </option>
+                            {% empty %}
+                                <option value="" disabled>No vehicles available</option>
+                            {% endfor %}
+                        </select>
+                        {% if not vehicles %}
+                            <small class="text-danger">No vehicles found. Please add a vehicle first in the Fuel Management section.</small>
+                        {% elif vehicles %}
+                            <small class="text-muted">Available vehicles: {{ vehicles|length }}</small>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Vehicle Name</label>
+                        <input type="text" id="vehicle_name" class="form-control" readonly placeholder="Select a vehicle">
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Owner Name</label>
+                        <input type="text" id="owner_name" class="form-control" readonly>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Model Number</label>
+                        <input type="text" id="model_number" class="form-control" readonly>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Manufacture Year</label>
+                        <input type="text" id="manufacture_year" class="form-control" readonly>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Detail Date *</label>
+                        <input type="date" class="form-control" id="detail_date" name="detail_date" 
+                               value="{% if form_data.detail_date %}{{ form_data.detail_date }}{% else %}{{ current_date }}{% endif %}" required>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Remarks</label>
+                    <textarea class="form-control" id="remarks" name="remarks" rows="3" 
+                              placeholder="Enter remarks (optional)">{% if form_data.remarks %}{{ form_data.remarks }}{% endif %}</textarea>
+                </div>
+
+                <button type="submit" class="btn btn-primary" {% if not vehicles %}disabled{% endif %}>
+                    <i class="bi bi-check-circle"></i> Submit
+                </button>
+                <a href="{% url 'vehicle_details' %}" class="btn btn-secondary">
+                    <i class="bi bi-x-circle"></i> Cancel
+                </a>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const vehicleSelect = document.getElementById('vehicle_id');
+    const vehicleName = document.getElementById('vehicle_name');
+    const ownerName = document.getElementById('owner_name');
+    const modelNumber = document.getElementById('model_number');
+    const manufactureYear = document.getElementById('manufacture_year');
+
+    function updateFields() {
+        const selectedOption = vehicleSelect.selectedOptions[0];
+        if (selectedOption && selectedOption.value) {
+            vehicleName.value = selectedOption.dataset.vehicleName || '';
+            ownerName.value = selectedOption.dataset.ownerName || '';
+            modelNumber.value = selectedOption.dataset.modelNumber || '';
+            manufactureYear.value = selectedOption.dataset.manufactureYear || '';
+        } else {
+            vehicleName.value = '';
+            ownerName.value = '';
+            modelNumber.value = '';
+            manufactureYear.value = '';
+        }
+    }
+
+    vehicleSelect.addEventListener('change', updateFields);
+    
+    // Run once on load in case of re-render with pre-selected value
+    if (vehicleSelect.value) {
+        updateFields();
+    }
+    
+    // Form validation before submit
+    const form = document.getElementById('detailForm');
+    form.addEventListener('submit', function(e) {
+        const vehicleId = vehicleSelect.value;
+        const detailDate = document.getElementById('detail_date').value;
+        
+        if (!vehicleId) {
+            e.preventDefault();
+            alert('Please select a vehicle');
+            vehicleSelect.focus();
+            return false;
+        }
+        
+        if (!detailDate) {
+            e.preventDefault();
+            alert('Please enter a detail date');
+            document.getElementById('detail_date').focus();
+            return false;
+        }
+    });
+});
+</script>
+
+<style>
+    .form-label {
+        font-weight: 500;
+    }
+    
+    input[readonly] {
+        background-color: #f8f9fa;
+        cursor: not-allowed;
+    }
+    
+    .card {
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    
+    select.form-select:focus,
+    input.form-control:focus,
+    textarea.form-control:focus {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    }
+    
+    .alert {
+        border-radius: 5px;
+    }
+    
+    .breadcrumb {
+        background-color: transparent;
+        padding: 0;
+        margin-bottom: 1rem;
+    }
+</style>
+
+{% endblock %}

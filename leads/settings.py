@@ -36,12 +36,22 @@ CSRF_TRUSTED_ORIGINS = [
 
 
 
+import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
+WHATSAPP_API_SECRET = os.getenv("WHATSAPP_API_SECRET")
+WHATSAPP_API_ACCOUNT = os.getenv("WHATSAPP_API_ACCOUNT")
+WHATSAPP_API_BASE_URL = os.getenv("WHATSAPP_API_BASE_URL")
+
+
 ALLOWED_HOSTS = ['88.222.215.20','myimc.in','www.myimc.in','127.0.0.1','localhost']
 
 LOGIN_REDIRECT_URL = 'admin_dashboard'
 LOGIN_URL = 'login'
 # Application definition
-
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -50,26 +60,33 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    # Third-party apps
     'ckeditor',
     'rest_framework',
+    'django.contrib.humanize',
+    'django_extensions',
+
+    # Your custom apps
     'app1',
-    'app2',  # 👈 Add this line
+    'app2',
     'app3',
     'app4',
-    'flutter',
     'app5',
+    'flutter',
     'sim_card',
     'my_drive',
     'fuel_management',
-    'django.contrib.humanize',
-    "wfh_Request",
-    # "punchout_reminder",
-    "image_capture",
+    'wfh_Request',
+    'image_capture',
     'software_master',
     'purchase_order',
     'claims',
-    
+    'wallet',
+    'Cancel_Requestes',
+    'vehicle_challan',
 ]
+
 
 
 
@@ -96,6 +113,7 @@ MIDDLEWARE = [
 
     'app1.middleware.NoCacheMiddleware',  # Add this line for logout issue
     'app1.middleware.UserMenuMiddleware', 
+    'leads.middleware.LoginRequiredMiddleware',  # add this at bottom
     
     
 ]
@@ -226,3 +244,15 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 DATA_UPLOAD_MAX_MEMORY_SIZE = 52428800  
 FILE_UPLOAD_MAX_MEMORY_SIZE = 52428800 
+
+
+# ===== DXing WhatsApp API credentials =====
+import os
+DXING_SECRET = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
+DXING_ACCOUNT = "1761365422812b4ba287f5ee0bc9d43bbf5bbe87fb68fc4daea92d8"
+
+if DEBUG:
+    BASE_URL = "http://127.0.0.1:8000"
+else:
+    BASE_URL = "https://myimc.in"
+

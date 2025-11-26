@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+  <h3>All Cancel Requests</h3>
+
+  <!-- 🔍 Filters -->
+  <form method="get" class="mb-3">
+    <div class="d-flex flex-wrap gap-2 align-items-center">
+      <label class="fw-bold">Employee Name:</label>
+      <input type="text" name="name" class="form-control w-auto" placeholder="Search..." value="{{ search_name }}">
+      <label class="fw-bold">Request Type:</label>
+      <select name="type" class="form-select w-auto">
+        <option value="all" {% if filter_type == 'all' %}selected{% endif %}>All</option>
+        <option value="leave" {% if filter_type == 'leave' %}selected{% endif %}>Leave</option>
+        <option value="late" {% if filter_type == 'late' %}selected{% endif %}>Late</option>
+        <option value="early" {% if filter_type == 'early' %}selected{% endif %}>Early</option>
+        <option value="wfh" {% if filter_type == 'wfh' %}selected{% endif %}>WFH</option>
+      </select>
+      <button type="submit" class="btn btn-primary">Filter</button>
+    </div>
+  </form>
+
+  <!-- 🗂️ Cancel Requests Table -->
+  <table class="table table-bordered">
+    <tr>
+      <th>Employee</th><th>Type</th>
+      <th>Reason</th>
+      <th>Status</th><th>Processed By</th><th>Action</th>
+    </tr>
+    {% for req in requests %}
+      <tr>
+        <td>{{ req.employee.name }}</td>
+        <td>{{ req.request_type|title }}</td>
+        <td>{{ req.reason|default:"-" }}</td>
+        <td>
+          {% if req.status == 'approved' %}
+            <span class="badge bg-success">Approved</span>
+          {% elif req.status == 'rejected' %}
+            <span class="badge bg-danger">Rejected</span>
+          {% else %}
+            <span class="badge bg-warning text-dark">Pending</span>
+          {% endif %}
+        </td>
+        <td>{{ req.processed_by|default:"-" }}</td>
+        <td>
+          {% if req.status == 'pending' %}
+            <a href="{% url 'process_cancel_request' req.id 'approve' %}" class="btn btn-success btn-sm">Approve</a>
+            <a href="{% url 'process_cancel_request' req.id 'reject' %}" class="btn btn-danger btn-sm">Reject</a>
+          {% else %}
+            <span class="text-muted">Completed</span>
+          {% endif %}
+        </td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="6" class="text-center">No cancel requests found.</td></tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}

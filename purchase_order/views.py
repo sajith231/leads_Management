@@ -178,9 +178,10 @@ def supplier_delete(request, pk):
 # ==================== ITEM MASTER VIEWS ====================
 
 def item_list(request):
-    """Display all items with pagination"""
+    """Display all items with search, department filter, and section filter"""
     search_query = request.GET.get('search', '')
     department_filter = request.GET.get('department', '')
+    section_filter = request.GET.get('section', '')
 
     # Base queryset
     items = Item.objects.all().order_by('name')
@@ -193,11 +194,14 @@ def item_list(request):
         )
 
     # 🏢 Department filter
-    if department_filter:
+    if department_filter and department_filter != 'all':
         items = items.filter(department_id=department_filter)
 
-    # ✅ Pagination (25 per page)
-    from django.core.paginator import Paginator
+    # 🧾 Section filter
+    if section_filter and section_filter != 'all':
+        items = items.filter(section=section_filter)
+
+    # ✅ Pagination (10 per page)
     paginator = Paginator(items, 10)
     page_number = request.GET.get('page')
     items = paginator.get_page(page_number)
@@ -205,23 +209,23 @@ def item_list(request):
     # 🧭 Department dropdown list
     departments = Department.objects.filter(is_active=True).order_by('name')
 
-    # ✅ Context for template
     context = {
         'items': items,
         'search_query': search_query,
         'departments': departments,
-        'selected_department': department_filter,  # match your template variable
+        'selected_department': department_filter,
+        'selected_section': section_filter,  # ✅ Added
     }
 
     return render(request, 'purchase_order/item_list.html', context)
 
+# Update your item_add and item_edit views in views.py
 
 def item_add(request):
     """Create new item"""
     if request.method == 'POST':
         try:
-
-             # ✅ NEW: Get department if provided
+            # Get department if provided
             department_id = request.POST.get('department')
             department = None
             if department_id:
@@ -231,13 +235,14 @@ def item_add(request):
                 name=request.POST.get('name'),
                 description=request.POST.get('description', ''),
                 department=department,
+                section=request.POST.get('section', 'GENERAL'),  # ✅ NEW: Section field
                 unit_of_measure=request.POST.get('unit_of_measure', 'pcs'),
                 tax_percentage=Decimal(request.POST.get('tax_percentage', '18.00')),
                 mrp=Decimal(request.POST.get('mrp', '0.00')),
                 purchase_price=Decimal(request.POST.get('purchase_price', '0.00')),
                 cost=Decimal(request.POST.get('cost', '0.00')),
                 hsn_code=request.POST.get('hsn_code', ''),
-                is_active=True,  # Default to active
+                is_active=True,
                 created_by=request.user.username if request.user.is_authenticated else 'Admin',
                 updated_by=request.user.username if request.user.is_authenticated else 'Admin',
             )
@@ -246,12 +251,11 @@ def item_add(request):
         except Exception as e:
             messages.error(request, f"Error adding item: {str(e)}")
 
-    # ✅ NEW: Get departments for dropdown
     departments = Department.objects.filter(is_active=True).order_by('name')
     
     return render(request, 'purchase_order/item_add.html', {
         'action': 'Add',
-        'departments': departments  # ✅ ADDED
+        'departments': departments
     })
 
 
@@ -261,7 +265,7 @@ def item_edit(request, pk):
     
     if request.method == 'POST':
         try:
-             # ✅ NEW: Get department if provided
+            # Get department if provided
             department_id = request.POST.get('department')
             department = None
             if department_id:
@@ -270,29 +274,28 @@ def item_edit(request, pk):
             item.name = request.POST.get('name')
             item.description = request.POST.get('description', '')
             item.department = department
+            item.section = request.POST.get('section', 'GENERAL')  # ✅ NEW: Section field
             item.unit_of_measure = request.POST.get('unit_of_measure', 'pcs')
             item.tax_percentage = Decimal(request.POST.get('tax_percentage', '18.00'))
             item.mrp = Decimal(request.POST.get('mrp', '0.00'))
             item.purchase_price = Decimal(request.POST.get('purchase_price', '0.00'))
             item.cost = Decimal(request.POST.get('cost', '0.00'))
             item.hsn_code = request.POST.get('hsn_code', '')
-            item.is_active = request.POST.get('status') == "True"  # ✅ Add status control
+            item.is_active = request.POST.get('status') == "True"
             item.updated_by = request.user.username if request.user.is_authenticated else 'Admin'
             item.save()
-
             
             messages.success(request, "Item updated successfully.")
             return redirect('purchase_order:item_list')
         except Exception as e:
             messages.error(request, f"Error updating item: {str(e)}")
     
-     # ✅ NEW: Get departments for dropdown
     departments = Department.objects.filter(is_active=True).order_by('name')
     
     return render(request, 'purchase_order/item_edit.html', {
         'item': item,
         'action': 'Edit',
-        'departments': departments  # ✅ ADDED
+        'departments': departments
     })
 
 
@@ -574,7 +577,7 @@ def purchase_order_update(request, pk):
             po.department = department
             po.reference_number = request.POST.get('reference_number', '')
             po.delivery_date = request.POST.get('delivery_date')
-            po.client_details = request.POST.get('client_details')
+            po.client_details = request.POST.get('client_details', '').strip() 
             po.payment_terms = request.POST.get('payment_terms')
             po.status = request.POST.get('status')
             po.calculation_method = request.POST.get('calculation_method', 'PLUS_TAX')
@@ -602,7 +605,7 @@ def purchase_order_update(request, pk):
                             f"📅 *Approved On:* {timezone.now().strftime('%Y-%m-%d %H:%M')}\n"
                             f"👤 *Approved By:* {request.user.username}"
                         )
-                        send_whatsapp_message("8606360089", msg)
+                        send_whatsapp_message("7591907004", msg)
 
                     # ❌ REJECTED
                     elif new_admin_status == 'REJECTED':
@@ -620,7 +623,7 @@ def purchase_order_update(request, pk):
                             f"📝 *Reason:* {rejection_reason}\n"
                             f"👤 *Rejected By:* {request.user.username}"
                         )
-                        send_whatsapp_message("8606360089", msg)
+                        send_whatsapp_message("7591907004", msg)
             
             po.notes = request.POST.get('notes', '')
             po.save()
@@ -744,13 +747,13 @@ def purchase_order_update(request, pk):
     }
     return render(request, 'purchase_order/po_form.html', context)
 
+# ==================== VIEW PURCHASE ORDER DETAILS ====================
 def purchase_order_view(request, pk):
-    """View purchase order details"""
-    po = get_object_or_404(
-        PurchaseOrder.objects.select_related('supplier').prefetch_related('po_items__item'),
-        pk=pk
-    )
-    context = {'po': po}
+    """Show full details of a single Purchase Order"""
+    po = get_object_or_404(PurchaseOrder, pk=pk)
+    context = {
+        'po': po
+    }
     return render(request, 'purchase_order/po_detail.html', context)
 
 
@@ -801,6 +804,7 @@ def get_supplier_details(request, supplier_id):
         return JsonResponse(data)
     except Supplier.DoesNotExist:
         return JsonResponse({'error': 'Supplier not found'}, status=404)
+
     
 # ==================== DEPARTMENT MASTER VIEWS (ADD THESE) ====================
 
@@ -841,6 +845,7 @@ def department_create(request):
                 alternate_number=request.POST.get('alternate_number', ''),
                 email=request.POST.get('email', ''),
                 gst_number=request.POST.get('gst_number', ''),
+                logo=request.FILES.get('logo'),  # ✅ ADD THIS
                 is_active=True
             )
             messages.success(request, 'Department created successfully!')
@@ -866,6 +871,10 @@ def department_update(request, pk):
             department.alternate_number = request.POST.get('alternate_number', '')
             department.email = request.POST.get('email', '')
             department.gst_number = request.POST.get('gst_number', '')
+
+            if 'logo' in request.FILES:
+                department.logo = request.FILES['logo']  # ✅ Handle file upload
+
             department.save()
             
             messages.success(request, 'Department updated successfully!')
@@ -1101,6 +1110,103 @@ def approve_purchase_order(request, pk):
     
     return redirect('purchase_order:po_detail', pk=po.pk)
 
+# ==================== Supplier/Item History Views ====================
+     
+from django.http import JsonResponse
+from .models import PurchaseOrderItem  # ensure correct import path
+
+def get_supplier_history(request, supplier_id):
+    """Return supplier purchase history as JSON with client details."""
+    try:
+        po_items = (
+            PurchaseOrderItem.objects
+            .filter(purchase_order__supplier_id=supplier_id)
+            .select_related('item', 'purchase_order')
+            .order_by('-purchase_order__po_date')[:20]
+        )
+
+        history = []
+        for item in po_items:
+            history.append({
+                "po_number": item.purchase_order.po_number,
+                "date": item.purchase_order.po_date.strftime("%Y-%m-%d"),
+                "item_name": item.item.name,
+                "client_details": item.purchase_order.client_details or "—",
+                "quantity": float(item.quantity or 0),
+                "rate": float(item.entry_rate or 0),
+                "total": float(item.line_total or 0),
+            })
+
+        return JsonResponse({"history": history})
+    except Exception as e:
+        print(f"⚠ Error in get_supplier_history: {e}")
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({"error": str(e)}, status=500)
+
+from django.http import JsonResponse
+from .models import PurchaseOrderItem  # ensure correct import path
+
+def get_item_history(request, item_id):
+    """Return item purchase history as JSON (with supplier name)."""
+    try:
+        po_items = (
+            PurchaseOrderItem.objects
+            .filter(item_id=item_id)
+            .select_related('purchase_order__supplier')
+            .order_by('-purchase_order__po_date')[:20]
+        )
+
+        history = []
+        for item in po_items:
+            history.append({
+                "po_number": item.purchase_order.po_number,
+                "date": item.purchase_order.po_date.strftime("%d-%m-%Y") if item.purchase_order.po_date else "",
+                "supplier_name": item.purchase_order.supplier.name if item.purchase_order.supplier else "N/A",  # ✅ Changed to supplier_name
+                "quantity": float(item.quantity or 0),
+                "rate": float(item.entry_rate or 0),
+                "total": float(item.line_total or 0),
+            })
+        
+        return JsonResponse({"history": history})
+
+    except Exception as e:
+        print(f"❌ Error loading item history: {e}")
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({"error": str(e)}, status=500)
+
+def supplier_history(request, supplier_id):
+    supplier = get_object_or_404(Supplier, pk=supplier_id)
+    history = (
+        PurchaseOrderItem.objects.filter(purchase_order__supplier=supplier)
+        .select_related('item', 'purchase_order')
+        .order_by('-purchase_order__po_date')
+        .values(
+            'item__name',
+            'quantity',
+            'entry_rate',
+            'line_total',
+            'purchase_order__po_number',
+            'purchase_order__po_date',
+        )
+    )
+    data = {
+        'history': [
+            {
+                'item_name': h['item__name'],
+                'quantity': h['quantity'],
+                'rate': float(h['entry_rate']),
+                'total': float(h['line_total']),
+                'po_number': h['purchase_order__po_number'],
+                'date': h['purchase_order__po_date'].strftime('%d-%m-%Y'),
+            }
+            for h in history
+        ]
+    }
+    return JsonResponse(data)
+
+# ==================== PDF GENERATION  ====================
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 
@@ -1152,98 +1258,183 @@ def generate_po_pdf(request, pk):
     return buffer
 
 import os
+import json
 import requests
 from io import BytesIO
+
+from django.http import JsonResponse, FileResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.contrib import messages
+from django.views.decorators.http import require_http_methods
 from django.conf import settings
-from django.http import JsonResponse
-from django.shortcuts import get_object_or_404
-from django.views.decorators.csrf import csrf_exempt
-from django.contrib.auth.decorators import login_required
-from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import A4
+
 from .models import PurchaseOrder
+from .pdf_generator import generate_pdf_from_template, get_po_context
 
-@csrf_exempt
-@login_required
+
+# ============================
+# SEND WHATSAPP WITH PDF
+# ============================
+
 def send_whatsapp_po(request, pk):
-    """Generate PO PDF and send it via WhatsApp to the supplier."""
-    if request.method != "POST":
-        return JsonResponse({"error": "Invalid request method"}, status=405)
-
     po = get_object_or_404(PurchaseOrder, pk=pk)
     supplier = po.supplier
 
-    if not supplier.mobile_no:
-        return JsonResponse({"error": "Supplier mobile number not found"}, status=400)
+    if not po.department:
+        return JsonResponse({'success': False, 'error': 'Department not assigned to PO'}, status=400)
 
-    # ✅ Normalize the phone number
-    raw_number = str(supplier.mobile_no).strip().replace("+", "")
-    if len(raw_number) == 10:  # assume local Indian number
-        recipient_number = "91" + raw_number
-    else:
-        recipient_number = raw_number
+    phone = (supplier.mobile_no or '').strip()
+    if not phone:
+        return JsonResponse({'success': False, 'error': 'Supplier has no mobile number'}, status=400)
 
-    print(f"📱 Sending WhatsApp to: {recipient_number}")
+    phone = ''.join(filter(str.isdigit, phone))
+    if not phone.startswith('91') and len(phone) == 10:
+        phone = '91' + phone
 
-    # ✅ 1. Generate PDF
+    pdf_format = request.GET.get('format', 'FORMAT_2')
+
+    template_map = {
+        'FORMAT_1': 'purchase_order/pdf_templates/format_1.html',
+        'FORMAT_2': 'purchase_order/pdf_templates/format_2.html',
+    }
+    template = template_map.get(pdf_format, template_map['FORMAT_2'])
+
     try:
-        pdf_buffer = BytesIO()
-        c = canvas.Canvas(pdf_buffer, pagesize=A4)
-        c.drawString(100, 800, f"Purchase Order: {po.po_number}")
-        c.drawString(100, 780, f"Supplier: {supplier.name}")
-        c.drawString(100, 760, f"Total: ₹{po.grand_total}")
-        c.showPage()
-        c.save()
-        pdf_buffer.seek(0)
+        file_path = generate_pdf_from_template(po, template_name=template)
 
-        folder_path = os.path.join(settings.MEDIA_ROOT, "po_pdfs")
-        os.makedirs(folder_path, exist_ok=True)
-        file_name = f"PO_{po.po_number}.pdf"
-        file_path = os.path.join(folder_path, file_name)
+        # Upload to tmpfiles.org
+        supplier_name = (po.supplier.name or "SUPPLIER").strip().replace(" ", "_")
+        pdf_filename = f"{supplier_name}_{po.po_number}.pdf"
 
-        with open(file_path, "wb") as f:
-            f.write(pdf_buffer.getbuffer())
+        with open(file_path, "rb") as pdf_file:
+            upload_response = requests.post(
+                "https://tmpfiles.org/api/v1/upload",
+                files={'file': (pdf_filename, pdf_file, 'application/pdf')},
+                timeout=30
+            )
 
-        # ✅ Use your live domain for file link
-        file_url = f"https://myimc.in/media/po_pdfs/{file_name}"
+        upload_data = upload_response.json()
 
-        print(f"📎 PDF URL: {file_url}")
+        if upload_data.get("status") != "success":
+            return JsonResponse({'success': False, 'error': "Upload failed"}, status=500)
 
-    except Exception as e:
-        return JsonResponse({"error": f"PDF generation failed: {str(e)}"}, status=500)
+        file_url = upload_data['data']['url']
+        pdf_url = file_url.replace("tmpfiles.org/", "tmpfiles.org/dl/")
 
-    # ✅ 2. Send to WhatsApp API
-    try:
+        # WhatsApp payload
         base_url = "https://app.dxing.in/api/send/whatsapp"
-        secret = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
-        account = "1761365422812b4ba287f5ee0bc9d43bbf5bbe87fb68fc4daea92d8"
-
         payload = {
-            "secret": secret,
-            "account": account,
-            "recipient": recipient_number,
+            "secret": "7b8ae820ecb39f8d173d57b51e1fce4c023e359e",
+            "account": "1761365422812b4ba287f5ee0bc9d43bbf5bbe87fb68fc4daea92d8",
+            "recipient": str(phone),
             "type": "document",
-            "document_url": file_url,
-            "document_name": file_name,
             "document_type": "pdf",
-            "priority": 1,
+            "document_url": pdf_url,
+            "document_name": pdf_filename,
+            "message": (
+                f"📋 *Purchase Order {po.po_number}*\n\n"
+                f"Dear {supplier.name},\n\n"
+                f"📅 PO Date: {po.po_date.strftime('%d/%m/%Y')}\n"
+                f"💰 Total Amount: ₹{po.grand_total}\n\n"
+                f"Thank you for your business! 🙏"
+            ),
+            "priority": 1
         }
 
-        response = requests.get(base_url, params=payload, timeout=10)
-        print("📤 WhatsApp API Response:", response.status_code, response.text)
-
-        if response.status_code == 200:
-            return JsonResponse({
-                "status": "success",
-                "message": "WhatsApp message sent successfully!",
-                "api_response": response.text,
-            })
-        else:
-            return JsonResponse({
-                "status": "failed",
-                "message": f"WhatsApp API returned {response.status_code}",
-                "api_response": response.text,
-            }, status=400)
+        response = requests.get(base_url, params=payload)
+        return JsonResponse({'success': True, 'response': response.json()})
 
     except Exception as e:
-        return JsonResponse({"error": f"WhatsApp send failed: {str(e)}"}, status=500)
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+
+# ============================
+# UPDATE PDF FORMAT
+# ============================
+
+@require_http_methods(["POST"])
+def update_po_pdf_format(request, pk):
+    po = get_object_or_404(PurchaseOrder, pk=pk)
+    data = json.loads(request.body)
+    pdf_format = data.get("pdf_format", "FORMAT_1")
+
+    valid_formats = ["FORMAT_1", "FORMAT_2"]
+
+    if pdf_format not in valid_formats:
+        return JsonResponse({
+            "success": False,
+            "error": f"Invalid format. Available: {valid_formats}"
+        }, status=400)
+
+    po.pdf_format = pdf_format
+    po.save(update_fields=["pdf_format"])
+
+    return JsonResponse({
+        "success": True,
+        "message": f"PDF format updated to {pdf_format}"
+    })
+
+
+
+# ============================
+# PREVIEW TEMPLATE IN BROWSER
+# ============================
+
+def preview_pdf_template(request, pk):
+    po = get_object_or_404(PurchaseOrder, pk=pk)
+
+    pdf_format = request.GET.get('format', po.pdf_format or 'FORMAT_1')
+
+    template_map = {
+        'FORMAT_1': 'purchase_order/pdf_templates/format_1.html',
+        'FORMAT_2': 'purchase_order/pdf_templates/format_2.html',
+    }
+    template = template_map.get(pdf_format, template_map['FORMAT_1'])
+
+    return render(request, template, get_po_context(po))
+
+
+
+# ============================
+# BULK ZIP DOWNLOAD
+# ============================
+
+def bulk_download_pdfs(request):
+    import zipfile
+    from io import BytesIO
+
+    try:
+        data = json.loads(request.body)
+        po_ids = data.get("po_ids", [])
+        pdf_format = data.get("format", "FORMAT_1")
+
+        if not po_ids:
+            return JsonResponse({'success': False, 'error': 'No PO IDs provided'}, status=400)
+
+        template_map = {
+            'FORMAT_1': 'purchase_order/pdf_templates/format_1.html',
+            'FORMAT_2': 'purchase_order/pdf_templates/format_2.html',
+        }
+        template = template_map.get(pdf_format, template_map['FORMAT_1'])
+
+        zip_buffer = BytesIO()
+
+        with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zipf:
+            for po_id in po_ids:
+                try:
+                    po = PurchaseOrder.objects.get(pk=po_id)
+                    file_path = generate_pdf_from_template(po, template_name=template)
+
+                    supplier_name = (po.supplier.name or "SUPPLIER").replace(" ", "_")
+                    filename = f"{supplier_name}_{po.po_number}.pdf"
+
+                    zipf.write(file_path, filename)
+                except Exception:
+                    continue
+
+        zip_buffer.seek(0)
+        return FileResponse(zip_buffer, content_type="application/zip")
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)

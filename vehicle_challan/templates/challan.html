@@ -1,0 +1,513 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2>
+                <i class="bi bi-car-front"></i> {{ vehicle.vehicle_number }}
+                <small class="text-muted">- {{ vehicle.vehicle_name }}</small>
+            </h2>
+            <p class="text-muted mb-0">Owner: {{ vehicle.owner_name }}</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'vehicle_details' %}" class="btn btn-secondary me-2">
+                <i class="bi bi-arrow-left"></i> Back
+            </a>
+            <a href="{% url 'challan_add' vehicle.id %}" class="btn btn-danger">
+                <i class="bi bi-plus"></i> Add Challan
+            </a>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="stat-card stat-card-blue">
+                <div class="stat-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/>
+                        <path fill-rule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1z"/>
+                    </svg>
+                </div>
+                <div class="stat-content">
+                    <h3>{{ stats.total_users }}</h3>
+                    <p>Total Users</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card stat-card-green">
+                <div class="stat-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M10.854 7.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7.5 9.793l2.646-2.647a.5.5 0 0 1 .708 0z"/>
+                        <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+                        <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
+                    </svg>
+                </div>
+                <div class="stat-content">
+                    <h3>{{ stats.total_fuel_entries }}</h3>
+                    <p>Activies</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card stat-card-orange">
+                <div class="stat-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M6.5 0a.5.5 0 0 0 0 1H7v1.07a7.001 7.001 0 0 0-3.273 12.474l-.602.602a.5.5 0 0 0 .707.708l.746-.746A6.97 6.97 0 0 0 8 16a6.97 6.97 0 0 0 3.422-.892l.746.746a.5.5 0 0 0 .707-.708l-.601-.602A7.001 7.001 0 0 0 9 2.07V1h.5a.5.5 0 0 0 0-1h-3zm1.038 3.018a6.093 6.093 0 0 1 .924 0 6 6 0 1 1-.924 0zM8.5 5.5a.5.5 0 0 0-1 0v3.362l-1.429 2.38a.5.5 0 1 0 .858.515l1.5-2.5A.5.5 0 0 0 8.5 9V5.5z"/>
+                    </svg>
+                </div>
+                <div class="stat-content">
+                    <h3>{{ stats.pending_challans }}</h3>
+                    <p>Pending Challans</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card stat-card-red">
+                <div class="stat-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M1 3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1H1zm7 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/>
+                        <path d="M0 5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H1a1 1 0 0 1-1-1V5zm3 0a2 2 0 0 1-2 2v4a2 2 0 0 1 2 2h10a2 2 0 0 1 2-2V7a2 2 0 0 1-2-2H3z"/>
+                    </svg>
+                </div>
+                <div class="stat-content">
+                    <h3>₹{{ stats.total_fine_amount }}</h3>
+                    <p>Total Pending Fine</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Challans Section -->
+    <div class="card mb-4">
+        <div class="card-header bg-danger text-white">
+            <h5 class="mb-0"><i class="bi bi-file-text"></i> Challans ({{ stats.total_challans }})</h5>
+        </div>
+        <div class="card-body">
+            {% if challans %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Challan No.</th>
+                                <th>Date</th>
+                                <th>Offense</th>
+                                <th>Location</th>
+                                <th>User</th>
+                                <th>Fine Amount</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for challan in challans %}
+                                <tr>
+                                    <td><strong>{{ challan.challan_number }}</strong></td>
+                                    <td>{{ challan.challan_date|date:"d M Y" }}</td>
+                                    <td>{{ challan.offense_type }}</td>
+                                    <td>{{ challan.offense_location|default:"-" }}</td>
+                                    <td>
+                                        {% if challan.user_display_name %}
+                                            <span class="badge bg-info">{{ challan.user_display_name }}</span>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td><strong>₹{{ challan.fine_amount }}</strong></td>
+                                    <td>
+                                        {% if challan.status == 'paid' %}
+                                            <span class="badge bg-success">Paid</span>
+                                            {% if challan.payment_date %}
+                                                <br><small class="text-muted">{{ challan.payment_date|date:"d M Y" }}</small>
+                                            {% endif %}
+                                        {% elif challan.status == 'pending' %}
+                                            <span class="badge bg-warning">Pending</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Disputed</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if challan.status == 'pending' %}
+                                            <button class="btn btn-sm btn-success" 
+                                                    onclick="markAsPaid({{ challan.id }})">
+                                                <i class="bi bi-check-circle"></i> Mark Paid
+                                            </button>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% if challan.remarks %}
+                                    <tr class="table-light">
+                                        <td colspan="8">
+                                            <small><strong>Remarks:</strong> {{ challan.remarks }}</small>
+                                        </td>
+                                    </tr>
+                                {% endif %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-4">
+                    <i class="bi bi-check-circle" style="font-size: 3rem; color: #198754;"></i>
+                    <p class="text-muted mt-3">No challans found for this vehicle.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Vehicle Usage History Section -->
+    <div class="card">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0"><i class="bi bi-clock-history"></i> Vehicle Usage History ({{ stats.total_fuel_entries }})</h5>
+        </div>
+        <div class="card-body">
+            {% if fuel_entries %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>User</th>
+                                <th>Purpose</th>
+                                <th>Start Time</th>
+                                <th>End Time</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for entry in fuel_entries %}
+                                <tr>
+                                    <td>
+                                        {% if entry.user_display_name %}
+                                            <strong>{{ entry.user_display_name }}</strong>
+                                            {% if entry.user_phone %}
+                                                <br><small class="text-muted">{{ entry.user_phone }}</small>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="text-muted">Not Assigned</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {{ entry.purpose|default:"-" }}
+                                    </td>
+                                    <td>
+                                        {% if entry.start_time %}
+                                            {{ entry.start_time|time:"h:i A" }}
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if entry.end_time %}
+                                            {{ entry.end_time|time:"h:i A" }}
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-4">
+                    <i class="bi bi-inbox" style="font-size: 3rem; color: #6c757d;"></i>
+                    <p class="text-muted mt-3">No usage history found for this vehicle.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Mark as Paid Modal -->
+<div class="modal fade" id="paymentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Mark Challan as Paid</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="paymentForm" method="POST">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Payment Date</label>
+                        <input type="date" name="payment_date" class="form-control" required>
+                    </div>
+                    <input type="hidden" name="status" value="paid">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">Confirm Payment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    body {
+        background-color: #f8f9fa;
+    }
+
+    .stat-card {
+        background: white;
+        padding: 24px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        border: 1px solid #e9ecef;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+    }
+
+    .stat-icon {
+        font-size: 2.5rem;
+        margin-right: 20px;
+        width: 60px;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+    }
+
+    .stat-card-blue .stat-icon {
+        background-color: #e7f3ff;
+        color: #0d6efd;
+    }
+
+    .stat-card-green .stat-icon {
+        background-color: #d1f4e0;
+        color: #198754;
+    }
+
+    .stat-card-orange .stat-icon {
+        background-color: #fff3cd;
+        color: #fd7e14;
+    }
+
+    .stat-card-red .stat-icon {
+        background-color: #ffe5e5;
+        color: #dc3545;
+    }
+
+    .stat-content h3 {
+        margin: 0;
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: #212529;
+    }
+
+    .stat-content p {
+        margin: 0;
+        font-size: 0.875rem;
+        color: #6c757d;
+        font-weight: 500;
+    }
+
+    .card {
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        border: 1px solid #e9ecef;
+        border-radius: 12px;
+        background: white;
+    }
+
+    .card-header {
+        border-bottom: 1px solid #e9ecef;
+        padding: 20px 24px;
+        border-radius: 12px 12px 0 0 !important;
+    }
+
+    .card-header.bg-danger {
+        background-color: white !important;
+        color: #212529 !important;
+        border-bottom: 2px solid #dc3545;
+    }
+
+    .card-header.bg-success {
+        background-color: white !important;
+        color: #212529 !important;
+        border-bottom: 2px solid #198754;
+    }
+
+    .card-header h5 {
+        font-weight: 600;
+        color: #212529 !important;
+    }
+
+    .card-body {
+        padding: 24px;
+    }
+
+    .table th {
+        font-weight: 600;
+        font-size: 0.875rem;
+        color: #495057;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 2px solid #e9ecef;
+        padding: 12px 16px;
+    }
+
+    .table td {
+        padding: 16px;
+        vertical-align: middle;
+        color: #212529;
+    }
+
+    .table-hover tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+
+    .badge {
+        padding: 6px 12px;
+        font-weight: 500;
+        font-size: 0.75rem;
+        border-radius: 6px;
+    }
+
+    .badge.bg-success {
+        background-color: #d1f4e0 !important;
+        color: #198754;
+    }
+
+    .badge.bg-warning {
+        background-color: #fff3cd !important;
+        color: #fd7e14;
+    }
+
+    .badge.bg-info {
+        background-color: #e7f3ff !important;
+        color: #0d6efd;
+    }
+
+    .badge.bg-secondary {
+        background-color: #e9ecef !important;
+        color: #6c757d;
+    }
+
+    .btn {
+        border-radius: 8px;
+        font-weight: 500;
+        padding: 8px 16px;
+        transition: all 0.2s;
+    }
+
+    .btn-primary {
+        background-color: #0d6efd;
+        border-color: #0d6efd;
+    }
+
+    .btn-primary:hover {
+        background-color: #0b5ed7;
+        border-color: #0a58ca;
+        transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+        background-color: white;
+        border-color: #dee2e6;
+        color: #6c757d;
+    }
+
+    .btn-secondary:hover {
+        background-color: #f8f9fa;
+        border-color: #dee2e6;
+        color: #495057;
+    }
+
+    .btn-success {
+        background-color: #198754;
+        border-color: #198754;
+    }
+
+    .btn-success:hover {
+        background-color: #157347;
+        border-color: #146c43;
+        transform: translateY(-1px);
+    }
+
+    .btn-danger {
+        background-color: #dc3545;
+        border-color: #dc3545;
+    }
+
+    .btn-danger:hover {
+        background-color: #bb2d3b;
+        border-color: #b02a37;
+        transform: translateY(-1px);
+    }
+
+    .modal-content {
+        border-radius: 12px;
+        border: none;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    }
+
+    .modal-header {
+        border-bottom: 1px solid #e9ecef;
+        padding: 20px 24px;
+    }
+
+    .modal-body {
+        padding: 24px;
+    }
+
+    .modal-footer {
+        border-top: 1px solid #e9ecef;
+        padding: 16px 24px;
+    }
+
+    .form-label {
+        font-weight: 500;
+        color: #495057;
+        margin-bottom: 8px;
+    }
+
+    .form-control {
+        border-radius: 8px;
+        border: 1px solid #dee2e6;
+        padding: 10px 14px;
+    }
+
+    .form-control:focus {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.1);
+    }
+
+    .alert {
+        border-radius: 8px;
+        border: none;
+        padding: 16px 20px;
+    }
+</style>
+
+<script>
+    function markAsPaid(challanId) {
+        const modal = new bootstrap.Modal(document.getElementById('paymentModal'));
+        const form = document.getElementById('paymentForm');
+        form.action = `/vehicle/challan/${challanId}/update-status/`;
+        
+        // Set today's date as default
+        const today = new Date().toISOString().split('T')[0];
+        form.querySelector('input[name="payment_date"]').value = today;
+        
+        modal.show();
+    }
+</script>
+{% endblock %}

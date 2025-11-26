@@ -117,6 +117,12 @@ class PurchaseOrder(models.Model):
         ('PLUS_TAX', 'Plus Tax (Add tax on base amount)'),
         ('REVERSE_TAX', 'Reverse Tax (Extract tax from total)'),
     ]
+
+    # ✅ ADD THIS NEW CHOICE - Place it right after CALCULATION_METHOD_CHOICES
+    PDF_FORMAT_CHOICES = [
+        ('FORMAT_1', 'Form 1 - Standard (No Client Details)'),
+        ('FORMAT_2', 'Form 2 - With Client Details in Items'),
+    ]
     
     # PO Basic Info
     po_number = models.CharField(
@@ -221,6 +227,15 @@ class PurchaseOrder(models.Model):
         verbose_name="Calculation Method",
         help_text="Plus Tax: Add tax to base price | Reverse Tax: Extract tax from inclusive price"
     )
+
+    # ✅ ADD THIS NEW FIELD - Place it right after calculation_method
+    pdf_format = models.CharField(
+        max_length=20,
+        choices=PDF_FORMAT_CHOICES,
+        default='FORMAT_1',
+        verbose_name="PDF Format",
+        help_text="Format 1: Standard PO | Format 2: Include client details in item rows"
+    )
     
     # Notes/Comments
     notes = models.TextField(blank=True, verbose_name="Additional Notes")
@@ -322,6 +337,14 @@ class PurchaseOrder(models.Model):
 
 # ----------------- ITEM (PRODUCT) MASTER -----------------
 class Item(models.Model):
+    SECTION_CHOICES = [
+        ('GENERAL', 'General'),
+        ('SERVICE', 'Service Items'),
+        ('SOFTWARE', 'Softwares'),
+        ('PAPER_ROLLS', 'Paper Rolls'),
+    ]
+    section = models.CharField(max_length=50, choices=SECTION_CHOICES, default='GENERAL')
+
     TAX_CHOICES = [
         (Decimal('5.00'), '5%'),
         (Decimal('18.00'), '18%'),
@@ -340,6 +363,15 @@ class Item(models.Model):
         help_text="Department this item belongs to",
         null=True,
         blank=True  # Make it optional initially
+    )
+
+    # ✅ NEW: Section field
+    section = models.CharField(
+        max_length=20,
+        choices=SECTION_CHOICES,
+        default='GENERAL',
+        verbose_name="Section",
+        help_text="Item category section"
     )
     
     # New fields with defaults
@@ -406,6 +438,12 @@ class Department(models.Model):
     state = models.CharField(max_length=60, verbose_name="State", default="Not Provided")
     pincode = models.CharField(max_length=20, verbose_name="Pincode", default="Not Provided")
     
+    logo = models.ImageField(
+        upload_to='department_logos/',
+        blank=True,
+        null=True,
+        verbose_name="Department Logo"
+    )
     # Contact Information
     phone_regex = RegexValidator(
         regex=r'^\+?1?\d{9,15}$',
@@ -495,6 +533,20 @@ class PurchaseOrderItem(models.Model):
         help_text="Base price after tax extraction (for Reverse Tax method)"
     )
 
+    item_cost = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=0.00,
+        verbose_name="Item Cost (Entry Total ÷ Qty)"
+    )
+
+    margin = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=0.00,
+        verbose_name="Margin (Sales Price - Item Cost)"
+    )
+
     sales_price = models.DecimalField(
         max_digits=12, 
         decimal_places=2, 
@@ -524,6 +576,14 @@ class PurchaseOrderItem(models.Model):
         verbose_name="Line Total"
     )
 
+    remarks = models.CharField(
+        max_length=255,
+        blank=True,
+        default='',
+        verbose_name="Remarks"
+    )
+
+
     def save(self, *args, **kwargs):
         """
         Auto-calculate line_total and entry_rate based on PO's calculation method
@@ -548,14 +608,20 @@ class PurchaseOrderItem(models.Model):
             subtotal = (self.quantity * self.entry_rate) - (self.discount / (Decimal('1') + (self.tax_percent / Decimal('100'))))
             tax_amt = gross_amount - subtotal
             self.line_total = gross_amount
+
+        if self.quantity and self.line_total:
+            self.item_cost = (self.line_total / self.quantity).quantize(Decimal('0.01'))
+        else:
+            self.item_cost = Decimal('0.00')
+        
+        # ✅ NEW: Calculate margin (Sales Price - Item Cost)
+        self.margin = (self.sales_price - self.item_cost).quantize(Decimal('0.01'))
         
         super().save(*args, **kwargs)
-
-    def __str__(self):
-        return f"{self.item.name} ({self.quantity})"
+        def __str__(self):
+            return f"{self.item.name} ({self.quantity})"
     
     class Meta:
         verbose_name = "Purchase Order Item"
         verbose_name_plural = "Purchase Order Items"
-    
     

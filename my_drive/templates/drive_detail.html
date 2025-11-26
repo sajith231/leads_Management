@@ -122,7 +122,7 @@
     color: #111827;
     text-decoration: none;
     font-weight: 600;
-    flex: 1;
+    margin-right: 8px;
   }
 
   .subfolder-item button {
@@ -131,11 +131,30 @@
     cursor: pointer;
     color: #ef4444;
     font-size: 16px;
+    margin-left: 8px;
   }
 
   .subfolder-item button:hover { color: #dc2626; }
 
   .no-subfolders { color: #6b7280; font-size: 14px; line-height: 1.5; }
+
+  .folder-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex: 1;
+  }
+
+  .item-count {
+    background: #e5e7eb;
+    color: #374151;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+    min-width: 20px;
+    text-align: center;
+  }
 
   /* Main content */
   .panel {
@@ -150,83 +169,236 @@
   .meta { color: #374151; font-size: 15px; margin: 6px 0; }
   .meta strong { font-weight: 600; }
 
-  /* Upload box layout */
-  .upload-box {
+  /* Search Section at Top */
+  .search-section {
+    background: #fff;
+    border: 1px solid #e7e8ef;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    padding: 16px;
+    margin-bottom: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .search-form {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex: 1;
+    min-width: 280px;
+  }
+
+  .search-form input[type="text"] {
+    padding: 10px 14px;
+    border: 1px solid #0d3f8a;
+    border-radius: 8px;
+    font-size: 14px;
+    flex: 1;
+    min-width: 200px;
+  }
+
+  .search-form button {
+    padding: 10px 16px;
+    background: #e5e7eb;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    color: #374151;
+    white-space: nowrap;
+    transition: 0.2s;
+  }
+
+  .search-form button:hover {
+    background: #d1d5db;
+  }
+
+  .row-selector {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .row-selector label {
+    font-weight: 600;
+    color: #374151;
+    font-size: 14px;
+    white-space: nowrap;
+  }
+
+  .row-selector select {
+    padding: 10px 14px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #374151;
+    background: #fff;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+
+  .row-selector select:hover {
+    border-color: #2563eb;
+  }
+
+  @media (max-width: 768px) {
+    .search-section {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .search-form {
+      width: 100%;
+    }
+    .row-selector {
+      justify-content: space-between;
+    }
+  }
+
+  /* Upload Section with Block Style */
+  .upload-section {
     background: #fafafa;
     border: 1px solid #e5e7eb;
     border-radius: 10px;
     padding: 16px;
-    display: grid;
-    gap: 12px;
-    /* use two columns: inputs and fixed area for button */
-    grid-template-columns: 1fr 220px;
-    align-items: center;
+    margin-bottom: 16px;
   }
 
-  @media (max-width: 640px) {
-    .upload-box { grid-template-columns: 1fr; }
-    .upload-box .controls-row { display: grid; grid-template-columns: 1fr 120px; gap: 8px; width: 100%; }
+  .upload-section label {
+    display: block;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 12px;
+    font-size: 15px;
   }
 
-  .upload-box label { grid-column: 1 / -1; font-weight: 600; color: #333; margin-bottom: 6px; }
-  .upload-box input, .upload-box button {
-    border-radius: 8px; font-size: 14px;
-  }
-
-  /* style file and text inputs to not expand the grid */
-  .upload-box .controls-row {
-    grid-column: 1 / -1;
+  .upload-form {
     display: flex;
-    gap: 8px;
-    align-items: center;
+    flex-direction: column;
+    gap: 12px;
   }
 
-  .upload-box input[type="file"] {
-    padding: 10px;
+  .upload-form input[type="file"] {
+    padding: 10px 12px;
     border: 1px solid #d1d5db;
-    min-width: 0; /* important to prevent overflowing the flex container */
-    flex: 0 1 320px; /* allow shrink */
-    overflow: hidden;
-    text-overflow: ellipsis;
+    border-radius: 8px;
+    background: #fff;
+    width: 100%;
+    display: block;
   }
 
-  .upload-box input[name="file_name"] {
-    padding: 10px;
+  .upload-form input[type="text"] {
+    padding: 10px 12px;
     border: 1px solid #d1d5db;
-    min-width: 0;
-    flex: 1 1 auto;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    border-radius: 8px;
+    width: 100%;
+    display: block;
   }
 
-  /* Make the upload button small and fixed width */
-  .upload-box button {
-    padding: 8px 12px;
+  .upload-form button {
+    padding: 10px 20px;
     border: 0;
     background: #0d6efd;
     color: #fff;
     font-weight: 600;
     cursor: pointer;
-    width: 120px;
+    border-radius: 8px;
     white-space: nowrap;
+    display: block;
+    width: 100%;
   }
-  .upload-box button:hover { background: #0b5ed7; }
+
+  .upload-form button:hover {
+    background: #0b5ed7;
+  }
+
+  /* Upload loader */
+  .upload-loader {
+    display: none;
+    text-align: center;
+    margin-bottom: 12px;
+    padding: 12px;
+    background: #f0f9ff;
+    border: 1px solid #bae6fd;
+    border-radius: 8px;
+  }
+
+  .upload-loader.active {
+    display: block;
+  }
+
+  .spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid #cbd5e1;
+    border-top-color: #2563eb;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    vertical-align: middle;
+    margin-right: 8px;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  /* Pagination */
+  .pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 15px 0 20px;
+    gap: 14px;
+  }
+
+  .pagination a,
+  .pagination span {
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid #e6eefb;
+    text-decoration: none;
+  }
+
+  .pagination a {
+    color: #2563eb;
+  }
+
+  .pagination a:hover {
+    background: #f0f9ff;
+  }
+
+  .pagination .current {
+    background: #f8fafc;
+    font-weight: 600;
+    color: #1e40af;
+  }
+
+  .pagination .disabled {
+    color: #94a3b8;
+    border-color: #f1f5f9;
+  }
 
   /* Table wrapper */
   .table-wrap {
     background: #fff;
     border: 1px solid #e5e7eb;
     border-radius: 10px;
-    overflow: auto; /* allow horizontal scroll if absolutely necessary */
+    overflow: auto;
     box-shadow: 0 2px 8px rgba(0,0,0,0.04);
   }
 
-  /* Use fixed table layout so columns won't stretch with long content */
   table {
     width: 100%;
     border-collapse: collapse;
     table-layout: fixed;
-    min-width: 700px; /* keep a reasonable minimum so small screens get a scrollbar */
+    min-width: 700px;
   }
 
   thead th {
@@ -238,287 +410,270 @@
     text-align: left;
   }
 
-  tbody td { padding: 12px; border-top: 1px solid #edf0f5; font-size: 14px; vertical-align: middle; }
-  tbody tr:nth-child(even) td { background: #f9fafb; }
-  /* Keep hover background but it won't change layout */
-  tbody tr:hover td { background: #f3f4f6; }
-  .text-center { text-align: center; }
+  tbody td {
+    padding: 12px;
+    border-top: 1px solid #edf0f5;
+    font-size: 14px;
+    vertical-align: middle;
+  }
 
-  .icon-btn { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 6px; transition: 0.2s; }
-  .icon-btn:hover { transform: translateY(-1px); }
+  tbody tr:nth-child(even) td {
+    background: #f9fafb;
+  }
 
-  .icon-view { color: #0d6efd; background: #eef4ff; }
-  .icon-edit { color: #f59e0b; background: #fff7ed; }
-  .icon-delete { color: #fff; background: #dc3545; }
-  .icon-delete:hover { background: #bb2d3b; }
+  tbody tr:hover td {
+    background: #f3f4f6;
+  }
 
-  /* File name cell: wrap long names line-by-line (no hover reflow) */
+  .text-center {
+    text-align: center;
+  }
+
+  .icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    transition: 0.2s;
+  }
+
+  .icon-btn:hover {
+    transform: translateY(-1px);
+  }
+
+  .icon-view {
+    color: #0d6efd;
+    background: #eef4ff;
+  }
+
+  .icon-edit {
+    color: #f59e0b;
+    background: #fff7ed;
+  }
+
+  .icon-delete {
+    color: #fff;
+    background: #dc3545;
+  }
+
+  .icon-delete:hover {
+    background: #bb2d3b;
+  }
+
+  /* File name cell */
   .file-name {
     display: block;
     width: 100%;
     max-width: 100%;
-    white-space: normal;          /* allow wrapping */
-    word-break: break-word;      /* break long continuous strings */
-    overflow-wrap: anywhere;     /* supports breaking at any point if needed */
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: anywhere;
     line-height: 1.35;
     margin: 0;
     padding: 0;
   }
 
-  /* remove hover expansion to prevent shaking (no :hover style here) */
-
   /* Shared popup styling */
-  #createSubfolderModal, #renameModal {
-    display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(17,24,39,0.55); align-items: center; justify-content: center;
-    z-index: 3000; backdrop-filter: blur(3px); animation: fadeIn .25s ease;
+  #createSubfolderModal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(17, 24, 39, 0.55);
+    align-items: center;
+    justify-content: center;
+    z-index: 3000;
+    backdrop-filter: blur(3px);
+    animation: fadeIn 0.25s ease;
   }
-  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
 
   .modal-card {
-    background: #fff; border-radius: 16px; padding: 24px 28px; width: 400px; max-width: 90%;
-    box-shadow: 0 15px 40px rgba(0,0,0,0.15); transform: scale(0.95);
-    animation: popIn .25s ease forwards;
+    background: #fff;
+    border-radius: 16px;
+    padding: 24px 28px;
+    width: 400px;
+    max-width: 90%;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+    transform: scale(0.95);
+    animation: popIn 0.25s ease forwards;
   }
-  @keyframes popIn { to { transform: scale(1); } }
 
-  .modal-card h3 { margin-top: 0; font-size: 20px; font-weight: 700; color: #111827; }
-  .modal-card p { color: #6b7280; margin-bottom: 16px; }
+  @keyframes popIn {
+    to {
+      transform: scale(1);
+    }
+  }
+
+  .modal-card h3 {
+    margin-top: 0;
+    font-size: 20px;
+    font-weight: 700;
+    color: #111827;
+  }
+
+  .modal-card p {
+    color: #6b7280;
+    margin-bottom: 16px;
+  }
+
   .modal-card input {
-    width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px;
-    margin-bottom: 14px; font-size: 14px;
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    margin-bottom: 14px;
+    font-size: 14px;
   }
-  .modal-card .actions { display: flex; justify-content: flex-end; gap: 10px; }
+
+  .modal-card .actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+
   .modal-card button {
-    padding: 8px 16px; border-radius: 8px; cursor: pointer; border: none; font-weight: 600;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    border: none;
+    font-weight: 600;
   }
-  .btn-cancel { background: #e5e7eb; color: #111827; }
-  .btn-create { background: #2563eb; color: #fff; }
-  .btn-create:hover { background: #1d4ed8; }
 
-  .folder-content {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex: 1;
-}
+  .btn-cancel {
+    background: #e5e7eb;
+    color: #111827;
+  }
 
-.item-count {
-  background: #e5e7eb;
-  color: #374151;
-  font-size: 11px;
-  font-weight: 600;
-  padding: 2px 8px;
-  border-radius: 10px;
-  min-width: 20px;
-  text-align: center;
-}
+  .btn-create {
+    background: #2563eb;
+    color: #fff;
+  }
 
-.subfolder-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: #fafafa;
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  padding: 10px 12px;
-}
-
-.subfolder-item a {
-  color: #111827;
-  text-decoration: none;
-  font-weight: 600;
-  margin-right: 8px;
-}
-
-.subfolder-item button {
-  border: 0;
-  background: none;
-  cursor: pointer;
-  color: #ef4444;
-  font-size: 16px;
-  margin-left: 8px;
-}
-
-
+  .btn-create:hover {
+    background: #1d4ed8;
+  }
 </style>
 
-<div class="page-wrap">
+<div class="">
   <div class="top-bar">
     <a href="{% url 'drive_list' %}" class="back-link">← Back to Drive</a>
   </div>
 
   <div class="main-grid">
     <!-- LEFT: Subfolders -->
-  <aside class="subfolder-panel">
-  <div class="subfolder-header">
-    <h3>Subfolders</h3>
-    <button id="openCreateSubfolder"><i class="fa-solid fa-folder"></i></button>
-  </div>
-
-  <div class="subfolder-list">
-    {% if subfolders %}
-      {% for sub in subfolders %}
-        <div class="subfolder-item">
-          <div class="folder-content">
-            <a href="{% url 'drive_detail' sub.id %}">📁 {{ sub.name }}</a>
-            <span class="item-count">{{ sub.file_count }}</span>
-          </div>
-
-          <form method="POST" action="{% url 'subfolder_delete' sub.id %}"
-                onsubmit="return handleSubfolderDelete({{ sub.file_count }});">
-            {% csrf_token %}
-            <button type="submit" title="Delete {{ sub.name }}">🗑️</button>
-          </form>
-        </div>
-      {% endfor %}
-    {% else %}
-      <div class="no-subfolders">
-        No subfolders yet.<br>Create one using the button above.
+    <aside class="">
+      <div class="subfolder-header">
+        <h3>Subfolders</h3>
+        <button id="openCreateSubfolder"><i class="fa-solid fa-folder"></i></button>
       </div>
-    {% endif %}
-  </div>
-</aside>
 
+      <div class="subfolder-list">
+        {% if subfolders %}
+          {% for sub in subfolders %}
+            <div class="subfolder-item">
+              <div class="folder-content">
+                <a href="{% url 'drive_detail' sub.id %}">📁 {{ sub.name }}</a>
+                <span class="item-count">{{ sub.file_count }}</span>
+              </div>
+
+              <form method="POST" action="{% url 'subfolder_delete' sub.id %}"
+                    onsubmit="return handleSubfolderDelete({{ sub.file_count }});">
+                {% csrf_token %}
+                <button type="submit" title="Delete {{ sub.name }}">🗑️</button>
+              </form>
+            </div>
+          {% endfor %}
+        {% else %}
+          <div class="no-subfolders">
+            No subfolders yet.<br>Create one using the button above.
+          </div>
+        {% endif %}
+      </div>
+    </aside>
 
     <!-- RIGHT: Main Content -->
     <div>
       <div class="panel">
         <div class="meta"><strong>Folder:</strong> {{ folder.name }}</div>
         <div class="meta"><strong>Created:</strong> {{ folder.created_at|date:"Y-m-d" }}</div>
+      </div>
 
-        <form class="upload-box" method="POST" enctype="multipart/form-data">
+      <!-- SEARCH SECTION AT TOP -->
+      <div class="search-section">
+        <div class="search-form">
+          <input type="text" id="fileSearch" placeholder="🔍 Search files...">
+          <button id="clearSearch">Clear</button>
+        </div>
+
+        <div class="row-selector">
+          <label for="rowCount">Show rows:</label>
+          <select
+            id="rowCount"
+            onchange="location.href='?per_page=' + this.value + '{% if query %}&q={{ query|urlencode }}{% endif %}{% if request.GET.page %}&page=1{% endif %}'">
+            <option value="10" {% if per_page == 10 or not per_page %}selected{% endif %}>10</option>
+            <option value="15" {% if per_page == 15 %}selected{% endif %}>15</option>
+            <option value="25" {% if per_page == 25 %}selected{% endif %}>25</option>
+            <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
+            <option value="100" {% if per_page == 100 %}selected{% endif %}>100</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- UPLOAD SECTION WITH BLOCK STYLE -->
+      <div class="upload-section">
+        <label for="fileUpload"><i class="fa-solid fa-upload"></i> Upload File (PDF, DOCX, TXT, XLSX, PPTX):</label>
+        <form class="upload-form" method="POST" enctype="multipart/form-data">
           {% csrf_token %}
-          <label for="fileUpload"><i class="fa-solid fa-upload"></i> Upload File (PDF, DOCX, TXT, XLSX, PPTX):</label>
-
-          <!-- Controls row: file input + optional custom filename + button -->
-          <div class="controls-row">
-            <input type="file" id="fileUpload" name="fileUpload" accept=".pdf,doc,docx,txt,xls,xlsx,ppt,pptx" required>
-            <input type="text" name="file_name" placeholder="Custom file name (optional)">
-            <button type="submit">Upload</button>
-          </div>
+          <input type="file" id="fileUpload" name="fileUpload" accept=".pdf,.doc,.docx,.txt,.xls,.xlsx,.ppt,.pptx" required>
+          <input type="text" id="customFileName" name="file_name" placeholder="Custom file name (optional)">
+          <button type="submit">Upload</button>
         </form>
       </div>
 
+      <!-- Upload loader -->
+      <div id="uploadLoader" class="upload-loader">
+        <span class="spinner"></span>
+        <span style="color:#374151;font-size:14px;font-weight:500;">Uploading file...</span>
+      </div>
 
-  <!-- Small loader above the table -->
-<div id="uploadLoader" style="display:none; text-align:center; margin-bottom:12px;">
-  <div style="
-    display:inline-block;
-    width:24px;
-    height:24px;
-    border:3px solid #cbd5e1;
-    border-top-color:#2563eb;
-    border-radius:50%;
-    animation:spin 1s linear infinite;
-    vertical-align:middle;
-  "></div>
-  <span style="margin-left:8px; color:#374151; font-size:14px; font-weight:500;">
-    Uploading file...
-  </span>
-</div>
+      <!-- Pagination -->
+      {% if paginator.num_pages > 1 %}
+        <div class="pagination">
+          {% if page_obj.has_previous %}
+            <a href="?per_page={{ per_page|default:'10' }}&page={{ page_obj.previous_page_number }}{% if query %}&q={{ query|urlencode }}{% endif %}">Previous</a>
+          {% else %}
+            <span class="disabled">Previous</span>
+          {% endif %}
 
+          <span class="current">Page {{ page_obj.number }} of {{ paginator.num_pages }}</span>
 
-
-<!-- Search bar and Row count selector -->
-<div style="margin-bottom: 12px; display: flex; justify-content: space-between; gap: 8px; align-items: center;">
-  <!-- Row count selector (LEFT) -->
-  <div style="display: flex; align-items: center; gap: 10px;">
-    <label for="rowCount" style="font-weight: 600; color: #374151; font-size: 14px;">
-      Show rows:
-    </label>
-    <select 
-      id="rowCount" 
-      onchange="location.href='?per_page=' + this.value + '{% if request.GET.page %}&page=1{% endif %}'"
-      style="
-        padding: 8px 12px;
-        border: 1px solid #d1d5db;
-        border-radius: 8px;
-        font-size: 14px;
-        font-weight: 600;
-        color: #374151;
-        background: #fff;
-        cursor: pointer;
-        transition: all 0.2s;
-      "
-      onmouseover="this.style.borderColor='#2563eb'"
-      onmouseout="this.style.borderColor='#d1d5db'"
-    >
-      <option value="10" {% if request.GET.per_page == '10' or not request.GET.per_page %}selected{% endif %}>10</option>
-      <option value="15" {% if request.GET.per_page == '15' %}selected{% endif %}>15</option>
-      <option value="25" {% if request.GET.per_page == '25' %}selected{% endif %}>25</option>
-      <option value="50" {% if request.GET.per_page == '50' %}selected{% endif %}>50</option>
-      <option value="100" {% if request.GET.per_page == '100' %}selected{% endif %}>100</option>
-    </select>
-  </div>
-
-  <!-- Search bar (RIGHT) -->
-  <div style="display: flex; gap: 8px; align-items: center;">
-    <input
-      type="text"
-      id="fileSearch"
-      placeholder="🔍 Search files..."
-      style="
-        padding: 8px 12px;
-        border: 1px solid #0d3f8a;
-        border-radius: 8px;
-        font-size: 14px;
-        width: 260px;
-      "
-    >
-    <button
-      id="clearSearch"
-      style="
-        padding: 8px 14px;
-        background: #e5e7eb;
-        border: none;
-        border-radius: 8px;
-        font-weight: 600;
-        cursor: pointer;
-        color: #374151;
-        transition: 0.2s;
-      "
-    >
-      Clear
-    </button>
-  </div>
-</div>
-
-
-{% if paginator.num_pages > 1 %}
-  <div style="display:flex; justify-content:center; align-items:center; margin:15px 0 20px; gap:14px;">
-    {% if page_obj.has_previous %}
-      <a href="?per_page={{ request.GET.per_page|default:'10' }}&page={{ page_obj.previous_page_number }}"
-         style="text-decoration:none; color:#2563eb; padding:8px 12px; border-radius:6px; border:1px solid #e6eefb;">
-        Previous
-      </a>
-    {% else %}
-      <span style="padding:8px 12px; color:#94a3b8; border-radius:6px; border:1px solid #f1f5f9;">Previous</span>
-    {% endif %}
-
-    <span style="padding:8px 12px; border-radius:6px; background:#f8fafc; border:1px solid #e6eefb; font-weight:600;">
-      Page {{ page_obj.number }} of {{ paginator.num_pages }}
-    </span>
-
-    {% if page_obj.has_next %}
-      <a href="?per_page={{ request.GET.per_page|default:'10' }}&page={{ page_obj.next_page_number }}"
-         style="text-decoration:none; color:#2563eb; padding:8px 12px; border-radius:6px; border:1px solid #e6eefb;">
-        Next
-      </a>
-    {% else %}
-      <span style="padding:8px 12px; color:#94a3b8; border-radius:6px; border:1px solid #f1f5f9;">Next</span>
-    {% endif %}
-  </div>
-{% endif %}
-
+          {% if page_obj.has_next %}
+            <a href="?per_page={{ per_page|default:'10' }}&page={{ page_obj.next_page_number }}{% if query %}&q={{ query|urlencode }}{% endif %}">Next</a>
+          {% else %}
+            <span class="disabled">Next</span>
+          {% endif %}
+        </div>
+      {% endif %}
 
       <div class="table-wrap">
         <table>
-          <!-- fixed column widths using colgroup so layout stays stable -->
           <colgroup>
             <col style="width: 60px;">
             <col style="width: 140px;">
-            <col> <!-- file name takes remaining space -->
+            <col>
             <col style="width: 80px;">
             <col style="width: 80px;">
             <col style="width: 80px;">
@@ -526,8 +681,12 @@
           </colgroup>
           <thead>
             <tr>
-              <th>SL No</th><th>Date</th><th>File Name</th>
+              <th>SL No</th>
+              <th>Date</th>
+              <th>File Name</th>
               <th class="text-center">Download</th>
+              <th class="text-center">Copy Link</th>
+
               <th class="text-center">View</th>
               <th class="text-center">Edit</th>
               <th class="text-center">Delete</th>
@@ -535,33 +694,38 @@
           </thead>
           <tbody>
             {% for f in files %}
-            <tr>
-              <td>{{ forloop.counter }}</td>
-              <td>{{ f.uploaded_at|date:"Y-m-d" }}</td>
+              <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ f.uploaded_at|date:"Y-m-d" }}</td>
 
-              <!-- file name cell: use .file-name and allow multi-line wrapping -->
-              <td>
-                <div class="file-name" title="{% if f.file_name %}{{ f.file_name }}{% else %}{{ f.file.name|slice:'7:' }}{% endif %}">
-                  {% if f.file_name %}
-                    {{ f.file_name }}
-                  {% else %}
-                    {{ f.file.name|slice:"7:" }}
-                  {% endif %}
-                </div>
-              </td>
+                <td>
+                  <div class="file-name" title="{% if f.file_name %}{{ f.file_name }}{% else %}{{ f.file.name|slice:'7:' }}{% endif %}">
+                    {% if f.file_name %}
+                      {{ f.file_name }}
+                    {% else %}
+                      {{ f.file.name|slice:"7:" }}
+                    {% endif %}
+                  </div>
+                </td>
 
-              <td class="text-center"><a class="icon-btn icon-view" href="{% url 'file_download' f.id %}"><i class="fa-solid fa-download"></i></a></td>
-              <td class="text-center"><a class="icon-btn icon-view" href="{% url 'file_preview' f.id %}" target="_blank"><i class="fa-solid fa-eye"></i></a></td>
-              <td class="text-center">
-  <a href="{% url 'file_edit_page' f.id %}" class="icon-btn icon-edit" title="Edit file name">
-    <i class="fa-solid fa-pen-to-square"></i>
-  </a>
-</td>
+                <td class="text-center"><a class="icon-btn icon-view" href="{% url 'file_download' f.id %}"><i class="fa-solid fa-download"></i></a></td>
+                <td class="text-center">
+                  <button class="icon-btn icon-view" onclick="generateCode({{ f.id }}, this)">
+                    <i class="fa-solid fa-link"></i>
+                  </button>
+                  <span class="share-code" style="display:none;margin-left:8px;color:#2563eb;font-weight:bold;"></span>
+                </td>
 
-              <td class="text-center"><a class="icon-btn icon-delete" href="{% url 'file_delete' f.id %}" onclick="return confirm('Delete this file?');"><i class="fa-solid fa-trash"></i></a></td>
-            </tr>
+                <td class="text-center"><a class="icon-btn icon-view" href="{% url 'file_preview' f.id %}" target="_blank"><i class="fa-solid fa-eye"></i></a></td>
+                <td class="text-center">
+                  <a href="{% url 'file_edit_page' f.id %}" class="icon-btn icon-edit" title="Edit file name">
+                    <i class="fa-solid fa-pen-to-square"></i>
+                  </a>
+                </td>
+                <td class="text-center"><a class="icon-btn icon-delete" href="{% url 'file_delete' f.id %}" onclick="return confirm('Delete this file?');"><i class="fa-solid fa-trash"></i></a></td>
+              </tr>
             {% empty %}
-            <tr><td colspan="7" class="text-center" style="color:#6b7280;padding:20px;">No files yet.</td></tr>
+              <tr><td colspan="7" class="text-center" style="color:#6b7280;padding:20px;">No files yet.</td></tr>
             {% endfor %}
           </tbody>
         </table>
@@ -586,18 +750,14 @@
   </div>
 </div>
 
-
-
 <script>
   // Subfolder modal logic
   const subModal = document.getElementById('createSubfolderModal');
   document.getElementById('openCreateSubfolder').onclick = () => subModal.style.display = 'flex';
   document.getElementById('cancelCreateSubfolder').onclick = () => subModal.style.display = 'none';
-  subModal.onclick = e => { if(e.target===subModal) subModal.style.display='none'; };
+  subModal.onclick = e => { if (e.target === subModal) subModal.style.display = 'none'; };
 
-
-
-  // Subfolder deletion logic (keeps your previous behavior)
+  // Subfolder deletion logic
   function handleSubfolderDelete(fileCount) {
     if (fileCount > 0) {
       alert("🚫 This folder cannot be deleted because it contains files.\n\nPlease remove all files first.");
@@ -607,46 +767,107 @@
     }
   }
 
-  // No extra JS needed for file-name display: CSS handles multi-line wrapping.
-  document.addEventListener('DOMContentLoaded', function() {
-    // nothing required here for file names
+  // Upload inline loader
+  document.querySelector('.upload-form').addEventListener('submit', function() {
+    const fileInput = document.getElementById('fileUpload');
+    if (fileInput.files.length > 0) {
+      document.getElementById('uploadLoader').classList.add('active');
+    }
   });
 
+  // Auto-fill custom name from selected file (without extension)
+  (function() {
+    const fileInput = document.getElementById('fileUpload');
+    const customInput = document.getElementById('customFileName');
 
+    if (fileInput && customInput) {
+      fileInput.addEventListener('change', () => {
+        if (!fileInput.files || !fileInput.files[0]) return;
 
-  
-// Small inline loader logic
-document.querySelector('.upload-box').addEventListener('submit', function(e) {
-  const fileInput = document.getElementById('fileUpload');
-  if (fileInput.files.length > 0) {
-    document.getElementById('uploadLoader').style.display = 'block';
-  }
-});
+        const fullName = fileInput.files[0].name;
+        const baseName = fullName.replace(/\.[^/.]+$/, '');
+        customInput.value = baseName;
+      });
+    }
+  })();
 
+  // File search filter with clear button
+  const searchInput = document.getElementById("fileSearch");
+  const clearButton = document.getElementById("clearSearch");
+  const rows = document.querySelectorAll("tbody tr");
 
-// ---- File search filter with clear button ----
-const searchInput = document.getElementById("fileSearch");
-const clearButton = document.getElementById("clearSearch");
-const rows = document.querySelectorAll("tbody tr");
+  searchInput.addEventListener("input", function() {
+    const query = this.value.toLowerCase().trim();
 
-searchInput.addEventListener("input", function () {
-  const query = this.value.toLowerCase().trim();
-
-  rows.forEach(row => {
-    const fileNameCell = row.querySelector(".file-name");
-    if (!fileNameCell) return; // skip empty rows
-    const text = fileNameCell.textContent.toLowerCase();
-    row.style.display = text.includes(query) ? "" : "none";
+    rows.forEach(row => {
+      const fileNameCell = row.querySelector(".file-name");
+      if (!fileNameCell) return;
+      const text = fileNameCell.textContent.toLowerCase();
+      row.style.display = text.includes(query) ? "" : "none";
+    });
   });
-});
 
-clearButton.addEventListener("click", function () {
-  searchInput.value = "";
-  rows.forEach(row => row.style.display = "");
-  searchInput.focus();
-});
-
-
+  clearButton.addEventListener("click", function() {
+    searchInput.value = "";
+    rows.forEach(row => row.style.display = "");
+    searchInput.focus();
+  });
 </script>
+
+
+<script>
+function generateCode(fileId, btn) {
+  // Disable button while generating
+  btn.disabled = true;
+  btn.style.opacity = "0.6";
+
+  fetch(`/my_drive/drives/share/gen/${fileId}/`)
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`Server responded with ${response.status}`);
+      }
+      return response.json();
+    })
+    .then(data => {
+      if (!data.code || !data.link) {
+        throw new Error("Invalid response format");
+      }
+
+      // Show code beside the button
+      const codeSpan = btn.parentElement.querySelector(".share-code");
+      codeSpan.textContent = data.code;
+      codeSpan.style.display = "inline";
+      codeSpan.style.background = "#2563eb";
+      codeSpan.style.color = "#fff";
+      codeSpan.style.padding = "4px 8px";
+      codeSpan.style.borderRadius = "6px";
+      codeSpan.style.marginLeft = "8px";
+      codeSpan.style.fontWeight = "600";
+
+      // Copy link to clipboard
+      navigator.clipboard.writeText(data.link)
+        .then(() => {
+          alert("✅ Link copied!\nUse this code: " + data.code);
+        })
+        .catch(() => {
+          alert("🔗 Code generated: " + data.code + "\n(Could not copy automatically)");
+        });
+
+      // Remove code after 1 minute
+      setTimeout(() => {
+        codeSpan.style.display = "none";
+        btn.disabled = false;
+        btn.style.opacity = "1";
+      }, 60000);
+    })
+    .catch(err => {
+      console.error("Error:", err);
+      alert("⚠️ Error generating link.\nPlease check the URL or reload the page.");
+      btn.disabled = false;
+      btn.style.opacity = "1";
+    });
+}
+</script>
+
 
 {% endblock %}

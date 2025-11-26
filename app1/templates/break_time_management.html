@@ -1,23 +1,42 @@
 {% extends 'base.html' %}
-
 {% block content %}
 <div class="container">
     <h2 class="my-4">Break Time Management</h2>
 
-    <!-- Date Filter -->
-    <div class="mb-3">
-        <label for="filter-date">Select Date:</label>
-        <input type="date" id="filter-date" class="form-control" 
-               value="{{ selected_date|date:'Y-m-d' }}" 
-               onchange="filterByDate(this.value)">
+    <!-- Filters -->
+    <div class="row mb-3">
+        <div class="col-md-3">
+            <label>From Date:</label>
+            <input type="date" id="start-date" class="form-control"
+                   value="{{ start_date|date:'Y-m-d' }}" onchange="applyFilters()">
+        </div>
+        <div class="col-md-3">
+            <label>To Date:</label>
+            <input type="date" id="end-date" class="form-control"
+                   value="{{ end_date|date:'Y-m-d' }}" onchange="applyFilters()">
+        </div>
+        <div class="col-md-4">
+            <label>User:</label>
+            <select id="filter-user" class="form-control" onchange="applyFilters()">
+                <option value="">All Active Users</option>
+                {% for user in active_users %}
+                    <option value="{{ user.id }}" {% if user.id|stringformat:"s" == selected_user_id|stringformat:"s" %}selected{% endif %}>
+                        {{ user.name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
     </div>
 
+    <!-- Table -->
     <div style="overflow: scroll;">
         <table class="table table-bordered">
-            <thead>
+            <thead class="table-light">
                 <tr>
                     <th>Employee</th>
                     <th>Date</th>
+                    <th>Main Punch In</th>
+                    <th>Main Punch Out</th>
                     <th>Break Punch In</th>
                     <th>Break Punch Out</th>
                     <th>Duration</th>
@@ -25,30 +44,44 @@
                 </tr>
             </thead>
             <tbody>
-                {% for break_time in break_times %}
-                <tr>
-                    <td>{{ break_time.employee.name }}</td>
-                    <td>{{ break_time.date|date:"d-m-Y" }}</td>
-                    <td>{{ break_time.break_punch_in|date:"d-m-Y H:i:s" }}</td>
-                    <td>{{ break_time.break_punch_out|date:"d-m-Y H:i:s" }}</td>
-                    <td>
-                        {% if break_time.break_punch_out %}
-                            {{ break_time.break_punch_in|timesince:break_time.break_punch_out }}
-                        {% else %}
-                            In Progress
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if break_time.is_active and not break_time.break_punch_out %}
-                            <span class="badge bg-warning">Active</span>
-                        {% else %}
-                            <span class="badge bg-success">Completed</span>
-                        {% endif %}
-                    </td>
-                </tr>
+                {% for record in punched_users %}
+                    {% if record.breaks %}
+                        {% for b in record.breaks %}
+                        <tr>
+                            <td>{{ record.employee.name }}</td>
+                            <td>{{ record.date|date:"d-m-Y" }}</td>
+                            <td>{{ record.punch_in|date:"H:i:s" }}</td>
+                            <td>{{ record.punch_out|date:"H:i:s"|default:"-" }}</td>
+                            <td>{{ b.break_punch_in|date:"H:i:s" }}</td>
+                            <td>{{ b.break_punch_out|date:"H:i:s"|default:"-" }}</td>
+                            <td>
+                                {% if b.break_punch_out %}
+                                    {{ b.break_punch_out|timeuntil:b.break_punch_in }}
+                                {% else %}
+                                    In Progress
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if b.break_punch_out %}
+                                    <span class="badge bg-success">Completed</span>
+                                {% else %}
+                                    <span class="badge bg-warning">Active</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td>{{ record.employee.name }}</td>
+                            <td>{{ record.date|date:"d-m-Y" }}</td>
+                            <td>{{ record.punch_in|date:"H:i:s" }}</td>
+                            <td>{{ record.punch_out|date:"H:i:s"|default:"-" }}</td>
+                            <td colspan="4" class="text-center">No Breaks Recorded</td>
+                        </tr>
+                    {% endif %}
                 {% empty %}
                 <tr>
-                    <td colspan="6" class="text-center">No break time data available for this date.</td>
+                    <td colspan="8" class="text-center">No main punch-in data found for this date or user.</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -57,8 +90,16 @@
 </div>
 
 <script>
-function filterByDate(date) {
-    window.location.href = '?date=' + date;
+function applyFilters() {
+    const startDate = document.getElementById('start-date').value;
+    const endDate = document.getElementById('end-date').value;
+    const user = document.getElementById('filter-user').value;
+
+    let url = '?';
+    if (startDate) url += 'start_date=' + startDate + '&';
+    if (endDate) url += 'end_date=' + endDate + '&';
+    if (user) url += 'user=' + user;
+    window.location.href = url;
 }
 </script>
 {% endblock %}

@@ -328,7 +328,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
 
-
 <script>
 document.addEventListener("DOMContentLoaded", function () {
     // 🔁 Toggle OB/Debit/Credit columns
@@ -382,7 +381,14 @@ document.addEventListener("DOMContentLoaded", function () {
             fetch(`/app3/get_dq_ledger/?code=${code}`)
                 .then(res => res.json())
                 .then(data => {
-                    fullLedgerData = data || [];
+                    if (!Array.isArray(data) || data.length === 0) {
+                        content.innerHTML = "<div class='text-dark'>No ledger entries available.</div>";
+                        modal.show();
+                        return;
+                    }
+
+                    // ✅ Default sort: earliest date first
+                    fullLedgerData = data.sort((a, b) => new Date(a.entry_date) - new Date(b.entry_date));
                     renderTable(fullLedgerData);
                     modal.show();
                 })
@@ -394,7 +400,9 @@ document.addEventListener("DOMContentLoaded", function () {
             // 📅 Date filter
             dateInput.oninput = () => {
                 const date = dateInput.value;
-                const filtered = !date ? fullLedgerData : fullLedgerData.filter(e => e.entry_date && e.entry_date.startsWith(date));
+                const filtered = !date
+                    ? fullLedgerData
+                    : fullLedgerData.filter(e => e.entry_date && e.entry_date.startsWith(date));
                 renderTable(filtered);
             };
 
@@ -410,13 +418,6 @@ document.addEventListener("DOMContentLoaded", function () {
                     content.innerHTML = "<div class='text-dark'>No ledger entries available.</div>";
                     return;
                 }
-
-                // ✅ Sort by voucher number ascending
-                data.sort((a, b) => {
-                    const aVoucher = (a.voucher_no || "").toString().toLowerCase();
-                    const bVoucher = (b.voucher_no || "").toString().toLowerCase();
-                    return aVoucher.localeCompare(bVoucher, undefined, { numeric: true });
-                });
 
                 let totalDebit = 0, totalCredit = 0;
 
@@ -441,8 +442,14 @@ document.addEventListener("DOMContentLoaded", function () {
                 const totalBalance = totalDebit - totalCredit;
 
                 content.innerHTML = `
-                    <div class="d-flex justify-content-end mb-2">
-                        <button class="btn btn-sm btn-outline-primary" id="toggleVoucherBtn">Show Voucher</button>
+                    <div class="d-flex justify-content-between mb-2">
+                        <div>
+                            <button class="btn btn-sm btn-outline-primary me-2" id="sortDateBtn">Sort by Date</button>
+                            <button class="btn btn-sm btn-outline-primary me-2" id="sortVoucherBtn">Sort by Voucher</button>
+                        </div>
+                        <div>
+                            <button class="btn btn-sm btn-outline-primary" id="toggleVoucherBtn">Show Voucher</button>
+                        </div>
                     </div>
                     <table class="table table-bordered table-sm align-middle">
                         <thead class="table-light">
@@ -470,6 +477,22 @@ document.addEventListener("DOMContentLoaded", function () {
                         </tfoot>
                     </table>`;
 
+                // ✅ Sort by Date (earliest first)
+                document.getElementById("sortDateBtn").addEventListener("click", () => {
+                    const sorted = [...data].sort((a, b) => new Date(a.entry_date) - new Date(b.entry_date));
+                    renderTable(sorted);
+                });
+
+                // ✅ Sort by Voucher (ascending)
+                document.getElementById("sortVoucherBtn").addEventListener("click", () => {
+                    const sorted = [...data].sort((a, b) => {
+                        const v1 = a.voucher_no || "";
+                        const v2 = b.voucher_no || "";
+                        return v1.localeCompare(v2, undefined, { numeric: true, sensitivity: "base" });
+                    });
+                    renderTable(sorted);
+                });
+
                 // 👁️ Toggle Voucher column
                 document.getElementById("toggleVoucherBtn").addEventListener("click", function () {
                     document.querySelectorAll(".voucher-col").forEach(col => col.classList.toggle("d-none"));
@@ -487,6 +510,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 });
 </script>
+
 
 
 {% endblock %}

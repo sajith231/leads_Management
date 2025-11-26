@@ -1,0 +1,209 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+  <h3>Cancel My Requests</h3>
+  <p>Only Approved or Rejected requests are shown.</p>
+
+  <!-- TOAST CONTAINER for Django messages (Bootstrap toasts) -->
+  <div aria-live="polite" aria-atomic="true" style="position: relative; min-height: 200px;">
+    <div id="toast-area" style="position: fixed; top: 1rem; right: 1rem; z-index: 9999;"></div>
+  </div>
+
+  <!-- Filter -->
+  <form method="get" class="mb-3">
+    <div class="d-flex flex-wrap gap-2 align-items-center">
+      <label for="type" class="fw-bold me-2">Filter by Request Type:</label>
+      <select name="type" id="type" class="form-select w-auto" onchange="this.form.submit()">
+        <option value="all" {% if filter_type == 'all' %}selected{% endif %}>All</option>
+        <option value="leave" {% if filter_type == 'leave' %}selected{% endif %}>Leave</option>
+        <option value="late" {% if filter_type == 'late' %}selected{% endif %}>Late</option>
+        <option value="early" {% if filter_type == 'early' %}selected{% endif %}>Early</option>
+        <option value="wfh" {% if filter_type == 'wfh' %}selected{% endif %}>WFH</option>
+      </select>
+    </div>
+  </form>
+
+  <!-- Tables -->
+  {% if leaves %}
+  <h5 class="mt-3">Leave Requests</h5>
+  <table class="table table-bordered">
+    <thead><tr><th>ID</th><th>Start</th><th>End</th><th>Status</th><th>Action</th></tr></thead>
+    <tbody>
+      {% for i in leaves %}
+      <tr>
+        <td>{{ i.id }}</td>
+        <td>{{ i.start_date }}</td>
+        <td>{{ i.end_date }}</td>
+        <td>{{ i.status }}</td>
+        <td>
+          <button class="btn btn-danger btn-sm"
+                  onclick="openCancelModal('leave', {{ i.id }}, '{{ i.start_date }} - {{ i.end_date }}')">
+            Cancel
+          </button>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
+  {% if late %}
+  <h5 class="mt-3">Late Requests</h5>
+  <table class="table table-bordered">
+    <thead><tr><th>ID</th><th>Date</th><th>Status</th><th>Action</th></tr></thead>
+    <tbody>
+      {% for i in late %}
+      <tr>
+        <td>{{ i.id }}</td>
+        <td>{{ i.date }}</td>
+        <td>{{ i.status }}</td>
+        <td>
+          <button class="btn btn-danger btn-sm"
+                  onclick="openCancelModal('late', {{ i.id }}, '{{ i.date }}')">
+            Cancel
+          </button>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
+  {% if early %}
+  <h5 class="mt-3">Early Requests</h5>
+  <table class="table table-bordered">
+    <thead><tr><th>ID</th><th>Date</th><th>Status</th><th>Action</th></tr></thead>
+    <tbody>
+      {% for i in early %}
+      <tr>
+        <td>{{ i.id }}</td>
+        <td>{{ i.date }}</td>
+        <td>{{ i.status }}</td>
+        <td>
+          <button class="btn btn-danger btn-sm"
+                  onclick="openCancelModal('early', {{ i.id }}, '{{ i.date }}')">
+            Cancel
+          </button>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
+  {% if wfh %}
+  <h5 class="mt-3">WFH Requests</h5>
+  <table class="table table-bordered">
+    <thead><tr><th>ID</th><th>Start</th><th>End</th><th>Status</th><th>Action</th></tr></thead>
+    <tbody>
+      {% for i in wfh %}
+      <tr>
+        <td>{{ i.id }}</td>
+        <td>{{ i.start_date }}</td>
+        <td>{{ i.end_date }}</td>
+        <td>{{ i.status }}</td>
+        <td>
+          <button class="btn btn-danger btn-sm"
+                  onclick="openCancelModal('wfh', {{ i.id }}, '{{ i.start_date }} - {{ i.end_date }}')">
+            Cancel
+          </button>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
+  {% if not leaves and not late and not early and not wfh %}
+    <div class="alert alert-secondary text-center mt-4">
+      No approved or rejected requests found.
+    </div>
+  {% endif %}
+</div>
+
+<!-- Confirmation Modal (single form) -->
+<div class="modal fade" id="confirmCancelModal" tabindex="-1" aria-labelledby="confirmCancelLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form id="cancelForm" method="post" action="{% url 'add_cancel_request' %}">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title" id="confirmCancelLabel">Confirm Cancel Request</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p id="confirmText" class="mb-2">Are you sure you want to send a cancel request?</p>
+
+          <div class="mb-3">
+            <label for="reason" class="form-label">Reason (optional)</label>
+            <textarea id="reason" name="reason" class="form-control" rows="2" placeholder="Type reason (optional)"></textarea>
+          </div>
+
+          <!-- Hidden fields filled by JS -->
+          <input type="hidden" id="modal_request_type" name="request_type" value="">
+          <input type="hidden" id="modal_request_id" name="request_id" value="">
+        </div>
+        <div class="modal-footer">
+          <button type="button" id="modalCancelBtn" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="submit" id="modalConfirmBtn" class="btn btn-danger">
+            Send Cancel Request
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Bootstrap & JS logic -->
+<script>
+  // Open modal and fill hidden fields & description
+  function openCancelModal(type, id, info) {
+    // set hidden inputs for the form in modal
+    document.getElementById('modal_request_type').value = type;
+    document.getElementById('modal_request_id').value = id;
+    // set confirm text with context
+    document.getElementById('confirmText').innerText =
+      "Are you sure you want to send a cancel request for " + type.toUpperCase() + " (" + info + ")?";
+    // clear reason
+    document.getElementById('reason').value = '';
+    // enable confirm button (in case previously disabled)
+    document.getElementById('modalConfirmBtn').disabled = false;
+    // show modal
+    var modal = new bootstrap.Modal(document.getElementById('confirmCancelModal'));
+    modal.show();
+  }
+
+  // Prevent double-submits: disable confirm button immediately on submit
+  document.getElementById('cancelForm').addEventListener('submit', function (e) {
+    var btn = document.getElementById('modalConfirmBtn');
+    btn.disabled = true;
+    btn.innerText = 'Sending...';
+    // allow normal form submission to server (no AJAX)
+  });
+
+  // Show Django messages as Bootstrap toasts
+  window.addEventListener('DOMContentLoaded', (event) => {
+    {% if messages %}
+      const toastArea = document.getElementById('toast-area');
+      {% for message in messages %}
+        const toastId = 'toast-{{ forloop.counter0 }}';
+        const toastHTML = `
+          <div id="${toastId}" class="toast" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="4000">
+            <div class="toast-header">
+              <strong class="me-auto">Notification</strong>
+              <small class="text-muted">Now</small>
+              <button type="button" class="btn-close ms-2 mb-1" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+              {{ message|escapejs }}
+            </div>
+          </div>`;
+        toastArea.insertAdjacentHTML('beforeend', toastHTML);
+        var tEl = document.getElementById(toastId);
+        var toast = new bootstrap.Toast(tEl);
+        toast.show();
+      {% endfor %}
+    {% endif %}
+  });
+</script>
+{% endblock %}
