@@ -5637,9 +5637,13 @@ def configure_user_menu(request, user_id):
             'icon': 'fas fa-bullhorn',
             'submenus': [
                 {'id': 'all_leads', 'name': 'Leads(Admin Dashboard)', 'icon': 'fas fa-user'},
-                {'id': 'user_dashboard', 'name': 'Leads(User Dashboard)', 'icon': 'fas fa-user'}
+                {'id': 'user_dashboard', 'name': 'Leads(User Dashboard)', 'icon': 'fas fa-user'},
+                {'id': 'lead_form', 'name': 'Lead Form', 'icon': 'fas fa-id-card'},
+                {'id': 'lead_reports', 'name': 'Lead Reports', 'icon': 'fas fa-folder-open'},
+                {'id': 'lead_assign_list', 'name': 'Assigned Leads', 'icon': 'fas fa-user'},
             ]
         },
+
         {
             'name': 'Services',
             'icon': 'fas fa-wrench',

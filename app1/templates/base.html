@@ -458,13 +458,18 @@
                 <a href="{% url 'all_leads' %}"><i class="fas fa-user"></i> Leads</a>
                 {% endif %}
 
-                    <a href="{% url 'app5:lead' %}">
-                     <i class="fas fa-id-card"></i> Lead Form
-                    </a>
+                   {% if 'lead_form' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+                        <a href="{% url 'app5:lead' %}">
+                            <i class="fas fa-id-card"></i> Lead Form
+                        </a>
+                        {% endif %}
 
-            <a href="{% url 'app5:lead_report' %}">
-             <i class="fas fa-id-card"></i>Lead Reports
-            </a>
+                        {% if 'lead_reports' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+                        <a href="{% url 'app5:lead_report' %}">
+                            <i class="fas fa-file-alt"></i> Lead Reports
+                        </a>
+                    {% endif %}
+
             </div>
             {% endif %}
 
@@ -919,16 +924,23 @@
                 <a href="{% url 'user_dashboard' %}"><i class="fas fa-user"></i> Leads</a>
                 {% endif %}
 
-            <a href="{% url 'app5:lead' %}">
-            <i class="fas fa-id-card"></i> Lead Form
-            </a>
-            <a href="{% url 'app5:lead_report' %}">
-             <i class="fas fa-folder-open"></i>Lead Report
-            </a>
-           
-            <a href="{% url 'app5:lead_assign_list' %}">
-            <i class="fas fa-user"></i></i> Assigned Leads
-            </a>
+            {% if 'lead_form' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+    <a href="{% url 'app5:lead' %}">
+        <i class="fas fa-id-card"></i> Lead Form
+    </a>
+    {% endif %}
+
+    {% if 'lead_reports' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+    <a href="{% url 'app5:lead_report' %}">
+        <i class="fas fa-folder-open"></i> Lead Report
+    </a>
+    {% endif %}
+
+    {% if 'lead_assign_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+    <a href="{% url 'app5:lead_assign_list' %}">
+        <i class="fas fa-user"></i> Assigned Leads
+    </a>
+    {% endif %}
 
             </div>
 
