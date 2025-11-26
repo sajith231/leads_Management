@@ -118,6 +118,10 @@ urlpatterns = [
     path('business-nature/edit/<int:id>/', views.business_nature_edit, name='business_nature_edit'),
     path('business-nature/delete/<int:pk>/', views.business_nature_delete, name='business_nature_delete'),
 
+    # QUOTATION
+    path('quotation/', views.quotation_list_view, name='quotation_list'),   # List page
+    path('quotation/create/', views.quotation_form_view, name='quotation_form'),  # Add new quotation
+
 
 
      path('state/', views.state_list, name='state_master_list'),  # Changed to state_master_list

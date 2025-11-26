@@ -860,6 +860,16 @@
         .page-number:hover:not(.active) {
             background: #e9ecef;
         }
+
+        .clear-btn {
+            background-color: #4CAF50;
+            color: white;
+            border: 1px solid #ddd;
+        }
+        
+        .clear-btn:hover {
+            background-color: #4CAF50;
+        }
         
         @media (max-width: 1200px) {
             .single-line-sections {
@@ -1188,11 +1198,15 @@
                             </li>
                             <li class="nav-item">
                                <a href="{% url 'app5:event_form' %}" class="nav-link">
-    <i class="fas fa-briefcase"></i>
-    Event
-</a>
+                               <i class="fas fa-briefcase"></i>
+                               Event
+                             </a>
 
                             </li>
+        <a href="{% url 'app5:quotation_list' %}" class="nav-link">
+    <i class="fas fa-briefcase"></i> Quotation
+</a>
+
                         </ul>
                     </div>
                     
@@ -1369,12 +1383,11 @@
                                     <div class="compact-form-group">
                                         <label for="refFrom">Reference From</label>
                                         <select id="refFrom" name="refFrom">
-                                            <option value="">Select Reference</option>
-                                            <option value="DIRECT MARKETING">DIRECT MARKETING</option>
-                                            <option value="TEXTILES">TEXTILES</option>
-                                            <option value="HARSHANA STAFF">HARSHANA STAFF</option>
-                                            <option value="IMC MUKKAM AGENT">IMC MUKKAM AGENT</option>
-                                            <option value="I-CARE BGRA">I-CARE BGRA</option>
+                                             <option value="">Select Reference</option>
+        {% for ref in references %}
+        <option value="{{ ref.ref_name }}">{{ ref.ref_name }}</option>
+        {% empty %}
+        {% endfor %}
                                         </select>
                                     </div>
                                     
@@ -1386,6 +1399,12 @@
                                             <option value="{{ nature.name }}">{{ nature.name }}</option>
                                             {% endfor %}
                                         </select>
+                                    </div>
+                                    
+                                    <!-- NEW: Campaign Details Field -->
+                                    <div class="compact-form-group">
+                                        <label for="campaign">Campaign Details</label>
+                                    <input type="text" id="Consultant" name="Campaign" placeholder="Enter Campaign Details">    
                                     </div>
                                     
                                     <div class="compact-form-group">
@@ -1429,6 +1448,10 @@
                                     <i class="fas fa-paper-plane"></i>
                                     &nbsp; Submit Form
                                 </button>
+                                <button type="button" class="clear-btn" id="clearFormBtn">
+                                    <i class="fas fa-eraser"></i>
+                                    &nbsp; Clear Form
+                                </button>
                                 <button type="button" class="reset-btn" onclick="window.location.href='{% url 'app5:lead_report' %}'">
     <i class="fas fa-arrow-left"></i>
     &nbsp; Back
@@ -1462,8 +1485,9 @@
         </div>
     </div>
 
-    <script>
+   <script>
     document.addEventListener('DOMContentLoaded', function() {
+        
         // Set today's date as default
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('date').value = today;
@@ -1486,6 +1510,9 @@
         const paginationNumbers = document.getElementById('paginationNumbers');
         const paginationInfo = document.getElementById('paginationInfo');
         
+        // Clear button element
+        const clearFormBtn = document.getElementById('clearFormBtn');
+        
         // Pagination configuration
         const itemsPerPage = 10;
         let currentPage = 1;
@@ -1503,6 +1530,13 @@
         const branchMap = {
             {% for department in departments %}
             "{{ department.id }}": "{{ department.name|escapejs }}",
+            {% endfor %}
+        };
+
+        // Campaign data map
+        const campaignMap = {
+            {% for campaign in campaigns %}
+            "{{ campaign.name|escapejs }}": "{{ campaign.name|escapejs }}",
             {% endfor %}
         };
 
@@ -1532,13 +1566,15 @@
                 individualPinCode: "{{ lead.individualPinCode|escapejs }}",
                 refFrom: "{{ lead.refFrom|escapejs }}",
                 business: "{{ lead.business|escapejs }}",
+                campaign: "{{ lead.campaign|default:''|escapejs }}", // NEW: Campaign field
                 marketedBy: "{{ lead.marketedBy|escapejs }}",
                 Consultant: "{{ lead.Consultant|escapejs }}",
                 requirement: "{{ lead.requirement|escapejs }}",
                 details: "{{ lead.details|escapejs }}",
                 // Add the actual names for display
                 marketedByName: "{{ lead.marketed_by_name|default:lead.marketedBy|escapejs }}",
-                branchName: "{{ lead.branch_name|default:lead.requirement|escapejs }}"
+                branchName: "{{ lead.branch_name|default:lead.requirement|escapejs }}",
+                campaignName: "{{ lead.campaign_name|default:lead.campaign|default:''|escapejs }}" // NEW: Campaign name
             }{% if not forloop.last %},{% endif %}
             {% endfor %}
         ];
@@ -1554,6 +1590,41 @@
             }{% if not forloop.last %},{% endif %}
             {% endfor %}
         ];
+
+        // Clear form functionality
+        clearFormBtn.addEventListener('click', function() {
+            if (confirm('Are you sure you want to clear all form fields?')) {
+                clearForm();
+            }
+        });
+
+        // Function to clear all form fields
+        function clearForm() {
+            // Reset the form
+            document.getElementById('customerForm').reset();
+            
+            // Reset the toggle to default state (Business)
+            document.getElementById('customerTypeToggle').checked = true;
+            initializeToggle();
+            
+            // Set today's date as default
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('date').value = today;
+            
+            // Clear any error styles
+            document.querySelectorAll('input, select').forEach(field => {
+                field.style.borderColor = '#ddd';
+            });
+            
+            // Clear any selected lead in the directory
+            const selectedLead = document.querySelector('.lead-item.selected');
+            if (selectedLead) {
+                selectedLead.classList.remove('selected');
+            }
+            
+            // Show success message
+            showNotification('Form has been cleared successfully', 'success');
+        }
 
         // Initialize pagination
         function initializePagination() {
@@ -1829,6 +1900,9 @@
             document.getElementById('date').value = leadData.date || '';
             document.getElementById('refFrom').value = leadData.refFrom || '';
             document.getElementById('business').value = leadData.business || '';
+            
+            // NEW: Campaign Details
+            document.getElementById('campaign').value = leadData.campaign || '';
             
             // Fix marketedBy field - handle both ID and name
             const marketedByValue = leadData.marketedBy || '';
@@ -2191,6 +2265,6 @@
             });
         });
     });
-    </script>
+</script>
 </body>
 </html>

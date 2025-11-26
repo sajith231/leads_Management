@@ -3543,6 +3543,11 @@ def lead_form_view(request):
     except Exception:
         departments = []
 
+    try:
+        references = Reference.objects.all().order_by('ref_name')
+    except Exception:
+        references = []
+
     context = {
         'business_natures': business_natures,
         'states': states,
@@ -3553,6 +3558,8 @@ def lead_form_view(request):
         'existing_firms': existing_firms,
         # ✅ ADDED: Active leads data for directory
         'active_leads_data': active_leads_data,
+        'references': references, 
+        'campaigns': Campaign.objects.all() if 'Campaign' in apps.all_models else [],  
         
     }
     return render(request, "lead_form.html", context)
@@ -5186,3 +5193,17 @@ def reference_delete(request, id):
 
 def event_form(request):
     return render(request, 'event_form.html')
+
+
+from django.shortcuts import render
+
+def quotation_form_view(request):
+    # Your quotation form logic here
+    return render(request, 'quotation_form.html')
+
+def quotation_list_view(request):
+    # Your view logic here
+    context = {
+        'quotations': [],  # Add your data here
+    }
+    return render(request, 'quotation_list.html', context)  # Remove 'app5/' prefix

@@ -535,6 +535,7 @@ class Lead(models.Model):
     status = models.CharField(max_length=20, default='Active')
     refFrom = models.CharField(max_length=100, blank=True, null=True)
     business = models.CharField(max_length=100, blank=True, null=True)
+    campaign = models.CharField(max_length=255, blank=True, null=True)
     marketedBy = models.CharField(max_length=100, blank=True, null=True)
     Consultant = models.CharField(max_length=100, blank=True, null=True)
     requirement = models.CharField(max_length=100, blank=True, null=True)

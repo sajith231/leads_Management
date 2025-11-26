@@ -548,6 +548,67 @@
             gap: 5px;
         }
         
+        /* Pagination Styles */
+        .directory-pagination {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            background: #f8f9fa;
+            border-top: 1px solid #e9ecef;
+        }
+        
+        .pagination-info {
+            font-size: 12px;
+            color: #6c757d;
+        }
+        
+        .pagination-controls {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .pagination-btn {
+            padding: 5px 10px;
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .pagination-btn:hover:not(:disabled) {
+            background: #e9ecef;
+        }
+        
+        .pagination-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .pagination-btn.active {
+            background: #4a6fdc;
+            color: white;
+            border-color: #4a6fdc;
+        }
+        
+        .items-per-page {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 12px;
+            color: #6c757d;
+        }
+        
+        .items-per-page select {
+            padding: 3px 5px;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            font-size: 12px;
+            width: auto;
+        }
+        
         @media (max-width: 1200px) {
             .main-content {
                 flex-direction: column;
@@ -615,6 +676,16 @@
             .nav-item {
                 flex: 1 0 50%;
             }
+            
+            .directory-pagination {
+                flex-direction: column;
+                gap: 10px;
+                align-items: stretch;
+            }
+            
+            .pagination-controls {
+                justify-content: center;
+            }
         }
         
         @media (max-width: 576px) {
@@ -667,137 +738,34 @@
                     
                     <!-- Event List (shown by default) -->
                     <div class="event-list active" id="eventList">
-                        <div class="event-item" data-id="1">
-                            <div class="event-avatar">
-                                TR
-                            </div>
-                            <div class="event-details">
-                                <div class="event-name">Team Training Session</div>
-                                <div class="event-type">Direct Training</div>
-                                <div class="event-date">2023-10-15</div>
-                                <div class="event-status">Status: Active</div>
-                            </div>
-                            <button class="assign-btn" data-event-id="1" data-role="event-view">View</button>
-                        </div>
-                        
-                        <div class="event-item" data-id="2">
-                            <div class="event-avatar">
-                                CP
-                            </div>
-                            <div class="event-details">
-                                <div class="event-name">Client Proposal Meeting</div>
-                                <div class="event-type">Proposal</div>
-                                <div class="event-date">2023-10-18</div>
-                                <div class="event-status">Status: Pending</div>
-                            </div>
-                            <button class="assign-btn" data-event-id="2" data-role="event-view">View</button>
-                        </div>
-                        
-                        <div class="event-item" data-id="3">
-                            <div class="event-avatar">
-                                FU
-                            </div>
-                            <div class="event-details">
-                                <div class="event-name">Quarterly Follow-up</div>
-                                <div class="event-type">Follow-Up</div>
-                                <div class="event-date">2023-10-20</div>
-                                <div class="event-status">Status: Active</div>
-                            </div>
-                            <button class="assign-btn" data-event-id="3" data-role="event-view">View</button>
-                        </div>
-                        
-                        <div class="event-item" data-id="4">
-                            <div class="event-avatar">
-                                IN
-                            </div>
-                            <div class="event-details">
-                                <div class="event-name">Software Installation</div>
-                                <div class="event-type">Installation</div>
-                                <div class="event-date">2023-10-22</div>
-                                <div class="event-status">Status: Scheduled</div>
-                            </div>
-                            <button class="assign-btn" data-event-id="4" data-role="event-view">View</button>
-                        </div>
-                        
-                        <div class="event-item" data-id="5">
-                            <div class="event-avatar">
-                                NL
-                            </div>
-                            <div class="event-details">
-                                <div class="event-name">New Lead Introduction</div>
-                                <div class="event-type">New Lead</div>
-                                <div class="event-date">2023-10-25</div>
-                                <div class="event-status">Status: Planning</div>
-                            </div>
-                            <button class="assign-btn" data-event-id="5" data-role="event-view">View</button>
-                        </div>
+                        <!-- Event items will be populated by JavaScript -->
                     </div>
                     
                     <!-- User List (hidden by default) -->
                     <div class="user-list" id="userList">
-                        <div class="user-item" data-id="1" data-name="John Smith">
-                            <div class="user-avatar">
-                                JS
-                            </div>
-                            <div class="user-details">
-                                <div class="user-name">John Smith</div>
-                                <div class="user-role">Project Manager</div>
-                            </div>
-                            <button class="assign-btn" data-id="1" data-name="John Smith" data-role="user-assign">
-                                Assign
+                        <!-- User items will be populated by JavaScript -->
+                    </div>
+                    
+                    <!-- Pagination -->
+                    <div class="directory-pagination" id="paginationContainer">
+                        <div class="pagination-info" id="paginationInfo">Showing 1-5 of 5</div>
+                        <div class="pagination-controls" id="paginationControls">
+                            <button class="pagination-btn" id="prevPage" disabled>
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <button class="pagination-btn active">1</button>
+                            <button class="pagination-btn" id="nextPage" disabled>
+                                <i class="fas fa-chevron-right"></i>
                             </button>
                         </div>
-                        
-                        <div class="user-item" data-id="2" data-name="Sarah Johnson">
-                            <div class="user-avatar">
-                                SJ
-                            </div>
-                            <div class="user-details">
-                                <div class="user-name">Sarah Johnson</div>
-                                <div class="user-role">Event Coordinator</div>
-                            </div>
-                            <button class="assign-btn" data-id="2" data-name="Sarah Johnson" data-role="user-assign">
-                                Assign
-                            </button>
-                        </div>
-                        
-                        <div class="user-item" data-id="3" data-name="Emily Davis">
-                            <div class="user-avatar">
-                                ED
-                            </div>
-                            <div class="user-details">
-                                <div class="user-name">Emily Davis</div>
-                                <div class="user-role">Training Specialist</div>
-                            </div>
-                            <button class="assign-btn" data-id="3" data-name="Emily Davis" data-role="user-assign">
-                                Assign
-                            </button>
-                        </div>
-                        
-                        <div class="user-item" data-id="4" data-name="Daniel Lee">
-                            <div class="user-avatar">
-                                DL
-                            </div>
-                            <div class="user-details">
-                                <div class="user-name">Daniel Lee</div>
-                                <div class="user-role">Technical Support</div>
-                            </div>
-                            <button class="assign-btn" data-id="4" data-name="Daniel Lee" data-role="user-assign">
-                                Assign
-                            </button>
-                        </div>
-                        
-                        <div class="user-item" data-id="5" data-name="Amanda White">
-                            <div class="user-avatar">
-                                AW
-                            </div>
-                            <div class="user-details">
-                                <div class="user-name">Amanda White</div>
-                                <div class="user-role">Sales Representative</div>
-                            </div>
-                            <button class="assign-btn" data-id="5" data-name="Amanda White" data-role="user-assign">
-                                Assign
-                            </button>
+                        <div class="items-per-page">
+                            <span>Show:</span>
+                            <select id="itemsPerPage">
+                                <option value="3">3</option>
+                                <option value="5" selected>5</option>
+                                <option value="10">10</option>
+                                <option value="20">20</option>
+                            </select>
                         </div>
                     </div>
                 </div>
@@ -830,6 +798,14 @@
             <a href="{% url 'app5:event_form' %}" class="nav-link active">
                 <i class="fas fa-briefcase"></i>
                 Event
+            </a>
+        </li>
+        </li>
+       </li>
+       <li class="nav-item">
+        <a href="{% url 'app5:quotation_list' %}" class="nav-link">
+            <i class="fas fa-file-invoice"></i>
+            Quotation
             </a>
         </li>
                         </ul>
@@ -890,7 +866,6 @@
                                             </select>
                                         </div>
 
-
                                         <div class="form-group-full">
                                         <label for="remark">Remarks</label>
                                         <textarea id="remark" placeholder="Enter any additional information for this event..."></textarea>
@@ -915,6 +890,10 @@
                                 <button type="submit" class="submit-btn">
                                     <i class="fas fa-calendar-plus"></i>
                                     &nbsp; Create Event
+                                </button>
+                                <button type="button" class="reset-btn" onclick="window.location.href='{% url 'app5:lead_report' %}'">
+                                <i class="fas fa-arrow-left"></i>
+                                &nbsp; Back
                                 </button>
                             </div>
                             
@@ -971,6 +950,46 @@
                 date: "2023-10-25",
                 status: "Planning",
                 assignedTo: "Amanda White"
+            },
+            {
+                id: 6,
+                name: "Product Demo Session",
+                type: "Demo",
+                date: "2023-10-28",
+                status: "Active",
+                assignedTo: "John Smith"
+            },
+            {
+                id: 7,
+                name: "Client Onboarding",
+                type: "Onboarding",
+                date: "2023-11-01",
+                status: "Scheduled",
+                assignedTo: "Sarah Johnson"
+            },
+            {
+                id: 8,
+                name: "Quarterly Review",
+                type: "Review",
+                date: "2023-11-05",
+                status: "Pending",
+                assignedTo: "Emily Davis"
+            },
+            {
+                id: 9,
+                name: "Technical Support Session",
+                type: "Support",
+                date: "2023-11-08",
+                status: "Active",
+                assignedTo: "Daniel Lee"
+            },
+            {
+                id: 10,
+                name: "Sales Presentation",
+                type: "Presentation",
+                date: "2023-11-12",
+                status: "Planning",
+                assignedTo: "Amanda White"
             }
         ];
 
@@ -1000,18 +1019,189 @@
                 id: 5,
                 name: "Amanda White",
                 role: "Sales Representative"
+            },
+            {
+                id: 6,
+                name: "Michael Brown",
+                role: "Marketing Manager"
+            },
+            {
+                id: 7,
+                name: "Jessica Wilson",
+                role: "Customer Success"
+            },
+            {
+                id: 8,
+                name: "Robert Taylor",
+                role: "IT Specialist"
+            },
+            {
+                id: 9,
+                name: "Lisa Anderson",
+                role: "Product Manager"
+            },
+            {
+                id: 10,
+                name: "Kevin Martin",
+                role: "Business Analyst"
             }
         ];
+
+        // Pagination variables
+        let currentPage = 1;
+        let itemsPerPage = 5;
+        let filteredEvents = [...events];
+        let filteredUsers = [...users];
+
+        // Initialize directory with pagination
+        function initializeDirectory() {
+            renderEventList();
+            renderUserList();
+            updatePagination();
+        }
+
+        // Render event list with pagination
+        function renderEventList() {
+            const eventList = document.getElementById('eventList');
+            eventList.innerHTML = '';
+
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const paginatedEvents = filteredEvents.slice(startIndex, endIndex);
+
+            if (paginatedEvents.length === 0) {
+                eventList.innerHTML = '<div class="no-results">No events found</div>';
+                return;
+            }
+
+            paginatedEvents.forEach(event => {
+                const eventItem = document.createElement('div');
+                eventItem.className = 'event-item';
+                eventItem.setAttribute('data-id', event.id);
+                
+                eventItem.innerHTML = `
+                    <div class="event-avatar">
+                        ${event.name.substring(0, 2).toUpperCase()}
+                    </div>
+                    <div class="event-details">
+                        <div class="event-name">${event.name}</div>
+                        <div class="event-type">${event.type}</div>
+                        <div class="event-date">${event.date}</div>
+                        <div class="event-status">Status: ${event.status}</div>
+                    </div>
+                    <button class="assign-btn" data-event-id="${event.id}" data-role="event-view">View</button>
+                `;
+                
+                eventList.appendChild(eventItem);
+            });
+
+            setupEventViewButtons();
+        }
+
+        // Render user list with pagination
+        function renderUserList() {
+            const userList = document.getElementById('userList');
+            userList.innerHTML = '';
+
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const paginatedUsers = filteredUsers.slice(startIndex, endIndex);
+
+            if (paginatedUsers.length === 0) {
+                userList.innerHTML = '<div class="no-results">No users found</div>';
+                return;
+            }
+
+            paginatedUsers.forEach(user => {
+                const userItem = document.createElement('div');
+                userItem.className = 'user-item';
+                userItem.setAttribute('data-id', user.id);
+                userItem.setAttribute('data-name', user.name);
+                
+                userItem.innerHTML = `
+                    <div class="user-avatar">
+                        ${user.name.substring(0, 2).toUpperCase()}
+                    </div>
+                    <div class="user-details">
+                        <div class="user-name">${user.name}</div>
+                        <div class="user-role">${user.role}</div>
+                    </div>
+                    <button class="assign-btn" data-id="${user.id}" data-name="${user.name}" data-role="user-assign">
+                        Assign
+                    </button>
+                `;
+                
+                userList.appendChild(userItem);
+            });
+
+            setupUserAssignButtons();
+        }
+
+        // Update pagination controls
+        function updatePagination() {
+            const activeTab = document.querySelector('.directory-tab.active').getAttribute('data-tab');
+            const totalItems = activeTab === 'users' ? filteredUsers.length : filteredEvents.length;
+            const totalPages = Math.ceil(totalItems / itemsPerPage);
+            
+            // Update pagination info
+            const startIndex = (currentPage - 1) * itemsPerPage + 1;
+            const endIndex = Math.min(currentPage * itemsPerPage, totalItems);
+            document.getElementById('paginationInfo').textContent = `Showing ${startIndex}-${endIndex} of ${totalItems}`;
+            
+            // Update pagination controls
+            const paginationControls = document.getElementById('paginationControls');
+            
+            // Clear existing page buttons (keep prev/next buttons)
+            const prevBtn = document.getElementById('prevPage');
+            const nextBtn = document.getElementById('nextPage');
+            paginationControls.innerHTML = '';
+            paginationControls.appendChild(prevBtn);
+            
+            // Add page number buttons
+            for (let i = 1; i <= totalPages; i++) {
+                const pageBtn = document.createElement('button');
+                pageBtn.className = 'pagination-btn';
+                if (i === currentPage) {
+                    pageBtn.classList.add('active');
+                }
+                pageBtn.textContent = i;
+                pageBtn.addEventListener('click', () => {
+                    currentPage = i;
+                    updateDirectory();
+                });
+                paginationControls.appendChild(pageBtn);
+            }
+            
+            paginationControls.appendChild(nextBtn);
+            
+            // Update prev/next button states
+            prevBtn.disabled = currentPage === 1;
+            nextBtn.disabled = currentPage === totalPages;
+            
+            // Update active tab count
+            document.getElementById('activeTabCount').textContent = totalItems;
+        }
+
+        // Update directory based on current state
+        function updateDirectory() {
+            const activeTab = document.querySelector('.directory-tab.active').getAttribute('data-tab');
+            
+            if (activeTab === 'users') {
+                renderUserList();
+            } else {
+                renderEventList();
+            }
+            
+            updatePagination();
+        }
 
         // Initialize tab counts properly from DOM
         function updateActiveTabCount() {
             const activeTab = document.querySelector('.directory-tab.active').getAttribute('data-tab');
             if (activeTab === 'users') {
-                const cnt = document.querySelectorAll('#userList .user-item').length;
-                document.getElementById('activeTabCount').textContent = cnt;
+                document.getElementById('activeTabCount').textContent = filteredUsers.length;
             } else {
-                const cnt = document.querySelectorAll('#eventList .event-item').length;
-                document.getElementById('activeTabCount').textContent = cnt;
+                document.getElementById('activeTabCount').textContent = filteredEvents.length;
             }
         }
 
@@ -1076,10 +1266,13 @@
                         eventList.classList.add('active');
                     }
 
+                    // Reset to first page when switching tabs
+                    currentPage = 1;
+                    
                     // Reset search
                     document.getElementById('directorySearch').value = '';
                     filterDirectoryItems('');
-                    updateActiveTabCount();
+                    updateDirectory();
                 });
             });
         }
@@ -1096,39 +1289,27 @@
         // Filter directory items based on search term
         function filterDirectoryItems(searchTerm) {
             const activeTab = document.querySelector('.directory-tab.active').getAttribute('data-tab');
-            const items = document.querySelectorAll(`.${activeTab === 'users' ? 'user-item' : 'event-item'}`);
-
-            let visibleCount = 0;
-
-            items.forEach(item => {
-                let textContent = '';
-
-                if (activeTab === 'users') {
-                    const nameEl = item.querySelector('.user-name');
-                    const roleEl = item.querySelector('.user-role');
-                    const name = nameEl ? nameEl.textContent.toLowerCase() : '';
-                    const role = roleEl ? roleEl.textContent.toLowerCase() : '';
-                    textContent = name + ' ' + role;
-                } else {
-                    const nameEl = item.querySelector('.event-name');
-                    const typeEl = item.querySelector('.event-type');
-                    const dateEl = item.querySelector('.event-date');
-                    const name = nameEl ? nameEl.textContent.toLowerCase() : '';
-                    const type = typeEl ? typeEl.textContent.toLowerCase() : '';
-                    const date = dateEl ? dateEl.textContent.toLowerCase() : '';
-                    textContent = name + ' ' + type + ' ' + date;
-                }
-
-                if (textContent.includes(searchTerm)) {
-                    item.style.display = 'flex';
-                    visibleCount++;
-                } else {
-                    item.style.display = 'none';
-                }
-            });
-
-            // Update the count display
-            document.getElementById('activeTabCount').textContent = visibleCount;
+            
+            if (activeTab === 'users') {
+                filteredUsers = users.filter(user => {
+                    const name = user.name.toLowerCase();
+                    const role = user.role.toLowerCase();
+                    return name.includes(searchTerm) || role.includes(searchTerm);
+                });
+            } else {
+                filteredEvents = events.filter(event => {
+                    const name = event.name.toLowerCase();
+                    const type = event.type.toLowerCase();
+                    const date = event.date.toLowerCase();
+                    const status = event.status.toLowerCase();
+                    return name.includes(searchTerm) || type.includes(searchTerm) || 
+                           date.includes(searchTerm) || status.includes(searchTerm);
+                });
+            }
+            
+            // Reset to first page when filtering
+            currentPage = 1;
+            updateDirectory();
         }
 
         // Navigation functionality
@@ -1146,13 +1327,42 @@
             });
         }
 
+        // Pagination controls
+        function setupPaginationControls() {
+            // Previous page button
+            document.getElementById('prevPage').addEventListener('click', function() {
+                if (currentPage > 1) {
+                    currentPage--;
+                    updateDirectory();
+                }
+            });
+            
+            // Next page button
+            document.getElementById('nextPage').addEventListener('click', function() {
+                const activeTab = document.querySelector('.directory-tab.active').getAttribute('data-tab');
+                const totalItems = activeTab === 'users' ? filteredUsers.length : filteredEvents.length;
+                const totalPages = Math.ceil(totalItems / itemsPerPage);
+                
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    updateDirectory();
+                }
+            });
+            
+            // Items per page selector
+            document.getElementById('itemsPerPage').addEventListener('change', function() {
+                itemsPerPage = parseInt(this.value);
+                currentPage = 1;
+                updateDirectory();
+            });
+        }
+
         // Initialize on page load
-        setupUserAssignButtons();
-        setupEventViewButtons();
+        initializeDirectory();
+        setupPaginationControls();
         setupDirectoryTabs();
         setupDirectorySearch();
         setupNavigation();
-        updateActiveTabCount();
 
         // Form submission
         document.getElementById('eventForm').addEventListener('submit', function(e) {
