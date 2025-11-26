@@ -57,16 +57,19 @@
         </div>
 
         <div class="results-info">
-            <span>Showing 1 to {{ items|length }} of {{ items|length }} items</span>
+            <span>
+                Showing {{ items.start_index }} to {{ items.end_index }} of {{ items.paginator.count }} items
+            </span>
             <div class="pagination-mini">
                 {% if items.has_previous %}
                 <button class="page-btn" onclick="window.location.href='?page={{ items.previous_page_number }}'">‹</button>
                 {% endif %}
-                <button class="page-btn active">{{ items.number|default:"1" }}</button>
+                <button class="page-btn active">{{ items.number }}</button>
                 {% if items.has_next %}
                 <button class="page-btn" onclick="window.location.href='?page={{ items.next_page_number }}'">›</button>
                 {% endif %}
             </div>
+
             <button class="clear-filters-btn" onclick="clearFilters()">
                 <i class="fas fa-times"></i> Clear 
             </button>
@@ -224,19 +227,6 @@
             {% endif %}
         </ul>
     </div>
-    
-        
-                {% if items.has_next %}
-                    <li>
-                        <a href="?page={{ items.next_page_number }}{% if selected_department %}&department={{ selected_department }}{% endif %}">»</a>
-                    </li>
-                {% else %}
-                    <li class="disabled"><span>»</span></li>
-                {% endif %}
-            </ul>
-        </div>
-        
-      
 </div>
 
 <!-- Delete Confirmation Modal -->
