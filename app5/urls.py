@@ -105,14 +105,22 @@ urlpatterns = [
     path('lead/', views.lead_form_view, name='lead'),
     path('lead/assign/edit/<lead_id>/', views.lead_assign_edit, name='lead_assign_edit'),  # <-- this name fixes your template reverse() cal),
     path('delete-lead/<int:lead_id>/', views.delete_lead_view, name='delete_lead'),
+    path("lead-detail/<int:lead_id>/", views.lead_detail, name="lead_detail"),
+
    
-
-
-
+   path('reference/add/', views.reference_add, name='reference_add'),
+    path('reference/list/', views.reference_list, name='reference_list'),
+    path('reference/edit/<int:id>/', views.reference_edit, name='reference_edit'),
+    path('reference/delete/<int:id>/', views.reference_delete, name='reference_delete'),
+    
     path('business-nature/', views.business_nature_list, name='business_nature_list'),
     path('business-nature/create/', views.business_nature_create, name='business_nature_create'),
     path('business-nature/edit/<int:id>/', views.business_nature_edit, name='business_nature_edit'),
     path('business-nature/delete/<int:pk>/', views.business_nature_delete, name='business_nature_delete'),
+
+    # QUOTATION
+    path('quotation/', views.quotation_list_view, name='quotation_list'),   # List page
+    path('quotation/create/', views.quotation_form_view, name='quotation_form'),  # Add new quotation
 
 
 
@@ -120,6 +128,10 @@ urlpatterns = [
     path('state/create/', views.state_master_create, name='state_master_create'),
     path('state/<int:id>/edit/', views.state_master_edit, name='state_master_edit'),
     path('state/<int:id>/delete/', views.state_master_delete, name='state_master_delete'),
+
+
+
+    path('event-form/', views.event_form, name='event_form'),
 ]
 
 

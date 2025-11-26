@@ -47,7 +47,7 @@
     .delete-btn { background: #dc3545; color: white; padding: 6px 10px; border: none; border-radius: 4px; font-size: 12px; cursor: pointer; width: 100%; }
     .delete-btn:hover { background: #c82333; }
     .btn-group { display: flex; justify-content: center; margin-top: auto; gap: 10px; width: 100%; padding-top: 20px; }
-    button { padding: 10px 20px; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
+    button { padding: 10px 20px;background-color: #0ec33f;color: #ffffff; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
     .submit-btn { background: linear-gradient(135deg, #4CAF50, #45a049); color: white; box-shadow: 0 3px 8px rgba(37,117,252,0.3); }
     .submit-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 10px rgba(37,117,252,0.4); }
     .back-btn { background-color: #4CAF50; color: #faf9f9; border: 1px solid #ddd; text-decoration: none; display: flex; align-items: center; justify-content: center; }
@@ -143,6 +143,46 @@
         opacity: 0.9;
     }
 
+    /* Pagination styles */
+    .directory-pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 10px 15px;
+        background: #f8f9fa;
+        border-top: 1px solid #e9ecef;
+        gap: 5px;
+    }
+    .pagination-btn {
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 5px 10px;
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.2s;
+        min-width: 30px;
+        text-align: center;
+    }
+    .pagination-btn:hover:not(:disabled) {
+        background: #e9ecef;
+        border-color: #6c757d;
+    }
+    .pagination-btn.active {
+        background: #4a6fdc;
+        color: white;
+        border-color: #4a6fdc;
+    }
+    .pagination-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    .pagination-info {
+        font-size: 12px;
+        color: #6c757d;
+        margin: 0 10px;
+    }
+
     @media (max-width: 1200px) {
         .main-content { flex-direction: column; }
         .directory-column { flex: 0 0 auto; width: 100%; margin-bottom: 20px; }
@@ -156,6 +196,7 @@
         .nav-menu { flex-direction: column; }
         .nav-item { min-width: 100%; }
         .split-directory-container { flex-direction: column; }
+        .directory-pagination { flex-wrap: wrap; }
     }
 </style>
 </head>
@@ -207,10 +248,18 @@
                             </div>
                         {% endif %}
                     </div>
+                    
+                    <!-- Pagination for Leads -->
+                    <div class="directory-pagination" id="leadsPagination">
+                        <button class="pagination-btn" id="leadsPrevBtn" disabled>
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <span class="pagination-info" id="leadsPageInfo">Page 1 of 1</span>
+                        <button class="pagination-btn" id="leadsNextBtn" disabled>
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
                 </div>
-
-            
-                
             </div>
         </div>
 
@@ -254,11 +303,20 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a href="#business-info" class="nav-link">
-                                <i class="fas fa-briefcase"></i>
-                                Event
+                             <a href="{% url 'app5:event_form' %}" class="nav-link">
+                             <i class="fas fa-briefcase"></i>
+                             Event
                             </a>
                         </li>
+                        </li>
+                              <li class="nav-item">
+                               <a href="{% url 'app5:quotation_list' %}" class="nav-link">
+                              <i class="fas fa-file-invoice"></i>
+
+                               Quotation
+                             </a>
+
+                            </li>
                     </ul>
                 </div>
 
@@ -355,6 +413,68 @@
     // TOP-LEVEL state
     let selectedLead = null;
     let selectedEmployee = null;
+
+    // Pagination state
+    const paginationState = {
+        leads: {
+            currentPage: 1,
+            itemsPerPage: 10,
+            totalItems: 0,
+            filteredItems: []
+        }
+    };
+
+    // Initialize pagination
+    function initializePagination() {
+        // Initialize leads pagination
+        const leadItems = document.querySelectorAll('#leadsDirectory .lead-item');
+        paginationState.leads.totalItems = leadItems.length;
+        paginationState.leads.filteredItems = Array.from(leadItems);
+        
+        updateLeadsPagination();
+    }
+
+    // Update leads pagination
+    function updateLeadsPagination() {
+        const state = paginationState.leads;
+        const totalPages = Math.ceil(state.totalItems / state.itemsPerPage);
+        
+        // Update page info
+        document.getElementById('leadsPageInfo').textContent = `Page ${state.currentPage} of ${totalPages}`;
+        
+        // Update button states
+        document.getElementById('leadsPrevBtn').disabled = state.currentPage <= 1;
+        document.getElementById('leadsNextBtn').disabled = state.currentPage >= totalPages;
+        
+        // Show/hide items based on current page
+        const startIndex = (state.currentPage - 1) * state.itemsPerPage;
+        const endIndex = startIndex + state.itemsPerPage;
+        
+        state.filteredItems.forEach((item, index) => {
+            if (index >= startIndex && index < endIndex) {
+                item.style.display = '';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    }
+
+    // Navigate to previous page for leads
+    document.getElementById('leadsPrevBtn').addEventListener('click', function() {
+        if (paginationState.leads.currentPage > 1) {
+            paginationState.leads.currentPage--;
+            updateLeadsPagination();
+        }
+    });
+
+    // Navigate to next page for leads
+    document.getElementById('leadsNextBtn').addEventListener('click', function() {
+        const totalPages = Math.ceil(paginationState.leads.totalItems / paginationState.leads.itemsPerPage);
+        if (paginationState.leads.currentPage < totalPages) {
+            paginationState.leads.currentPage++;
+            updateLeadsPagination();
+        }
+    });
 
     function selectLead(leadItem) {
         // clear any previous selection
@@ -482,6 +602,8 @@
             const leads = document.querySelectorAll('#leadsDirectory .lead-item');
             
             let visible = 0;
+            const filteredLeads = [];
+            
             leads.forEach(lead => {
                 const name = (lead.dataset.name || '').toLowerCase();
                 const phone = (lead.dataset.phone || '').toLowerCase();
@@ -489,6 +611,7 @@
                 
                 if (!q || name.includes(q) || phone.includes(q) || ticket.includes(q)) {
                     lead.style.display = '';
+                    filteredLeads.push(lead);
                     visible++;
                 } else {
                     lead.style.display = 'none';
@@ -498,6 +621,13 @@
                     }
                 }
             });
+            
+            // Update pagination state
+            paginationState.leads.filteredItems = filteredLeads;
+            paginationState.leads.totalItems = filteredLeads.length;
+            paginationState.leads.currentPage = 1;
+            
+            updateLeadsPagination();
             document.getElementById('leadsCount').textContent = visible;
         });
     }
@@ -701,15 +831,14 @@
         }
     });
 
-    // Initialize counts on page load
+    // Initialize counts and pagination on page load
     document.addEventListener('DOMContentLoaded', function() {
         // Count leads
         const leadsCount = document.querySelectorAll('#leadsDirectory .lead-item').length;
         document.getElementById('leadsCount').textContent = leadsCount;
         
-        // Count users
-        const usersCount = document.querySelectorAll('#usersDirectory .employee-item').length;
-        document.getElementById('usersCount').textContent = usersCount;
+        // Initialize pagination
+        initializePagination();
     });
 </script>
 </body>

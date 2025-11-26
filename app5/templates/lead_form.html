@@ -44,6 +44,9 @@
             display: flex;
             flex-direction: column;
         }
+
+
+        
         
         .form-container {
             background-color:#dcd9f3;
@@ -649,6 +652,11 @@
             transition: background 0.2s;
             cursor: pointer;
         }
+
+        .lead-item.selected {
+            background: #e3f2fd;
+            border-left: 4px solid #2575fc;
+        }
         
         .employee-item:hover, .lead-item:hover {
             background: #f8f9fa;
@@ -770,6 +778,98 @@
             font-size: 13px;
             height: 32px;
         }
+
+        .loading-spinner {
+            display: none;
+            text-align: center;
+            padding: 10px;
+            color: #2575fc;
+        }
+
+        .loading-spinner i {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Pagination Styles */
+        .directory-pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 12px 15px;
+            background: #f8f9fa;
+            border-top: 1px solid #e9ecef;
+            gap: 10px;
+        }
+        
+        .pagination-info {
+            font-size: 12px;
+            color: #6c757d;
+            margin: 0 10px;
+        }
+        
+        .pagination-btn {
+            padding: 6px 12px;
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #4a6fdc;
+        }
+        
+        .pagination-btn:hover:not(:disabled) {
+            background: #4a6fdc;
+            color: white;
+            border-color: #4a6fdc;
+        }
+        
+        .pagination-btn:disabled {
+            background: #f8f9fa;
+            color: #6c757d;
+            cursor: not-allowed;
+        }
+        
+        .pagination-numbers {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .page-number {
+            padding: 6px 10px;
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #495057;
+        }
+        
+        .page-number.active {
+            background: #4a6fdc;
+            color: white;
+            border-color: #4a6fdc;
+        }
+        
+        .page-number:hover:not(.active) {
+            background: #e9ecef;
+        }
+
+        .clear-btn {
+            background-color: #4CAF50;
+            color: white;
+            border: 1px solid #ddd;
+        }
+        
+        .clear-btn:hover {
+            background-color: #4CAF50;
+        }
         
         @media (max-width: 1200px) {
             .single-line-sections {
@@ -808,6 +908,18 @@
             .header-controls {
                 justify-content: space-between;
                 width: 100%;
+            }
+            
+            .directory-pagination {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            
+            .pagination-numbers {
+                order: 3;
+                width: 100%;
+                justify-content: center;
+                margin-top: 8px;
             }
         }
         
@@ -940,6 +1052,27 @@
             .status-inline select {
                 width: 100%;
             }
+            
+            .directory-pagination {
+                flex-direction: column;
+                gap: 8px;
+            }
+            
+            .pagination-numbers {
+                order: 0;
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .pagination-info {
+                order: 1;
+            }
+            
+            .pagination-buttons {
+                order: 2;
+                display: flex;
+                gap: 8px;
+            }
         }
     </style>
 </head>
@@ -982,7 +1115,6 @@
                                     <div class="lead-ticket">{{ lead.ticket_number }}</div>
                                     <div class="lead-status">Status: {{ lead.status }}</div>
                                 </div>
-                                <!-- <button class="assign-btn" data-lead-id="{{ lead.id }}" data-role="lead-view">View</button> -->
                             </div>
                             {% endfor %}
                         {% else %}
@@ -1015,6 +1147,29 @@
                             <div class="no-results">No active users found</div>
                         {% endif %}
                     </div>
+                    
+                    <!-- Pagination -->
+                    <div class="directory-pagination" id="directoryPagination">
+                        <div class="pagination-buttons">
+                            <button class="pagination-btn" id="prevPage" disabled>
+                                <i class="fas fa-chevron-left"></i> Prev
+                            </button>
+                        </div>
+                        
+                        <div class="pagination-numbers" id="paginationNumbers">
+                            <!-- Page numbers will be generated here -->
+                        </div>
+                        
+                        <div class="pagination-info" id="paginationInfo">
+                            Page 1 of 1
+                        </div>
+                        
+                        <div class="pagination-buttons">
+                            <button class="pagination-btn" id="nextPage" disabled>
+                                Next <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
             
@@ -1042,11 +1197,16 @@
                                  </a>
                             </li>
                             <li class="nav-item">
-                                <a href="#business-info" class="nav-link">
-                                    <i class="fas fa-briefcase"></i>
-                                    Event
-                                </a>
+                               <a href="{% url 'app5:event_form' %}" class="nav-link">
+                               <i class="fas fa-briefcase"></i>
+                               Event
+                             </a>
+
                             </li>
+        <a href="{% url 'app5:quotation_list' %}" class="nav-link">
+    <i class="fas fa-briefcase"></i> Quotation
+</a>
+
                         </ul>
                     </div>
                     
@@ -1062,12 +1222,18 @@
                                         <span>Communication Details</span>
                                     </div>
                                     <div class="status-inline">
-                                        <!-- <label for="status">Status:</label> -->
                                         <select id="status" name="status" class="status-select" required>
                                             <option value="">Status</option>
                                             <option value="Active">🟢 Active</option>
                                             <option value="Inactive">🔴 Inactive</option>
                                             <option value="Installed">🔧 Installed</option>
+                                        </select>
+
+                                        <select id="priority" name="priority" class="status-select" required>
+                                        <option value="">Priority</option>
+                                        <option value="High">🔴 High</option>
+                                        <option value="Medium">🟡 Medium</option>
+                                        <option value="Low">🟢 Low</option>
                                         </select>
                                     </div>
                                 </div>
@@ -1085,8 +1251,7 @@
                                     
                                     <div class="form-group">
                                         <label for="email">Email Address</label>
-                                         <input type="email" id="email" name="email" placeholder="Enter Email Address" required>
-                                        
+                                         <input type="email" id="email" name="email" placeholder="Enter Email Address">
                                     </div>
                                 </div>
                             </div>
@@ -1218,12 +1383,11 @@
                                     <div class="compact-form-group">
                                         <label for="refFrom">Reference From</label>
                                         <select id="refFrom" name="refFrom">
-                                            <option value="">Select Reference</option>
-                                            <option value="DIRECT MARKETING">DIRECT MARKETING</option>
-                                            <option value="TEXTILES">TEXTILES</option>
-                                            <option value="HARSHANA STAFF">HARSHANA STAFF</option>
-                                            <option value="IMC MUKKAM AGENT">IMC MUKKAM AGENT</option>
-                                            <option value="I-CARE BGRA">I-CARE BGRA</option>
+                                             <option value="">Select Reference</option>
+        {% for ref in references %}
+        <option value="{{ ref.ref_name }}">{{ ref.ref_name }}</option>
+        {% empty %}
+        {% endfor %}
                                         </select>
                                     </div>
                                     
@@ -1235,6 +1399,12 @@
                                             <option value="{{ nature.name }}">{{ nature.name }}</option>
                                             {% endfor %}
                                         </select>
+                                    </div>
+                                    
+                                    <!-- NEW: Campaign Details Field -->
+                                    <div class="compact-form-group">
+                                        <label for="campaign">Campaign Details</label>
+                                    <input type="text" id="Consultant" name="Campaign" placeholder="Enter Campaign Details">    
                                     </div>
                                     
                                     <div class="compact-form-group">
@@ -1278,6 +1448,10 @@
                                     <i class="fas fa-paper-plane"></i>
                                     &nbsp; Submit Form
                                 </button>
+                                <button type="button" class="clear-btn" id="clearFormBtn">
+                                    <i class="fas fa-eraser"></i>
+                                    &nbsp; Clear Form
+                                </button>
                                 <button type="button" class="reset-btn" onclick="window.location.href='{% url 'app5:lead_report' %}'">
     <i class="fas fa-arrow-left"></i>
     &nbsp; Back
@@ -1311,8 +1485,9 @@
         </div>
     </div>
 
-    <script>
+   <script>
     document.addEventListener('DOMContentLoaded', function() {
+        
         // Set today's date as default
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('date').value = today;
@@ -1329,33 +1504,325 @@
         const cancelModalBtn = document.getElementById('cancelModalBtn');
         const assignmentTypeField = document.getElementById('assignmentType');
         
+        // Pagination elements
+        const prevPageBtn = document.getElementById('prevPage');
+        const nextPageBtn = document.getElementById('nextPage');
+        const paginationNumbers = document.getElementById('paginationNumbers');
+        const paginationInfo = document.getElementById('paginationInfo');
+        
+        // Clear button element
+        const clearFormBtn = document.getElementById('clearFormBtn');
+        
+        // Pagination configuration
+        const itemsPerPage = 10;
+        let currentPage = 1;
+        let totalPages = 1;
+        let currentItems = [];
+        let filteredItems = [];
+        
+        // Create lookup maps for marketedBy and branch
+        const marketedByMap = {
+            {% for user in active_users %}
+            "{{ user.id }}": "{{ user.name|escapejs }}",
+            {% endfor %}
+        };
+
+        const branchMap = {
+            {% for department in departments %}
+            "{{ department.id }}": "{{ department.name|escapejs }}",
+            {% endfor %}
+        };
+
+        // Campaign data map
+        const campaignMap = {
+            {% for campaign in campaigns %}
+            "{{ campaign.name|escapejs }}": "{{ campaign.name|escapejs }}",
+            {% endfor %}
+        };
+
         // Lead data - created on server side via template earlier (active_leads_data)
         const leads = [
             {% for lead in active_leads_data %}
             {
                 id: {{ lead.id }},
                 ownerName: "{{ lead.ownerName|escapejs }}",
-                phone: "{{ lead.phoneNo|escapejs }}",
+                phoneNo: "{{ lead.phoneNo|escapejs }}",
+                email: "{{ lead.email|escapejs }}",
                 ticketNo: "{{ lead.ticket_number|escapejs }}",
                 date: "{{ lead.date|date:'Y-m-d'|escapejs }}",
-                status: "{{ lead.status|escapejs }}"
+                status: "{{ lead.status|escapejs }}",
+                customerType: "{{ lead.customerType|escapejs }}",
+                name: "{{ lead.name|escapejs }}",
+                address: "{{ lead.address|escapejs }}",
+                place: "{{ lead.place|escapejs }}",
+                District: "{{ lead.District|escapejs }}",
+                State: "{{ lead.State|escapejs }}",
+                pinCode: "{{ lead.pinCode|escapejs }}",
+                firstName: "{{ lead.firstName|escapejs }}",
+                individualAddress: "{{ lead.individualAddress|escapejs }}",
+                individualPlace: "{{ lead.individualPlace|escapejs }}",
+                individualDistrict: "{{ lead.individualDistrict|escapejs }}",
+                individualState: "{{ lead.individualState|escapejs }}",
+                individualPinCode: "{{ lead.individualPinCode|escapejs }}",
+                refFrom: "{{ lead.refFrom|escapejs }}",
+                business: "{{ lead.business|escapejs }}",
+                campaign: "{{ lead.campaign|default:''|escapejs }}", // NEW: Campaign field
+                marketedBy: "{{ lead.marketedBy|escapejs }}",
+                Consultant: "{{ lead.Consultant|escapejs }}",
+                requirement: "{{ lead.requirement|escapejs }}",
+                details: "{{ lead.details|escapejs }}",
+                // Add the actual names for display
+                marketedByName: "{{ lead.marketed_by_name|default:lead.marketedBy|escapejs }}",
+                branchName: "{{ lead.branch_name|default:lead.requirement|escapejs }}",
+                campaignName: "{{ lead.campaign_name|default:lead.campaign|default:''|escapejs }}" // NEW: Campaign name
             }{% if not forloop.last %},{% endif %}
             {% endfor %}
         ];
+
+        // Employee data
+        const employees = [
+            {% for u in active_users %}
+            {
+                id: {{ u.id }},
+                name: "{{ u.name|escapejs }}",
+                department: "{{ u.department|escapejs }}",
+                designation: "{{ u.designation|escapejs }}"
+            }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ];
+
+        // Clear form functionality
+        clearFormBtn.addEventListener('click', function() {
+            if (confirm('Are you sure you want to clear all form fields?')) {
+                clearForm();
+            }
+        });
+
+        // Function to clear all form fields
+        function clearForm() {
+            // Reset the form
+            document.getElementById('customerForm').reset();
+            
+            // Reset the toggle to default state (Business)
+            document.getElementById('customerTypeToggle').checked = true;
+            initializeToggle();
+            
+            // Set today's date as default
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('date').value = today;
+            
+            // Clear any error styles
+            document.querySelectorAll('input, select').forEach(field => {
+                field.style.borderColor = '#ddd';
+            });
+            
+            // Clear any selected lead in the directory
+            const selectedLead = document.querySelector('.lead-item.selected');
+            if (selectedLead) {
+                selectedLead.classList.remove('selected');
+            }
+            
+            // Show success message
+            showNotification('Form has been cleared successfully', 'success');
+        }
+
+        // Initialize pagination
+        function initializePagination() {
+            const activeTab = document.querySelector('.directory-tab.active').getAttribute('data-tab');
+            if (activeTab === 'employees') {
+                currentItems = employees;
+            } else {
+                currentItems = leads;
+            }
+            
+            filteredItems = [...currentItems];
+            updatePagination();
+        }
+
+        // Update pagination
+        function updatePagination() {
+            totalPages = Math.ceil(filteredItems.length / itemsPerPage);
+            
+            // Ensure current page is within bounds
+            if (currentPage > totalPages) {
+                currentPage = totalPages || 1;
+            }
+            
+            // Update pagination buttons
+            prevPageBtn.disabled = currentPage === 1;
+            nextPageBtn.disabled = currentPage === totalPages;
+            
+            // Update pagination info
+            const startItem = (currentPage - 1) * itemsPerPage + 1;
+            const endItem = Math.min(currentPage * itemsPerPage, filteredItems.length);
+            paginationInfo.textContent = `Page ${currentPage} of ${totalPages} (${filteredItems.length} items)`;
+            
+            // Generate page numbers
+            generatePageNumbers();
+            
+            // Display current page items
+            displayCurrentPageItems();
+            
+            // Update active tab count
+            document.getElementById('activeTabCount').textContent = filteredItems.length;
+        }
+
+        // Generate page number buttons
+        function generatePageNumbers() {
+            paginationNumbers.innerHTML = '';
+            
+            // Show max 5 page numbers
+            let startPage = Math.max(1, currentPage - 2);
+            let endPage = Math.min(totalPages, startPage + 4);
+            
+            // Adjust start page if we're near the end
+            if (endPage - startPage < 4) {
+                startPage = Math.max(1, endPage - 4);
+            }
+            
+            // First page
+            if (startPage > 1) {
+                const firstPageBtn = document.createElement('button');
+                firstPageBtn.className = 'page-number';
+                firstPageBtn.textContent = '1';
+                firstPageBtn.addEventListener('click', () => goToPage(1));
+                paginationNumbers.appendChild(firstPageBtn);
+                
+                if (startPage > 2) {
+                    const ellipsis = document.createElement('span');
+                    ellipsis.className = 'pagination-ellipsis';
+                    ellipsis.textContent = '...';
+                    paginationNumbers.appendChild(ellipsis);
+                }
+            }
+            
+            // Page numbers
+            for (let i = startPage; i <= endPage; i++) {
+                const pageBtn = document.createElement('button');
+                pageBtn.className = `page-number ${i === currentPage ? 'active' : ''}`;
+                pageBtn.textContent = i;
+                pageBtn.addEventListener('click', () => goToPage(i));
+                paginationNumbers.appendChild(pageBtn);
+            }
+            
+            // Last page
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) {
+                    const ellipsis = document.createElement('span');
+                    ellipsis.className = 'pagination-ellipsis';
+                    ellipsis.textContent = '...';
+                    paginationNumbers.appendChild(ellipsis);
+                }
+                
+                const lastPageBtn = document.createElement('button');
+                lastPageBtn.className = 'page-number';
+                lastPageBtn.textContent = totalPages;
+                lastPageBtn.addEventListener('click', () => goToPage(totalPages));
+                paginationNumbers.appendChild(lastPageBtn);
+            }
+        }
+
+        // Go to specific page
+        function goToPage(page) {
+            currentPage = page;
+            updatePagination();
+        }
+
+        // Display items for current page
+        function displayCurrentPageItems() {
+            const activeTab = document.querySelector('.directory-tab.active').getAttribute('data-tab');
+            const container = activeTab === 'employees' ? document.getElementById('employeeList') : document.getElementById('leadList');
+            
+            // Clear container
+            container.innerHTML = '';
+            
+            if (filteredItems.length === 0) {
+                const noResults = document.createElement('div');
+                noResults.className = 'no-results';
+                noResults.textContent = 'No items found';
+                container.appendChild(noResults);
+                return;
+            }
+            
+            // Calculate slice indices
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = Math.min(startIndex + itemsPerPage, filteredItems.length);
+            const currentPageItems = filteredItems.slice(startIndex, endIndex);
+            
+            // Create items
+            currentPageItems.forEach(item => {
+                if (activeTab === 'employees') {
+                    createEmployeeItem(item, container);
+                } else {
+                    createLeadItem(item, container);
+                }
+            });
+            
+            // Re-attach event listeners
+            if (activeTab === 'employees') {
+                setupEmployeeAssignButtons();
+            } else {
+                setupLeadViewButtons();
+            }
+        }
+
+        // Create employee item
+        function createEmployeeItem(employee, container) {
+            const item = document.createElement('div');
+            item.className = 'employee-item';
+            item.setAttribute('data-id', employee.id);
+            item.setAttribute('data-name', employee.name);
+            
+            item.innerHTML = `
+                <div class="employee-avatar">
+                    ${employee.name.slice(0, 2).toUpperCase()}
+                </div>
+                <div class="employee-details">
+                    <div class="employee-name">${employee.name}</div>
+                    <div class="employee-role">
+                        ${employee.department}${employee.designation ? ' - ' + employee.designation : ''}
+                    </div>
+                </div>
+                <button class="assign-btn" data-id="${employee.id}" data-name="${employee.name}" data-role="employee-assign">
+                    Assign
+                </button>
+            `;
+            
+            container.appendChild(item);
+        }
+
+        // Create lead item
+        function createLeadItem(lead, container) {
+            const item = document.createElement('div');
+            item.className = 'lead-item';
+            item.setAttribute('data-id', lead.id);
+            
+            item.innerHTML = `
+                <div class="lead-avatar">
+                    ${(lead.ownerName || '').slice(0, 2).toUpperCase()}
+                </div>
+                <div class="lead-details">
+                    <div class="lead-name">${lead.ownerName}</div>
+                    <div class="lead-phone">${lead.phoneNo}</div>
+                    <div class="lead-ticket">${lead.ticketNo}</div>
+                    <div class="lead-status">Status: ${lead.status}</div>
+                </div>
+            `;
+            
+            container.appendChild(item);
+        }
 
         // Initialize tab counts properly from DOM
         function updateActiveTabCount() {
             const activeTab = document.querySelector('.directory-tab.active').getAttribute('data-tab');
             if (activeTab === 'employees') {
-                const cnt = document.querySelectorAll('#employeeList .employee-item').length;
-                document.getElementById('activeTabCount').textContent = cnt;
+                document.getElementById('activeTabCount').textContent = filteredItems.length;
             } else {
-                const cnt = document.querySelectorAll('#leadList .lead-item').length;
-                document.getElementById('activeTabCount').textContent = cnt;
+                document.getElementById('activeTabCount').textContent = filteredItems.length;
             }
         }
 
-        // Add event listeners to employee assign buttons (server-rendered)
+        // Add event listeners to employee assign buttons
         function setupEmployeeAssignButtons() {
             const employeeAssignButtons = document.querySelectorAll('#employeeList .assign-btn[data-role="employee-assign"]');
             employeeAssignButtons.forEach(btn => {
@@ -1369,32 +1836,170 @@
                     
                     // You can pass the employee data as URL parameters or use session storage
                     window.location.href = url;
-                    
-                    // Alternative: If you want to pass the employee data to the assignment page
-                    // window.location.href = `${url}?assigned_to=${empId}&assigned_to_name=${encodeURIComponent(empName)}`;
                 });
             });
         }
 
-        // Add event listeners to lead view buttons
+        // Add event listeners to lead items for click functionality
         function setupLeadViewButtons() {
-            const leadViewButtons = document.querySelectorAll('#leadList .assign-btn[data-role="lead-view"]');
-            leadViewButtons.forEach(btn => {
-                btn.addEventListener('click', function(e) {
+            const leadItems = document.querySelectorAll('#leadList .lead-item');
+            leadItems.forEach(item => {
+                item.addEventListener('click', function(e) {
                     e.stopPropagation();
-                    const leadId = this.getAttribute('data-lead-id');
+                    
+                    // Remove previous selection
+                    leadItems.forEach(i => i.classList.remove('selected'));
+                    
+                    // Add selection to current item
+                    this.classList.add('selected');
+                    
+                    const leadId = this.getAttribute('data-id');
                     const lead = leads.find(l => l.id == leadId);
+                    
                     if (lead) {
-                        document.getElementById('ownerName').value = lead.ownerName || '';
-                        // set phone (strip non-digits)
-                        document.getElementById('phoneNo').value = (lead.phone || '').replace(/\D/g,'');
-                        // Set status
-                        document.getElementById('status').value = lead.status || '';
-                        // if you want to set ticket or other fields, do it here
-                        // alert(`Loaded details for ${lead.ownerName}`);
+                        populateFormWithLeadData(lead);
                     }
                 });
             });
+        }
+
+        // Function to populate all form fields with lead data
+        function populateFormWithLeadData(leadData) {
+            // Communication Details
+            document.getElementById('ownerName').value = leadData.ownerName || '';
+            document.getElementById('phoneNo').value = leadData.phoneNo || '';
+            document.getElementById('email').value = leadData.email || '';
+            document.getElementById('status').value = leadData.status || '';
+            
+            // Basic Information (Business/Individual)
+            if (leadData.customerType === 'Business') {
+                // Set to Business mode
+                document.getElementById('customerTypeToggle').checked = true;
+                initializeToggle(); // Update UI
+                
+                document.getElementById('name').value = leadData.name || '';
+                document.getElementById('address').value = leadData.address || '';
+                document.getElementById('place').value = leadData.place || '';
+                document.getElementById('District').value = leadData.District || '';
+                document.getElementById('State').value = leadData.State || '';
+                document.getElementById('pinCode').value = leadData.pinCode || '';
+            } else {
+                // Set to Individual mode
+                document.getElementById('customerTypeToggle').checked = false;
+                initializeToggle(); // Update UI
+                
+                document.getElementById('firstName').value = leadData.firstName || '';
+                document.getElementById('individualAddress').value = leadData.individualAddress || '';
+                document.getElementById('individualPlace').value = leadData.individualPlace || '';
+                document.getElementById('individualDistrict').value = leadData.individualDistrict || '';
+                document.getElementById('individualState').value = leadData.individualState || '';
+                document.getElementById('individualPinCode').value = leadData.individualPinCode || '';
+            }
+            
+            // Business Information
+            document.getElementById('date').value = leadData.date || '';
+            document.getElementById('refFrom').value = leadData.refFrom || '';
+            document.getElementById('business').value = leadData.business || '';
+            
+            // NEW: Campaign Details
+            document.getElementById('campaign').value = leadData.campaign || '';
+            
+            // Fix marketedBy field - handle both ID and name
+            const marketedByValue = leadData.marketedBy || '';
+            let marketedByName = leadData.marketedByName || '';
+            
+            // If we have an ID but no name, try to look it up
+            if (marketedByValue && !isNaN(marketedByValue) && !marketedByName) {
+                marketedByName = marketedByMap[marketedByValue] || marketedByValue;
+            }
+            
+            // Set marketedBy field - try to find matching option
+            const marketedBySelect = document.getElementById('marketedBy');
+            let marketedByFound = false;
+            
+            for (let i = 0; i < marketedBySelect.options.length; i++) {
+                const option = marketedBySelect.options[i];
+                if (option.value === marketedByValue || option.text === marketedByName) {
+                    option.selected = true;
+                    marketedByFound = true;
+                    break;
+                }
+            }
+            
+            // If not found in options, set the value directly
+            if (!marketedByFound && marketedByValue) {
+                marketedBySelect.value = marketedByValue;
+            }
+            
+            document.getElementById('Consultant').value = leadData.Consultant || '';
+            
+            // Fix branch/requirement field - handle both ID and name
+            const branchValue = leadData.requirement || '';
+            let branchName = leadData.branchName || '';
+            
+            // If we have an ID but no name, try to look it up
+            if (branchValue && !isNaN(branchValue) && !branchName) {
+                branchName = branchMap[branchValue] || branchValue;
+            }
+            
+            // Set branch field - try to find matching option
+            const branchSelect = document.getElementById('requirement');
+            let branchFound = false;
+            
+            for (let i = 0; i < branchSelect.options.length; i++) {
+                const option = branchSelect.options[i];
+                if (option.value === branchValue || option.text === branchName) {
+                    option.selected = true;
+                    branchFound = true;
+                    break;
+                }
+            }
+            
+            // If not found in options, set the value directly
+            if (!branchFound && branchValue) {
+                branchSelect.value = branchValue;
+            }
+            
+            document.getElementById('details').value = leadData.details || '';
+            
+            // Scroll to form for better UX
+            document.querySelector('.form-column').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            
+            // Show success message
+            showNotification(`Loaded lead data for ${leadData.ownerName}`, 'success');
+        }
+
+        // Show notification function
+        function showNotification(message, type = 'info') {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 15px 20px;
+                background: ${type === 'success' ? '#4CAF50' : '#2196F3'};
+                color: white;
+                border-radius: 5px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                z-index: 10000;
+                font-weight: 600;
+                transition: all 0.3s ease;
+            `;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            // Remove after 3 seconds
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                notification.style.transform = 'translateX(100px)';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 300);
+            }, 3000);
         }
 
         // Tab switching functionality
@@ -1420,10 +2025,10 @@
                         leadList.classList.add('active');
                     }
 
-                    // Reset search
+                    // Reset search and pagination
                     document.getElementById('directorySearch').value = '';
-                    filterDirectoryItems('');
-                    updateActiveTabCount();
+                    currentPage = 1;
+                    initializePagination();
                 });
             });
         }
@@ -1440,39 +2045,39 @@
         // Filter directory items based on search term
         function filterDirectoryItems(searchTerm) {
             const activeTab = document.querySelector('.directory-tab.active').getAttribute('data-tab');
-            const items = document.querySelectorAll(`.${activeTab === 'employees' ? 'employee-item' : 'lead-item'}`);
-
-            let visibleCount = 0;
-
-            items.forEach(item => {
-                let textContent = '';
-
-                if (activeTab === 'employees') {
-                    const nameEl = item.querySelector('.employee-name');
-                    const roleEl = item.querySelector('.employee-role');
-                    const name = nameEl ? nameEl.textContent.toLowerCase() : '';
-                    const role = roleEl ? roleEl.textContent.toLowerCase() : '';
-                    textContent = name + ' ' + role;
-                } else {
-                    const nameEl = item.querySelector('.lead-name');
-                    const phoneEl = item.querySelector('.lead-phone');
-                    const ticketEl = item.querySelector('.lead-ticket');
-                    const name = nameEl ? nameEl.textContent.toLowerCase() : '';
-                    const phone = phoneEl ? phoneEl.textContent.toLowerCase() : '';
-                    const ticket = ticketEl ? ticketEl.textContent.toLowerCase() : '';
-                    textContent = name + ' ' + phone + ' ' + ticket;
-                }
-
-                if (textContent.includes(searchTerm)) {
-                    item.style.display = 'flex';
-                    visibleCount++;
-                } else {
-                    item.style.display = 'none';
-                }
-            });
-
-            // Update the count display
-            document.getElementById('activeTabCount').textContent = visibleCount;
+            
+            if (activeTab === 'employees') {
+                currentItems = employees;
+            } else {
+                currentItems = leads;
+            }
+            
+            if (!searchTerm) {
+                filteredItems = [...currentItems];
+            } else {
+                filteredItems = currentItems.filter(item => {
+                    let textContent = '';
+                    
+                    if (activeTab === 'employees') {
+                        textContent = (
+                            item.name.toLowerCase() + ' ' + 
+                            item.department.toLowerCase() + ' ' + 
+                            (item.designation || '').toLowerCase()
+                        );
+                    } else {
+                        textContent = (
+                            item.ownerName.toLowerCase() + ' ' + 
+                            item.phoneNo.toLowerCase() + ' ' + 
+                            item.ticketNo.toLowerCase()
+                        );
+                    }
+                    
+                    return textContent.includes(searchTerm);
+                });
+            }
+            
+            currentPage = 1;
+            updatePagination();
         }
 
         // Initialize toggle state
@@ -1506,11 +2111,24 @@
 
         // Initialize on page load
         initializeToggle();
-        setupEmployeeAssignButtons();
-        setupLeadViewButtons();
         setupDirectoryTabs();
         setupDirectorySearch();
-        updateActiveTabCount();
+        initializePagination();
+        
+        // Pagination button event listeners
+        prevPageBtn.addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                updatePagination();
+            }
+        });
+        
+        nextPageBtn.addEventListener('click', () => {
+            if (currentPage < totalPages) {
+                currentPage++;
+                updatePagination();
+            }
+        });
 
         // Handle toggle change
         customerTypeToggle.addEventListener('change', function() {
@@ -1647,6 +2265,6 @@
             });
         });
     });
-    </script>
+</script>
 </body>
 </html>
