@@ -17,7 +17,7 @@
             <i class="fas fa-hashtag"></i> Item ID: <strong>{{ item.id }}</strong>
         </div>
 
-        <form method="POST" action="" class="item-form" id="itemForm">
+        <form method="POST" action="" class="item-form" id="itemForm" enctype="multipart/form-data">
             {% csrf_token %}
             
             <div class="form-section">
@@ -112,6 +112,20 @@
                             placeholder="Enter HSN code"
                         >
                         <small class="help-text">For GST purposes</small>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group full-width">
+                        <label for="images">Item Images</label>
+                        <input
+                            type="file"
+                            id="images"
+                            name="images"
+                            multiple
+                            accept="image/*"
+                            class="form-control"
+                        >
+                        <small class="help-text">Upload new images (multiple allowed)</small>
                     </div>
                 </div>
             </div>

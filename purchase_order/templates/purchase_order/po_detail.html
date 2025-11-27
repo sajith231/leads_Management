@@ -1980,7 +1980,7 @@
 
 /* Positive margin (profit) */
 .margin-cell.positive {
-    color: #ffffffff;
+    color: #000000ff;
 }
 
 /* Negative margin (loss) */
@@ -2315,6 +2315,32 @@
     background: #f8f9fa !important;
     color: #2c3e50 !important;
     border-bottom: 2px solid #e9ecef !important;
+}
+
+/* Item Cost, Margin, Total Amount - Unified Styling */
+.items-table th.cost-col,
+.items-table th.margin-col,
+.items-table th.total-col,
+.items-table td.item-cost-cell,
+.items-table td.margin-cell,
+.items-table td.right-align {
+    text-align: right;
+    font-weight: 600;
+    color: #2c3e50;
+    background: #f8f9fa;
+}
+
+/* Print Styles */
+@media print {
+    .print-items-table .cost-col { 
+        width: 10%; 
+    }
+    
+    .item-cost-cell,
+    .margin-cell {
+        background: none !important;
+        font-weight: 600;
+    }
 }
 
 </style>

@@ -88,21 +88,28 @@
             <div class="directory-list">
                 {% for item in items %}
                 <div class="directory-item {% if forloop.first %}active{% endif %}" 
-                     data-item-id="{{ item.id }}" 
-                     data-item-name="{{ item.name }}"
-                     data-item-unit="{{ item.unit_of_measure }}"
-                     data-item-dept="{% if item.department %}{{ item.department.name }}{% else %}—{% endif %}"
-                     data-item-section="{{ item.get_section_display }}"
-                     data-item-hsn="{{ item.hsn_code|default:'—' }}"
-                     data-item-tax="{{ item.tax_percentage }}"
-                     data-item-mrp="{{ item.mrp|floatformat:2 }}"
-                     data-item-purchase="{{ item.purchase_price|floatformat:2 }}"
-                     data-item-cost="{{ item.cost|floatformat:2 }}"
-                     data-item-active="{{ item.is_active }}"
-                     data-item-edit-url="{% url 'purchase_order:item_edit' item.pk %}"
-                     onclick="showItemDetail(this)">
+                    data-item-id="{{ item.id }}" 
+                    data-item-name="{{ item.name }}"
+                    data-item-unit="{{ item.unit_of_measure }}"
+                    data-item-image="{% if item.images.first %}{{ item.images.first.image.url }}{% endif %}"
+                    data-item-images="{% for img in item.images.all %}{{ img.image.url }}{% if not forloop.last %}|{% endif %}{% endfor %}"
+                    data-item-dept="{% if item.department %}{{ item.department.name }}{% else %}—{% endif %}"
+                    data-item-section="{{ item.get_section_display }}"
+                    data-item-hsn="{{ item.hsn_code|default:'—' }}"
+                    data-item-tax="{{ item.tax_percentage }}"
+                    data-item-mrp="{{ item.mrp|floatformat:2 }}"
+                    data-item-purchase="{{ item.purchase_price|floatformat:2 }}"
+                    data-item-cost="{{ item.cost|floatformat:2 }}"
+                    data-item-active="{{ item.is_active }}"
+                    data-item-edit-url="{% url 'purchase_order:item_edit' item.pk %}"
+                    onclick="showItemDetail(this)">
                     <div class="item-avatar">
-                        <i class="fas fa-cube"></i>
+                        {% if item.images.first %}
+                            <img src="{{ item.images.first.image.url }}"
+                                style="width:40px;height:40px;border-radius:50%;object-fit:cover;">
+                        {% else %}
+                            <i class="fas fa-cube"></i>
+                        {% endif %}
                     </div>
                     <div class="item-mini-info">
                         <div class="item-mini-name">{{ item.name }}</div>
@@ -119,8 +126,16 @@
             <div class="item-detail-card" id="itemDetail">
                 <!-- Item Header -->
                 <div class="item-header">
-                    <div class="item-avatar-large">
-                        <i class="fas fa-cube"></i>
+                    <div class="item-avatar-large" id="detailImageContainer">
+                        {% with first_image=items.0.images.first %}
+                            {% if first_image %}
+                                <img src="{{ first_image.image.url }}" 
+                                    id="detailMainImage"
+                                    style="width:80px;height:80px;border-radius:10px;object-fit:cover;">
+                            {% else %}
+                                <i class="fas fa-cube"></i>
+                            {% endif %}
+                        {% endwith %}
                     </div>
                     <div class="item-header-info">
                         <h2 class="item-title" id="detailItemName">{{ items.0.name }}</h2>
@@ -139,8 +154,11 @@
                     <button class="tab-btn" data-tab="pricing">
                         <i class="fas fa-tags"></i> Pricing Details
                     </button>
-                    <button class="tab-btn" data-tab="stock">
+                    {% comment %} <button class="tab-btn" data-tab="stock">
                         <i class="fas fa-warehouse"></i> Stock Details
+                    </button> {% endcomment %}
+                    <button class="tab-btn" data-tab="images">
+                        <i class="fas fa-images"></i> Images
                     </button>
                 </div>
 
@@ -211,13 +229,35 @@
                 </div>
 
                 <!-- Tab Content: Stock Details -->
-                <div class="tab-content" data-content="stock">
+                {% comment %} <div class="tab-content" data-content="stock">
                     <div class="info-section">
                         <h3><i class="fas fa-warehouse"></i> Stock Information</h3>
                         <div class="empty-state">
                             <i class="fas fa-box-open"></i>
                             <p>Stock details will be displayed here.</p>
                             <small>This section can be customized to show inventory levels, reorder points, and stock movement history.</small>
+                        </div>
+                    </div>
+                </div> {% endcomment %}
+
+                <!-- Tab Content: Images -->
+                <div class="tab-content" data-content="images">
+                    <div class="info-section">
+                        <h3><i class="fas fa-images"></i> Item Images</h3>
+                        <div id="imageGallery" class="image-grid">
+                            {% if items.0.images.all %}
+                                {% for img in items.0.images.all %}
+                                    <div class="image-thumb">
+                                        <img src="{{ img.image.url }}" alt="{{ items.0.name }}">
+                                    </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="empty-state">
+                                    <i class="fas fa-image"></i>
+                                    <p>No images uploaded for this item.</p>
+                                    <small>Use the Edit page to upload one or more images.</small>
+                                </div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -433,7 +473,7 @@ body {
 
 /* Sidebar Directory */
 .sidebar-directory {
-    width: 280px;
+    width: 380px;
     background: white;
     border-radius: 10px;
     padding: 20px;
@@ -505,9 +545,10 @@ body {
     font-weight: 600;
     font-size: 14px;
     color: #333;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: normal;   /* allows wrapping */
+    overflow: visible;     /* show full text */
+    text-overflow: unset;  /* disable ellipsis */
+    line-height: 1.3;
 }
 
 .item-mini-desc {
@@ -822,6 +863,11 @@ body {
     height: 100%;
     background-color: rgba(0, 0, 0, 0.5);
     animation: fadeIn 0.3s;
+    pointer-events: none;
+}
+
+.modal.show {
+    pointer-events: auto;
 }
 
 .modal-content {
@@ -1018,191 +1064,143 @@ body {
 .sidebar-directory::-webkit-scrollbar-thumb:hover {
     background: #354b67;
 }
+
+.image-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.image-thumb {
+    width: 90px;
+    height: 90px;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #f0f0f0;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+.image-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
 </style>
 
 <script>
-// Tab switching functionality
-document.addEventListener('DOMContentLoaded', function() {
+// ================= TAB SWITCHING =================
+document.addEventListener('DOMContentLoaded', function () {
     const tabBtns = document.querySelectorAll('.tab-btn');
     const tabContents = document.querySelectorAll('.tab-content');
 
-    tabBtns.forEach(btn => {
-        btn.addEventListener('click', function() {
-            const targetTab = this.getAttribute('data-tab');
-
-            // Remove active class from all tabs and contents
+    tabBtns.forEach(btn =>
+        btn.addEventListener('click', function () {
+            const target = this.getAttribute('data-tab');
             tabBtns.forEach(b => b.classList.remove('active'));
             tabContents.forEach(c => c.classList.remove('active'));
 
-            // Add active class to clicked tab and corresponding content
             this.classList.add('active');
-            document.querySelector(`[data-content="${targetTab}"]`).classList.add('active');
-        });
-    });
+            document.querySelector(`[data-content="${target}"]`).classList.add('active');
+        })
+    );
 });
 
-// Directory item selection with dynamic content update
+// ================= SHOW ITEM DETAIL =================
 function showItemDetail(element) {
-    // Remove active class from all items
-    const items = document.querySelectorAll('.directory-item');
-    items.forEach(item => item.classList.remove('active'));
-    
-    // Add active class to clicked item
+    document.querySelectorAll('.directory-item')
+        .forEach(item => item.classList.remove('active'));
     element.classList.add('active');
-    
-    // Get data attributes
-    const itemId = element.getAttribute('data-item-id');
-    const itemName = element.getAttribute('data-item-name');
-    const itemUnit = element.getAttribute('data-item-unit');
-    const itemDept = element.getAttribute('data-item-dept');
-    const itemSection = element.getAttribute('data-item-section');
-    const itemHsn = element.getAttribute('data-item-hsn');
-    const itemTax = element.getAttribute('data-item-tax');
-    const itemMrp = element.getAttribute('data-item-mrp');
-    const itemPurchase = element.getAttribute('data-item-purchase');
-    const itemCost = element.getAttribute('data-item-cost');
-    const itemActive = element.getAttribute('data-item-active') === 'True';
-    const itemEditUrl = element.getAttribute('data-item-edit-url');
-    
-    // Update detail panel
+
+    // Get attributes
+    const itemId = element.dataset.itemId;
+    const itemName = element.dataset.itemName;
+    const itemUnit = element.dataset.itemUnit;
+    const itemDept = element.dataset.itemDept;
+    const itemSection = element.dataset.itemSection;
+    const itemHsn = element.dataset.itemHsn;
+    const itemTax = element.dataset.itemTax;
+    const itemMrp = element.dataset.itemMrp;
+    const itemPurchase = element.dataset.itemPurchase;
+    const itemCost = element.dataset.itemCost;
+    const itemActive = element.dataset.itemActive === "True";
+    const itemEditUrl = element.dataset.itemEditUrl;
+    const itemImage = element.dataset.itemImage;
+    const itemImages = element.dataset.itemImages || "";
+
+    // Update Item Details
     document.getElementById('detailItemName').textContent = itemName;
     document.getElementById('detailItemId').textContent = 'Item ID: ' + itemId;
-    
+
     const statusBadge = document.getElementById('detailItemStatus');
     statusBadge.textContent = itemActive ? 'ACTIVE' : 'INACTIVE';
     statusBadge.className = 'status-badge ' + (itemActive ? 'status-active' : 'status-inactive');
-    
+
     document.getElementById('detailDepartment').textContent = itemDept;
     document.getElementById('detailSection').textContent = itemSection;
     document.getElementById('detailHsn').textContent = itemHsn;
-    document.getElementById('detailTax').textContent = itemTax + '%';
+    document.getElementById('detailTax').textContent = itemTax + "%";
     document.getElementById('detailUnit').textContent = itemUnit;
-    document.getElementById('detailMrp').textContent = '₹' + itemMrp;
-    document.getElementById('detailPurchase').textContent = '₹' + itemPurchase;
-    document.getElementById('detailCost').textContent = '₹' + itemCost;
-    
-    // Update edit button
-    document.getElementById('editItemBtn').onclick = function() {
-        window.location.href = itemEditUrl;
-    };
-    
-    // Update delete button
-    document.getElementById('deleteItemBtn').onclick = function() {
-        confirmDelete(itemId, itemName);
-    };
+    document.getElementById('detailMrp').textContent = "₹" + itemMrp;
+    document.getElementById('detailPurchase').textContent = "₹" + itemPurchase;
+    document.getElementById('detailCost').textContent = "₹" + itemCost;
+
+    // Buttons update
+    document.getElementById('editItemBtn').onclick = () => window.location.href = itemEditUrl;
+    document.getElementById('deleteItemBtn').onclick = () => confirmDelete(itemId, itemName);
+
+    // ================= UPDATE MAIN IMAGE =================
+    const imageContainer = document.getElementById('detailImageContainer');
+    imageContainer.innerHTML = itemImage
+        ? `<img src="${itemImage}" style="width:80px;height:80px;border-radius:10px;object-fit:cover;">`
+        : `<i class="fas fa-cube"></i>`;
+
+    // ================= UPDATE IMAGE GALLERY TAB =================
+    const gallery = document.getElementById('imageGallery');
+    if (gallery) {
+        const urls = itemImages ? itemImages.split('|').filter(Boolean) : [];
+        gallery.innerHTML = urls.length
+            ? urls.map(url => `
+                <div class="image-thumb">
+                    <img src="${url}" alt="Image" style="width:90px;height:90px;border-radius:10px;object-fit:cover;">
+                </div>`).join('')
+            : `<div class="empty-state">
+                    <i class="fas fa-image"></i>
+                    <p>No images uploaded for this item.</p>
+                </div>`;
+    }
 }
 
-// Search functionality
-document.getElementById('searchInput').addEventListener('keyup', function() {
-    const searchValue = this.value.toLowerCase();
+// ================= SEARCH FILTER =================
+document.getElementById('searchInput')?.addEventListener('keyup', function () {
+    const value = this.value.toLowerCase();
     const items = document.querySelectorAll('.directory-item');
-    let visibleCount = 0;
+    let count = 0;
 
     items.forEach(item => {
-        const text = item.textContent.toLowerCase();
-        const isVisible = text.includes(searchValue);
-        item.style.display = isVisible ? 'flex' : 'none';
-        if (isVisible) visibleCount++;
+        const visible = item.textContent.toLowerCase().includes(value);
+        item.style.display = visible ? "flex" : "none";
+        if (visible) count++;
     });
 
-    // Update count
-    document.querySelector('.item-count').textContent = visibleCount + ' items on this page';
+    document.querySelector('.item-count').textContent = `${count} items on this page`;
 });
 
-// Filter functionality
-document.getElementById('departmentSelect').addEventListener('change', function() {
-    applyFilters();
-});
+// ================= CLOSE MODAL =================
+window.addEventListener('click', function(e) {
+    if (e.target.id === "deleteModal") closeModal();
+}, false);
+document.addEventListener("keydown", e => e.key === "Escape" && closeModal());
 
-document.getElementById('sectionSelect').addEventListener('change', function() {
-    applyFilters();
-});
-
-document.getElementById('statusSelect').addEventListener('change', function() {
-    applyFilters();
-});
-
-function applyFilters() {
-    const department = document.getElementById('departmentSelect').value;
-    const section = document.getElementById('sectionSelect').value;
-    const status = document.getElementById('statusSelect').value;
-    
-    // Build query string
-    const params = new URLSearchParams(window.location.search);
-    
-    if (department !== 'all') {
-        params.set('department', department);
-    } else {
-        params.delete('department');
-    }
-    
-    if (section !== 'all') {
-        params.set('section', section);
-    } else {
-        params.delete('section');
-    }
-    
-    if (status !== 'all') {
-        params.set('status', status);
-    } else {
-        params.delete('status');
-    }
-    
-    // Reload page with filters
-    const newUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
-    window.location.href = newUrl;
-}
-
-// Clear filters function
-function clearFilters() {
-    window.location.href = window.location.pathname;
-}
-
-// Delete confirmation modal
-function confirmDelete(itemId, itemName) {
-    const modal = document.getElementById('deleteModal');
-    const deleteForm = document.getElementById('deleteForm');
-    const itemNameElement = document.getElementById('itemName');
-    
-    itemNameElement.textContent = itemName;
-    deleteForm.action = "{% url 'purchase_order:item_delete' 0 %}".replace('0', itemId);
-    modal.style.display = 'block';
-}
-
-function closeModal() {
-    const modal = document.getElementById('deleteModal');
-    modal.style.display = 'none';
-}
-
-// Modal close on outside click
-window.onclick = function(event) {
-    const modal = document.getElementById('deleteModal');
-    if (event.target === modal) {
-        closeModal();
-    }
-}
-
-// Modal close on ESC key
-document.addEventListener('keydown', function(event) {
-    if (event.key === 'Escape') {
-        closeModal();
+// ================= Initialize default selected item =================
+document.addEventListener('DOMContentLoaded', function () {
+    const first = document.querySelector('.directory-item');
+    if (first) {
+        showItemDetail(first);   // load details without triggering click event system-wide
     }
 });
 
-// Set first item as active on load
-document.addEventListener('DOMContentLoaded', function() {
-    const firstItem = document.querySelector('.directory-item');
-    if (firstItem && !document.querySelector('.directory-item.active')) {
-        firstItem.classList.add('active');
-    }
-});
-
-// Smooth scroll for directory
-document.addEventListener('DOMContentLoaded', function() {
-    const directoryList = document.querySelector('.directory-list');
-    if (directoryList) {
-        directoryList.style.scrollBehavior = 'smooth';
-    }
-});
 </script>
+
 {% endblock %}

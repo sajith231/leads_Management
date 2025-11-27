@@ -882,18 +882,20 @@ label {
 
 .dropdown-list {
     position: absolute;
-    top: 100%;
+    top: calc(100% + 2px);
     left: 0;
     right: 0;
     max-height: 300px;
     overflow-y: auto;
     background: white;
     border: 2px solid #3498db;
-    border-top: none;
     border-radius: 0 0 6px 6px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    z-index: 1000;
-    margin-top: -2px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+    z-index: 9999;
+    display: none;
+    /* ✅ ADD THESE LINES */
+    pointer-events: auto;
+    user-select: none;
 }
 
 .dropdown-item {
@@ -1832,6 +1834,32 @@ input[type="number"].numeric-input {
     overflow: visible !important;
 }
 
+.line-items-table td,
+.line-items-table tr,
+.table-wrapper,
+.form-container,
+.form-section,
+.content-wrapper {
+    overflow: visible !important;
+    position: relative !important;
+}
+
+.dropdown-list {
+    max-height: 300px;
+    overflow-y: auto !important;
+    position: absolute;
+    z-index: 99999 !important;
+}
+
+#itemDropdown {
+    max-height: 300px;
+    overflow-y: auto;
+    position: absolute;
+    z-index: 99999 !important;
+}
+
+
+
 </style>
 
 <script>
@@ -1926,6 +1954,28 @@ document.addEventListener('DOMContentLoaded', function() {
             if (row) calculateItemCost(row);
         }
     });
+    // ==================== PREFILL CLIENT ON EDIT ====================
+    if (typeof PREFILLED_CLIENT !== 'undefined' && PREFILLED_CLIENT.trim() !== "") {
+        const clientHidden = document.getElementById("client_details");
+        const clientInput = document.getElementById("client_search_input");
+        const clientSelected = document.getElementById("clientSelectedText");
+        const selectedNameSpan = document.getElementById("selectedClientName");
+
+        clientHidden.value = PREFILLED_CLIENT;
+        if (clientInput) clientInput.value = PREFILLED_CLIENT;
+        if (selectedNameSpan) selectedNameSpan.textContent = PREFILLED_CLIENT;
+        if (clientSelected) clientSelected.style.display = "block";
+
+        // stay on select mode
+        switchClientMode("select");
+    }
+
+    // If manual client was used previously
+    if (typeof PREFILLED_CLIENT !== 'undefined' && !allClients.includes(PREFILLED_CLIENT)) {
+        switchClientMode("manual");
+        document.getElementById("client_manual_input").value = PREFILLED_CLIENT;
+        document.getElementById("client_details").value = PREFILLED_CLIENT;
+    }
 });
 
 
@@ -3150,9 +3200,8 @@ function populateItemDropdown(input, itemsList) {
         div.dataset.name = item.name;
         div.dataset.unit = item.unit;
         
-        // ✅ Use mousedown to prevent input blur
-        div.addEventListener('mousedown', function(e) {
-            e.preventDefault();
+        // ✅ Use click instead of mousedown
+        div.addEventListener('click', function(e) {
             e.stopPropagation();
             console.log('Item clicked:', item.name);
             selectItemOption(this, input);
@@ -3214,21 +3263,30 @@ function selectItemOption(option, input) {
     dropdown.style.display = 'none';
     
     console.log('Item selection complete');
+
+    input.blur();
 }
 
 // ==================== CLOSE DROPDOWNS ON OUTSIDE CLICK ====================
 
-document.addEventListener('mousedown', function(e) {
-    // Don't close if clicking dropdown or input
-    if (e.target.closest('.dropdown-list') || e.target.closest('.item-searchable-wrapper')) {
-        return;
-    }
+document.addEventListener('click', function(e) {
+    // Check if the click is inside any dropdown-related element
+    const isDropdownClick = e.target.closest('.dropdown-list');
+    const isWrapperClick = e.target.closest('.item-searchable-wrapper, .supplier-searchable-wrapper, .department-searchable-wrapper');
+    const isInputClick = e.target.closest('.searchable-input, .item-input, .dropdown-arrow');
     
-    // Close all dropdowns
-    document.querySelectorAll('.dropdown-list').forEach(list => {
-        list.classList.remove('show');
-        list.style.display = 'none';
-    });
+    // If clicked outside all dropdown-related elements, close all dropdowns
+    if (!isDropdownClick && !isWrapperClick && !isInputClick) {
+        document.querySelectorAll('.dropdown-list').forEach(list => {
+            list.classList.remove('show');
+            list.style.display = 'none';
+        });
+        
+        // Remove active states
+        document.querySelectorAll('.supplier-searchable-wrapper, .department-searchable-wrapper').forEach(wrapper => {
+            wrapper.classList.remove('active');
+        });
+    }
 });
 
 // ==================== SCROLL/RESIZE HANDLERS ====================
@@ -3654,18 +3712,6 @@ function selectDepartment(option) {
     wrapper.classList.remove('active');
     loadDepartmentInfo();
 }
-
-// ==================== CLOSE ALL DROPDOWNS ON OUTSIDE CLICK ====================
-
-document.addEventListener('mousedown', (e) => {
-    if (!e.target.closest('.supplier-searchable-wrapper') &&
-        !e.target.closest('.department-searchable-wrapper') &&
-        !e.target.closest('.item-searchable-wrapper')) {
-        document.querySelectorAll('.dropdown-list').forEach(list => {
-            list.classList.remove('show');
-        });
-    }
-});
 
 // ==================== INITIALIZE ON PAGE LOAD ====================
 document.addEventListener('DOMContentLoaded', () => {

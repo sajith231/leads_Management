@@ -7,7 +7,7 @@ from django.http import JsonResponse
 from decimal import Decimal
 from datetime import date
 from django.utils import timezone  
-from .models import Supplier, PurchaseOrder, Item, PurchaseOrderItem, Department
+from .models import Supplier, PurchaseOrder, Item, ItemImage, PurchaseOrderItem, Department
 from django.core.paginator import Paginator
 from django.core.paginator import EmptyPage, PageNotAnInteger
 from django.db.models import ProtectedError
@@ -231,11 +231,12 @@ def item_add(request):
             if department_id:
                 department = get_object_or_404(Department, pk=department_id)
 
-            Item.objects.create(
+            # Create item first
+            item = Item.objects.create(
                 name=request.POST.get('name'),
                 description=request.POST.get('description', ''),
                 department=department,
-                section=request.POST.get('section', 'GENERAL'),  # ✅ NEW: Section field
+                section=request.POST.get('section', 'GENERAL'),
                 unit_of_measure=request.POST.get('unit_of_measure', 'pcs'),
                 tax_percentage=Decimal(request.POST.get('tax_percentage', '18.00')),
                 mrp=Decimal(request.POST.get('mrp', '0.00')),
@@ -246,8 +247,15 @@ def item_add(request):
                 created_by=request.user.username if request.user.is_authenticated else 'Admin',
                 updated_by=request.user.username if request.user.is_authenticated else 'Admin',
             )
+
+            # ===== SAVE IMAGES =====
+            if request.FILES.getlist('images'):
+                for img in request.FILES.getlist('images'):
+                    ItemImage.objects.create(item=item, image=img)
+
             messages.success(request, "Item added successfully.")
             return redirect('purchase_order:item_list')
+
         except Exception as e:
             messages.error(request, f"Error adding item: {str(e)}")
 
@@ -258,23 +266,19 @@ def item_add(request):
         'departments': departments
     })
 
-
 def item_edit(request, pk):
     """Update existing item"""
     item = get_object_or_404(Item, pk=pk)
     
     if request.method == 'POST':
         try:
-            # Get department if provided
             department_id = request.POST.get('department')
-            department = None
-            if department_id:
-                department = get_object_or_404(Department, pk=department_id)
+            department = get_object_or_404(Department, pk=department_id) if department_id else None
 
             item.name = request.POST.get('name')
             item.description = request.POST.get('description', '')
             item.department = department
-            item.section = request.POST.get('section', 'GENERAL')  # ✅ NEW: Section field
+            item.section = request.POST.get('section', 'GENERAL')
             item.unit_of_measure = request.POST.get('unit_of_measure', 'pcs')
             item.tax_percentage = Decimal(request.POST.get('tax_percentage', '18.00'))
             item.mrp = Decimal(request.POST.get('mrp', '0.00'))
@@ -284,12 +288,18 @@ def item_edit(request, pk):
             item.is_active = request.POST.get('status') == "True"
             item.updated_by = request.user.username if request.user.is_authenticated else 'Admin'
             item.save()
-            
+
+            # ===== SAVE NEW IMAGES =====
+            if request.FILES.getlist('images'):
+                for img in request.FILES.getlist('images'):
+                    ItemImage.objects.create(item=item, image=img)
+
             messages.success(request, "Item updated successfully.")
             return redirect('purchase_order:item_list')
+
         except Exception as e:
             messages.error(request, f"Error updating item: {str(e)}")
-    
+
     departments = Department.objects.filter(is_active=True).order_by('name')
     
     return render(request, 'purchase_order/item_edit.html', {
@@ -297,7 +307,6 @@ def item_edit(request, pk):
         'action': 'Edit',
         'departments': departments
     })
-
 
 def item_delete(request, pk):
     """Delete item"""
@@ -529,7 +538,7 @@ def purchase_order_create(request):
                 f"📅 *Date:* {po.po_date}\n"
                 f"👤 *Created By:* {po.created_by or request.user.username or 'System'}"
             )
-            send_whatsapp_message("9946545535", msg)
+            send_whatsapp_message("8606360089", msg)
             return redirect('purchase_order:po_list')
 
         except Exception as e:
@@ -701,7 +710,7 @@ def purchase_order_update(request, pk):
                     f"📅 *Updated On:* {timezone.now().strftime('%Y-%m-%d %H:%M')}\n"
                     f"👤 *Updated By:* {request.user.username}"
                 )
-                send_whatsapp_message("9946545535", msg)
+                send_whatsapp_message("8606360089", msg)
             return redirect('purchase_order:po_list')
 
         except Exception as e:
