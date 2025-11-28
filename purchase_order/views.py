@@ -538,7 +538,7 @@ def purchase_order_create(request):
                 f"📅 *Date:* {po.po_date}\n"
                 f"👤 *Created By:* {po.created_by or request.user.username or 'System'}"
             )
-            send_whatsapp_message("8606360089", msg)
+            send_whatsapp_message("9946545535", msg)
             return redirect('purchase_order:po_list')
 
         except Exception as e:
@@ -710,7 +710,7 @@ def purchase_order_update(request, pk):
                     f"📅 *Updated On:* {timezone.now().strftime('%Y-%m-%d %H:%M')}\n"
                     f"👤 *Updated By:* {request.user.username}"
                 )
-                send_whatsapp_message("8606360089", msg)
+                send_whatsapp_message("9946545535", msg)
             return redirect('purchase_order:po_list')
 
         except Exception as e:
