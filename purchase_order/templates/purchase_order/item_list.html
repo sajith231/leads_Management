@@ -51,8 +51,8 @@
             <!-- Status Filter -->
             <select name="status" id="statusSelect" class="modern-select">
                 <option value="all">All Status</option>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
+                <option value="active" {% if selected_status == 'active' %}selected{% endif %}>Active</option>
+                <option value="inactive" {% if selected_status == 'inactive' %}selected{% endif %}>Inactive</option>
             </select>
         </div>
 
@@ -263,7 +263,7 @@
                 </div>
             </div>
             {% else %}
-                <li class="disabled"><span>»</span></li>
+                
             {% endif %}
         </ul>
     </div>
@@ -1090,6 +1090,74 @@ body {
 </style>
 
 <script>
+// ================= FILTER FUNCTIONALITY =================
+document.addEventListener('DOMContentLoaded', function () {
+    const searchInput = document.getElementById('searchInput');
+    const departmentSelect = document.getElementById('departmentSelect');
+    const sectionSelect = document.getElementById('sectionSelect');
+    const statusSelect = document.getElementById('statusSelect');
+
+    // Function to apply filters by updating URL
+    function applyFilters() {
+        const params = new URLSearchParams(window.location.search);
+        
+        const search = searchInput.value.trim();
+        const department = departmentSelect.value;
+        const section = sectionSelect.value;
+        const status = statusSelect.value;
+        
+        // Clear all filter params first
+        params.delete('search');
+        params.delete('department');
+        params.delete('section');
+        params.delete('status');
+        params.delete('page'); // Reset to page 1 when filtering
+        
+        // Add back only non-empty filters
+        if (search) params.set('search', search);
+        if (department && department !== 'all') params.set('department', department);
+        if (section && section !== 'all') params.set('section', section);
+        if (status && status !== 'all') params.set('status', status);
+        
+        // Redirect with new filters
+        window.location.href = '?' + params.toString();
+    }
+
+    // Search with debounce (wait 500ms after user stops typing)
+    let searchTimeout;
+    if (searchInput) {
+        searchInput.addEventListener('keyup', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(applyFilters, 500);
+        });
+    }
+
+    // Instant filter on dropdown change
+    if (departmentSelect) departmentSelect.addEventListener('change', applyFilters);
+    if (sectionSelect) sectionSelect.addEventListener('change', applyFilters);
+    if (statusSelect) statusSelect.addEventListener('change', applyFilters);
+});
+
+// ================= CLEAR FILTERS =================
+function clearFilters() {
+    window.location.href = window.location.pathname;
+}
+
+// ================= DELETE MODAL =================
+function confirmDelete(itemId, itemName) {
+    const modal = document.getElementById('deleteModal');
+    document.getElementById('itemName').textContent = itemName;
+    document.getElementById('deleteForm').action = `/po/items/${itemId}/delete/`;
+    modal.style.display = 'block';
+    setTimeout(() => modal.classList.add('show'), 10);
+}
+
+function closeModal() {
+    const modal = document.getElementById('deleteModal');
+    modal.classList.remove('show');
+    setTimeout(() => modal.style.display = 'none', 300);
+}
+
 // ================= TAB SWITCHING =================
 document.addEventListener('DOMContentLoaded', function () {
     const tabBtns = document.querySelectorAll('.tab-btn');
@@ -1172,35 +1240,20 @@ function showItemDetail(element) {
     }
 }
 
-// ================= SEARCH FILTER =================
-document.getElementById('searchInput')?.addEventListener('keyup', function () {
-    const value = this.value.toLowerCase();
-    const items = document.querySelectorAll('.directory-item');
-    let count = 0;
-
-    items.forEach(item => {
-        const visible = item.textContent.toLowerCase().includes(value);
-        item.style.display = visible ? "flex" : "none";
-        if (visible) count++;
-    });
-
-    document.querySelector('.item-count').textContent = `${count} items on this page`;
-});
-
-// ================= CLOSE MODAL =================
+// ================= CLOSE MODAL ON OUTSIDE CLICK =================
 window.addEventListener('click', function(e) {
     if (e.target.id === "deleteModal") closeModal();
 }, false);
+
 document.addEventListener("keydown", e => e.key === "Escape" && closeModal());
 
 // ================= Initialize default selected item =================
 document.addEventListener('DOMContentLoaded', function () {
     const first = document.querySelector('.directory-item');
     if (first) {
-        showItemDetail(first);   // load details without triggering click event system-wide
+        showItemDetail(first);
     }
 });
-
 </script>
 
 {% endblock %}

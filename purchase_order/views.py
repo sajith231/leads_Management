@@ -178,10 +178,11 @@ def supplier_delete(request, pk):
 # ==================== ITEM MASTER VIEWS ====================
 
 def item_list(request):
-    """Display all items with search, department filter, and section filter"""
+    """Display all items with search, department filter, section filter, and status filter"""
     search_query = request.GET.get('search', '')
     department_filter = request.GET.get('department', '')
     section_filter = request.GET.get('section', '')
+    status_filter = request.GET.get('status', '')  # ✅ NEW: Get status filter
 
     # Base queryset
     items = Item.objects.all().order_by('name')
@@ -201,6 +202,13 @@ def item_list(request):
     if section_filter and section_filter != 'all':
         items = items.filter(section=section_filter)
 
+    # ✅ Status filter
+    if status_filter and status_filter != 'all':
+        if status_filter == 'active':
+            items = items.filter(is_active=True)
+        elif status_filter == 'inactive':
+            items = items.filter(is_active=False)
+
     # ✅ Pagination (10 per page)
     paginator = Paginator(items, 10)
     page_number = request.GET.get('page')
@@ -214,7 +222,8 @@ def item_list(request):
         'search_query': search_query,
         'departments': departments,
         'selected_department': department_filter,
-        'selected_section': section_filter,  # ✅ Added
+        'selected_section': section_filter,
+        'selected_status': status_filter,  # ✅ Pass to template
     }
 
     return render(request, 'purchase_order/item_list.html', context)
@@ -538,7 +547,7 @@ def purchase_order_create(request):
                 f"📅 *Date:* {po.po_date}\n"
                 f"👤 *Created By:* {po.created_by or request.user.username or 'System'}"
             )
-            send_whatsapp_message("8606360089", msg)
+            send_whatsapp_message("9946545535", msg)
             return redirect('purchase_order:po_list')
 
         except Exception as e:
@@ -710,7 +719,7 @@ def purchase_order_update(request, pk):
                     f"📅 *Updated On:* {timezone.now().strftime('%Y-%m-%d %H:%M')}\n"
                     f"👤 *Updated By:* {request.user.username}"
                 )
-                send_whatsapp_message("8606360089", msg)
+                send_whatsapp_message("9946545535", msg)
             return redirect('purchase_order:po_list')
 
         except Exception as e:

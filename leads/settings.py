@@ -85,6 +85,7 @@ INSTALLED_APPS = [
     'wallet',
     'Cancel_Requestes',
     'vehicle_challan',
+    'campaign'
 ]
 
 
