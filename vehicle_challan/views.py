@@ -323,3 +323,28 @@ def challan_update_status(request, challan_id):
         return redirect('vehicle_challan_activity', vehicle_id=challan.vehicle.id)
     
     return redirect('vehicle_details')
+
+
+@require_http_methods(["POST"])
+def challan_delete(request, challan_id):
+    """Delete a challan"""
+    try:
+        challan = get_object_or_404(Challan, id=challan_id)
+        vehicle_id = challan.vehicle.id
+        challan_number = challan.challan_number
+        
+        # Delete the challan
+        challan.delete()
+        
+        messages.success(request, f"Challan {challan_number} deleted successfully.")
+        logger.info(f"Deleted challan ID {challan_id} (Challan No: {challan_number})")
+    except Challan.DoesNotExist:
+        messages.error(request, "Challan not found.")
+        logger.error(f"Attempted to delete non-existent challan ID {challan_id}")
+        return redirect('vehicle_details')
+    except Exception as e:
+        logger.error(f"Error deleting challan {challan_id}: {str(e)}")
+        messages.error(request, f"Error deleting challan: {str(e)}")
+        return redirect('vehicle_details')
+    
+    return redirect('vehicle_challan_activity', vehicle_id=vehicle_id)

@@ -522,6 +522,7 @@
                     <i class="fas fa-photo-video"></i>
                     <span>IMC Connect</span>
                 </a>
+                
             </div>
             {% endif %}
 
@@ -633,6 +634,16 @@
     </a>
 </div>
 {% endif %}
+
+{% if 'drive_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+<div class="information_center">
+    <a href="{% url 'public_list' %}">
+        <i class="fas fa-folder"></i>
+        <span>Public Folder</span>
+    </a>
+</div>
+{% endif %}
+
 
 <div class="mainmenu" onclick="toggleSysmacMenu()">
     <span>
@@ -1133,7 +1144,14 @@
 </div>
 {% endif %}
 
-
+{% if 'drive_list' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+<div class="information_center">
+    <a href="{% url 'public_list' %}">
+        <i class="fas fa-folder"></i>
+        <span>Public Folder</span>
+    </a>
+</div>
+{% endif %}
 
 
 <!-- Fixed SYSMAC Menu Section for base.html -->

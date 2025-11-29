@@ -110,16 +110,23 @@
                 </div>
                 <!-- Add this inside the form in edit_user.html -->
 <div class="mb-3">
-    <label for="job_role" class="form-label">Job Role</label>
-    <select id="job_role" name="job_role" class="form-select">
-        <option value="">-- Select Job Role --</option>
-        {% for role in job_roles %}
-        <option value="{{ role.id }}" {% if user.job_role.id == role.id %}selected{% endif %}>{{ role.title }}</option>
+    <label for="job_title" class="form-label">Job Title</label>
+    <select id="job_title" name="job_title" class="form-select">
+        <option value="">-- Select Job Title --</option>
+        {% for jt in job_titles %}
+            <option value="{{ jt.id }}"
+                {% if user.job_title %}
+                    {% if user.job_title.id|default:'' == jt.id|stringformat:"s" or user.job_title == jt.title %}
+                        selected
+                    {% endif %}
+                {% endif %}
+            >{{ jt.title }}</option>
         {% endfor %}
     </select>
-    {% if form.job_role.errors %}
+
+    {% if form.job_title and form.job_title.errors %}
         <div class="invalid-feedback d-block">
-            {{ form.job_role.errors|join:", " }}
+            {{ form.job_title.errors|join:", " }}
         </div>
     {% endif %}
 </div>
