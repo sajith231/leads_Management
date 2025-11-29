@@ -45,8 +45,6 @@
             flex-direction: column;
         }
 
-
-        
         
         .form-container {
             background-color:#dcd9f3;
@@ -365,6 +363,7 @@
         .compact-form-group {
             margin-bottom: 12px;
             width: 100%;
+            position: relative;
         }
         
         .compact-form-group label {
@@ -871,6 +870,110 @@
             background-color: #4CAF50;
         }
         
+        /* Searchable Select Styles */
+        .select-search-container {
+            position: relative;
+            width: 100%;
+        }
+        
+        .select-search-input {
+            padding: 8px 35px 8px 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 13px;
+            width: 100%;
+            background-color: #f9f9f9;
+            cursor: pointer;
+            height: 32px;
+        }
+        
+        .select-search-input:focus {
+            border-color: #6a11cb;
+            box-shadow: 0 0 0 2px rgba(106, 17, 203, 0.1);
+            outline: none;
+            background-color: white;
+        }
+        
+        .select-search-input.active {
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
+            border-bottom-color: #eee;
+        }
+        
+        .select-options {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #6a11cb;
+            border-top: none;
+            border-radius: 0 0 6px 6px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            display: none;
+        }
+        
+        .select-options.active {
+            display: block;
+        }
+        
+        .select-option {
+            padding: 8px 12px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 13px;
+            transition: background-color 0.2s;
+        }
+        
+        .select-option:hover {
+            background-color: #f5f5f5;
+        }
+        
+        .select-option.selected {
+            background-color: #e3f2fd;
+            color: #1976d2;
+            font-weight: 600;
+        }
+        
+        .select-search-icon {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #666;
+            pointer-events: none;
+        }
+        
+        .select-clear-icon {
+            position: absolute;
+            right: 30px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #999;
+            cursor: pointer;
+            font-size: 12px;
+            display: none;
+        }
+        
+        .select-clear-icon:hover {
+            color: #666;
+        }
+        
+        .select-clear-icon.active {
+            display: block;
+        }
+        
+        .no-results-option {
+            padding: 8px 12px;
+            color: #999;
+            font-style: italic;
+            font-size: 13px;
+            text-align: center;
+        }
+        
         @media (max-width: 1200px) {
             .single-line-sections {
                 flex-direction: column;
@@ -1093,12 +1196,26 @@
                         <button class="directory-tab" data-tab="employees">Employees</button>
                     </div>
                     
-                    <div class="search-container">
-                        <div class="search-box">
-                            <i class="fas fa-search search-icon"></i>
-                            <input type="text" id="directorySearch" placeholder="Search by Name/Phone/Ticket...">
-                        </div>
-                    </div>
+                   <div class="search-container">
+    <div class="search-box">
+        <i class="fas fa-search search-icon"></i>
+        <input type="text" id="directorySearch" placeholder="Search by Name/Phone/Ticket...">
+    </div>
+</div>
+
+<!-- ADD PRIORITY FILTER HERE -->
+<div class="filter-container" id="priorityFilterContainer" style="padding: 10px 15px; background: #f8f9fa; border-bottom: 1px solid #ddd;">
+    <div class="filter-group" style="display: flex; align-items: center; gap: 10px;">
+        <span class="filter-label" style="font-size: 13px; font-weight: 600;">Priority:</span>
+        <select id="priorityFilter" class="filter-select" style="padding: 6px; border-radius: 8px;">
+            <option value="all">All Priorities</option>
+            <option value="High">🔴 High</option>
+            <option value="Medium">🟡 Medium</option>
+            <option value="Low">🟢 Low</option>
+        </select>
+    </div>
+</div>
+
                     
                     <!-- Lead List (shown by default) -->
                     <div class="lead-list active" id="leadList">
@@ -1224,16 +1341,16 @@
                                     <div class="status-inline">
                                         <select id="status" name="status" class="status-select" required>
                                             <option value="">Status</option>
-                                            <option value="Active">🟢 Active</option>
-                                            <option value="Inactive">🔴 Inactive</option>
-                                            <option value="Installed">🔧 Installed</option>
+                                            <option value="Active">🟢Active</option>
+                                            <option value="Inactive">🔴Inactive</option>
+                                            <option value="Installed">🟡 Installed</option>
                                         </select>
 
                                         <select id="priority" name="priority" class="status-select" required>
                                         <option value="">Priority</option>
                                         <option value="High">🔴 High</option>
                                         <option value="Medium">🟡 Medium</option>
-                                        <option value="Low">🟢 Low</option>
+                                        <option value="Low">🟢  Low</option>
                                         </select>
                                     </div>
                                 </div>
@@ -1379,18 +1496,17 @@
                                             </div>
                                         </div>
                                     </div>
-                                    
-                                    <div class="compact-form-group">
-                                        <label for="refFrom">Reference From</label>
-                                        <select id="refFrom" name="refFrom">
-                                             <option value="">Select Reference</option>
-        {% for ref in references %}
-        <option value="{{ ref.ref_name }}">{{ ref.ref_name }}</option>
-        {% empty %}
-        {% endfor %}
+
+                                     <div class="compact-form-group">
+                                        <label for="requirement">Branch</label>
+                                        <select id="requirement" name="requirement">
+                                            <option value="">Select Branch</option>
+                                            {% for department in departments %}
+                                            <option value="{{ department.id }}">{{ department.name }}</option>
+                                            {% endfor %}
                                         </select>
                                     </div>
-                                    
+
                                     <div class="compact-form-group">
                                         <label for="business">Business Nature</label>
                                         <select id="business" name="business">
@@ -1401,12 +1517,23 @@
                                         </select>
                                     </div>
                                     
-                                    <!-- NEW: Campaign Details Field -->
+                                    <!-- Searchable Reference From Field -->
                                     <div class="compact-form-group">
-                                        <label for="campaign">Campaign Details</label>
-                                    <input type="text" id="Consultant" name="Campaign" placeholder="Enter Campaign Details">    
+                                        <label for="refFrom">Reference From</label>
+                                        <div class="select-search-container" id="refFromContainer">
+                                            <input type="text" class="select-search-input" id="refFromSearch" placeholder="Search or select reference..." readonly>
+                                            <i class="fas fa-times select-clear-icon" id="refFromClear"></i>
+                                            <i class="fas fa-chevron-down select-search-icon"></i>
+                                            <div class="select-options" id="refFromOptions"></div>
+                                        </div>
+                                        <select id="refFrom" name="refFrom" style="display: none;">
+                                            <option value="">Select Reference</option>
+                                            {% for ref in references %}
+                                            <option value="{{ ref.ref_name }}">{{ ref.ref_name }}</option>
+                                            {% empty %}
+                                            {% endfor %}
+                                        </select>
                                     </div>
-                                    
                                     <div class="compact-form-group">
                                         <label for="marketedBy">Marketed By</label>
                                         <select id="marketedBy" name="marketedBy" class="form-select">
@@ -1417,19 +1544,15 @@
                                         </select>
                                     </div>
                                     
+                                    <!-- NEW: Campaign Details Field -->
                                     <div class="compact-form-group">
-                                        <label for="Consultant">Consultant</label>
-                                        <input type="text" id="Consultant" name="Consultant" placeholder="Enter consultant name">
+                                        <label for="campaign">Campaign Details</label>
+                                   <input type="text" id="campaign" name="Campaign" placeholder="Enter Campaign Details">  
                                     </div>
                                     
                                     <div class="compact-form-group">
-                                        <label for="requirement">Branch</label>
-                                        <select id="requirement" name="requirement">
-                                            <option value="">Select Branch</option>
-                                            {% for department in departments %}
-                                            <option value="{{ department.id }}">{{ department.name }}</option>
-                                            {% endfor %}
-                                        </select>
+                                        <label for="Consultant">Consultant</label>
+                                        <input type="text" id="Consultant" name="Consultant" placeholder="Enter consultant name">
                                     </div>
                                     
                                     <div class="compact-form-group">
@@ -1485,398 +1608,1005 @@
         </div>
     </div>
 
-   <script>
-    document.addEventListener('DOMContentLoaded', function() {
+  <script>
+document.addEventListener('DOMContentLoaded', function() {
+    
+    // Set today's date as default
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('date').value = today;
+    
+    // Toggle functionality for Individual/Business
+    const customerTypeToggle = document.getElementById('customerTypeToggle');
+    const businessFields = document.querySelector('.business-fields');
+    const individualFields = document.querySelector('.individual-fields');
+    
+    // Modal elements
+    const assignmentModal = document.getElementById('assignmentModal');
+    const selfAssignedBtn = document.getElementById('selfAssignedBtn');
+    const unassignedBtn = document.getElementById('unassignedBtn');
+    const cancelModalBtn = document.getElementById('cancelModalBtn');
+    const assignmentTypeField = document.getElementById('assignmentType');
+    
+    // Pagination elements
+    const prevPageBtn = document.getElementById('prevPage');
+    const nextPageBtn = document.getElementById('nextPage');
+    const paginationNumbers = document.getElementById('paginationNumbers');
+    const paginationInfo = document.getElementById('paginationInfo');
+    
+    // Clear button element
+    const clearFormBtn = document.getElementById('clearFormBtn');
+    
+    // Pagination configuration
+    const itemsPerPage = 10;
+    let currentPage = 1;
+    let totalPages = 1;
+    let currentItems = [];
+    let filteredItems = [];
+    
+    // Searchable Select Variables
+    let isRefFromOpen = false;
+    let currentRefFromIndex = -1;
+    
+    // Create lookup maps for marketedBy and branch
+    const marketedByMap = {
+        {% for user in active_users %}
+        "{{ user.id }}": "{{ user.name|escapejs }}",
+        {% endfor %}
+    };
+
+    const branchMap = {
+        {% for department in departments %}
+        "{{ department.id }}": "{{ department.name|escapejs }}",
+        {% endfor %}
+    };
+
+    // Campaign data map
+    const campaignMap = {
+        {% for campaign in campaigns %}
+        "{{ campaign.name|escapejs }}": "{{ campaign.name|escapejs }}",
+        {% endfor %}
+    };
+
+    // Lead data - created on server side via template earlier (active_leads_data)
+    const leads = [
+        {% for lead in active_leads_data %}
+        {
+            id: {{ lead.id }},
+            ownerName: "{{ lead.ownerName|escapejs }}",
+            phoneNo: "{{ lead.phoneNo|escapejs }}",
+            email: "{{ lead.email|escapejs }}",
+            ticketNo: "{{ lead.ticket_number|escapejs }}",
+            date: "{{ lead.date|date:'Y-m-d'|escapejs }}",
+            status: "{{ lead.status|escapejs }}",
+            priority: "{{ lead.priority|default:'Medium'|escapejs }}",
+            customerType: "{{ lead.customerType|escapejs }}",
+            name: "{{ lead.name|escapejs }}",
+            address: "{{ lead.address|escapejs }}",
+            place: "{{ lead.place|escapejs }}",
+            District: "{{ lead.District|escapejs }}",
+            State: "{{ lead.State|escapejs }}",
+            pinCode: "{{ lead.pinCode|escapejs }}",
+            firstName: "{{ lead.firstName|escapejs }}",
+            individualAddress: "{{ lead.individualAddress|escapejs }}",
+            individualPlace: "{{ lead.individualPlace|escapejs }}",
+            individualDistrict: "{{ lead.individualDistrict|escapejs }}",
+            individualState: "{{ lead.individualState|escapejs }}",
+            individualPinCode: "{{ lead.individualPinCode|escapejs }}",
+            refFrom: "{{ lead.refFrom|escapejs }}",
+            business: "{{ lead.business|escapejs }}",
+            campaign: "{{ lead.campaign|default:''|escapejs }}",
+            marketedBy: "{{ lead.marketedBy|escapejs }}",
+            Consultant: "{{ lead.Consultant|escapejs }}",
+            requirement: "{{ lead.requirement|escapejs }}",
+            details: "{{ lead.details|escapejs }}",
+            // Add the actual names for display
+            marketedByName: "{{ lead.marketed_by_name|default:lead.marketedBy|escapejs }}",
+            branchName: "{{ lead.branch_name|default:lead.requirement|escapejs }}",
+            campaignName: "{{ lead.campaign_name|default:lead.campaign|default:''|escapejs }}"
+        }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ];
+
+    // Employee data
+    const employees = [
+        {% for u in active_users %}
+        {
+            id: {{ u.id }},
+            name: "{{ u.name|escapejs }}",
+            department: "{{ u.department|escapejs }}",
+            designation: "{{ u.designation|escapejs }}"
+        }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ];
+
+    // ========== INITIALIZATION FUNCTIONS ==========
+
+    /**
+     * Initialize all functionality
+     */
+    function initializeApp() {
+        initializeToggle();
+        setupDirectoryTabs();
+        setupDirectorySearch();
+        setupPriorityFilter();
+        initializePagination();
+        setupEventListeners();
+        initializeSearchableSelect();
+        
+        console.log('✅ Lead Management System initialized successfully');
+        console.log('📊 Total leads:', leads.length);
+        console.log('👥 Total employees:', employees.length);
+        console.log('🎯 Campaigns available:', Object.keys(campaignMap).length);
+    }
+
+    /**
+     * Initialize searchable select for Reference From field
+     */
+    function initializeSearchableSelect() {
+        const refFromSelect = document.getElementById('refFrom');
+        const refFromSearch = document.getElementById('refFromSearch');
+        const refFromOptions = document.getElementById('refFromOptions');
+        const refFromClear = document.getElementById('refFromClear');
+        
+        if (!refFromSelect || !refFromSearch || !refFromOptions) return;
+
+        // Get all options from original select
+        const originalOptions = Array.from(refFromSelect.options);
+        
+        // Populate options
+        function populateOptions(filter = '') {
+            refFromOptions.innerHTML = '';
+            
+            const filteredOptions = originalOptions.filter(option => 
+                option.text.toLowerCase().includes(filter.toLowerCase())
+            );
+            
+            filteredOptions.forEach((option, index) => {
+                if (option.value === '') return; // Skip empty option
+                
+                const optionElement = document.createElement('div');
+                optionElement.className = 'select-option';
+                optionElement.textContent = option.text;
+                optionElement.dataset.value = option.value;
+                optionElement.dataset.index = index;
+                
+                optionElement.addEventListener('click', function() {
+                    selectRefFromOption(this);
+                });
+                
+                refFromOptions.appendChild(optionElement);
+            });
+            
+            if (filteredOptions.length === 0) {
+                const noResults = document.createElement('div');
+                noResults.className = 'no-results-option';
+                noResults.textContent = 'No references found';
+                refFromOptions.appendChild(noResults);
+            }
+            
+            // Reset current index
+            currentRefFromIndex = -1;
+        }
+        
+        // Select reference option
+        function selectRefFromOption(optionElement) {
+            refFromSearch.value = optionElement.textContent;
+            refFromSelect.value = optionElement.dataset.value;
+            
+            // Remove selected class from all options
+            document.querySelectorAll('#refFromOptions .select-option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            
+            // Add selected class to current option
+            optionElement.classList.add('selected');
+            
+            // Update clear button visibility
+            updateClearButton();
+            
+            // Close dropdown
+            closeRefFromDropdown();
+            
+            console.log('Selected reference:', optionElement.textContent, 'Value:', optionElement.dataset.value);
+        }
+        
+        // Update clear button visibility
+        function updateClearButton() {
+            if (refFromSearch.value) {
+                refFromClear.classList.add('active');
+            } else {
+                refFromClear.classList.remove('active');
+            }
+        }
+        
+        // Open dropdown
+        function openRefFromDropdown() {
+            refFromOptions.classList.add('active');
+            refFromSearch.classList.add('active');
+            refFromSearch.readOnly = false;
+            refFromSearch.focus();
+            isRefFromOpen = true;
+            populateOptions(refFromSearch.value);
+        }
+        
+        // Close dropdown
+        function closeRefFromDropdown() {
+            refFromOptions.classList.remove('active');
+            refFromSearch.classList.remove('active');
+            refFromSearch.readOnly = true;
+            isRefFromOpen = false;
+            currentRefFromIndex = -1;
+        }
+        
+        // Toggle dropdown
+        function toggleRefFromDropdown() {
+            if (isRefFromOpen) {
+                closeRefFromDropdown();
+            } else {
+                openRefFromDropdown();
+            }
+        }
+        
+        // Clear selection
+        function clearRefFromSelection() {
+            refFromSearch.value = '';
+            refFromSelect.value = '';
+            updateClearButton();
+            
+            // Remove selected class from all options
+            document.querySelectorAll('#refFromOptions .select-option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+        }
+        
+        // Initial population
+        populateOptions();
+        updateClearButton();
+        
+        // Event listeners
+        refFromSearch.addEventListener('click', function(e) {
+            e.stopPropagation();
+            openRefFromDropdown();
+        });
+        
+        refFromSearch.addEventListener('input', function() {
+            populateOptions(this.value);
+        });
+        
+        refFromSearch.addEventListener('keydown', function(e) {
+            const options = refFromOptions.querySelectorAll('.select-option');
+            
+            switch(e.key) {
+                case 'ArrowDown':
+                    e.preventDefault();
+                    if (options.length > 0) {
+                        currentRefFromIndex = (currentRefFromIndex + 1) % options.length;
+                        options.forEach(opt => opt.classList.remove('selected'));
+                        options[currentRefFromIndex].classList.add('selected');
+                        options[currentRefFromIndex].scrollIntoView({ block: 'nearest' });
+                    }
+                    break;
+                    
+                case 'ArrowUp':
+                    e.preventDefault();
+                    if (options.length > 0) {
+                        currentRefFromIndex = (currentRefFromIndex - 1 + options.length) % options.length;
+                        options.forEach(opt => opt.classList.remove('selected'));
+                        options[currentRefFromIndex].classList.add('selected');
+                        options[currentRefFromIndex].scrollIntoView({ block: 'nearest' });
+                    }
+                    break;
+                    
+                case 'Enter':
+                    e.preventDefault();
+                    if (currentRefFromIndex >= 0 && options[currentRefFromIndex]) {
+                        selectRefFromOption(options[currentRefFromIndex]);
+                    }
+                    break;
+                    
+                case 'Escape':
+                    closeRefFromDropdown();
+                    break;
+                    
+                case 'Tab':
+                    closeRefFromDropdown();
+                    break;
+            }
+        });
+        
+        refFromClear.addEventListener('click', function(e) {
+            e.stopPropagation();
+            clearRefFromSelection();
+        });
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('#refFromContainer')) {
+                closeRefFromDropdown();
+            }
+        });
+        
+        // Set initial value if exists
+        if (refFromSelect.value) {
+            const selectedOption = originalOptions.find(opt => opt.value === refFromSelect.value);
+            if (selectedOption) {
+                refFromSearch.value = selectedOption.text;
+                updateClearButton();
+            }
+        }
+    }
+
+    /**
+     * Set up all event listeners
+     */
+    function setupEventListeners() {
+        // Clear form functionality
+        clearFormBtn.addEventListener('click', handleClearForm);
+        
+        // Pagination button event listeners
+        prevPageBtn.addEventListener('click', goToPreviousPage);
+        nextPageBtn.addEventListener('click', goToNextPage);
+        
+        // Customer type toggle
+        customerTypeToggle.addEventListener('change', initializeToggle);
+        
+        // Assignment modal handlers
+        selfAssignedBtn.addEventListener('click', handleSelfAssigned);
+        unassignedBtn.addEventListener('click', handleUnassigned);
+        cancelModalBtn.addEventListener('click', hideAssignmentModal);
+        assignmentModal.addEventListener('click', handleModalClickOutside);
+        
+        // Form submission
+        const form = document.getElementById('customerForm');
+        form.addEventListener('submit', handleFormSubmit);
+        
+        // Real-time validation
+        document.querySelectorAll('input[required], select[required]').forEach(field => {
+            field.addEventListener('blur', handleFieldValidation);
+        });
+        
+        // Navigation menu functionality
+        setupNavigationMenu();
+    }
+
+    // ========== FORM MANAGEMENT ==========
+
+    /**
+     * Handle clear form button click
+     */
+    function handleClearForm() {
+        if (confirm('Are you sure you want to clear all form fields?')) {
+            clearForm();
+        }
+    }
+
+    /**
+     * Clear all form fields and reset to default state
+     */
+    function clearForm() {
+        // Reset the form
+        document.getElementById('customerForm').reset();
+        
+        // Reset the toggle to default state (Business)
+        document.getElementById('customerTypeToggle').checked = true;
+        initializeToggle();
         
         // Set today's date as default
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('date').value = today;
         
-        // Toggle functionality for Individual/Business
-        const customerTypeToggle = document.getElementById('customerTypeToggle');
-        const businessFields = document.querySelector('.business-fields');
-        const individualFields = document.querySelector('.individual-fields');
+        // Clear any error styles
+        document.querySelectorAll('input, select').forEach(field => {
+            field.style.borderColor = '#ddd';
+        });
         
-        // Modal elements
-        const assignmentModal = document.getElementById('assignmentModal');
-        const selfAssignedBtn = document.getElementById('selfAssignedBtn');
-        const unassignedBtn = document.getElementById('unassignedBtn');
-        const cancelModalBtn = document.getElementById('cancelModalBtn');
-        const assignmentTypeField = document.getElementById('assignmentType');
+        // Clear any selected lead in the directory
+        const selectedLead = document.querySelector('.lead-item.selected');
+        if (selectedLead) {
+            selectedLead.classList.remove('selected');
+        }
         
-        // Pagination elements
-        const prevPageBtn = document.getElementById('prevPage');
-        const nextPageBtn = document.getElementById('nextPage');
-        const paginationNumbers = document.getElementById('paginationNumbers');
-        const paginationInfo = document.getElementById('paginationInfo');
+        // Clear searchable select
+        const refFromSearch = document.getElementById('refFromSearch');
+        const refFromSelect = document.getElementById('refFrom');
+        const refFromClear = document.getElementById('refFromClear');
         
-        // Clear button element
-        const clearFormBtn = document.getElementById('clearFormBtn');
+        if (refFromSearch) refFromSearch.value = '';
+        if (refFromSelect) refFromSelect.value = '';
+        if (refFromClear) refFromClear.classList.remove('active');
         
-        // Pagination configuration
-        const itemsPerPage = 10;
-        let currentPage = 1;
-        let totalPages = 1;
-        let currentItems = [];
-        let filteredItems = [];
-        
-        // Create lookup maps for marketedBy and branch
-        const marketedByMap = {
-            {% for user in active_users %}
-            "{{ user.id }}": "{{ user.name|escapejs }}",
-            {% endfor %}
-        };
+        // Show success message
+        showNotification('Form has been cleared successfully', 'success');
+    }
 
-        const branchMap = {
-            {% for department in departments %}
-            "{{ department.id }}": "{{ department.name|escapejs }}",
-            {% endfor %}
-        };
+    /**
+     * Initialize customer type toggle functionality
+     */
+    function initializeToggle() {
+        if (customerTypeToggle.checked) {
+            // Business mode
+            businessFields.style.display = 'block';
+            individualFields.style.display = 'none';
+            
+            document.querySelectorAll('.business-fields [required]').forEach(field => {
+                field.required = true;
+            });
+            document.querySelectorAll('.individual-fields [required]').forEach(field => {
+                field.required = false;
+            });
+        } else {
+            // Individual mode
+            businessFields.style.display = 'none';
+            individualFields.style.display = 'block';
+            
+            document.querySelectorAll('.business-fields [required]').forEach(field => {
+                field.required = false;
+            });
+            document.querySelectorAll('.individual-fields [required]').forEach(field => {
+                field.required = true;
+            });
+        }
+    }
 
-        // Campaign data map
-        const campaignMap = {
-            {% for campaign in campaigns %}
-            "{{ campaign.name|escapejs }}": "{{ campaign.name|escapejs }}",
-            {% endfor %}
-        };
+    // ========== VALIDATION & SUBMISSION ==========
 
-        // Lead data - created on server side via template earlier (active_leads_data)
-        const leads = [
-            {% for lead in active_leads_data %}
-            {
-                id: {{ lead.id }},
-                ownerName: "{{ lead.ownerName|escapejs }}",
-                phoneNo: "{{ lead.phoneNo|escapejs }}",
-                email: "{{ lead.email|escapejs }}",
-                ticketNo: "{{ lead.ticket_number|escapejs }}",
-                date: "{{ lead.date|date:'Y-m-d'|escapejs }}",
-                status: "{{ lead.status|escapejs }}",
-                customerType: "{{ lead.customerType|escapejs }}",
-                name: "{{ lead.name|escapejs }}",
-                address: "{{ lead.address|escapejs }}",
-                place: "{{ lead.place|escapejs }}",
-                District: "{{ lead.District|escapejs }}",
-                State: "{{ lead.State|escapejs }}",
-                pinCode: "{{ lead.pinCode|escapejs }}",
-                firstName: "{{ lead.firstName|escapejs }}",
-                individualAddress: "{{ lead.individualAddress|escapejs }}",
-                individualPlace: "{{ lead.individualPlace|escapejs }}",
-                individualDistrict: "{{ lead.individualDistrict|escapejs }}",
-                individualState: "{{ lead.individualState|escapejs }}",
-                individualPinCode: "{{ lead.individualPinCode|escapejs }}",
-                refFrom: "{{ lead.refFrom|escapejs }}",
-                business: "{{ lead.business|escapejs }}",
-                campaign: "{{ lead.campaign|default:''|escapejs }}", // NEW: Campaign field
-                marketedBy: "{{ lead.marketedBy|escapejs }}",
-                Consultant: "{{ lead.Consultant|escapejs }}",
-                requirement: "{{ lead.requirement|escapejs }}",
-                details: "{{ lead.details|escapejs }}",
-                // Add the actual names for display
-                marketedByName: "{{ lead.marketed_by_name|default:lead.marketedBy|escapejs }}",
-                branchName: "{{ lead.branch_name|default:lead.requirement|escapejs }}",
-                campaignName: "{{ lead.campaign_name|default:lead.campaign|default:''|escapejs }}" // NEW: Campaign name
-            }{% if not forloop.last %},{% endif %}
-            {% endfor %}
-        ];
+    /**
+     * Handle form field validation on blur
+     */
+    function handleFieldValidation() {
+        if (!this.value.trim() && this.hasAttribute('required')) {
+            this.style.borderColor = 'red';
+        } else {
+            this.style.borderColor = '#ddd';
+        }
+    }
 
-        // Employee data
-        const employees = [
-            {% for u in active_users %}
-            {
-                id: {{ u.id }},
-                name: "{{ u.name|escapejs }}",
-                department: "{{ u.department|escapejs }}",
-                designation: "{{ u.designation|escapejs }}"
-            }{% if not forloop.last %},{% endif %}
-            {% endfor %}
-        ];
+    /**
+     * Validate form before submission
+     */
+    function validateForm() {
+        let isValid = true;
+        const isBusiness = customerTypeToggle.checked;
 
-        // Clear form functionality
-        clearFormBtn.addEventListener('click', function() {
-            if (confirm('Are you sure you want to clear all form fields?')) {
-                clearForm();
+        // Clear previous error styles
+        document.querySelectorAll('input, select').forEach(field => {
+            field.style.borderColor = '#ddd';
+        });
+
+        // Basic validation - Communication Details
+        const requiredBasic = ['ownerName', 'phoneNo', 'status', 'priority'];
+        requiredBasic.forEach(fieldId => {
+            const field = document.getElementById(fieldId);
+            if (!field.value.trim()) {
+                isValid = false;
+                field.style.borderColor = 'red';
+                if (isValid) { // Only scroll to first error
+                    field.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
             }
         });
 
-        // Function to clear all form fields
-        function clearForm() {
-            // Reset the form
-            document.getElementById('customerForm').reset();
-            
-            // Reset the toggle to default state (Business)
-            document.getElementById('customerTypeToggle').checked = true;
-            initializeToggle();
-            
-            // Set today's date as default
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('date').value = today;
-            
-            // Clear any error styles
-            document.querySelectorAll('input, select').forEach(field => {
-                field.style.borderColor = '#ddd';
+        // Customer type specific validation
+        if (isBusiness) {
+            const requiredBusiness = ['name', 'place', 'pinCode'];
+            requiredBusiness.forEach(fieldId => {
+                const field = document.getElementById(fieldId);
+                if (!field.value.trim()) {
+                    isValid = false;
+                    field.style.borderColor = 'red';
+                }
             });
-            
-            // Clear any selected lead in the directory
-            const selectedLead = document.querySelector('.lead-item.selected');
-            if (selectedLead) {
-                selectedLead.classList.remove('selected');
-            }
-            
-            // Show success message
-            showNotification('Form has been cleared successfully', 'success');
         }
 
-        // Initialize pagination
-        function initializePagination() {
-            const activeTab = document.querySelector('.directory-tab.active').getAttribute('data-tab');
-            if (activeTab === 'employees') {
-                currentItems = employees;
-            } else {
-                currentItems = leads;
-            }
-            
-            filteredItems = [...currentItems];
-            updatePagination();
+        return isValid;
+    }
+
+    /**
+     * Handle form submission
+     */
+    function handleFormSubmit(e) {
+        e.preventDefault();
+
+        if (!validateForm()) {
+            showNotification('Please fill in all required fields marked in red.', 'error');
+            return;
         }
 
-        // Update pagination
-        function updatePagination() {
-            totalPages = Math.ceil(filteredItems.length / itemsPerPage);
-            
-            // Ensure current page is within bounds
-            if (currentPage > totalPages) {
-                currentPage = totalPages || 1;
-            }
-            
-            // Update pagination buttons
-            prevPageBtn.disabled = currentPage === 1;
-            nextPageBtn.disabled = currentPage === totalPages;
-            
-            // Update pagination info
-            const startItem = (currentPage - 1) * itemsPerPage + 1;
-            const endItem = Math.min(currentPage * itemsPerPage, filteredItems.length);
-            paginationInfo.textContent = `Page ${currentPage} of ${totalPages} (${filteredItems.length} items)`;
-            
-            // Generate page numbers
-            generatePageNumbers();
-            
-            // Display current page items
-            displayCurrentPageItems();
-            
-            // Update active tab count
-            document.getElementById('activeTabCount').textContent = filteredItems.length;
-        }
+        showAssignmentModal();
+    }
 
-        // Generate page number buttons
-        function generatePageNumbers() {
-            paginationNumbers.innerHTML = '';
-            
-            // Show max 5 page numbers
-            let startPage = Math.max(1, currentPage - 2);
-            let endPage = Math.min(totalPages, startPage + 4);
-            
-            // Adjust start page if we're near the end
-            if (endPage - startPage < 4) {
-                startPage = Math.max(1, endPage - 4);
-            }
-            
-            // First page
-            if (startPage > 1) {
-                const firstPageBtn = document.createElement('button');
-                firstPageBtn.className = 'page-number';
-                firstPageBtn.textContent = '1';
-                firstPageBtn.addEventListener('click', () => goToPage(1));
-                paginationNumbers.appendChild(firstPageBtn);
-                
-                if (startPage > 2) {
-                    const ellipsis = document.createElement('span');
-                    ellipsis.className = 'pagination-ellipsis';
-                    ellipsis.textContent = '...';
-                    paginationNumbers.appendChild(ellipsis);
-                }
-            }
-            
-            // Page numbers
-            for (let i = startPage; i <= endPage; i++) {
-                const pageBtn = document.createElement('button');
-                pageBtn.className = `page-number ${i === currentPage ? 'active' : ''}`;
-                pageBtn.textContent = i;
-                pageBtn.addEventListener('click', () => goToPage(i));
-                paginationNumbers.appendChild(pageBtn);
-            }
-            
-            // Last page
-            if (endPage < totalPages) {
-                if (endPage < totalPages - 1) {
-                    const ellipsis = document.createElement('span');
-                    ellipsis.className = 'pagination-ellipsis';
-                    ellipsis.textContent = '...';
-                    paginationNumbers.appendChild(ellipsis);
-                }
-                
-                const lastPageBtn = document.createElement('button');
-                lastPageBtn.className = 'page-number';
-                lastPageBtn.textContent = totalPages;
-                lastPageBtn.addEventListener('click', () => goToPage(totalPages));
-                paginationNumbers.appendChild(lastPageBtn);
-            }
-        }
+    /**
+     * Submit the form to server
+     */
+    function submitForm() {
+        const submitBtn = document.querySelector('.submit-btn');
+        const originalText = submitBtn.innerHTML;
 
-        // Go to specific page
-        function goToPage(page) {
-            currentPage = page;
-            updatePagination();
-        }
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> &nbsp; Submitting...';
+        submitBtn.disabled = true;
 
-        // Display items for current page
-        function displayCurrentPageItems() {
-            const activeTab = document.querySelector('.directory-tab.active').getAttribute('data-tab');
-            const container = activeTab === 'employees' ? document.getElementById('employeeList') : document.getElementById('leadList');
-            
-            // Clear container
-            container.innerHTML = '';
-            
-            if (filteredItems.length === 0) {
-                const noResults = document.createElement('div');
-                noResults.className = 'no-results';
-                noResults.textContent = 'No items found';
-                container.appendChild(noResults);
-                return;
-            }
-            
-            // Calculate slice indices
-            const startIndex = (currentPage - 1) * itemsPerPage;
-            const endIndex = Math.min(startIndex + itemsPerPage, filteredItems.length);
-            const currentPageItems = filteredItems.slice(startIndex, endIndex);
-            
-            // Create items
-            currentPageItems.forEach(item => {
-                if (activeTab === 'employees') {
-                    createEmployeeItem(item, container);
+        // Submit the form
+        document.getElementById('customerForm').submit();
+
+        // Re-enable button after 5 seconds in case submission fails
+        setTimeout(() => {
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        }, 5000);
+    }
+
+    // ========== ASSIGNMENT MODAL ==========
+
+    /**
+     * Show assignment modal
+     */
+    function showAssignmentModal() {
+        assignmentModal.style.display = 'flex';
+    }
+
+    /**
+     * Hide assignment modal
+     */
+    function hideAssignmentModal() {
+        assignmentModal.style.display = 'none';
+    }
+
+    /**
+     * Handle self-assigned option
+     */
+    function handleSelfAssigned() {
+        assignmentTypeField.value = 'self_assigned';
+        hideAssignmentModal();
+        submitForm();
+    }
+
+    /**
+     * Handle unassigned option
+     */
+    function handleUnassigned() {
+        assignmentTypeField.value = 'unassigned';
+        hideAssignmentModal();
+        submitForm();
+    }
+
+    /**
+     * Handle modal click outside
+     */
+    function handleModalClickOutside(e) {
+        if (e.target === assignmentModal) {
+            hideAssignmentModal();
+        }
+    }
+
+    // ========== DIRECTORY & PAGINATION ==========
+
+    /**
+     * Set up directory tabs
+     */
+    function setupDirectoryTabs() {
+        const tabs = document.querySelectorAll('.directory-tab');
+        const employeeList = document.getElementById('employeeList');
+        const leadList = document.getElementById('leadList');
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', function() {
+                const targetTab = this.getAttribute('data-tab');
+
+                // Update active tab
+                tabs.forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+
+                // Show/hide appropriate list
+                if (targetTab === 'employees') {
+                    employeeList.classList.add('active');
+                    leadList.classList.remove('active');
+                    document.getElementById('priorityFilterContainer').style.display = 'none';
                 } else {
-                    createLeadItem(item, container);
+                    employeeList.classList.remove('active');
+                    leadList.classList.add('active');
+                    document.getElementById('priorityFilterContainer').style.display = 'block';
+                }
+
+                document.getElementById('directorySearch').value = '';
+                document.getElementById('priorityFilter').value = 'all';
+                currentPage = 1;
+                initializePagination();
+            });
+        });
+    }
+
+    /**
+     * Set up directory search functionality
+     */
+    function setupDirectorySearch() {
+        const searchInput = document.getElementById('directorySearch');
+        searchInput.addEventListener('input', function() {
+            const priority = document.getElementById('priorityFilter').value;
+            filterDirectoryItemsByPriorityAndSearch(this.value.toLowerCase(), priority);
+        });
+    }
+
+    /**
+     * Set up priority filter functionality
+     */
+    function setupPriorityFilter() {
+        const priorityFilter = document.getElementById('priorityFilter');
+        
+        priorityFilter.addEventListener('change', function() {
+            filterDirectoryItemsByPriorityAndSearch(
+                document.getElementById('directorySearch').value.toLowerCase(),
+                this.value
+            );
+        });
+    }
+
+    /**
+     * Combined filter function for search and priority
+     */
+    function filterDirectoryItemsByPriorityAndSearch(searchTerm, priority) {
+        const activeTab = document.querySelector('.directory-tab.active').getAttribute('data-tab');
+        
+        if (activeTab === 'employees') {
+            currentItems = employees;
+        } else {
+            currentItems = leads;
+        }
+        
+        // Apply search filter
+        if (!searchTerm) {
+            filteredItems = [...currentItems];
+        } else {
+            filteredItems = currentItems.filter(item => {
+                let textContent = '';
+                
+                if (activeTab === 'employees') {
+                    textContent = (
+                        item.name.toLowerCase() + ' ' + 
+                        item.department.toLowerCase() + ' ' + 
+                        (item.designation || '').toLowerCase()
+                    );
+                } else {
+                    textContent = (
+                        item.ownerName.toLowerCase() + ' ' + 
+                        item.phoneNo.toLowerCase() + ' ' + 
+                        item.ticketNo.toLowerCase() + ' ' +
+                        (item.priority || '').toLowerCase() + ' ' +
+                        (item.campaign || '').toLowerCase()
+                    );
+                }
+                
+                return textContent.includes(searchTerm);
+            });
+        }
+        
+        // Apply priority filter (only for leads tab)
+        if (activeTab === 'leads' && priority !== 'all') {
+            filteredItems = filteredItems.filter(item => item.priority === priority);
+        }
+        
+        currentPage = 1;
+        updatePagination();
+    }
+
+    /**
+     * Initialize pagination
+     */
+    function initializePagination() {
+        const activeTab = document.querySelector('.directory-tab.active').getAttribute('data-tab');
+        if (activeTab === 'employees') {
+            currentItems = employees;
+        } else {
+            currentItems = leads;
+        }
+        
+        filteredItems = [...currentItems];
+        updatePagination();
+    }
+
+    /**
+     * Update pagination display
+     */
+    function updatePagination() {
+        totalPages = Math.ceil(filteredItems.length / itemsPerPage);
+        
+        // Ensure current page is within bounds
+        if (currentPage > totalPages) {
+            currentPage = totalPages || 1;
+        }
+        
+        // Update pagination buttons
+        prevPageBtn.disabled = currentPage === 1;
+        nextPageBtn.disabled = currentPage === totalPages;
+        
+        // Update pagination info
+        const startItem = (currentPage - 1) * itemsPerPage + 1;
+        const endItem = Math.min(currentPage * itemsPerPage, filteredItems.length);
+        paginationInfo.textContent = `Page ${currentPage} of ${totalPages} (${filteredItems.length} items)`;
+        
+        // Generate page numbers
+        generatePageNumbers();
+        
+        // Display current page items
+        displayCurrentPageItems();
+        
+        // Update active tab count
+        document.getElementById('activeTabCount').textContent = filteredItems.length;
+    }
+
+    /**
+     * Generate page number buttons
+     */
+    function generatePageNumbers() {
+        paginationNumbers.innerHTML = '';
+        
+        // Show max 5 page numbers
+        let startPage = Math.max(1, currentPage - 2);
+        let endPage = Math.min(totalPages, startPage + 4);
+        
+        // Adjust start page if we're near the end
+        if (endPage - startPage < 4) {
+            startPage = Math.max(1, endPage - 4);
+        }
+        
+        // First page
+        if (startPage > 1) {
+            const firstPageBtn = document.createElement('button');
+            firstPageBtn.className = 'page-number';
+            firstPageBtn.textContent = '1';
+            firstPageBtn.addEventListener('click', () => goToPage(1));
+            paginationNumbers.appendChild(firstPageBtn);
+            
+            if (startPage > 2) {
+                const ellipsis = document.createElement('span');
+                ellipsis.className = 'pagination-ellipsis';
+                ellipsis.textContent = '...';
+                paginationNumbers.appendChild(ellipsis);
+            }
+        }
+        
+        // Page numbers
+        for (let i = startPage; i <= endPage; i++) {
+            const pageBtn = document.createElement('button');
+            pageBtn.className = `page-number ${i === currentPage ? 'active' : ''}`;
+            pageBtn.textContent = i;
+            pageBtn.addEventListener('click', () => goToPage(i));
+            paginationNumbers.appendChild(pageBtn);
+        }
+        
+        // Last page
+        if (endPage < totalPages) {
+            if (endPage < totalPages - 1) {
+                const ellipsis = document.createElement('span');
+                ellipsis.className = 'pagination-ellipsis';
+                ellipsis.textContent = '...';
+                paginationNumbers.appendChild(ellipsis);
+            }
+            
+            const lastPageBtn = document.createElement('button');
+            lastPageBtn.className = 'page-number';
+            lastPageBtn.textContent = totalPages;
+            lastPageBtn.addEventListener('click', () => goToPage(totalPages));
+            paginationNumbers.appendChild(lastPageBtn);
+        }
+    }
+
+    /**
+     * Go to specific page
+     */
+    function goToPage(page) {
+        currentPage = page;
+        updatePagination();
+    }
+
+    /**
+     * Go to previous page
+     */
+    function goToPreviousPage() {
+        if (currentPage > 1) {
+            currentPage--;
+            updatePagination();
+        }
+    }
+
+    /**
+     * Go to next page
+     */
+    function goToNextPage() {
+        if (currentPage < totalPages) {
+            currentPage++;
+            updatePagination();
+        }
+    }
+
+    /**
+     * Display items for current page
+     */
+    function displayCurrentPageItems() {
+        const activeTab = document.querySelector('.directory-tab.active').getAttribute('data-tab');
+        const container = activeTab === 'employees' ? document.getElementById('employeeList') : document.getElementById('leadList');
+        
+        // Clear container
+        container.innerHTML = '';
+        
+        if (filteredItems.length === 0) {
+            const noResults = document.createElement('div');
+            noResults.className = 'no-results';
+            noResults.textContent = 'No items found';
+            container.appendChild(noResults);
+            return;
+        }
+        
+        // Calculate slice indices
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        const endIndex = Math.min(startIndex + itemsPerPage, filteredItems.length);
+        const currentPageItems = filteredItems.slice(startIndex, endIndex);
+        
+        // Create items
+        currentPageItems.forEach(item => {
+            if (activeTab === 'employees') {
+                createEmployeeItem(item, container);
+            } else {
+                createLeadItem(item, container);
+            }
+        });
+        
+        // Re-attach event listeners
+        if (activeTab === 'employees') {
+            setupEmployeeAssignButtons();
+        } else {
+            setupLeadViewButtons();
+        }
+    }
+
+    /**
+     * Create employee item element
+     */
+    function createEmployeeItem(employee, container) {
+        const item = document.createElement('div');
+        item.className = 'employee-item';
+        item.setAttribute('data-id', employee.id);
+        item.setAttribute('data-name', employee.name);
+        
+        item.innerHTML = `
+            <div class="employee-avatar">
+                ${employee.name.slice(0, 2).toUpperCase()}
+            </div>
+            <div class="employee-details">
+                <div class="employee-name">${employee.name}</div>
+                <div class="employee-role">
+                    ${employee.department}${employee.designation ? ' - ' + employee.designation : ''}
+                </div>
+            </div>
+            <button class="assign-btn" data-id="${employee.id}" data-name="${employee.name}" data-role="employee-assign">
+                Assign
+            </button>
+        `;
+        
+        container.appendChild(item);
+    }
+
+    /**
+     * Create lead item element with priority display
+     */
+    function createLeadItem(lead, container) {
+        const item = document.createElement('div');
+        item.className = 'lead-item';
+        item.setAttribute('data-id', lead.id);
+        
+        // Priority badge with emoji indicators
+        const priorityConfig = getPriorityConfig(lead.priority || 'Medium');
+        
+        // Get campaign display value - prefer campaignName, fallback to campaign
+        const campaignDisplay = lead.campaignName || lead.campaign || '';
+        
+        item.innerHTML = `
+            <div class="lead-avatar">
+                ${(lead.ownerName || '').slice(0, 2).toUpperCase()}
+            </div>
+            <div class="lead-details">
+                <div class="lead-name">
+                    <span style="font-size: 16px; margin-right: 5px;">${priorityConfig.emoji}</span>
+                    ${lead.ownerName}
+                </div>
+                <div class="lead-phone">${lead.phoneNo}</div>
+                <div class="lead-ticket">${lead.ticketNo}</div>
+                <div class="lead-status" style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px;">
+                    <span>Status: ${lead.status}</span>
+                    <span style="color: ${priorityConfig.color}; font-weight: 600; font-size: 10px; padding: 2px 6px; border-radius: 10px;">
+                        ${priorityConfig.text}
+                    </span>
+                </div>
+                ${campaignDisplay ? `<div class="lead-campaign" style="font-size: 11px; color: #666; margin-top: 3px; font-style: italic;"><i class="fas fa-bullhorn" style="margin-right: 3px;"></i>Campaign: ${campaignDisplay}</div>` : ''}
+            </div>
+        `;
+        
+        container.appendChild(item);
+    }
+
+    /**
+     * Get priority configuration
+     */
+    function getPriorityConfig(priority) {
+        const configs = {
+            'High': { emoji: '🔴', color: '#ff4444', text: 'High' },
+            'Medium': { emoji: '🟡', color: '#ffaa00', text: 'Medium' },
+            'Low': { emoji: '🟢', color: '#22c55e', text: 'Low' }
+        };
+        
+        return configs[priority] || configs['Medium'];
+    }
+
+    /**
+     * Add event listeners to employee assign buttons
+     */
+    function setupEmployeeAssignButtons() {
+        const employeeAssignButtons = document.querySelectorAll('#employeeList .assign-btn[data-role="employee-assign"]');
+        employeeAssignButtons.forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const empId = this.getAttribute('data-id');
+                const empName = this.getAttribute('data-name');
+                const url = "{% url 'app5:lead_assign_list' %}";
+                window.location.href = url;
+            });
+        });
+    }
+
+    /**
+     * Add event listeners to lead items for click functionality
+     */
+    function setupLeadViewButtons() {
+        const leadItems = document.querySelectorAll('#leadList .lead-item');
+        
+        leadItems.forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.stopPropagation();
+                
+                // Remove previous selection
+                leadItems.forEach(i => i.classList.remove('selected'));
+                
+                // Add selection to current item
+                this.classList.add('selected');
+                
+                const leadId = this.getAttribute('data-id');
+                const lead = leads.find(l => l.id == leadId);
+                
+                if (lead) {
+                    populateFormWithLeadData(lead);
+                } else {
+                    console.error('Lead not found in leads array');
+                    showNotification('Error: Lead data not found', 'error');
                 }
             });
-            
-            // Re-attach event listeners
-            if (activeTab === 'employees') {
-                setupEmployeeAssignButtons();
-            } else {
-                setupLeadViewButtons();
-            }
+        });
+    }
+
+    /**
+     * Populate all form fields with lead data
+     */
+    function populateFormWithLeadData(leadData) {
+        // Communication Details
+        document.getElementById('ownerName').value = leadData.ownerName || '';
+        document.getElementById('phoneNo').value = leadData.phoneNo || '';
+        document.getElementById('email').value = leadData.email || '';
+        document.getElementById('status').value = leadData.status || '';
+        document.getElementById('priority').value = leadData.priority || 'Medium';
+        
+        // Set customer type toggle based on customerType
+        const toggle = document.getElementById('customerTypeToggle');
+        if (leadData.customerType === 'Individual') {
+            toggle.checked = false; // Individual (toggle OFF)
+        } else {
+            toggle.checked = true; // Business (toggle ON - default)
         }
-
-        // Create employee item
-        function createEmployeeItem(employee, container) {
-            const item = document.createElement('div');
-            item.className = 'employee-item';
-            item.setAttribute('data-id', employee.id);
-            item.setAttribute('data-name', employee.name);
-            
-            item.innerHTML = `
-                <div class="employee-avatar">
-                    ${employee.name.slice(0, 2).toUpperCase()}
-                </div>
-                <div class="employee-details">
-                    <div class="employee-name">${employee.name}</div>
-                    <div class="employee-role">
-                        ${employee.department}${employee.designation ? ' - ' + employee.designation : ''}
-                    </div>
-                </div>
-                <button class="assign-btn" data-id="${employee.id}" data-name="${employee.name}" data-role="employee-assign">
-                    Assign
-                </button>
-            `;
-            
-            container.appendChild(item);
-        }
-
-        // Create lead item
-        function createLeadItem(lead, container) {
-            const item = document.createElement('div');
-            item.className = 'lead-item';
-            item.setAttribute('data-id', lead.id);
-            
-            item.innerHTML = `
-                <div class="lead-avatar">
-                    ${(lead.ownerName || '').slice(0, 2).toUpperCase()}
-                </div>
-                <div class="lead-details">
-                    <div class="lead-name">${lead.ownerName}</div>
-                    <div class="lead-phone">${lead.phoneNo}</div>
-                    <div class="lead-ticket">${lead.ticketNo}</div>
-                    <div class="lead-status">Status: ${lead.status}</div>
-                </div>
-            `;
-            
-            container.appendChild(item);
-        }
-
-        // Initialize tab counts properly from DOM
-        function updateActiveTabCount() {
-            const activeTab = document.querySelector('.directory-tab.active').getAttribute('data-tab');
-            if (activeTab === 'employees') {
-                document.getElementById('activeTabCount').textContent = filteredItems.length;
-            } else {
-                document.getElementById('activeTabCount').textContent = filteredItems.length;
-            }
-        }
-
-        // Add event listeners to employee assign buttons
-        function setupEmployeeAssignButtons() {
-            const employeeAssignButtons = document.querySelectorAll('#employeeList .assign-btn[data-role="employee-assign"]');
-            employeeAssignButtons.forEach(btn => {
-                btn.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    const empId = this.getAttribute('data-id');
-                    const empName = this.getAttribute('data-name');
-
-                    // Redirect to lead assignment list page with employee data
-                    const url = "{% url 'app5:lead_assign_list' %}";
-                    
-                    // You can pass the employee data as URL parameters or use session storage
-                    window.location.href = url;
-                });
-            });
-        }
-
-        // Add event listeners to lead items for click functionality
-        function setupLeadViewButtons() {
-            const leadItems = document.querySelectorAll('#leadList .lead-item');
-            leadItems.forEach(item => {
-                item.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    
-                    // Remove previous selection
-                    leadItems.forEach(i => i.classList.remove('selected'));
-                    
-                    // Add selection to current item
-                    this.classList.add('selected');
-                    
-                    const leadId = this.getAttribute('data-id');
-                    const lead = leads.find(l => l.id == leadId);
-                    
-                    if (lead) {
-                        populateFormWithLeadData(lead);
-                    }
-                });
-            });
-        }
-
-        // Function to populate all form fields with lead data
-        function populateFormWithLeadData(leadData) {
-            // Communication Details
-            document.getElementById('ownerName').value = leadData.ownerName || '';
-            document.getElementById('phoneNo').value = leadData.phoneNo || '';
-            document.getElementById('email').value = leadData.email || '';
-            document.getElementById('status').value = leadData.status || '';
-            
-            // Basic Information (Business/Individual)
+        
+        // Trigger the toggle initialization to show/hide correct fields
+        initializeToggle();
+        
+        // Wait for DOM to update, then populate fields
+        setTimeout(() => {
             if (leadData.customerType === 'Business') {
-                // Set to Business mode
-                document.getElementById('customerTypeToggle').checked = true;
-                initializeToggle(); // Update UI
-                
+                // Populate Business fields
                 document.getElementById('name').value = leadData.name || '';
                 document.getElementById('address').value = leadData.address || '';
                 document.getElementById('place').value = leadData.place || '';
@@ -1884,10 +2614,7 @@
                 document.getElementById('State').value = leadData.State || '';
                 document.getElementById('pinCode').value = leadData.pinCode || '';
             } else {
-                // Set to Individual mode
-                document.getElementById('customerTypeToggle').checked = false;
-                initializeToggle(); // Update UI
-                
+                // Populate Individual fields
                 document.getElementById('firstName').value = leadData.firstName || '';
                 document.getElementById('individualAddress').value = leadData.individualAddress || '';
                 document.getElementById('individualPlace').value = leadData.individualPlace || '';
@@ -1896,364 +2623,127 @@
                 document.getElementById('individualPinCode').value = leadData.individualPinCode || '';
             }
             
-            // Business Information
+            // Business Information (common for both)
             document.getElementById('date').value = leadData.date || '';
-            document.getElementById('refFrom').value = leadData.refFrom || '';
+            
+            // Reference From - handle searchable select
+            if (leadData.refFrom) {
+                document.getElementById('refFrom').value = leadData.refFrom;
+                document.getElementById('refFromSearch').value = leadData.refFrom;
+                
+                // Update clear button
+                const refFromClear = document.getElementById('refFromClear');
+                if (refFromClear) {
+                    refFromClear.classList.add('active');
+                }
+            }
+            
             document.getElementById('business').value = leadData.business || '';
             
-            // NEW: Campaign Details
-            document.getElementById('campaign').value = leadData.campaign || '';
-            
-            // Fix marketedBy field - handle both ID and name
-            const marketedByValue = leadData.marketedBy || '';
-            let marketedByName = leadData.marketedByName || '';
-            
-            // If we have an ID but no name, try to look it up
-            if (marketedByValue && !isNaN(marketedByValue) && !marketedByName) {
-                marketedByName = marketedByMap[marketedByValue] || marketedByValue;
+            // Campaign Details
+            const campaignField = document.getElementById('campaign');
+            if (campaignField) {
+                campaignField.value = leadData.campaign || leadData.campaignName || '';
             }
             
-            // Set marketedBy field - try to find matching option
-            const marketedBySelect = document.getElementById('marketedBy');
-            let marketedByFound = false;
+            // Marketed By - handle both ID and name
+            setSelectValue('marketedBy', leadData.marketedBy);
             
-            for (let i = 0; i < marketedBySelect.options.length; i++) {
-                const option = marketedBySelect.options[i];
-                if (option.value === marketedByValue || option.text === marketedByName) {
-                    option.selected = true;
-                    marketedByFound = true;
-                    break;
-                }
-            }
-            
-            // If not found in options, set the value directly
-            if (!marketedByFound && marketedByValue) {
-                marketedBySelect.value = marketedByValue;
-            }
-            
+            // Consultant
             document.getElementById('Consultant').value = leadData.Consultant || '';
             
-            // Fix branch/requirement field - handle both ID and name
-            const branchValue = leadData.requirement || '';
-            let branchName = leadData.branchName || '';
+            // Branch/Requirement
+            setSelectValue('requirement', leadData.requirement);
             
-            // If we have an ID but no name, try to look it up
-            if (branchValue && !isNaN(branchValue) && !branchName) {
-                branchName = branchMap[branchValue] || branchValue;
-            }
-            
-            // Set branch field - try to find matching option
-            const branchSelect = document.getElementById('requirement');
-            let branchFound = false;
-            
-            for (let i = 0; i < branchSelect.options.length; i++) {
-                const option = branchSelect.options[i];
-                if (option.value === branchValue || option.text === branchName) {
-                    option.selected = true;
-                    branchFound = true;
-                    break;
-                }
-            }
-            
-            // If not found in options, set the value directly
-            if (!branchFound && branchValue) {
-                branchSelect.value = branchValue;
-            }
-            
+            // Details/Notes
             document.getElementById('details').value = leadData.details || '';
             
-            // Scroll to form for better UX
-            document.querySelector('.form-column').scrollIntoView({ behavior: 'smooth', block: 'start' });
-            
-            // Show success message
-            showNotification(`Loaded lead data for ${leadData.ownerName}`, 'success');
-        }
-
-        // Show notification function
-        function showNotification(message, type = 'info') {
-            // Create notification element
-            const notification = document.createElement('div');
-            notification.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                padding: 15px 20px;
-                background: ${type === 'success' ? '#4CAF50' : '#2196F3'};
-                color: white;
-                border-radius: 5px;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                z-index: 10000;
-                font-weight: 600;
-                transition: all 0.3s ease;
-            `;
-            notification.textContent = message;
-            
-            document.body.appendChild(notification);
-            
-            // Remove after 3 seconds
-            setTimeout(() => {
-                notification.style.opacity = '0';
-                notification.style.transform = 'translateX(100px)';
-                setTimeout(() => {
-                    if (notification.parentNode) {
-                        notification.parentNode.removeChild(notification);
-                    }
-                }, 300);
-            }, 3000);
-        }
-
-        // Tab switching functionality
-        function setupDirectoryTabs() {
-            const tabs = document.querySelectorAll('.directory-tab');
-            const employeeList = document.getElementById('employeeList');
-            const leadList = document.getElementById('leadList');
-
-            tabs.forEach(tab => {
-                tab.addEventListener('click', function() {
-                    const targetTab = this.getAttribute('data-tab');
-
-                    // Update active tab
-                    tabs.forEach(t => t.classList.remove('active'));
-                    this.classList.add('active');
-
-                    // Show/hide appropriate list
-                    if (targetTab === 'employees') {
-                        employeeList.classList.add('active');
-                        leadList.classList.remove('active');
-                    } else {
-                        employeeList.classList.remove('active');
-                        leadList.classList.add('active');
-                    }
-
-                    // Reset search and pagination
-                    document.getElementById('directorySearch').value = '';
-                    currentPage = 1;
-                    initializePagination();
-                });
+            // Scroll to form
+            document.querySelector('.form-column').scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'start' 
             });
-        }
-
-        // Search functionality for directory
-        function setupDirectorySearch() {
-            const searchInput = document.getElementById('directorySearch');
-
-            searchInput.addEventListener('input', function() {
-                filterDirectoryItems(this.value.toLowerCase());
-            });
-        }
-
-        // Filter directory items based on search term
-        function filterDirectoryItems(searchTerm) {
-            const activeTab = document.querySelector('.directory-tab.active').getAttribute('data-tab');
             
-            if (activeTab === 'employees') {
-                currentItems = employees;
-            } else {
-                currentItems = leads;
+            // Show success notification
+            const priorityConfig = getPriorityConfig(leadData.priority || 'Medium');
+            let notificationMessage = `${priorityConfig.emoji} Loaded lead data for ${leadData.ownerName} (Priority: ${priorityConfig.text})`;
+            
+            // Add campaign info to notification if available
+            if (leadData.campaign) {
+                notificationMessage += ` | Campaign: ${leadData.campaign}`;
             }
             
-            if (!searchTerm) {
-                filteredItems = [...currentItems];
-            } else {
-                filteredItems = currentItems.filter(item => {
-                    let textContent = '';
-                    
-                    if (activeTab === 'employees') {
-                        textContent = (
-                            item.name.toLowerCase() + ' ' + 
-                            item.department.toLowerCase() + ' ' + 
-                            (item.designation || '').toLowerCase()
-                        );
-                    } else {
-                        textContent = (
-                            item.ownerName.toLowerCase() + ' ' + 
-                            item.phoneNo.toLowerCase() + ' ' + 
-                            item.ticketNo.toLowerCase()
-                        );
-                    }
-                    
-                    return textContent.includes(searchTerm);
-                });
-            }
+            showNotification(notificationMessage, 'success');
             
-            currentPage = 1;
-            updatePagination();
-        }
+        }, 100);
+    }
 
-        // Initialize toggle state
-        function initializeToggle() {
-            if (customerTypeToggle.checked) {
-                // Business mode
-                businessFields.style.display = 'block';
-                individualFields.style.display = 'none';
-
-                // Set required attributes for business fields
-                document.querySelectorAll('.business-fields [required]').forEach(field => {
-                    field.required = true;
-                });
-                document.querySelectorAll('.individual-fields [required]').forEach(field => {
-                    field.required = false;
-                });
-            } else {
-                // Individual mode
-                businessFields.style.display = 'none';
-                individualFields.style.display = 'block';
-
-                // Set required attributes for individual fields
-                document.querySelectorAll('.business-fields [required]').forEach(field => {
-                    field.required = false;
-                });
-                document.querySelectorAll('.individual-fields [required]').forEach(field => {
-                    field.required = true;
-                });
-            }
-        }
-
-        // Initialize on page load
-        initializeToggle();
-        setupDirectoryTabs();
-        setupDirectorySearch();
-        initializePagination();
+    /**
+     * Set select value with fallback
+     */
+    function setSelectValue(selectId, value) {
+        const select = document.getElementById(selectId);
+        if (!select || !value) return;
         
-        // Pagination button event listeners
-        prevPageBtn.addEventListener('click', () => {
-            if (currentPage > 1) {
-                currentPage--;
-                updatePagination();
-            }
-        });
+        let valueFound = false;
         
-        nextPageBtn.addEventListener('click', () => {
-            if (currentPage < totalPages) {
-                currentPage++;
-                updatePagination();
+        for (let i = 0; i < select.options.length; i++) {
+            const option = select.options[i];
+            if (option.value === value || option.text === value) {
+                option.selected = true;
+                valueFound = true;
+                break;
             }
-        });
-
-        // Handle toggle change
-        customerTypeToggle.addEventListener('change', function() {
-            initializeToggle();
-        });
-
-        // Form validation function
-        function validateForm() {
-            let isValid = true;
-            const isBusiness = customerTypeToggle.checked;
-
-            // Clear previous error styles
-            document.querySelectorAll('input, select').forEach(field => {
-                field.style.borderColor = '#ddd';
-            });
-
-            // Basic validation - Communication Details
-            const requiredBasic = ['ownerName', 'phoneNo', 'status'];
-            requiredBasic.forEach(fieldId => {
-                const field = document.getElementById(fieldId);
-                if (!field.value.trim()) {
-                    isValid = false;
-                    field.style.borderColor = 'red';
-                    field.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }
-            });
-
-            // Customer type specific validation
-            if (isBusiness) {
-                const requiredBusiness = ['name', 'place', 'pinCode'];
-                requiredBusiness.forEach(fieldId => {
-                    const field = document.getElementById(fieldId);
-                    if (!field.value.trim()) {
-                        isValid = false;
-                        field.style.borderColor = 'red';
-                        if (isValid === false) {
-                            field.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        }
-                    }
-                });
-            }
-
-            return isValid;
         }
-
-        // Show assignment modal
-        function showAssignmentModal() {
-            assignmentModal.style.display = 'flex';
+        
+        if (!valueFound) {
+            select.value = value;
         }
+    }
 
-        // Hide assignment modal
-        function hideAssignmentModal() {
-            assignmentModal.style.display = 'none';
-        }
+    // ========== NOTIFICATION SYSTEM ==========
 
-        // Handle self-assigned option
-        selfAssignedBtn.addEventListener('click', function() {
-            assignmentTypeField.value = 'self_assigned';
-            hideAssignmentModal();
-            submitForm();
-        });
-
-        // Handle unassigned option
-        unassignedBtn.addEventListener('click', function() {
-            assignmentTypeField.value = 'unassigned';
-            hideAssignmentModal();
-            submitForm();
-        });
-
-        // Handle cancel button
-        cancelModalBtn.addEventListener('click', function() {
-            hideAssignmentModal();
-        });
-
-        // Close modal when clicking outside
-        assignmentModal.addEventListener('click', function(e) {
-            if (e.target === assignmentModal) {
-                hideAssignmentModal();
-            }
-        });
-
-        // Actual form submission
-        function submitForm() {
-            const submitBtn = document.querySelector('.submit-btn');
-            const originalText = submitBtn.innerHTML;
-
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> &nbsp; Submitting...';
-            submitBtn.disabled = true;
-
-            // Submit the form
-            document.getElementById('customerForm').submit();
-
-            // Re-enable button after 5 seconds in case submission fails
+    /**
+     * Show notification to user
+     */
+    function showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            background: ${type === 'success' ? '#4CAF50' : type === 'error' ? '#f44336' : '#2196F3'};
+            color: white;
+            border-radius: 5px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 10000;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            max-width: 400px;
+            word-wrap: break-word;
+        `;
+        notification.textContent = message;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.style.opacity = '0';
+            notification.style.transform = 'translateX(100px)';
             setTimeout(() => {
-                submitBtn.innerHTML = originalText;
-                submitBtn.disabled = false;
-            }, 5000);
-        }
-
-        // Form submission handler
-        const form = document.getElementById('customerForm');
-        form.addEventListener('submit', function(e) {
-            e.preventDefault();
-
-            if (!validateForm()) {
-                alert('Please fill in all required fields marked in red.');
-                return;
-            }
-
-            // Show assignment modal instead of submitting directly
-            showAssignmentModal();
-        });
-
-        // Real-time validation
-        document.querySelectorAll('input[required], select[required]').forEach(field => {
-            field.addEventListener('blur', function() {
-                if (!this.value.trim()) {
-                    this.style.borderColor = 'red';
-                } else {
-                    this.style.borderColor = '#ddd';
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
                 }
-            });
-        });
+            }, 300);
+        }, 3000);
+    }
 
-        // Navigation menu functionality
+    // ========== NAVIGATION ==========
+
+    /**
+     * Set up navigation menu functionality
+     */
+    function setupNavigationMenu() {
         const navLinks = document.querySelectorAll('.nav-link');
         navLinks.forEach(link => {
             link.addEventListener('click', function(e) {
@@ -2264,7 +2754,13 @@
                 }
             });
         });
-    });
+    }
+
+    // ========== INITIALIZE APPLICATION ==========
+    
+    initializeApp();
+
+});
 </script>
 </body>
 </html>
