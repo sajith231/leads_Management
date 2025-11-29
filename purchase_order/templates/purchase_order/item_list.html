@@ -43,7 +43,7 @@
             <select name="section" id="sectionSelect" class="modern-select">
                 <option value="all">All Sections</option>
                 <option value="GENERAL" {% if selected_section == 'GENERAL' %}selected{% endif %}>General</option>
-                <option value="SERVICE" {% if selected_section == 'SERVICE' %}selected{% endif %}>Hardware</option>
+                <option value="HARDWARE" {% if selected_section == 'HARDWARE' %}selected{% endif %}>Hardware</option>
                 <option value="SOFTWARE" {% if selected_section == 'SOFTWARE' %}selected{% endif %}>Softwares</option>
                 <option value="PAPER_ROLLS" {% if selected_section == 'PAPER_ROLLS' %}selected{% endif %}>Paper Rolls</option>
             </select>
@@ -60,15 +60,23 @@
             <span>
                 Showing {{ items.start_index }} to {{ items.end_index }} of {{ items.paginator.count }} items
             </span>
+            {% with request.GET.urlencode as query %}
+            {% with query|cut:"page={{ items.number }}" as cleaned_query %}
             <div class="pagination-mini">
                 {% if items.has_previous %}
-                <button class="page-btn" onclick="window.location.href='?page={{ items.previous_page_number }}'">‹</button>
+                    <button class="page-btn"
+                        onclick="window.location.href='?page={{ items.previous_page_number }}{% if cleaned_query %}&{{ cleaned_query }}{% endif %}'">‹</button>
                 {% endif %}
+
                 <button class="page-btn active">{{ items.number }}</button>
+
                 {% if items.has_next %}
-                <button class="page-btn" onclick="window.location.href='?page={{ items.next_page_number }}'">›</button>
+                    <button class="page-btn"
+                        onclick="window.location.href='?page={{ items.next_page_number }}{% if cleaned_query %}&{{ cleaned_query }}{% endif %}'">›</button>
                 {% endif %}
             </div>
+            {% endwith %}
+            {% endwith %}
 
             <button class="clear-filters-btn" onclick="clearFilters()">
                 <i class="fas fa-times"></i> Clear 

@@ -515,27 +515,49 @@
 
     <!-- Pagination -->
     {% if campaigns.has_other_pages %}
+    {% with request.GET.urlencode as query %}
+    {% with query|cut:"page={{ campaigns.number }}" as cleaned_query %}
     <nav>
       <ul class="pagination">
+
         {% if campaigns.has_previous %}
-          <li class="page-item"><a class="page-link" href="?page=1">First</a></li>
-          <li class="page-item"><a class="page-link" href="?page={{ campaigns.previous_page_number }}">Previous</a></li>
+          <li class="page-item">
+            <a class="page-link" href="?page=1{% if cleaned_query %}&{{ cleaned_query }}{% endif %}">First</a>
+          </li>
+          <li class="page-item">
+            <a class="page-link" href="?page={{ campaigns.previous_page_number }}{% if cleaned_query %}&{{ cleaned_query }}{% endif %}">
+              Previous
+            </a>
+          </li>
         {% endif %}
 
         {% for num in campaigns.paginator.page_range %}
           {% if campaigns.number == num %}
             <li class="page-item active"><span class="page-link">{{ num }}</span></li>
           {% elif num > campaigns.number|add:'-3' and num < campaigns.number|add:'3' %}
-            <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+            <li class="page-item">
+              <a class="page-link" href="?page={{ num }}{% if cleaned_query %}&{{ cleaned_query }}{% endif %}">{{ num }}</a>
+            </li>
           {% endif %}
         {% endfor %}
 
         {% if campaigns.has_next %}
-          <li class="page-item"><a class="page-link" href="?page={{ campaigns.next_page_number }}">Next</a></li>
-          <li class="page-item"><a class="page-link" href="?page={{ campaigns.paginator.num_pages }}">Last</a></li>
+          <li class="page-item">
+            <a class="page-link" href="?page={{ campaigns.next_page_number }}{% if cleaned_query %}&{{ cleaned_query }}{% endif %}">
+              Next
+            </a>
+          </li>
+          <li class="page-item">
+            <a class="page-link" href="?page={{ campaigns.paginator.num_pages }}{% if cleaned_query %}&{{ cleaned_query }}{% endif %}">
+              Last
+            </a>
+          </li>
         {% endif %}
+
       </ul>
     </nav>
+    {% endwith %}
+    {% endwith %}
     {% endif %}
   </div>
 </div>

@@ -339,8 +339,8 @@ class PurchaseOrder(models.Model):
 class Item(models.Model):
     SECTION_CHOICES = [
         ('GENERAL', 'General'),
-        ('SERVICE', 'Service Items'),
-        ('SOFTWARE', 'Softwares'),
+        ('HARDWARE', 'Hardware Items'),
+        ('SOFTWARE', 'Software Items'),
         ('PAPER_ROLLS', 'Paper Rolls'),
     ]
     section = models.CharField(max_length=50, choices=SECTION_CHOICES, default='GENERAL')
