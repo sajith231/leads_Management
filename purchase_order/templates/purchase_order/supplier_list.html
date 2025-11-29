@@ -139,37 +139,45 @@
         {% endif %}
 
         {% if suppliers.has_other_pages %}
-        <div class="pagination-wrapper">
-            <ul class="modern-pagination">
-                {% if suppliers.has_previous %}
-                    <li>
-                        <a href="?page={{ suppliers.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if department_filter %}&department={{ department_filter }}{% endif %}">«</a>
-                    </li>
-                {% else %}
-                    <li class="disabled"><span>«</span></li>
-                {% endif %}
+            <div class="pagination-section">
 
-                {% for num in suppliers.paginator.page_range %}
-                    {% if suppliers.number == num %}
-                        <li class="active"><span>{{ num }}</span></li>
-                    {% elif num > suppliers.number|add:'-3' and num < suppliers.number|add:'3' %}
-                        <li>
-                            <a href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if department_filter %}&department={{ department_filter }}{% endif %}">
-                                {{ num }}
-                            </a>
-                        </li>
-                    {% endif %}
-                {% endfor %}
+                <!-- ✅ Pagination -->
 
-                {% if suppliers.has_next %}
-                    <li>
-                        <a href="?page={{ suppliers.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if department_filter %}&department={{ department_filter }}{% endif %}">»</a>
-                    </li>
-                {% else %}
-                    <li class="disabled"><span>»</span></li>
-                {% endif %}
-            </ul>
-        </div>
+                <div class="row-count-info" style="padding:15px;">
+                    Showing {{ suppliers.start_index }}–{{ suppliers.end_index }} of {{ suppliers.paginator.count }} suppliers
+                </div>
+                <div class="pagination-wrapper">
+                    <ul class="modern-pagination">
+                        {% if suppliers.has_previous %}
+                            <li>
+                                <a href="?page={{ suppliers.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if department_filter %}&department={{ department_filter }}{% endif %}">«</a>
+                            </li>
+                        {% else %}
+                            <li class="disabled"><span>«</span></li>
+                        {% endif %}
+
+                        {% for num in suppliers.paginator.page_range %}
+                            {% if suppliers.number == num %}
+                                <li class="active"><span>{{ num }}</span></li>
+                            {% elif num > suppliers.number|add:'-3' and num < suppliers.number|add:'3' %}
+                                <li>
+                                    <a href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if department_filter %}&department={{ department_filter }}{% endif %}">
+                                        {{ num }}
+                                    </a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if suppliers.has_next %}
+                            <li>
+                                <a href="?page={{ suppliers.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if department_filter %}&department={{ department_filter }}{% endif %}">»</a>
+                            </li>
+                        {% else %}
+                            <li class="disabled"><span>»</span></li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
         {% endif %}
     </div>
 </div>
@@ -388,7 +396,6 @@
     text-align: left;
     font-weight: 600;
     font-size: 13px;
-    text-transform: uppercase;
     letter-spacing: 0.5px;
     white-space: nowrap;
 }
@@ -680,6 +687,21 @@
 .modern-pagination li:last-child span {
     border-top-right-radius: 8px;
     border-bottom-right-radius: 8px;
+}
+
+.pagination-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 15px;
+}
+
+.row-count-info {
+    font-size: 14px;
+    color: #555;
+    font-weight: 500;
+    margin-bottom: 8px;
 }
 
 </style>

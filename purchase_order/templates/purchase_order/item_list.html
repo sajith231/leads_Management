@@ -4,175 +4,269 @@
 {% block title %}Item Master{% endblock %}
 
 {% block content %}
-<div class="content-wrapper">
-    <div class="page-header">
-        <h1 class="page-title">Item Master</h1>
-        <a href="{% url 'purchase_order:item_add' %}" class="btn btn-primary">
-            <i class="fas fa-plus"></i> Add Item
-        </a>
+<div class="modern-container">
+    <!-- Header -->
+    <div class="modern-header">
+        <div class="header-left">
+            <i class="fas fa-box"></i>
+            <h1>Item Master</h1>
+        </div>
+        <button class="btn-add-new" onclick="window.location.href='{% url 'purchase_order:item_add' %}'">
+            <i class="fas fa-plus"></i> Add New Item
+        </button>
     </div>
 
-    <!-- Search & Department Filter Section -->
-    <div class="search-section" style="display:flex; gap:10px; flex-wrap:wrap;">
-        <!-- Search Box -->
-        <div class="search-box" style="flex:1;">
-            <i class="fas fa-search"></i>
-            <input 
-                type="text" 
-                id="searchInput"
-                placeholder="Search by item name, description, or HSN code..." 
-                class="search-input"
-            >
-        </div>
-
-        <!-- Department Filter -->
-        <div class="filter-box">
-            <form method="get" id="departmentFilterForm">
-                <select 
-                    name="department" 
-                    id="departmentSelect" 
-                    class="filter-select"
-                    onchange="document.getElementById('departmentFilterForm').submit()"
+    <!-- Filters Section -->
+    <div class="filters-section">
+        <div class="filter-row">
+            <!-- Search Box -->
+            <div class="search-container">
+                <input 
+                    type="text" 
+                    id="searchInput"
+                    placeholder="Search by Name/ID/HSN/Department..." 
+                    class="modern-search"
                 >
-                    <option value="all">All Departments</option>
-                    {% for dept in departments %}
-                        <option value="{{ dept.id }}" {% if selected_department|default:'all' == dept.id|stringformat:"s" %}selected{% endif %}>
-                            {{ dept.name }}
-                        </option>
-                    {% endfor %}
-                </select>
-            </form>
-        </div>
-    </div>
+            </div>
 
-    <!-- Items Table -->
-    <div class="table-container">
-        {% if items %}
-        <div class="table-scroll">
-            <table class="data-table" id="itemTable">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>ITEM NAME</th>
-                        <th>TAX %</th>
-                        <th>DEPARTMENT</th>
-                        <th>SECTION</th>
-                        <th class="amount">MRP</th>
-                        <th class="amount">PURCHASE PRICE</th>
-                        <th class="amount">COST</th>
-                        <th class="hsn-code">HSN CODE</th>
-                        <th>STATUS</th>
-                        <th class="actions">ACTIONS</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for item in items %}
-                    <tr>
-                        <td><span class="id-badge">{{ forloop.counter }}</span></td>
-                        <td>
-                            <div class="item-info">
-                                <div class="item-name">{{ item.name }}</div>
-                                <div class="item-unit">{{ item.unit_of_measure }}</div>
-                            </div>
-                        </td>
-                        <td>
-                            <span class="tax-badge">{{ item.tax_percentage }}%</span>
-                        </td>
-                        <td>
-                            {% if item.department %}
-                                <span class="dept-badge">{{ item.department.name }}</span>
-                            {% else %}
-                                <span class="text-muted">—</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <span class="section-badge section-{{ item.section|lower }}">
-                                {{ item.get_section_display }}
-                            </span>
-                        </td>
-                        <td class="amount">₹{{ item.mrp|floatformat:2 }}</td>
-                        <td class="amount">₹{{ item.purchase_price|floatformat:2 }}</td>
-                        <td class="amount">₹{{ item.cost|floatformat:2 }}</td>
-                        <td>
-                            <span class="hsn-code">{{ item.hsn_code|default:"-" }}</span>
-                        </td>
-                        <td>
-                            {% if item.is_active %}
-                                <span class="badge badge-success">Active</span>
-                            {% else %}
-                                <span class="badge badge-danger">Inactive</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <div class="action-buttons">
-                                <a href="{% url 'purchase_order:item_edit' item.pk %}" 
-                                   class="btn-icon btn-edit" title="Edit">
-                                    <i class="fas fa-edit"></i>
-                                </a>
-                                <button type="button" 
-                                        class="btn-icon btn-delete" 
-                                        title="Delete"
-                                        onclick="confirmDelete({{ item.id }}, '{{ item.name|escapejs }}')">
-                                    <i class="fas fa-trash-alt"></i>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        {% else %}
-        <div class="no-data">
-            <i class="fas fa-box-open"></i>
-            <p>No items found</p>
-            <a href="{% url 'purchase_order:item_add' %}" class="btn btn-primary">Add First Item</a>
-        </div>
-        {% endif %}
-    </div>
+            <!-- Department Filter -->
+            <select name="department" id="departmentSelect" class="modern-select">
+                <option value="all">All Departments</option>
+                {% for dept in departments %}
+                    <option value="{{ dept.id }}" {% if selected_department|default:'all' == dept.id|stringformat:"s" %}selected{% endif %}>
+                        {{ dept.name }}
+                    </option>
+                {% endfor %}
+            </select>
 
-    <!-- Updated Modern Pagination -->
-    {% if items.has_other_pages %}
-    <div class="pagination-wrapper">
-        <ul class="modern-pagination">
-            {% if items.has_previous %}
-                <li>
-                    <a href="?page={{ items.previous_page_number }}{% if selected_department %}&department={{ selected_department }}{% endif %}">«</a>
-                </li>
-            {% else %}
-                <li class="disabled"><span>«</span></li>
-            {% endif %}
+            <!-- Section Filter -->
+            <select name="section" id="sectionSelect" class="modern-select">
+                <option value="all">All Sections</option>
+                <option value="GENERAL" {% if selected_section == 'GENERAL' %}selected{% endif %}>General</option>
+                <option value="SERVICE" {% if selected_section == 'SERVICE' %}selected{% endif %}>Hardware</option>
+                <option value="SOFTWARE" {% if selected_section == 'SOFTWARE' %}selected{% endif %}>Softwares</option>
+                <option value="PAPER_ROLLS" {% if selected_section == 'PAPER_ROLLS' %}selected{% endif %}>Paper Rolls</option>
+            </select>
 
-            {% for num in items.paginator.page_range %}
-                {% if items.number == num %}
-                    <li class="active"><span>{{ num }}</span></li>
-                {% elif num > items.number|add:'-3' and num < items.number|add:'3' %}
-                    <li><a href="?page={{ num }}{% if selected_department %}&department={{ selected_department }}{% endif %}">{{ num }}</a></li>
+            <!-- Status Filter -->
+            <select name="status" id="statusSelect" class="modern-select">
+                <option value="all">All Status</option>
+                <option value="active" {% if selected_status == 'active' %}selected{% endif %}>Active</option>
+                <option value="inactive" {% if selected_status == 'inactive' %}selected{% endif %}>Inactive</option>
+            </select>
+        </div>
+
+        <div class="results-info">
+            <span>
+                Showing {{ items.start_index }} to {{ items.end_index }} of {{ items.paginator.count }} items
+            </span>
+            <div class="pagination-mini">
+                {% if items.has_previous %}
+                <button class="page-btn" onclick="window.location.href='?page={{ items.previous_page_number }}'">‹</button>
                 {% endif %}
-            {% endfor %}
+                <button class="page-btn active">{{ items.number }}</button>
+                {% if items.has_next %}
+                <button class="page-btn" onclick="window.location.href='?page={{ items.next_page_number }}'">›</button>
+                {% endif %}
+            </div>
 
-            {% if items.has_next %}
-                <li>
-                    <a href="?page={{ items.next_page_number }}{% if selected_department %}&department={{ selected_department }}{% endif %}">»</a>
-                </li>
+            <button class="clear-filters-btn" onclick="clearFilters()">
+                <i class="fas fa-times"></i> Clear 
+            </button>
+        </div>
+    </div>  
+
+    <!-- Main Content Area -->
+    <div class="content-area">
+        <!-- Sidebar Directory -->
+        <div class="sidebar-directory">
+            <div class="directory-header">
+                <h3>Item Directory</h3>
+                <span class="item-count">{{ items|length }} items on this page</span>
+            </div>
+            
+            <div class="directory-list">
+                {% for item in items %}
+                <div class="directory-item {% if forloop.first %}active{% endif %}" 
+                    data-item-id="{{ item.id }}" 
+                    data-item-name="{{ item.name }}"
+                    data-item-unit="{{ item.unit_of_measure }}"
+                    data-item-image="{% if item.images.first %}{{ item.images.first.image.url }}{% endif %}"
+                    data-item-images="{% for img in item.images.all %}{{ img.image.url }}{% if not forloop.last %}|{% endif %}{% endfor %}"
+                    data-item-dept="{% if item.department %}{{ item.department.name }}{% else %}—{% endif %}"
+                    data-item-section="{{ item.get_section_display }}"
+                    data-item-hsn="{{ item.hsn_code|default:'—' }}"
+                    data-item-tax="{{ item.tax_percentage }}"
+                    data-item-mrp="{{ item.mrp|floatformat:2 }}"
+                    data-item-purchase="{{ item.purchase_price|floatformat:2 }}"
+                    data-item-cost="{{ item.cost|floatformat:2 }}"
+                    data-item-active="{{ item.is_active }}"
+                    data-item-edit-url="{% url 'purchase_order:item_edit' item.pk %}"
+                    onclick="showItemDetail(this)">
+                    <div class="item-avatar">
+                        {% if item.images.first %}
+                            <img src="{{ item.images.first.image.url }}"
+                                style="width:40px;height:40px;border-radius:50%;object-fit:cover;">
+                        {% else %}
+                            <i class="fas fa-cube"></i>
+                        {% endif %}
+                    </div>
+                    <div class="item-mini-info">
+                        <div class="item-mini-name">{{ item.name }}</div>
+                        <div class="item-mini-desc">{{ item.unit_of_measure }}</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Detail Panel -->
+        <div class="detail-panel">
+            {% if items %}
+            <div class="item-detail-card" id="itemDetail">
+                <!-- Item Header -->
+                <div class="item-header">
+                    <div class="item-avatar-large" id="detailImageContainer">
+                        {% with first_image=items.0.images.first %}
+                            {% if first_image %}
+                                <img src="{{ first_image.image.url }}" 
+                                    id="detailMainImage"
+                                    style="width:80px;height:80px;border-radius:10px;object-fit:cover;">
+                            {% else %}
+                                <i class="fas fa-cube"></i>
+                            {% endif %}
+                        {% endwith %}
+                    </div>
+                    <div class="item-header-info">
+                        <h2 class="item-title" id="detailItemName">{{ items.0.name }}</h2>
+                        <p class="item-id" id="detailItemId">Item ID: {{ items.0.id }}</p>
+                        <span class="status-badge {% if items.0.is_active %}status-active{% else %}status-inactive{% endif %}" id="detailItemStatus">
+                            {% if items.0.is_active %}ACTIVE{% else %}INACTIVE{% endif %}
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Tab Navigation -->
+                <div class="tab-navigation">
+                    <button class="tab-btn active" data-tab="info">
+                        <i class="fas fa-info-circle"></i> Item Information
+                    </button>
+                    <button class="tab-btn" data-tab="pricing">
+                        <i class="fas fa-tags"></i> Pricing Details
+                    </button>
+                    {% comment %} <button class="tab-btn" data-tab="stock">
+                        <i class="fas fa-warehouse"></i> Stock Details
+                    </button> {% endcomment %}
+                    <button class="tab-btn" data-tab="images">
+                        <i class="fas fa-images"></i> Images
+                    </button>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="action-buttons-top">
+                    <button class="btn-action btn-edit" id="editItemBtn" onclick="window.location.href='{% url 'purchase_order:item_edit' items.0.pk %}'">
+                        <i class="fas fa-edit"></i> Edit
+                    </button>
+                    <button class="btn-action btn-delete" id="deleteItemBtn" onclick="confirmDelete({{ items.0.id }}, '{{ items.0.name|escapejs }}')">
+                        <i class="fas fa-trash-alt"></i> Delete
+                    </button>
+                </div>
+
+                <!-- Tab Content: Item Information -->
+                <div class="tab-content active" data-content="info">
+                    <div class="info-section">
+                        <h3><i class="fas fa-briefcase"></i> Organization & Position</h3>
+                        <div class="info-grid">
+                            <div class="info-box">
+                                <label>DEPARTMENT</label>
+                                <p id="detailDepartment">{% if items.0.department %}{{ items.0.department.name }}{% else %}—{% endif %}</p>
+                            </div>
+                            <div class="info-box">
+                                <label>SECTION</label>
+                                <p id="detailSection">{{ items.0.get_section_display }}</p>
+                            </div>
+                            <div class="info-box">
+                                <label>HSN CODE</label>
+                                <p class="hsn-code-display" id="detailHsn">{{ items.0.hsn_code|default:"—" }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="info-section">
+                        <h3><i class="fas fa-chart-line"></i> Tax Information</h3>
+                        <div class="info-grid">
+                            <div class="info-box">
+                                <label>TAX PERCENTAGE</label>
+                                <p class="tax-display" id="detailTax">{{ items.0.tax_percentage }}%</p>
+                            </div>
+                            <div class="info-box">
+                                <label>UNIT OF MEASURE</label>
+                                <p id="detailUnit">{{ items.0.unit_of_measure }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab Content: Pricing Details -->
+                <div class="tab-content" data-content="pricing">
+                    <div class="info-section">
+                        <h3><i class="fas fa-rupee-sign"></i> Pricing Details</h3>
+                        <div class="pricing-grid">
+                            <div class="pricing-card">
+                                <div class="pricing-label">MRP</div>
+                                <div class="pricing-value" id="detailMrp">₹{{ items.0.mrp|floatformat:2 }}</div>
+                            </div>
+                            <div class="pricing-card">
+                                <div class="pricing-label">Purchase Price</div>
+                                <div class="pricing-value" id="detailPurchase">₹{{ items.0.purchase_price|floatformat:2 }}</div>
+                            </div>
+                            <div class="pricing-card">
+                                <div class="pricing-label">Cost</div>
+                                <div class="pricing-value" id="detailCost">₹{{ items.0.cost|floatformat:2 }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab Content: Stock Details -->
+                {% comment %} <div class="tab-content" data-content="stock">
+                    <div class="info-section">
+                        <h3><i class="fas fa-warehouse"></i> Stock Information</h3>
+                        <div class="empty-state">
+                            <i class="fas fa-box-open"></i>
+                            <p>Stock details will be displayed here.</p>
+                            <small>This section can be customized to show inventory levels, reorder points, and stock movement history.</small>
+                        </div>
+                    </div>
+                </div> {% endcomment %}
+
+                <!-- Tab Content: Images -->
+                <div class="tab-content" data-content="images">
+                    <div class="info-section">
+                        <h3><i class="fas fa-images"></i> Item Images</h3>
+                        <div id="imageGallery" class="image-grid">
+                            {% if items.0.images.all %}
+                                {% for img in items.0.images.all %}
+                                    <div class="image-thumb">
+                                        <img src="{{ img.image.url }}" alt="{{ items.0.name }}">
+                                    </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="empty-state">
+                                    <i class="fas fa-image"></i>
+                                    <p>No images uploaded for this item.</p>
+                                    <small>Use the Edit page to upload one or more images.</small>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
             {% else %}
-                <li class="disabled"><span>»</span></li>
+                
             {% endif %}
         </ul>
     </div>
-    {% endif %}
-        
-                {% if items.has_next %}
-                    <li>
-                        <a href="?page={{ items.next_page_number }}{% if selected_department %}&department={{ selected_department }}{% endif %}">»</a>
-                    </li>
-                {% else %}
-                    <li class="disabled"><span>»</span></li>
-                {% endif %}
-            </ul>
-        </div>
-        
-      
 </div>
 
 <!-- Delete Confirmation Modal -->
@@ -199,341 +293,563 @@
 </div>
 
 <style>
-.content-wrapper {
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background: #f5f5f5;
+}
+
+.modern-container {
     padding: 20px;
-    max-width: 100%;
+    max-width: 1600px;
     margin: 0 auto;
 }
 
-.page-header {
+/* Header */
+.modern-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 30px;
+    padding: 20px 30px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
 }
 
-.page-title {
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    color: #354b67;
+}
+
+.header-left i {
     font-size: 28px;
+}
+
+.header-left h1 {
+    font-size: 24px;
     font-weight: 600;
-    color: #2c3e50;
     margin: 0;
 }
 
-.btn {
-    padding: 10px 20px;
-    border-radius: 6px;
-    text-decoration: none;
-    font-weight: 500;
-    transition: all 0.3s ease;
+.btn-add-new {
+    background: #3498db;
+    color: #ffffffff;
+    padding: 12px 24px;
     border: none;
+    border-radius: 8px;
+    font-weight: 600;
     cursor: pointer;
-    display: inline-flex;
+    display: flex;
     align-items: center;
     gap: 8px;
+    transition: all 0.3s ease;
+    font-size: 14px;
 }
 
-.btn-primary {
-    background: #3498db;
-    color: white;
-}
-
-.btn-primary:hover {
-    background: #2980b9;
+.btn-add-new:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-.btn-secondary {
-    background: #95a5a6;
-    color: white;
-}
-
-.btn-secondary:hover {
-    background: #7f8c8d;
-}
-
-.btn-danger {
-    background: #e74c3c;
-    color: white;
-}
-
-.btn-danger:hover {
-    background: #c0392b;
-}
-
-.search-section {
+/* Filters Section */
+.filters-section {
     background: white;
     padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.filter-row {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+}
+
+.search-container {
+    flex: 1;
+    min-width: 250px;
+}
+
+.modern-search {
+    width: 100%;
+    padding: 12px 20px;
+    border: 2px solid #e0e0e0;
     border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    font-size: 14px;
+    transition: border-color 0.3s ease;
+}
+
+.modern-search:focus {
+    outline: none;
+    border-color: #354b67;
+}
+
+.modern-select {
+    padding: 12px 20px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 14px;
+    background: white;
+    cursor: pointer;
+    min-width: 180px;
+    transition: border-color 0.3s ease;
+}
+
+.modern-select:focus {
+    outline: none;
+    border-color: #354b67;
+}
+
+.results-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 14px;
+    color: #666;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.pagination-mini {
+    display: flex;
+    gap: 5px;
+}
+
+.page-btn {
+    padding: 6px 12px;
+    border: 1px solid #e0e0e0;
+    background: white;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 13px;
+}
+
+.page-btn:hover {
+    background: #354b67;
+    color: white;
+    border-color: #354b67;
+}
+
+.page-btn.active {
+    background: #354b67;
+    color: white;
+    border-color: #354b67;
+}
+
+.clear-filters-btn {
+    padding: 8px 16px;
+    background: #525151ff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    transition: all 0.2s ease;
+    color: white;
+}
+
+.clear-filters-btn:hover {
+    background: #e0e0e0;
+}
+
+/* Content Area */
+.content-area {
+    display: flex;
+    gap: 20px;
+    min-height: 600px;
+}
+
+/* Sidebar Directory */
+.sidebar-directory {
+    width: 380px;
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    max-height: calc(100vh - 300px);
+    overflow-y: auto;
+}
+
+.directory-header {
     margin-bottom: 20px;
 }
 
-.search-box {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    background: #f8f9fa;
-    padding: 12px 20px;
-    border-radius: 8px;
-    border: 2px solid #e9ecef;
-}
-
-.search-box i {
-    color: #7f8c8d;
-}
-
-.search-input {
-    flex: 1;
-    border: none;
-    background: transparent;
-    font-size: 15px;
-    outline: none;
-    color: #2c3e50;
-}
-
-.table-container {
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    overflow: hidden;
-}
-
-.table-scroll {
-    overflow-x: auto;
-    overflow-y: visible;
-}
-
-.data-table {
-    width: 100%;
-    border-collapse: collapse;
-    table-layout: fixed;
-    min-width: 1400px;
-}
-
-.data-table thead {
-    background: #34495e;
-    color: white;
-}
-
-.data-table th {
-    padding: 15px 8px;
-    text-align: center !important;
-    vertical-align: middle;
+.directory-header h3 {
+    font-size: 16px;
     font-weight: 600;
-    font-size: 13px;
-    text-transform: uppercase;
-    letter-spacing: 0.3px;
-    white-space: nowrap;
+    color: #333;
+    margin-bottom: 5px;
 }
 
-/* RESPONSIVE COLUMN WIDTHS */
-.data-table th:nth-child(1), .data-table td:nth-child(1) { width: 5%; text-align: center !important; }
-.data-table th:nth-child(2), .data-table td:nth-child(2) { width: 13%; text-align: left !important; }
-.data-table th:nth-child(3), .data-table td:nth-child(3) { width: 7%; text-align: center !important; }
-.data-table th:nth-child(4), .data-table td:nth-child(4) { width: 10%; text-align: center !important; }
-.data-table th:nth-child(5), .data-table td:nth-child(5) { width: 10%; text-align: center !important; }
-.data-table th:nth-child(6), .data-table td:nth-child(6) { width: 9%; text-align: right !important; }
-.data-table th:nth-child(7), .data-table td:nth-child(7) { width: 11%; text-align: right !important; }
-.data-table th:nth-child(8), .data-table td:nth-child(8) { width: 9%; text-align: right !important; }
-.data-table th:nth-child(9), .data-table td:nth-child(9) { width: 9%; text-align: center !important; }
-.data-table th:nth-child(10), .data-table td:nth-child(10) { width: 8%; text-align: center !important; }
-.data-table th:nth-child(11), .data-table td:nth-child(11) { width: 9%; text-align: center !important; }
-
-.data-table tbody tr {
-    border-bottom: 1px solid #ecf0f1;
-    transition: all 0.3s ease;
+.item-count {
+    font-size: 12px;
+    color: #999;
 }
 
-.data-table tbody tr:hover {
-    background: #f8f9fa;
-}
-
-.data-table td {
-    padding: 12px 8px;
-    color: #2c3e50;
-    vertical-align: middle;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.id-badge {
-    background: #ecf0f1;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-weight: 600;
-    font-size: 11px;
-    color: #555;
-    display: inline-block;
-}
-
-.item-info {
+.directory-list {
     display: flex;
     flex-direction: column;
-    gap: 3px;
-    overflow: hidden;
+    gap: 8px;
 }
 
-.item-name {
+.directory-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.directory-item:hover {
+    background: #f5f5f5;
+}
+
+.directory-item.active {
+    background: #e8eaf6;
+    border-left: 3px solid #354b67;
+}
+
+.item-avatar {
+    width: 40px;
+    height: 40px;
+    background: #354b67;;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.item-mini-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.item-mini-name {
     font-weight: 600;
-    color: #2c3e50;
-    font-size: 13px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    font-size: 14px;
+    color: #333;
+    white-space: normal;   /* allows wrapping */
+    overflow: visible;     /* show full text */
+    text-overflow: unset;  /* disable ellipsis */
+    line-height: 1.3;
 }
 
-.item-unit {
-    font-size: 10px;
-    color: #7f8c8d;
+.item-mini-desc {
+    font-size: 11px;
+    color: #999;
     text-transform: uppercase;
 }
 
-.tax-badge {
-    background: #e8f5e9;
-    color: #2e7d32;
-    padding: 4px 8px;
-    border-radius: 6px;
+/* Detail Panel */
+.detail-panel {
+    flex: 1;
+    background: white;
+    border-radius: 10px;
+    padding: 30px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    position: relative;
+}
+
+.item-detail-card {
+    position: relative;
+}
+
+.item-header {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding-bottom: 25px;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.item-avatar-large {
+    width: 80px;
+    height: 80px;
+    background:#354b67;;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 36px;
+    flex-shrink: 0;
+}
+
+.item-header-info {
+    flex: 1;
+}
+
+.item-title {
+    font-size: 24px;
     font-weight: 600;
-    font-size: 11px;
-    display: inline-block;
+    color: #333;
+    margin-bottom: 5px;
 }
 
-.dept-badge {
-    background: #e3f2fd;
-    color: #1565c0;
-    padding: 4px 10px;
-    border-radius: 6px;
-    font-weight: 600;
-    font-size: 11px;
-    display: inline-block;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 100%;
-}
-
-/* Section Badge Styles */
-.section-badge {
-    padding: 4px 10px;
-    border-radius: 6px;
-    font-weight: 600;
-    font-size: 11px;
-    display: inline-block;
-    white-space: nowrap;
-    text-transform: uppercase;
-}
-
-.section-general {
-    background: #fff3e0;
-    color: #e65100;
-}
-
-.section-service {
-    background: #f3e5f5;
-    color: #6a1b9a;
-}
-
-.section-software {
-    background: #e1f5fe;
-    color: #01579b;
-}
-
-td.amount {
-    font-weight: 600;
-    color: #000000;
+.item-id {
     font-size: 13px;
-    white-space: nowrap;
-    padding-right: 12px !important;
+    color: #999;
+    margin-bottom: 10px;
 }
 
-td .hsn-code {
-    font-family: 'Courier New', monospace;
-    color: #7f8c8d;
-    font-size: 12px;
-    font-weight: bold;
-    display: block;
-    text-align: center;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.badge {
-    padding: 4px 8px;
-    border-radius: 6px;
-    font-weight: 600;
-    font-size: 11px;
+.status-badge {
     display: inline-block;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
 }
 
-.badge-success {
+.status-active {
     background: #e8f5e9;
     color: #2e7d32;
 }
 
-.badge-danger {
+.status-inactive {
     background: #ffebee;
     color: #c62828;
 }
 
-td .action-buttons {
+/* Tab Navigation */
+.tab-navigation {
     display: flex;
-    gap: 5px;
-    justify-content: center;
-    align-items: center;
+    gap: 10px;
+    margin: 25px 0;
+    border-bottom: 2px solid #f0f0f0;
 }
 
-.btn-icon {
-    width: 30px;
-    height: 30px;
+.tab-btn {
+    padding: 12px 20px;
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    color: #666;
     display: flex;
     align-items: center;
-    justify-content: center;
-    border-radius: 5px;
-    text-decoration: none;
+    gap: 8px;
     transition: all 0.3s ease;
+}
+
+.tab-btn:hover {
+    color: #354b67;
+}
+
+.tab-btn.active {
+    color: #354b67;
+    border-bottom-color: #354b67;
+}
+
+/* Action Buttons */
+.action-buttons-top {
+    position: absolute;
+    top: 30px;
+    right: 30px;
+    display: flex;
+    gap: 10px;
+}
+
+.btn-action {
+    padding: 10px 20px;
     border: none;
+    border-radius: 6px;
     cursor: pointer;
-    font-size: 12px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    font-size: 14px;
 }
 
 .btn-edit {
-    background: #3498db;
+    background:#3498db;
     color: white;
 }
 
 .btn-edit:hover {
-    background: #2980b9;
-    transform: scale(1.1);
+    background: #354b67;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
 }
 
 .btn-delete {
-    background: #e74c3c;
+    background: #f44336;
     color: white;
 }
 
 .btn-delete:hover {
-    background: #c0392b;
-    transform: scale(1.1);
+    background: #d32f2f;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(244, 67, 54, 0.3);
 }
 
-.no-data {
+/* Tab Content */
+.tab-content {
+    display: none;
+    animation: fadeIn 0.3s ease;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.info-section {
+    margin-bottom: 30px;
+}
+
+.info-section h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.info-section h3 i {
+    color:#354b67;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.info-box {
+    background: #f9f9f9;
+    padding: 20px;
+    border-radius: 8px;
+    border-left: 4px solid#354b67;
+}
+
+.info-box label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #999;
+    letter-spacing: 0.5px;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.info-box p {
+    font-size: 15px;
+    font-weight: 600;
+    color: #333;
+    margin: 0;
+}
+
+.hsn-code-display {
+    font-family: 'Courier New', monospace;
+    color: #354b67;
+}
+
+.tax-display {
+    color: #2e7d32;
+}
+
+/* Pricing Grid */
+.pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.pricing-card {
+    background: linear-gradient(135deg, #ffffffff 0%, #ffffffff 100%);
+    padding: 25px;
+    border-radius: 12px;
+    text-align: center;
+    color: black;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.pricing-label {
+    font-size: 12px;
+    font-weight: 600;
+    opacity: 0.9;
+    margin-bottom: 10px;
+    letter-spacing: 0.5px;
+}
+
+.pricing-value {
+    font-size: 28px;
+    font-weight: 700;
+}
+
+/* Empty State */
+.empty-state {
     text-align: center;
     padding: 60px 20px;
-    color: #7f8c8d;
+    color: #999;
 }
 
-.no-data i {
+.empty-state i {
+    font-size: 48px;
+    margin-bottom: 15px;
+    opacity: 0.3;
+}
+
+.empty-state p {
+    font-size: 16px;
+    margin-bottom: 10px;
+    color: #666;
+}
+
+.empty-state small {
+    font-size: 13px;
+    color: #999;
+}
+
+/* No Data Panel */
+.no-data-panel {
+    text-align: center;
+    padding: 80px 20px;
+    color: #999;
+}
+
+.no-data-panel i {
     font-size: 64px;
     margin-bottom: 20px;
     opacity: 0.3;
 }
 
-.no-data p {
-    font-size: 18px;
-    margin-bottom: 20px;
+.no-data-panel h3 {
+    font-size: 20px;
+    margin-bottom: 10px;
+    color: #666;
+}
+
+.no-data-panel p {
+    margin-bottom: 25px;
+    color: #999;
 }
 
 /* Modal Styles */
@@ -547,6 +863,11 @@ td .action-buttons {
     height: 100%;
     background-color: rgba(0, 0, 0, 0.5);
     animation: fadeIn 0.3s;
+    pointer-events: none;
+}
+
+.modal.show {
+    pointer-events: auto;
 }
 
 .modal-content {
@@ -562,7 +883,7 @@ td .action-buttons {
 
 .modal-header {
     padding: 25px 30px;
-    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    background: linear-gradient(135deg, #f44336, #d32f2f);
     color: white;
     border-radius: 12px 12px 0 0;
     display: flex;
@@ -587,31 +908,57 @@ td .action-buttons {
 .modal-body p {
     margin: 0 0 15px 0;
     font-size: 16px;
-    color: #2c3e50;
+    color: #333;
 }
 
 .modal-body strong {
-    color: #e74c3c;
+    color: #f44336;
 }
 
 .warning-text {
-    color: #7f8c8d;
+    color: #999;
     font-size: 14px;
     font-style: italic;
 }
 
 .modal-footer {
     padding: 20px 30px;
-    background: #f8f9fa;
+    background: #f9f9f9;
     border-radius: 0 0 12px 12px;
     display: flex;
     justify-content: flex-end;
     gap: 10px;
 }
 
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+.btn-secondary {
+    background: #95a5a6;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.btn-secondary:hover {
+    background: #7f8c8d;
+}
+
+.btn-danger {
+    background: #f44336;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-danger:hover {
+    background: #d32f2f;
 }
 
 @keyframes slideIn {
@@ -625,114 +972,72 @@ td .action-buttons {
     }
 }
 
-.pagination-wrapper {
-    display: flex;
-    justify-content: center;
-    margin: 30px 0;
-}
-
-.modern-pagination {
-    display: flex;
-    list-style: none;
-    background: #fff;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    padding: 0;
-}
-
-.modern-pagination li {
-    margin: 0;
-}
-
-.modern-pagination a,
-.modern-pagination span {
-    display: block;
-    padding: 10px 18px;
-    text-decoration: none;
-    color: #34495e;
-    font-weight: 500;
-    transition: all 0.2s ease;
-}
-
-.modern-pagination a:hover {
-    background: #3498db;
-    color: #fff;
-}
-
-.modern-pagination .active span {
-    background: #3498db;
-    color: #fff;
-    font-weight: 600;
-}
-
-.modern-pagination .disabled span {
-    color: #aaa;
-    cursor: not-allowed;
-    background: #f4f4f4;
-}
-
-.filter-box {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.filter-select {
-    padding: 10px 15px;
-    border: 2px solid #e9ecef;
-    border-radius: 6px;
-    font-size: 14px;
-    background: white;
-    cursor: pointer;
-    min-width: 200px;
-}
-
-.filter-select:focus {
-    outline: none;
-    border-color: #3498db;
-}
-
-@media (max-width: 1400px) {
-    .data-table th,
-    .data-table td {
-        padding: 10px 6px;
-        font-size: 10px;
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .content-area {
+        flex-direction: column;
     }
-    
-    .item-name {
-        font-size: 12px;
+
+    .sidebar-directory {
+        width: 100%;
+        max-height: 300px;
     }
-    
-    td.amount {
-        font-size: 12px;
+
+    .directory-list {
+        flex-direction: row;
+        overflow-x: auto;
+        padding-bottom: 10px;
+    }
+
+    .directory-item {
+        min-width: 200px;
+    }
+
+    .action-buttons-top {
+        position: static;
+        margin-top: 20px;
+        justify-content: flex-start;
     }
 }
 
 @media (max-width: 768px) {
-    .page-header {
+    .modern-header {
         flex-direction: column;
         align-items: flex-start;
         gap: 15px;
     }
 
-    .search-section {
+    .filter-row {
         flex-direction: column;
-        align-items: stretch;
     }
-    
-    .search-box {
-        min-width: 100%;
-    }
-    
-    .filter-box {
-        flex-direction: column;
-        align-items: stretch;
-    }
-    
-    .filter-select {
+
+    .modern-select {
         width: 100%;
+    }
+
+    .info-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .pricing-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .tab-navigation {
+        overflow-x: auto;
+    }
+
+    .tab-btn {
+        white-space: nowrap;
+    }
+
+    .results-info {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .detail-panel {
+        padding: 20px;
     }
 
     .modal-content {
@@ -740,49 +1045,215 @@ td .action-buttons {
         margin: 20% auto;
     }
 }
+
+/* Scrollbar Styling */
+.sidebar-directory::-webkit-scrollbar {
+    width: 6px;
+}
+
+.sidebar-directory::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.sidebar-directory::-webkit-scrollbar-thumb {
+    background: #354b67;
+    border-radius: 10px;
+}
+
+.sidebar-directory::-webkit-scrollbar-thumb:hover {
+    background: #354b67;
+}
+
+.image-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.image-thumb {
+    width: 90px;
+    height: 90px;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #f0f0f0;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+.image-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
 </style>
 
 <script>
-// Real-time search functionality
-document.getElementById('searchInput').addEventListener('keyup', function() {
-    const searchValue = this.value.toLowerCase();
-    const table = document.getElementById('itemTable');
-    const rows = table.getElementsByTagName('tr');
+// ================= FILTER FUNCTIONALITY =================
+document.addEventListener('DOMContentLoaded', function () {
+    const searchInput = document.getElementById('searchInput');
+    const departmentSelect = document.getElementById('departmentSelect');
+    const sectionSelect = document.getElementById('sectionSelect');
+    const statusSelect = document.getElementById('statusSelect');
 
-    for (let i = 1; i < rows.length; i++) {
-        const row = rows[i];
-        const text = row.textContent.toLowerCase();
-        row.style.display = text.includes(searchValue) ? '' : 'none';
+    // Function to apply filters by updating URL
+    function applyFilters() {
+        const params = new URLSearchParams(window.location.search);
+        
+        const search = searchInput.value.trim();
+        const department = departmentSelect.value;
+        const section = sectionSelect.value;
+        const status = statusSelect.value;
+        
+        // Clear all filter params first
+        params.delete('search');
+        params.delete('department');
+        params.delete('section');
+        params.delete('status');
+        params.delete('page'); // Reset to page 1 when filtering
+        
+        // Add back only non-empty filters
+        if (search) params.set('search', search);
+        if (department && department !== 'all') params.set('department', department);
+        if (section && section !== 'all') params.set('section', section);
+        if (status && status !== 'all') params.set('status', status);
+        
+        // Redirect with new filters
+        window.location.href = '?' + params.toString();
     }
+
+    // Search with debounce (wait 500ms after user stops typing)
+    let searchTimeout;
+    if (searchInput) {
+        searchInput.addEventListener('keyup', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(applyFilters, 500);
+        });
+    }
+
+    // Instant filter on dropdown change
+    if (departmentSelect) departmentSelect.addEventListener('change', applyFilters);
+    if (sectionSelect) sectionSelect.addEventListener('change', applyFilters);
+    if (statusSelect) statusSelect.addEventListener('change', applyFilters);
 });
 
-// Delete confirmation modal
+// ================= CLEAR FILTERS =================
+function clearFilters() {
+    window.location.href = window.location.pathname;
+}
+
+// ================= DELETE MODAL =================
 function confirmDelete(itemId, itemName) {
     const modal = document.getElementById('deleteModal');
-    const deleteForm = document.getElementById('deleteForm');
-    const itemNameElement = document.getElementById('itemName');
-    
-    itemNameElement.textContent = itemName;
-    deleteForm.action = "{% url 'purchase_order:item_delete' 0 %}".replace('0', itemId);
+    document.getElementById('itemName').textContent = itemName;
+    document.getElementById('deleteForm').action = `/po/items/${itemId}/delete/`;
     modal.style.display = 'block';
+    setTimeout(() => modal.classList.add('show'), 10);
 }
 
 function closeModal() {
     const modal = document.getElementById('deleteModal');
-    modal.style.display = 'none';
+    modal.classList.remove('show');
+    setTimeout(() => modal.style.display = 'none', 300);
 }
 
-window.onclick = function(event) {
-    const modal = document.getElementById('deleteModal');
-    if (event.target === modal) {
-        closeModal();
+// ================= TAB SWITCHING =================
+document.addEventListener('DOMContentLoaded', function () {
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    tabBtns.forEach(btn =>
+        btn.addEventListener('click', function () {
+            const target = this.getAttribute('data-tab');
+            tabBtns.forEach(b => b.classList.remove('active'));
+            tabContents.forEach(c => c.classList.remove('active'));
+
+            this.classList.add('active');
+            document.querySelector(`[data-content="${target}"]`).classList.add('active');
+        })
+    );
+});
+
+// ================= SHOW ITEM DETAIL =================
+function showItemDetail(element) {
+    document.querySelectorAll('.directory-item')
+        .forEach(item => item.classList.remove('active'));
+    element.classList.add('active');
+
+    // Get attributes
+    const itemId = element.dataset.itemId;
+    const itemName = element.dataset.itemName;
+    const itemUnit = element.dataset.itemUnit;
+    const itemDept = element.dataset.itemDept;
+    const itemSection = element.dataset.itemSection;
+    const itemHsn = element.dataset.itemHsn;
+    const itemTax = element.dataset.itemTax;
+    const itemMrp = element.dataset.itemMrp;
+    const itemPurchase = element.dataset.itemPurchase;
+    const itemCost = element.dataset.itemCost;
+    const itemActive = element.dataset.itemActive === "True";
+    const itemEditUrl = element.dataset.itemEditUrl;
+    const itemImage = element.dataset.itemImage;
+    const itemImages = element.dataset.itemImages || "";
+
+    // Update Item Details
+    document.getElementById('detailItemName').textContent = itemName;
+    document.getElementById('detailItemId').textContent = 'Item ID: ' + itemId;
+
+    const statusBadge = document.getElementById('detailItemStatus');
+    statusBadge.textContent = itemActive ? 'ACTIVE' : 'INACTIVE';
+    statusBadge.className = 'status-badge ' + (itemActive ? 'status-active' : 'status-inactive');
+
+    document.getElementById('detailDepartment').textContent = itemDept;
+    document.getElementById('detailSection').textContent = itemSection;
+    document.getElementById('detailHsn').textContent = itemHsn;
+    document.getElementById('detailTax').textContent = itemTax + "%";
+    document.getElementById('detailUnit').textContent = itemUnit;
+    document.getElementById('detailMrp').textContent = "₹" + itemMrp;
+    document.getElementById('detailPurchase').textContent = "₹" + itemPurchase;
+    document.getElementById('detailCost').textContent = "₹" + itemCost;
+
+    // Buttons update
+    document.getElementById('editItemBtn').onclick = () => window.location.href = itemEditUrl;
+    document.getElementById('deleteItemBtn').onclick = () => confirmDelete(itemId, itemName);
+
+    // ================= UPDATE MAIN IMAGE =================
+    const imageContainer = document.getElementById('detailImageContainer');
+    imageContainer.innerHTML = itemImage
+        ? `<img src="${itemImage}" style="width:80px;height:80px;border-radius:10px;object-fit:cover;">`
+        : `<i class="fas fa-cube"></i>`;
+
+    // ================= UPDATE IMAGE GALLERY TAB =================
+    const gallery = document.getElementById('imageGallery');
+    if (gallery) {
+        const urls = itemImages ? itemImages.split('|').filter(Boolean) : [];
+        gallery.innerHTML = urls.length
+            ? urls.map(url => `
+                <div class="image-thumb">
+                    <img src="${url}" alt="Image" style="width:90px;height:90px;border-radius:10px;object-fit:cover;">
+                </div>`).join('')
+            : `<div class="empty-state">
+                    <i class="fas fa-image"></i>
+                    <p>No images uploaded for this item.</p>
+                </div>`;
     }
 }
 
-document.addEventListener('keydown', function(event) {
-    if (event.key === 'Escape') {
-        closeModal();
+// ================= CLOSE MODAL ON OUTSIDE CLICK =================
+window.addEventListener('click', function(e) {
+    if (e.target.id === "deleteModal") closeModal();
+}, false);
+
+document.addEventListener("keydown", e => e.key === "Escape" && closeModal());
+
+// ================= Initialize default selected item =================
+document.addEventListener('DOMContentLoaded', function () {
+    const first = document.querySelector('.directory-item');
+    if (first) {
+        showItemDetail(first);
     }
 });
 </script>
+
 {% endblock %}

@@ -7,7 +7,7 @@ from django.http import JsonResponse
 from decimal import Decimal
 from datetime import date
 from django.utils import timezone  
-from .models import Supplier, PurchaseOrder, Item, PurchaseOrderItem, Department
+from .models import Supplier, PurchaseOrder, Item, ItemImage, PurchaseOrderItem, Department
 from django.core.paginator import Paginator
 from django.core.paginator import EmptyPage, PageNotAnInteger
 from django.db.models import ProtectedError
@@ -178,9 +178,11 @@ def supplier_delete(request, pk):
 # ==================== ITEM MASTER VIEWS ====================
 
 def item_list(request):
-    """Display all items with pagination"""
+    """Display all items with search, department filter, section filter, and status filter"""
     search_query = request.GET.get('search', '')
     department_filter = request.GET.get('department', '')
+    section_filter = request.GET.get('section', '')
+    status_filter = request.GET.get('status', '')  # ✅ NEW: Get status filter
 
     # Base queryset
     items = Item.objects.all().order_by('name')
@@ -193,11 +195,21 @@ def item_list(request):
         )
 
     # 🏢 Department filter
-    if department_filter:
+    if department_filter and department_filter != 'all':
         items = items.filter(department_id=department_filter)
 
-    # ✅ Pagination (25 per page)
-    from django.core.paginator import Paginator
+    # 🧾 Section filter
+    if section_filter and section_filter != 'all':
+        items = items.filter(section=section_filter)
+
+    # ✅ Status filter
+    if status_filter and status_filter != 'all':
+        if status_filter == 'active':
+            items = items.filter(is_active=True)
+        elif status_filter == 'inactive':
+            items = items.filter(is_active=False)
+
+    # ✅ Pagination (10 per page)
     paginator = Paginator(items, 10)
     page_number = request.GET.get('page')
     items = paginator.get_page(page_number)
@@ -205,16 +217,16 @@ def item_list(request):
     # 🧭 Department dropdown list
     departments = Department.objects.filter(is_active=True).order_by('name')
 
-    # ✅ Context for template
     context = {
         'items': items,
         'search_query': search_query,
         'departments': departments,
-        'selected_department': department_filter,  # match your template variable
+        'selected_department': department_filter,
+        'selected_section': section_filter,
+        'selected_status': status_filter,  # ✅ Pass to template
     }
 
     return render(request, 'purchase_order/item_list.html', context)
-
 
 # Update your item_add and item_edit views in views.py
 
@@ -228,11 +240,12 @@ def item_add(request):
             if department_id:
                 department = get_object_or_404(Department, pk=department_id)
 
-            Item.objects.create(
+            # Create item first
+            item = Item.objects.create(
                 name=request.POST.get('name'),
                 description=request.POST.get('description', ''),
                 department=department,
-                section=request.POST.get('section', 'GENERAL'),  # ✅ NEW: Section field
+                section=request.POST.get('section', 'GENERAL'),
                 unit_of_measure=request.POST.get('unit_of_measure', 'pcs'),
                 tax_percentage=Decimal(request.POST.get('tax_percentage', '18.00')),
                 mrp=Decimal(request.POST.get('mrp', '0.00')),
@@ -243,8 +256,15 @@ def item_add(request):
                 created_by=request.user.username if request.user.is_authenticated else 'Admin',
                 updated_by=request.user.username if request.user.is_authenticated else 'Admin',
             )
+
+            # ===== SAVE IMAGES =====
+            if request.FILES.getlist('images'):
+                for img in request.FILES.getlist('images'):
+                    ItemImage.objects.create(item=item, image=img)
+
             messages.success(request, "Item added successfully.")
             return redirect('purchase_order:item_list')
+
         except Exception as e:
             messages.error(request, f"Error adding item: {str(e)}")
 
@@ -255,23 +275,19 @@ def item_add(request):
         'departments': departments
     })
 
-
 def item_edit(request, pk):
     """Update existing item"""
     item = get_object_or_404(Item, pk=pk)
     
     if request.method == 'POST':
         try:
-            # Get department if provided
             department_id = request.POST.get('department')
-            department = None
-            if department_id:
-                department = get_object_or_404(Department, pk=department_id)
+            department = get_object_or_404(Department, pk=department_id) if department_id else None
 
             item.name = request.POST.get('name')
             item.description = request.POST.get('description', '')
             item.department = department
-            item.section = request.POST.get('section', 'GENERAL')  # ✅ NEW: Section field
+            item.section = request.POST.get('section', 'GENERAL')
             item.unit_of_measure = request.POST.get('unit_of_measure', 'pcs')
             item.tax_percentage = Decimal(request.POST.get('tax_percentage', '18.00'))
             item.mrp = Decimal(request.POST.get('mrp', '0.00'))
@@ -281,12 +297,18 @@ def item_edit(request, pk):
             item.is_active = request.POST.get('status') == "True"
             item.updated_by = request.user.username if request.user.is_authenticated else 'Admin'
             item.save()
-            
+
+            # ===== SAVE NEW IMAGES =====
+            if request.FILES.getlist('images'):
+                for img in request.FILES.getlist('images'):
+                    ItemImage.objects.create(item=item, image=img)
+
             messages.success(request, "Item updated successfully.")
             return redirect('purchase_order:item_list')
+
         except Exception as e:
             messages.error(request, f"Error updating item: {str(e)}")
-    
+
     departments = Department.objects.filter(is_active=True).order_by('name')
     
     return render(request, 'purchase_order/item_edit.html', {
@@ -294,7 +316,6 @@ def item_edit(request, pk):
         'action': 'Edit',
         'departments': departments
     })
-
 
 def item_delete(request, pk):
     """Delete item"""
@@ -574,7 +595,7 @@ def purchase_order_update(request, pk):
             po.department = department
             po.reference_number = request.POST.get('reference_number', '')
             po.delivery_date = request.POST.get('delivery_date')
-            po.client_details = request.POST.get('client_details')
+            po.client_details = request.POST.get('client_details', '').strip() 
             po.payment_terms = request.POST.get('payment_terms')
             po.status = request.POST.get('status')
             po.calculation_method = request.POST.get('calculation_method', 'PLUS_TAX')
@@ -744,13 +765,13 @@ def purchase_order_update(request, pk):
     }
     return render(request, 'purchase_order/po_form.html', context)
 
+# ==================== VIEW PURCHASE ORDER DETAILS ====================
 def purchase_order_view(request, pk):
-    """View purchase order details"""
-    po = get_object_or_404(
-        PurchaseOrder.objects.select_related('supplier').prefetch_related('po_items__item'),
-        pk=pk
-    )
-    context = {'po': po}
+    """Show full details of a single Purchase Order"""
+    po = get_object_or_404(PurchaseOrder, pk=pk)
+    context = {
+        'po': po
+    }
     return render(request, 'purchase_order/po_detail.html', context)
 
 
@@ -1113,7 +1134,7 @@ from django.http import JsonResponse
 from .models import PurchaseOrderItem  # ensure correct import path
 
 def get_supplier_history(request, supplier_id):
-    """Return supplier purchase history as JSON."""
+    """Return supplier purchase history as JSON with client details."""
     try:
         po_items = (
             PurchaseOrderItem.objects
@@ -1122,51 +1143,55 @@ def get_supplier_history(request, supplier_id):
             .order_by('-purchase_order__po_date')[:20]
         )
 
-        history = [
-            {
+        history = []
+        for item in po_items:
+            history.append({
+                "po_number": item.purchase_order.po_number,
+                "date": item.purchase_order.po_date.strftime("%Y-%m-%d"),
                 "item_name": item.item.name,
+                "client_details": item.purchase_order.client_details or "—",
                 "quantity": float(item.quantity or 0),
                 "rate": float(item.entry_rate or 0),
                 "total": float(item.line_total or 0),
-                "po_number": item.purchase_order.po_number,
-                "date": item.purchase_order.po_date.strftime("%Y-%m-%d"),
-            }
-            for item in po_items
-        ]
+            })
 
         return JsonResponse({"history": history})
     except Exception as e:
         print(f"⚠ Error in get_supplier_history: {e}")
+        import traceback
+        traceback.print_exc()
         return JsonResponse({"error": str(e)}, status=500)
 
 from django.http import JsonResponse
 from .models import PurchaseOrderItem  # ensure correct import path
 
 def get_item_history(request, item_id):
-    """Return purchase history of a specific item."""
+    """Return item purchase history as JSON (with supplier name)."""
     try:
         po_items = (
             PurchaseOrderItem.objects
             .filter(item_id=item_id)
-            .select_related('item', 'purchase_order', 'purchase_order__supplier')
+            .select_related('purchase_order__supplier')
             .order_by('-purchase_order__po_date')[:20]
         )
 
-        history = [
-            {
-                "supplier_name": i.purchase_order.supplier.name if i.purchase_order.supplier else "—",
-                "quantity": float(i.quantity or 0),
-                "rate": float(i.entry_rate or 0),
-                "total": float(i.line_total or 0),
-                "po_number": i.purchase_order.po_number,
-                "date": i.purchase_order.po_date.strftime("%Y-%m-%d"),
-            }
-            for i in po_items
-        ]
-
+        history = []
+        for item in po_items:
+            history.append({
+                "po_number": item.purchase_order.po_number,
+                "date": item.purchase_order.po_date.strftime("%d-%m-%Y") if item.purchase_order.po_date else "",
+                "supplier_name": item.purchase_order.supplier.name if item.purchase_order.supplier else "N/A",  # ✅ Changed to supplier_name
+                "quantity": float(item.quantity or 0),
+                "rate": float(item.entry_rate or 0),
+                "total": float(item.line_total or 0),
+            })
+        
         return JsonResponse({"history": history})
+
     except Exception as e:
-        print(f"⚠ Error in get_item_history: {e}")
+        print(f"❌ Error loading item history: {e}")
+        import traceback
+        traceback.print_exc()
         return JsonResponse({"error": str(e)}, status=500)
 
 def supplier_history(request, supplier_id):
@@ -1198,40 +1223,6 @@ def supplier_history(request, supplier_id):
         ]
     }
     return JsonResponse(data)
-
-def item_history(request, item_id):
-    from django.http import JsonResponse
-    from .models import PurchaseOrderItem
-
-    history = (
-        PurchaseOrderItem.objects.filter(item_id=item_id)
-        .select_related("purchase_order", "purchase_order__supplier")
-        .order_by("-purchase_order__po_date")
-        .values(
-            "purchase_order__supplier__name",
-            "quantity",
-            "entry_rate",
-            "line_total",
-            "purchase_order__po_number",
-            "purchase_order__po_date",
-        )
-    )
-
-    data = {
-        "history": [
-            {
-                "supplier": h["purchase_order__supplier__name"],
-                "quantity": h["quantity"],
-                "rate": float(h["entry_rate"]),
-                "total": float(h["line_total"]),
-                "po_number": h["purchase_order__po_number"],
-                "date": h["purchase_order__po_date"].strftime("%d-%m-%Y"),
-            }
-            for h in history
-        ]
-    }
-    return JsonResponse(data)
-
 
 # ==================== PDF GENERATION  ====================
 from reportlab.pdfgen import canvas
@@ -1285,661 +1276,183 @@ def generate_po_pdf(request, pk):
     return buffer
 
 import os
+import json
 import requests
 from io import BytesIO
-from django.http import JsonResponse
-from django.shortcuts import get_object_or_404
+
+from django.http import JsonResponse, FileResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.contrib import messages
+from django.views.decorators.http import require_http_methods
 from django.conf import settings
-from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import A4
-# Note: Make sure PurchaseOrder is already imported at the top of your file
+
+from .models import PurchaseOrder
+from .pdf_generator import generate_pdf_from_template, get_po_context
 
 
-def generate_and_save_po_pdf_file(po):
-    """
-    Generates a professional PO PDF with logo on left and company details right-aligned.
-    """
-    from reportlab.lib import colors
-    from reportlab.lib.pagesizes import A4
-    from reportlab.lib.units import inch, cm
-    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
-    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-    from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
-    from django.conf import settings
-    import os
+# ============================
+# SEND WHATSAPP WITH PDF
+# ============================
 
-    # Get PDF format
-    pdf_format = getattr(po, 'pdf_format', 'FORMAT_1')
-
-    # Get Department Data
-    department = po.department
-    if not department:
-        raise ValueError("⚠️ Purchase Order must have a department assigned!")
-
-    # Create PDF directory
-    pdf_dir = os.path.join(settings.MEDIA_ROOT, 'po_pdfs')
-    os.makedirs(pdf_dir, exist_ok=True)
-
-    # Generate file path
-    supplier_name = (po.supplier.name or "SUPPLIER").strip().replace(" ", "_").replace("/", "_")
-    pdf_name = f"{supplier_name}_{po.po_number}.pdf"
-    file_path = os.path.join(pdf_dir, pdf_name)
-
-    # Setup document
-    doc = SimpleDocTemplate(
-        file_path,
-        pagesize=A4,
-        rightMargin=0.5*inch,
-        leftMargin=0.5*inch,
-        topMargin=0.4*inch,
-        bottomMargin=0.5*inch
-    )
-
-    elements = []
-    styles = getSampleStyleSheet()
-
-    # ==================== CUSTOM STYLES ====================
-    
-    # Company name style (RIGHT ALIGNED, PROFESSIONAL)
-    company_name_style = ParagraphStyle(
-        'CompanyName',
-        parent=styles['Normal'],
-        fontSize=14,
-        fontName='Helvetica-Bold',
-        alignment=TA_RIGHT,
-        spaceAfter=1,
-        leading=16,
-        textColor=colors.HexColor('#1a1a1a')
-    )
-
-    # Company details style (RIGHT ALIGNED, PROFESSIONAL)
-    company_detail_style = ParagraphStyle(
-        'CompanyDetail',
-        parent=styles['Normal'],
-        fontSize=8.5,
-        fontName='Helvetica',
-        alignment=TA_RIGHT,
-        spaceAfter=0.5,
-        leading=11,
-        textColor=colors.HexColor('#333333')
-    )
-
-    title_style = ParagraphStyle(
-        'Title',
-        parent=styles['Normal'],
-        fontSize=22,
-        fontName='Helvetica-Bold',
-        textColor=colors.HexColor('#0eb69e'),
-        alignment=TA_RIGHT,
-        spaceAfter=3,
-        spaceBefore=8,
-        letterSpacing=0.5
-    )
-
-    page_num_style = ParagraphStyle(
-        'PageNum',
-        parent=styles['Normal'],
-        fontSize=7.5,
-        fontName='Helvetica',
-        alignment=TA_RIGHT,
-        textColor=colors.HexColor('#666666'),
-        spaceAfter=10
-    )
-
-    to_label_style = ParagraphStyle(
-        'ToLabel',
-        parent=styles['Normal'],
-        fontSize=9,
-        fontName='Helvetica-Bold',
-        spaceAfter=3,
-        leading=12
-    )
-
-    normal_text_style = ParagraphStyle(
-        'NormalText',
-        parent=styles['Normal'],
-        fontSize=8.5,
-        fontName='Helvetica',
-        spaceAfter=1.5,
-        leading=11
-    )
-
-    table_header_style = ParagraphStyle(
-        'TableHeader',
-        parent=styles['Normal'],
-        fontSize=8,
-        fontName='Helvetica-Bold',
-        alignment=TA_CENTER,
-        leading=9
-    )
-
-    table_cell_style = ParagraphStyle(
-        'TableCell',
-        parent=styles['Normal'],
-        fontSize=8,
-        fontName='Helvetica',
-        leading=10
-    )
-
-    # ==================== HEADER SECTION (MODIFIED) ====================
-    
-    # Build company info lines
-    company_name = department.name.upper()
-    company_lines = [company_name]
-    
-    if department.address:
-        company_lines.append(department.address)
-    
-    location_parts = []
-    if department.city:
-        location_parts.append(department.city)
-    if department.state:
-        location_parts.append(department.state)
-    if department.pincode:
-        location_parts.append(f"- {department.pincode}")
-    
-    if location_parts:
-        company_lines.append(", ".join(location_parts))
-    
-    if department.contact_number:
-        company_lines.append(f"+{department.contact_number}")
-    
-    if department.gst_number and department.gst_number not in ["", "Not Provided", "N/A"]:
-        company_lines.append(f"GSTIN: {department.gst_number}")
-
-    # ✅ LOGO HANDLING (proportional sizing with max constraints)
-    logo_path = None
-    logo_cell = ''
-    
-    if department.logo:
-        try:
-            logo_full_path = os.path.join(settings.MEDIA_ROOT, str(department.logo))
-            if os.path.exists(logo_full_path):
-                logo_path = logo_full_path
-                # Create image with constraints: max 1.8 inch width, max 1 inch height
-                from reportlab.lib.utils import ImageReader
-                img = ImageReader(logo_full_path)
-                img_width, img_height = img.getSize()
-                aspect = img_height / float(img_width)
-                
-                # Set maximum dimensions
-                max_width = 1.8 * inch
-                max_height = 1 * inch
-                
-                # Calculate size maintaining aspect ratio
-                if aspect > (max_height / max_width):
-                    # Height is limiting factor
-                    display_height = max_height
-                    display_width = display_height / aspect
-                else:
-                    # Width is limiting factor
-                    display_width = max_width
-                    display_height = display_width * aspect
-                
-                logo_cell = Image(logo_full_path, width=display_width, height=display_height)
-        except Exception as e:
-            print(f"⚠️ Logo error: {e}")
-            logo_cell = ''
-
-    # ✅ BUILD HEADER: Logo (LEFT) + Company Details (RIGHT ALIGNED)
-    
-    # Create right-aligned company info block with better spacing
-    company_info_paragraphs = []
-    for idx, line in enumerate(company_lines):
-        style = company_name_style if idx == 0 else company_detail_style
-        company_info_paragraphs.append(Paragraph(line, style))
-    
-    # Stack company info vertically in a nested table (right-aligned)
-    company_info_table = Table(
-        [[p] for p in company_info_paragraphs],
-        colWidths=[4.2*inch]
-    )
-    company_info_table.setStyle(TableStyle([
-        ('ALIGN', (0, 0), (-1, -1), 'RIGHT'),
-        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-        ('TOPPADDING', (0, 0), (-1, -1), 0),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
-    ]))
-    
-    # Main header table: Logo on left, company info on right
-    header_table = Table(
-        [[logo_cell, company_info_table]],
-        colWidths=[2*inch, 4.5*inch]  # Flexible logo column, company info column
-    )
-    
-    header_table.setStyle(TableStyle([
-        ('ALIGN', (0, 0), (0, 0), 'LEFT'),
-        ('ALIGN', (1, 0), (1, 0), 'RIGHT'),
-        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('TOPPADDING', (0, 0), (-1, -1), 5),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
-        ('LEFTPADDING', (0, 0), (-1, -1), 0),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 0),
-    ]))
-    
-    elements.append(header_table)
-    elements.append(Spacer(1, 0.08*inch))
-
-    # Professional horizontal separator line (slightly thicker, dark gray)
-    line_table = Table([['']], colWidths=[6.5*inch])
-    line_table.setStyle(TableStyle([
-        ('LINEBELOW', (0, 0), (-1, -1), 1.5, colors.HexColor('#333333')),
-    ]))
-    elements.append(line_table)
-    elements.append(Spacer(1, 0.12*inch))
-
-    # ==================== TITLE: PURCHASE ORDER (ENHANCED) ====================
-    elements.append(Paragraph("PURCHASE ORDER", title_style))
-    elements.append(Paragraph("Page 1 of 1", page_num_style))
-    elements.append(Spacer(1, 0.18*inch))
-
-    # ==================== TO SECTION + PO DETAILS ====================
-    
-    # Left side: Supplier details
-    supplier_lines = [
-        Paragraph("<b>To</b>", to_label_style),
-        Paragraph(f"<b>{po.supplier.name.upper()}</b>", normal_text_style)
-    ]
-    
-    if po.supplier.address:
-        supplier_lines.append(Paragraph(po.supplier.address, normal_text_style))
-    
-    if po.supplier.places:
-        supplier_lines.append(Paragraph(po.supplier.places, normal_text_style))
-    
-    if po.supplier.city:
-        supplier_lines.append(Paragraph(po.supplier.city, normal_text_style))
-    
-    if po.supplier.state:
-        supplier_lines.append(Paragraph(po.supplier.state, normal_text_style))
-
-    supplier_table = Table([[line] for line in supplier_lines], colWidths=[3*inch])
-    supplier_table.setStyle(TableStyle([
-        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-        ('TOPPADDING', (0, 0), (-1, -1), 1),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 1),
-    ]))
-
-    # Right side: PO Number and Date (ENHANCED STYLING)
-    po_details_data = [
-        [Paragraph("<b>No</b>", table_header_style), Paragraph(po.po_number, table_cell_style)],
-        [Paragraph("<b>Date</b>", table_header_style), Paragraph(po.po_date.strftime("%d/%m/%Y"), table_cell_style)]
-    ]
-    
-    po_details_table = Table(po_details_data, colWidths=[0.6*inch, 2.9*inch])
-    po_details_table.setStyle(TableStyle([
-        ('GRID', (0, 0), (-1, -1), 0.8, colors.HexColor('#333333')),
-        ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#f5f5f5')),
-        ('BACKGROUND', (1, 0), (1, -1), colors.white),
-        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('TOPPADDING', (0, 0), (-1, -1), 6),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
-        ('LEFTPADDING', (0, 0), (-1, -1), 8),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 8),
-        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, -1), 9),
-    ]))
-
-    # Combine supplier and PO details
-    combined_table = Table([[supplier_table, po_details_table]], colWidths=[3*inch, 3.5*inch])
-    combined_table.setStyle(TableStyle([
-        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-    ]))
-    
-    elements.append(combined_table)
-    elements.append(Spacer(1, 0.15*inch))
-
-    # ==================== "Sir," SECTION (ENHANCED) ====================
-    sir_table = Table([[Paragraph("Sir,", normal_text_style)]], colWidths=[6.5*inch])
-    sir_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#fffacd')),
-        ('TOPPADDING', (0, 0), (-1, -1), 10),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 10),
-        ('LEFTPADDING', (0, 0), (-1, -1), 12),
-    ]))
-    elements.append(sir_table)
-    elements.append(Spacer(1, 0.12*inch))
-
-    # ==================== ITEMS TABLE ====================
-    
-    items_data = [
-        [
-            Paragraph("<b>SL<br/>NO</b>", table_header_style),
-            Paragraph("<b>ITEM</b>", table_header_style),
-            Paragraph("<b>PACKIN<br/>G</b>", table_header_style),
-            Paragraph("<b>QTY</b>", table_header_style),
-            Paragraph("<b>DISCO<br/>UNT</b>", table_header_style),
-            Paragraph("<b>ENTRY<br/>RATE</b>", table_header_style),
-            Paragraph("<b>TAX<br/>%</b>", table_header_style),
-            Paragraph("<b>SALES PRICE<br/>(MRP)</b>", table_header_style),
-            Paragraph("<b>ITEM<br/>COST</b>", table_header_style),
-            Paragraph("<b>TOTAL<br/>AMOUNT</b>", table_header_style),
-            Paragraph("<b>REMAR<br/>K</b>", table_header_style),
-        ]
-    ]
-
-    # Data rows
-    for idx, item in enumerate(po.po_items.all(), 1):
-        item_name = item.item.name
-        
-        # FORMAT 2: Add client details below item name
-        if pdf_format == 'FORMAT_2' and po.client_details:
-            item_name += f"<br/><font size=6 color='#666'>({po.client_details})</font>"
-        
-        items_data.append([
-            Paragraph(str(idx), table_cell_style),
-            Paragraph(item_name, table_cell_style),
-            Paragraph(item.item.unit_of_measure or "pcs", table_cell_style),
-            Paragraph(f"{item.quantity:.2f}", table_cell_style),
-            Paragraph(f"{item.discount:.2f}", table_cell_style),
-            Paragraph(f"{item.entry_rate:.2f}", table_cell_style),
-            Paragraph(f"{item.tax_percent:.2f}", table_cell_style),
-            Paragraph(f"{getattr(item, 'sales_price', 0):.2f}", table_cell_style),
-            Paragraph(f"{getattr(item.item, 'cost', 0):.2f}", table_cell_style),
-            Paragraph(f"{item.line_total:.2f}", table_cell_style),
-            Paragraph("", table_cell_style),
-        ])
-
-    # Totals section
-    items_data.extend([
-        ['', '', '', '', '', '', '', '', Paragraph("<b>Total</b>", table_header_style), 
-         Paragraph(f"<b>{po.total_amount:.2f}</b>", table_header_style), ''],
-        ['', '', '', '', '', '', '', '', Paragraph("<b>Discount</b>", table_header_style), 
-         Paragraph("<b>0.00</b>", table_header_style), ''],
-        ['', '', '', '', '', '', '', '', Paragraph("<b>Tax</b>", table_header_style), 
-         Paragraph(f"<b>{po.tax_amount:.2f}</b>", table_header_style), ''],
-        ['', '', '', '', '', '', '', '', Paragraph("<b>Grand Total</b>", table_header_style), 
-         Paragraph(f"<b>{po.grand_total:.2f}</b>", table_header_style), ''],
-    ])
-
-    col_widths = [
-        0.3*inch, 1.4*inch, 0.45*inch, 0.4*inch, 0.5*inch,
-        0.55*inch, 0.4*inch, 0.7*inch, 0.55*inch, 0.7*inch, 0.5*inch
-    ]
-
-    items_table = Table(items_data, colWidths=col_widths, repeatRows=1)
-    items_table.setStyle(TableStyle([
-        # Header styling (PROFESSIONAL - Light gray background)
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#e8e8e8')),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#1a1a1a')),
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, 0), 7),
-        ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
-        ('VALIGN', (0, 0), (-1, 0), 'MIDDLE'),
-        
-        # Body rows
-        ('FONTNAME', (0, 1), (-1, -5), 'Helvetica'),
-        ('FONTSIZE', (0, 1), (-1, -5), 7),
-        ('ALIGN', (0, 1), (0, -1), 'CENTER'),
-        ('ALIGN', (3, 1), (-1, -1), 'RIGHT'),
-        ('ALIGN', (1, 1), (1, -1), 'LEFT'),
-        ('VALIGN', (0, 1), (-1, -1), 'MIDDLE'),
-        
-        # Grid (professional dark gray lines)
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#666666')),
-        ('LINEBELOW', (0, 0), (-1, 0), 1, colors.HexColor('#333333')),
-        ('TOPPADDING', (0, 0), (-1, -1), 3),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
-        ('LEFTPADDING', (0, 0), (-1, -1), 3),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 3),
-        
-        # Alternating row colors for better readability
-        ('ROWBACKGROUNDS', (0, 1), (-1, -5), [colors.white, colors.HexColor('#fafafa')]),
-        
-        # Totals section (enhanced)
-        ('FONTNAME', (8, -4), (9, -1), 'Helvetica-Bold'),
-        ('FONTSIZE', (8, -4), (9, -1), 7.5),
-        ('BACKGROUND', (8, -4), (9, -1), colors.HexColor('#f0f0f0')),
-        ('ALIGN', (8, -4), (9, -1), 'RIGHT'),
-        ('TEXTCOLOR', (8, -1), (9, -1), colors.HexColor('#0eb69e')),
-    ]))
-    
-    elements.append(items_table)
-    elements.append(Spacer(1, 0.25*inch))
-
-    # ==================== FOOTER SECTION ====================
-    footer_data = [
-        [Paragraph("<b>Mode of Transport</b>", normal_text_style)],
-        [''],
-        [Paragraph("<b>Enclosures</b>", normal_text_style)],
-        ['']
-    ]
-    footer_table = Table(footer_data, colWidths=[6.5*inch])
-    footer_table.setStyle(TableStyle([
-        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-        ('TOPPADDING', (0, 0), (-1, -1), 4),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
-    ]))
-    elements.append(footer_table)
-    elements.append(Spacer(1, 0.15*inch))
-
-    # Signature section
-    signature_data = [
-        [Paragraph("Yours Faithfully", normal_text_style), ''],
-        ['', ''],
-        ['', Paragraph("<b>Authorised Signatory</b>", normal_text_style)]
-    ]
-    signature_table = Table(signature_data, colWidths=[3.25*inch, 3.25*inch])
-    signature_table.setStyle(TableStyle([
-        ('ALIGN', (0, 0), (0, -1), 'LEFT'),
-        ('ALIGN', (1, 0), (1, -1), 'RIGHT'),
-        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-        ('TEXTCOLOR', (1, 2), (1, 2), colors.grey),
-    ]))
-    elements.append(signature_table)
-
-    try:
-        doc.build(elements)
-        print(f"✅ PDF Generated: {file_path}")
-        return file_path
-    except Exception as e:
-        import traceback
-        print(f"❌ ERROR during PDF generation: {e}")
-        print(traceback.format_exc())
-        return None
-    
-from django.http import FileResponse
-
-def download_po_pdf(request, pk):
-    """Download PO PDF with validation"""
-    po = get_object_or_404(PurchaseOrder, pk=pk)
-    
-    # ✅ Check for department
-    if not po.department:
-        messages.error(request, 'Purchase Order must have a department assigned to generate PDF.')
-        return redirect('purchase_order:po_detail', pk=pk)
-    
-    # ✅ Get format from query parameter or use saved format
-    pdf_format = request.GET.get('format', po.pdf_format)
-    po.pdf_format = pdf_format
-    
-    try:
-        file_path = generate_and_save_po_pdf_file(po)
-        
-        if not file_path or not os.path.exists(file_path):
-            messages.error(request, 'Failed to generate PDF.')
-            return redirect('purchase_order:po_detail', pk=pk)
-        
-        supplier_name = (po.supplier.name or "SUPPLIER").strip().replace(" ", "_").replace("/", "_")
-        filename = f"{supplier_name}_{po.po_number}.pdf"
-
-        response = FileResponse(open(file_path, 'rb'), content_type='application/pdf')
-        response['Content-Disposition'] = f'attachment; filename="{filename}"'
-        return response
-        
-    except Exception as e:
-        messages.error(request, f'Error generating PDF: {str(e)}')
-        return redirect('purchase_order:po_detail', pk=pk)
-    
-#  ==================== WHATSAPP PDF SEND ====================
 def send_whatsapp_po(request, pk):
-    """Generate PO PDF and send via WhatsApp"""
     po = get_object_or_404(PurchaseOrder, pk=pk)
     supplier = po.supplier
-    
-    # ✅ Check for department
+
     if not po.department:
-        return JsonResponse({
-            'success': False,
-            'error': 'Department not assigned to PO'
-        }, status=400)
-    
-    # Validate phone number
+        return JsonResponse({'success': False, 'error': 'Department not assigned to PO'}, status=400)
+
     phone = (supplier.mobile_no or '').strip()
     if not phone:
-        return JsonResponse({
-            'success': False,
-            'error': 'Supplier has no mobile number'
-        }, status=400)
-    
-    # Clean phone number
+        return JsonResponse({'success': False, 'error': 'Supplier has no mobile number'}, status=400)
+
     phone = ''.join(filter(str.isdigit, phone))
     if not phone.startswith('91') and len(phone) == 10:
         phone = '91' + phone
-    
+
+    pdf_format = request.GET.get('format', 'FORMAT_2')
+
+    template_map = {
+        'FORMAT_1': 'purchase_order/pdf_templates/format_1.html',
+        'FORMAT_2': 'purchase_order/pdf_templates/format_2.html',
+    }
+    template = template_map.get(pdf_format, template_map['FORMAT_2'])
+
     try:
-        # ✅ Get format from request (always use FORMAT_2 for WhatsApp)
-        pdf_format = request.GET.get('format', 'FORMAT_2')
-        po.pdf_format = pdf_format
-        
-        # 1. Generate PDF
-        file_path = generate_and_save_po_pdf_file(po)
-        
-        if not os.path.exists(file_path) or os.path.getsize(file_path) == 0:
-            return JsonResponse({'success': False, 'error': 'PDF generation failed'}, status=500)
-        
-        print(f"📄 PDF File: {file_path}")
-        print(f"📱 Sending to: {phone}")
-        
-        # 2. Upload to tmpfiles.org
-        supplier_name = (po.supplier.name or "SUPPLIER").strip().replace(" ", "_").replace("/", "_")
+        file_path = generate_pdf_from_template(po, template_name=template)
+
+        # Upload to tmpfiles.org
+        supplier_name = (po.supplier.name or "SUPPLIER").strip().replace(" ", "_")
         pdf_filename = f"{supplier_name}_{po.po_number}.pdf"
 
-        with open(file_path, 'rb') as pdf_file:
+        with open(file_path, "rb") as pdf_file:
             upload_response = requests.post(
-                'https://tmpfiles.org/api/v1/upload',
+                "https://tmpfiles.org/api/v1/upload",
                 files={'file': (pdf_filename, pdf_file, 'application/pdf')},
                 timeout=30
             )
-        
-        if upload_response.status_code != 200:
-            return JsonResponse({
-                'success': False, 
-                'error': f'PDF upload failed: {upload_response.text}'
-            }, status=500)
-        
-        upload_data = upload_response.json()
-        
-        if upload_data.get('status') != 'success':
-            return JsonResponse({
-                'success': False, 
-                'error': f'Upload failed: {upload_data}'
-            }, status=500)
-        
-        # Get direct download link
-        file_url = upload_data['data']['url']
-        pdf_url = file_url.replace('tmpfiles.org/', 'tmpfiles.org/dl/')
-        
-        print(f"📤 Uploaded to: {pdf_url}")
-        
-        # 3. Send via WhatsApp
-        base_url = "https://app.dxing.in/api/send/whatsapp"
-        secret = "7b8ae820ecb39f8d173d57b51e1fce4c023e359e"
-        account = "1761365422812b4ba287f5ee0bc9d43bbf5bbe87fb68fc4daea92d8"
-        
-        message = (
-            f"📋 *Purchase Order {po.po_number}*\n\n"
-            f"Dear {supplier.name},\n\n"
-            f"📅 PO Date: {po.po_date}\n"
-            f"💰 Total Amount: ₹{po.grand_total}\n\n"
-            f"Thank you for your business! 🙏"
-        )
 
+        upload_data = upload_response.json()
+
+        if upload_data.get("status") != "success":
+            return JsonResponse({'success': False, 'error': "Upload failed"}, status=500)
+
+        file_url = upload_data['data']['url']
+        pdf_url = file_url.replace("tmpfiles.org/", "tmpfiles.org/dl/")
+
+        # WhatsApp payload
+        base_url = "https://app.dxing.in/api/send/whatsapp"
         payload = {
-            "secret": secret,
-            "account": account,
+            "secret": "7b8ae820ecb39f8d173d57b51e1fce4c023e359e",
+            "account": "1761365422812b4ba287f5ee0bc9d43bbf5bbe87fb68fc4daea92d8",
             "recipient": str(phone),
             "type": "document",
             "document_type": "pdf",
             "document_url": pdf_url,
             "document_name": pdf_filename,
-            "message": message,
+            "message": (
+                f"📋 *Purchase Order {po.po_number}*\n\n"
+                f"Dear {supplier.name},\n\n"
+                f"📅 PO Date: {po.po_date.strftime('%d/%m/%Y')}\n"
+                f"💰 Total Amount: ₹{po.grand_total}\n\n"
+                f"Thank you for your business! 🙏"
+            ),
             "priority": 1
         }
-        
-        response = requests.get(base_url, params=payload, timeout=30)
-        
-        print(f"📱 Status: {response.status_code}")
-        print(f"📱 Response: {response.text}")
-        
-        try:
-            response_data = response.json()
-        except:
-            response_data = {'raw_text': response.text}
-        
-        api_status = str(response_data.get('status', '')).lower()
-        api_message = str(response_data.get('message', '')).lower()
 
-        if (
-            response.status_code == 200 and
-            (
-                'queued' in api_message or
-                'success' in api_message or
-                api_status in ['200', 'success', 'true']
-            )
-        ):
-            print("✅ WhatsApp message sent successfully")
-            return JsonResponse({
-                'success': True,
-                'response': response_data
-            })
-        else:
-            print("⚠️ WhatsApp send failed")
-            return JsonResponse({
-                'success': False,
-                'error': response_data.get('message', 'WhatsApp send failed'),
-                'pdf_url': pdf_url,
-                'response': response_data
-            }, status=400)
-    
+        response = requests.get(base_url, params=payload)
+        return JsonResponse({'success': True, 'response': response.json()})
+
     except Exception as e:
-        import traceback
-        print(f"❌ ERROR: {e}")
-        print(traceback.format_exc())
-        return JsonResponse({
-            'success': False,
-            'error': str(e)
-        }, status=500)
-    
-from django.views.decorators.http import require_http_methods
-import json
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+
+# ============================
+# UPDATE PDF FORMAT
+# ============================
 
 @require_http_methods(["POST"])
 def update_po_pdf_format(request, pk):
-    """Update PDF format preference for a PO"""
-    try:
-        po = get_object_or_404(PurchaseOrder, pk=pk)
-        
-        data = json.loads(request.body)
-        pdf_format = data.get('pdf_format', 'FORMAT_1')
-        
-        if pdf_format not in ['FORMAT_1', 'FORMAT_2']:
-            return JsonResponse({'success': False, 'error': 'Invalid format'}, status=400)
-        
-        po.pdf_format = pdf_format
-        po.save(update_fields=['pdf_format'])
-        
-        return JsonResponse({
-            'success': True,
-            'message': f'PDF format updated to {pdf_format}'
-        })
-    
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'error': str(e)
-        }, status=500)    
-    
+    po = get_object_or_404(PurchaseOrder, pk=pk)
+    data = json.loads(request.body)
+    pdf_format = data.get("pdf_format", "FORMAT_1")
 
+    valid_formats = ["FORMAT_1", "FORMAT_2"]
+
+    if pdf_format not in valid_formats:
+        return JsonResponse({
+            "success": False,
+            "error": f"Invalid format. Available: {valid_formats}"
+        }, status=400)
+
+    po.pdf_format = pdf_format
+    po.save(update_fields=["pdf_format"])
+
+    return JsonResponse({
+        "success": True,
+        "message": f"PDF format updated to {pdf_format}"
+    })
+
+
+
+# ============================
+# PREVIEW TEMPLATE IN BROWSER
+# ============================
+
+def preview_pdf_template(request, pk):
+    po = get_object_or_404(PurchaseOrder, pk=pk)
+
+    pdf_format = request.GET.get('format', po.pdf_format or 'FORMAT_1')
+
+    template_map = {
+        'FORMAT_1': 'purchase_order/pdf_templates/format_1.html',
+        'FORMAT_2': 'purchase_order/pdf_templates/format_2.html',
+    }
+    template = template_map.get(pdf_format, template_map['FORMAT_1'])
+
+    return render(request, template, get_po_context(po))
+
+
+
+# ============================
+# BULK ZIP DOWNLOAD
+# ============================
+
+def bulk_download_pdfs(request):
+    import zipfile
+    from io import BytesIO
+
+    try:
+        data = json.loads(request.body)
+        po_ids = data.get("po_ids", [])
+        pdf_format = data.get("format", "FORMAT_1")
+
+        if not po_ids:
+            return JsonResponse({'success': False, 'error': 'No PO IDs provided'}, status=400)
+
+        template_map = {
+            'FORMAT_1': 'purchase_order/pdf_templates/format_1.html',
+            'FORMAT_2': 'purchase_order/pdf_templates/format_2.html',
+        }
+        template = template_map.get(pdf_format, template_map['FORMAT_1'])
+
+        zip_buffer = BytesIO()
+
+        with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zipf:
+            for po_id in po_ids:
+                try:
+                    po = PurchaseOrder.objects.get(pk=po_id)
+                    file_path = generate_pdf_from_template(po, template_name=template)
+
+                    supplier_name = (po.supplier.name or "SUPPLIER").replace(" ", "_")
+                    filename = f"{supplier_name}_{po.po_number}.pdf"
+
+                    zipf.write(file_path, filename)
+                except Exception:
+                    continue
+
+        zip_buffer.seek(0)
+        return FileResponse(zip_buffer, content_type="application/zip")
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)

@@ -504,6 +504,11 @@ class Lead(models.Model):
         ('self_assigned', 'Self Assigned'),
         ('unassigned', 'Unassigned'),
     ]
+    PRIORITY_CHOICES = [
+        ('High', 'High'),
+        ('Medium', 'Medium'),
+        ('Low', 'Low'),
+    ]
 
     assignment_type = models.CharField(
         max_length=20, choices=ASSIGNMENT_CHOICES, default='unassigned'
@@ -533,8 +538,10 @@ class Lead(models.Model):
 
     # Business information
     status = models.CharField(max_length=20, default='Active')
+    priority = models.CharField( max_length=20,choices=PRIORITY_CHOICES,default='High',help_text="Lead priority level")
     refFrom = models.CharField(max_length=100, blank=True, null=True)
     business = models.CharField(max_length=100, blank=True, null=True)
+    campaign = models.CharField(max_length=255, blank=True, null=True)
     marketedBy = models.CharField(max_length=100, blank=True, null=True)
     Consultant = models.CharField(max_length=100, blank=True, null=True)
     requirement = models.CharField(max_length=100, blank=True, null=True)
@@ -658,7 +665,23 @@ class StateMaster(models.Model):
     
     def __str__(self):
         return self.name
+    
 
+from django.db import models
+
+class Reference(models.Model):
+    ref_name = models.CharField(max_length=255, verbose_name="Reference Name")
+    description = models.TextField(blank=True, null=True, verbose_name="Description")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'reference_master'
+        verbose_name = 'Reference'
+        verbose_name_plural = 'References'
+
+    def __str__(self):
+        return self.ref_name
 
     
          

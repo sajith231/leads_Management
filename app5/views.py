@@ -195,7 +195,7 @@ def jobcard_create(request):
         messages.success(request, success_message)
         return redirect('app5:jobcard_list')
 
-    # ✅ GET Request - USE PURCHASE_ORDER ITEMS
+    # âœ… GET Request - USE PURCHASE_ORDER ITEMS
     try:
         # Get items from purchase_order app
         purchase_items = PurchaseItem.objects.filter(is_active=True).order_by('name')
@@ -235,8 +235,8 @@ def jobcard_create(request):
         logger.warning("Error fetching customer data: %s", e)
 
     return render(request, 'jobcard_form.html', {
-        'items': purchase_items,  # ✅ Using purchase_order items
-        'departments': departments,  # ✅ Optional: for filtering
+        'items': purchase_items,  # âœ… Using purchase_order items
+        'departments': departments,  # âœ… Optional: for filtering
         'customer_data': customer_data,
         'suppliers': suppliers,
         'hardware_complaints': hardware_complaints,
@@ -290,9 +290,9 @@ def delete_ticket_by_number(request, ticket_no):
         return JsonResponse({
             "success": True,
             "message": (
-                f"✅ Deleted complete ticket <strong>{ticket_no}</strong> "
+                f"âœ… Deleted complete ticket <strong>{ticket_no}</strong> "
                 f"for customer <strong>{customer_name}</strong> (Phone: {customer_phone}).<br>"
-                f"📋 Deleted {deleted_count} job card(s) for items: <strong>{', '.join(set(deleted_items))}</strong>"
+                f"ðŸ“‹ Deleted {deleted_count} job card(s) for items: <strong>{', '.join(set(deleted_items))}</strong>"
             )
         })
 
@@ -440,13 +440,13 @@ def add_item(request):
             messages.error(request, "Item name cannot be empty.")
             return redirect("app5:add_item")
 
-        # ✅ Check only letters/numbers allowed
+        # âœ… Check only letters/numbers allowed
         import re
         if not re.match(r'^[A-Z0-9 ]+$', name):
             messages.error(request, "Item name must contain only CAPITAL letters and numbers.")
             return redirect("app5:add_item")
 
-        # ✅ Prevent duplicate
+        # âœ… Prevent duplicate
         if Item.objects.filter(name=name).exists():
             messages.error(request, f'Item "{name}" already exists!')
             return redirect("app5:add_item")
@@ -470,7 +470,7 @@ def edit_item(request, item_id):
             messages.error(request, "Item name must contain only CAPITAL letters and numbers.")
             return redirect("app5:edit_item", item_id=item.id)
 
-        # ✅ Check duplicates (exclude current item)
+        # âœ… Check duplicates (exclude current item)
         if Item.objects.filter(name=name).exclude(id=item.id).exists():
             messages.error(request, f'Item "{name}" already exists!')
             return redirect("app5:edit_item", item_id=item.id)
@@ -582,7 +582,7 @@ from django.shortcuts import redirect, get_object_or_404
 from .models import JobCard
 from app1.models import User
 
-# ✅ Updated WhatsApp API credentials
+# âœ… Updated WhatsApp API credentials
 WHATSAPP_API_SECRET = '7b8ae820ecb39f8d173d57b51e1fce4c023e359e'
 WHATSAPP_API_ACCOUNT = '1761365422812b4ba287f5ee0bc9d43bbf5bbe87fb68fc4daea92d8'
 
@@ -607,11 +607,11 @@ def assign_new_job(request):
             jobcard.technician = technician
             jobcard.status = status  # Update main status
             
-            # ✅ SET THE ASSIGNED DATE WHEN ASSIGNING TO TECHNICIAN
+            # âœ… SET THE ASSIGNED DATE WHEN ASSIGNING TO TECHNICIAN
             if not jobcard.assigned_date:  # Only set if not already set
                 jobcard.assigned_date = timezone.now()
             
-            # ✅ UPDATE INDIVIDUAL ITEM STATUSES TO 'sent_technician'
+            # âœ… UPDATE INDIVIDUAL ITEM STATUSES TO 'sent_technician'
             if jobcard.items_data:
                 for item in jobcard.items_data:
                     item['status'] = 'sent_technician'  # Update each item's status
@@ -682,12 +682,12 @@ def jobcard_assign_edit(request, pk):
         # Check if technician is being assigned/changed
         if technician and technician != jobcard.technician:
             jobcard.technician = technician
-            # ✅ SET/UPDATE THE ASSIGNED DATE WHEN TECHNICIAN CHANGES
+            # âœ… SET/UPDATE THE ASSIGNED DATE WHEN TECHNICIAN CHANGES
             jobcard.assigned_date = timezone.now()
         
         jobcard.status = status
         
-        # ✅ UPDATE INDIVIDUAL ITEM STATUSES
+        # âœ… UPDATE INDIVIDUAL ITEM STATUSES
         if jobcard.items_data:
             for item in jobcard.items_data:
                 item['status'] = status  # Update each item's status
@@ -983,9 +983,9 @@ def update_standby_issued(request, pk):
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.http import JsonResponse
-from .models import JobCard, StandbyIssuance        # ✅ from app5
+from .models import JobCard, StandbyIssuance        # âœ… from app5
 from app2.models import StandbyItem, StandbyImage
- # ✅ from app2
+ # âœ… from app2
 from django.utils import timezone
 from django.db import models
 from django.db.models import Q
@@ -996,9 +996,9 @@ from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
 import json
-from .models import JobCard, JobCardImage, Item, StandbyIssuance          # ✅ only from app5
+from .models import JobCard, JobCardImage, Item, StandbyIssuance          # âœ… only from app5
 from app2.models import StandbyItem, StandbyImage
- # ✅ correct app for StandbyItem
+ # âœ… correct app for StandbyItem
 from app1.models import User
 
 def standby_issue_form(request, jobcard_id):
@@ -1018,7 +1018,7 @@ def standby_issue_form(request, jobcard_id):
         messages.error(request, "You are not assigned to this job card.")
         return redirect('app5:job_technician_accept')
     
-    # ✅ FIXED: Get only "in_stock" standby items with only ORIGINAL images
+    # âœ… FIXED: Get only "in_stock" standby items with only ORIGINAL images
     available_items = StandbyItem.objects.filter(
         status='in_stock', 
         stock__gt=0
@@ -1073,7 +1073,7 @@ def standby_issue_item(request, jobcard_id):
             issued_date=timezone.now()
         )
         
-        # ✅ UPDATE STANDBY ITEM WITH CUSTOMER DETAILS
+        # âœ… UPDATE STANDBY ITEM WITH CUSTOMER DETAILS
         standby_item.stock -= 1
         standby_item.status = 'with_customer'
         
@@ -1155,7 +1155,7 @@ def view_standby_issuance_details(request, jobcard_id):
     # Process each issuance to include return details
     processed_issuances = []
     for issuance in standby_issuances:
-        # ✅ Get return condition images - FIXED query
+        # âœ… Get return condition images - FIXED query
         return_images = []
         
         if issuance.status == 'returned':
@@ -1386,7 +1386,7 @@ def standby_issuance_return(request, jobcard_id):
         return redirect('item_list')
     
     if request.method == 'POST':
-        # ✅ Get form data
+        # âœ… Get form data
         return_date_str = request.POST.get('return_date')
         return_notes = request.POST.get('return_notes', '').strip()
         stock = request.POST.get('stock', item.stock)
@@ -1405,7 +1405,7 @@ def standby_issuance_return(request, jobcard_id):
         logger.info(f"Return date: {return_date}, Notes: {return_notes[:50] if return_notes else 'None'}")
         
         try:
-            # ✅ Create StandbyReturn record FIRST
+            # âœ… Create StandbyReturn record FIRST
             standby_return = StandbyReturn.objects.create(
                 item=item,
                 return_date=return_date,
@@ -1421,7 +1421,7 @@ def standby_issuance_return(request, jobcard_id):
             
             logger.info(f"Created StandbyReturn record: {standby_return.id}")
             
-            # ✅ Save return images linked to the StandbyReturn record
+            # âœ… Save return images linked to the StandbyReturn record
             images_saved = 0
             for image in return_images:
                 try:
@@ -1437,7 +1437,7 @@ def standby_issuance_return(request, jobcard_id):
             
             logger.info(f"Saved {images_saved} return condition images linked to return record {standby_return.id}")
             
-            # ✅ Update item status and details AFTER creating return record
+            # âœ… Update item status and details AFTER creating return record
             item.status = 'in_stock'
             item.stock = stock
             
@@ -1456,7 +1456,7 @@ def standby_issuance_return(request, jobcard_id):
             item.save()
             logger.info(f"Item {item.id} updated - status: {item.status}, stock: {item.stock}")
             
-            # ✅ Try to find and update related issuance (if exists)
+            # âœ… Try to find and update related issuance (if exists)
             try:
                 from .models import StandbyIssuance  # Import if exists in your models
                 related_issuance = StandbyIssuance.objects.filter(
@@ -1569,7 +1569,7 @@ def warranty_item_management(request):
         # Fallback to app5 suppliers
         from .models import Supplier
         
-        # ✅ CHECK if is_active field exists
+        # âœ… CHECK if is_active field exists
         field_names = [f.name for f in Supplier._meta.get_fields()]
         
         if 'is_active' in field_names:
@@ -1697,7 +1697,7 @@ def api_ticket_details(request):
         # Get items data from the jobcard's items_data property
         items_data = jobcard.items_data if hasattr(jobcard, 'items_data') else []
         
-        # ✅ FILTER: Only include items with warranty='yes' AND not sent to supplier
+        # âœ… FILTER: Only include items with warranty='yes' AND not sent to supplier
         filtered_items = []
         for item in items_data:
             warranty_status = item.get('warranty_status')
@@ -1716,7 +1716,7 @@ def api_ticket_details(request):
             'address': jobcard.address,
             'status': getattr(jobcard, 'status', 'pending'),
             'created_at': jobcard.created_at.isoformat(),
-            'items_data': filtered_items,  # ✅ Use filtered items
+            'items_data': filtered_items,  # âœ… Use filtered items
         }
         
         return JsonResponse({
@@ -1747,7 +1747,7 @@ def api_ticket_details(request):
 def process_warranty_tickets(request):
     """
     Process multiple warranty items submission
-    ✅ USES ONLY purchase_order.Supplier
+    âœ… USES ONLY purchase_order.Supplier
     """
     try:
         supplier_id = request.POST.get('supplier')
@@ -1777,7 +1777,7 @@ def process_warranty_tickets(request):
             messages.error(request, error_msg)
             return redirect('app5:warranty_item')
         
-        # ✅ GET SUPPLIER FROM PURCHASE_ORDER MODEL
+        # âœ… GET SUPPLIER FROM PURCHASE_ORDER MODEL
         supplier = None
         try:
             from purchase_order.models import Supplier as POSupplier
@@ -1793,13 +1793,13 @@ def process_warranty_tickets(request):
                 supplier = POSupplier.objects.filter(id=supplier_id).first()
             
             if supplier:
-                logger.info(f"✅ Found supplier: ID={supplier.id}, Name={supplier.name}, Active={supplier.is_active}")
+                logger.info(f"âœ… Found supplier: ID={supplier.id}, Name={supplier.name}, Active={supplier.is_active}")
             else:
                 # List all available suppliers for debugging
                 all_suppliers = POSupplier.objects.all().values('id', 'name', 'is_active')
-                logger.error(f"❌ Supplier {supplier_id} not found. Available suppliers: {list(all_suppliers)}")
+                logger.error(f"âŒ Supplier {supplier_id} not found. Available suppliers: {list(all_suppliers)}")
                 
-                # ✅ Fixed nested f-string issue here
+                # âœ… Fixed nested f-string issue here
                 supplier_list = ", ".join([f"ID {s['id']}: {s['name']}" for s in all_suppliers[:5]])
                 error_msg = f"Supplier with ID {supplier_id} not found. Available suppliers: {supplier_list}"
                 
@@ -1894,7 +1894,7 @@ def process_warranty_tickets(request):
                 jobcard.items_data[item_index]['warranty_ticket_no'] = new_ticket_no
                 jobcard.items_data[item_index]['warranty_processed'] = True
             
-            # ✅ Create warranty ticket
+            # âœ… Create warranty ticket
             try:
                 warranty_ticket = WarrantyTicket.objects.create(
                     ticket_no=new_ticket_no,
@@ -1906,7 +1906,7 @@ def process_warranty_tickets(request):
                     issue_description=f"Warranty claim for {selected_item}",
                     submitted_at=timezone.now()
                 )
-                logger.info(f"✅ Created warranty ticket: {new_ticket_no}")
+                logger.info(f"âœ… Created warranty ticket: {new_ticket_no}")
             except Exception as e:
                 logger.error(f"Error creating warranty ticket: {e}", exc_info=True)
                 error_msg = f"Error creating warranty ticket for {selected_item}: {str(e)}"
@@ -1950,9 +1950,9 @@ def process_warranty_tickets(request):
         # WhatsApp notification
         if created_tickets:
             try:
-                items_list = "\n".join([f"• {item['name']}" for item in processed_items])
+                items_list = "\n".join([f"â€¢ {item['name']}" for item in processed_items])
                 message_text = (
-                    f"🔧 *Warranty Items Sent to Supplier*\n\n"
+                    f"ðŸ”§ *Warranty Items Sent to Supplier*\n\n"
                     f"*Job Card:* {jobcard.ticket_no}\n"
                     f"*Supplier:* {supplier.name}\n"
                     f"*Customer:* {jobcard.customer}\n"
@@ -1963,10 +1963,10 @@ def process_warranty_tickets(request):
                 
                 if duplicate_items:
                     duplicate_list = "\n".join([
-                        f"• {item['item']} (Existing: {', '.join(item['existing_tickets'])})" 
+                        f"â€¢ {item['item']} (Existing: {', '.join(item['existing_tickets'])})" 
                         for item in duplicate_items
                     ])
-                    message_text += f"\n\n⚠️ *Duplicates Skipped:*\n{duplicate_list}"
+                    message_text += f"\n\nâš ï¸ *Duplicates Skipped:*\n{duplicate_list}"
                 
                 whatsapp_api_base = "https://app.dxing.in/api/send/whatsapp"
                 params = {
@@ -1994,7 +1994,7 @@ def process_warranty_tickets(request):
         if processed_items:
             messages.success(
                 request, 
-                f'✅ Created {len(created_tickets)} warranty ticket(s) and sent to {supplier.name}'
+                f'âœ… Created {len(created_tickets)} warranty ticket(s) and sent to {supplier.name}'
             )
         
         return redirect('app5:warranty_ticket_list')
@@ -2036,7 +2036,7 @@ def warranty_ticket_list(request):
     rejected_count = warranty_tickets.filter(status='rejected').count()
     completed_count = warranty_tickets.filter(status='completed').count()
     
-    # ✅ FIXED: Get suppliers with proper error handling
+    # âœ… FIXED: Get suppliers with proper error handling
     suppliers = []
     supplier_source = 'none'
     
@@ -2118,7 +2118,7 @@ def update_warranty_item_status(request, ticket_id):
         old_status = warranty_ticket.status
         warranty_ticket.status = new_status
         
-        # ✅ UPDATE WARRANTY STATUS IN JOBCARD when status indicates return
+        # âœ… UPDATE WARRANTY STATUS IN JOBCARD when status indicates return
         if new_status in ['completed', 'approved', 'returned']:
             warranty_ticket.resolved_at = timezone.now()
             
@@ -2128,7 +2128,7 @@ def update_warranty_item_status(request, ticket_id):
             if hasattr(jobcard, 'items_data') and jobcard.items_data:
                 for idx, item in enumerate(jobcard.items_data):
                     if item.get('item') == item_name:
-                        # ✅ CHANGE STATUS FROM "sent_to_supplier" TO "returned_from_supplier"
+                        # âœ… CHANGE STATUS FROM "sent_to_supplier" TO "returned_from_supplier"
                         jobcard.items_data[idx]['warranty_status'] = 'returned_from_supplier'
                         jobcard.items_data[idx]['warranty_return_date'] = timezone.now().isoformat()
                         jobcard.items_data[idx]['warranty_resolution'] = resolution_notes
@@ -2186,7 +2186,7 @@ def api_warranty_details(request):
                 'error': 'No warranty ticket found for this item'
             })
         
-        # ✅ NEW: Get return details if exists
+        # âœ… NEW: Get return details if exists
         return_details = None
         if hasattr(warranty_ticket, 'return_item'):
             return_item = warranty_ticket.return_item
@@ -2220,7 +2220,7 @@ def api_warranty_details(request):
             'resolved_date': warranty_ticket.resolved_at.strftime('%d %b %Y') if warranty_ticket.resolved_at else None,
             'issue_description': warranty_ticket.issue_description or '',
             'resolution_notes': warranty_ticket.resolution_notes or '',
-            'return_details': return_details  # ✅ Add return details
+            'return_details': return_details  # âœ… Add return details
         }
         
         return JsonResponse({
@@ -2313,14 +2313,14 @@ def return_warranty_item(request, ticket_id):
                 messages.error(request, "Return date is required.")
                 return render(request, 'return_warranty_item.html', {'ticket': ticket})
             
-            # ✅ UPDATE WARRANTY STATUS IN JOBCARD ITEMS_DATA
+            # âœ… UPDATE WARRANTY STATUS IN JOBCARD ITEMS_DATA
             jobcard = ticket.jobcard
             item_name = ticket.selected_item
             
             if hasattr(jobcard, 'items_data') and jobcard.items_data:
                 for idx, item in enumerate(jobcard.items_data):
                     if item.get('item') == item_name:
-                        # ✅ CHANGE STATUS FROM "sent_to_supplier" TO "returned_from_supplier"
+                        # âœ… CHANGE STATUS FROM "sent_to_supplier" TO "returned_from_supplier"
                         jobcard.items_data[idx]['warranty_status'] = 'returned_from_supplier'
                         jobcard.items_data[idx]['warranty_return_date'] = timezone.now().isoformat()
                         jobcard.items_data[idx]['warranty_resolution'] = notes
@@ -2346,7 +2346,7 @@ def return_warranty_item(request, ticket_id):
                         messages.warning(request, f"Image {image.name} is too large. Maximum size is 5MB.")
                         continue
                     
-                    # ✅ FIXED: Use the correct model for return images
+                    # âœ… FIXED: Use the correct model for return images
                     # If you have a ReturnImage model, use it. Otherwise, we need to create one.
                     try:
                         # Try to import ReturnImage if it exists
@@ -2419,7 +2419,7 @@ def return_item_delete(request, return_id):
 def service_billing_view(request):
     """
     Display service billing form and generate invoices
-    ✅ FIXED: Amount determines service type (0 = Free, >0 = Payable)
+    âœ… FIXED: Amount determines service type (0 = Free, >0 = Payable)
     """
     # Get current user
     current_user_name = "Unknown"
@@ -2476,7 +2476,7 @@ def service_billing_view(request):
                 messages.warning(request, f"An invoice already exists for this job card: INV-{existing_invoice.ticket_no}")
                 return redirect('app5:service_billing_view')
             
-            # ✅ FIXED: Amount determines service type
+            # âœ… FIXED: Amount determines service type
             subtotal = 0.00
             services_data = []
             free_items_count = 0
@@ -2494,18 +2494,18 @@ def service_billing_view(request):
                     logger.error(f"Error parsing charge for item {i}: {e}")
                     charge = 0.00
                 
-                # ✅ DETERMINE SERVICE TYPE BASED ON AMOUNT
+                # âœ… DETERMINE SERVICE TYPE BASED ON AMOUNT
                 if charge == 0.00:
-                    # Amount is 0 → Free Service
+                    # Amount is 0 â†’ Free Service
                     service_status = 'Free'
                     free_items_count += 1
-                    logger.info(f"Item {i}: {item_names[i]} - Amount: ₹0.00 → FREE SERVICE")
+                    logger.info(f"Item {i}: {item_names[i]} - Amount: â‚¹0.00 â†’ FREE SERVICE")
                 else:
-                    # Amount > 0 → Payable Service
+                    # Amount > 0 â†’ Payable Service
                     service_status = 'Payment'
                     subtotal += charge
                     payable_items_count += 1
-                    logger.info(f"Item {i}: {item_names[i]} - Amount: ₹{charge} → PAYABLE - Running Subtotal: ₹{subtotal}")
+                    logger.info(f"Item {i}: {item_names[i]} - Amount: â‚¹{charge} â†’ PAYABLE - Running Subtotal: â‚¹{subtotal}")
                 
                 # Safe access to other fields
                 serial_no = item_serials[i] if i < len(item_serials) else ''
@@ -2526,9 +2526,9 @@ def service_billing_view(request):
             logger.info("=== FINAL CALCULATIONS ===")
             logger.info(f"Free Items (Amount = 0): {free_items_count}")
             logger.info(f"Payable Items (Amount > 0): {payable_items_count}")
-            logger.info(f"Subtotal: ₹{subtotal}")
-            logger.info(f"Tax (10%): ₹{tax}")
-            logger.info(f"Total: ₹{total}")
+            logger.info(f"Subtotal: â‚¹{subtotal}")
+            logger.info(f"Tax (10%): â‚¹{tax}")
+            logger.info(f"Total: â‚¹{total}")
             logger.info("=== BILLING DEBUG END ===")
             
             # Create ServiceBilling record
@@ -2593,11 +2593,11 @@ def service_billing_view(request):
             # Send WhatsApp notification
             try:
                 items_list = "\n".join([
-                    f"• {service[0]}: ₹{service[3]:.2f} ({'FREE' if service[3] == 0 else 'PAID'})" 
+                    f"â€¢ {service[0]}: â‚¹{service[3]:.2f} ({'FREE' if service[3] == 0 else 'PAID'})" 
                     for service in billing_data['services']
                 ])
                 message_text = (
-                    f"📋 *Service Invoice Generated*\n\n"
+                    f"ðŸ“‹ *Service Invoice Generated*\n\n"
                     f"*Invoice No:* {billing_data['invoice_no']}\n"
                     f"*Date:* {billing_data['date']}\n"
                     f"*Customer:* {billing_data['customer_name']}\n"
@@ -2606,9 +2606,9 @@ def service_billing_view(request):
                     f"*Services:*\n{items_list}\n\n"
                     f"*Free Services:* {free_items_count}\n"
                     f"*Payable Services:* {payable_items_count}\n"
-                    f"*Subtotal:* ₹{billing_data['subtotal']:.2f}\n"
-                    f"*Tax (10%):* ₹{billing_data['tax']:.2f}\n"
-                    f"*Total Amount Due:* ₹{billing_data['total']:.2f}\n\n"
+                    f"*Subtotal:* â‚¹{billing_data['subtotal']:.2f}\n"
+                    f"*Tax (10%):* â‚¹{billing_data['tax']:.2f}\n"
+                    f"*Total Amount Due:* â‚¹{billing_data['total']:.2f}\n\n"
                     f"*Payment Status:* {billing_data['payment_status'].title()}"
                 )
                 
@@ -2625,13 +2625,13 @@ def service_billing_view(request):
             except Exception as e:
                 logger.debug(f"WhatsApp notification failed: {e}")
             
-            success_message = f"✅ Invoice created successfully for ticket {ticket_no}!"
+            success_message = f"âœ… Invoice created successfully for ticket {ticket_no}!"
             if free_items_count > 0 and payable_items_count > 0:
-                success_message += f" ({free_items_count} free, {payable_items_count} payable - Total: ₹{total})"
+                success_message += f" ({free_items_count} free, {payable_items_count} payable - Total: â‚¹{total})"
             elif free_items_count > 0 and payable_items_count == 0:
                 success_message += f" (All {free_items_count} services are FREE)"
             else:
-                success_message += f" (Total: ₹{total})"
+                success_message += f" (Total: â‚¹{total})"
             
             messages.success(request, success_message)
             
@@ -2742,7 +2742,7 @@ def service_billing_list(request):
                 
                 # Get service items for this invoice
                 service_items = ServiceItem.objects.filter(billing=invoice)
-                jobcard.service_items_list = [f"{item.item_name} (₹{item.charge})" for item in service_items]
+                jobcard.service_items_list = [f"{item.item_name} (â‚¹{item.charge})" for item in service_items]
                 jobcard.invoice_total = invoice.total
             else:
                 jobcard.has_invoice = False
@@ -2785,7 +2785,7 @@ def service_billing_list(request):
 def service_billing_edit(request, ticket_no):
     """
     Edit an existing service invoice
-    ✅ FIXED: Amount determines service type (0 = Free, >0 = Payable)
+    âœ… FIXED: Amount determines service type (0 = Free, >0 = Payable)
     """
     # Get current user
     current_user_name = "Unknown"
@@ -2823,7 +2823,7 @@ def service_billing_edit(request, ticket_no):
             # Delete existing items
             service_billing.service_items.all().delete()
             
-            # ✅ FIXED: Amount determines service type
+            # âœ… FIXED: Amount determines service type
             subtotal = 0.00
             services_data = []
             free_items_count = 0
@@ -2841,18 +2841,18 @@ def service_billing_edit(request, ticket_no):
                     logger.error(f"Error parsing charge for item {i}: {e}")
                     charge = 0.00
                 
-                # ✅ DETERMINE SERVICE TYPE BASED ON AMOUNT
+                # âœ… DETERMINE SERVICE TYPE BASED ON AMOUNT
                 if charge == 0.00:
-                    # Amount is 0 → Free Service
+                    # Amount is 0 â†’ Free Service
                     service_status = 'Free'
                     free_items_count += 1
-                    logger.info(f"Item {i}: {item_names[i]} - Amount: ₹0.00 → FREE SERVICE")
+                    logger.info(f"Item {i}: {item_names[i]} - Amount: â‚¹0.00 â†’ FREE SERVICE")
                 else:
-                    # Amount > 0 → Payable Service
+                    # Amount > 0 â†’ Payable Service
                     service_status = 'Payment'
                     subtotal += charge
                     payable_items_count += 1
-                    logger.info(f"Item {i}: {item_names[i]} - Amount: ₹{charge} → PAYABLE - Running Subtotal: ₹{subtotal}")
+                    logger.info(f"Item {i}: {item_names[i]} - Amount: â‚¹{charge} â†’ PAYABLE - Running Subtotal: â‚¹{subtotal}")
                 
                 # Safe access to other fields
                 serial_no = item_serials[i] if i < len(item_serials) else ''
@@ -2883,9 +2883,9 @@ def service_billing_edit(request, ticket_no):
             logger.info("=== FINAL CALCULATIONS ===")
             logger.info(f"Free Items (Amount = 0): {free_items_count}")
             logger.info(f"Payable Items (Amount > 0): {payable_items_count}")
-            logger.info(f"Subtotal: ₹{subtotal}")
-            logger.info(f"Tax (10%): ₹{tax}")
-            logger.info(f"Total: ₹{total}")
+            logger.info(f"Subtotal: â‚¹{subtotal}")
+            logger.info(f"Tax (10%): â‚¹{tax}")
+            logger.info(f"Total: â‚¹{total}")
             logger.info("=== EDIT BILLING DEBUG END ===")
             
             # Update billing totals
@@ -2894,13 +2894,13 @@ def service_billing_edit(request, ticket_no):
             service_billing.total = total
             service_billing.save()
             
-            success_message = f"✅ Invoice updated successfully for ticket {ticket_no}!"
+            success_message = f"âœ… Invoice updated successfully for ticket {ticket_no}!"
             if free_items_count > 0 and payable_items_count > 0:
-                success_message += f" ({free_items_count} free, {payable_items_count} payable - Total: ₹{total})"
+                success_message += f" ({free_items_count} free, {payable_items_count} payable - Total: â‚¹{total})"
             elif free_items_count > 0 and payable_items_count == 0:
                 success_message += f" (All {free_items_count} services are FREE)"
             else:
-                success_message += f" (Total: ₹{total})"
+                success_message += f" (Total: â‚¹{total})"
             
             messages.success(request, success_message)
             return redirect('app5:service_billing_list')
@@ -3028,7 +3028,7 @@ def delete_service_invoice(request, ticket_no):
         
         return JsonResponse({
             "success": True,
-            "message": f"✅ Invoice for ticket {ticket_no} (Customer: {customer_name}, Phone: {customer_phone}) has been deleted successfully!"
+            "message": f"âœ… Invoice for ticket {ticket_no} (Customer: {customer_name}, Phone: {customer_phone}) has been deleted successfully!"
         })
         
     except JobCard.DoesNotExist:
@@ -3224,7 +3224,6 @@ def user_display_name(u):
 # Lead form view (create)
 from django.contrib.auth.decorators import login_required
 
-@login_required
 def lead_form_view(request):
     """
     GET: show form
@@ -3257,14 +3256,52 @@ def lead_form_view(request):
         except Exception:
             Lead = None
 
-    # ✅ ADDED: Get active leads for directory
+    # âœ… UPDATED: Get active leads for directory WITH PRIORITY
     active_leads_data = []
     if Lead:
         try:
-            active_leads_data = Lead.objects.filter(status__iexact='Active').order_by('-created_at')[:25]
-            logger.info(f"Found {len(active_leads_data)} active leads for directory")
+            # Fetch active leads with all necessary fields including priority
+            active_leads_qs = Lead.objects.filter(status__iexact='Active').order_by('-created_at')[:50]
+            
+            # Process each lead to ensure all fields are properly formatted
+            for lead in active_leads_qs:
+                lead_dict = {
+                    'id': lead.id,
+                    'ownerName': lead.ownerName,
+                    'phoneNo': lead.phoneNo,
+                    'email': lead.email if lead.email else '',
+                    'ticket_number': getattr(lead, 'ticket_number', f'TKT-{lead.id}'),
+                    'status': lead.status,
+                    'priority': getattr(lead, 'priority', 'Medium'),  # âœ… Include priority with default
+                    'customerType': lead.customerType,
+                    'name': lead.name if lead.name else '',
+                    'address': lead.address if lead.address else '',
+                    'place': lead.place if lead.place else '',
+                    'District': lead.District if lead.District else '',
+                    'State': lead.State if lead.State else '',
+                    'pinCode': lead.pinCode if lead.pinCode else '',
+                    'firstName': lead.firstName if lead.firstName else '',
+                    'lastName': getattr(lead, 'lastName', '') if hasattr(lead, 'lastName') else '',
+                    'individualAddress': lead.individualAddress if lead.individualAddress else '',
+                    'individualPlace': lead.individualPlace if lead.individualPlace else '',
+                    'individualDistrict': lead.individualDistrict if lead.individualDistrict else '',
+                    'individualState': lead.individualState if lead.individualState else '',
+                    'individualPinCode': lead.individualPinCode if lead.individualPinCode else '',
+                    'refFrom': lead.refFrom if lead.refFrom else '',
+                    'business': lead.business if lead.business else '',
+                    'campaign': getattr(lead, 'campaign', ''),
+                    'marketedBy': lead.marketedBy if lead.marketedBy else '',
+                    'Consultant': lead.Consultant if lead.Consultant else '',
+                    'requirement': lead.requirement if lead.requirement else '',
+                    'details': lead.details if lead.details else '',
+                    'date': lead.date.strftime('%Y-%m-%d') if lead.date else '',
+                    'created_at': lead.created_at if hasattr(lead, 'created_at') else None,
+                }
+                active_leads_data.append(lead_dict)
+            
+            logger.info(f"Found {len(active_leads_data)} active leads for directory with priority data")
         except Exception as e:
-            logger.debug(f"Could not fetch active leads: {e}")
+            logger.error(f"Could not fetch active leads: {e}", exc_info=True)
             active_leads_data = []
 
     # -------------------------
@@ -3272,59 +3309,89 @@ def lead_form_view(request):
     # Build a list of dicts: {'id', 'name', 'department'}
     # -------------------------
     active_users = []
+    user_field_names = []
+    
     try:
-        active_users = User.objects.filter(status='active').values('id', 'name', 'department', 'designation').order_by('name')
-    except Exception:
-        user_field_names = []
-
-    try:
-        # choose filter predicate
+        # Get field names from User model
+        from app1.models import User
+        user_field_names = [f.name for f in User._meta.get_fields()]
+        
+        # Try to get active users
         if 'status' in user_field_names:
-            users_qs = UserModel.objects.filter(status__iexact='active').order_by('name')
+            active_users = list(User.objects.filter(status='active').values('id', 'name', 'department', 'designation').order_by('name'))
         elif 'is_active' in user_field_names:
-            users_qs = UserModel.objects.filter(is_active=True).order_by('first_name', 'username')
-        else:
-            users_qs = UserModel.objects.all().order_by('id')
-
-        # Build portable display name & department/role
-        for u in users_qs:
-            # determine display name
-            display_name = None
-            # common attributes in different user models
-            for attr in ('name', 'full_name', 'get_full_name', 'first_name', 'username', 'email'):
-                try:
-                    if attr == 'get_full_name' and hasattr(u, 'get_full_name'):
-                        val = u.get_full_name()
-                    else:
-                        val = getattr(u, attr, None)
-                    if val:
-                        display_name = val
-                        break
-                except Exception:
-                    continue
-            if not display_name:
-                display_name = str(u)
-
-            # determine department/role/designation
-            role = ''
-            for rattr in ('department', 'dept', 'designation', 'role', 'position'):
-                try:
-                    val = getattr(u, rattr, None)
-                    if val:
-                        role = str(val)
-                        break
-                except Exception:
-                    continue
-
-            active_users.append({
-                'id': getattr(u, 'id', None),
-                'name': display_name,
-                'department': role  # template / JS expects .department
-            })
-
+            users_qs = User.objects.filter(is_active=True).order_by('name')
+            for u in users_qs:
+                active_users.append({
+                    'id': u.id,
+                    'name': getattr(u, 'name', str(u)),
+                    'department': getattr(u, 'department', ''),
+                    'designation': getattr(u, 'designation', '')
+                })
     except Exception as e:
-        logger.warning(f"Could not build active_users list: {e}")
-        active_users = []
+        logger.warning(f"Could not fetch users from app1.User: {e}")
+
+    # Fallback: try with UserModel if active_users is still empty
+    if not active_users:
+        try:
+            # choose filter predicate
+            if 'status' in user_field_names:
+                users_qs = UserModel.objects.filter(status__iexact='active').order_by('name')
+            elif 'is_active' in user_field_names:
+                users_qs = UserModel.objects.filter(is_active=True).order_by('first_name', 'username')
+            else:
+                users_qs = UserModel.objects.all().order_by('id')
+
+            # Build portable display name & department/role
+            for u in users_qs:
+                # determine display name
+                display_name = None
+                # common attributes in different user models
+                for attr in ('name', 'full_name', 'get_full_name', 'first_name', 'username', 'email'):
+                    try:
+                        if attr == 'get_full_name' and hasattr(u, 'get_full_name'):
+                            val = u.get_full_name()
+                        else:
+                            val = getattr(u, attr, None)
+                        if val:
+                            display_name = val
+                            break
+                    except Exception:
+                        continue
+                if not display_name:
+                    display_name = str(u)
+
+                # determine department/role/designation
+                role = ''
+                designation = ''
+                for rattr in ('department', 'dept'):
+                    try:
+                        val = getattr(u, rattr, None)
+                        if val:
+                            role = str(val)
+                            break
+                    except Exception:
+                        continue
+                
+                for dattr in ('designation', 'role', 'position'):
+                    try:
+                        val = getattr(u, dattr, None)
+                        if val:
+                            designation = str(val)
+                            break
+                    except Exception:
+                        continue
+
+                active_users.append({
+                    'id': getattr(u, 'id', None),
+                    'name': display_name,
+                    'department': role,
+                    'designation': designation
+                })
+
+        except Exception as e:
+            logger.warning(f"Could not build active_users list: {e}")
+            active_users = []
 
     # Prepare existing firms for dropdown (used on GET and on re-render after failed POST)
     existing_firms = []
@@ -3344,7 +3411,7 @@ def lead_form_view(request):
         # Customer type toggle logic kept as before (Business vs Individual)
         customer_type = "Business" if data.get("customerTypeToggle") else "Individual"
 
-        # ✅ FIXED: Properly resolve marketedBy to user name
+        # âœ… FIXED: Properly resolve marketedBy to user name
         marketed_by_val = data.get("marketedBy")  # This gets the user ID from form or free text
         marketed_by_name = None
 
@@ -3364,10 +3431,10 @@ def lead_form_view(request):
                 logger.warning(f"Error resolving marketedBy user: {e}")
                 marketed_by_name = marketed_by_val
 
-        # ✅ Get consultant name (direct text input)
+        # âœ… Get consultant name (direct text input)
         consultant_name = data.get("Consultant", "").strip()
 
-        # ✅ FIXED: Get branch/requirement - resolve department name if ID provided
+        # âœ… FIXED: Get branch/requirement - resolve department name if ID provided
         requirement_val = data.get("requirement", "").strip()
         branch_name = None
 
@@ -3394,11 +3461,6 @@ def lead_form_view(request):
 
         # -----------------------
         # Firm name handling
-        # The form may submit:
-        # - 'existing_name' (select from dropdown) OR
-        # - 'name' (free-text input) OR
-        # - 'name_hidden' (if JS copied value here)
-        # Prefer existing_name if present and non-empty; otherwise use name/name_hidden.
         # -----------------------
         posted_existing_name = (data.get('existing_name') or '').strip()
         posted_name_text = (data.get('name') or data.get('name_hidden') or '').strip()
@@ -3408,13 +3470,15 @@ def lead_form_view(request):
         else:
             final_name = posted_name_text
 
+        # âœ… Get campaign details
+        campaign_details = data.get("campaign", "").strip()
+
         # Build the lead data
         lead_kwargs = {
             "ownerName": data.get("ownerName"),
             "phoneNo": data.get("phoneNo"),
             "email": data.get("email"),
             "customerType": customer_type,
-            # Save 'name' only when Business (as in your original logic); otherwise None
             "name": final_name if customer_type == "Business" else None,
             "address": data.get("address") if customer_type == "Business" else None,
             "place": data.get("place") if customer_type == "Business" else None,
@@ -3430,17 +3494,18 @@ def lead_form_view(request):
             "individualPinCode": data.get("individualPinCode") if customer_type == "Individual" else None,
             "date": data.get("date") or None,
             "status": data.get("status") or None,
+            "priority": data.get("priority") or "Medium",  # âœ… Add priority with default
             "refFrom": data.get("refFrom"),
             "business": data.get("business"),
+            "campaign": campaign_details,  # âœ… Add campaign
             "details": data.get("details"),
-            # ✅ SAVE AS TEXT/NAME (not FK)
-            "marketedBy": marketed_by_name,  # Save the user's name, not ID
-            "Consultant": consultant_name,    # Save consultant name
-            "requirement": branch_name,       # Save department/branch name
+            "marketedBy": marketed_by_name,
+            "Consultant": consultant_name,
+            "requirement": branch_name,
             "assignment_type": assignment_type,
         }
 
-        # ✅ Handle assignment if self-assigned
+        # âœ… Handle assignment if self-assigned
         if assignment_type == "self_assigned":
             try:
                 current_user = None
@@ -3453,7 +3518,6 @@ def lead_form_view(request):
                     current_user = request.user
 
                 if current_user:
-                    # Store assigned user name
                     assigned_name = getattr(current_user, 'name', None) or \
                                   getattr(current_user, 'username', None) or \
                                   str(current_user)
@@ -3461,11 +3525,8 @@ def lead_form_view(request):
                     lead_kwargs["assigned_to_name"] = assigned_name
                     lead_kwargs["assigned_date"] = timezone.now().date()
                     lead_kwargs["assigned_time"] = timezone.now().time()
-                    
-                    # ✅ ADDED: Set assigned_by_name for self-assigned leads (same user)
                     lead_kwargs["assigned_by_name"] = assigned_name
 
-                    # If your model has FK fields, set them too
                     if Lead and hasattr(Lead, 'assigned_to') and current_user:
                         lead_kwargs["assigned_to"] = current_user
                         
@@ -3475,15 +3536,13 @@ def lead_form_view(request):
             except Exception as e:
                 logger.warning(f"Error setting self-assignment: {e}")
 
-        # Save the lead (defensive: check Lead model exists and handle field mismatch)
+        # Save the lead
         if not Lead:
             messages.error(request, "Lead model not available; cannot save.")
             return redirect("app5:lead")
 
         try:
             with transaction.atomic():
-                # If your Lead model uses different field names than provided above,
-                # protect against unexpected kwargs by filtering lead_kwargs to model fields.
                 model_field_names = {f.name for f in Lead._meta.get_fields()}
 
                 safe_kwargs = {}
@@ -3502,7 +3561,6 @@ def lead_form_view(request):
                             safe_kwargs['assigned_to_name'] = v
                         elif k == 'assigned_by_name' and 'assigned_by_name' in model_field_names:
                             safe_kwargs['assigned_by_name'] = v
-                        # add other aliases here as needed
 
                 lead = Lead.objects.create(**safe_kwargs)
 
@@ -3516,22 +3574,24 @@ def lead_form_view(request):
             return redirect("app5:lead_report")
 
         except Exception as e:
-            logger.error(f"Error saving lead: {e}")
+            logger.error(f"Error saving lead: {e}", exc_info=True)
             messages.error(request, f"Error saving lead: {str(e)}")
-            # fall through to re-render form with previously entered values
 
-    # GET: prepare dropdowns (safe: try/except if not imported)
+    # GET: prepare dropdowns
     try:
+        from app1.models import District
         districts = District.objects.all().order_by('name')
     except Exception:
         districts = []
 
     try:
+        from .models import BusinessNature
         business_natures = BusinessNature.objects.all().order_by('name')
     except Exception:
         business_natures = []
 
     try:
+        from .models import StateMaster
         states = StateMaster.objects.all().order_by('name')
     except Exception:
         states = []
@@ -3542,17 +3602,28 @@ def lead_form_view(request):
     except Exception:
         departments = []
 
+    try:
+        from .models import Reference
+        references = Reference.objects.all().order_by('ref_name')
+    except Exception:
+        references = []
+    
+    try:
+        from .models import Campaign
+        campaigns = Campaign.objects.all() if Campaign else []
+    except Exception:
+        campaigns = []
+
     context = {
         'business_natures': business_natures,
         'states': states,
         'districts': districts,
         'active_users': active_users,
         'departments': departments,
-        # pass existing firms for the searchable dropdown
         'existing_firms': existing_firms,
-        # ✅ ADDED: Active leads data for directory
-        'active_leads_data': active_leads_data,
-        
+        'active_leads_data': active_leads_data,  # âœ… Now includes priority
+        'references': references, 
+        'campaigns': campaigns,  
     }
     return render(request, "lead_form.html", context)
 
@@ -3568,7 +3639,7 @@ def lead_creation_view(request):
     from purchase_order.models import Department
     from app1.models import User
 
-    # ✅ Get only active leads for the directory
+    # âœ… Get only active leads for the directory
     active_leads_data = Lead.objects.filter(status__iexact='Active').order_by('-created_at')[:25]
 
     context = {
@@ -3704,6 +3775,7 @@ def lead_detail_api(request, lead_id):
 # -----------------------
 # Lead edit (view + save)
 # -----------------------
+
 def lead_edit(request, lead_id):
     lead = get_object_or_404(Lead, id=lead_id)
 
@@ -3713,6 +3785,7 @@ def lead_edit(request, lead_id):
         lead.email = request.POST.get('email')
         lead.customerType = 'Business' if request.POST.get('customerTypeToggle') else 'Individual'
         lead.status = request.POST.get('status', 'Active')
+        lead.priority = request.POST.get('priority', 'Medium')
         lead.refFrom = request.POST.get('refFrom')
         lead.business = request.POST.get('business')
         lead.marketedBy = request.POST.get('marketedBy')
@@ -3720,6 +3793,12 @@ def lead_edit(request, lead_id):
         lead.requirement = request.POST.get('requirement')
         lead.details = request.POST.get('details')
         lead.date = request.POST.get('date') or lead.date
+        
+        # Handle campaign field - check if it exists in the model
+        if hasattr(lead, 'Campaign'):
+            lead.Campaign = request.POST.get('Campaign')
+        elif hasattr(lead, 'campaign'):
+            lead.campaign = request.POST.get('Campaign')
 
         if lead.customerType == 'Business':
             lead.name = request.POST.get('name')
@@ -3761,7 +3840,7 @@ def lead_edit(request, lead_id):
     states = StateMaster.objects.all().order_by('name') if StateMaster is not None else []
     districts = District.objects.all().order_by('name') if District is not None else []
 
-    # Active users for dropdown (robust)
+    # Active users for dropdown
     active_users = (
         User.objects.filter(is_active=True)
         .order_by('first_name', 'username')
@@ -3769,6 +3848,59 @@ def lead_edit(request, lead_id):
     )
 
     departments = Department.objects.filter(is_active=True).order_by('name') if Department is not None else []
+    
+    # Get campaigns for dropdown - with error handling
+    try:
+        campaigns = Campaign.objects.all().order_by('name')
+    except:
+        campaigns = []
+    
+    # Get references for dropdown - with error handling
+    try:
+        references = ReferenceFrom.objects.all().order_by('ref_name')
+    except:
+        references = []
+    
+    # Get active leads for directory
+    active_leads_data = Lead.objects.filter(status='Active').order_by('-date')[:50]  # Limit to 50 for performance
+
+    # Get display names for better user experience
+    marketed_by_name = None
+    if lead.marketedBy:
+        try:
+            # Handle both string and integer IDs
+            marketed_by_id = int(lead.marketedBy) if str(lead.marketedBy).isdigit() else lead.marketedBy
+            if isinstance(marketed_by_id, int):
+                marketed_by_user = User.objects.get(id=marketed_by_id)
+                marketed_by_name = f"{marketed_by_user.first_name} {marketed_by_user.last_name}".strip()
+                if not marketed_by_name.strip():
+                    marketed_by_name = marketed_by_user.username
+            else:
+                # If it's already a name, use it directly
+                marketed_by_name = marketed_by_id
+        except (User.DoesNotExist, ValueError):
+            marketed_by_name = None
+
+    branch_name = None
+    if lead.requirement:
+        try:
+            # Handle both string and integer IDs
+            branch_id = int(lead.requirement) if str(lead.requirement).isdigit() else lead.requirement
+            if isinstance(branch_id, int):
+                branch = Department.objects.get(id=branch_id)
+                branch_name = branch.name
+            else:
+                # If it's already a name, use it directly
+                branch_name = branch_id
+        except (Department.DoesNotExist, ValueError):
+            branch_name = None
+
+    # Get campaign name - check both possible field names
+    campaign_name = None
+    if hasattr(lead, 'Campaign') and lead.Campaign:
+        campaign_name = lead.Campaign
+    elif hasattr(lead, 'campaign') and lead.campaign:
+        campaign_name = lead.campaign
 
     context = {
         'lead': lead,
@@ -3777,8 +3909,15 @@ def lead_edit(request, lead_id):
         'districts': districts,
         'active_users': active_users,
         'departments': departments,
+        'campaigns': campaigns,
+        'references': references,
+        'active_leads_data': active_leads_data,
+        'marketed_by_name': marketed_by_name,
+        'branch_name': branch_name,
+        'campaign_name': campaign_name,
     }
     return render(request, 'lead_form_edit.html', context)
+
 from django.shortcuts import get_object_or_404, redirect
 from django.http import JsonResponse, HttpResponseNotAllowed
 from django.contrib import messages
@@ -4063,7 +4202,7 @@ def assign_lead_view(request):
             except Exception:
                 unassigned_leads = LeadModel.objects.all() if hasattr(LeadModel, 'objects') else []
 
-        # Users — try to use your custom User model and sensible filters
+        # Users â€” try to use your custom User model and sensible filters
         try:
             if UserModel is not None:
                 # try common active/status fields
@@ -4247,7 +4386,7 @@ def assign_lead_view(request):
                     except Exception as e:
                         logger.debug("Could not set assigned_time: %s", e)
 
-                # ✅ FIXED: Only update assignment_type, NOT the main status
+                # âœ… FIXED: Only update assignment_type, NOT the main status
                 # This keeps the lead status as "Active" even after assignment
                 if hasattr(lead, 'assignment_type'):
                     try:
@@ -4255,7 +4394,7 @@ def assign_lead_view(request):
                     except Exception as e:
                         logger.debug("Could not update assignment_type field: %s", e)
 
-                # ✅ STATUS REMAINS UNCHANGED - No code here to modify lead.status
+                # âœ… STATUS REMAINS UNCHANGED - No code here to modify lead.status
 
                 # Save the lead
                 lead.save()
@@ -4497,6 +4636,25 @@ def lead_assign_edit(request, lead_id):
     }
     return render(request, 'lead_assign_edit.html', context)
 
+
+def lead_detail(request, lead_id):
+    lead = get_object_or_404(Lead, id=lead_id)
+
+    data = {
+        "id": lead.id,
+        "customer_name": lead.customer_name,
+        "phone_number": lead.phone_number,
+        "email": lead.email,
+        "address": lead.address,
+        "district": lead.district,
+        "state": lead.state,
+        "business_type": lead.business_type,
+        "company_name": lead.company_name,
+        "gst_number": lead.gst_number,
+    }
+
+    return JsonResponse({"success": True, "data": data})
+
 # app5/views.py
 # Add these imports near the top of your views.py (if not already present)
 import json
@@ -4513,7 +4671,7 @@ def requirement_list(request):
     import json
 
     # ------------------------------
-    # ITEMS (PurchaseItem → fallback to App5Item)
+    # ITEMS (PurchaseItem â†’ fallback to App5Item)
     # ------------------------------
     try:
         try:
@@ -4613,6 +4771,9 @@ def requirement_list(request):
     # ------------------------------
     # LOAD ACTIVE LEADS - IMPROVED
     # ------------------------------
+    # ------------------------------
+    # LOAD ACTIVE LEADS - IMPROVED WITH PRIORITY & STATUS
+    # ------------------------------
     try:
         try:
             from .models import Lead
@@ -4630,14 +4791,17 @@ def requirement_list(request):
         logger.error(f"Error loading leads: {e}")
         leads_qs = []
 
-    # Process leads for template - IMPROVED
+    # Process leads for template - IMPROVED WITH PRIORITY & STATUS
     active_leads_list = []
     for l in leads_qs:
         # IMPROVED: Better lead name extraction
         name = None
+        owner_name = None
         
+        # Extract both name and ownerName for flexibility
         if hasattr(l, 'ownerName') and l.ownerName:
-            name = l.ownerName.strip()
+            owner_name = l.ownerName.strip()
+            name = owner_name
         elif hasattr(l, 'name') and l.name:
             name = l.name.strip()
         elif hasattr(l, 'owner_name') and l.owner_name:
@@ -4649,15 +4813,26 @@ def requirement_list(request):
         
         if not name:
             name = f"Lead #{l.id}"
+            
+        if not owner_name:
+            owner_name = name
 
-        # Phone extraction
-        phone = (
-            getattr(l, "phoneNo", None) or
-            getattr(l, "phone", None) or
-            getattr(l, "contact_number", None) or
-            getattr(l, "mobile", None) or
-            ""
-        )
+        # Phone extraction - support multiple field names
+        phone = None
+        phone_no = None
+        
+        if hasattr(l, "phoneNo") and l.phoneNo:
+            phone_no = l.phoneNo
+            phone = phone_no
+        elif hasattr(l, "phone") and l.phone:
+            phone = l.phone
+        elif hasattr(l, "contact_number") and l.contact_number:
+            phone = l.contact_number
+        elif hasattr(l, "mobile") and l.mobile:
+            phone = l.mobile
+        
+        if not phone_no:
+            phone_no = phone
 
         # Ticket number
         ticket = (
@@ -4667,15 +4842,25 @@ def requirement_list(request):
             f"TKT-{l.id}"
         )
 
+        # Status - with default
+        status = getattr(l, "status", "Active") or "Active"
+
+        # Ã¢Å“â€¦ PRIORITY - with default
+        priority = getattr(l, "priority", "Medium") or "Medium"
+
         business = getattr(l, "business", "") or getattr(l, "business_nature", "") or ""
 
         active_leads_list.append({
             "id": l.id,
             "name": name,
+            "ownerName": owner_name,
             "phone": phone,
+            "phoneNo": phone_no,
             "ticket_number": ticket,
+            "status": status,
+            "priority": priority,  # Ã¢Å“â€¦ Include priority
             "business": business,
-            "customer_type": getattr(l, "customerType", ""),
+            "customerType": getattr(l, "customerType", ""),
             "place": getattr(l, "place", "") or getattr(l, "individualPlace", ""),
         })
 
@@ -4769,7 +4954,7 @@ def requirement_form(request):
         if not unit and item_obj:
             unit = getattr(item_obj, 'unit_of_measure', '') or getattr(item_obj, 'unit', '') or ''
 
-        # ✅ FIXED: Now using the correct fields that match the model
+        # âœ… FIXED: Now using the correct fields that match the model
         try:
             RequirementItem.objects.create(
                 item_name=item_name,  # This field exists
@@ -4789,7 +4974,7 @@ def requirement_form(request):
             logger.error(f"Error creating RequirementItem: {e}", exc_info=True)
 
     if created:
-        messages.success(request, f"✅ Successfully saved {created} requirement item(s)!")
+        messages.success(request, f"âœ… Successfully saved {created} requirement item(s)!")
     
     if errors:
         error_display = "; ".join(errors[:3])
@@ -4815,6 +5000,40 @@ def get_item_details(request):
         })
     except POItem.DoesNotExist:
         return JsonResponse({"success": False})
+    
+def get_lead_data(request, lead_id):
+    try:
+        lead = Lead.objects.get(id=lead_id)
+        lead_data = {
+            'id': lead.id,
+            'ownerName': lead.ownerName,
+            'phoneNo': lead.phoneNo,
+            'email': lead.email,
+            'status': lead.status,
+            'customerType': lead.customerType,
+            'name': lead.name,
+            'address': lead.address,
+            'place': lead.place,
+            'District': lead.District,
+            'State': lead.State,
+            'pinCode': lead.pinCode,
+            'firstName': lead.firstName,
+            'individualAddress': lead.individualAddress,
+            'individualPlace': lead.individualPlace,
+            'individualDistrict': lead.individualDistrict,
+            'individualState': lead.individualState,
+            'individualPinCode': lead.individualPinCode,
+            'date': lead.date.strftime('%Y-%m-%d') if lead.date else '',
+            'refFrom': lead.refFrom,
+            'business': lead.business,
+            'marketedBy': lead.marketedBy,
+            'Consultant': lead.Consultant,
+            'requirement': lead.requirement,
+            'details': lead.details,
+        }
+        return JsonResponse(lead_data)
+    except Lead.DoesNotExist:
+        return JsonResponse({'error': 'Lead not found'}, status=404)
 
 
 
@@ -5043,3 +5262,106 @@ def _generate_unique_lead_ticket():
         if not Lead.objects.filter(ticket_number=ticket_no).exists():
             return ticket_no
         counter += 1
+
+
+# views.py
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from django.db.models import Q
+from .models import Reference
+
+def reference_list(request):
+    search_query = request.GET.get('search', '')
+    
+    if search_query:
+        references = Reference.objects.filter(
+            Q(ref_name__icontains=search_query) |
+            Q(description__icontains=search_query)
+        ).order_by('id')
+        if references.exists():
+            messages.info(request, f'Found {references.count()} reference(s) matching "{search_query}"')
+        else:
+            messages.info(request, f'No references found matching "{search_query}"')
+    else:
+        references = Reference.objects.all().order_by('id')
+    
+    return render(request, 'reference_master_list.html', {# Make sure this path is correct
+        'references': references,
+        'search_query': search_query
+    })
+
+def reference_add(request):
+    if request.method == 'POST':
+        ref_name = request.POST.get('ref_name')
+        description = request.POST.get('description')
+        
+        if ref_name:
+            # Check if reference with same name already exists
+            if Reference.objects.filter(ref_name=ref_name).exists():
+                messages.error(request, f'A reference with name "{ref_name}" already exists.')
+            else:
+                reference = Reference.objects.create(
+                    ref_name=ref_name,
+                    description=description
+                )
+                messages.success(request, f'Reference "{reference.ref_name}" added successfully!')
+                return redirect('app5:reference_list')
+        else:
+            messages.error(request, 'Reference name is required.')
+    
+    # FIX: Remove 'app5/' from the template path
+    return render(request, 'reference_master_form.html', {})
+
+def reference_edit(request, id):
+    reference = get_object_or_404(Reference, id=id)
+    
+    if request.method == 'POST':
+        ref_name = request.POST.get('ref_name')
+        description = request.POST.get('description')
+        
+        if ref_name:
+            # Check if another reference with same name exists (excluding current one)
+            if Reference.objects.filter(ref_name=ref_name).exclude(id=id).exists():
+                messages.error(request, f'A reference with name "{ref_name}" already exists.')
+            else:
+                reference.ref_name = ref_name
+                reference.description = description
+                reference.save()
+                messages.success(request, f'Reference "{reference.ref_name}" updated successfully!')
+                return redirect('app5:reference_list')
+        else:
+            messages.error(request, 'Reference name is required.')
+    
+    # FIX: Remove 'app5/' from the template path
+    return render(request, 'reference_master_form.html', {'reference': reference})
+
+def reference_delete(request, id):
+    reference = get_object_or_404(Reference, id=id)
+    
+    if request.method == 'POST':
+        reference_name = reference.ref_name
+        reference.delete()
+        messages.success(request, f'Reference "{reference_name}" deleted successfully!')
+        return redirect('app5:reference_list')  # Changed from 'reference_master_list' to 'reference_list'
+    
+    messages.error(request, 'Invalid request method. Please use the delete button from the list.')
+    return redirect('app5:reference_list')  # Changed from 'reference_master_list' to 'reference_list'
+
+
+
+def event_form(request):
+    return render(request, 'event_form.html')
+
+
+from django.shortcuts import render
+
+def quotation_form_view(request):
+    # Your quotation form logic here
+    return render(request, 'quotation_form.html')
+
+def quotation_list_view(request):
+    # Your view logic here
+    context = {
+        'quotations': [],  # Add your data here
+    }
+    return render(request, 'quotation_list.html', context)

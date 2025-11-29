@@ -17,7 +17,7 @@
             <i class="fas fa-hashtag"></i> Item ID: <strong>{{ item.id }}</strong>
         </div>
 
-        <form method="POST" action="" class="item-form" id="itemForm">
+        <form method="POST" action="" class="item-form" id="itemForm" enctype="multipart/form-data">
             {% csrf_token %}
             
             <div class="form-section">
@@ -74,10 +74,10 @@
                     <div class="form-group full-width">
                         <label for="section">Section <span class="required">*</span></label>
                         <select id="section" name="section" required class="form-control">
-                            <option value="">Select Section</option>
                             <option value="GENERAL" {% if item.section == 'GENERAL' %}selected{% endif %}>General</option>
                             <option value="SERVICE" {% if item.section == 'SERVICE' %}selected{% endif %}>Service Items</option>
                             <option value="SOFTWARE" {% if item.section == 'SOFTWARE' %}selected{% endif %}>Softwares</option>
+                            <option value="PAPER_ROLLS" {% if item.section == 'PAPER_ROLLS' %}selected{% endif %}>Paper Rolls</option>
                         </select>
                         <small class="help-text">Categorize this item by section</small>
                     </div>
@@ -112,6 +112,20 @@
                             placeholder="Enter HSN code"
                         >
                         <small class="help-text">For GST purposes</small>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group full-width">
+                        <label for="images">Item Images</label>
+                        <input
+                            type="file"
+                            id="images"
+                            name="images"
+                            multiple
+                            accept="image/*"
+                            class="form-control"
+                        >
+                        <small class="help-text">Upload new images (multiple allowed)</small>
                     </div>
                 </div>
             </div>
