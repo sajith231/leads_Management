@@ -47,7 +47,7 @@ WHATSAPP_API_ACCOUNT = os.getenv("WHATSAPP_API_ACCOUNT")
 WHATSAPP_API_BASE_URL = os.getenv("WHATSAPP_API_BASE_URL")
 
 
-ALLOWED_HOSTS = ['88.222.215.20','myimc.in','www.myimc.in','127.0.0.1','localhost']
+ALLOWED_HOSTS = ['88.222.215.20','myimc.in','www.myimc.in','127.0.0.1','localhost','192.168.1.70']
 
 LOGIN_REDIRECT_URL = 'admin_dashboard'
 LOGIN_URL = 'login'
@@ -85,7 +85,8 @@ INSTALLED_APPS = [
     'wallet',
     'Cancel_Requestes',
     'vehicle_challan',
-    'campaign'
+    'campaign',
+    'public_folder',
 ]
 
 
@@ -169,7 +170,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'leading_management',
         'USER': 'postgres',
-        'PASSWORD': 'inf',
+        'PASSWORD': 'info@imc',
         'HOST': 'localhost',
         'PORT': '5432',
     }

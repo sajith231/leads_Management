@@ -115,19 +115,19 @@
                         </div>
                         <!-- Add this inside the form in add_user.html -->
                         <div class="mb-3">
-                            <label for="job_role" class="form-label">Job Role</label>
-                            <select id="job_role" name="job_role" class="form-select">
-                                <option value="">-- Select Job Role --</option>
-                                {% for role in job_roles %}
-                                <option value="{{ role.id }}">{{ role.title }}</option>
-                                {% endfor %}
-                            </select>
-                            {% if form.job_role.errors %}
-                                <div class="invalid-feedback d-block">
-                                    {{ form.job_role.errors|join:", " }}
-                                </div>
-                            {% endif %}
-                        </div>
+    <label for="job_title" class="form-label">Job Title</label>
+    <select id="job_title" name="job_title" class="form-select">
+        <option value="">-- Select Job Title --</option>
+        {% for jt in job_titles %}
+        <option value="{{ jt.id }}">{{ jt.title }}</option>
+        {% endfor %}
+    </select>
+    {% if form.job_title and form.job_title.errors %}
+        <div class="invalid-feedback d-block">
+            {{ form.job_title.errors|join:", " }}
+        </div>
+    {% endif %}
+</div>
                         <div class="mb-3">
                             <label for="{{ form.status.id_for_label }}" class="form-label">User Status</label>
                             <select id="{{ form.status.id_for_label }}" name="{{ form.status.html_name }}" class="form-select">

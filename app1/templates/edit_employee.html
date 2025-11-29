@@ -403,27 +403,44 @@
                         </div>
                     </div>
 
-                    <!-- Job Information Section -->
-                    <div class="form-section">
-                        <div class="section-header">
-                            <h4><i class="fas fa-briefcase"></i> Job Information</h4>
-                        </div>
-                        <div class="form-grid">
-                            <div class="form-group">
-                                <label for="job_title">Job Title <span style="color: #dc3545;">*</span></label>
-                                <input type="text" name="job_title" id="job_title" class="form-control" value="{{ employee.job_title }}" required>
-                            </div>
-                            <div class="form-group">
-  <label for="organization">Organization</label>
-  <select name="organization" id="organization" class="form-control">
-    <option value="">Select organization</option>
-    {% for dept in departments %}
-      <option value="{{ dept.id }}" {% if employee.organization == dept.name %}selected{% endif %}>
-        {{ dept.name }}
-      </option>
-    {% endfor %}
-  </select>
+                   <!-- Job Information Section -->
+<div class="form-section">
+    <div class="section-header">
+        <h4><i class="fas fa-briefcase"></i> Job Information</h4>
+    </div>
+
+    <div class="form-grid">
+
+        <!-- Job Title Dropdown -->
+        <div class="form-group">
+            <label for="job_title">Job Title <span style="color: #dc3545;">*</span></label>
+            <select name="job_title" id="job_title" class="form-control" required>
+                <option value="">Select job title</option>
+
+                {% for jt in job_titles %}
+                    <option value="{{ jt.id }}" {% if employee.job_title == jt.title %}selected{% endif %}>
+                        {{ jt.title }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Organization Dropdown -->
+        <div class="form-group">
+            <label for="organization">Organization</label>
+            <select name="organization" id="organization" class="form-control">
+                <option value="">Select organization</option>
+                {% for dept in departments %}
+                    <option value="{{ dept.id }}" {% if employee.organization == dept.name %}selected{% endif %}>
+                        {{ dept.name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+    </div>
 </div>
+
                             <div class="form-group">
                                 <label for="joining_date">Joining Date <span style="color: #dc3545;">*</span></label>
                                 <input type="date" name="joining_date" id="joining_date" class="form-control" value="{{ joining_date }}" required>

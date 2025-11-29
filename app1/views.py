@@ -2465,13 +2465,23 @@ def employee_management(request):
 from django.shortcuts import render, redirect
 from .models import Employee, Attachment, CV
 from django.shortcuts import render, redirect
-from .models import Employee, User, Attachment, CV
+from .models import Employee, User, Attachment, CV,JobTitle
 from purchase_order.models import Department
+
+# add these imports near the top of your views.py if not already present
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, redirect
+from django.contrib.auth.models import User
+
+# import your models (adjust module path if models live in another app)
+from .models import Employee, Attachment, CV, JobTitle
 
 @login_required
 def add_employee(request):
     users = User.objects.all()  # For user dropdown
-    departments = Department.objects.all().order_by('name')  # <-- NEW
+    departments = Department.objects.all().order_by('name')
+    job_titles = JobTitle.objects.all().order_by('title')  # to populate the dropdown
 
     if request.method == "POST":
         # ---- basic fields ----
@@ -2484,7 +2494,7 @@ def add_employee(request):
             messages.error(request, f"User ID {selected_user.userid} is already assigned to another employee.")
             return render(
                 request, 'add_employee.html',
-                {'users': users, 'cvs': CV.objects.all(), 'departments': departments}
+                {'users': users, 'cvs': CV.objects.all(), 'departments': departments, 'job_titles': job_titles}
             )
 
         # Department: posted value is dept id; we store the dept NAME in Employee.organization
@@ -2507,7 +2517,19 @@ def add_employee(request):
         district = request.POST.get('district', '')
         education = request.POST.get('education', '')
         experience = request.POST.get('experience', '')
-        job_title = request.POST.get('job_title', '')
+
+        # Job title may come as a JobTitle id (from the dropdown) or as a free string.
+        job_title_input = request.POST.get('job_title', '').strip()
+        job_title = ""
+        if job_title_input:
+            # Try to treat it as an id first (works for numeric PKs and UUIDs).
+            try:
+                jt = JobTitle.objects.get(id=job_title_input)
+                job_title = jt.title
+            except (JobTitle.DoesNotExist, ValueError):
+                # fallback: user posted a plain title string (or id lookup failed)
+                job_title = job_title_input
+
         joining_date = request.POST.get('joining_date')
         dob = request.POST.get('dob')
         bank_account_number = request.POST.get('bank_account_number', '')
@@ -2551,7 +2573,7 @@ def add_employee(request):
     # GET
     return render(
         request, 'add_employee.html',
-        {'users': users, 'cvs': CV.objects.all(), 'departments': departments}
+        {'users': users, 'cvs': CV.objects.all(), 'departments': departments, 'job_titles': job_titles}
     )
 
 
@@ -2569,13 +2591,18 @@ from django.shortcuts import render, redirect, get_object_or_404
 from .models import Employee, Attachment
 from django.contrib import messages
 @login_required
+@login_required
 def edit_employee(request, emp_id):
     employee = get_object_or_404(Employee, id=emp_id)
+
     # Keep current user in list even if already assigned; exclude others that are taken
+    # Note: ensure the union uses QuerySets of same model; this keeps the employee's current user present.
     users = User.objects.exclude(employee__isnull=False).union(
-        User.objects.filter(id=employee.user.id if employee.user else None)
+        User.objects.filter(id=employee.user.id) if employee.user else User.objects.none()
     )
-    departments = Department.objects.all().order_by('name')  # <-- NEW
+
+    departments = Department.objects.all().order_by('name')
+    job_titles = JobTitle.objects.all().order_by('title')  # to populate dropdown
 
     if request.method == "POST":
         user_id = request.POST.get("user_id")
@@ -2584,7 +2611,8 @@ def edit_employee(request, emp_id):
         # Ensure User ID is unique (your original logic)
         if selected_user and Employee.objects.exclude(id=employee.id).filter(user=selected_user).exists():
             messages.error(request, f"User ID {selected_user.userid} is already assigned to another employee.")
-            return redirect("edit_employee", emp_id=emp_id)  # :contentReference[oaicite:4]{index=4}
+            # Redirect back to edit page (keeps message); alternatively you can render with context to preserve data.
+            return redirect("edit_employee", emp_id=emp_id)
 
         # Resolve department id -> name; store in Employee.organization
         dept_id = request.POST.get("organization")
@@ -2596,7 +2624,19 @@ def edit_employee(request, emp_id):
             except Department.DoesNotExist:
                 pass
 
-        # Update fields (mirrors your existing code; just swaps organization to dept_name)
+        # Job title: accept JobTitle id OR free string, convert id -> title string
+        job_title_input = request.POST.get("job_title", "").strip()
+        job_title_value = ""
+        if job_title_input:
+            try:
+                # first try to interpret as JobTitle id
+                jt = JobTitle.objects.get(id=job_title_input)
+                job_title_value = jt.title
+            except (JobTitle.DoesNotExist, ValueError):
+                # fallback: assume it's a free-text title string
+                job_title_value = job_title_input
+
+        # Update fields (mirrors your existing code; using dept_name and resolved job_title_value)
         employee.user = selected_user
         employee.name = request.POST.get("name", "").strip()
         if "photo" in request.FILES:
@@ -2608,8 +2648,8 @@ def edit_employee(request, emp_id):
         employee.district = request.POST.get("district", "")
         employee.education = request.POST.get("education", "")
         employee.experience = request.POST.get("experience", "")
-        employee.job_title = request.POST.get("job_title", "")
-        employee.organization = dept_name                   # <-- here
+        employee.job_title = job_title_value
+        employee.organization = dept_name
         employee.joining_date = request.POST.get("joining_date")
         employee.dob = request.POST.get("dob")
         employee.bank_account_number = request.POST.get("bank_account_number", "")
@@ -2638,6 +2678,7 @@ def edit_employee(request, emp_id):
         "employee": employee,
         "users": users,
         "departments": departments,
+        "job_titles": job_titles,
         "joining_date": employee.joining_date.strftime("%Y-%m-%d") if employee.joining_date else "",
         "dob": employee.dob.strftime("%Y-%m-%d") if employee.dob else "",
     }

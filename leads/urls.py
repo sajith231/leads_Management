@@ -50,6 +50,8 @@ urlpatterns = [
     path('wallet/', include('wallet.urls')),
     path('cancel_requestes/', include('Cancel_Requestes.urls')),
     path('vehicle/', include('vehicle_challan.urls')),
+    path('public_folder/', include('public_folder.urls')),
+
 
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -144,6 +144,10 @@
                                                 <i class="bi bi-check-circle"></i> Mark Paid
                                             </button>
                                         {% endif %}
+                                        <button class="btn btn-sm btn-danger" 
+                                                onclick="confirmDelete({{ challan.id }}, '{{ challan.challan_number }}')">
+                                            <i class="bi bi-trash"></i> Delete
+                                        </button>
                                     </td>
                                 </tr>
                                 {% if challan.remarks %}
@@ -248,6 +252,29 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-success">Confirm Payment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete challan <strong id="deleteModalChallanNumber"></strong>?</p>
+                <p class="text-danger"><small>This action cannot be undone.</small></p>
+            </div>
+            <form id="deleteForm" method="POST">
+                {% csrf_token %}
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Delete Challan</button>
                 </div>
             </form>
         </div>
@@ -506,6 +533,17 @@
         // Set today's date as default
         const today = new Date().toISOString().split('T')[0];
         form.querySelector('input[name="payment_date"]').value = today;
+        
+        modal.show();
+    }
+
+    function confirmDelete(challanId, challanNumber) {
+        const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+        const form = document.getElementById('deleteForm');
+        form.action = `/vehicle/challan/${challanId}/delete/`;
+        
+        // Set challan number in modal
+        document.getElementById('deleteModalChallanNumber').textContent = challanNumber;
         
         modal.show();
     }
