@@ -732,6 +732,7 @@
             id="phoneNumber" 
             placeholder="e.g., 919876543210" 
             autocomplete="tel"
+            value="91"
           >
           <small style="color: #6b7280; font-size: 12px; margin-top: 4px; display: block;">
             Include country code without + symbol (e.g., 91 for India)
@@ -897,5 +898,10 @@
         document.getElementById('filterForm').submit();
       }
     });
+    document.getElementById('phoneNumber').addEventListener('input', function() {
+    if (!this.value.startsWith("91")) {
+        this.value = "91";
+    }
+});
   </script>
 {% endblock %}
