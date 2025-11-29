@@ -504,6 +504,11 @@ class Lead(models.Model):
         ('self_assigned', 'Self Assigned'),
         ('unassigned', 'Unassigned'),
     ]
+    PRIORITY_CHOICES = [
+        ('High', 'High'),
+        ('Medium', 'Medium'),
+        ('Low', 'Low'),
+    ]
 
     assignment_type = models.CharField(
         max_length=20, choices=ASSIGNMENT_CHOICES, default='unassigned'
@@ -533,6 +538,7 @@ class Lead(models.Model):
 
     # Business information
     status = models.CharField(max_length=20, default='Active')
+    priority = models.CharField( max_length=20,choices=PRIORITY_CHOICES,default='High',help_text="Lead priority level")
     refFrom = models.CharField(max_length=100, blank=True, null=True)
     business = models.CharField(max_length=100, blank=True, null=True)
     campaign = models.CharField(max_length=255, blank=True, null=True)
