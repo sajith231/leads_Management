@@ -60,23 +60,29 @@
             <span>
                 Showing {{ items.start_index }} to {{ items.end_index }} of {{ items.paginator.count }} items
             </span>
-            {% with request.GET.urlencode as query %}
-            {% with query|cut:"page={{ items.number }}" as cleaned_query %}
-            <div class="pagination-mini">
+            {% if items.paginator.num_pages > 1 %}
+            <div class="custom-pagination">
+
                 {% if items.has_previous %}
-                    <button class="page-btn"
-                        onclick="window.location.href='?page={{ items.previous_page_number }}{% if cleaned_query %}&{{ cleaned_query }}{% endif %}'">‹</button>
+                    <a href="?{% if request.GET %}{{ request.GET.urlencode|cut:'page='|cut:'&' }}&{% endif %}page={{ items.previous_page_number }}" class="page-link">«</a>
                 {% endif %}
 
-                <button class="page-btn active">{{ items.number }}</button>
+                {% for page_num in items.paginator.page_range %}
+                    {% if page_num >= items.number|add:'-2' and page_num <= items.number|add:'2' %}
+                        {% if page_num == items.number %}
+                            <span class="page-link active">{{ page_num }}</span>
+                        {% else %}
+                            <a href="?{% if request.GET %}{{ request.GET.urlencode|cut:'page='|cut:'&' }}&{% endif %}page={{ page_num }}" class="page-link">{{ page_num }}</a>
+                        {% endif %}
+                    {% endif %}
+                {% endfor %}
 
                 {% if items.has_next %}
-                    <button class="page-btn"
-                        onclick="window.location.href='?page={{ items.next_page_number }}{% if cleaned_query %}&{{ cleaned_query }}{% endif %}'">›</button>
+                    <a href="?{% if request.GET %}{{ request.GET.urlencode|cut:'page='|cut:'&' }}&{% endif %}page={{ items.next_page_number }}" class="page-link">»</a>
                 {% endif %}
+
             </div>
-            {% endwith %}
-            {% endwith %}
+            {% endif %}
 
             <button class="clear-filters-btn" onclick="clearFilters()">
                 <i class="fas fa-times"></i> Clear 
@@ -1093,6 +1099,35 @@ body {
     height: 100%;
     object-fit: cover;
     display: block;
+}
+
+.custom-pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    margin-top: 15px;
+}
+
+.page-link {
+    padding: 8px 14px;
+    border-radius: 6px;
+    background: #fff;
+    border: 1px solid #ccc;
+    color: #333;
+    text-decoration: none;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.page-link:hover {
+    background: #e9efff;
+    border-color: #3498db;
+}
+
+.page-link.active {
+    background: #3498db;
+    color: #fff !important;
 }
 
 </style>
