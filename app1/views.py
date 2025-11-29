@@ -2406,14 +2406,18 @@ def employee_management(request):
     # --- Read GET params ---
     # Template uses these exact parameter names: search, status, job, organization, page
     search_query = request.GET.get('search', '').strip()
-    status_filter = request.GET.get('status', '').strip()        # '' means all statuses; 'active' etc. if provided
+    status_filter = request.GET.get('status', '').strip()        # '' means not provided
     job_filter = request.GET.get('job', '').strip()
     organization_filter = request.GET.get('organization', '').strip()
+
+    # --- DEFAULT: show only active employees when no status param present ---
+    if not status_filter:
+        status_filter = 'active'
 
     # --- Base queryset ---
     qs = Employee.objects.select_related("user").all().order_by('name')
 
-    # Apply status filter only if provided (keeps default behavior if you want 'active' by default, set below)
+    # Apply status filter (now will default to 'active' if none provided)
     if status_filter:
         qs = qs.filter(status=status_filter)
 
@@ -2459,7 +2463,6 @@ def employee_management(request):
         "organization_filter": organization_filter,
     }
     return render(request, "employee_management.html", context)
-
 
 
 from django.shortcuts import render, redirect
