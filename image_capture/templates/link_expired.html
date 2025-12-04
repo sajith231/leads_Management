@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Link Expired</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    body {
+      background: linear-gradient(135deg, #fc8181 0%, #f56565 100%);
+      min-height: 100vh;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .expired-container {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 50px 40px;
+      max-width: 600px;
+      width: 100%;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      text-align: center;
+    }
+
+    .expired-icon {
+      width: 100px;
+      height: 100px;
+      background: linear-gradient(135deg, #fc8181 0%, #f56565 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 30px;
+      animation: shake 0.5s ease-out;
+    }
+
+    .expired-icon i {
+      font-size: 50px;
+      color: white;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-10px); }
+      75% { transform: translateX(10px); }
+    }
+
+    .expired-title {
+      color: #2d3748;
+      font-weight: 700;
+      font-size: 32px;
+      margin-bottom: 15px;
+    }
+
+    .expired-message {
+      color: #718096;
+      font-size: 16px;
+      margin-bottom: 30px;
+      line-height: 1.6;
+    }
+
+    .info-card {
+      background: #fff5f5;
+      border-left: 4px solid #fc8181;
+      border-radius: 12px;
+      padding: 25px;
+      margin-bottom: 30px;
+      text-align: left;
+    }
+
+    .info-card h5 {
+      color: #c53030;
+      font-weight: 600;
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .info-card p {
+      color: #718096;
+      margin: 0;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .customer-info {
+      background: #f7fafc;
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 25px;
+    }
+
+    .customer-info p {
+      margin: 8px 0;
+      color: #2d3748;
+      font-size: 15px;
+    }
+
+    .customer-info strong {
+      color: #4a5568;
+    }
+
+    .btn-contact {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: none;
+      border-radius: 12px;
+      padding: 15px 30px;
+      color: white;
+      font-weight: 600;
+      font-size: 16px;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .btn-contact:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+      color: white;
+    }
+
+    .timestamp {
+      font-size: 13px;
+      color: #a0aec0;
+      margin-top: 20px;
+      font-style: italic;
+    }
+
+    @media (max-width: 576px) {
+      .expired-container {
+        padding: 40px 25px;
+      }
+
+      .expired-title {
+        font-size: 26px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="expired-container">
+    <div class="expired-icon">
+      <i class="fas fa-times-circle"></i>
+    </div>
+
+    <h1 class="expired-title">Link Expired</h1>
+    <p class="expired-message">
+      {{ message }}
+    </p>
+
+    <div class="customer-info">
+      <p><strong>Customer Name:</strong> {{ data.customer_name }}</p>
+      {% if data.phone_number %}
+      <p><strong>Phone Number:</strong> +91 {{ data.phone_number }}</p>
+      {% endif %}
+      {% if data.link_used_at %}
+      <p class="timestamp">
+        <i class="fas fa-clock"></i> Link was used on {{ data.link_used_at|date:"M d, Y at H:i" }}
+      </p>
+      {% endif %}
+    </div>
+
+    <div class="info-card">
+      <h5>
+        <i class="fas fa-info-circle"></i>
+        Why can't I use this link?
+      </h5>
+      <p>
+        This verification link was designed for one-time use only to ensure security. 
+        The image has already been uploaded using this link.
+      </p>
+    </div>
+
+    <div class="info-card">
+      <h5>
+        <i class="fas fa-question-circle"></i>
+        Need Help?
+      </h5>
+      <p>
+        If you need to submit another image or believe this is an error, 
+        please contact our support team. They will generate a new verification link for you.
+      </p>
+    </div>
+
+    <a href="tel:+919876543210" class="btn-contact">
+      <i class="fas fa-phone"></i> Contact Support
+    </a>
+  </div>
+</body>
+</html>

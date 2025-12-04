@@ -1,0 +1,711 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+    .table-responsive { overflow-x: auto; }
+    .requests-table th { background-color: #f8f9fa; font-weight: 600; }
+    .employee-row:hover { background-color: #f5f5f5; }
+    .badge { font-size: 0.75em; }
+    .eye-icon { cursor: pointer; color: #0d6efd; transition: color 0.3s ease; }
+    .eye-icon:hover { color: #0b5ed7; }
+    .modal-lg { max-width: 90%; }
+    .send-status { font-size: 0.9em; margin-top: 10px; padding: 10px; border-radius: 5px; }
+    .send-success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    .send-error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    .send-info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+    .message-preview { max-height: 300px; overflow-y: auto; background: #f8f9fa; padding: 10px; border-radius: 5px; font-family: monospace; font-size: 0.9em; white-space: pre-wrap; }
+</style>
+
+<div class="container-fluid py-4">
+    <!-- Header Section -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <h2 class="card-title mb-0">Requests Summary</h2>
+                    <p class="text-muted mb-0">Overview of all requests for the selected month</p>
+                </div>
+                <div class="col-md-6 text-end">
+                    <label class="form-label me-2">Select Month</label>
+                    <input type="month" class="form-control d-inline-block w-auto" id="monthFilter" value="{{ selected_month }}">
+
+                    <select class="form-select d-inline-block w-auto ms-3" id="statusFilter" onchange="filterByStatus()">
+                        <option value="active" selected>Active Users</option>
+                        <option value="inactive">Inactive Users</option>
+                        <option value="all">All Users</option>
+                    </select>
+
+                    
+                    <!-- TODAY button with dropdown -->
+                    <div class="btn-group ms-3" role="group">
+                        <button id="todayBtn" class="btn btn-outline-primary" title="Show today's all requests">
+                            TODAY
+                        </button>
+
+                        <script>
+                            // ---- Utilities ----
+                            const IST_OFFSET_MIN = 330; // UTC+5:30
+                            const MS = 1000, MIN = 60 * MS, HR = 60 * MIN;
+
+                            // Get current IST time
+                            function nowIST() {
+                                const now = new Date();
+                                const utcMs = now.getTime() + now.getTimezoneOffset() * MIN;
+                                return new Date(utcMs + IST_OFFSET_MIN * MIN);
+                            }
+
+                            // Convert IST wall time to UTC ms
+                            function istWallTimeToUtcMs(y, m, d, hh, mm) {
+                                const istMs = Date.UTC(y, m, d, hh, mm, 0, 0);
+                                return istMs - IST_OFFSET_MIN * MIN;
+                            }
+
+                            // Determine next click time (IST)
+                            function nextClickUtcMs() {
+                                const ist = nowIST();
+                                const y = ist.getUTCFullYear();
+                                const m = ist.getUTCMonth();
+                                const d = ist.getUTCDate();
+
+                                // Target times (IST)
+                                const targets = [
+                                    [11, 0],  // 11:00
+                                    [16, 0],  // 16:00
+                                ];
+
+                                // Try today first
+                                for (const [hh, mm] of targets) {
+                                    const utcMs = istWallTimeToUtcMs(y, m, d, hh, mm);
+                                    if (utcMs > Date.now()) return utcMs;
+                                }
+
+                                // Otherwise, pick tomorrow's first (11:00)
+                                const tomorrowIst = new Date(ist.getTime() + 24 * HR);
+                                const yt = tomorrowIst.getUTCFullYear();
+                                const mt = tomorrowIst.getUTCMonth();
+                                const dt = tomorrowIst.getUTCDate();
+                                return istWallTimeToUtcMs(yt, mt, dt, 11, 0);
+                            }
+
+                            // Click the button
+                            function clickTodayButton() {
+                                const btn = document.getElementById('todayBtn');
+                                if (btn) {
+                                    btn.click();
+                                    const ist = nowIST();
+                                    console.log(
+                                        "Button clicked at IST: " +
+                                        ist.toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })
+                                    );
+                                } else {
+                                    console.warn("todayBtn not found at click time.");
+                                }
+                            }
+
+                            // Schedule the next click
+                            let timeoutId = null;
+                            function scheduleNext() {
+                                const targetUtcMs = nextClickUtcMs();
+                                const delay = Math.max(0, targetUtcMs - Date.now());
+
+                                if (timeoutId) clearTimeout(timeoutId);
+                                timeoutId = setTimeout(() => {
+                                    clickTodayButton();
+                                    scheduleNext();
+                                }, delay);
+
+                                const nextIst = new Date(targetUtcMs + IST_OFFSET_MIN * MIN);
+                                console.log(
+                                    "Next auto-click scheduled for IST: " +
+                                    nextIst.toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })
+                                );
+                            }
+
+                            // Wait until button exists before starting
+                            function waitForButtonAndStart() {
+                                if (document.getElementById('todayBtn')) {
+                                    scheduleNext();
+                                    return;
+                                }
+                                const obs = new MutationObserver(() => {
+                                    if (document.getElementById('todayBtn')) {
+                                        obs.disconnect();
+                                        scheduleNext();
+                                    }
+                                });
+                                obs.observe(document.documentElement, { childList: true, subtree: true });
+                            }
+
+                            // Start when DOM is ready
+                            if (document.readyState === "loading") {
+                                document.addEventListener("DOMContentLoaded", waitForButtonAndStart);
+                            } else {
+                                waitForButtonAndStart();
+                            }
+                        </script>
+
+
+
+
+
+
+
+                        <button type="button" class="btn btn-outline-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+                            <span class="visually-hidden">Toggle Dropdown</span>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#" onclick="testSendMessage()">🧪 Test Send Message</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="forceSendMessage()">📤 Force Send Now</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="dryRunMessage()">👁️ Preview Message</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#" onclick="debugTiming()">🔍 Debug Timing</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Send Status Area -->
+            <div id="sendStatusArea" class="mt-3" style="display: none;"></div>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Total Requests</h5>
+                    <h2 class="mb-0" id="totalRequests">0</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Leave Requests</h5>
+                    <h2 class="mb-0" id="totalLeaveRequests">0</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Time Requests</h5>
+                    <h2 class="mb-0" id="totalTimeRequests">0</h2>
+                </div>
+            </div>
+        </div>
+        <!-- Today summary card -->
+        <div class="col-md-3 d-none" id="todaySummaryCard">
+            <div class="card bg-dark text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Today - Total</h5>
+                    <h2 class="mb-0" id="todayTotal">0</h2>
+                    <p class="mb-0" style="font-size:0.9rem" id="todayBreakdown"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Requests Table -->
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover requests-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Employee Name</th>
+                            <th>User ID</th>
+                            <th>Total Requests</th>
+                            <th>Leave Requests</th>
+                            <th>Late Requests</th>
+                            <th>Early Requests</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for emp_data in employee_requests %}
+                        <tr class="employee-row"data-employee-id="{{ emp_data.employee.id }}"data-status="{{ emp_data.employee.user.status|default:'active' }}">
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ emp_data.employee.name }}</td>
+                            <td>{{ emp_data.employee.user.userid|default:"-" }}</td>
+                            <td><span class="badge bg-primary">{{ emp_data.total_requests }}</span></td>
+                            <td><span class="badge bg-success">{{ emp_data.leave_count }}</span></td>
+                            <td><span class="badge bg-warning">{{ emp_data.late_count }}</span></td>
+                            <td><span class="badge bg-info">{{ emp_data.early_count }}</span></td>
+                            <td>
+                                <i class="fas fa-eye eye-icon"
+                                   onclick="viewEmployeeRequests({{ emp_data.employee.id }}, '{{ emp_data.employee.name }}')"
+                                   data-bs-toggle="tooltip"
+                                   title="View all requests">
+                                </i>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center text-muted py-4">No employees found for the selected month.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Employee Requests Details -->
+<div class="modal fade" id="employeeRequestsModal" tabindex="-1" aria-labelledby="employeeRequestsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="employeeRequestsModalLabel">Request Details - <span id="modalEmployeeName"></span></h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-flex justify-content-between mb-3">
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-sm btn-outline-primary filter-type-btn active" data-type="all">All Requests</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary filter-type-btn" data-type="leave">Leave Requests</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary filter-type-btn" data-type="late">Late Requests</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary filter-type-btn" data-type="early">Early Requests</button>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover" id="requestsDetailsTable">
+                        <thead>
+                            <tr>
+                                <th>Type</th>
+                                <th>Date</th>
+                                <th>Details</th>
+                                <th>Reason</th>
+                                <th>Status</th>
+                                <th>Requested On</th>
+                            </tr>
+                        </thead>
+                        <tbody id="requestsDetailsBody"></tbody>
+                    </table>
+                </div>
+
+                <div id="noRequestsMessage" class="text-center text-muted py-4 d-none">No requests found for the selected filter.</div>
+            </div>
+            <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button></div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Today's Requests -->
+<div class="modal fade" id="todayRequestsModal" tabindex="-1" aria-labelledby="todayRequestsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title" id="todayRequestsModalLabel">Today's Requests - <span id="todayDateLabel"></span></h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3 d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>Total:</strong> <span id="todayTotalCount">0</span>
+                        &nbsp;|&nbsp; Leave: <span id="todayLeaveCount">0</span>
+                        &nbsp;|&nbsp; Late: <span id="todayLateCount">0</span>
+                        &nbsp;|&nbsp; Early: <span id="todayEarlyCount">0</span>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover" id="todayRequestsTable">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Type</th>
+                                <th>Employee</th>
+                                <th>Date</th>
+                                <th>Details</th>
+                                <th>Reason</th>
+                                <th>Status</th>
+                                <th>Requested On</th>
+                            </tr>
+                        </thead>
+                        <tbody id="todayRequestsBody"></tbody>
+                    </table>
+                </div>
+
+                <div id="todayNoRequests" class="text-center text-muted py-4 d-none">No requests for today.</div>
+            </div>
+            <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button></div>
+        </div>
+    </div>
+</div>
+
+<!-- Message Preview Modal -->
+<div class="modal fade" id="messagePreviewModal" tabindex="-1" aria-labelledby="messagePreviewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="messagePreviewModalLabel">📱 WhatsApp Message Preview</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="message-preview" id="messagePreviewContent">Loading...</div>
+                <div class="mt-3">
+                    <small class="text-muted">
+                        Recipients: <span id="previewRecipients"></span><br>
+                        Message Length: <span id="previewLength"></span> characters
+                    </small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-success" onclick="sendMessageFromPreview()">📤 Send Now</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let allEmployeeRequests = [];
+
+function updateSummaryCounts() {
+    let totalRequests = 0;
+    let totalLeaveRequests = 0;
+    let totalTimeRequests = 0;
+
+    document.querySelectorAll('.employee-row').forEach(row => {
+        const total = parseInt(row.querySelector('td:nth-child(4) .badge').textContent) || 0;
+        const leave = parseInt(row.querySelector('td:nth-child(5) .badge').textContent) || 0;
+        const late = parseInt(row.querySelector('td:nth-child(6) .badge').textContent) || 0;
+        const early = parseInt(row.querySelector('td:nth-child(7) .badge').textContent) || 0;
+
+        totalRequests += total;
+        totalLeaveRequests += leave;
+        totalTimeRequests += (late + early);
+    });
+
+    document.getElementById('totalRequests').textContent = totalRequests;
+    document.getElementById('totalLeaveRequests').textContent = totalLeaveRequests;
+    document.getElementById('totalTimeRequests').textContent = totalTimeRequests;
+}
+
+function showSendStatus(message, type = 'info') {
+    const statusArea = document.getElementById('sendStatusArea');
+    statusArea.className = `send-status send-${type}`;
+    statusArea.innerHTML = message;
+    statusArea.style.display = 'block';
+    
+    // Auto hide after 10 seconds for success messages
+    if (type === 'success') {
+        setTimeout(() => {
+            statusArea.style.display = 'none';
+        }, 10000);
+    }
+}
+
+function viewEmployeeRequests(employeeId, employeeName) {
+    document.getElementById('modalEmployeeName').textContent = employeeName;
+    const tbody = document.getElementById('requestsDetailsBody');
+    tbody.innerHTML = '<tr><td colspan="6" class="text-center">Loading...</td></tr>';
+
+    const monthFilter = document.getElementById('monthFilter').value;
+    fetch(`/get-employee-requests/${employeeId}/?month=${monthFilter}`)
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                allEmployeeRequests = [...data.leave_requests, ...data.late_requests, ...data.early_requests]
+                    .map(item => {
+                        if (item.hasOwnProperty('start_date') && item.hasOwnProperty('end_date')) {
+                            return {
+                                type: 'Leave',
+                                start_date: item.start_date,
+                                end_date: item.end_date,
+                                details: item.leave_type || '',
+                                reason: item.reason || '',
+                                status: item.status || 'pending',
+                                created_at: item.created_at || ''
+                            };
+                        } else if (item.hasOwnProperty('delay_time')) {
+                            return {
+                                type: 'Late',
+                                date: item.date,
+                                details: item.delay_time || '',
+                                reason: item.reason || '',
+                                status: item.status || 'pending',
+                                created_at: item.created_at || ''
+                            };
+                        } else {
+                            return {
+                                type: 'Early',
+                                date: item.date,
+                                details: item.early_time || '',
+                                reason: item.reason || '',
+                                status: item.status || 'pending',
+                                created_at: item.created_at || ''
+                            };
+                        }
+                    })
+                    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+                displayRequests('all');
+                new bootstrap.Modal(document.getElementById('employeeRequestsModal')).show();
+            } else {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center text-danger">Error loading requests</td></tr>';
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center text-danger">Error loading requests</td></tr>';
+        });
+}
+
+function displayRequests(type) {
+    const tbody = document.getElementById('requestsDetailsBody');
+    const noRequestsMessage = document.getElementById('noRequestsMessage');
+    let filtered = allEmployeeRequests;
+    if (type !== 'all') filtered = allEmployeeRequests.filter(r => r.type.toLowerCase() === type);
+
+    tbody.innerHTML = '';
+    if (filtered.length === 0) {
+        noRequestsMessage.classList.remove('d-none');
+        tbody.classList.add('d-none');
+    } else {
+        noRequestsMessage.classList.add('d-none');
+        tbody.classList.remove('d-none');
+
+        filtered.forEach(request => {
+            const row = document.createElement('tr');
+            let statusClass = 'badge bg-secondary';
+            if (request.status === 'approved') statusClass = 'badge bg-success';
+            if (request.status === 'rejected') statusClass = 'badge bg-danger';
+            if (request.status === 'pending') statusClass = 'badge bg-warning text-dark';
+
+            let dates = '';
+            if (request.type === 'Leave') {
+                dates = `${request.start_date} to ${request.end_date}`;
+            } else {
+                dates = request.date || '';
+            }
+
+            row.innerHTML = `
+                <td>
+                    <span class="badge ${request.type === 'Leave' ? 'bg-success' : request.type === 'Late' ? 'bg-warning' : 'bg-info'}">${request.type}</span>
+                </td>
+                <td>${dates}</td>
+                <td>${request.details || ''}</td>
+                <td>${request.reason || ''}</td>
+                <td><span class="${statusClass}">${request.status}</span></td>
+                <td>${request.created_at || ''}</td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+}
+
+// TODAY button behavior
+document.getElementById('todayBtn').addEventListener('click', function() {
+    const today = new Date().toISOString().split('T')[0];
+    fetchTodayRequests(today);
+});
+
+function fetchTodayRequests(dateISO, params = '') {
+    document.getElementById('todayDateLabel').textContent = dateISO;
+    const modalEl = document.getElementById('todayRequestsModal');
+    const modal = new bootstrap.Modal(modalEl);
+
+    const tbody = document.getElementById('todayRequestsBody');
+    tbody.innerHTML = '<tr><td colspan="8" class="text-center">Loading...</td></tr>';
+    document.getElementById('todayNoRequests').classList.add('d-none');
+    document.getElementById('todaySummaryCard').classList.remove('d-none');
+
+    const url = `/today-requests/?date=${dateISO}${params}`;
+    
+    fetch(url)
+        .then(r => r.json())
+        .then(data => {
+            if (!data.success) {
+                tbody.innerHTML = `<tr><td colspan="8" class="text-center text-danger">${data.error || 'Error'}</td></tr>`;
+                modal.show();
+                return;
+            }
+
+            const counts = data.counts || {};
+            document.getElementById('todayTotalCount').textContent = counts.total || 0;
+            document.getElementById('todayLeaveCount').textContent = counts.leave || 0;
+            document.getElementById('todayLateCount').textContent = counts.late || 0;
+            document.getElementById('todayEarlyCount').textContent = counts.early || 0;
+
+            document.getElementById('todayTotal').textContent = counts.total || 0;
+            document.getElementById('todayBreakdown').textContent = `L:${counts.leave||0} | Late:${counts.late||0} | E:${counts.early||0}`;
+
+            const reqs = data.requests || [];
+
+            if (reqs.length === 0) {
+                document.getElementById('todayNoRequests').classList.remove('d-none');
+                tbody.innerHTML = '';
+            } else {
+                document.getElementById('todayNoRequests').classList.add('d-none');
+                tbody.innerHTML = '';
+                reqs.forEach((req, idx) => {
+                    const tr = document.createElement('tr');
+                    let statusClass = 'badge bg-secondary';
+                    if (req.status === 'approved') statusClass = 'badge bg-success';
+                    if (req.status === 'rejected') statusClass = 'badge bg-danger';
+                    if (req.status === 'pending') statusClass = 'badge bg-warning text-dark';
+
+                    let dates = '';
+                    if (req.type === 'Leave') {
+                        dates = `${req.start_date} to ${req.end_date}`;
+                    } else {
+                        dates = req.date || '';
+                    }
+
+                    tr.innerHTML = `
+                        <td>${idx + 1}</td>
+                        <td><span class="badge ${req.type === 'Leave' ? 'bg-success' : req.type === 'Late' ? 'bg-warning' : 'bg-info'}">${req.type}</span></td>
+                        <td>${req.employee_name || '-'}</td>
+                        <td>${dates}</td>
+                        <td>${req.details || ''}</td>
+                        <td>${req.reason || ''}</td>
+                        <td><span class="${statusClass}">${req.status}</span></td>
+                        <td>${req.created_at || ''}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+
+            // Handle send results if present
+            if (data.send_attempted) {
+                if (data.send_results && data.send_results.length > 0) {
+                    const successCount = data.send_results.filter(r => r.ok).length;
+                    const totalCount = data.send_results.length;
+                    
+                    if (successCount === totalCount) {
+                        showSendStatus(`✅ Messages sent successfully to all ${totalCount} recipients!`, 'success');
+                    } else {
+                        showSendStatus(`⚠️ Messages sent to ${successCount} of ${totalCount} recipients. Check console for details.`, 'error');
+                    }
+                    
+                    console.log('Send Results:', data.send_results);
+                } else {
+                    showSendStatus('📤 Message sending attempted but no results available.', 'info');
+                }
+            }
+
+            modal.show();
+        })
+        .catch(err => {
+            console.error(err);
+            document.getElementById('todayRequestsBody').innerHTML = '<tr><td colspan="8" class="text-center text-danger">Error loading today requests</td></tr>';
+            modal.show();
+        });
+}
+
+// Test functions for messaging
+function testSendMessage() {
+    const today = new Date().toISOString().split('T')[0];
+    showSendStatus('🧪 Testing message send...', 'info');
+    fetchTodayRequests(today, '&force=1');
+}
+
+function forceSendMessage() {
+    const today = new Date().toISOString().split('T')[0];
+    showSendStatus('📤 Force sending message now...', 'info');
+    fetchTodayRequests(today, '&force=1');
+}
+
+function dryRunMessage() {
+    const today = new Date().toISOString().split('T')[0];
+    
+    fetch(`/today-requests/?date=${today}&dry_run=1&force=1`)
+        .then(r => r.json())
+        .then(data => {
+            if (data.success && data.dry_run) {
+                document.getElementById('messagePreviewContent').textContent = data.full_message || data.message_preview || 'No message content available';
+                document.getElementById('previewRecipients').textContent = (data.norm_recipients || []).join(', ');
+                document.getElementById('previewLength').textContent = (data.full_message || '').length;
+                
+                new bootstrap.Modal(document.getElementById('messagePreviewModal')).show();
+            } else {
+                showSendStatus('❌ Failed to generate message preview', 'error');
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            showSendStatus('❌ Error generating message preview', 'error');
+        });
+}
+
+function sendMessageFromPreview() {
+    bootstrap.Modal.getInstance(document.getElementById('messagePreviewModal')).hide();
+    forceSendMessage();
+}
+
+function debugTiming() {
+    const today = new Date().toISOString().split('T')[0];
+    
+    fetch(`/today-requests/?date=${today}&debug=1`)
+        .then(r => r.json())
+        .then(data => {
+            const debugInfo = `
+🕐 Current IST Time: ${data.ist_now || 'N/A'}
+🎯 Auto Send Hours: ${(data.auto_hours_ist || []).join(', ')}
+⏰ Current Hour: ${data.should_send_logic?.current_hour || 'N/A'}
+⏱️ Current Minute: ${data.should_send_logic?.current_minute || 'N/A'}
+✅ Is Auto Hour: ${data.should_send_logic?.is_auto_hour ? 'Yes' : 'No'}
+🎯 Is Exact Minute: ${data.should_send_logic?.is_exact_minute ? 'Yes' : 'No'}
+📤 Send Attempted: ${data.send_attempted ? 'Yes' : 'No'}
+📊 Total Requests: ${data.total_requests_found || 0}
+            `.trim();
+            
+            showSendStatus(`🔍 Debug Information:<br><pre style="margin-top: 10px;">${debugInfo}</pre>`, 'info');
+        })
+        .catch(err => {
+            console.error(err);
+            showSendStatus('❌ Error getting debug information', 'error');
+        });
+}
+
+// Filter type buttons for employee modal
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('filter-type-btn')) {
+        document.querySelectorAll('.filter-type-btn').forEach(btn => btn.classList.remove('active'));
+        e.target.classList.add('active');
+        displayRequests(e.target.getAttribute('data-type'));
+    }
+});
+
+// On page load
+document.addEventListener('DOMContentLoaded', function() {
+    updateSummaryCounts();
+
+    // Month filter change handler
+    document.getElementById('monthFilter').addEventListener('change', function() {
+        const selectedMonth = this.value;
+        window.location.href = `{% url 'all_requests_summary' %}?month=${selectedMonth}`;
+    });
+
+    // Initialize tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function(el){ return new bootstrap.Tooltip(el); });
+});
+</script>
+<script>
+function filterByStatus() {
+    const selectedStatus = document.getElementById("statusFilter").value;
+    const rows = document.querySelectorAll(".employee-row");
+
+    rows.forEach(row => {
+        const status = row.getAttribute("data-status") || "active";
+        if (selectedStatus === "all" || status === selectedStatus) {
+            row.style.display = "";
+        } else {
+            row.style.display = "none";
+        }
+    });
+}
+
+// Apply default "active" filter on page load
+document.addEventListener("DOMContentLoaded", function() {
+    filterByStatus();
+});
+</script>
+
+{% endblock %}
