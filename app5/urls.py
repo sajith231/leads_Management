@@ -132,6 +132,7 @@ urlpatterns = [
 
 
     path('event-form/', views.event_form, name='event_form'),
+    
 ]
 
 
