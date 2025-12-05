@@ -7,7 +7,7 @@
 <div class="content-wrapper">
     <div class="page-header">
         <h1 class="page-title">Edit Item</h1>
-        <a href="{% url 'purchase_order:item_list' %}" class="btn btn-secondary">
+        <a href="{% if request.GET.next %}{{ request.GET.next }}{% else %}{% url 'purchase_order:item_list' %}{% endif %}" class="btn btn-secondary">
             <i class="fas fa-arrow-left"></i> Back to List
         </a>
     </div>
@@ -253,7 +253,7 @@
                 <button type="submit" class="btn btn-primary btn-lg">
                     <i class="fas fa-save"></i> Update Item
                 </button>
-                <a href="{% url 'purchase_order:item_list' %}" class="btn btn-secondary btn-lg">
+                <a href="{% if request.GET.next %}{{ request.GET.next }}{% else %}{% url 'purchase_order:item_list' %}{% endif %}" class="btn btn-secondary btn-lg">
                     <i class="fas fa-times"></i> Cancel
                 </a>
             </div>

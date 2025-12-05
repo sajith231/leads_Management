@@ -26,6 +26,7 @@
                     id="searchInput"
                     placeholder="Search by Name/ID/HSN/Department..." 
                     class="modern-search"
+                    value="{{ request.GET.search|default:'' }}"
                 >
             </div>
 
@@ -33,7 +34,8 @@
             <select name="department" id="departmentSelect" class="modern-select">
                 <option value="all">All Departments</option>
                 {% for dept in departments %}
-                    <option value="{{ dept.id }}" {% if selected_department|default:'all' == dept.id|stringformat:"s" %}selected{% endif %}>
+                    <option value="{{ dept.id }}" 
+                        {% if request.GET.department == dept.id|stringformat:"s" %}selected{% endif %}>
                         {{ dept.name }}
                     </option>
                 {% endfor %}
@@ -42,17 +44,17 @@
             <!-- Section Filter -->
             <select name="section" id="sectionSelect" class="modern-select">
                 <option value="all">All Sections</option>
-                <option value="GENERAL" {% if selected_section == 'GENERAL' %}selected{% endif %}>General</option>
-                <option value="HARDWARE" {% if selected_section == 'HARDWARE' %}selected{% endif %}>Hardware</option>
-                <option value="SOFTWARE" {% if selected_section == 'SOFTWARE' %}selected{% endif %}>Softwares</option>
-                <option value="PAPER_ROLLS" {% if selected_section == 'PAPER_ROLLS' %}selected{% endif %}>Paper Rolls</option>
+                <option value="GENERAL" {% if request.GET.section == 'GENERAL' %}selected{% endif %}>General</option>
+                <option value="HARDWARE" {% if request.GET.section == 'HARDWARE' %}selected{% endif %}>Hardware</option>
+                <option value="SOFTWARE" {% if request.GET.section == 'SOFTWARE' %}selected{% endif %}>Softwares</option>
+                <option value="PAPER_ROLLS" {% if request.GET.section == 'PAPER_ROLLS' %}selected{% endif %}>Paper Rolls</option>
             </select>
 
             <!-- Status Filter -->
             <select name="status" id="statusSelect" class="modern-select">
                 <option value="all">All Status</option>
-                <option value="active" {% if selected_status == 'active' %}selected{% endif %}>Active</option>
-                <option value="inactive" {% if selected_status == 'inactive' %}selected{% endif %}>Inactive</option>
+                <option value="active" {% if request.GET.status == 'active' %}selected{% endif %}>Active</option>
+                <option value="inactive" {% if request.GET.status == 'inactive' %}selected{% endif %}>Inactive</option>
             </select>
         </div>
 
@@ -64,7 +66,7 @@
             <div class="custom-pagination">
 
                 {% if items.has_previous %}
-                    <a href="?{% if request.GET %}{{ request.GET.urlencode|cut:'page='|cut:'&' }}&{% endif %}page={{ items.previous_page_number }}" class="page-link">«</a>
+                    <a href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ items.previous_page_number }}" class="page-link">«</a>
                 {% endif %}
 
                 {% for page_num in items.paginator.page_range %}
@@ -72,13 +74,13 @@
                         {% if page_num == items.number %}
                             <span class="page-link active">{{ page_num }}</span>
                         {% else %}
-                            <a href="?{% if request.GET %}{{ request.GET.urlencode|cut:'page='|cut:'&' }}&{% endif %}page={{ page_num }}" class="page-link">{{ page_num }}</a>
+                            <a href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_num }}" class="page-link">{{ page_num }}</a>
                         {% endif %}
                     {% endif %}
                 {% endfor %}
 
                 {% if items.has_next %}
-                    <a href="?{% if request.GET %}{{ request.GET.urlencode|cut:'page='|cut:'&' }}&{% endif %}page={{ items.next_page_number }}" class="page-link">»</a>
+                    <a href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ items.next_page_number }}" class="page-link">»</a>
                 {% endif %}
 
             </div>
@@ -88,7 +90,7 @@
                 <i class="fas fa-times"></i> Clear 
             </button>
         </div>
-    </div>  
+    </div>
 
     <!-- Main Content Area -->
     <div class="content-area">
@@ -115,7 +117,7 @@
                     data-item-purchase="{{ item.purchase_price|floatformat:2 }}"
                     data-item-cost="{{ item.cost|floatformat:2 }}"
                     data-item-active="{{ item.is_active }}"
-                    data-item-edit-url="{% url 'purchase_order:item_edit' item.pk %}"
+                    data-item-edit-url="{% url 'purchase_order:item_edit' item.pk %}?next={{ request.get_full_path|urlencode }}"
                     onclick="showItemDetail(this)">
                     <div class="item-avatar">
                         {% if item.images.first %}
@@ -178,7 +180,7 @@
 
                 <!-- Action Buttons -->
                 <div class="action-buttons-top">
-                    <button class="btn-action btn-edit" id="editItemBtn" onclick="window.location.href='{% url 'purchase_order:item_edit' items.0.pk %}'">
+                    <button class="btn-action btn-edit" id="editItemBtn" onclick="window.location.href='{% url 'purchase_order:item_edit' items.0.pk %}?next={{ request.get_full_path|urlencode }}'">
                         <i class="fas fa-edit"></i> Edit
                     </button>
                     <button class="btn-action btn-delete" id="deleteItemBtn" onclick="confirmDelete({{ items.0.id }}, '{{ items.0.name|escapejs }}')">
@@ -1140,8 +1142,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const sectionSelect = document.getElementById('sectionSelect');
     const statusSelect = document.getElementById('statusSelect');
 
-    // Function to apply filters by updating URL
-    function applyFilters() {
+    // Function to build URL with filters
+    function buildFilterURL(resetPage = true) {
         const params = new URLSearchParams(window.location.search);
         
         const search = searchInput.value.trim();
@@ -1149,24 +1151,32 @@ document.addEventListener('DOMContentLoaded', function () {
         const section = sectionSelect.value;
         const status = statusSelect.value;
         
-        // Clear all filter params first
+        // Clear filter params
         params.delete('search');
         params.delete('department');
         params.delete('section');
         params.delete('status');
-        params.delete('page'); // Reset to page 1 when filtering
         
-        // Add back only non-empty filters
+        // Reset to page 1 when filters change
+        if (resetPage) {
+            params.delete('page');
+        }
+        
+        // Add active filters
         if (search) params.set('search', search);
         if (department && department !== 'all') params.set('department', department);
         if (section && section !== 'all') params.set('section', section);
         if (status && status !== 'all') params.set('status', status);
         
-        // Redirect with new filters
-        window.location.href = '?' + params.toString();
+        return '?' + params.toString();
     }
 
-    // Search with debounce (wait 500ms after user stops typing)
+    // Apply filters
+    function applyFilters() {
+        window.location.href = buildFilterURL(true);
+    }
+
+    // Search with debounce (500ms delay)
     let searchTimeout;
     if (searchInput) {
         searchInput.addEventListener('keyup', function() {
@@ -1183,14 +1193,18 @@ document.addEventListener('DOMContentLoaded', function () {
 
 // ================= CLEAR FILTERS =================
 function clearFilters() {
+    // Clear all filters, keep only base URL
     window.location.href = window.location.pathname;
 }
 
 // ================= DELETE MODAL =================
 function confirmDelete(itemId, itemName) {
     const modal = document.getElementById('deleteModal');
+    const currentUrl = encodeURIComponent(window.location.pathname + window.location.search);
+    
     document.getElementById('itemName').textContent = itemName;
-    document.getElementById('deleteForm').action = `/po/items/${itemId}/delete/`;
+    document.getElementById('deleteForm').action = `/po/items/${itemId}/delete/?next=${currentUrl}`;
+    
     modal.style.display = 'block';
     setTimeout(() => modal.classList.add('show'), 10);
 }
@@ -1279,6 +1293,7 @@ function showItemDetail(element) {
             : `<div class="empty-state">
                     <i class="fas fa-image"></i>
                     <p>No images uploaded for this item.</p>
+                    <small>Use the Edit page to upload images.</small>
                 </div>`;
     }
 }
