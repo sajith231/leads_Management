@@ -8,4 +8,5 @@ urlpatterns = [
     path("download-file/<uuid:file_id>/", views.download_file, name="download_file"),
     path("delete-file/<uuid:file_id>/", views.delete_file, name="delete_file"),
     path("send-whatsapp/", views.send_whatsapp, name="send_whatsapp"),
+    path("get-clients/", views.get_clients, name="get_clients"),  # This line should be here
 ]

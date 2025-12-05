@@ -7,12 +7,13 @@
             <p class="text-muted mb-0">Manage your vehicle information</p>
         </div>
         <div class="col-md-6 text-end">
+            <!-- Only keep Add Vehicle button at the top -->
             <a href="{% url 'details_add' %}" class="btn btn-primary btn-modern">
                 <i class="bi bi-plus-circle"></i> Add Vehicle
-            </a>
+            </a>            
         </div>
     </div>
-
+    
     {% if messages %}
         {% for message in messages %}
             <div class="alert alert-{{ message.tags }} alert-dismissible fade show modern-alert" role="alert">
@@ -41,24 +42,54 @@
                             {% for detail in details %}
                                 <tr id="row-{{ detail.id }}">
                                     <td class="text-muted">{{ detail.detail_date|date:"d M Y" }}</td>
-                                    <td><span class="badge-vehicle">{{ detail.vehicle.vehicle_number }}</span></td>
-                                    <td class="fw-medium">{{ detail.vehicle.vehicle_name }}</td>
-                                    <td>{{ detail.vehicle.owner_name }}</td>
+                                    <td>
+                                        {% if detail.vehicle and detail.vehicle.vehicle_number %}
+                                            <span class="badge-vehicle">{{ detail.vehicle.vehicle_number }}</span>
+                                        {% else %}
+                                            <span class="text-muted">—</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="fw-medium">
+                                        {{ detail.vehicle.vehicle_name|default:"—" }}
+                                    </td>
+                                    <td>{{ detail.vehicle.owner_name|default:"—" }}</td>
                                     <td class="text-muted">{{ detail.remarks|default:"—" }}</td>
                                     <td class="text-end">
-                                        <a href="{% url 'vehicle_challan_activity' detail.vehicle.id %}" 
-                                           class="btn btn-sm btn-outline-primary btn-action me-2"
-                                           title="View Challan/Activity">
-                                            <i class="bi bi-file-text"></i> Challan/Activity
-                                        </a>
-                                        <button type="button" 
-                                                class="btn btn-sm btn-outline-danger btn-action delete-btn" 
-                                                data-detail-id="{{ detail.id }}"
-                                                data-vehicle-number="{{ detail.vehicle.vehicle_number }}"
-                                                data-detail-date="{{ detail.detail_date|date:'d M Y' }}"
-                                                title="Delete">
-                                            <i class="bi bi-trash"></i> Delete
-                                        </button>
+                                        <!-- Row-level buttons - Only Check and Report -->
+                                        <div class="d-flex flex-wrap justify-content-end gap-2">
+                                            <!-- Report Button -->
+                                            <a href="{% url 'report_list' %}" class="btn btn-sm btn-info btn-action">
+                                                <i class="bi bi-file-earmark-text"></i>
+                                                <span>Report</span>
+                                            </a>
+                                            
+                                            <!-- Check Button -->
+                                            <a href="{% url 'add_check' %}" class="btn btn-sm btn-success btn-action">
+                                                <i class="bi bi-check2-circle"></i>
+                                                <span>Check</span>
+                                            </a>
+                                            
+                                            {% if detail.vehicle and detail.vehicle.id %}
+                                                <a href="{% url 'vehicle_challan_activity' detail.vehicle.id %}" 
+                                                   class="btn btn-sm btn-outline-primary btn-action"
+                                                   title="View Challan/Activity">
+                                                    <i class="bi bi-file-text"></i>
+                                                    <span>Challan</span>
+                                                </a>
+                                            {% else %}
+                                                <span class="text-muted me-2">No vehicle</span>
+                                            {% endif %}
+
+                                            <button type="button" 
+                                                    class="btn btn-sm btn-outline-danger btn-action delete-btn" 
+                                                    data-detail-id="{{ detail.id }}"
+                                                    data-vehicle-number="{{ detail.vehicle.vehicle_number|default:'—' }}"
+                                                    data-detail-date="{{ detail.detail_date|date:'d M Y' }}"
+                                                    title="Delete">
+                                                <i class="bi bi-trash"></i>
+                                                <span>Delete</span>
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             {% endfor %}
@@ -81,7 +112,7 @@
     </div>
 </div>
 
-<!-- Delete Confirmation Modal -->
+<!-- Delete Modal & Scripts (same as earlier, unchanged) -->
 <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content modern-modal">
@@ -127,33 +158,24 @@ document.addEventListener('DOMContentLoaded', function() {
     let deleteDetailId = null;
     let deleteModal = null;
     
-    // Initialize modal
     const modalElement = document.getElementById('deleteModal');
     if (modalElement) {
         deleteModal = new bootstrap.Modal(modalElement);
     }
     
-    // Handle delete button clicks
     document.querySelectorAll('.delete-btn').forEach(button => {
         button.addEventListener('click', function() {
             deleteDetailId = this.getAttribute('data-detail-id');
             const vehicleNumber = this.getAttribute('data-vehicle-number');
             const detailDate = this.getAttribute('data-detail-date');
-            
-            // Set the details in the modal
             document.getElementById('deleteVehicleNumber').textContent = vehicleNumber;
             document.getElementById('deleteDetailDate').textContent = detailDate;
-            
-            // Update the form action with the correct URL
             const deleteForm = document.getElementById('deleteForm');
             deleteForm.action = `/vehicle/details/${deleteDetailId}/delete/`;
-            
-            // Show the modal
             deleteModal.show();
         });
     });
     
-    // Auto-dismiss alerts after 5 seconds
     const alerts = document.querySelectorAll('.alert');
     alerts.forEach(function(alert) {
         setTimeout(function() {
@@ -169,6 +191,10 @@ document.addEventListener('DOMContentLoaded', function() {
     :root {
         --primary-color: #2563eb;
         --primary-hover: #1d4ed8;
+        --info-color: #0891b2;
+        --info-hover: #0e7490;
+        --success-color: #059669;
+        --success-hover: #047857;
         --danger-color: #dc2626;
         --danger-hover: #b91c1c;
         --text-primary: #1f2937;
@@ -264,6 +290,31 @@ document.addEventListener('DOMContentLoaded', function() {
         font-size: 0.875rem;
         font-weight: 500;
         transition: all 0.2s ease;
+        white-space: nowrap;
+    }
+    
+    .btn-info.btn-action {
+        background-color: var(--info-color);
+        border-color: var(--info-color);
+        color: white;
+    }
+    
+    .btn-info.btn-action:hover {
+        background-color: var(--info-hover);
+        border-color: var(--info-hover);
+        color: white;
+    }
+    
+    .btn-success.btn-action {
+        background-color: var(--success-color);
+        border-color: var(--success-color);
+        color: white;
+    }
+    
+    .btn-success.btn-action:hover {
+        background-color: var(--success-hover);
+        border-color: var(--success-hover);
+        color: white;
     }
     
     .btn-outline-primary.btn-action {
@@ -359,6 +410,11 @@ document.addEventListener('DOMContentLoaded', function() {
         font-weight: 500;
     }
     
+    /* Flex container for buttons */
+    .gap-2 {
+        gap: 0.5rem;
+    }
+    
     /* Responsive */
     @media (max-width: 768px) {
         .modern-table thead th,
@@ -377,6 +433,10 @@ document.addEventListener('DOMContentLoaded', function() {
         
         .btn-action span {
             display: none;
+        }
+        
+        .gap-2 {
+            gap: 0.25rem;
         }
     }
 </style>

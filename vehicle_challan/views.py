@@ -305,46 +305,433 @@ def challan_add(request, vehicle_id):
     })
 
 def challan_update_status(request, challan_id):
-    """Update challan payment status"""
     if request.method == 'POST':
         challan = get_object_or_404(Challan, id=challan_id)
         status = request.POST.get('status')
         payment_date = request.POST.get('payment_date')
-        
         if status in ['paid', 'pending', 'disputed']:
             challan.status = status
             if status == 'paid' and payment_date:
                 challan.payment_date = payment_date
             challan.save()
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                return JsonResponse({'success': True})
             messages.success(request, f"Challan status updated to {status}.")
         else:
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                return JsonResponse({'success': False, 'error': 'Invalid status'}, status=400)
             messages.error(request, "Invalid status.")
-        
         return redirect('vehicle_challan_activity', vehicle_id=challan.vehicle.id)
-    
     return redirect('vehicle_details')
 
 
 @require_http_methods(["POST"])
 def challan_delete(request, challan_id):
-    """Delete a challan"""
     try:
         challan = get_object_or_404(Challan, id=challan_id)
         vehicle_id = challan.vehicle.id
         challan_number = challan.challan_number
-        
-        # Delete the challan
         challan.delete()
-        
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({'success': True})
         messages.success(request, f"Challan {challan_number} deleted successfully.")
-        logger.info(f"Deleted challan ID {challan_id} (Challan No: {challan_number})")
-    except Challan.DoesNotExist:
-        messages.error(request, "Challan not found.")
-        logger.error(f"Attempted to delete non-existent challan ID {challan_id}")
-        return redirect('vehicle_details')
     except Exception as e:
-        logger.error(f"Error deleting challan {challan_id}: {str(e)}")
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({'success': False, 'error': str(e)}, status=500)
         messages.error(request, f"Error deleting challan: {str(e)}")
         return redirect('vehicle_details')
-    
     return redirect('vehicle_challan_activity', vehicle_id=vehicle_id)
+
+
+
+
+
+
+
+
+# vehicle_challan/views.py
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from django.db.models import Max, Count, Q
+from django.http import JsonResponse, HttpResponseBadRequest
+from django.views.decorators.http import require_http_methods
+from django.urls import reverse
+from datetime import date, datetime
+import logging
+from urllib.parse import quote_plus, unquote_plus
+
+from fuel_management.models import Vehicle
+from .models import VehicleDetail, Challan
+
+logger = logging.getLogger(__name__)
+
+
+def _ensure_temp_checks_session(request):
+    """Ensure session key exists and is a list."""
+    temp_checks = request.session.get('temp_checks')
+    if not isinstance(temp_checks, list):
+        request.session['temp_checks'] = []
+        temp_checks = request.session['temp_checks']
+    return temp_checks
+
+
+def add_check(request):
+    """
+    Add a temporary (non-persisted) check stored in session.
+    Each POST will append a new temporary check so the same vehicle can appear multiple times.
+    """
+    try:
+        vehicles = Vehicle.objects.all().order_by('vehicle_number')
+    except Exception as e:
+        logger.exception("Error loading vehicles for add_check: %s", e)
+        vehicles = []
+        messages.error(request, "Error loading vehicles list.")
+
+    if request.method == 'POST':
+        vehicle_id = request.POST.get('vehicle_id', '').strip()
+        remarks = request.POST.get('remarks', '').strip()
+        detail_date = request.POST.get('detail_date') or date.today().isoformat()
+
+        if not vehicle_id:
+            messages.error(request, "Please select a vehicle before submitting.")
+            return render(request, 'add_check.html', {
+                'vehicles': vehicles,
+                'form_data': request.POST,
+                'current_date': date.today().strftime('%Y-%m-%d'),
+            })
+
+        # validate vehicle exists
+        try:
+            vehicle = Vehicle.objects.get(id=int(vehicle_id))
+        except (ValueError, Vehicle.DoesNotExist):
+            messages.error(request, "Selected vehicle is invalid.")
+            return render(request, 'add_check.html', {
+                'vehicles': vehicles,
+                'form_data': request.POST,
+                'current_date': date.today().strftime('%Y-%m-%d'),
+            })
+
+        # Build the temp-check dictionary
+        temp_check = {
+            'vehicle_id': vehicle.id,
+            'vehicle_number': vehicle.vehicle_number,
+            'vehicle_name': getattr(vehicle, 'vehicle_name', None),
+            'date': detail_date,       # store as ISO string; we'll parse later
+            'remarks': remarks or '',
+            'created_at': datetime.now().isoformat()
+        }
+
+        # Save into session list (append)
+        temp_checks = _ensure_temp_checks_session(request)
+        temp_checks.append(temp_check)
+        request.session.modified = True  # mark session changed
+
+        messages.success(request, f"Temporary check added for {vehicle.vehicle_number} ({detail_date}).")
+        # Redirect to the report list (no query params needed; report reads session)
+        try:
+            return redirect('report_list')
+        except Exception:
+            return redirect('/vehicle/report/')
+
+    # GET: show the add_check form
+    return render(request, 'add_check.html', {
+        'vehicles': vehicles,
+        'current_date': date.today().strftime('%Y-%m-%d'),
+    })
+
+
+def vehicle_info_json(request, vehicle_id):
+    try:
+        vehicle = get_object_or_404(Vehicle, id=vehicle_id)
+        last_check = VehicleDetail.objects.filter(vehicle=vehicle).aggregate(last=Max('detail_date'))['last']
+        pending = Challan.objects.filter(vehicle=vehicle, status='pending').count()
+        paid = Challan.objects.filter(vehicle=vehicle, status='paid').count()
+        total = Challan.objects.filter(vehicle=vehicle).count()
+        last_check_str = last_check.isoformat() if last_check else None
+        data = {
+            'last_check_date': last_check_str,
+            'pending_challans': pending,
+            'paid_challans': paid,
+            'total_challans': total,
+        }
+        return JsonResponse({'success': True, 'data': data})
+    except Exception as e:
+        logger.exception("Error in vehicle_info_json for id %s: %s", vehicle_id, e)
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+def vehicle_challans_json(request, vehicle_id):
+    if request.method != 'GET':
+        return HttpResponseBadRequest("Only GET allowed")
+    try:
+        vehicle = get_object_or_404(Vehicle, id=vehicle_id)
+        challans = Challan.objects.filter(vehicle=vehicle).order_by('-challan_date')
+        data = []
+        for c in challans:
+            data.append({
+                'id': c.id,
+                'challan_number': getattr(c, 'challan_number', f'#{c.id}'),
+                'challan_date': c.challan_date.isoformat() if getattr(c, 'challan_date', None) else None,
+                'offense_type': getattr(c, 'offense_type', '') or '',
+                'fine_amount': str(getattr(c, 'fine_amount', '') or ''),
+                'status': getattr(c, 'status', '') or '',
+                'payment_date': c.payment_date.isoformat() if getattr(c, 'payment_date', None) else None,
+                'remarks': getattr(c, 'remarks', '') or '',
+            })
+        return JsonResponse({'success': True, 'data': data})
+    except Exception as exc:
+        logger.exception("vehicle_challans_json error for vehicle %s: %s", vehicle_id, exc)
+        return JsonResponse({'success': False, 'error': str(exc)}, status=500)
+
+
+def report_list(request):
+    """
+    Build rows for the report list with filtering support:
+     - Filter by vehicle
+     - Filter by date range (from/to)
+     - include one row per saved VehicleDetail
+     - include session temporary checks as separate rows
+    """
+    try:
+        # Get filter parameters from GET request
+        selected_vehicle = request.GET.get('vehicle', '')
+        date_from = request.GET.get('date_from', '')
+        date_to = request.GET.get('date_to', '')
+        
+        # Parse dates if provided
+        date_from_obj = None
+        date_to_obj = None
+        if date_from:
+            try:
+                date_from_obj = datetime.strptime(date_from, '%Y-%m-%d').date()
+            except ValueError:
+                messages.warning(request, "Invalid 'from' date format.")
+        
+        if date_to:
+            try:
+                date_to_obj = datetime.strptime(date_to, '%Y-%m-%d').date()
+            except ValueError:
+                messages.warning(request, "Invalid 'to' date format.")
+        
+        # Get all vehicles for the dropdown
+        all_vehicles = Vehicle.objects.all().order_by('vehicle_number')
+        
+        # Build base queryset for VehicleDetail
+        details_qs = VehicleDetail.objects.select_related('vehicle')
+        
+        # Apply vehicle filter
+        if selected_vehicle:
+            try:
+                vehicle_id = int(selected_vehicle)
+                details_qs = details_qs.filter(vehicle_id=vehicle_id)
+            except ValueError:
+                pass
+        
+        # Apply date range filter
+        if date_from_obj:
+            details_qs = details_qs.filter(detail_date__gte=date_from_obj)
+        if date_to_obj:
+            details_qs = details_qs.filter(detail_date__lte=date_to_obj)
+        
+        details_qs = details_qs.order_by('-detail_date', 'vehicle__vehicle_number')
+        
+        # Precompute challan counts per vehicle
+        challan_qs = Challan.objects.all()
+        if selected_vehicle:
+            try:
+                vehicle_id = int(selected_vehicle)
+                challan_qs = challan_qs.filter(vehicle_id=vehicle_id)
+            except ValueError:
+                pass
+        
+        counts = challan_qs.values('vehicle').annotate(
+            pending_ch=Count('id', filter=Q(status='pending')),
+            paid_ch=Count('id', filter=Q(status='paid')),
+            total_ch=Count('id')
+        )
+        counts_map = {c['vehicle']: c for c in counts}
+        
+        # Cache latest challan info per vehicle
+        last_challan_cache = {}
+        
+        vehicles_rows = []
+        
+        class RowObj:
+            pass
+        
+        # Add persisted rows (one per saved check)
+        for d in details_qs:
+            v = d.vehicle
+            vid = v.id
+            c = counts_map.get(vid, {})
+            pending = c.get('pending_ch', 0)
+            paid = c.get('paid_ch', 0)
+            total = c.get('total_ch', 0)
+            
+            if vid not in last_challan_cache:
+                latest = Challan.objects.filter(vehicle=v).order_by('-challan_date').first()
+                if latest:
+                    last_challan_cache[vid] = {
+                        'last_challan_date': latest.challan_date,
+                        'last_challan_status': latest.status,
+                        'last_challan_payment_date': latest.payment_date
+                    }
+                else:
+                    last_challan_cache[vid] = {
+                        'last_challan_date': None,
+                        'last_challan_status': None,
+                        'last_challan_payment_date': None
+                    }
+            
+            last_info = last_challan_cache[vid]
+            
+            row = RowObj()
+            row.id = vid
+            row.vehicle_number = v.vehicle_number
+            row.vehicle_name = getattr(v, 'vehicle_name', None)
+            row.last_check = d.detail_date
+            row.pending_challans = pending
+            row.paid_challans = paid
+            row.total_challans = total
+            row.last_challan_date = last_info['last_challan_date']
+            row.last_challan_status = last_info['last_challan_status']
+            row.last_challan_payment_date = last_info['last_challan_payment_date']
+            row.remarks = d.remarks
+            row.is_persisted = True
+            vehicles_rows.append(row)
+        
+        # If no vehicle filter is applied, add vehicles with NO details
+        if not selected_vehicle:
+            detailed_vehicle_ids = set(d.vehicle_id for d in details_qs)
+            remaining_vehicles = Vehicle.objects.exclude(id__in=detailed_vehicle_ids).order_by('vehicle_number')
+            
+            for v in remaining_vehicles:
+                vid = v.id
+                c = counts_map.get(vid, {})
+                pending = c.get('pending_ch', 0)
+                paid = c.get('paid_ch', 0)
+                total = c.get('total_ch', 0)
+                
+                if vid not in last_challan_cache:
+                    latest = Challan.objects.filter(vehicle=v).order_by('-challan_date').first()
+                    if latest:
+                        last_challan_cache[vid] = {
+                            'last_challan_date': latest.challan_date,
+                            'last_challan_status': latest.status,
+                            'last_challan_payment_date': latest.payment_date
+                        }
+                    else:
+                        last_challan_cache[vid] = {
+                            'last_challan_date': None,
+                            'last_challan_status': None,
+                            'last_challan_payment_date': None
+                        }
+                
+                last_info = last_challan_cache[vid]
+                
+                row = RowObj()
+                row.id = vid
+                row.vehicle_number = v.vehicle_number
+                row.vehicle_name = getattr(v, 'vehicle_name', None)
+                row.last_check = None
+                row.pending_challans = pending
+                row.paid_challans = paid
+                row.total_challans = total
+                row.last_challan_date = last_info['last_challan_date']
+                row.last_challan_status = last_info['last_challan_status']
+                row.last_challan_payment_date = last_info['last_challan_payment_date']
+                row.remarks = None
+                row.is_persisted = True
+                vehicles_rows.append(row)
+        
+        # Process session temporary checks
+        temp_checks = request.session.get('temp_checks') or []
+        for tmp in reversed(temp_checks):
+            try:
+                temp_vid = int(tmp.get('vehicle_id') or 0)
+            except Exception:
+                temp_vid = 0
+            
+            # Apply vehicle filter to temp checks
+            if selected_vehicle:
+                try:
+                    if temp_vid != int(selected_vehicle):
+                        continue
+                except ValueError:
+                    continue
+            
+            temp_vehicle_number = tmp.get('vehicle_number') or f"Vehicle #{temp_vid}"
+            temp_vehicle_name = tmp.get('vehicle_name')
+            temp_date_raw = tmp.get('date')
+            temp_remarks = tmp.get('remarks', '')
+            
+            # Parse date
+            temp_last_check = None
+            if temp_date_raw:
+                try:
+                    temp_last_check = date.fromisoformat(temp_date_raw)
+                except Exception:
+                    try:
+                        temp_last_check = datetime.fromisoformat(temp_date_raw).date()
+                    except Exception:
+                        temp_last_check = None
+            
+            # Apply date range filter to temp checks
+            if date_from_obj and temp_last_check and temp_last_check < date_from_obj:
+                continue
+            if date_to_obj and temp_last_check and temp_last_check > date_to_obj:
+                continue
+            
+            c = counts_map.get(temp_vid, {})
+            last_info = last_challan_cache.get(temp_vid, {
+                'last_challan_date': None,
+                'last_challan_status': None,
+                'last_challan_payment_date': None
+            })
+            
+            row = RowObj()
+            row.id = temp_vid
+            row.vehicle_number = temp_vehicle_number
+            row.vehicle_name = temp_vehicle_name
+            row.last_check = temp_last_check
+            row.pending_challans = c.get('pending_ch', 0)
+            row.paid_challans = c.get('paid_ch', 0)
+            row.total_challans = c.get('total_ch', 0)
+            row.last_challan_date = last_info['last_challan_date']
+            row.last_challan_status = last_info['last_challan_status']
+            row.last_challan_payment_date = last_info['last_challan_payment_date']
+            row.remarks = temp_remarks
+            row.is_persisted = False
+            vehicles_rows.insert(0, row)
+        
+        # Get selected vehicle name for display
+        selected_vehicle_name = None
+        if selected_vehicle:
+            try:
+                selected_veh = Vehicle.objects.filter(id=int(selected_vehicle)).first()
+                if selected_veh:
+                    selected_vehicle_name = f"{selected_veh.vehicle_number}"
+                    if selected_veh.vehicle_name:
+                        selected_vehicle_name += f" - {selected_veh.vehicle_name}"
+            except ValueError:
+                pass
+        
+        return render(request, 'report_list.html', {
+            'vehicles': vehicles_rows,
+            'all_vehicles': all_vehicles,
+            'selected_vehicle': selected_vehicle,
+            'selected_vehicle_name': selected_vehicle_name,
+            'date_from': date_from,
+            'date_to': date_to,
+        })
+    
+    except Exception as e:
+        logger.exception("Error loading report list: %s", e)
+        messages.error(request, f"Error loading report: {str(e)}")
+        return render(request, 'report_list.html', {
+            'vehicles': [],
+            'all_vehicles': Vehicle.objects.all().order_by('vehicle_number'),
+            'selected_vehicle': '',
+            'date_from': '',
+            'date_to': '',
+        })
