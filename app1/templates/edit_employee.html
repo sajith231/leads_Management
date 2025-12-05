@@ -33,75 +33,66 @@
         gap: 15px;
     }
 
-    .form-layout {
-        display: grid;
-        grid-template-columns: 1fr 300px;
-        gap: 30px;
-    }
-
-    .form-main {
+    .form-container {
         background: white;
         border-radius: 10px;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
         padding: 30px;
+        position: relative;
     }
 
-    .form-sidebar {
-        background: white;
+    .employee-photo-sidebar {
+        position: absolute;
+        top: 30px;
+        right: 30px;
+        width: 220px; /* Increased width */
+        background: #f8f9fa;
+        padding: 25px; /* Increased padding */
         border-radius: 10px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-        padding: 30px;
-        height: fit-content;
-        position: sticky;
-        top: 20px;
-    }
-
-    .employee-photo-section {
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
         text-align: center;
     }
 
-    .employee-photo-section h4 {
-        font-size: 16px;
-        font-weight: 700;
-        color: #333;
-        margin: 0 0 20px 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 10px;
-    }
-
-    .current-photo-wrapper {
+    .photo-section {
         margin-bottom: 20px;
     }
 
     .current-photo {
-        width: 200px;
-        height: 200px;
-        border-radius: 12px;
+        width: 180px; /* Increased size */
+        height: 180px; /* Increased size */
+        border-radius: 50%; /* Made circular */
         object-fit: cover;
-        border: 3px solid #e0e0e0;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        border: 5px solid white; /* Thicker border */
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); /* Stronger shadow */
         cursor: pointer;
         transition: all 0.3s;
+        margin-bottom: 20px;
     }
 
     .current-photo:hover {
         transform: scale(1.05);
-        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
     }
 
     .photo-upload-label {
-        display: block;
         font-weight: 600;
         color: #333;
-        margin-bottom: 10px;
+        margin-bottom: 8px;
+        display: block;
         font-size: 14px;
         text-align: left;
     }
 
+    .photo-note {
+        font-size: 12px;
+        color: #666;
+        margin-top: 5px;
+        display: block;
+    }
+
     .form-section {
         margin-bottom: 35px;
+        margin-right: 250px; /* Increased space for larger sidebar */
     }
 
     .section-header {
@@ -124,7 +115,7 @@
 
     .form-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
         gap: 20px;
     }
 
@@ -225,6 +216,7 @@
         margin-top: 30px;
         padding-top: 25px;
         border-top: 2px solid #f0f0f0;
+        margin-right: 250px; /* Increased space for larger sidebar */
     }
 
     .btn-submit {
@@ -272,12 +264,15 @@
     }
 
     @media (max-width: 1024px) {
-        .form-layout {
-            grid-template-columns: 1fr;
-        }
-
-        .form-sidebar {
+        .employee-photo-sidebar {
             position: static;
+            width: 100%;
+            margin-bottom: 30px;
+        }
+        
+        .form-section,
+        .action-buttons {
+            margin-right: 0;
         }
     }
 
@@ -297,8 +292,12 @@
         }
 
         .current-photo {
-            width: 150px;
-            height: 150px;
+            width: 150px; /* Adjusted for mobile */
+            height: 150px; /* Adjusted for mobile */
+        }
+        
+        .employee-photo-sidebar {
+            width: 100%;
         }
     }
 
@@ -342,209 +341,211 @@
             </h2>
         </div>
 
-        <!-- Form Layout -->
+        <!-- Form Container with Sidebar -->
         <form action="{% url 'edit_employee' employee.id %}" method="post" enctype="multipart/form-data">
             {% csrf_token %}
             
-            <div class="form-layout">
-                <!-- Main Form Section -->
-                <div class="form-main">
-                    <!-- Personal Information Section -->
-                    <div class="form-section">
-                        <div class="section-header">
-                            <h4><i class="fas fa-user"></i> Personal Information</h4>
-                        </div>
-                        <div class="form-grid">
-                            <div class="form-group">
-                                <label for="name">Full Name <span style="color: #dc3545;">*</span></label>
-                                <input type="text" name="name" id="name" class="form-control" value="{{ employee.name }}" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="dob">Date of Birth <span style="color: #dc3545;">*</span></label>
-                                <input type="date" name="dob" id="dob" class="form-control" value="{{ dob }}" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="education">Education</label>
-                                <input type="text" name="education" id="education" class="form-control" value="{{ employee.education }}">
-                            </div>
-                            <div class="form-group">
-                                <label for="experience">Experience</label>
-                                <input type="text" name="experience" id="experience" class="form-control" value="{{ employee.experience }}">
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Contact Information Section -->
-                    <div class="form-section">
-                        <div class="section-header">
-                            <h4><i class="fas fa-address-book"></i> Contact Information</h4>
-                        </div>
-                        <div class="form-grid">
-                            <div class="form-group">
-                                <label for="phone_personal">Phone (Personal) <span style="color: #dc3545;">*</span></label>
-                                <input type="text" name="phone_personal" id="phone_personal" class="form-control" value="{{ employee.phone_personal }}" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="phone_residential">Phone (Residential)</label>
-                                <input type="text" name="phone_residential" id="phone_residential" class="form-control" value="{{ employee.phone_residential }}">
-                            </div>
-                            <div class="form-group form-grid-full">
-                                <label for="address">Address</label>
-                                <textarea name="address" id="address" class="form-control">{{ employee.address }}</textarea>
-                            </div>
-                            <div class="form-group">
-                                <label for="place">Place <span style="color: #dc3545;">*</span></label>
-                                <input type="text" name="place" id="place" class="form-control" value="{{ employee.place }}" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="district">District <span style="color: #dc3545;">*</span></label>
-                                <input type="text" name="district" id="district" class="form-control" value="{{ employee.district }}" required>
-                            </div>
-                        </div>
-                    </div>
-
-                   <!-- Job Information Section -->
-<div class="form-section">
-    <div class="section-header">
-        <h4><i class="fas fa-briefcase"></i> Job Information</h4>
-    </div>
-
-    <div class="form-grid">
-
-        <!-- Job Title Dropdown -->
-        <div class="form-group">
-            <label for="job_title">Job Title <span style="color: #dc3545;">*</span></label>
-            <select name="job_title" id="job_title" class="form-control" required>
-                <option value="">Select job title</option>
-
-                {% for jt in job_titles %}
-                    <option value="{{ jt.id }}" {% if employee.job_title == jt.title %}selected{% endif %}>
-                        {{ jt.title }}
-                    </option>
-                {% endfor %}
-            </select>
-        </div>
-
-        <!-- Organization Dropdown -->
-        <div class="form-group">
-            <label for="organization">Organization</label>
-            <select name="organization" id="organization" class="form-control">
-                <option value="">Select organization</option>
-                {% for dept in departments %}
-                    <option value="{{ dept.id }}" {% if employee.organization == dept.name %}selected{% endif %}>
-                        {{ dept.name }}
-                    </option>
-                {% endfor %}
-            </select>
-        </div>
-
-    </div>
-</div>
-
-                            <div class="form-group">
-                                <label for="joining_date">Joining Date <span style="color: #dc3545;">*</span></label>
-                                <input type="date" name="joining_date" id="joining_date" class="form-control" value="{{ joining_date }}" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="user_id">Employee User ID</label>
-                                <select name="user_id" id="user_id" class="form-control">
-                                    <option value="" {% if not employee.user %}selected{% endif %}>No User ID</option>
-                                    {% for user in users %}
-                                        <option value="{{ user.id }}" {% if employee.user and employee.user.id == user.id %}selected{% endif %}>
-                                            {{ user.userid }}
-                                        </option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="duty_time_start">Duty Time Start</label>
-                                <input type="time" name="duty_time_start" id="duty_time_start" class="form-control" value="{{ employee.duty_time_start|time:'H:i' }}">
-                            </div>
-                            <div class="form-group">
-                                <label for="duty_time_end">Duty Time End</label>
-                                <input type="time" name="duty_time_end" id="duty_time_end" class="form-control" value="{{ employee.duty_time_end|time:'H:i' }}">
-                            </div>
-                            <div class="form-group">
-                                <label for="status">Status <span style="color: #dc3545;">*</span></label>
-                                <select name="status" id="status" class="form-control" required>
-                                    <option value="active" {% if employee.status == 'active' %}selected{% endif %}>Active</option>
-                                    <option value="inactive" {% if employee.status == 'inactive' %}selected{% endif %}>Inactive</option>
-                                    <option value="on_leave" {% if employee.status == 'on_leave' %}selected{% endif %}>On Leave</option>
-                                </select>
-                            </div>
-                            <div class="form-group form-grid-full">
-                                <label for="attachments">Attachments</label>
-                                {% if employee.attachments.all %}
-                                    <div class="attachments-section">
-                                        <h5>Current Attachments</h5>
-                                        {% for attachment in employee.attachments.all %}
-                                            <div class="attachment-item">
-                                                <input type="checkbox" name="delete_attachments" value="{{ attachment.id }}" id="delete_{{ attachment.id }}">
-                                                <a href="{{ attachment.file.url }}" target="_blank" class="attachment-link">
-                                                    <i class="fas fa-file-alt"></i>
-                                                    View Document {{ forloop.counter }}
-                                                </a>
-                                                <label for="delete_{{ attachment.id }}" class="delete-text" style="margin: 0; cursor: pointer;">Delete</label>
-                                            </div>
-                                        {% endfor %}
-                                    </div>
-                                {% endif %}
-                                <input type="file" name="attachments" id="attachments" class="form-control" multiple>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Bank Details Section -->
-                    <div class="form-section">
-                        <div class="section-header">
-                            <h4><i class="fas fa-university"></i> Bank Details</h4>
-                        </div>
-                        <div class="form-grid">
-                            <div class="form-group">
-                                <label for="bank_account_number">Bank Account Number</label>
-                                <input type="text" name="bank_account_number" id="bank_account_number" class="form-control" value="{{ employee.bank_account_number }}">
-                            </div>
-                            <div class="form-group">
-                                <label for="ifsc_code">IFSC Code</label>
-                                <input type="text" name="ifsc_code" id="ifsc_code" class="form-control" value="{{ employee.ifsc_code }}">
-                            </div>
-                            <div class="form-group">
-                                <label for="bank_name">Bank Name</label>
-                                <input type="text" name="bank_name" id="bank_name" class="form-control" value="{{ employee.bank_name }}">
-                            </div>
-                            <div class="form-group">
-                                <label for="branch">Branch</label>
-                                <input type="text" name="branch" id="branch" class="form-control" value="{{ employee.branch }}">
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Action Buttons -->
-                    <div class="action-buttons">
-                        <a href="{% url 'employee_management' %}" class="btn-cancel">
-                            <i class="fas fa-times"></i>
-                            Cancel
-                        </a>
-                        <button type="submit" class="btn-submit">
-                            <i class="fas fa-save"></i>
-                            Update Employee
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Sidebar - Employee Photo -->
-                <div class="form-sidebar">
-                    <div class="employee-photo-section">
-                        <h4><i class="fas fa-camera"></i> Employee Photo</h4>
-                        <div class="current-photo-wrapper">
-                            <img src="{{ employee.photo.url }}" alt="{{ employee.name }}" class="current-photo" onclick="showPhotoModal('{{ employee.photo.url }}', '{{ employee.name }}')">
-                        </div>
+            <div class="form-container">
+                <!-- Employee Photo Sidebar -->
+                <div class="employee-photo-sidebar">
+                    <div class="photo-section">
+                        <img src="{{ employee.photo.url }}" alt="{{ employee.name }}" class="current-photo" onclick="showPhotoModal('{{ employee.photo.url }}', '{{ employee.name }}')">
                         <div class="form-group">
                             <label for="photo" class="photo-upload-label">Update Photo</label>
                             <input type="file" name="photo" id="photo" class="form-control" accept="image/*">
-                            <small style="color: #666; display: block; margin-top: 8px;">Click image to view larger</small>
+                            <small class="photo-note">Click image to view larger</small>
                         </div>
                     </div>
+                </div>
+
+                <!-- Personal Information Section -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <h4><i class="fas fa-user"></i> Personal Information</h4>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="name">Full Name <span style="color: #dc3545;">*</span></label>
+                            <input type="text" name="name" id="name" class="form-control" value="{{ employee.name }}" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="dob">Date of Birth <span style="color: #dc3545;">*</span></label>
+                            <input type="date" name="dob" id="dob" class="form-control" value="{{ dob }}" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="education">Education</label>
+                            <input type="text" name="education" id="education" class="form-control" value="{{ employee.education }}">
+                        </div>
+                        <div class="form-group">
+                            <label for="experience">Experience</label>
+                            <input type="text" name="experience" id="experience" class="form-control" value="{{ employee.experience }}">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contact Information Section -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <h4><i class="fas fa-address-book"></i> Contact Information</h4>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="phone_personal">Phone (Personal) <span style="color: #dc3545;">*</span></label>
+                            <input type="text" name="phone_personal" id="phone_personal" class="form-control" value="{{ employee.phone_personal }}" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="phone_residential">Phone (Residential)</label>
+                            <input type="text" name="phone_residential" id="phone_residential" class="form-control" value="{{ employee.phone_residential }}">
+                        </div>
+                        <div class="form-group form-grid-full">
+                            <label for="address">Address</label>
+                            <textarea name="address" id="address" class="form-control">{{ employee.address }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="place">Place <span style="color: #dc3545;">*</span></label>
+                            <input type="text" name="place" id="place" class="form-control" value="{{ employee.place }}" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="district">District <span style="color: #dc3545;">*</span></label>
+                            <select name="district" id="district" class="form-control" required>
+                                <option value="" disabled>Select a District</option>
+                                <option value="Thiruvananthapuram" {% if employee.district == "Thiruvananthapuram" %}selected{% endif %}>Thiruvananthapuram</option>
+                                <option value="Kollam" {% if employee.district == "Kollam" %}selected{% endif %}>Kollam</option>
+                                <option value="Pathanamthitta" {% if employee.district == "Pathanamthitta" %}selected{% endif %}>Pathanamthitta</option>
+                                <option value="Alappuzha" {% if employee.district == "Alappuzha" %}selected{% endif %}>Alappuzha</option>
+                                <option value="Kottayam" {% if employee.district == "Kottayam" %}selected{% endif %}>Kottayam</option>
+                                <option value="Idukki" {% if employee.district == "Idukki" %}selected{% endif %}>Idukki</option>
+                                <option value="Ernakulam" {% if employee.district == "Ernakulam" %}selected{% endif %}>Ernakulam</option>
+                                <option value="Thrissur" {% if employee.district == "Thrissur" %}selected{% endif %}>Thrissur</option>
+                                <option value="Palakkad" {% if employee.district == "Palakkad" %}selected{% endif %}>Palakkad</option>
+                                <option value="Malappuram" {% if employee.district == "Malappuram" %}selected{% endif %}>Malappuram</option>
+                                <option value="Kozhikode" {% if employee.district == "Kozhikode" %}selected{% endif %}>Kozhikode</option>
+                                <option value="Wayanad" {% if employee.district == "Wayanad" %}selected{% endif %}>Wayanad</option>
+                                <option value="Kannur" {% if employee.district == "Kannur" %}selected{% endif %}>Kannur</option>
+                                <option value="Kasaragod" {% if employee.district == "Kasaragod" %}selected{% endif %}>Kasaragod</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Job Information Section -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <h4><i class="fas fa-briefcase"></i> Job Information</h4>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="job_title">Job Title <span style="color: #dc3545;">*</span></label>
+                            <select name="job_title" id="job_title" class="form-control" required>
+                                <option value="">Select job title</option>
+                                {% for jt in job_titles %}
+                                    <option value="{{ jt.id }}" {% if employee.job_title == jt.title %}selected{% endif %}>
+                                        {{ jt.title }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="organization">Organization</label>
+                            <select name="organization" id="organization" class="form-control">
+                                <option value="">Select organization</option>
+                                {% for dept in departments %}
+                                    <option value="{{ dept.id }}" {% if employee.organization == dept.name %}selected{% endif %}>
+                                        {{ dept.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="joining_date">Joining Date <span style="color: #dc3545;">*</span></label>
+                            <input type="date" name="joining_date" id="joining_date" class="form-control" value="{{ joining_date }}" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="user_id">Employee User ID</label>
+                            <select name="user_id" id="user_id" class="form-control">
+                                <option value="" {% if not employee.user %}selected{% endif %}>No User ID</option>
+                                {% for user in users %}
+                                    <option value="{{ user.id }}" {% if employee.user and employee.user.id == user.id %}selected{% endif %}>
+                                        {{ user.userid }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="duty_time_start">Duty Time Start</label>
+                            <input type="time" name="duty_time_start" id="duty_time_start" class="form-control" value="{{ employee.duty_time_start|time:'H:i' }}">
+                        </div>
+                        <div class="form-group">
+                            <label for="duty_time_end">Duty Time End</label>
+                            <input type="time" name="duty_time_end" id="duty_time_end" class="form-control" value="{{ employee.duty_time_end|time:'H:i' }}">
+                        </div>
+                        <div class="form-group">
+                            <label for="status">Status <span style="color: #dc3545;">*</span></label>
+                            <select name="status" id="status" class="form-control" required>
+                                <option value="active" {% if employee.status == 'active' %}selected{% endif %}>Active</option>
+                                <option value="inactive" {% if employee.status == 'inactive' %}selected{% endif %}>Inactive</option>
+                                <option value="on_leave" {% if employee.status == 'on_leave' %}selected{% endif %}>On Leave</option>
+                            </select>
+                        </div>
+                        <div class="form-group form-grid-full">
+                            <label for="attachments">Attachments</label>
+                            {% if employee.attachments.all %}
+                                <div class="attachments-section">
+                                    <h5>Current Attachments</h5>
+                                    {% for attachment in employee.attachments.all %}
+                                        <div class="attachment-item">
+                                            <input type="checkbox" name="delete_attachments" value="{{ attachment.id }}" id="delete_{{ attachment.id }}">
+                                            <a href="{{ attachment.file.url }}" target="_blank" class="attachment-link">
+                                                <i class="fas fa-file-alt"></i>
+                                                View Document {{ forloop.counter }}
+                                            </a>
+                                            <label for="delete_{{ attachment.id }}" class="delete-text" style="margin: 0; cursor: pointer;">Delete</label>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <input type="file" name="attachments" id="attachments" class="form-control" multiple>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bank Details Section -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <h4><i class="fas fa-university"></i> Bank Details</h4>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="bank_account_number">Bank Account Number</label>
+                            <input type="text" name="bank_account_number" id="bank_account_number" class="form-control" value="{{ employee.bank_account_number }}">
+                        </div>
+                        <div class="form-group">
+                            <label for="ifsc_code">IFSC Code</label>
+                            <input type="text" name="ifsc_code" id="ifsc_code" class="form-control" value="{{ employee.ifsc_code }}">
+                        </div>
+                        <div class="form-group">
+                            <label for="bank_name">Bank Name</label>
+                            <input type="text" name="bank_name" id="bank_name" class="form-control" value="{{ employee.bank_name }}">
+                        </div>
+                        <div class="form-group">
+                            <label for="branch">Branch</label>
+                            <input type="text" name="branch" id="branch" class="form-control" value="{{ employee.branch }}">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="action-buttons">
+                    <a href="{% url 'employee_management' %}" class="btn-cancel">
+                        <i class="fas fa-times"></i>
+                        Cancel
+                    </a>
+                    <button type="submit" class="btn-submit">
+                        <i class="fas fa-save"></i>
+                        Update Employee
+                    </button>
                 </div>
             </div>
         </form>

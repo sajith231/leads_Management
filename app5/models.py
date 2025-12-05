@@ -240,18 +240,43 @@ class StandbyIssuance(models.Model):
         super().save(*args, **kwargs)
 # item
 
+# 在 models.py 中找到 Item 类，修改为：
 class Item(models.Model):
+    SECTION_CHOICES = [
+        ('GENERAL', 'General'),
+        ('HARDWARE', 'Hardware'),
+        ('SOFTWARE', 'Software'),
+        ('PAPER_ROLLS', 'Paper Rolls'),
+        ('OTHER', 'Other'),
+    ]
+    
     name = models.CharField(max_length=100, unique=True)
+    section = models.CharField(
+        max_length=50, 
+        choices=SECTION_CHOICES, 
+        default='GENERAL',
+        verbose_name="Section"
+    )
+    unit_of_measure = models.CharField(
+        max_length=50, 
+        default='pcs',
+        verbose_name="Unit of Measure"
+    )
+    mrp = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        default=0.00,
+        verbose_name="Maximum Retail Price"
+    )
     description = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return self.name
-    
+        return f"{self.name} - {self.get_section_display()}"
 
     class Meta:
-        ordering = ['name']
+        ordering = ['section', 'name']
 
 # Supplier
 class Supplier(models.Model):
@@ -611,34 +636,21 @@ class RequirementItem(models.Model):
     # Basic item information
     item_name = models.CharField(max_length=200, verbose_name="Item Name")
     
-    # Customer/owner information (ADDED THESE FIELDS)
+    # Customer/owner information
     owner_name = models.CharField(max_length=255, blank=True, null=True, verbose_name="Owner Name")
     phone_no = models.CharField(max_length=20, blank=True, null=True, verbose_name="Phone Number")
     email = models.EmailField(blank=True, null=True, verbose_name="Email Address")
     
     # Item details
+    section = models.CharField(max_length=255, null=True, blank=True)
     unit = models.CharField(max_length=50, blank=True, null=True, verbose_name="Unit")
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name="Price")
+    quantity = models.IntegerField(default=1, verbose_name="Quantity")  # Add this
     total = models.DecimalField(max_digits=12, decimal_places=2, default=0.00, verbose_name="Total")
     
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        verbose_name = "Requirement Item"
-        verbose_name_plural = "Requirement Items"
-        ordering = ['-created_at']
-
-    def __str__(self):
-        return f"{self.item_name} - {self.owner_name or 'No Owner'}"
-    
-    def save(self, *args, **kwargs):
-        # Auto-calculate total if needed, or you can remove this
-        if not self.total:
-            self.total = self.price
-        super().save(*args, **kwargs)
-    
 # bussiness nature
 
 class BusinessNature(models.Model):
@@ -682,6 +694,9 @@ class Reference(models.Model):
 
     def __str__(self):
         return self.ref_name
+    
+
+    
 
     
          

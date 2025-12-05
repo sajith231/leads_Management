@@ -2392,32 +2392,106 @@ def generate_offer_letter(request, cv_id):
 
 
 
-from django.shortcuts import render, redirect, get_object_or_404
-from django.http import HttpResponse
-from .models import Employee, Attachment
-from django.core.files.storage import FileSystemStorage
-
+# views.py
+# views.py
+import re
+import logging
+from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Q
+from django.db.models.functions import Trim, Lower
+from django.db import connection
 
+from .models import Employee
+
+logger = logging.getLogger(__name__)
+
+# Toggle this True while debugging locally (set False in production)
+DEBUG_JOB_FILTER = False
+
+# ---------------------------------------------------------------------
+# Normalization utilities
+# ---------------------------------------------------------------------
+_ws_re = re.compile(r'[\s\u00A0]+', flags=re.UNICODE)
+
+def collapse_unicode_whitespace(val: str) -> str:
+    """Collapse any Unicode whitespace (tabs, NBSP, etc.) into normal spaces and strip."""
+    if val is None:
+        return val
+    v = _ws_re.sub(' ', val).strip()
+    return v
+
+def normal_upper(val: str) -> str:
+    """Normalize incoming value: collapse whitespace, strip, uppercase. Return '' for falsy."""
+    if not val:
+        return ""
+    return collapse_unicode_whitespace(val).upper()
+
+# ---------------------------------------------------------------------
+# Allowed (hard-coded) choices -- keep these synced with template
+# ---------------------------------------------------------------------
+ALLOWED_JOBS = [
+    "HARDWARE TECHNICIAN",
+    "DIGITAL MARKETER",
+    "CUSTOMER CARE SUPPORT",
+    "MARKETING EXECUTIVE",
+    "HR MANAGER",
+    "GRAPHIC DESIGNER",
+    "MOBILE APP DEVELOPER",
+    "FULL STACK DEVELOPER",
+    "INTERNS AND TRAINEES",
+    "ADMINISTRATIVE OFFICER",
+    "PROJECT MANAGER",
+    "ACCOUNTS MANAGER",
+    "CHIEF EXECUTIVE OFFICER",
+    "COO",
+    "CHIEF MARKETING OFFICER",
+    "CUSTOMER RELATION MANAGER",
+    "OPERATION ANALYST",
+    "TECHNICAL TEAM LEAD",
+    "CONTENT CREATOR",
+    "VIDEO EDITOR",
+    "BRANCH MANAGER",
+    "OFFICE STAFF",
+]
+
+ALLOWED_ORGS = [
+    "IMC BUSINESS SOLUTIONS",
+    "IMCB SOLUTIONS - DEV",
+    "IMCB SOLUTIONS LLP - HO",
+    "IMCB SOLUTIONS LLP - MUKKAM",
+    "SYSMAC COMPUTERS",
+    "SYSMAC INFO SYSTEMS",
+]
+
+# ---------------------------------------------------------------------
+# Main view: Employee Management (robust job/org filtering)
+# ---------------------------------------------------------------------
 @login_required
 def employee_management(request):
-    # --- Read GET params ---
-    # Template uses these exact parameter names: search, status, job, organization, page
+    # --- Read GET params (raw) ---
     search_query = request.GET.get('search', '').strip()
-    status_filter = request.GET.get('status', '').strip()        # '' means all statuses; 'active' etc. if provided
+    status_filter = request.GET.get('status', '').strip()
     job_filter = request.GET.get('job', '').strip()
     organization_filter = request.GET.get('organization', '').strip()
+    
+    # Debug logging
+    if DEBUG_JOB_FILTER:
+        logger.debug(f"Raw GET params: search={search_query}, status={status_filter}, job={job_filter}, org={organization_filter}")
 
-    # --- Base queryset ---
+    # DEFAULT status
+    if not status_filter:
+        status_filter = 'active'
+
+    # Base queryset
     qs = Employee.objects.select_related("user").all().order_by('name')
 
-    # Apply status filter only if provided (keeps default behavior if you want 'active' by default, set below)
+    # Status filter
     if status_filter:
-        qs = qs.filter(status=status_filter)
+        qs = qs.filter(status__iexact=status_filter)
 
-    # Apply search across multiple fields
+    # Search filter
     if search_query:
         qs = qs.filter(
             Q(name__icontains=search_query) |
@@ -2426,39 +2500,131 @@ def employee_management(request):
             Q(organization__icontains=search_query)
         )
 
-    # Apply job filter if provided
-    if job_filter:
-        qs = qs.filter(job_title=job_filter)
+    # Normalize incoming selections
+    job_normal = normal_upper(job_filter)
+    org_normal = normal_upper(organization_filter)
 
-    # Apply organization filter if provided
-    if organization_filter:
-        qs = qs.filter(organization=organization_filter)
+    if DEBUG_JOB_FILTER:
+        logger.debug(f"Normalized: job={job_normal}, org={org_normal}")
 
-    # --- Build job_list and organization_list for dropdowns ---
-    # Use distinct values from DB so the dropdown shows actual options
-    job_list = list(Employee.objects.values_list('job_title', flat=True).distinct().order_by('job_title'))
-    organization_list = list(Employee.objects.values_list('organization', flat=True).distinct().order_by('organization'))
+    # Job filter
+    if job_normal:
+        if job_normal in ALLOWED_JOBS:
+            # First try exact match with normalized DB values
+            qs = qs.annotate(
+                job_norm=Lower(Trim('job_title'))
+            ).filter(
+                job_norm=job_normal.lower()
+            )
+            
+            if DEBUG_JOB_FILTER:
+                count_after = qs.count()
+                logger.debug(f"After exact job filter, count={count_after}")
+                
+            # If no results, try regex fallback
+            if qs.count() == 0:
+                parts = job_normal.split()
+                escaped = [re.escape(p) for p in parts]
+                mid = r'[\s\u00A0]+'
+                job_regex = r'^\s*' + mid.join(escaped) + r'\s*$'
+                
+                if DEBUG_JOB_FILTER:
+                    logger.debug(f"Trying regex fallback: {job_regex}")
+                
+                # Start fresh with all filters except job
+                qs = Employee.objects.select_related("user").all()
+                if status_filter:
+                    qs = qs.filter(status__iexact=status_filter)
+                if search_query:
+                    qs = qs.filter(
+                        Q(name__icontains=search_query) |
+                        Q(user__userid__icontains=search_query) |
+                        Q(job_title__icontains=search_query) |
+                        Q(organization__icontains=search_query)
+                    )
+                
+                # Apply regex filter
+                qs = qs.filter(job_title__iregex=job_regex)
+                
+                if DEBUG_JOB_FILTER:
+                    logger.debug(f"After regex job filter, count={qs.count()}")
+        else:
+            if DEBUG_JOB_FILTER:
+                logger.debug(f"Job '{job_normal}' not in allowed list, ignoring filter")
 
-    # --- Pagination (apply after all filters) ---
+    # Organization filter
+    if org_normal:
+        if org_normal in ALLOWED_ORGS:
+            # First try exact match with normalized DB values
+            qs = qs.annotate(
+                org_norm=Lower(Trim('organization'))
+            ).filter(
+                org_norm=org_normal.lower()
+            )
+            
+            if DEBUG_JOB_FILTER:
+                count_after = qs.count()
+                logger.debug(f"After exact org filter, count={count_after}")
+                
+            # If no results, try regex fallback
+            if qs.count() == 0:
+                parts = org_normal.split()
+                escaped = [re.escape(p) for p in parts]
+                mid = r'[\s\u00A0]+'
+                org_regex = r'^\s*' + mid.join(escaped) + r'\s*$'
+                
+                if DEBUG_JOB_FILTER:
+                    logger.debug(f"Trying org regex fallback: {org_regex}")
+                
+                # Start fresh with all filters except org
+                qs = Employee.objects.select_related("user").all()
+                if status_filter:
+                    qs = qs.filter(status__iexact=status_filter)
+                if search_query:
+                    qs = qs.filter(
+                        Q(name__icontains=search_query) |
+                        Q(user__userid__icontains=search_query) |
+                        Q(job_title__icontains=search_query) |
+                        Q(organization__icontains=search_query)
+                    )
+                if job_normal and job_normal in ALLOWED_JOBS:
+                    qs = qs.annotate(job_norm=Lower(Trim('job_title'))).filter(job_norm=job_normal.lower())
+                
+                # Apply regex filter
+                qs = qs.filter(organization__iregex=org_regex)
+                
+                if DEBUG_JOB_FILTER:
+                    logger.debug(f"After regex org filter, count={qs.count()}")
+        else:
+            if DEBUG_JOB_FILTER:
+                logger.debug(f"Organization '{org_normal}' not in allowed list, ignoring filter")
+
+    # Order the results
+    qs = qs.order_by('name')
+
+    # Pagination
     per_page = 15
     paginator = Paginator(qs, per_page)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    page_employees = page_obj.object_list
+
+    # Debug final SQL
+    if DEBUG_JOB_FILTER and connection.queries:
+        logger.debug(f"Final SQL: {connection.queries[-1]['sql']}")
+        logger.debug(f"Total queries: {len(connection.queries)}")
 
     context = {
         "page_obj": page_obj,
-        "employees": page_employees,     # template loops over `employees`
+        "employees": page_obj.object_list,
         "status_filter": status_filter,
         "search_query": search_query,
-        "total_employees": qs.count(),   # total after filters
-        # filter dropdown context expected by the template:
-        "job_list": job_list,
+        "total_employees": qs.count(),
         "job_filter": job_filter,
-        "organization_list": organization_list,
         "organization_filter": organization_filter,
+        "job_choices": ALLOWED_JOBS,
+        "organization_choices": ALLOWED_ORGS,
     }
-    return render(request, "employee_management.html", context)
+    return render(request, 'employee_management.html', context)
 
 
 

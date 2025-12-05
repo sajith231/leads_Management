@@ -2,14 +2,15 @@
 import os
 import requests
 import logging
+import json
 from django.shortcuts import render, redirect, get_object_or_404
 from django.conf import settings
 from django.http import FileResponse, HttpResponse, JsonResponse
-from django.views.decorators.csrf import csrf_protect
+from django.views.decorators.csrf import csrf_protect, csrf_exempt
 from django.views.decorators.http import require_POST
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db.models import Q
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from .models import PublicUpload
 
@@ -20,6 +21,47 @@ logger = logging.getLogger(__name__)
 def public_view(view_func):
     view_func.is_public = True
     return view_func
+
+
+# ---------------------------
+# Get Clients (AJAX endpoint for autocomplete)
+# ---------------------------
+@csrf_exempt
+@public_view
+def get_clients(request):
+    """Proxy API call to avoid CORS issues"""
+    try:
+        api_url = 'https://accmaster.imcbs.com/api/sync/rrc-clients/'
+        logger.info(f"Fetching clients from: {api_url}")
+        
+        response = requests.get(api_url, timeout=15)
+        response.raise_for_status()
+        
+        data = response.json()
+        logger.info(f"Successfully fetched {len(data) if isinstance(data, list) else 'unknown'} clients")
+        
+        return JsonResponse(data, safe=False)
+        
+    except requests.exceptions.Timeout:
+        logger.error("API request timeout")
+        return JsonResponse({'error': 'Request timeout. Please try again.'}, status=408)
+
+    except requests.exceptions.ConnectionError:
+        logger.error("Connection error to API")
+        return JsonResponse({'error': 'Unable to connect to client database.'}, status=503)
+
+    except requests.exceptions.RequestException as e:
+        logger.error(f"API request failed: {e}")
+        return JsonResponse({'error': f'Failed to fetch clients: {str(e)}'}, status=500)
+
+    except json.JSONDecodeError:
+        logger.error("Invalid JSON response from API")
+        return JsonResponse({'error': 'Invalid response format from server'}, status=500)
+    
+    except Exception as e:
+        logger.error(f"Unexpected error in get_clients: {str(e)}")
+        return JsonResponse({'error': 'An unexpected error occurred'}, status=500)
+
 
 # ---------------------------
 # Public upload (no login required)
@@ -37,11 +79,15 @@ def public_upload(request):
     if request.method == "POST":
         uploaded = request.FILES.get("file")
         client_name = (request.POST.get("client_name") or "").strip()
+        client_code = (request.POST.get("client_code") or "").strip()
+        client_branch = (request.POST.get("client_branch") or "").strip()
         provided_name = (request.POST.get("provided_name") or "").strip()
         description = (request.POST.get("description") or "").strip()
 
         if not uploaded:
             errors.append("No file selected.")
+        elif not client_name:
+            errors.append("Client name is required.")
         else:
             # Save model instance
             inst = PublicUpload.objects.create(
@@ -51,7 +97,14 @@ def public_upload(request):
                 description=description,
                 client_name=client_name,
             )
-            message = "Upload successful."
+            
+            # Log the upload
+            logger.info(f"File uploaded - Client: {client_name} ({client_code}), Branch: {client_branch}, File: {uploaded.name}")
+            
+            message = f"Upload successful! Client: {client_name}"
+            if client_code:
+                message += f" ({client_code})"
+            
             return render(request, "public_upload.html", {"message": message})
 
     return render(request, "public_upload.html", {"message": message, "errors": errors})
@@ -91,7 +144,6 @@ def public_list(request):
         try:
             date_to_obj = datetime.strptime(date_to, '%Y-%m-%d')
             # Add one day to include the entire end date
-            from datetime import timedelta
             date_to_obj = date_to_obj + timedelta(days=1)
             files = files.filter(uploaded_at__lt=date_to_obj)
         except ValueError:
@@ -125,15 +177,55 @@ def public_list(request):
 # ---------------------------
 # Download file
 # ---------------------------
+import os
+import mimetypes
+from django.http import FileResponse, HttpResponse
+from django.shortcuts import get_object_or_404
+
 @public_view
 def download_file(request, file_id):
     inst = get_object_or_404(PublicUpload, id=file_id)
     file_path = inst.file.path
+
     if not os.path.exists(file_path):
         return HttpResponse("File not found.", status=404)
-    suggested = inst.provided_name or inst.original_name or os.path.basename(inst.file.name)
-    response = FileResponse(open(file_path, "rb"), as_attachment=True, filename=suggested)
+
+    # Pick a filename (prefer provided_name, fall back to original_name or stored file name)
+    provided = (inst.provided_name or "").strip()
+    original = (inst.original_name or "").strip() or os.path.basename(inst.file.name)
+
+    # Ensure filename has an extension (copy from original if missing)
+    def ensure_ext(name, fallback):
+        if not name:
+            return fallback
+        if '.' in name:
+            return name
+        _, ext = os.path.splitext(fallback)
+        return f"{name}{ext}" if ext else name
+
+    filename = ensure_ext(provided, original)
+
+    # Guess MIME type from filename first, then from actual path
+    mime_type, encoding = mimetypes.guess_type(filename)
+    if mime_type is None:
+        mime_type, encoding = mimetypes.guess_type(file_path)
+    if mime_type is None:
+        mime_type = "application/octet-stream"
+
+    # Force download for all file types (including PDFs)
+    as_attachment = True
+
+    # Open file and return FileResponse with explicit content_type and disposition
+    file_obj = open(file_path, "rb")
+    response = FileResponse(file_obj, as_attachment=as_attachment, filename=filename, content_type=mime_type)
+
+    # Explicit Content-Disposition header (helps some browsers)
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+
     return response
+
+
+
 
 
 # ---------------------------

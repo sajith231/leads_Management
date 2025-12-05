@@ -554,23 +554,72 @@
             flex-direction: column;
         }
         
+        /* UPDATED DIRECTORY HEADER - Left/Right Alignment */
         .directory-header {
             background: #4a6fdc;
             color: white;
             padding: 12px 15px;
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            align-items: flex-start;
         }
         
-        .directory-header h2 {
+        .directory-left {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            text-align: left;
+        }
+        
+        .directory-left h2 {
             font-size: 16px;
             font-weight: 600;
+            margin-bottom: 4px;
         }
         
-        .directory-info {
+        .directory-date {
+            font-size: 13px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.9);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .directory-date i {
             font-size: 12px;
+        }
+        
+        .directory-right {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            text-align: right;
+        }
+        
+        .directory-info-row {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 4px;
+        }
+        
+        .directory-count {
+            font-size: 13px;
+            font-weight: 500;
             opacity: 0.9;
+        }
+        
+        .directory-today {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.8);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .directory-today i {
+            font-size: 11px;
         }
         
         .directory-tabs {
@@ -603,10 +652,20 @@
             background: #e9ecef;
         }
         
-        .search-container {
-            padding: 12px 15px;
+        /* UPDATED SEARCH AND FILTER CONTAINER - Left/Right Layout */
+        .directory-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
             background: #f8f9fa;
             border-bottom: 1px solid #e9ecef;
+            gap: 10px;
+        }
+        
+        .directory-search-container {
+            flex: 1;
+            min-width: 0;
         }
         
         .search-box {
@@ -630,6 +689,30 @@
             transform: translateY(-50%);
             color: #6c757d;
             font-size: 13px;
+        }
+        
+        .directory-filter-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+        
+        .filter-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #495057;
+            white-space: nowrap;
+        }
+        
+        .filter-select {
+            padding: 6px 8px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 13px;
+            background: white;
+            cursor: pointer;
+            min-width: 120px;
         }
         
         .employee-list, .lead-list {
@@ -716,7 +799,7 @@
             font-size: 10px;
             color: #6c757d;
             background: #f8f9fa;
-            padding: 2px 5px;
+           
             border-radius: 4px;
             display: inline-block;
             margin-top: 2px;
@@ -974,6 +1057,316 @@
             text-align: center;
         }
         
+        /* Enhanced Lead Date Display Styles */
+        .lead-date-full {
+            font-size: 10px;
+            color: #6c757d;
+            background: #f8f9fa;
+            padding: 2px 8px;
+            border-radius: 10px;
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            margin-left: 5px;
+            font-weight: 500;
+        }
+        
+        .lead-date-full i {
+            font-size: 9px;
+            color: #6c757d;
+        }
+        
+        .lead-date-compact {
+            font-size: 10px;
+            color: #6c757d;
+            background: #f8f9fa;
+            padding: 2px 6px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            margin-left: auto;
+            font-weight: 500;
+        }
+        
+        .lead-datetime {
+            font-size: 9px;
+            color: #888;
+            margin-top: 1px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .lead-datetime i {
+            font-size: 8px;
+        }
+        
+        .lead-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            width: 100%;
+            margin-bottom: 8px;
+        }
+        
+        .lead-name-container {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .lead-priority-indicator {
+            font-size: 12px;
+            margin-right: 3px;
+        }
+        
+        .lead-info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 3px;
+            width: 100%;
+        }
+        
+        /* ========== DATE AND TIME ELAPSED LAYOUT ========== */
+
+        .date-time-container {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 3px;
+            min-width: 80px;
+        }
+
+        /* Time elapsed badge - placed below the date */
+        .time-elapsed-badge {
+            font-size: 9px !important;
+            font-weight: 600 !important;
+            padding: 2px 6px !important;
+            border-radius: 10px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 4px !important;
+            background: rgba(0, 0, 0, 0.05) !important;
+            color: #666 !important;
+            white-space: nowrap !important;
+        }
+
+        .time-elapsed-badge i {
+            font-size: 8px !important;
+        }
+
+        .time-elapsed-badge.time-recent {
+            background: rgba(34, 197, 94, 0.15) !important;
+            color: #16a34a !important;
+        }
+
+        .time-elapsed-badge.time-medium {
+            background: rgba(245, 158, 11, 0.15) !important;
+            color: #d97706 !important;
+        }
+
+        .time-elapsed-badge.time-old {
+            background: rgba(239, 68, 68, 0.15) !important;
+            color: #dc2626 !important;
+        }
+        
+        /* Campaign tooltip */
+        .lead-campaign {
+            position: relative;
+            cursor: help;
+            font-size: 11px;
+            color: #666;
+            margin-top: 2px;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            font-style: italic;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .lead-campaign:hover::after {
+            content: attr(title);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            white-space: nowrap;
+            z-index: 1000;
+            margin-bottom: 5px;
+            max-width: 300px;
+            word-wrap: break-word;
+        }
+        
+        .lead-campaign:hover::before {
+            content: '';
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 5px solid transparent;
+            border-top-color: #333;
+            margin-bottom: -5px;
+            z-index: 1000;
+        }
+        
+        /* Campaign dropdown badge */
+        .campaign-badge {
+            display: inline-block;
+            background: #4a6fdc;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            margin-left: 5px;
+            font-weight: 600;
+        }
+        
+        /* Campaign Details Styles */
+        .campaign-details-section {
+            animation: slideDown 0.3s ease-out;
+            margin-top: 10px;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .campaign-detail-item {
+            padding: 8px;
+            background: white;
+            border-radius: 6px;
+            border: 1px solid #e8e8e8;
+        }
+
+        .campaign-detail-item span {
+            word-break: break-word;
+        }
+
+        /* Status Badges for Campaigns */
+        .status-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-active {
+            background: #e8f5e9;
+            color: #4caf50;
+        }
+
+        .status-draft {
+            background: #e3f2fd;
+            color: #2196f3;
+        }
+
+        .status-completed {
+            background: #f3e5f5;
+            color: #9c27b0;
+        }
+
+        .campaign-stats-summary {
+            margin-top: 5px;
+            font-size: 11px;
+            color: #666;
+        }
+
+        .campaign-stats-summary span {
+            margin-right: 10px;
+        }
+
+        .campaign-stats-summary i {
+            margin-right: 3px;
+        }
+        
+        /* Campaign details mobile */
+        .campaign-details-section {
+            animation: slideDown 0.3s ease-out;
+            margin-top: 10px;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .campaign-detail-item {
+            padding: 8px;
+            background: white;
+            border-radius: 6px;
+            border: 1px solid #e8e8e8;
+        }
+
+        .campaign-detail-item span {
+            word-break: break-word;
+        }
+
+        /* Status Badges */
+        .status-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-active {
+            background: #e8f5e9;
+            color: #4caf50;
+        }
+
+        .status-draft {
+            background: #e3f2fd;
+            color: #2196f3;
+        }
+
+        .status-completed {
+            background: #f3e5f5;
+            color: #9c27b0;
+        }
+
+        .campaign-stats-summary {
+            margin-top: 5px;
+            font-size: 11px;
+            color: #666;
+        }
+
+        .campaign-stats-summary span {
+            margin-right: 10px;
+        }
+
+        .campaign-stats-summary i {
+            margin-right: 3px;
+        }
+
         @media (max-width: 1200px) {
             .single-line-sections {
                 flex-direction: column;
@@ -1081,6 +1474,26 @@
                 gap: 10px;
             }
             
+            .directory-left, .directory-right {
+                width: 100%;
+                align-items: flex-start;
+                text-align: left;
+            }
+            
+            .directory-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .directory-search-container {
+                width: 100%;
+            }
+            
+            .directory-filter-container {
+                width: 100%;
+                justify-content: space-between;
+            }
+            
             .employee-item, .lead-item {
                 flex-direction: column;
                 align-items: flex-start;
@@ -1101,6 +1514,48 @@
             
             .status-inline select {
                 width: 120px;
+            }
+            
+            /* Lead details mobile adjustments */
+            .lead-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 5px;
+            }
+            
+            .lead-date-full {
+                align-self: flex-start;
+                margin-left: 0;
+                margin-top: 5px;
+            }
+            
+            .lead-date-compact {
+                margin-left: 0;
+                margin-top: 5px;
+            }
+            
+            /* Date time container mobile */
+            .date-time-container {
+                align-items: flex-start;
+                margin-top: 5px;
+            }
+            
+            /* Campaign tooltip mobile */
+            .lead-campaign:hover::after {
+                font-size: 11px;
+                padding: 6px 8px;
+                max-width: 250px;
+            }
+
+            /* Campaign details mobile */
+            .campaign-details-section {
+                padding: 10px;
+            }
+            
+            /* Time elapsed mobile */
+            .time-elapsed-badge {
+                font-size: 8px;
+                padding: 2px 4px;
             }
         }
         
@@ -1176,6 +1631,26 @@
                 display: flex;
                 gap: 8px;
             }
+            
+            /* Campaign tooltip small mobile */
+            .lead-campaign:hover::after {
+                font-size: 10px;
+                padding: 4px 6px;
+                max-width: 200px;
+            }
+
+            /* Campaign details small mobile */
+            .campaign-stats-summary {
+                display: flex;
+                flex-direction: column;
+                gap: 5px;
+            }
+            
+            /* Time elapsed small mobile */
+            .time-elapsed-badge {
+                font-size: 8px;
+                padding: 2px 4px;
+            }
         }
     </style>
 </head>
@@ -1185,9 +1660,24 @@
             <!-- Left Column - Lead Directory -->
             <div class="directory-column">
                 <div class="lead-directory-container">
+                    <!-- UPDATED DIRECTORY HEADER - Left/Right Alignment -->
                     <div class="directory-header">
-                        <h2>Lead Management</h2>
-                        <div class="directory-info">Showing <span id="activeTabCount">{{ active_leads_data|length }}</span> active leads</div>
+                        <div class="directory-left">
+                            <h2>Lead Management</h2>
+                            <div class="directory-date" id="currentDate">
+                                <i class="far fa-calendar-alt"></i>
+                                Loading date...
+                            </div>
+                        </div>
+                        <div class="directory-right">
+                            <div class="directory-info-row">
+                                <div class="directory-count">Leads: <span id="activeTabCount">{{ active_leads_data|length }}</span></div>
+                                <div class="directory-today" id="todayDate">
+                                    <i class="far fa-clock"></i>
+                                    Loading time...
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     
                     <!-- Directory Tabs -->
@@ -1196,26 +1686,24 @@
                         <button class="directory-tab" data-tab="employees">Employees</button>
                     </div>
                     
-                   <div class="search-container">
-    <div class="search-box">
-        <i class="fas fa-search search-icon"></i>
-        <input type="text" id="directorySearch" placeholder="Search by Name/Phone/Ticket...">
-    </div>
-</div>
-
-<!-- ADD PRIORITY FILTER HERE -->
-<div class="filter-container" id="priorityFilterContainer" style="padding: 10px 15px; background: #f8f9fa; border-bottom: 1px solid #ddd;">
-    <div class="filter-group" style="display: flex; align-items: center; gap: 10px;">
-        <span class="filter-label" style="font-size: 13px; font-weight: 600;">Priority:</span>
-        <select id="priorityFilter" class="filter-select" style="padding: 6px; border-radius: 8px;">
-            <option value="all">All Priorities</option>
-            <option value="High">🔴 High</option>
-            <option value="Medium">🟡 Medium</option>
-            <option value="Low">🟢 Low</option>
-        </select>
-    </div>
-</div>
-
+                    <!-- UPDATED SEARCH AND FILTER - Combined in one row -->
+                    <div class="directory-controls">
+                        <div class="directory-search-container">
+                            <div class="search-box">
+                                <i class="fas fa-search search-icon"></i>
+                                <input type="text" id="directorySearch" placeholder="Search leads...">
+                            </div>
+                        </div>
+                        <div class="directory-filter-container">
+                            <span class="filter-label">Priority:</span>
+                            <select id="priorityFilter" class="filter-select">
+                                <option value="all">All</option>
+                                <option value="High">🔴 High</option>
+                                <option value="Medium">🟡 Medium</option>
+                                <option value="Low">🟢 Low</option>
+                            </select>
+                        </div>
+                    </div>
                     
                     <!-- Lead List (shown by default) -->
                     <div class="lead-list active" id="leadList">
@@ -1227,10 +1715,55 @@
                                 </div>
 
                                 <div class="lead-details">
-                                    <div class="lead-name">{{ lead.ownerName }}</div>
+                                    <div class="lead-header">
+                                        <div class="lead-name-container">
+                                            <span class="lead-priority-indicator">
+                                                {% if lead.priority == "High" %}🔴
+                                                {% elif lead.priority == "Medium" %}🟡
+                                                {% elif lead.priority == "Low" %}🟢
+                                                {% else %}⚪{% endif %}
+                                            </span>
+                                            <span class="lead-name">{{ lead.ownerName }}</span>
+                                        </div>
+                                        
+                                        <!-- DATE AND TIME ELAPSED CONTAINER -->
+                                        <div class="date-time-container">
+                                            {% if lead.created_at %}
+                                            <div class="lead-date-compact" title="Created: {{ lead.created_at|date:'l, d F Y' }}">
+                                                <i class="far fa-calendar-alt"></i>
+                                                {{ lead.created_at|date:"d M" }}
+                                            </div>
+                                            {% endif %}
+                                            
+                                            <!-- TIME ELAPSED BADGE - Place it right below the date -->
+                                            <div class="time-elapsed-badge" 
+                                                 data-created="{{ lead.created_at|date:'c'|default:lead.date|date:'c' }}">
+                                                <i class="fas fa-clock"></i>
+                                                <span class="elapsed-text">{{ lead.time_elapsed|default:"Calculating..." }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     <div class="lead-phone">{{ lead.phoneNo }}</div>
                                     <div class="lead-ticket">{{ lead.ticket_number }}</div>
-                                    <div class="lead-status">Status: {{ lead.status }}</div>
+                                    {% if lead.created_at %}
+                                    <div class="lead-datetime">
+                                        <i class="far fa-clock"></i>
+                                        Created at {{ lead.created_at|time:"H:i" }}
+                                    </div>
+                                    {% endif %}
+                                    <div class="lead-info-row">
+                                        <div class="lead-status">Status: {{ lead.status }}</div>
+                                        <span style="color: {% if lead.priority == 'High' %}#ff4444{% elif lead.priority == 'Medium' %}#ffaa00{% else %}#22c55e{% endif %}; font-weight: 600; font-size: 10px; padding: 2px 8px; border-radius: 10px; background: {% if lead.priority == 'High' %}#ff444415{% elif lead.priority == 'Medium' %}#ffaa0015{% else %}#22c55e15{% endif %};">
+                                            {{ lead.priority|default:"Medium" }}
+                                        </span>
+                                    </div>
+                                    {% if lead.campaign_display %}
+                                    <div class="lead-campaign" title="{{ lead.campaign_display }}">
+                                        <i class="fas fa-bullhorn" style="font-size: 9px;"></i>
+                                        <span>{{ lead.campaign_display|truncatechars:40 }}</span>
+                                    </div>
+                                    {% endif %}
                                 </div>
                             </div>
                             {% endfor %}
@@ -1320,10 +1853,11 @@
                              </a>
 
                             </li>
-        <a href="{% url 'app5:quotation_list' %}" class="nav-link">
-    <i class="fas fa-briefcase"></i> Quotation
-</a>
-
+                            <li class="nav-item">
+                                <a href="{% url 'app5:quotation_list' %}" class="nav-link">
+                                    <i class="fas fa-briefcase"></i> Quotation
+                                </a>
+                            </li>
                         </ul>
                     </div>
                     
@@ -1387,7 +1921,7 @@
                                             <div class="toggle-container">
                                                 <span class="toggle-label">New</span>
                                                 <label class="toggle-switch">
-                                                    <input type="checkbox" id="customerTypeToggle">
+                                                    <input type="checkbox" id="customerTypeToggle" name="customerTypeToggle" checked>
                                                     <span class="toggle-slider"></span>
                                                 </label>
                                                 <span class="toggle-label">Exist</span>
@@ -1492,7 +2026,7 @@
                                         <div class="header-controls">
                                             <div class="date-field-compact">
                                                 <label for="date">Date</label>
-                                                <input type="date" id="date" name="date">
+                                                <input type="date" id="date" name="date" value="{{ today|date:'Y-m-d' }}">
                                             </div>
                                         </div>
                                     </div>
@@ -1534,6 +2068,7 @@
                                             {% endfor %}
                                         </select>
                                     </div>
+                                    
                                     <div class="compact-form-group">
                                         <label for="marketedBy">Marketed By</label>
                                         <select id="marketedBy" name="marketedBy" class="form-select">
@@ -1544,11 +2079,40 @@
                                         </select>
                                     </div>
                                     
-                                    <!-- NEW: Campaign Details Field -->
+                                    <!-- CAMPAIGN DETAILS FIELD WITH DISPLAY -->
                                     <div class="compact-form-group">
-                                        <label for="campaign">Campaign Details</label>
-                                   <input type="text" id="campaign" name="Campaign" placeholder="Enter Campaign Details">  
-                                    </div>
+    <label for="campaign">Campaign Details 
+        <span class="campaign-badge">{{ campaigns|length }} campaigns</span>
+    </label>
+    
+    <select id="campaign" name="campaign" class="form-control" onchange="displayCampaignDetails(this)">
+        <option value="">-- Select Campaign --</option>
+        {% for campaign in campaigns %}
+            <option value="{{ campaign.campaign_unique_id }}"
+                    data-id="{{ campaign.campaign_unique_id }}"
+                    data-name="{{ campaign.campaign_name }}"
+                    data-software="{{ campaign.software_name }}"
+                    
+                    data-leads="{{ campaign.total_leads|default:0 }}">
+                {{ campaign.campaign_unique_id }} - {{ campaign.campaign_name }}
+                {% if campaign.software_name %} ({{ campaign.software_name }}){% endif %}
+                <!-- {% if campaign.status %} [{{ campaign.status|title }}]{% endif %} -->
+            </option>
+        {% empty %}
+            <option value="">No campaigns available</option>
+        {% endfor %}
+    </select>
+    
+    {% if campaigns %}
+        <small class="text-muted" style="display: block; margin-top: 4px;">
+            Select from {{ campaigns|length }} available campaigns
+        </small>
+    {% endif %}
+</div>
+
+
+
+
                                     
                                     <div class="compact-form-group">
                                         <label for="Consultant">Consultant</label>
@@ -1576,9 +2140,9 @@
                                     &nbsp; Clear Form
                                 </button>
                                 <button type="button" class="reset-btn" onclick="window.location.href='{% url 'app5:lead_report' %}'">
-    <i class="fas fa-arrow-left"></i>
-    &nbsp; Back
-</button>
+                                    <i class="fas fa-arrow-left"></i>
+                                    &nbsp; Back
+                                </button>
                             </div>
                         </form>
                     </div>
@@ -1660,12 +2224,28 @@ document.addEventListener('DOMContentLoaded', function() {
         {% endfor %}
     };
 
-    // Campaign data map
-    const campaignMap = {
-        {% for campaign in campaigns %}
-        "{{ campaign.name|escapejs }}": "{{ campaign.name|escapejs }}",
-        {% endfor %}
-    };
+    // Campaign data map with complete structure
+    const campaignMap = {};
+    {% for campaign in campaigns %}
+        {% if campaign.campaign_unique_id %}
+            campaignMap["{{ campaign.campaign_unique_id|escapejs }}"] = {
+                id: "{{ campaign.campaign_unique_id|escapejs }}",
+                name: "{{ campaign.campaign_name|escapejs }}",
+                software: "{{ campaign.software_name|escapejs|default:'' }}",
+                // status: "{{ campaign.status|escapejs|default:'draft' }}",
+                // fromDate: "{{ campaign.from_date|date:'d M, Y'|escapejs }}",
+                // toDate: "{{ campaign.to_date|date:'d M, Y'|escapejs }}",
+                // days: "{{ campaign.number_of_days|escapejs }}",
+                // location: "{{ campaign.location|escapejs|default:'Not specified' }}",
+                // amount: "{{ campaign.total_amount|escapejs }}",
+                // reach: "{{ campaign.total_reach|default:0|escapejs }}",
+                // impression: "{{ campaign.total_impression|default:0|escapejs }}",
+                // leads: "{{ campaign.total_leads|default:0|escapejs }}",
+                // fullName: "{{ campaign.campaign_unique_id|escapejs }} - {{ campaign.campaign_name|escapejs }}{% if campaign.software_name %} ({{ campaign.software_name|escapejs }}){% endif %}{% if campaign.status %} [{{ campaign.status|title|escapejs }}]{% endif %}",
+                // displayName: "{{ campaign.campaign_unique_id|escapejs }} - {{ campaign.campaign_name|escapejs }}"
+            };
+        {% endif %}
+    {% endfor %}
 
     // Lead data - created on server side via template earlier (active_leads_data)
     const leads = [
@@ -1677,6 +2257,8 @@ document.addEventListener('DOMContentLoaded', function() {
             email: "{{ lead.email|escapejs }}",
             ticketNo: "{{ lead.ticket_number|escapejs }}",
             date: "{{ lead.date|date:'Y-m-d'|escapejs }}",
+            createdAt: "{{ lead.created_at|date:'Y-m-d'|escapejs }}",
+            createdTime: "{{ lead.created_at|time:'H:i'|escapejs }}",
             status: "{{ lead.status|escapejs }}",
             priority: "{{ lead.priority|default:'Medium'|escapejs }}",
             customerType: "{{ lead.customerType|escapejs }}",
@@ -1695,6 +2277,7 @@ document.addEventListener('DOMContentLoaded', function() {
             refFrom: "{{ lead.refFrom|escapejs }}",
             business: "{{ lead.business|escapejs }}",
             campaign: "{{ lead.campaign|default:''|escapejs }}",
+            campaign_display: "{{ lead.campaign_display|default:''|escapejs }}",
             marketedBy: "{{ lead.marketedBy|escapejs }}",
             Consultant: "{{ lead.Consultant|escapejs }}",
             requirement: "{{ lead.requirement|escapejs }}",
@@ -1702,7 +2285,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Add the actual names for display
             marketedByName: "{{ lead.marketed_by_name|default:lead.marketedBy|escapejs }}",
             branchName: "{{ lead.branch_name|default:lead.requirement|escapejs }}",
-            campaignName: "{{ lead.campaign_name|default:lead.campaign|default:''|escapejs }}"
+            campaignName: "{{ lead.campaign_display|default:lead.campaign|default:''|escapejs }}"
         }{% if not forloop.last %},{% endif %}
         {% endfor %}
     ];
@@ -1719,25 +2302,387 @@ document.addEventListener('DOMContentLoaded', function() {
         {% endfor %}
     ];
 
+    console.log('📊 Campaign Data Loaded:');
+    console.log('Total campaigns in map:', Object.keys(campaignMap).length);
+    console.log('Sample campaign:', Object.keys(campaignMap)[0] ? campaignMap[Object.keys(campaignMap)[0]] : 'No campaigns');
+    console.log('Total leads:', leads.length);
+    console.log('Total employees:', employees.length);
+
+    // ========== DATE FUNCTIONS ==========
+
+    /**
+     * Format date for display
+     */
+    function formatDateForDisplay(dateString) {
+        if (!dateString) return { short: '', full: '', tooltip: '' };
+        
+        try {
+            const dateObj = new Date(dateString);
+            if (isNaN(dateObj.getTime())) {
+                return {
+                    short: dateString,
+                    full: dateString,
+                    tooltip: dateString
+                };
+            }
+            
+            // Short format: "15 Jan"
+            const short = dateObj.toLocaleDateString('en-GB', {
+                day: '2-digit',
+                month: 'short'
+            });
+            
+            // Full format: "15 January 2024"
+            const full = dateObj.toLocaleDateString('en-GB', {
+                day: '2-digit',
+                month: 'long',
+                year: 'numeric'
+            });
+            
+            // Tooltip format: "Monday, 15 January 2024"
+            const tooltip = dateObj.toLocaleDateString('en-GB', {
+                weekday: 'long',
+                day: '2-digit',
+                month: 'long',
+                year: 'numeric'
+            });
+            
+            // Time format if available
+            const time = dateObj.toLocaleTimeString('en-GB', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true
+            });
+            
+            return {
+                short: short,
+                full: full,
+                tooltip: tooltip,
+                time: time,
+                dateObj: dateObj
+            };
+        } catch (e) {
+            return {
+                short: dateString,
+                full: dateString,
+                tooltip: dateString
+            };
+        }
+    }
+    
+    /**
+     * Update current date display in directory
+     */
+    function updateDirectoryDateDisplay() {
+        const now = new Date();
+        
+        // Format current date for left side
+        const currentDateDisplay = now.toLocaleDateString('en-GB', {
+            weekday: 'short',
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric'
+        });
+        
+        // Format time for right side
+        const timeDisplay = now.toLocaleTimeString('en-GB', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+        });
+        
+        // Format today's date for right side
+        const todayDisplay = now.toLocaleDateString('en-GB', {
+            day: '2-digit',
+            month: 'short'
+        });
+        
+        // Update DOM elements
+        const currentDateElement = document.getElementById('currentDate');
+        const todayDateElement = document.getElementById('todayDate');
+        
+        if (currentDateElement) {
+            currentDateElement.innerHTML = `<i class="far fa-calendar-alt"></i> ${currentDateDisplay}`;
+        }
+        
+        if (todayDateElement) {
+            todayDateElement.innerHTML = `<i class="far fa-clock"></i> ${todayDisplay} ${timeDisplay}`;
+        }
+    }
+    
+    /**
+     * Initialize date display
+     */
+    function initializeDateDisplay() {
+        updateDirectoryDateDisplay();
+        
+        // Update time every minute
+        setInterval(updateDirectoryDateDisplay, 60000);
+    }
+
+    // ========== CAMPAIGN DETAILS FUNCTIONS ==========
+
+    /**
+     * Display campaign details when a campaign is selected
+     */
+    function displayCampaignDetails(select) {
+        const box = document.getElementById("campaign-details-box");
+        
+        if (!select.value) {
+            box.style.display = "none";
+            return;
+        }
+        
+        const opt = select.options[select.selectedIndex];
+        const campaignData = campaignMap[select.value];
+        
+        if (!campaignData) {
+            console.warn('Campaign data not found for ID:', select.value);
+            box.style.display = "none";
+            return;
+        }
+        
+        // Update all detail fields
+        document.getElementById("c-id").textContent = campaignData.id;
+        document.getElementById("c-name").textContent = campaignData.name || "-";
+        document.getElementById("c-software").textContent = campaignData.software || "-";
+        
+        // Status with badge
+        const status = campaignData.status || "draft";
+        const statusBadge = `<span class="status-badge status-${status}">${status.charAt(0).toUpperCase() + status.slice(1)}</span>`;
+        document.getElementById("c-status").innerHTML = statusBadge;
+        
+        // Dates and duration
+        document.getElementById("c-from").textContent = campaignData.fromDate || "-";
+        document.getElementById("c-to").textContent = campaignData.toDate || "-";
+        document.getElementById("c-duration").textContent = campaignData.days ? `${campaignData.days} days` : "-";
+        document.getElementById("c-location").textContent = campaignData.location || "-";
+        
+        // Financial and metrics
+        const amount = parseFloat(campaignData.amount || 0);
+        document.getElementById("c-amount").textContent = amount > 0 ? `₹${amount.toLocaleString('en-IN')}` : "-";
+        
+        const reach = parseInt(campaignData.reach || 0);
+        document.getElementById("c-reach").textContent = reach > 0 ? reach.toLocaleString('en-IN') : "-";
+        
+        const impression = parseInt(campaignData.impression || 0);
+        document.getElementById("c-impression").textContent = impression > 0 ? impression.toLocaleString('en-IN') : "-";
+        
+        const leads = parseInt(campaignData.leads || 0);
+        document.getElementById("c-leads").textContent = leads > 0 ? leads.toLocaleString('en-IN') : "-";
+        
+        // Show the details box
+        box.style.display = "block";
+        
+        // Log for debugging
+        console.log('🎯 Selected Campaign:', campaignData);
+    }
+
+    /**
+     * Update display when loading existing lead data
+     */
+    function updateCampaignDisplayWhenLoadingLead() {
+        const campaignField = document.getElementById('campaign');
+        if (campaignField && campaignField.value) {
+            displayCampaignDetails(campaignField);
+        }
+    }
+
+    /**
+     * Clear campaign details display
+     */
+    function clearCampaignDetails() {
+        const box = document.getElementById("campaign-details-box");
+        if (box) {
+            box.style.display = "none";
+        }
+        
+        // Reset all detail fields
+        document.querySelectorAll('#campaign-details-box span[id^="c-"]').forEach(span => {
+            span.textContent = "-";
+        });
+    }
+
+    // ========== TIME ELAPSED FUNCTIONS ==========
+
+    /**
+     * Update all time elapsed badges in real-time
+     */
+    function updateAllTimeElapsedBadges() {
+        const timeElapsedBadges = document.querySelectorAll('.time-elapsed-badge');
+        
+        timeElapsedBadges.forEach(badge => {
+            const createdDateStr = badge.getAttribute('data-created');
+            const elapsedText = badge.querySelector('.elapsed-text');
+            
+            if (!createdDateStr || !elapsedText) return;
+            
+            try {
+                const createdDate = new Date(createdDateStr);
+                const now = new Date();
+                const diffMs = now - createdDate;
+                
+                // Calculate time difference
+                const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+                const diffHours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+                
+                // Format the elapsed time
+                let elapsedTextValue = '';
+                let badgeClass = 'time-elapsed-badge';
+                
+                if (diffDays > 0) {
+                    if (diffDays === 1) elapsedTextValue = '1 day ago';
+                    else if (diffDays < 7) elapsedTextValue = `${diffDays} days ago`;
+                    else if (diffDays < 30) elapsedTextValue = `${Math.floor(diffDays / 7)} week${Math.floor(diffDays / 7) > 1 ? 's' : ''} ago`;
+                    else if (diffDays < 365) elapsedTextValue = `${Math.floor(diffDays / 30)} month${Math.floor(diffDays / 30) > 1 ? 's' : ''} ago`;
+                    else elapsedTextValue = `${Math.floor(diffDays / 365)} year${Math.floor(diffDays / 365) > 1 ? 's' : ''} ago`;
+                    
+                    // Color coding based on time
+                    if (diffDays < 1) {
+                        badgeClass += ' time-recent';
+                    } else if (diffDays < 3) {
+                        badgeClass += ' time-medium';
+                    } else {
+                        badgeClass += ' time-old';
+                    }
+                } else if (diffHours > 0) {
+                    if (diffHours === 1) elapsedTextValue = '1 hour ago';
+                    else elapsedTextValue = `${diffHours} hours ago`;
+                    badgeClass += ' time-recent';
+                } else if (diffMinutes > 0) {
+                    if (diffMinutes === 1) elapsedTextValue = '1 minute ago';
+                    else elapsedTextValue = `${diffMinutes} minutes ago`;
+                    badgeClass += ' time-recent';
+                } else {
+                    elapsedTextValue = 'Just now';
+                    badgeClass += ' time-recent';
+                }
+                
+                // Update the element
+                elapsedText.textContent = elapsedTextValue;
+                badge.className = badgeClass;
+                badge.style.display = 'inline-flex';
+                
+            } catch (e) {
+                console.error('Error calculating time elapsed:', e);
+                elapsedText.textContent = 'Time error';
+                badge.style.display = 'inline-flex';
+            }
+        });
+    }
+
+    /**
+     * Update time elapsed for a single lead item (now shown below the date)
+     */
+    /**
+ * Update time elapsed for a single lead item
+ */
+function updateTimeElapsedForElement(leadElement) {
+    const timeElapsedElement = leadElement.querySelector('.lead-time-elapsed');
+    const createdDateStr = timeElapsedElement.getAttribute('data-created');
+    const elapsedTextElement = timeElapsedElement.querySelector('.elapsed-text');
+    
+    if (!createdDateStr || !elapsedTextElement) return;
+    
+    try {
+        const createdDate = new Date(createdDateStr);
+        const now = new Date();
+        const diffMs = now - createdDate;
+        
+        // Calculate time difference
+        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+        const diffHours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+        
+        // Format the elapsed time
+        let elapsedText = '';
+        let badgeClass = 'lead-time-elapsed';
+        
+        if (diffDays > 0) {
+            if (diffDays === 1) elapsedText = '1 day ago';
+            else if (diffDays < 7) elapsedText = `${diffDays} days ago`;
+            else if (diffDays < 30) elapsedText = `${Math.floor(diffDays / 7)} week${Math.floor(diffDays / 7) > 1 ? 's' : ''} ago`;
+            else if (diffDays < 365) elapsedText = `${Math.floor(diffDays / 30)} month${Math.floor(diffDays / 30) > 1 ? 's' : ''} ago`;
+            else elapsedText = `${Math.floor(diffDays / 365)} year${Math.floor(diffDays / 365) > 1 ? 's' : ''} ago`;
+            
+            // Color coding based on time
+            if (diffDays < 1) {
+                badgeClass += ' time-recent';
+            } else if (diffDays < 3) {
+                badgeClass += ' time-medium';
+            } else {
+                badgeClass += ' time-old';
+            }
+        } else if (diffHours > 0) {
+            if (diffHours === 1) elapsedText = '1 hour ago';
+            else elapsedText = `${diffHours} hours ago`;
+            badgeClass += ' time-recent';
+        } else if (diffMinutes > 0) {
+            if (diffMinutes === 1) elapsedText = '1 minute ago';
+            else elapsedText = `${diffMinutes} minutes ago`;
+            badgeClass += ' time-recent';
+        } else {
+            elapsedText = 'Just now';
+            badgeClass += ' time-recent';
+        }
+        
+        // Update the element
+        elapsedTextElement.textContent = elapsedText;
+        timeElapsedElement.className = badgeClass;
+        timeElapsedElement.style.display = 'flex';
+        
+    } catch (e) {
+        console.error('Error calculating time elapsed:', e);
+        elapsedTextElement.textContent = 'Time error';
+        timeElapsedElement.style.display = 'flex';
+    }
+}
+
     // ========== INITIALIZATION FUNCTIONS ==========
 
     /**
      * Initialize all functionality
      */
     function initializeApp() {
-        initializeToggle();
-        setupDirectoryTabs();
-        setupDirectorySearch();
-        setupPriorityFilter();
-        initializePagination();
-        setupEventListeners();
-        initializeSearchableSelect();
-        
-        console.log('✅ Lead Management System initialized successfully');
-        console.log('📊 Total leads:', leads.length);
-        console.log('👥 Total employees:', employees.length);
-        console.log('🎯 Campaigns available:', Object.keys(campaignMap).length);
-    }
+    // -------------------------
+    // Initialize UI components
+    // -------------------------
+    initializeToggle();
+    setupDirectoryTabs();
+    setupDirectorySearch();
+    setupPriorityFilter();
+    initializePagination();
+    setupEventListeners();
+    initializeSearchableSelect();
+    initializeDateDisplay();
+
+    // -------------------------
+    // Initialize Time Elapsed
+    // -------------------------
+
+    // Run after slight delay to ensure DOM is loaded
+    setTimeout(() => {
+        updateAllTimeElapsedIndicators();
+    }, 500);
+
+    // Update every 1 minute
+    setInterval(updateAllTimeElapsedIndicators, 60000);
+
+    // -------------------------
+    // Debug logs
+    // -------------------------
+    console.log('✅ Lead Management System initialized successfully');
+    console.log('📊 Total leads:', leads.length);
+    console.log('👥 Total employees:', employees.length);
+    console.log('🎯 Campaigns available:', Object.keys(campaignMap).length);
+    console.log('📅 Date display initialized');
+    console.log('⏱️ Time elapsed indicators enabled');
+
+    // Debug campaign dropdown issues
+    debugCampaignDropdown();
+}
+
 
     /**
      * Initialize searchable select for Reference From field
@@ -1984,20 +2929,52 @@ document.addEventListener('DOMContentLoaded', function() {
      * Clear all form fields and reset to default state
      */
     function clearForm() {
-        // Reset the form
-        document.getElementById('customerForm').reset();
+        // Get the form element
+        const form = document.getElementById('customerForm');
         
-        // Reset the toggle to default state (Business)
-        document.getElementById('customerTypeToggle').checked = true;
+        // Store the CSRF token before resetting
+        const csrfToken = form.querySelector('[name=csrfmiddlewaretoken]').value;
+        
+        // Reset the form
+        form.reset();
+        
+        // Restore the CSRF token (Django forms need this)
+        form.querySelector('[name=csrfmiddlewaretoken]').value = csrfToken;
+        
+        // Reset the toggle to default state (Business - checked)
+        const toggle = document.getElementById('customerTypeToggle');
+        toggle.checked = true;
+        
+        // Force the toggle to update the UI
         initializeToggle();
         
         // Set today's date as default
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('date').value = today;
         
+        // Explicitly clear all text inputs that might not reset properly
+        const textInputs = form.querySelectorAll('input[type="text"], input[type="email"], input[type="tel"]');
+        textInputs.forEach(input => {
+            input.value = '';
+        });
+        
+        // Explicitly reset all selects to empty option
+        const selectElements = form.querySelectorAll('select');
+        selectElements.forEach(select => {
+            // Check if there's an empty option
+            const emptyOption = select.querySelector('option[value=""]');
+            if (emptyOption) {
+                emptyOption.selected = true;
+            } else {
+                // If no empty option, select the first one
+                select.selectedIndex = 0;
+            }
+        });
+        
         // Clear any error styles
         document.querySelectorAll('input, select').forEach(field => {
             field.style.borderColor = '#ddd';
+            field.style.backgroundColor = '';
         });
         
         // Clear any selected lead in the directory
@@ -2012,12 +2989,93 @@ document.addEventListener('DOMContentLoaded', function() {
         const refFromClear = document.getElementById('refFromClear');
         
         if (refFromSearch) refFromSearch.value = '';
-        if (refFromSelect) refFromSelect.value = '';
+        if (refFromSelect) refFromSelect.selectedIndex = 0;
         if (refFromClear) refFromClear.classList.remove('active');
+        
+        // Hide any dropdown
+        const refFromOptions = document.getElementById('refFromOptions');
+        if (refFromOptions) {
+            refFromOptions.classList.remove('active');
+        }
+        
+        // Clear hidden assignment type field
+        document.getElementById('assignmentType').value = '';
+        
+        // Clear campaign details display
+        clearCampaignDetails();
         
         // Show success message
         showNotification('Form has been cleared successfully', 'success');
+        
+        // Log for debugging
+        console.log('✅ Form cleared successfully');
     }
+
+    /**
+ * Update all time elapsed indicators in real-time
+ */
+function updateAllTimeElapsedIndicators() {
+    const timeElapsedElements = document.querySelectorAll('.lead-time-elapsed');
+    
+    timeElapsedElements.forEach(element => {
+        const createdDateStr = element.getAttribute('data-created');
+        const elapsedText = element.querySelector('.elapsed-text');
+        
+        if (!createdDateStr || !elapsedText) return;
+        
+        try {
+            const createdDate = new Date(createdDateStr);
+            const now = new Date();
+            const diffMs = now - createdDate;
+            
+            // Calculate time difference
+            const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+            const diffHours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+            
+            // Format the elapsed time
+            let elapsedText = '';
+            let badgeClass = 'time-elapsed-badge';
+            
+            if (diffDays > 0) {
+                if (diffDays === 1) elapsedText = '1 day ago';
+                else if (diffDays < 7) elapsedText = `${diffDays} days ago`;
+                else if (diffDays < 30) elapsedText = `${Math.floor(diffDays / 7)} week${Math.floor(diffDays / 7) > 1 ? 's' : ''} ago`;
+                else if (diffDays < 365) elapsedText = `${Math.floor(diffDays / 30)} month${Math.floor(diffDays / 30) > 1 ? 's' : ''} ago`;
+                else elapsedText = `${Math.floor(diffDays / 365)} year${Math.floor(diffDays / 365) > 1 ? 's' : ''} ago`;
+                
+                // Color coding based on time
+                if (diffDays < 2) {
+                    badgeClass += ' time-recent';
+                } else if (diffDays < 7) {
+                    badgeClass += ' time-medium';
+                } else {
+                    badgeClass += ' time-old';
+                }
+            } else if (diffHours > 0) {
+                if (diffHours === 1) elapsedText = '1 hour ago';
+                else elapsedText = `${diffHours} hours ago`;
+                badgeClass += ' time-recent';
+            } else if (diffMinutes > 0) {
+                if (diffMinutes === 1) elapsedText = '1 minute ago';
+                else elapsedText = `${diffMinutes} minutes ago`;
+                badgeClass += ' time-recent';
+            } else {
+                elapsedText = 'Just now';
+                badgeClass += ' time-recent';
+            }
+            
+            // Update the element
+            element.querySelector('.elapsed-text').textContent = elapsedText;
+            element.className = 'lead-time-elapsed ' + badgeClass;
+            element.style.display = 'flex';
+            
+        } catch (e) {
+            console.error('Error calculating time elapsed:', e);
+            element.querySelector('.elapsed-text').textContent = 'Time error';
+        }
+    });
+}
 
     /**
      * Initialize customer type toggle functionality
@@ -2200,11 +3258,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (targetTab === 'employees') {
                     employeeList.classList.add('active');
                     leadList.classList.remove('active');
-                    document.getElementById('priorityFilterContainer').style.display = 'none';
+                    document.querySelector('.directory-filter-container').style.display = 'none';
                 } else {
                     employeeList.classList.remove('active');
                     leadList.classList.add('active');
-                    document.getElementById('priorityFilterContainer').style.display = 'block';
+                    document.querySelector('.directory-filter-container').style.display = 'flex';
                 }
 
                 document.getElementById('directorySearch').value = '';
@@ -2271,7 +3329,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         item.phoneNo.toLowerCase() + ' ' + 
                         item.ticketNo.toLowerCase() + ' ' +
                         (item.priority || '').toLowerCase() + ' ' +
-                        (item.campaign || '').toLowerCase()
+                        (item.campaign || '').toLowerCase() + ' ' +
+                        (item.campaign_display || '').toLowerCase() + ' ' +
+                        (item.date || '').toLowerCase()
                     );
                 }
                 
@@ -2486,43 +3546,91 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     /**
-     * Create lead item element with priority display
+     * Create lead item element with date and time elapsed below it
      */
-    function createLeadItem(lead, container) {
-        const item = document.createElement('div');
-        item.className = 'lead-item';
-        item.setAttribute('data-id', lead.id);
-        
-        // Priority badge with emoji indicators
-        const priorityConfig = getPriorityConfig(lead.priority || 'Medium');
-        
-        // Get campaign display value - prefer campaignName, fallback to campaign
-        const campaignDisplay = lead.campaignName || lead.campaign || '';
-        
-        item.innerHTML = `
-            <div class="lead-avatar">
-                ${(lead.ownerName || '').slice(0, 2).toUpperCase()}
-            </div>
-            <div class="lead-details">
-                <div class="lead-name">
-                    <span style="font-size: 16px; margin-right: 5px;">${priorityConfig.emoji}</span>
-                    ${lead.ownerName}
-                </div>
-                <div class="lead-phone">${lead.phoneNo}</div>
-                <div class="lead-ticket">${lead.ticketNo}</div>
-                <div class="lead-status" style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px;">
-                    <span>Status: ${lead.status}</span>
-                    <span style="color: ${priorityConfig.color}; font-weight: 600; font-size: 10px; padding: 2px 6px; border-radius: 10px;">
-                        ${priorityConfig.text}
-                    </span>
-                </div>
-                ${campaignDisplay ? `<div class="lead-campaign" style="font-size: 11px; color: #666; margin-top: 3px; font-style: italic;"><i class="fas fa-bullhorn" style="margin-right: 3px;"></i>Campaign: ${campaignDisplay}</div>` : ''}
-            </div>
-        `;
-        
-        container.appendChild(item);
+    /**
+ * Create lead item element with enhanced date display and time elapsed
+ */
+function createLeadItem(lead, container) {
+    const item = document.createElement('div');
+    item.className = 'lead-item';
+    item.setAttribute('data-id', lead.id);
+    
+    // Priority configuration
+    const priorityConfig = getPriorityConfig(lead.priority || 'Medium');
+    
+    // Format ISO date for JavaScript
+    const createdDate = lead.createdAt || lead.date;
+    const isoDate = createdDate ? new Date(createdDate).toISOString() : '';
+    
+    // Get campaign display value
+    let campaignDisplay = lead.campaign_display || '';
+    if (!campaignDisplay && lead.campaign) {
+        campaignDisplay = getCampaignDisplayName(lead.campaign);
     }
-
+    
+    // Format dates for display
+    const leadDateInfo = formatDateForDisplay(lead.date);
+    const createdDateInfo = formatDateForDisplay(lead.createdAt);
+    
+    item.innerHTML = `
+        <div class="lead-avatar">
+            ${(lead.ownerName || '').slice(0, 2).toUpperCase()}
+        </div>
+        <div class="lead-details">
+            <div class="lead-header">
+                <div class="lead-name-container">
+                    <span class="lead-priority-indicator">
+                        ${priorityConfig.emoji}
+                    </span>
+                    <span class="lead-name">${lead.ownerName || 'No Name'}</span>
+                    ${leadDateInfo.short ? `
+                    <span class="lead-date-full" title="Lead Date: ${leadDateInfo.tooltip}">
+                        <i class="far fa-calendar-check"></i>
+                        ${leadDateInfo.short}
+                    </span>` : ''}
+                </div>
+                ${createdDateInfo.short ? `
+                <div class="lead-date-compact" title="Created: ${createdDateInfo.tooltip}">
+                    <i class="far fa-calendar-alt"></i>
+                    ${createdDateInfo.short}
+                </div>` : ''}
+            </div>
+            
+            <!-- TIME ELAPSED INDICATOR - Will be updated by JavaScript -->
+            <div class="lead-time-elapsed" 
+                 data-created="${isoDate}"
+                 style="display: none;">
+                <i class="fas fa-clock"></i>
+                <span class="elapsed-text">Calculating...</span>
+            </div>
+            
+            <div class="lead-phone">${lead.phoneNo || 'No Phone'}</div>
+            <div class="lead-ticket">${lead.ticketNo || 'No Ticket'}</div>
+            ${lead.createdTime ? `
+            <div class="lead-datetime">
+                <i class="far fa-clock"></i>
+                Created at ${lead.createdTime}
+            </div>` : ''}
+            <div class="lead-info-row">
+                <div class="lead-status">Status: ${lead.status || 'Unknown'}</div>
+                <span style="color: ${priorityConfig.color}; font-weight: 600; font-size: 10px; padding: 2px 8px; border-radius: 10px; background: ${priorityConfig.color}15;">
+                    ${priorityConfig.text}
+                </span>
+            </div>
+            ${campaignDisplay ? `
+            <div class="lead-campaign" title="${campaignDisplay}">
+                <i class="fas fa-bullhorn" style="font-size: 9px;"></i>
+                <span>${campaignDisplay.substring(0, 40)}${campaignDisplay.length > 40 ? '...' : ''}</span>
+            </div>` : ''}
+        </div>
+    `;
+    
+    container.appendChild(item);
+    
+    // Update time elapsed for this specific item
+    setTimeout(() => updateTimeElapsedForElement(item), 100);
+}
     /**
      * Get priority configuration
      */
@@ -2534,6 +3642,30 @@ document.addEventListener('DOMContentLoaded', function() {
         };
         
         return configs[priority] || configs['Medium'];
+    }
+
+    /**
+     * Get campaign display name from campaign ID
+     */
+    function getCampaignDisplayName(campaignId) {
+        if (!campaignId) return '';
+        
+        // First check in campaignMap
+        if (campaignMap[campaignId]) {
+            return campaignMap[campaignId].fullName || campaignMap[campaignId].displayName || campaignId;
+        }
+        
+        // Then check in dropdown options
+        const campaignField = document.getElementById('campaign');
+        if (campaignField) {
+            for (let option of campaignField.options) {
+                if (option.value === campaignId) {
+                    return option.text;
+                }
+            }
+        }
+        
+        return campaignId;
     }
 
     /**
@@ -2585,6 +3717,8 @@ document.addEventListener('DOMContentLoaded', function() {
      * Populate all form fields with lead data
      */
     function populateFormWithLeadData(leadData) {
+        console.log('Loading lead data:', leadData);
+        
         // Communication Details
         document.getElementById('ownerName').value = leadData.ownerName || '';
         document.getElementById('phoneNo').value = leadData.phoneNo || '';
@@ -2623,8 +3757,31 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('individualPinCode').value = leadData.individualPinCode || '';
             }
             
-            // Business Information (common for both)
-            document.getElementById('date').value = leadData.date || '';
+            // Business Information - FIXED DATE FORMATTING
+            // Business Information - FIXED DATE FORMATTING
+const dateField = document.getElementById('date');
+if (leadData.date) {
+    let formattedDate = formatDateForInput(leadData.date);
+    dateField.value = formattedDate;
+    console.log('Setting date field:', formattedDate, 'from:', leadData.date);
+} else {
+    dateField.value = '';
+}
+
+// 🔥 AUTO-FILL CREATED DATE WHEN SELECTING ACTIVE LEAD
+const createdDateField = document.getElementById('created_date');
+
+if (createdDateField) {
+    if (leadData.createdAt) {
+        let formattedCreatedDate = formatDateForInput(leadData.createdAt);
+        createdDateField.value = formattedCreatedDate;
+        console.log("Created Date Set:", formattedCreatedDate);
+    } else {
+        createdDateField.value = "";
+    }
+}
+
+
             
             // Reference From - handle searchable select
             if (leadData.refFrom) {
@@ -2640,10 +3797,19 @@ document.addEventListener('DOMContentLoaded', function() {
             
             document.getElementById('business').value = leadData.business || '';
             
-            // Campaign Details
+            // Campaign Details - Handle properly
             const campaignField = document.getElementById('campaign');
             if (campaignField) {
-                campaignField.value = leadData.campaign || leadData.campaignName || '';
+                console.log('Setting campaign field value:', leadData.campaign);
+                console.log('Campaign display:', leadData.campaign_display);
+                
+                // First, try to set the value directly
+                campaignField.value = leadData.campaign || "";
+                
+                // Trigger display of campaign details
+                setTimeout(() => {
+                    displayCampaignDetails(campaignField);
+                }, 100);
             }
             
             // Marketed By - handle both ID and name
@@ -2664,18 +3830,67 @@ document.addEventListener('DOMContentLoaded', function() {
                 block: 'start' 
             });
             
-            // Show success notification
+            // Show success notification with date info
             const priorityConfig = getPriorityConfig(leadData.priority || 'Medium');
             let notificationMessage = `${priorityConfig.emoji} Loaded lead data for ${leadData.ownerName} (Priority: ${priorityConfig.text})`;
             
+            // Add date info to notification if available
+            if (leadData.date) {
+                const leadDateInfo = formatDateForDisplay(leadData.date);
+                if (leadDateInfo.short) {
+                    notificationMessage += ` | Lead Date: ${leadDateInfo.short}`;
+                }
+            }
+            
             // Add campaign info to notification if available
-            if (leadData.campaign) {
-                notificationMessage += ` | Campaign: ${leadData.campaign}`;
+            if (leadData.campaign_display || leadData.campaign) {
+                const campaignDisplay = leadData.campaign_display || getCampaignDisplayName(leadData.campaign);
+                notificationMessage += ` | Campaign: ${campaignDisplay.substring(0, 30)}${campaignDisplay.length > 30 ? '...' : ''}`;
             }
             
             showNotification(notificationMessage, 'success');
             
         }, 100);
+    }
+
+    /**
+     * Format date for HTML input (YYYY-MM-DD)
+     */
+    function formatDateForInput(dateString) {
+        if (!dateString) return '';
+        
+        try {
+            // If already in YYYY-MM-DD format, return as-is
+            if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+                return dateString;
+            }
+            
+            // Try to parse the date
+            let dateObj;
+            
+            // Check if it's a Date object string
+            if (typeof dateString === 'string' && dateString.includes('T')) {
+                dateObj = new Date(dateString);
+            } else {
+                // Try parsing as different formats
+                dateObj = new Date(dateString);
+            }
+            
+            if (isNaN(dateObj.getTime())) {
+                console.warn('Invalid date format:', dateString);
+                return '';
+            }
+            
+            // Format to YYYY-MM-DD
+            const year = dateObj.getFullYear();
+            const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const day = String(dateObj.getDate()).padStart(2, '0');
+            
+            return `${year}-${month}-${day}`;
+        } catch (error) {
+            console.error('Error formatting date:', error, dateString);
+            return '';
+        }
     }
 
     /**
@@ -2756,9 +3971,110 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // ========== DEBUG FUNCTIONS ==========
+
+    /**
+     * Debug campaign dropdown
+     */
+    function debugCampaignDropdown() {
+        const campaignField = document.getElementById('campaign');
+        if (campaignField) {
+            console.group('🎯 Campaign Dropdown Debug');
+            console.log('Total options:', campaignField.options.length);
+            console.log('Campaign map entries:', Object.keys(campaignMap).length);
+            
+            // Log first 5 options
+            Array.from(campaignField.options).forEach((option, index) => {
+                if (index < 5 || option.value) {
+                    console.log(`Option ${index}: "${option.value}" -> "${option.text}"`);
+                }
+            });
+            
+            // Check campaignMap
+            const campaignKeys = Object.keys(campaignMap);
+            if (campaignKeys.length > 0) {
+                console.log('Campaign Map sample (first 3):', 
+                    campaignKeys.slice(0, 3).map(key => 
+                        `${key}: ${campaignMap[key].fullName}`
+                    )
+                );
+            } else {
+                console.log('⚠️ Campaign map is empty!');
+            }
+            console.groupEnd();
+        }
+    }
+
     // ========== INITIALIZE APPLICATION ==========
     
     initializeApp();
+
+    // Add this JavaScript function to your lead_form.html template
+
+function displayCampaignDetails(selectElement) {
+    const selectedOption = selectElement.options[selectElement.selectedIndex];
+    const detailsBox = document.getElementById('campaign-details-box');
+    
+    if (!selectedOption.value) {
+        // Hide details if no campaign selected
+        detailsBox.style.display = 'none';
+        return;
+    }
+    
+    // Extract data attributes from the selected option
+    const campaignData = {
+        id: selectedOption.getAttribute('data-id'),
+        name: selectedOption.getAttribute('data-name'),
+        software: selectedOption.getAttribute('data-software'),
+        status: selectedOption.getAttribute('data-status'),
+        fromDate: selectedOption.getAttribute('data-from'),
+        toDate: selectedOption.getAttribute('data-to'),
+        days: selectedOption.getAttribute('data-days'),
+        location: selectedOption.getAttribute('data-location'),
+        amount: selectedOption.getAttribute('data-amount'),
+        reach: selectedOption.getAttribute('data-reach'),
+        impression: selectedOption.getAttribute('data-impression'),
+        leads: selectedOption.getAttribute('data-leads')
+    };
+    
+    // Update the details display
+    document.getElementById('c-id').textContent = campaignData.id || '-';
+    document.getElementById('c-name').textContent = campaignData.name || '-';
+    document.getElementById('c-software').textContent = campaignData.software || '-';
+    
+    // Status with badge styling
+    const statusElement = document.getElementById('c-status');
+    const status = campaignData.status || 'draft';
+    statusElement.innerHTML = `<span class="status-badge status-${status}">${status.charAt(0).toUpperCase() + status.slice(1)}</span>`;
+    
+    // Date and duration info
+    document.getElementById('c-from').textContent = campaignData.fromDate || '-';
+    document.getElementById('c-to').textContent = campaignData.toDate || '-';
+    document.getElementById('c-duration').textContent = campaignData.days ? `${campaignData.days} days` : '-';
+    document.getElementById('c-location').textContent = campaignData.location || 'Not specified';
+    
+    // Financial and metrics
+    const amount = parseFloat(campaignData.amount || 0);
+    document.getElementById('c-amount').textContent = amount > 0 ? `₹${amount.toLocaleString('en-IN')}` : '-';
+    
+    const reach = parseInt(campaignData.reach || 0);
+    document.getElementById('c-reach').textContent = reach > 0 ? reach.toLocaleString('en-IN') : '-';
+    
+    const impression = parseInt(campaignData.impression || 0);
+    document.getElementById('c-impression').textContent = impression > 0 ? impression.toLocaleString('en-IN') : '-';
+    
+    const leads = parseInt(campaignData.leads || 0);
+    document.getElementById('c-leads').textContent = leads > 0 ? leads.toLocaleString('en-IN') : '-';
+    
+    // Show the details box with animation
+    detailsBox.style.display = 'block';
+}
+
+// Optional: Add close button functionality
+function closeCampaignDetails() {
+    const detailsBox = document.getElementById('campaign-details-box');
+    detailsBox.style.display = 'none';
+}
 
 });
 </script>
