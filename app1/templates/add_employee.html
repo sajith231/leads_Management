@@ -42,20 +42,38 @@
 
     .cv-selection-section {
         background: #f8f9fa;
-        padding: 25px;
+        padding: 15px 20px;
         border-radius: 8px;
-        margin-bottom: 30px;
+        margin-bottom: 25px;
         border-left: 4px solid #667eea;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 15px;
     }
 
     .cv-selection-section h4 {
         font-size: 16px;
         font-weight: 700;
         color: #333;
-        margin: 0 0 20px 0;
+        margin: 0;
         display: flex;
         align-items: center;
         gap: 10px;
+    }
+
+    .cv-search-container {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-grow: 1;
+        max-width: 400px;
+    }
+
+    .cv-search-wrapper {
+        position: relative;
+        flex-grow: 1;
     }
 
     .form-section {
@@ -127,12 +145,13 @@
 
     #cvSearch {
         width: 100%;
-        padding: 12px 16px;
+        padding: 10px 16px;
         font-size: 14px;
         border: 1px solid #ddd;
         border-radius: 6px;
         background-color: #ffffff;
         transition: all 0.3s;
+        padding-right: 40px;
     }
 
     #cvSearch:focus {
@@ -143,26 +162,34 @@
 
     #cvSelect {
         display: none;
-        width: 100%;
-        padding: 8px;
-        font-size: 14px;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        z-index: 1000;
+        max-height: 250px;
+        overflow-y: auto;
+        background: white;
         border: 1px solid #ddd;
         border-radius: 6px;
-        background-color: #ffffff;
-        max-height: 200px;
-        overflow-y: auto;
-        margin-top: 10px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        margin-top: 5px;
     }
 
     #cvSelect option {
-        padding: 10px;
+        padding: 10px 15px;
         font-size: 14px;
         color: #333;
         cursor: pointer;
+        border-bottom: 1px solid #f0f0f0;
     }
 
     #cvSelect option:hover {
         background-color: #f0f4ff;
+    }
+
+    #cvSelect option:last-child {
+        border-bottom: none;
     }
 
     .action-buttons {
@@ -232,6 +259,16 @@
             width: 100%;
             justify-content: center;
         }
+
+        .cv-selection-section {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .cv-search-container {
+            max-width: 100%;
+            width: 100%;
+        }
     }
 
     /* Scrollbar Styling */
@@ -251,6 +288,31 @@
     #cvSelect::-webkit-scrollbar-thumb:hover {
         background: #555;
     }
+
+    .search-icon {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #999;
+        pointer-events: none;
+    }
+
+    .btn-clear {
+        background: #6c757d;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        padding: 10px 15px;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.3s;
+        white-space: nowrap;
+    }
+
+    .btn-clear:hover {
+        background: #5a6268;
+    }
 </style>
 
 <div class="allbody">
@@ -268,28 +330,33 @@
             <form action="{% url 'add_employee' %}" method="post" enctype="multipart/form-data">
                 {% csrf_token %}
                 
-                <!-- CV Selection Section -->
+                <!-- CV Selection Section - Compact -->
                 <div class="cv-selection-section">
-                    <h4><i class="fas fa-file-alt"></i> Add Employee from CV (Optional)</h4>
-                    <div class="form-group">
-                        <label for="cvSearch">Search CV by Name</label>
-                        <input type="text" class="form-control" id="cvSearch" placeholder="Type to search existing CVs..." oninput="filterCVs()" onclick="showDropdown()" aria-label="Search CV">
-                        <select class="form-control" id="cvSelect" onchange="fillEmployeeDetails()" size="5">
-                            <option value="">Select a CV</option>
-                            {% for cv in cvs %}
-                                <option value="{{ cv.id }}" 
-                                        data-name="{{ cv.name }}" 
-                                        data-address="{{ cv.address }}" 
-                                        data-phone="{{ cv.phone_number }}" 
-                                        data-place="{{ cv.place }}" 
-                                        data-district="{{ cv.district }}" 
-                                        data-education="{{ cv.education }}" 
-                                        data-experience="{{ cv.experience }}" 
-                                        data-dob="{{ cv.dobdate|date:'Y-m-d' }}">
-                                    {{ cv.name }}
-                                </option>
-                            {% endfor %}
-                        </select>
+                    <h4><i class="fas fa-file-import"></i> Import from CV (Optional)</h4>
+                    <div class="cv-search-container">
+                        <div class="cv-search-wrapper">
+                            <input type="text" class="form-control" id="cvSearch" placeholder="Search CV by name..." oninput="filterCVs()" onclick="showDropdown()" aria-label="Search CV">
+                            <i class="fas fa-search search-icon"></i>
+                            <select class="form-control" id="cvSelect" onchange="fillEmployeeDetails()" size="5">
+                                <option value="">Select a CV</option>
+                                {% for cv in cvs %}
+                                    <option value="{{ cv.id }}" 
+                                            data-name="{{ cv.name }}" 
+                                            data-address="{{ cv.address }}" 
+                                            data-phone="{{ cv.phone_number }}" 
+                                            data-place="{{ cv.place }}" 
+                                            data-district="{{ cv.district }}" 
+                                            data-education="{{ cv.education }}" 
+                                            data-experience="{{ cv.experience }}" 
+                                            data-dob="{{ cv.dobdate|date:'Y-m-d' }}">
+                                        {{ cv.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <button type="button" class="btn-clear" onclick="clearCVSelection()">
+                            <i class="fas fa-times"></i> Clear
+                        </button>
                     </div>
                 </div>
 
@@ -318,6 +385,68 @@
                         <div class="form-group form-grid-full">
                             <label for="experience">Experience</label>
                             <input type="text" name="experience" id="experience" class="form-control">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Job Information Section -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <h4><i class="fas fa-briefcase"></i> Job Information</h4>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="job_title">Job Title <span style="color: #dc3545;">*</span></label>
+                            <select name="job_title" id="job_title" class="form-control" required>
+                                <option value="" disabled selected>Select job title</option>
+                                {% for jt in job_titles %}
+                                    <option value="{{ jt.id }}">{{ jt.title }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="organization">Organization</label>
+                            <select name="organization" id="organization" class="form-control">
+                                <option value="">Select organization</option>
+                                {% for dept in departments %}
+                                    <option value="{{ dept.id }}">{{ dept.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="joining_date">Joining Date <span style="color: #dc3545;">*</span></label>
+                            <input type="date" name="joining_date" id="joining_date" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="user_id">Employee User ID <span style="color: #dc3545;">*</span></label>
+                            <select name="user_id" id="user_id" class="form-control" required>
+                                <option value="" disabled selected>Select User ID</option>
+                                {% for user in users %}
+                                    <option value="{{ user.id }}">{{ user.userid }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="duty_time_start">Duty Time Start</label>
+                            <input type="time" name="duty_time_start" id="duty_time_start" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="duty_time_end">Duty Time End</label>
+                            <input type="time" name="duty_time_end" id="duty_time_end" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="status">Status <span style="color: #dc3545;">*</span></label>
+                            <select name="status" id="status" class="form-control" required>
+                                <option value="active" selected>Active</option>
+                                <option value="inactive">Inactive</option>
+                                <option value="on_leave">On Leave</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="attachments">Attachments</label>
+                            <input type="file" name="attachments" id="attachments" class="form-control" multiple>
                         </div>
                     </div>
                 </div>
@@ -367,68 +496,6 @@
                     </div>
                 </div>
 
-                <!-- Job Information Section -->
-                <div class="form-section">
-                    <div class="section-header">
-                        <h4><i class="fas fa-briefcase"></i> Job Information</h4>
-                    </div>
-                    <div class="form-grid">
-                       <div class="form-group">
-    <label for="job_title">Job Title <span style="color: #dc3545;">*</span></label>
-    <select name="job_title" id="job_title" class="form-control" required>
-        <option value="" disabled selected>Select job title</option>
-        {% for jt in job_titles %}
-            <option value="{{ jt.id }}">{{ jt.title }}</option>
-        {% endfor %}
-    </select>
-</div>
-
-                        <div class="form-group">
-  <label for="organization">Organization</label>
-  <select name="organization" id="organization" class="form-control">
-    <option value="">Select organization</option>
-    {% for dept in departments %}
-      <option value="{{ dept.id }}">{{ dept.name }}</option>
-    {% endfor %}
-  </select>
-</div>
-
-                        <div class="form-group">
-                            <label for="joining_date">Joining Date <span style="color: #dc3545;">*</span></label>
-                            <input type="date" name="joining_date" id="joining_date" class="form-control" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="user_id">Employee User ID <span style="color: #dc3545;">*</span></label>
-                            <select name="user_id" id="user_id" class="form-control" required>
-                                <option value="" disabled selected>Select User ID</option>
-                                {% for user in users %}
-                                    <option value="{{ user.id }}">{{ user.userid }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="duty_time_start">Duty Time Start</label>
-                            <input type="time" name="duty_time_start" id="duty_time_start" class="form-control">
-                        </div>
-                        <div class="form-group">
-                            <label for="duty_time_end">Duty Time End</label>
-                            <input type="time" name="duty_time_end" id="duty_time_end" class="form-control">
-                        </div>
-                        <div class="form-group">
-                            <label for="status">Status <span style="color: #dc3545;">*</span></label>
-                            <select name="status" id="status" class="form-control" required>
-                                <option value="active" selected>Active</option>
-                                <option value="inactive">Inactive</option>
-                                <option value="on_leave">On Leave</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="attachments">Attachments</label>
-                            <input type="file" name="attachments" id="attachments" class="form-control" multiple>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Bank Details Section -->
                 <div class="form-section">
                     <div class="section-header">
@@ -472,7 +539,9 @@
 
 <script>
     function showDropdown() {
-        document.getElementById('cvSelect').style.display = 'block';
+        const cvSelect = document.getElementById('cvSelect');
+        cvSelect.style.display = 'block';
+        filterCVs(); // Refresh the filtered list
     }
 
     function filterCVs() {
@@ -492,7 +561,12 @@
             }
         }
 
-        cvSelect.style.display = matchFound ? 'block' : 'none';
+        // Show/hide dropdown based on matches
+        if (searchInput.trim() === '') {
+            cvSelect.style.display = 'none';
+        } else {
+            cvSelect.style.display = matchFound ? 'block' : 'none';
+        }
     }
 
     function fillEmployeeDetails() {
@@ -509,18 +583,50 @@
             document.getElementById('experience').value = selectedOption.getAttribute('data-experience');
             document.getElementById('dob').value = selectedOption.getAttribute('data-dob');
 
+            // Update search input with selected name
+            document.getElementById('cvSearch').value = selectedOption.getAttribute('data-name');
+            
             cvSelect.style.display = 'none';
         }
+    }
+
+    function clearCVSelection() {
+        document.getElementById('cvSearch').value = '';
+        document.getElementById('cvSelect').value = '';
+        document.getElementById('cvSelect').style.display = 'none';
+        
+        // Clear only the fields that would have been populated from CV
+        document.getElementById('name').value = '';
+        document.getElementById('address').value = '';
+        document.getElementById('phone_personal').value = '';
+        document.getElementById('place').value = '';
+        document.getElementById('district').value = '';
+        document.getElementById('education').value = '';
+        document.getElementById('experience').value = '';
+        document.getElementById('dob').value = '';
     }
 
     // Hide dropdown when clicking outside
     document.addEventListener('click', function(event) {
         const searchInput = document.getElementById('cvSearch');
         const cvSelect = document.getElementById('cvSelect');
+        const searchWrapper = document.querySelector('.cv-search-wrapper');
 
-        if (!searchInput.contains(event.target) && !cvSelect.contains(event.target)) {
+        if (!searchWrapper.contains(event.target)) {
             cvSelect.style.display = 'none';
         }
+    });
+
+    // Close dropdown when pressing Escape key
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            document.getElementById('cvSelect').style.display = 'none';
+        }
+    });
+
+    // Hide dropdown when an option is selected
+    document.getElementById('cvSelect').addEventListener('change', function() {
+        this.style.display = 'none';
     });
 </script>
 
