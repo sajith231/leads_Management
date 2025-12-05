@@ -1,0 +1,818 @@
+{% extends 'base.html' %}
+{%block content%}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Key Request Form</title>
+    <style>
+        /* ======  CSS RESET & BASE  ====== */
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{
+            font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+            background:#f5f5f5;color:#333;line-height:1.4;
+        }
+        .container{max-width:800px;margin:0 auto;padding:20px}
+        header{background:#fff;padding:20px;border-radius:8px;margin-bottom:30px;display:flex;justify-content:space-between;align-items:center}
+        .form-container{background:#fff;padding:30px;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,.1)}
+        .form-group{margin-bottom:20px}
+        .form-row{display:flex;gap:20px}
+        .form-row .form-group{flex:1}
+        label{display:block;margin-bottom:5px;font-weight:600;color:#34495e}
+        input,select,textarea{width:100%;padding:12px;border:1px solid #ddd;border-radius:5px;font-size:14px}
+        
+        /* Key Type dropdown styling */
+        #keyType {
+            font-weight: bold;
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            color: #333;
+        }
+        #keyType option {
+            font-weight: bold;
+            background: #e3f2fd;
+            color: #333;
+            padding: 10px;
+        }
+        #keyType option:hover {
+            background: #bbdefb;
+        }
+        textarea{resize:vertical;min-height:100px}
+        .form-actions{display:flex;justify-content:space-between;margin-top:20px}
+        .btn{padding:12px 24px;border:none;border-radius:5px;cursor:pointer;font-weight:600;text-decoration:none;font-size:14px}
+        .btn-primary{background:#3498db;color:#fff}
+        .btn-primary:hover{background:#2980b9}
+        .btn-secondary{background:#6c757d;color:#fff}
+        .btn-secondary:hover{background:#5a6268}
+        .dynamic-field{display:none}
+
+        /* Enhanced client dropdown styles */
+        .client-dropdown-container {
+            position: relative;
+        }
+        .client-search-input {
+            width: 100%;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-size: 16px;
+            height: 50px;
+        }
+        .client-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-top: none;
+            border-radius: 0 0 5px 5px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+            box-shadow: 0 2px 10px rgba(0,0,0,.1);
+        }
+        .client-option {
+            padding: 15px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        .client-option:hover {
+            background-color: #f8f9fa;
+        }
+        .client-option.highlighted {
+            background-color: #e3f2fd;
+        }
+        .client-option:last-child {
+            border-bottom: none;
+        }
+        .client-name {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 2px;
+        }
+        .client-address {
+            font-size: 12px;
+            color: #7f8c8d;
+            font-style: italic;
+        }
+        .no-results {
+            padding: 12px;
+            color: #7f8c8d;
+            font-style: italic;
+            font-size: 14px;
+        }
+        .loading {
+            padding: 12px;
+            color: #7f8c8d;
+            text-align: center;
+            font-size: 14px;
+        }
+        .dropdown-arrow {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+            color: #7f8c8d;
+        }
+        .error {
+            color: #dc3545;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        /* Amount field styling */
+        .amount-input {
+            position: relative;
+        }
+        .currency-symbol {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #7f8c8d;
+            font-weight: 600;
+        }
+        .amount-input input {
+            padding-left: 30px;
+        }
+
+        /* ======  RESPONSIVE  ====== */
+        @media(max-width:768px){
+            .container{padding:15px}
+            header{padding:15px;flex-direction:column;text-align:center;gap:15px}
+            .form-container{padding:20px}
+            .form-actions{flex-direction:column;gap:10px}
+            .form-row{flex-direction:column}
+        }
+        
+        /* Message styles */
+        .messages {
+            margin-bottom: 20px;
+        }
+        .alert {
+            padding: 12px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+        .alert-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="form-container">
+            <!-- Back to List Button at top left -->
+            <div style="margin-bottom: 20px;">
+                <a href="{% url 'key_request_list' %}" class="btn btn-secondary">← Back to List</a>
+            </div>
+
+    <div class="container">
+        <header>
+            <h1>🔑Key Request</h1>
+        </header>
+
+        <!-- Display messages -->
+        {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+            <div class="alert alert-{% if message.tags %}{{ message.tags }}{% else %}info{% endif %}">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+            
+            <form method="POST" action="{% url 'key_request' %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                
+                <!-- Client Name -->
+                <div class="form-group">
+                    <label for="clientName">Client Name *</label>
+                    <div class="client-dropdown-container">
+                        <input 
+                            type="text" 
+                            id="clientName" 
+                            name="clientName" 
+                            class="client-search-input"
+                            placeholder="Type to search or click to see all clients..."
+                            autocomplete="off"
+                            required
+                        >
+                        <span class="dropdown-arrow">▼</span>
+                        <div id="clientDropdown" class="client-dropdown">
+                            <div class="loading">Loading clients...</div>
+                        </div>
+                    </div>
+                    <div id="clientError" class="error"></div>
+                </div>
+                <div class="form-group">
+    <label for="requested_by">Requested By:</label>
+    {% if user.is_authenticated %}
+        <input type="text" 
+               id="requested_by" 
+               name="requested_by" 
+               value="{% if user.get_full_name %}{{ user.get_full_name }}{% elif user.first_name %}{{ user.first_name }} {{ user.last_name }}{% else %}{{ user.username }}{% endif %}" 
+               class="form-control" 
+               readonly>
+        <small class="form-text text-muted">This field is automatically filled with your login information</small>
+    {% else %}
+        <input type="text" 
+               id="requested_by" 
+               name="requested_by" 
+               value="Guest User" 
+               class="form-control" 
+               readonly>
+        <small class="form-text text-muted"><a href="/login/">Please log in</a> to track your requests</small>
+    {% endif %}
+</div>
+
+                <!-- Location -->
+                <div class="form-group">
+                    <label for="location">Location *</label>
+                    <input type="text" id="location" name="location" required readonly style="background-color: #f8f9fa;">
+                </div>
+
+                <!-- Branch -->
+                <div class="form-group">
+                    <label for="branch">Branch</label>
+                    <input type="text" id="branch" name="branch" readonly style="background-color: #f8f9fa;">
+                </div>
+
+                <!-- Key Type -->
+                <div class="form-group">
+                    <label for="keyType">Requested Key *</label>
+                    <select id="keyType" name="keyType" required onchange="toggleFields()">
+                        <option value="">Select key type...</option>
+                        <option value="Seat Upgradation Request">Seat Upgradation Request</option>
+                        <option value="More Module Request">More Module Request</option>
+                        <option value="Trade Name And Address Change Request">Trade Name And Address Change Request</option>
+                        <option value="Key type Change Request">Key type Change Request</option>
+                        <option value="Key Extension Request">Key Extension Request</option>
+                        <option value="Hosted Key Request">Hosted Key Request</option>
+                        <option value="Feeder Cancellation Request">Feeder Cancellation Request</option>
+                        <option value="Demo Key Request">Demo Key Request</option>
+                        <option value="Software Amount Change Request">Software Amount Change Request</option>
+                        <option value="Maturity Upgradation Request">Maturity Upgradation Request</option>
+                        <option value="Enterprises Key Request">Enterprises Key Request</option>
+                        <option value="Special Updation Request">Special Updation Request</option>
+                        <option value="Image Request">Image Request</option>
+                    </select>
+                </div>
+
+                <!-- Amount Field (Global) -->
+                <div class="form-group">
+                    <label for="amount">Amount</label>
+                    <div class="amount-input">
+                        <span class="currency-symbol">₹</span>
+                        <input type="text" id="amount" name="amount" placeholder="Enter amount if applicable">
+                    </div>
+                </div>
+
+                <!-- Dynamic fields -->
+                <!-- Image Request -->
+                <div id="imageRequestFields" class="dynamic-field">
+    <div class="form-group">
+        <label for="requestImage">Request Image *</label>
+        <input type="file" id="requestImage" name="requestImage" accept="image/*" required>
+    </div>
+    <div class="form-row">
+        <div class="form-group">
+            <label for="gps_lat">GPS Latitude</label>
+            <input type="text" id="gps_lat" name="gps_lat" readonly style="background:#f8f9fa;">
+        </div>
+        <div class="form-group">
+            <label for="gps_lon">GPS Longitude</label>
+            <input type="text" id="gps_lon" name="gps_lon" readonly style="background:#f8f9fa;">
+        </div>
+    </div>
+</div>
+                
+
+
+                <!-- Enterprises Key Request -->
+                <div id="enterprisesKeyFields" class="dynamic-field">
+                    <div class="form-group">
+                        <label>Enterprise Details</label>
+                        <textarea name="enterpriseDetails" placeholder="Provide enterprise-specific details"></textarea>
+                    </div>
+                </div>
+
+                <!-- Seat Upgradation -->
+                <div id="seatUpgradeFields" class="dynamic-field">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Current Seats</label>
+                            <input type="number" name="currentSeats" placeholder="Current number of seats">
+                        </div>
+                        <div class="form-group">
+                            <label>Required Seats</label>
+                            <input type="number" name="requiredSeats" placeholder="Required number of seats">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hosted Key -->
+                <div id="hostedKeyFields" class="dynamic-field">
+                    <div class="form-group">
+                        <label>Server Details</label>
+                        <textarea name="serverDetails" placeholder="Provide server configuration details"></textarea>
+                    </div>
+                </div>
+
+                <!-- Maturity Upgradation -->
+                <div id="maturityUpgradeFields" class="dynamic-field">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Current Maturity Pack</label>
+                            <input type="text" name="currentMaturity" placeholder="Current maturity pack">
+                        </div>
+                        <div class="form-group">
+                            <label>Required Maturity Pack</label>
+                            <input type="text" name="requiredMaturity" placeholder="Required maturity pack">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- More Module -->
+                <div id="moduleRequestFields" class="dynamic-field">
+                    <div class="form-group">
+                        <label>Module Details</label>
+                        <textarea name="module" placeholder="Specify the module details"></textarea>
+                    </div>
+                </div>
+
+                <!-- Demo Key -->
+                <div id="demoKeyFields" class="dynamic-field">
+                    <div class="form-group">
+                        <label>Task</label>
+                        <textarea name="task" placeholder="Describe the task for demo"></textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>B-Care</label>
+                            <input type="text" name="bcare" placeholder="B-Care details">
+                        </div>
+                        <div class="form-group">
+                            <label>I-Care</label>
+                            <input type="text" name="icare" placeholder="I-Care details">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Feeder Cancellation -->
+                <div id="feederCancelFields" class="dynamic-field">
+                    <div class="form-group">
+                        <label>Reason for Cancellation</label>
+                        <textarea name="cancelReason" placeholder="Provide reason for feeder cancellation"></textarea>
+                    </div>
+                </div>
+
+                <!-- Software Amount Change -->
+                <div id="softwareAmountFields" class="dynamic-field">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Current Amount</label>
+                            <div class="amount-input">
+                                <span class="currency-symbol">₹</span>
+                                <input type="text" name="currentAmount" placeholder="Current software amount">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Required Amount</label>
+                            <div class="amount-input">
+                                <span class="currency-symbol">₹</span>
+                                <input type="text" name="requiredAmount" placeholder="Required software amount">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Request Image (Optional)</label>
+                        <input type="file" name="softwareAmountImage" accept="image/*">
+                        <small style="color: #666; display: block; margin-top: 5px;">Upload supporting image for software amount change request</small>
+                    </div>
+                </div>
+
+                <!-- Key Extension -->
+                <div id="keyExtensionFields" class="dynamic-field">
+                    <div class="form-group">
+                        <label>Extension Period</label>
+                        <input type="text" name="extensionPeriod" placeholder="Extension period (e.g., 3 months, 1 year)">
+                    </div>
+                </div>
+
+                <!-- Trade Name And Address Change -->
+                <div id="tradeNameChangeFields" class="dynamic-field">
+                    <div class="form-group">
+                        <label>New Firm Name</label>
+                        <input type="text" name="newFirmName" placeholder="New firm name">
+                    </div>
+                    <div class="form-group">
+                        <label>New Address</label>
+                        <textarea name="newAddress" placeholder="New address details"></textarea>
+                    </div>
+                </div>
+
+                <!-- Key Type Change -->
+                <div id="keyTypeChangeFields" class="dynamic-field">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Current Key Type</label>
+                            <input type="text" name="currentKeyType" placeholder="Current key type">
+                        </div>
+                        <div class="form-group">
+                            <label>Required Key Type</label>
+                            <input type="text" name="requiredKeyType" placeholder="Required key type">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Date Requested -->
+                <div class="form-group">
+                    <label for="requestDate">Date Requested *</label>
+                    <input type="date" id="requestDate" name="requestDate" required>
+                </div>
+
+                <!-- Description (optional extra field) -->
+                <div class="form-group">
+                    <label for="description">Description</label>
+                    <textarea id="description" name="description" placeholder="Enter extra details..."></textarea>
+                </div>
+
+                <!-- Buttons -->
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Submit Request</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+<script>
+    class ClientDropdown {
+        constructor() {
+            this.clients = [];
+            this.filteredClients = [];
+            this.selectedIndex = -1;
+            this.isLoading = true;
+            this.isDropdownOpen = false;
+            this.debounceTimer = null;
+            
+            this.input = document.getElementById('clientName');
+            this.dropdown = document.getElementById('clientDropdown');
+            
+            this.init();
+        }
+        
+        init() {
+            this.loadClients();
+            this.setupEventListeners();
+        }
+        
+        setupEventListeners() {
+            // Debounce input to avoid excessive filtering
+            this.input.addEventListener('input', (e) => {
+                clearTimeout(this.debounceTimer);
+                this.debounceTimer = setTimeout(() => this.handleInput(e), 150);
+            });
+            
+            this.input.addEventListener('focus', () => this.showDropdown());
+            this.input.addEventListener('keydown', (e) => this.handleKeydown(e));
+            
+            // Optimize click outside detection
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.client-dropdown-container')) {
+                    this.hideDropdown();
+                }
+            }, { passive: true });
+            
+            // Optimize dropdown arrow click
+            this.input.parentElement.addEventListener('click', (e) => {
+                if (e.target.classList.contains('dropdown-arrow') || e.target === this.input) {
+                    e.preventDefault();
+                    if (this.isDropdownOpen) {
+                        this.hideDropdown();
+                    } else {
+                        this.showDropdown();
+                    }
+                }
+            }, { passive: false });
+        }
+        
+        async loadClients() {
+            try {
+                const response = await fetch("/app4/api/clients/");
+                
+                if (!response.ok) {
+                    throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data && data.error) {
+                    this.showError(`Error: ${data.error}`);
+                    console.error("API Error:", data.error);
+                    return;
+                }
+                
+                if (Array.isArray(data) && data.length > 0) {
+                    // Keep full client objects and sort alphabetically by name
+                    this.clients = data
+                        .filter(client => client.name)
+                        .map(client => ({
+                            name: client.name,
+                            address: client.address || "",
+                            branch: client.branch || ""
+                        }))
+                        .sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
+                    
+                    this.filteredClients = [...this.clients];
+                } else {
+                    this.clients = [];
+                    this.filteredClients = [];
+                }
+                
+                this.isLoading = false;
+                this.renderDropdown();
+                
+            } catch (error) {
+                console.error("Error fetching clients:", error);
+                this.showError(`Failed to load clients: ${error.message}`);
+            }
+        }
+        
+        handleInput(e) {
+            const value = e.target.value.toLowerCase().trim();
+            
+            // Clear location and branch when client name changes
+            if (!value) {
+                document.getElementById('location').value = '';
+                document.getElementById('branch').value = '';
+            }
+            
+            this.filterClients(value);
+            this.selectedIndex = -1;
+            if (!this.isDropdownOpen) {
+                this.showDropdown();
+            }
+        }
+        
+        filterClients(searchTerm) {
+            if (!searchTerm) {
+                this.filteredClients = [...this.clients];
+            } else {
+                // Use more efficient filtering and maintain alphabetical order
+                this.filteredClients = this.clients.filter(client => {
+                    const nameMatch = client.name.toLowerCase().includes(searchTerm);
+                    const addressMatch = client.address.toLowerCase().includes(searchTerm);
+                    const branchMatch = client.branch.toLowerCase().includes(searchTerm);
+                    return nameMatch || addressMatch || branchMatch;
+                });
+            }
+            this.renderDropdown();
+        }
+        
+      selectClient(client) {
+    console.log("=== CLIENT SELECTION DEBUG ===");
+    console.log("Selected client:", client);
+    console.log("Branch value:", client.branch);
+    console.log("Branch type:", typeof client.branch);
+    
+    this.input.value = client.name;
+    
+    // Auto-fill location field with client address
+    document.getElementById('location').value = client.address || '';
+    
+    // Auto-fill branch field with client branch
+    const branchField = document.getElementById('branch');
+    const branchValue = client.branch && client.branch.trim() ? client.branch.trim() : '';
+    branchField.value = branchValue;
+    
+    console.log("Branch field set to:", branchField.value);
+    console.log("=== END DEBUG ===");
+    
+    this.hideDropdown();
+    this.input.dispatchEvent(new Event('change', { bubbles: true }));
+}
+        
+        showDropdown() {
+            if (this.isLoading) {
+                this.dropdown.innerHTML = '<div class="loading">Loading clients...</div>';
+                this.dropdown.style.display = 'block';
+                this.isDropdownOpen = true;
+                return;
+            }
+            
+            if (this.input.value.trim() === '') {
+                this.filteredClients = [...this.clients];
+            }
+            
+            this.renderDropdown();
+            this.dropdown.style.display = 'block';
+            this.isDropdownOpen = true;
+        }
+        
+        hideDropdown() {
+            this.dropdown.style.display = 'none';
+            this.selectedIndex = -1;
+            this.isDropdownOpen = false;
+        }
+        
+        handleKeydown(e) {
+            if (!this.isDropdownOpen) {
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    this.showDropdown();
+                }
+                return;
+            }
+            
+            switch (e.key) {
+                case 'ArrowDown':
+                    e.preventDefault();
+                    this.selectedIndex = Math.min(this.selectedIndex + 1, this.filteredClients.length - 1);
+                    this.updateHighlight();
+                    break;
+                    
+                case 'ArrowUp':
+                    e.preventDefault();
+                    this.selectedIndex = Math.max(this.selectedIndex - 1, -1);
+                    this.updateHighlight();
+                    break;
+                    
+                case 'Enter':
+                    e.preventDefault();
+                    if (this.selectedIndex >= 0 && this.selectedIndex < this.filteredClients.length) {
+                        this.selectClient(this.filteredClients[this.selectedIndex]);
+                    }
+                    break;
+                    
+                case 'Escape':
+                    this.hideDropdown();
+                    break;
+            }
+        }
+        
+        updateHighlight() {
+            const options = this.dropdown.querySelectorAll('.client-option');
+            options.forEach((option, index) => {
+                option.classList.toggle('highlighted', index === this.selectedIndex);
+            });
+            
+            if (this.selectedIndex >= 0) {
+                const highlighted = options[this.selectedIndex];
+                if (highlighted) {
+                    highlighted.scrollIntoView({ block: 'nearest', behavior: 'instant' });
+                }
+            }
+        }
+        
+       renderDropdown() {
+    if (this.isLoading) {
+        this.dropdown.innerHTML = '<div class="loading">Loading clients...</div>';
+        return;
+    }
+    
+    if (this.filteredClients.length === 0) {
+        this.dropdown.innerHTML = '<div class="no-results">No clients found</div>';
+        return;
+    }
+    
+    this.dropdown.innerHTML = this.filteredClients
+        .map(client => {
+            // Debug: Log branch data
+            if (client.branch) {
+                console.log(`Client: ${client.name}, Branch: ${client.branch}`);
+            }
+            return `
+                <div class="client-option" data-name="${client.name}" data-address="${client.address}" data-branch="${client.branch || ''}">
+                    <div class="client-name">${client.name}</div>
+                    <div class="client-address">${client.address || 'No address available'}${client.branch ? ` • Branch: ${client.branch}` : ''}</div>
+                </div>
+            `;
+        })
+        .join('');
+    
+    this.dropdown.querySelectorAll('.client-option').forEach(option => {
+        option.addEventListener('click', () => {
+            const branchValue = option.getAttribute('data-branch');
+            console.log(`Selected client branch: "${branchValue}"`); // Debug
+            this.selectClient({
+                name: option.getAttribute('data-name'),
+                address: option.getAttribute('data-address'),
+                branch: branchValue
+            });
+        }, { passive: true });
+    });
+}
+        
+        showError(message) {
+            this.isLoading = false;
+            this.dropdown.innerHTML = `<div class="no-results">${message}</div>`;
+            this.dropdown.style.display = 'block';
+            this.isDropdownOpen = true;
+        }
+    }
+
+    // Initialize everything when DOM is loaded
+    document.addEventListener("DOMContentLoaded", function () {
+        // Initialize the searchable client dropdown
+        new ClientDropdown();
+        
+        // Set today's date as default
+        document.getElementById('requestDate').valueAsDate = new Date();
+        
+        // Initialize dynamic fields based on any preselected value
+        toggleFields();
+    });
+
+     // ADD THE DEBUGGING CODE HERE:
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const branchValue = document.getElementById('branch').value;
+        console.log("Form submission - Branch value:", branchValue);
+    });
+
+    // Toggle dynamic fields function
+    function toggleFields() {
+        const selected = document.getElementById("keyType").value;
+
+        // Hide all dynamic fields first
+        document.querySelectorAll(".dynamic-field").forEach(div => {
+            div.style.display = "none";
+            // Clear required attributes when hidden
+            div.querySelectorAll('[required]').forEach(input => {
+                input.removeAttribute('required');
+            });
+        });
+
+        // Show only the relevant fieldset
+        const fieldMap = {
+            "Enterprises Key Request": "enterprisesKeyFields",
+            "Special Updation Request": "specialUpdateFields",
+            "Seat Upgradation Request": "seatUpgradeFields",
+            "Hosted Key Request": "hostedKeyFields",
+            "Maturity Upgradation Request": "maturityUpgradeFields",
+            "More Module Request": "moduleRequestFields",
+            "Demo Key Request": "demoKeyFields",
+            "Feeder Cancellation Request": "feederCancelFields",
+            "Software Amount Change Request": "softwareAmountFields",
+            "Key Extension Request": "keyExtensionFields",
+            "Trade Name And Address Change Request": "tradeNameChangeFields",
+            "Key type Change Request": "keyTypeChangeFields",
+            "Image Request": "imageRequestFields"
+        };
+
+        if (fieldMap[selected]) {
+            const fieldDiv = document.getElementById(fieldMap[selected]);
+            fieldDiv.style.display = "block";
+            
+            // Add required attributes if needed
+            if (selected === "Image Request") {
+                fieldDiv.querySelector('input[type="file"]').setAttribute('required', 'required');
+            }
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+    const imageInput = document.getElementById("requestImage");
+    imageInput?.addEventListener("change", function () {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                function (pos) {
+                    const lat = pos.coords.latitude.toFixed(6);
+                    const lon = pos.coords.longitude.toFixed(6);
+
+                    // Fill hidden GPS fields
+                    document.getElementById("gps_lat").value = lat;
+                    document.getElementById("gps_lon").value = lon;
+
+                    // DO NOT overwrite the client location field
+                    // The location field should remain as client-entered data
+                    
+                    // Optional: Show a message that GPS was captured
+                    console.log(`GPS coordinates captured: ${lat}, ${lon}`);
+                },
+                function (err) {
+                    alert("GPS not available: " + err.message);
+                }
+            );
+        }
+    });
+});
+</script>
+
+</body>
+</html>
+{%endblock%}

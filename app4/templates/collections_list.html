@@ -1,0 +1,1089 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid px-3 mt-4">
+    {% csrf_token %}
+    <meta name="delete-url-pattern" content="{% url 'collections_delete' 0 %}">
+    <meta name="status-update-url" content="{% url 'collection_update_status' 0 %}">
+    
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="mb-0">
+            <i class="fas fa-money-check-alt me-2"></i>Collections
+        </h2>
+        <a href="{% url 'collections_add' %}" class="btn btn-primary">
+            <i class="fas fa-plus me-1"></i>Add New Collection
+        </a>
+    </div>
+
+    <!-- Search and Filter -->
+    <div class="filter-card mb-3">
+        <div class="filter-header">
+            <h6><i class="fas fa-filter me-2"></i>Search & Filter</h6>
+        </div>
+        <div class="filter-body">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Search Client 🔎</label>
+                    <input type="text" id="searchInput" class="form-control" placeholder="Enter client name...">
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label">Branch 🏢</label>
+                    <select id="branchFilter" class="form-select">
+                        <option value="">All Branches</option>
+                        <option value="IMC BUSINESS SOLUTIONS">IMC BUSINESS SOLUTIONS</option>
+                        <option value="	
+IMCB SOLUTIONS - DEV">IMCB SOLUTIONS - DEV</option>
+                        <option value="IMCB SOLUTIONS LLP - HO">IMCB SOLUTIONS LLP - HO</option>
+                        <option value="IMCB SOLUTIONS LLP - MUKKAM">IMCB SOLUTIONS LLP - MUKKAM</option>
+                        <option value="SYSMAC COMPUTERS">SYSMAC COMPUTERS</option>
+                        <option value="SYSMAC INFO SYSTEMS">SYSMAC INFO SYSTEMS</option>
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label">Created By 👤</label>
+                    <input type="text" id="userFilter" class="form-control" placeholder="Username...">
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label">Status 📊</label>
+                    <select id="statusFilter" class="form-select">
+                        <option value="">All Status</option>
+                        <option value="pending">Pending</option>
+                        <option value="verified">Verified</option>
+                        <option value="multiple entry">Multiple Entry</option>
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label">Date 🗓️</label>
+                    <input type="date" id="dateFilter" class="form-control">
+                </div>
+                
+                <div class="col-md-1">
+                    <label class="form-label">&nbsp;</label>
+                    <button type="button" id="clearFilters" class="btn btn-secondary w-100">
+                        <i class="fas fa-times"></i> Clear
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Show Entries and Info Bar -->
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <div class="mb-3">
+    <label>Show:</label>
+    <select onchange="window.location.href='?per_page=' + this.value">
+        <option value="10" {% if request.GET.per_page == '10' or not request.GET.per_page %}selected{% endif %}>10 per page</option>
+        <option value="25" {% if request.GET.per_page == '25' %}selected{% endif %}>25 per page</option>
+        <option value="50" {% if request.GET.per_page == '50' %}selected{% endif %}>50 per page</option>
+        <option value="100" {% if request.GET.per_page == '100' %}selected{% endif %}>100 per page</option>
+        <option value="all" {% if request.GET.per_page == 'all' %}selected{% endif %}>Show All</option>
+    </select>
+</div>
+        <div id="tableInfo" class="text-muted small"></div>
+    </div>
+
+    <!-- Collections Table -->
+    <div class="table-card">
+        {% if collections %}
+            <div class="table-responsive" style="max-height: calc(100vh - 340px); overflow-y: auto;">
+                <table class="table table-hover">
+                    <thead class="sticky-top">
+                        <tr>
+                            <th width="3%">#</th>
+                            <th width="15%">Client Name</th>
+                            <th width="10%">Branch</th>
+                            <th width="10%">Created By</th>
+                            <th width="8%">Amount</th>
+                            <th width="12%">Paid For</th>
+                            <th width="10%">Status</th>
+                            <th width="10%">Date</th>
+                            <th width="8%">Screenshot</th>
+                            <th width="14%">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="collectionsTableBody">
+                        {% for collection in collections %}
+                            <tr id="collection-row-{{ collection.id }}" 
+                                data-client-name="{{ collection.client_name|lower }}"
+                                data-branch="{{ collection.branch }}"
+                                data-created-by="{{ collection.created_by|lower }}"
+                                data-status="{{ collection.status }}"
+                                data-date="{{ collection.created_at|date:'Y-m-d' }}">
+                                <td>{{ forloop.counter }}</td>
+                                <td>
+                                    <strong>{{ collection.client_name }}</strong>
+                                    {% if collection.notes %}
+                                        <br><small class="text-muted">{{ collection.notes|truncatechars:30 }}</small>
+                                    {% endif %}
+                                </td>
+                                <td><span class="badge bg-secondary">{{ collection.branch }}</span></td>
+                                <td>{{ collection.created_by|default:"—" }}</td>
+                                <td>
+                                    <strong class="text-success">₹{{ collection.amount|floatformat:2 }}</strong>
+                                    <br>
+                                    <small class="collection-type-badge">
+                                        {% if collection.collection_type == 'cash' %}
+                                            <i class="fas fa-money-bill-wave"></i> Cash
+                                        {% elif collection.collection_type == 'upi' %}
+                                            <i class="fas fa-mobile-alt"></i> UPI
+                                        {% elif collection.collection_type == 'neft' %}
+                                            <i class="fas fa-university"></i> NEFT
+                                        {% elif collection.collection_type == 'cheque' %}
+                                            <i class="fas fa-money-check"></i> Cheque
+                                        {% else %}
+                                            <i class="fas fa-question-circle"></i> {{ collection.collection_type|default:"N/A" }}
+                                        {% endif %}
+                                    </small>
+                                </td>
+                                <td>{{ collection.paid_for|truncatechars:20 }}</td>
+                                <td>
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm dropdown-toggle status-btn status-{{ collection.status|slugify }}" 
+                                                type="button" id="statusDropdown{{ collection.id }}" 
+                                                data-bs-toggle="dropdown">
+                                            {% if collection.status == 'pending' %}
+                                                <i class="fas fa-clock"></i> Pending
+                                            {% elif collection.status == 'verified' %}
+                                                <i class="fas fa-check-circle"></i> Verified
+                                            {% elif collection.status == 'multiple entry' %}
+                                                <i class="fas fa-layer-group"></i> Multiple Entry
+                                            {% endif %}
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            <li>
+                                                <a class="dropdown-item status-option" href="#" 
+                                                   data-status="pending" 
+                                                   data-collection-id="{{ collection.id }}">
+                                                    <i class="fas fa-clock text-warning"></i> Pending
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item status-option" href="#" 
+                                                   data-status="verified" 
+                                                   data-collection-id="{{ collection.id }}">
+                                                    <i class="fas fa-check-circle text-success"></i> Verified
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item status-option" href="#" 
+                                                   data-status="multiple entry" 
+                                                   data-collection-id="{{ collection.id }}">
+                                                    <i class="fas fa-layer-group text-info"></i> Multiple Entry
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </td>
+                                <td>
+                                    <small>{{ collection.created_at|date:"d M Y" }}<br>
+                                    {{ collection.created_at|time:"H:i" }}</small>
+                                </td>
+                                <td>
+                                    {% if collection.payment_screenshot %}
+                                        <button class="btn btn-sm btn-info" 
+                                                onclick="viewScreenshot('{{ collection.payment_screenshot.url }}', '{{ collection.client_name }}')">
+                                            <i class="fas fa-image"></i>
+                                        </button>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="{% url 'collections_edit' collection.id %}" 
+                                           class="btn btn-sm btn-warning" title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <button class="btn btn-sm btn-danger" 
+                                                onclick="deleteCollection(this, {{ collection.id }}, '{{ collection.client_name|escapejs }}')" 
+                                                title="Delete">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                        <a href="{% url 'collection_receipt' collection.id %}" 
+                                           class="btn btn-sm btn-primary" title="Receipt">
+                                            <i class="fas fa-receipt"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Enhanced Pagination -->
+            <nav aria-label="Page navigation" class="mt-3" id="paginationContainer">
+                <ul class="pagination justify-content-center mb-0" id="paginationList"></ul>
+            </nav>
+        {% else %}
+            <div class="empty-state">
+                <i class="fas fa-money-check-alt fa-3x text-muted mb-3"></i>
+                <h5>No collections found</h5>
+                <p class="text-muted">Start by adding your first collection record.</p>
+                <a href="{% url 'collections_add' %}" class="btn btn-primary">
+                    <i class="fas fa-plus me-1"></i>Add First Collection
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Screenshot Modal -->
+<div class="modal fade" id="screenshotModal" tabindex="-1">
+    <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-image me-2"></i>Payment Screenshot
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div class="image-viewer">
+                    <img id="screenshotImage" src="" alt="Payment Screenshot" class="screenshot-img">
+                    <div class="zoom-controls">
+                        <button class="btn btn-light" onclick="zoomIn()" title="Zoom In">
+                            <i class="fas fa-search-plus"></i>
+                        </button>
+                        <button class="btn btn-light" onclick="zoomOut()" title="Zoom Out">
+                            <i class="fas fa-search-minus"></i>
+                        </button>
+                        <button class="btn btn-light" onclick="resetZoom()" title="Reset Zoom">
+                            <i class="fas fa-expand-arrows-alt"></i>
+                        </button>
+                        <span class="zoom-level">100%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Modal -->
+<div class="modal fade" id="loadingModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-body text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-3 mb-0">Processing...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Get CSRF token
+function getCSRFToken() {
+    return document.querySelector('[name=csrfmiddlewaretoken]').value;
+}
+
+// Get URLs
+function getDeleteUrl(collectionId) {
+    const urlPattern = document.querySelector('meta[name="delete-url-pattern"]').content;
+    return urlPattern.replace('0', collectionId);
+}
+
+function getStatusUpdateUrl(collectionId) {
+    const urlPattern = document.querySelector('meta[name="status-update-url"]').content;
+    return urlPattern.replace('0', collectionId);
+}
+
+// Pagination variables
+let allRowsData = [];
+let filteredRows = [];
+let currentPage = 1;
+let entriesPerPage = 25;
+
+// Initialize rows data on page load
+function initializeRowsData() {
+    const rows = document.querySelectorAll('#collectionsTableBody tr');
+    allRowsData = Array.from(rows).map((row, index) => ({
+        element: row,
+        originalIndex: index + 1,
+        clientName: (row.getAttribute('data-client-name') || '').toLowerCase(),
+        branch: row.getAttribute('data-branch') || '',
+        createdBy: (row.getAttribute('data-created-by') || '').toLowerCase(),
+        status: row.getAttribute('data-status') || '',
+        date: row.getAttribute('data-date') || ''
+    }));
+    filteredRows = [...allRowsData];
+}
+
+// Filter table
+function filterTable() {
+    const searchValue = document.getElementById('searchInput').value.toLowerCase().trim();
+    const branchValue = document.getElementById('branchFilter').value;
+    const userValue = document.getElementById('userFilter').value.toLowerCase().trim();
+    const statusValue = document.getElementById('statusFilter').value;
+    const dateValue = document.getElementById('dateFilter').value;
+
+    // Filter all rows
+    filteredRows = allRowsData.filter(rowData => {
+        let match = true;
+
+        if (searchValue && !rowData.clientName.includes(searchValue)) match = false;
+        if (branchValue && rowData.branch !== branchValue) match = false;
+        if (userValue && !rowData.createdBy.includes(userValue)) match = false;
+        if (statusValue && rowData.status !== statusValue) match = false;
+        if (dateValue && rowData.date !== dateValue) match = false;
+
+        return match;
+    });
+
+    // Reset to first page when filtering
+    currentPage = 1;
+    displayPage();
+    updatePagination();
+}
+
+// Display current page
+function displayPage() {
+    const startIndex = (currentPage - 1) * entriesPerPage;
+    const endIndex = startIndex + entriesPerPage;
+    
+    // Hide all rows first
+    allRowsData.forEach(rowData => {
+        rowData.element.style.display = 'none';
+    });
+
+    // Show only rows for current page
+    const pageRows = filteredRows.slice(startIndex, endIndex);
+    pageRows.forEach((rowData, index) => {
+        rowData.element.style.display = '';
+        const firstCell = rowData.element.querySelector('td:first-child');
+        if (firstCell) firstCell.textContent = startIndex + index + 1;
+    });
+
+    // Update table info
+    updateTableInfo();
+
+    // Show no results message if needed
+    const tbody = document.getElementById('collectionsTableBody');
+    let existingMessage = document.getElementById('noResultsMessage');
+    
+    if (filteredRows.length === 0 && !existingMessage) {
+        const messageRow = document.createElement('tr');
+        messageRow.id = 'noResultsMessage';
+        messageRow.innerHTML = `
+            <td colspan="10" class="text-center py-4">
+                <i class="fas fa-search fa-2x text-muted mb-2 d-block"></i>
+                <h6 class="text-muted">No collections match your filters</h6>
+            </td>
+        `;
+        tbody.appendChild(messageRow);
+    } else if (filteredRows.length > 0 && existingMessage) {
+        existingMessage.remove();
+    }
+}
+
+// Update table info
+function updateTableInfo() {
+    const startIndex = (currentPage - 1) * entriesPerPage + 1;
+    const endIndex = Math.min(currentPage * entriesPerPage, filteredRows.length);
+    const totalRows = filteredRows.length;
+    
+    const infoText = totalRows > 0 
+        ? `Showing ${startIndex} to ${endIndex} of ${totalRows} entries`
+        : 'No entries to display';
+    
+    document.getElementById('tableInfo').textContent = infoText;
+}
+
+// Update pagination
+function updatePagination() {
+    const totalPages = Math.ceil(filteredRows.length / entriesPerPage);
+    const paginationList = document.getElementById('paginationList');
+    
+    if (totalPages <= 1) {
+        paginationList.innerHTML = '';
+        return;
+    }
+
+    let paginationHTML = '';
+
+    // Previous button
+    paginationHTML += `
+        <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+            <a class="page-link" href="#" onclick="changePage(${currentPage - 1}); return false;">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+        </li>
+    `;
+
+    // Page numbers logic
+    const maxVisiblePages = 5;
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+    // Adjust start if we're near the end
+    if (endPage - startPage < maxVisiblePages - 1) {
+        startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+
+    // First page
+    if (startPage > 1) {
+        paginationHTML += `
+            <li class="page-item">
+                <a class="page-link" href="#" onclick="changePage(1); return false;">1</a>
+            </li>
+        `;
+        if (startPage > 2) {
+            paginationHTML += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+        }
+    }
+
+    // Page numbers
+    for (let i = startPage; i <= endPage; i++) {
+        paginationHTML += `
+            <li class="page-item ${i === currentPage ? 'active' : ''}">
+                <a class="page-link" href="#" onclick="changePage(${i}); return false;">${i}</a>
+            </li>
+        `;
+    }
+
+    // Last page
+    if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+            paginationHTML += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+        }
+        paginationHTML += `
+            <li class="page-item">
+                <a class="page-link" href="#" onclick="changePage(${totalPages}); return false;">${totalPages}</a>
+            </li>
+        `;
+    }
+
+    // Next button
+    paginationHTML += `
+        <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+            <a class="page-link" href="#" onclick="changePage(${currentPage + 1}); return false;">
+                <i class="fas fa-chevron-right"></i>
+            </a>
+        </li>
+    `;
+
+    paginationList.innerHTML = paginationHTML;
+}
+
+// Change page
+function changePage(page) {
+    const totalPages = Math.ceil(filteredRows.length / entriesPerPage);
+    if (page < 1 || page > totalPages) return;
+    
+    currentPage = page;
+    displayPage();
+    updatePagination();
+    
+    // Scroll to top of table
+    document.querySelector('.table-responsive').scrollTop = 0;
+}
+
+// Change entries per page
+function changeEntriesPerPage(value) {
+    entriesPerPage = parseInt(value);
+    currentPage = 1;
+    displayPage();
+    updatePagination();
+}
+
+// Event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize rows data
+    initializeRowsData();
+    displayPage();
+    updatePagination();
+    
+    let searchTimeout;
+
+    // Real-time search
+    ['searchInput', 'userFilter'].forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.addEventListener('input', function() {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(filterTable, 300);
+            });
+        }
+    });
+
+    // Dropdown filters
+    ['branchFilter', 'statusFilter', 'dateFilter'].forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.addEventListener('change', filterTable);
+        }
+    });
+
+    // Entries per page
+    const perPageEl = document.getElementById('entriesPerPage');
+if (perPageEl) {
+  perPageEl.addEventListener('change', function () {
+    changeEntriesPerPage(this.value);
+  });
+}
+
+    // Clear filters
+    const clearBtn = document.getElementById('clearFilters');
+    if (clearBtn) {
+        clearBtn.addEventListener('click', function() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('branchFilter').value = '';
+            document.getElementById('userFilter').value = '';
+            document.getElementById('statusFilter').value = '';
+            document.getElementById('dateFilter').value = '';
+            filterTable();
+        });
+    }
+
+    // Status update handlers
+    document.querySelectorAll('.status-option').forEach(option => {
+        option.addEventListener('click', function(e) {
+            e.preventDefault();
+            const collectionId = this.getAttribute('data-collection-id');
+            const newStatus = this.getAttribute('data-status');
+            updateCollectionStatus(collectionId, newStatus);
+        });
+    });
+});
+
+// Update collection status
+function updateCollectionStatus(collectionId, newStatus) {
+    const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
+    loadingModal.show();
+
+    fetch(getStatusUpdateUrl(collectionId), {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCSRFToken(),
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: newStatus })
+    })
+    .then(response => response.json())
+    .then(data => {
+        loadingModal.hide();
+        if (data.success) {
+            const statusBtn = document.querySelector(`#statusDropdown${collectionId}`);
+            const row = document.getElementById(`collection-row-${collectionId}`);
+            
+            if (row) row.setAttribute('data-status', newStatus);
+            
+            if (statusBtn) {
+                let btnClass = 'btn btn-sm dropdown-toggle status-btn ';
+                let btnContent = '';
+                
+                if (newStatus === 'verified') {
+                    btnClass += 'status-verified';
+                    btnContent = '<i class="fas fa-check-circle"></i> Verified';
+                } else if (newStatus === 'multiple entry') {
+                    btnClass += 'status-multiple-entry';
+                    btnContent = '<i class="fas fa-layer-group"></i> Multiple Entry';
+                } else {
+                    btnClass += 'status-pending';
+                    btnContent = '<i class="fas fa-clock"></i> Pending';
+                }
+                
+                statusBtn.className = btnClass;
+                statusBtn.innerHTML = btnContent;
+            }
+            
+            showAlert('success', data.message);
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showAlert('danger', data.message || 'Status update failed');
+        }
+    })
+    .catch(err => {
+        loadingModal.hide();
+        showAlert('danger', 'Network error: ' + err.message);
+    });
+}
+
+// Zoom functionality
+let currentZoom = 1;
+const minZoom = 0.5;
+const maxZoom = 3;
+const zoomStep = 0.25;
+
+function updateZoomLevel() {
+    const img = document.getElementById('screenshotImage');
+    const zoomLevel = document.querySelector('.zoom-level');
+    
+    img.style.transform = `scale(${currentZoom})`;
+    zoomLevel.textContent = `${Math.round(currentZoom * 100)}%`;
+}
+
+function zoomIn() {
+    if (currentZoom < maxZoom) {
+        currentZoom += zoomStep;
+        updateZoomLevel();
+    }
+}
+
+function zoomOut() {
+    if (currentZoom > minZoom) {
+        currentZoom -= zoomStep;
+        updateZoomLevel();
+    }
+}
+
+function resetZoom() {
+    currentZoom = 1;
+    updateZoomLevel();
+}
+
+// View screenshot
+function viewScreenshot(imageUrl, clientName) {
+    const img = document.getElementById('screenshotImage');
+    const modal = document.getElementById('screenshotModal');
+    
+    currentZoom = 1;
+    
+    img.src = imageUrl;
+    img.style.transform = 'scale(1)';
+    modal.querySelector('.modal-title').innerHTML = `<i class="fas fa-image me-2"></i>Payment Screenshot - ${clientName}`;
+    
+    new bootstrap.Modal(modal).show();
+    
+    setTimeout(() => {
+        updateZoomLevel();
+    }, 100);
+}
+
+// Mouse wheel zoom
+document.addEventListener('DOMContentLoaded', function() {
+    const screenshotModal = document.getElementById('screenshotModal');
+    if (screenshotModal) {
+        screenshotModal.addEventListener('wheel', function(e) {
+            if (screenshotModal.classList.contains('show')) {
+                e.preventDefault();
+                if (e.deltaY < 0) {
+                    zoomIn();
+                } else {
+                    zoomOut();
+                }
+            }
+        });
+    }
+});
+
+// Delete collection
+function deleteCollection(btn, collectionId, clientName) {
+    if (!confirm(`Delete collection for "${clientName}"?\n\nThis cannot be undone.`)) {
+        return;
+    }
+
+    const row = btn.closest('tr');
+    const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
+    loadingModal.show();
+
+    btn.disabled = true;
+
+    fetch(getDeleteUrl(collectionId), {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCSRFToken(),
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        loadingModal.hide();
+        if (data.success) {
+            row.style.opacity = '0';
+            setTimeout(() => {
+                row.remove();
+                initializeRowsData();
+                filterTable();
+            }, 300);
+            showAlert('success', data.message);
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showAlert('danger', data.message || 'Deletion failed');
+            btn.disabled = false;
+        }
+    })
+    .catch(err => {
+        loadingModal.hide();
+        showAlert('danger', 'Network error: ' + err.message);
+        btn.disabled = false;
+    });
+}
+
+// Show alert
+function showAlert(type, message) {
+    document.querySelectorAll('.alert-dismissible').forEach(alert => alert.remove());
+    
+    const alertHtml = `
+        <div class="alert alert-${type} alert-dismissible fade show" 
+             style="position: fixed; top: 20px; right: 20px; z-index: 9999; min-width: 300px;">
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('afterbegin', alertHtml);
+    
+    setTimeout(() => {
+        const alert = document.querySelector('.alert-dismissible');
+        if (alert) new bootstrap.Alert(alert).close();
+    }, 5000);
+}
+</script>
+
+<style>
+/* Professional clean styles */
+body {
+    overflow-x: hidden;
+}
+
+.container-fluid {
+    max-width: 100%;
+    padding-left: 15px;
+    padding-right: 15px;
+}
+
+.filter-card {
+    background: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+.filter-header {
+    padding: 12px 16px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #e0e0e0;
+    border-radius: 6px 6px 0 0;
+}
+
+.filter-header h6 {
+    margin: 0;
+    font-weight: 600;
+    font-size: 14px;
+    color: #2c3e50;
+}
+
+.filter-body {
+    padding: 16px;
+}
+
+.form-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: #495057;
+    margin-bottom: 4px;
+}
+
+.form-control, .form-select {
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    font-size: 13px;
+    padding: 6px 10px;
+    height: auto;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.15rem rgba(13,110,253,0.15);
+}
+
+.table-card {
+    background: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    overflow: hidden;
+}
+
+.table-responsive {
+    position: relative;
+}
+
+.table {
+    margin-bottom: 0;
+    font-size: 13px;
+}
+
+.table thead {
+    background: #2c3e50;
+    color: white;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.table thead th {
+    font-weight: 600;
+    font-size: 12px;
+    padding: 10px 8px;
+    border: none;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+}
+
+.table tbody td {
+    padding: 10px 8px;
+    vertical-align: middle;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 13px;
+}
+
+.table tbody tr {
+    transition: background-color 0.15s ease;
+}
+
+.table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+.table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Collection Type Badge Styling */
+.collection-type-badge {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 500;
+    color: #6c757d;
+    background-color: #f8f9fa;
+    padding: 2px 6px;
+    border-radius: 3px;
+    margin-top: 2px;
+    border: 1px solid #e9ecef;
+}
+
+.collection-type-badge i {
+    font-size: 9px;
+    margin-right: 2px;
+}
+
+.status-btn {
+    min-width: 120px;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 5px 10px;
+}
+
+.status-pending {
+    background: #ffc107;
+    color: #000;
+    border: none;
+}
+
+.status-pending:hover {
+    background: #e0a800;
+}
+
+.status-verified {
+    background: #28a745;
+    color: white;
+    border: none;
+}
+
+.status-verified:hover {
+    background: #218838;
+}
+
+.status-multiple-entry {
+    background: #17a2b8;
+    color: white;
+    border: none;
+}
+
+.status-multiple-entry:hover {
+    background: #138496;
+}
+
+.btn-group .btn {
+    padding: 5px 8px;
+    font-size: 12px;
+}
+
+.badge {
+    font-size: 11px;
+    font-weight: 500;
+    padding: 4px 8px;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.pagination {
+    margin: 15px 0;
+    flex-wrap: wrap;
+}
+
+.pagination .page-link {
+    color: #2c3e50;
+    border: 1px solid #dee2e6;
+    padding: 6px 12px;
+    font-size: 13px;
+    margin: 2px;
+}
+
+.pagination .page-item.active .page-link {
+    background-color: #2c3e50;
+    border-color: #2c3e50;
+    color: white;
+}
+
+.pagination .page-item.disabled .page-link {
+    color: #6c757d;
+    pointer-events: none;
+    background-color: #fff;
+    border-color: #dee2e6;
+}
+
+.pagination .page-link:hover {
+    background-color: #e9ecef;
+    border-color: #dee2e6;
+}
+
+.pagination .page-item.active .page-link:hover {
+    background-color: #2c3e50;
+    border-color: #2c3e50;
+}
+
+.image-viewer {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    overflow: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f5f5f5;
+}
+
+.screenshot-img {
+    max-width: 100%;
+    max-height: 100%;
+    transition: transform 0.2s ease;
+    cursor: zoom-in;
+}
+
+.zoom-controls {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.7);
+    padding: 10px 20px;
+    border-radius: 30px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    z-index: 1000;
+}
+
+.zoom-controls .btn {
+    padding: 8px 12px;
+    border-radius: 6px;
+}
+
+.zoom-level {
+    color: white;
+    font-weight: 600;
+    min-width: 50px;
+    text-align: center;
+    font-size: 14px;
+}
+
+/* Scrollbar styling */
+.table-responsive::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+@media (max-width: 768px) {
+    .btn-group {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+    
+    .btn-group .btn {
+        width: 100%;
+    }
+    
+    .filter-body .row {
+        gap: 15px 0 !important;
+    }
+
+    .table {
+        font-size: 11px;
+    }
+
+    .table thead th,
+    .table tbody td {
+        padding: 8px 6px;
+    }
+
+    .status-btn {
+        min-width: 100px;
+        font-size: 11px;
+        padding: 4px 8px;
+    }
+
+    .pagination .page-link {
+        padding: 5px 10px;
+        font-size: 12px;
+    }
+
+    .collection-type-badge {
+        font-size: 9px;
+        padding: 1px 4px;
+    }
+}
+
+@media (max-width: 576px) {
+    .container-fluid {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
+    h2 {
+        font-size: 1.5rem;
+    }
+
+    .table {
+        font-size: 10px;
+    }
+
+    .badge {
+        font-size: 10px;
+        padding: 3px 6px;
+    }
+
+    .collection-type-badge {
+        font-size: 8px;
+        padding: 1px 3px;
+    }
+}
+</style>
+{% endblock %}                          

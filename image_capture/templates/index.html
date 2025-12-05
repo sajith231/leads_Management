@@ -1,0 +1,650 @@
+{% extends 'base.html' %}
+{% block content %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verified Customers</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow-x: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px 30px;
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+            flex-shrink: 0;
+        }
+
+        .page-title {
+            color: white;
+            font-weight: 700;
+            font-size: 24px;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .page-title i {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: rgba(255, 255, 255, 0.85);
+            font-size: 14px;
+            margin: 0;
+        }
+
+        .main-content {
+            flex: 1;
+            overflow: auto;
+            background: white;
+            padding: 0;
+        }
+
+        .table-container {
+            background: white;
+            height: 100%;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .table-wrapper {
+            flex: 1;
+            overflow: auto;
+            padding: 0;
+        }
+
+        .table {
+            margin-bottom: 0;
+            width: 100%;
+            font-size: 13px;
+            background: white;
+        }
+
+        .table thead {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .table thead th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 14px 12px;
+            font-weight: 600;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+            border-bottom: 3px solid #5568d3;
+        }
+
+        .table tbody tr {
+            transition: all 0.2s ease;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .table tbody tr:hover {
+            background-color: #f8f9ff;
+        }
+
+        .table tbody td {
+            padding: 12px;
+            vertical-align: middle;
+            border-color: #e9ecef;
+        }
+
+        .customer-image {
+            width: 50px;
+            height: 50px;
+            border-radius: 8px;
+            object-fit: cover;
+            border: 2px solid #e9ecef;
+            display: block;
+        }
+
+        .verification-badge {
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            white-space: nowrap;
+        }
+
+        .customer-name {
+            font-weight: 600;
+            color: #2d3748;
+            font-size: 13px;
+            margin-bottom: 3px;
+            white-space: nowrap;
+        }
+
+        .customer-phone {
+            font-size: 11px;
+            color: #718096;
+            margin: 0;
+            white-space: nowrap;
+        }
+
+       .location-text {
+    font-size: 12px;
+    line-height: 1.4;
+    color: #4a5568;
+
+    /* MAKE LOCATION MULTILINE */
+    white-space: normal !important;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    max-width: 250px; /* adjustable */
+}
+
+        .coord-text {
+          
+            font-size: 11px;
+            color: #718096;
+            white-space: nowrap;
+        }
+
+        .timestamp {
+            font-size: 11px;
+            color: #718096;
+            white-space: nowrap;
+        }
+
+        .timestamp > div {
+            margin-bottom: 2px;
+        }
+
+        .btn-generate {
+            background: rgba(255, 255, 255, 0.95);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            padding: 10px 20px;
+            color: #667eea;
+            font-weight: 600;
+            font-size: 13px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .btn-generate:hover {
+            background: white;
+            color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-manual {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            border-radius: 10px;
+            padding: 10px 20px;
+            color: white;
+            font-weight: 600;
+            font-size: 13px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .btn-manual:hover {
+            background: rgba(255, 255, 255, 0.3);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .status-select {
+            padding: 6px 10px;
+            border-radius: 6px;
+            border: 1px solid #cbd5e0;
+            font-size: 11px;
+            color: #4a5568;
+            background-color: #fff;
+            outline: none;
+            transition: 0.2s;
+            width: 100%;
+            max-width: 100px;
+        }
+
+        .status-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 5px rgba(102, 126, 234, 0.3);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+            flex-wrap: nowrap;
+        }
+
+        .action-buttons .btn {
+            padding: 5px 10px;
+            font-size: 11px;
+        }
+
+        .header-buttons {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .sno-col {
+            font-weight: 600;
+            color: #667eea;
+            font-size: 13px;
+        }
+
+        /* Scrollbar styling */
+        .table-wrapper::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        .table-wrapper::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .table-wrapper::-webkit-scrollbar-thumb {
+            background: #667eea;
+            border-radius: 4px;
+        }
+
+        .table-wrapper::-webkit-scrollbar-thumb:hover {
+            background: #5568d3;
+        }
+
+        @media (max-width: 1400px) {
+            .table {
+                font-size: 12px;
+            }
+            
+            .location-text {
+                max-width: 160px;
+            }
+        }
+
+        @media (max-width: 1200px) {
+            .table thead th:nth-child(5),
+            .table tbody td:nth-child(5) {
+                display: none;
+            }
+        }
+
+        @media (max-width: 992px) {
+            .page-title {
+                font-size: 20px;
+            }
+
+            .btn-generate, .btn-manual {
+                padding: 8px 16px;
+                font-size: 12px;
+            }
+
+            .customer-image {
+                width: 45px;
+                height: 45px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header-section {
+                padding: 15px 20px;
+            }
+
+            .page-title {
+                font-size: 18px;
+            }
+
+            .page-title i {
+                font-size: 24px;
+            }
+
+            .subtitle {
+                font-size: 12px;
+            }
+
+            .table {
+                font-size: 11px;
+            }
+
+            .table thead th {
+                padding: 10px 8px;
+                font-size: 10px;
+            }
+
+            .table tbody td {
+                padding: 8px;
+            }
+
+            .customer-image {
+                width: 40px;
+                height: 40px;
+            }
+
+            .location-text {
+                max-width: 120px;
+                font-size: 11px;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .header-buttons {
+                width: 100%;
+                margin-top: 10px;
+            }
+
+            .btn-generate, .btn-manual {
+                flex: 1;
+                justify-content: center;
+                font-size: 11px;
+                padding: 8px 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+  <!-- Header Section -->
+  <div class="header-section">
+    <div class="container-main">
+      <div class="d-flex justify-content-between align-items-center flex-wrap">
+        <div>
+          <h1 class="page-title">
+            <i class="fas fa-users"></i>
+            Verified Customers
+          </h1>
+          <p class="subtitle">List of all successfully verified customer submissions</p>
+        </div>
+        <div class="d-flex gap-3 flex-wrap">
+          <a href="{% url 'image_capture_form' %}" class="btn-generate">
+            <i class="fas fa-link"></i>
+            Generate New Link
+          </a>
+          <a href="{% url 'manual_capture_form' %}" class="btn-manual">
+            <i class="fas fa-plus"></i>
+            Manual Capture
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="container-main">
+    <div class="table-container">
+      {% if verified_captures %}
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th>S.No</th>
+                <th>Customer Details</th>
+                <th>Image</th>
+                <th>Location</th>
+                <th>Coordinates</th>
+                <th>Verification Time</th>
+                <th>Status</th>
+                <th>Manual Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for capture in verified_captures %}
+              <tr>
+                <td class="fw-bold">{{ forloop.counter }}</td>
+                <td>
+                  <div class="customer-name">{{ capture.customer_name }}</div>
+                  {% if capture.phone_number %}
+  <div class="customer-phone">
+    <i class="fas fa-phone"></i>
+    {{ capture.phone_number }}
+  </div>
+{% endif %}
+
+                </td>
+                <td>
+                  {% if capture.image %}
+                    <img src="{{ capture.image.url }}" alt="Verification Photo" class="customer-image" loading="lazy">
+                  {% else %}
+                    <div class="text-muted">No Image</div>
+                  {% endif %}
+                </td>
+                <td>
+                  <div class="location-text">
+                    {% if capture.location_name %}
+                      <i class="fas fa-map-marker-alt text-primary"></i>
+                      {{ capture.location_name }}
+                    {% elif capture.latitude and capture.longitude %}
+                      <span class="text-muted">
+                        <i class="fas fa-map-marker-alt"></i>
+                        {{ capture.latitude }}, {{ capture.longitude }}
+                      </span>
+                    {% else %}
+                      <span class="text-muted">
+                        <i class="fas fa-map-marker-alt"></i>
+                        Location not available
+                      </span>
+                    {% endif %}
+                  </div>
+                </td>
+                <td>
+                  {% if capture.latitude and capture.longitude %}
+                    <small class="text-muted">
+                      <i class="fas fa-map-pin"></i>
+                      {{ capture.latitude }}, {{ capture.longitude }}
+                    </small>
+                  {% else %}
+                    <small class="text-muted">—</small>
+                  {% endif %}
+                </td>
+                <td>
+                  <div class="timestamp">
+                    <div>{{ capture.created_at|date:"M d, Y" }}</div>
+                    <div>{{ capture.created_at|date:"H:i" }}</div>
+                    <small class="text-muted">{{ capture.created_at|timesince }} ago</small>
+                  </div>
+                </td>
+                <td>
+                  <span class="verification-badge">
+                    <i class="fas fa-check-circle"></i>
+                    Gps Detected
+                  </span>
+                </td>
+
+                <!-- ✅ UPDATED Manual Status Dropdown with AJAX -->
+                <td>
+                  <select class="status-select" data-capture-id="{{ capture.id }}" onchange="updateStatus(this)">
+                    <option value="Pending" {% if capture.status == "Pending" %}selected{% endif %}>Pending</option>
+                    <option value="Verified" {% if capture.status == "Verified" %}selected{% endif %}>Verified</option>
+                  </select>
+                </td>
+
+                <td>
+                  <div class="action-buttons d-flex gap-2">
+                    {% if capture.image %}
+                      <button class="btn btn-sm btn-outline-primary" onclick="viewImage('{{ capture.image.url }}')" title="View Image">
+                        <i class="fas fa-eye"></i>
+                      </button>
+                      <a class="btn btn-sm btn-outline-success" href="{{ capture.image.url }}" download="{{ capture.image.name|cut:'captures/' }}" title="Download Image">
+                        <i class="fas fa-download"></i>
+                      </a>
+                    {% endif %}
+                    <button class="btn btn-sm btn-outline-danger" onclick="confirmDelete('{{ capture.id }}', '{{ capture.customer_name }}')" title="Delete Customer">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <!-- Empty State -->
+        <div class="empty-state">
+          <i class="fas fa-users-slash"></i>
+          <h3>No Verified Customers Yet</h3>
+          <p>Start by generating a verification link or manually capturing a customer image.</p>
+          <div class="d-flex justify-content-center gap-3 flex-wrap mt-3">
+            <a href="{% url 'image_capture_form' %}" class="btn-generate">
+              <i class="fas fa-link"></i>
+              Generate Link
+            </a>
+            <a href="{% url 'manual_capture_form' %}" class="btn-manual">
+              <i class="fas fa-plus"></i>
+              Manual Capture
+            </a>
+          </div>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Image Modal -->
+  <div class="modal fade" id="imageModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Verification Image</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body text-center">
+          <img id="modalImage" src="" alt="Verification Image" class="img-fluid rounded" style="max-height: 70vh;">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Confirm Delete</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p>Are you sure you want to delete customer: <strong id="customerNameToDelete"></strong>?</p>
+          <p class="text-danger"><small>This action cannot be undone.</small></p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // View image in modal
+    function viewImage(imageUrl) {
+      document.getElementById('modalImage').src = imageUrl;
+      const modal = new bootstrap.Modal(document.getElementById('imageModal'));
+      modal.show();
+    }
+
+    // Delete customer functionality
+    let customerIdToDelete = null;
+    function confirmDelete(customerId, customerName) {
+      customerIdToDelete = customerId;
+      document.getElementById('customerNameToDelete').textContent = customerName;
+      const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+      modal.show();
+    }
+
+    document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
+      if (customerIdToDelete) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = "{% url 'delete_customer' %}";
+        const csrf = document.createElement('input');
+        csrf.type = 'hidden';
+        csrf.name = 'csrfmiddlewaretoken';
+        csrf.value = '{{ csrf_token }}';
+        form.appendChild(csrf);
+        const id = document.createElement('input');
+        id.type = 'hidden';
+        id.name = 'customer_id';
+        id.value = customerIdToDelete;
+        form.appendChild(id);
+        document.body.appendChild(form);
+        form.submit();
+      }
+    });
+
+    // ✅ NEW: Update status via AJAX
+    function updateStatus(selectElement) {
+      const captureId = selectElement.getAttribute('data-capture-id');
+      const newStatus = selectElement.value;
+      
+      // Get CSRF token
+      const csrfToken = '{{ csrf_token }}';
+      
+      // Use Django URL template tag to get the correct URL
+      const updateUrl = "{% url 'update_status' 0 %}".replace('/0/', `/${captureId}/`);
+      
+      fetch(updateUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'X-CSRFToken': csrfToken
+        },
+        body: `status=${newStatus}`
+      })
+      .then(response => {
+        console.log('Response status:', response.status);
+        if (response.ok) {
+          // Show success feedback
+          const originalBg = selectElement.style.backgroundColor;
+          selectElement.style.backgroundColor = '#d4edda';
+          setTimeout(() => {
+            selectElement.style.backgroundColor = originalBg;
+          }, 1000);
+        } else {
+          console.error('Update failed with status:', response.status);
+          alert('Failed to update status');
+          location.reload();
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('Error updating status: ' + error.message);
+        location.reload();
+      });
+    }
+  </script>
+</body>
+</html>
+{% endblock %}

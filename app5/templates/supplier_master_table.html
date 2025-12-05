@@ -1,0 +1,317 @@
+{% extends "base.html" %}
+
+{% block title %}Supplier Records{% endblock %}
+
+{% block content %}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Supplier Records</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    .table-container {
+      margin: 20px auto;
+      padding: 25px;
+      max-width: 1200px;
+      background: #dadaf1;
+      border-radius: 12px;
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.08);
+    }
+    
+    .table-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid #d99595;
+      position: relative;
+    }
+    
+    .table-header h2 {
+      margin: 0 auto; /* Center the heading */
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: #2c3e50;
+      text-align: center;
+      /* Enhanced heading styles */
+      background: linear-gradient(135deg, #061262 0%, #3498db 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      text-shadow: 0px 2px 3px rgba(0,0,0,0.1);
+      position: relative;
+      padding-bottom: 10px;
+      flex: 1;
+      text-align: center;
+    }
+    
+    .table-header h2::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80px;
+      height: 3px;
+      background: linear-gradient(90deg, #061262, #3498db);
+      border-radius: 2px;
+    }
+    
+    #suppliersTable {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      overflow: hidden;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+    
+    #suppliersTable thead {
+      background:#061262;
+      color: white;
+    }
+    
+    #suppliersTable th, 
+    #suppliersTable td {
+      padding: 14px 16px;
+      text-align: left;
+      border: 1px solid #e0e0e0;
+      font-size: 0.95rem;
+    }
+    
+    #suppliersTable th {
+      font-weight: 600;
+      color: white;
+      text-transform: uppercase;
+      font-size: 0.9rem;
+      letter-spacing: 0.5px;
+    }
+    
+    #suppliersTable tbody tr {
+      transition: all 0.2s ease;
+    }
+    
+    #suppliersTable tbody tr:nth-child(even) {
+      background-color: #f9fafb;
+    }
+    
+    #suppliersTable tbody tr:hover {
+      background-color: #ecf0f1;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    }
+    
+    #suppliersTable .no-data {
+      text-align: center;
+      color: #7f8c8d;
+      font-style: italic;
+      padding: 30px;
+      background-color: #f9f9f9;
+    }
+    
+    .btn-add {
+      background:#061262;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 8px rgba(6, 18, 98, 0.3);
+      border: none;
+      cursor: pointer;
+      font-size: 1rem;
+      margin-left: auto; /* Push to the right */
+    }
+    
+    .btn-add:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(6, 18, 98, 0.4);
+      background: #0a1b7a;
+    }
+
+    /* Actions styling */
+    .action-icons {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+    }
+    
+    .action-icons a {
+      font-size: 1.1rem;
+      text-decoration: none;
+      padding: 8px;
+      border-radius: 50%;
+      transition: all 0.2s ease;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .action-icons a.edit {
+      color: #f39c12;
+      background-color: rgba(243, 156, 18, 0.1);
+      border: 1px solid rgba(243, 156, 18, 0.2);
+    }
+    
+    .action-icons a.edit:hover {
+      background-color: rgba(243, 156, 18, 0.2);
+      transform: scale(1.1);
+    }
+    
+    .action-icons a.delete {
+      color: #e74c3c;
+      background-color: rgba(231, 76, 60, 0.1);
+      border: 1px solid rgba(231, 76, 60, 0.2);
+    }
+    
+    .action-icons a.delete:hover {
+      background-color: rgba(231, 76, 60, 0.2);
+      transform: scale(1.1);
+    }
+    
+    /* Serial number column styling */
+    .serial-column {
+      width: 70px;
+      text-align: center;
+      font-weight: 600;
+      color: #555;
+    }
+
+    .btn-back {
+  background: #0a1b7a;
+  color: white;
+  padding: 12px 24px;
+  border-radius: 6px;
+  text-decoration: none;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 8px rgba(127, 140, 141, 0.3);
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.btn-back:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(127, 140, 141, 0.4);
+  background: #636e72;
+}
+
+    
+    /* Address column styling */
+    .address-cell {
+      max-width: 250px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 992px) {
+      .table-container {
+        padding: 15px;
+        margin: 10px;
+      }
+      
+      #suppliersTable {
+        display: block;
+        overflow-x: auto;
+      }
+      
+      .address-cell {
+        max-width: 200px;
+      }
+    }
+    
+    @media (max-width: 768px) {
+      .table-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 15px;
+      }
+      
+      .table-header h2 {
+        order: 1; /* Heading comes first */
+        margin-bottom: 10px;
+      }
+      
+      .btn-add {
+        order: 2; /* Button comes after heading */
+        margin: 0 auto; /* Center button on mobile */
+        width: fit-content;
+      }
+      
+      .address-cell {
+        max-width: 150px;
+      }
+    }
+  </style>
+
+  <div class="table-container">
+
+    <div class="table-header">
+  <a href="javascript:history.back()" class="btn-back">
+  <i class="fas fa-arrow-left"></i> Back
+</a>
+  <h2>Supplier Records</h2>
+  <a href="{% url 'app5:supplier_master_add' %}" class="btn-add">
+    <i class="fas fa-plus"></i> Add New
+  </a>
+</div>
+
+
+    <table id="suppliersTable">
+      <thead>
+        <tr>
+          <th class="serial-column">SL.No</th>
+          <th>Name</th>
+          <th>Place</th>
+          <th>Phone Number</th>
+          <th>Address</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody">
+        {% if suppliers %}
+          {% for supplier in suppliers %}
+          <tr>
+            <td class="serial-column">{{ forloop.counter }}</td>
+            <td>{{ supplier.name }}</td>
+            <td>{{ supplier.place }}</td>
+            <td>{{ supplier.phone }}</td>
+            <td class="address-cell" title="{{ supplier.address }}">{{ supplier.address }}</td>
+            <td>
+              <div class="action-icons">
+                <a href="{% url 'app5:supplier_master_edit' supplier.id %}" class="edit" title="Edit">
+                  <i class="fas fa-edit"></i>
+                </a>
+                <a href="{% url 'app5:supplier_master_delete' supplier.id %}" 
+                   class="delete" 
+                   title="Delete"
+                   onclick="return confirm('Are you sure you want to delete this supplier?');">
+                   <i class="fas fa-trash"></i>
+                </a>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="6" class="no-data">No supplier records yet. Add your first supplier above.</td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+{% endblock %}

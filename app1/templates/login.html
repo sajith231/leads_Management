@@ -1,0 +1,170 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+
+
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <style>
+        body {
+            background: #f8f7f5;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+        }
+
+        .login-container {
+            display: flex;
+            background-color: #ffdd33;
+            border-radius: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            max-width: 800px;
+            width: 100%;
+        }
+
+        .left-section {
+            background-color: #ffdd33;
+            padding: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+        }
+
+        .left-section img {
+            width: 80%;
+            max-width: 300px;
+        }
+
+        .right-section {
+            background-color: #ffffff;
+            padding: 40px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .right-section h2 {
+            font-size: 26px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            background-color: #f9f9f9;
+            border: 2px solid #ddd;
+            border-radius: 30px;
+            transition: 0.3s;
+            padding-left: 20px;
+        }
+
+        .form-control:focus {
+            background-color: #ffffff;
+            border-color: #ff9933;
+            outline: none;
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 12px;
+            background-color: #ff9933;
+            color: #ffffff;
+            font-weight: bold;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s, transform 0.1s;
+        }
+
+        .btn-primary:hover {
+            background-color: #e68a00;
+            transform: scale(1.02);
+        }
+        @media screen and (min-width:320px) {
+            .login-container{
+                display: grid;
+                grid-template-columns: repeat(1, 1fr);
+                place-items: center;
+            }
+            .right-section{
+                border-radius: 20px;
+                width: 100%;
+                height: 100%;
+            }
+        }
+        @media screen and (min-width:600px) {
+            .login-container{
+                display: flex;
+                background-color: #ffdd33;
+                border-radius: 20px;
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+                overflow: hidden;
+                max-width: 800px;
+                width: 100%;
+            }
+            .administration{
+                white-space: nowrap;
+            }
+        }
+        
+    </style>
+</head>
+
+<body>
+    <div class="login-container">
+        <div class="left-section">
+            <div class="logo" style="display: flex; width: 100%;height: 49px; justify-content: left;"><img
+                    src="{% static 'images/imclogo.png' %}" alt="Logo"
+                    style="margin-left: 1%; height: 100%; width: 100%; object-fit: contain;"></div>
+            <div class="logo" style="display: flex; width: 100%; height: 280px; justify-content: left;"><img
+                    src="{% static 'images/sysmaclogo.png' %}" alt="Logo"
+                    style="margin-left: 1%; height: 100%; width: 100%; object-fit: contain;"></div>
+        </div>
+        <div class="right-section">
+            <h2 style="" class="administration">Administration Management</h2>
+            <form method="POST">
+                {% csrf_token %}
+                <div class="form-group">
+                    <input type="text" class="form-control" name="username" placeholder="User Name" required>
+                </div>
+                <div class="form-group">
+                    <input type="password" class="form-control" name="password" placeholder="Password" required>
+                </div>
+                <button type="submit" class="btn-primary">Login</button>
+            </form>
+            {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                <div class="alert alert-{% if message.tags %}{{ message.tags }}{% else %}info{% endif %} alert-dismissible fade show"
+                    role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</body>
+
+</html>

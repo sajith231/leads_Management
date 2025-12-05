@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% block title %}Add Interview Management{% endblock %}
+{% block header %}Add Interview Management{% endblock %}
+{% block content %}
+
+<style>
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+
+  .form-container {
+    max-width: 600px;
+    margin: 30px auto;
+    padding: 25px;
+    background-color: #f9f9f9;
+    border-radius: 12px;
+    box-shadow: 0 0 12px rgba(0, 0, 0, 0.1);
+  }
+
+  h3 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #2c3e50;
+  }
+
+  form label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 600;
+  }
+
+  form select,
+  form input {
+    width: 100%;
+    padding: 8px 12px;
+    margin-bottom: 16px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    transition: border-color 0.3s;
+  }
+
+  form select:focus,
+  form input:focus {
+    border-color: #28a745;
+    outline: none;
+  }
+
+  .btn-success {
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+    border-radius: 6px;
+  }
+</style>
+
+<div class="form-container">
+  <h3>Add Interview Management</h3>
+
+  <form method="post" action="{% url 'add_interview_management' %}">
+    {% csrf_token %}
+    
+    <div>
+      <label for="name">Select Name:</label>
+    <select id="name" name="employee_id" required>
+  <option value="">-- Select Candidate --</option>
+  {% for emp in employees %}
+    <option value="{{ emp.id }}">{{ emp.name }} - {{ emp.place }} - {{ emp.job_title }}</option>
+  {% endfor %}
+</select>
+
+    </div>
+
+    <button type="submit" class="btn btn-success">Save</button>
+  </form>
+</div>
+
+{% endblock %}

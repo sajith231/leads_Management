@@ -1,0 +1,1044 @@
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Requirements Management</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { background: #f0f2f5; min-height: 100vh; }
+    .container { max-width: 1600px; width: 100%; margin: 0 auto; padding: 20px; }
+    .main-content { display: flex; gap: 20px; align-items: stretch; width: 100%; min-height: 80vh; }
+    .directory-column { flex: 0 0 320px; width: 320px; display: flex; flex-direction: column; }
+    .form-column { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+    .form-container { background-color:#dcd9f3; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.15); overflow: hidden; width: 100%; flex: 1; display: flex; flex-direction: column; }
+    .form-header { background:#a095f6; color:black; padding: 15px 20px; text-align: center; }
+    .form-header h1 { font-size: 22px; margin-bottom: 5px; font-weight: 700; }
+    .form-header p { font-size: 13px; opacity: 0.9; }
+    .form-body { padding: 20px; flex: 1; display: flex; flex-direction: column; }
+    .form-section { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px dashed #e0e0e0; }
+    #communication-details { background-color:#dbf5dd; border: 2px solid #0ec33f; border-radius: 10px; padding: 20px; box-shadow: 0 3px 10px rgba(37,117,252,0.15); }
+    .section-title { font-size: 16px; color: #14ad09; font-weight: bold; margin-bottom: 15px; padding-bottom: 5px; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; }
+    .section-title i { margin-right: 8px; font-size: 16px; }
+    .form-row { display: flex; flex-wrap: wrap; margin: 0 -5px; width: 100%; }
+    .form-group { flex: 1; min-width: 180px; padding: 0 5px; margin-bottom: 15px; }
+    label { display: block; margin-bottom: 5px; font-weight: 600; color: #444; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    input, select, textarea { width: 100%; padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; transition: all 0.2s; background-color: #f9f9f9; }
+    input:focus, select:focus, textarea:focus { border-color: #6a11cb; box-shadow: 0 0 0 2px rgba(106,17,203,0.1); outline: none; background-color: white; }
+    .form-navigation { display: flex; justify-content: center; margin-bottom: 20px; background: white; border-radius: 10px; padding: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); width: 100%; }
+    .nav-menu { display: flex; list-style: none; gap: 5px; width: 100%; justify-content: center; flex-wrap: wrap; }
+    .nav-item { flex: 1; text-align: center; min-width: 120px; }
+    .nav-link { display: block; padding: 12px 15px; text-decoration: none; color: #666; font-weight: 600; border-radius: 8px; transition: all 0.3s ease; border: 2px solid transparent; font-size: 14px; white-space: nowrap; }
+    .nav-link:hover { background: linear-gradient(135deg, #f8f9ff, #e8f0ff); color: #4CAF50; border-color: #4CAF50; }
+    .nav-link.active { background: linear-gradient(135deg, #4CAF50, #45a049); color: white; border-color: #4CAF50; box-shadow: 0 4px 12px rgba(37,117,252,0.3); transform: translateY(-2px); }
+    .nav-link i { margin-right: 8px; font-size: 16px; }
+    .requirements-section { background-color: #ffe9cc; border: 2px solid #f8861b; border-radius: 10px; padding: 20px; margin-bottom: 20px; box-shadow: 0 3px 10px rgba(0,0,0,0.08); }
+    .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #e5bc08; width: 100%; }
+    .section-title-compact { display: flex; align-items: center; font-size: 16px; color: #d29105; font-weight: 700; margin: 0; white-space: nowrap; }
+    .section-title-compact i { margin-right: 10px; font-size: 18px; color: #d29105; }
+    .add-btn { background: linear-gradient(135deg, #4CAF50, #45a049); color: white; padding: 10px 20px; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s; display: flex; align-items: center; justify-content: center; }
+    .add-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 10px rgba(37,117,252,0.4); }
+    .table-container { overflow-x: auto; border: 1px solid #f18d0a; border-radius: 8px; background: white; margin-top: 15px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { background-color: #ffe9cc; padding: 12px 10px; text-align: left; font-weight: 600; color: #444; border: 1px solid #f18d0a; }
+    td { padding: 10px; border: 1px solid #f18d0a; background: white; }
+    tr:hover { background-color: #f9fafb; }
+    .total-row { font-weight: bold; background-color: #ffe9cc; }
+    .total-row td { border-top: 2px solid #f18d0a; font-size: 14px; }
+    .delete-btn { background: #dc3545; color: white; padding: 6px 10px; border: none; border-radius: 4px; font-size: 12px; cursor: pointer; width: 100%; }
+    .delete-btn:hover { background: #c82333; }
+    .btn-group { display: flex; justify-content: center; margin-top: auto; gap: 10px; width: 100%; padding-top: 20px; }
+    button { padding: 10px 20px;background-color: #0ec33f;color: #ffffff; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
+    .submit-btn { background: linear-gradient(135deg, #4CAF50, #45a049); color: white; box-shadow: 0 3px 8px rgba(37,117,252,0.3); }
+    .submit-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 10px rgba(37,117,252,0.4); }
+    .back-btn { background-color: #4CAF50; color: #faf9f9; border: 1px solid #ddd; text-decoration: none; display: flex; align-items: center; justify-content: center; }
+    .back-btn:hover { background-color: #4CAF50; }
+
+    /* Lead Directory Styles - Matching lead_form.html */
+    .lead-directory-container { background: white; border-radius: 10px; box-shadow: 0 3px 10px rgba(0,0,0,0.08); overflow: hidden; height: 100%; display: flex; flex-direction: column; }
+    .directory-header { background: #4a6fdc; color: white; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; }
+    .directory-header h2 { font-size: 16px; font-weight: 600; }
+    .directory-info { font-size: 12px; opacity: 0.9; }
+    .directory-tabs { display: flex; background: #f8f9fa; border-bottom: 1px solid #e9ecef; }
+    .directory-tab { flex: 1; padding: 10px 12px; text-align: center; background: transparent; border: none; font-weight: 600; font-size: 13px; color: #6c757d; cursor: pointer; transition: all 0.3s; border-bottom: 3px solid transparent; }
+    .directory-tab.active { color: #4a6fdc; border-bottom-color: #4a6fdc; background: white; }
+    .directory-tab:hover { background: #e9ecef; }
+    .search-container { padding: 12px 15px; background: #f8f9fa; border-bottom: 1px solid #e9ecef; }
+    .search-box { position: relative; width: 100%; }
+    .search-box input { padding: 8px 12px 8px 35px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; width: 100%; background: white; }
+    .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #6c757d; font-size: 13px; }
+    .employee-list, .lead-list { flex: 1; overflow-y: auto; padding: 8px 0; display: none; }
+    .employee-list.active, .lead-list.active { display: block; }
+    .employee-item, .lead-item { display: flex; align-items: center; padding: 12px 15px; border-bottom: 1px solid #f0f0f0; transition: background 0.2s; cursor: pointer; }
+    .lead-item.selected { background: #e3f2fd; border-left: 4px solid #2575fc; }
+    .employee-item:hover, .lead-item:hover { background: #f8f9fa; }
+    .employee-avatar, .lead-avatar { width: 32px; height: 32px; border-radius: 50%; background: #4a6fdc; color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 12px; margin-right: 12px; flex-shrink: 0; }
+    .lead-avatar { background: #28a745; }
+    .employee-details, .lead-details { flex: 1; min-width: 0; }
+    .employee-name, .lead-name { font-weight: 600; color: #333; margin-bottom: 2px; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .employee-role, .lead-info { font-size: 12px; color: #6c757d; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .lead-phone { font-size: 11px; color: #495057; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .lead-ticket { font-size: 10px; color: #6c757d; background: #f8f9fa; padding: 2px 5px; border-radius: 4px; display: inline-block; margin-top: 2px; }
+    .lead-status { font-size: 10px; color: #28a745; font-weight: 600; margin-top: 2px; }
+    .assign-btn { padding: 5px 10px; background: #4CAF50; color: white; border: none; border-radius: 4px; font-size: 11px; cursor: pointer; transition: all 0.2s; flex-shrink: 0; }
+    .assign-btn:hover { background: #45a049; }
+    .assign-btn.assigned { background: #6c757d; }
+    .no-results { padding: 20px 15px; text-align: center; color: #6c757d; font-size: 13px; }
+
+    /* Priority Filter Styles - Consistent with lead_form.html */
+    .filter-container { padding: 10px 15px; background: #f8f9fa; border-bottom: 1px solid #ddd; }
+    .filter-group { display: flex; align-items: center; gap: 10px; }
+    .filter-label { font-size: 13px; font-weight: 600; }
+    .filter-select { padding: 6px; border-radius: 8px; }
+
+    /* Pagination Styles */
+    .directory-pagination { display: flex; justify-content: center; align-items: center; padding: 12px 15px; background: #f8f9fa; border-top: 1px solid #e9ecef; gap: 10px; }
+    .pagination-info { font-size: 12px; color: #6c757d; margin: 0 10px; }
+    .pagination-btn { padding: 6px 12px; background: white; border: 1px solid #dee2e6; border-radius: 4px; font-size: 12px; cursor: pointer; transition: all 0.2s; color: #4a6fdc; }
+    .pagination-btn:hover:not(:disabled) { background: #4a6fdc; color: white; border-color: #4a6fdc; }
+    .pagination-btn:disabled { background: #f8f9fa; color: #6c757d; cursor: not-allowed; }
+    .pagination-numbers { display: flex; gap: 5px; }
+    .page-number { padding: 6px 10px; background: white; border: 1px solid #dee2e6; border-radius: 4px; font-size: 12px; cursor: pointer; transition: all 0.2s; color: #495057; }
+    .page-number.active { background: #4a6fdc; color: white; border-color: #4a6fdc; }
+    .page-number:hover:not(.active) { background: #e9ecef; }
+
+    /* Message styles */
+    .success-message { background-color: #d4edda; color: #155724; padding: 12px; border-radius: 6px; margin-bottom: 20px; border: 1px solid #c3e6cb; }
+    .error-message { background-color: #f8d7da; color: #721c24; padding: 12px; border-radius: 6px; margin-bottom: 20px; border: 1px solid #f5c6cb; }
+    .warning-message { background-color: #fff3cd; color: #856404; padding: 12px; border-radius: 6px; margin-bottom: 20px; border: 1px solid #ffeaa7; }
+
+    /* Lead selection styles */
+    .lead-selection-hint {
+        background: #e3f2fd;
+        color: #1976d2;
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        margin-bottom: 10px;
+        border-left: 4px solid #2196f3;
+    }
+
+    @media (max-width: 1200px) {
+        .main-content { flex-direction: column; }
+        .directory-column { flex: 0 0 auto; width: 100%; }
+        .lead-directory-container { height: auto; max-height: 400px; }
+    }
+    
+    @media (max-width: 768px) {
+        .container { padding: 10px; }
+        .form-row { flex-direction: column; }
+        .form-group { min-width: 100%; }
+        .nav-menu { flex-direction: column; }
+        .nav-item { min-width: 100%; }
+        .directory-pagination { flex-wrap: wrap; }
+        .directory-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+        .employee-item, .lead-item { flex-direction: column; align-items: flex-start; gap: 10px; }
+        .assign-btn { align-self: flex-end; }
+    }
+</style>
+</head>
+<body>
+<div class="container">
+    <div class="main-content">
+        <!-- Left Column - Lead Directory (Matching lead_form.html) -->
+        <div class="directory-column">
+            <div class="lead-directory-container">
+                <div class="directory-header">
+                    <h2>Lead Management</h2>
+                    <div class="directory-info">Showing <span id="activeTabCount">{{ active_leads|length }}</span> active leads</div>
+                </div>
+                
+                <!-- Directory Tabs -->
+                <div class="directory-tabs">
+                    <button class="directory-tab active" data-tab="leads">Active Leads</button>
+                    <button class="directory-tab" data-tab="employees">Employees</button>
+                </div>
+                
+                <div class="search-container">
+                    <div class="search-box">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" id="directorySearch" placeholder="Search by Name/Phone/Ticket...">
+                    </div>
+                </div>
+
+                <!-- Priority Filter - Consistent with lead_form.html -->
+                <div class="filter-container" id="priorityFilterContainer" style="display: block;">
+                    <div class="filter-group">
+                        <span class="filter-label">Priority:</span>
+                        <select id="priorityFilter" class="filter-select">
+                            <option value="all">All Priorities</option>
+                            <option value="High">🔴 High</option>
+                            <option value="Medium">🟡 Medium</option>
+                            <option value="Low">🟢 Low</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Lead List (shown by default) -->
+                <div class="lead-list active" id="leadList">
+                    {% if active_leads %}
+                        {% for lead in active_leads %}
+                        <div class="lead-item" data-id="{{ lead.id }}" 
+                             data-name="{{ lead.name|default:'' }}" 
+                             data-phone="{{ lead.phone|default:'' }}" 
+                             data-ticket="{{ lead.ticket_number|default:'' }}"
+                             data-priority="{{ lead.priority|default:'Medium' }}">
+                            <div class="lead-avatar">
+                                {{ lead.name|default:""|slice:":1"|upper }}
+                            </div>
+
+                            <div class="lead-details">
+                                <div class="lead-name">
+                                    <span style="font-size: 16px; margin-right: 5px;">
+                                        {% if lead.priority == 'High' %}🔴
+                                        {% elif lead.priority == 'Medium' %}🟡
+                                        {% elif lead.priority == 'Low' %}🟢
+                                        {% else %}ðŸŸ¡{% endif %}
+                                    </span>
+                                    {{ lead.name|default:"Unknown" }}
+                                </div>
+                                <div class="lead-phone">{{ lead.phone|default:"" }}</div>
+                                <div class="lead-ticket">{{ lead.ticket_number|default:"" }}</div>
+                                <div class="lead-status" style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px;">
+                                    <span>Status: {{ lead.status|default:"Active" }}</span>
+                                    <span style="color: {% if lead.priority == 'High' %}#ff4444{% elif lead.priority == 'Medium' %}#ffaa00{% elif lead.priority == 'Low' %}#44ff44{% else %}#ffaa00{% endif %}; font-weight:bold; font-size: 10px; padding: 2px 6px; border-radius: 10px;">
+                                        {{ lead.priority|default:"Medium" }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="no-results">No active leads found</div>
+                    {% endif %}
+                </div>
+                
+                <!-- Employee List (hidden by default) -->
+                <div class="employee-list" id="employeeList">
+                    {% if active_users %}
+                        {% for u in active_users %}
+                        <div class="employee-item" data-id="{{ u.id }}" data-name="{{ u.name|escapejs }}">
+                            <div class="employee-avatar">
+                                {{ u.name|slice:":1"|upper }}
+                            </div>
+
+                            <div class="employee-details">
+                                <div class="employee-name">{{ u.name }}</div>
+                                <div class="employee-role">
+                                    {{ u.department }}{% if u.designation %} - {{ u.designation }}{% endif %}
+                                </div>
+                            </div>
+
+                            <button class="assign-btn" data-id="{{ u.id }}" data-name="{{ u.name|escapejs }}" data-role="employee-assign">
+                                Assign
+                            </button>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="no-results">No active users found</div>
+                    {% endif %}
+                </div>
+                
+                <!-- Pagination -->
+                <div class="directory-pagination" id="directoryPagination">
+                    <div class="pagination-buttons">
+                        <button class="pagination-btn" id="prevPage" disabled>
+                            <i class="fas fa-chevron-left"></i> Prev
+                        </button>
+                    </div>
+                    
+                    <div class="pagination-numbers" id="paginationNumbers">
+                        <!-- Page numbers will be generated here -->
+                    </div>
+                    
+                    <div class="pagination-info" id="paginationInfo">
+                        Page 1 of 1
+                    </div>
+                    
+                    <div class="pagination-buttons">
+                        <button class="pagination-btn" id="nextPage" disabled>
+                            Next <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column - Requirements Form -->
+        <div class="form-column">
+            <div class="form-container">
+                <div class="form-header">
+                    <h1>Requirements Management</h1>
+                    <p>Manage your project requirements and items</p>
+                    <div class="lead-details-header" style="margin-top: 10px; padding: 10px; background: rgba(255,255,255,0.2); border-radius: 6px;">
+                        <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; font-size: 13px;">
+                            <div>
+                                <strong><i class="fas fa-ticket-alt"></i> Ticket No:</strong> 
+                                <span id="header-ticket">-</span>
+                            </div>
+                            <div>
+                                <strong><i class="fas fa-user"></i> Name:</strong> 
+                                <span id="header-name">-</span>
+                            </div>
+                            <div>
+                                <strong><i class="fas fa-phone"></i> Phone No:</strong> 
+                                <span id="header-phone">-</span>
+                            </div>
+                            <div>
+                                <strong><i class="fas fa-flag"></i> Priority:</strong> 
+                                <span id="header-priority">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation Menu -->
+                <div class="form-navigation">
+                    <ul class="nav-menu">
+                        <li class="nav-item">
+                            <a href="{% url 'app5:lead' %}" class="nav-link">
+                                <i class="fas fa-phone-alt"></i>
+                                Lead Form
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#requirements-section" class="nav-link active">
+                                <i class="fas fa-clipboard-list"></i>
+                                Requirements
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                             <a href="{% url 'app5:event_form' %}" class="nav-link">
+                             <i class="fas fa-briefcase"></i>
+                             Event
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                           <a href="{% url 'app5:quotation_list' %}" class="nav-link">
+                          <i class="fas fa-file-invoice"></i>
+                           Quotation
+                         </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="form-body">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="{{ message.tags|default:'info' }}-message">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                    
+                    <!-- Lead Selection Hint -->
+                    <div class="lead-selection-hint">
+                        <i class="fas fa-info-circle"></i>
+                        Please select a lead from the directory to add requirements
+                    </div>
+                    
+                    <!-- ===== Requirements Section (MRP used for price) ===== -->
+                    <div class="requirements-section" id="requirements-section">
+                        <div class="section-header">
+                            <div class="section-title-compact">
+                                <i class="fas fa-clipboard-list"></i>
+                                <span>Requirements</span>
+                            </div>
+                            <button type="button" class="add-btn" id="add-item-btn">
+                                <i class="fas fa-plus"></i> Add Item
+                            </button>
+                        </div>
+
+                        <form id="requirements-form" method="POST" action="{% url 'app5:requirement_form' %}">
+                            {% csrf_token %}
+
+                            <!-- Hidden fields for communication details -->
+                            <input type="hidden" name="owner_name" id="hiddenOwnerName">
+                            <input type="hidden" name="phone_no" id="hiddenPhoneNo">
+                            <input type="hidden" name="ticket_number" id="hiddenTicketNumber">
+                            <input type="hidden" name="priority" id="hiddenPriority">
+
+                            <!-- server-rendered options for JS (single source of truth) -->
+                            <template id="item-options">
+                                {% for it in items %}
+                                    <option value="{{ it.id }}"
+                                            data-unit="{{ it.unit_of_measure|default_if_none:'' }}"
+                                            data-price="{{ it.mrp|default_if_none:'0.00'|floatformat:2 }}">
+                                        {{ it.name }}
+                                    </option>
+                                {% endfor %}
+                            </template>
+
+                            <div class="table-container">
+                                <table id="requirements-table">
+                                    <thead>
+                                        <tr>
+                                            <th width="5%">Sl.No:</th>
+                                            <th width="50%">Item Name</th>
+                                            <th width="15%">Unit</th>
+                                            <th width="20%">Price</th>
+                                             <th width="10%">Qty</th>
+                                             <th width="15%">Total</th>
+                                            <th width="10%">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="table-body">
+                                        <!-- rows are dynamically added -->
+                                    </tbody>
+                                    <tfoot>
+                                        <tr class="total-row">
+                                            <td colspan="3" style="text-align: right; font-weight:700;">Grand Total:</td>
+                                            <td id="grand-total" style="font-weight:700;">0.00</td>
+                                            <td></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+
+                            <!-- Form Actions -->
+                            <div class="btn-group">
+                                <button type="submit" class="submit-btn" id="submitRequirementsBtn" disabled>
+                                    <i class="fas fa-paper-plane"></i> Submit Requirements
+                                </button>
+                                <button type="button" class="reset-btn" onclick="window.location.href='{% url 'app5:lead_report' %}'">
+                                    <i class="fas fa-arrow-left"></i>
+                                    &nbsp; Back
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    <!-- ===== end Requirements Section ===== -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Directory functionality matching lead_form.html
+    document.addEventListener('DOMContentLoaded', function() {
+        // Pagination configuration
+        const itemsPerPage = 10;
+        let currentPage = 1;
+        let totalPages = 1;
+        let currentItems = [];
+        let filteredItems = [];
+        
+        // Pagination elements
+        const prevPageBtn = document.getElementById('prevPage');
+        const nextPageBtn = document.getElementById('nextPage');
+        const paginationNumbers = document.getElementById('paginationNumbers');
+        const paginationInfo = document.getElementById('paginationInfo');
+        
+        // Lead data
+        // Lead data - Fixed to match lead_form.html field names
+const leads = [
+    {% for lead in active_leads %}
+    {
+        id: {{ lead.id }},
+        ownerName: "{{ lead.ownerName|default:lead.name|default:'Unknown'|escapejs }}",
+        phoneNo: "{{ lead.phoneNo|default:lead.phone|default:''|escapejs }}",
+        ticket_number: "{{ lead.ticket_number|default:''|escapejs }}",
+        status: "{{ lead.status|default:'Active'|escapejs }}",
+        priority: "{{ lead.priority|default:'Medium'|escapejs }}"
+    }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+];
+
+        // Employee data
+        const employees = [
+            {% for u in active_users %}
+            {
+                id: {{ u.id }},
+                name: "{{ u.name|escapejs }}",
+                department: "{{ u.department|escapejs }}",
+                designation: "{{ u.designation|escapejs }}"
+            }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ];
+
+        // Priority filter functionality - Consistent with lead_form.html
+        function setupPriorityFilter() {
+            const priorityFilter = document.getElementById('priorityFilter');
+            
+            priorityFilter.addEventListener('change', function() {
+                filterDirectoryItemsByPriorityAndSearch(
+                    document.getElementById('directorySearch').value.toLowerCase(),
+                    this.value
+                );
+            });
+        }
+
+        // Combined filter function for search and priority - Consistent with lead_form.html
+        function filterDirectoryItemsByPriorityAndSearch(searchTerm, priority) {
+            const activeTab = document.querySelector('.directory-tab.active').getAttribute('data-tab');
+            
+            if (activeTab === 'employees') {
+                currentItems = employees;
+            } else {
+                currentItems = leads;
+            }
+            
+            // Apply search filter
+            if (!searchTerm) {
+                filteredItems = [...currentItems];
+            } else {
+                filteredItems = currentItems.filter(item => {
+                    let textContent = '';
+                    
+                    if (activeTab === 'employees') {
+                        textContent = (
+                            item.name.toLowerCase() + ' ' + 
+                            item.department.toLowerCase() + ' ' + 
+                            (item.designation || '').toLowerCase()
+                        );
+                    } else {
+                        textContent = (
+                            item.name.toLowerCase() + ' ' + 
+                            item.phone.toLowerCase() + ' ' + 
+                            item.ticketNo.toLowerCase() + ' ' +
+                            (item.priority || '').toLowerCase()
+                        );
+                    }
+                    
+                    return textContent.includes(searchTerm);
+                });
+            }
+            
+            // Apply priority filter (only for leads tab)
+            if (activeTab === 'leads' && priority !== 'all') {
+                filteredItems = filteredItems.filter(item => item.priority === priority);
+            }
+            
+            currentPage = 1;
+            updatePagination();
+        }
+
+        // Initialize pagination
+        function initializePagination() {
+            const activeTab = document.querySelector('.directory-tab.active').getAttribute('data-tab');
+            if (activeTab === 'employees') {
+                currentItems = employees;
+            } else {
+                currentItems = leads;
+            }
+            
+            filteredItems = [...currentItems];
+            updatePagination();
+        }
+
+        // Update pagination
+        function updatePagination() {
+            totalPages = Math.ceil(filteredItems.length / itemsPerPage);
+            
+            // Ensure current page is within bounds
+            if (currentPage > totalPages) {
+                currentPage = totalPages || 1;
+            }
+            
+            // Update pagination buttons
+            prevPageBtn.disabled = currentPage === 1;
+            nextPageBtn.disabled = currentPage === totalPages;
+            
+            // Update pagination info
+            const startItem = (currentPage - 1) * itemsPerPage + 1;
+            const endItem = Math.min(currentPage * itemsPerPage, filteredItems.length);
+            paginationInfo.textContent = `Page ${currentPage} of ${totalPages} (${filteredItems.length} items)`;
+            
+            // Generate page numbers
+            generatePageNumbers();
+            
+            // Display current page items
+            displayCurrentPageItems();
+            
+            // Update active tab count
+            document.getElementById('activeTabCount').textContent = filteredItems.length;
+        }
+
+        // Generate page number buttons
+        function generatePageNumbers() {
+            paginationNumbers.innerHTML = '';
+            
+            // Show max 5 page numbers
+            let startPage = Math.max(1, currentPage - 2);
+            let endPage = Math.min(totalPages, startPage + 4);
+            
+            // Adjust start page if we're near the end
+            if (endPage - startPage < 4) {
+                startPage = Math.max(1, endPage - 4);
+            }
+            
+            // First page
+            if (startPage > 1) {
+                const firstPageBtn = document.createElement('button');
+                firstPageBtn.className = 'page-number';
+                firstPageBtn.textContent = '1';
+                firstPageBtn.addEventListener('click', () => goToPage(1));
+                paginationNumbers.appendChild(firstPageBtn);
+                
+                if (startPage > 2) {
+                    const ellipsis = document.createElement('span');
+                    ellipsis.className = 'pagination-ellipsis';
+                    ellipsis.textContent = '...';
+                    paginationNumbers.appendChild(ellipsis);
+                }
+            }
+            
+            // Page numbers
+            for (let i = startPage; i <= endPage; i++) {
+                const pageBtn = document.createElement('button');
+                pageBtn.className = `page-number ${i === currentPage ? 'active' : ''}`;
+                pageBtn.textContent = i;
+                pageBtn.addEventListener('click', () => goToPage(i));
+                paginationNumbers.appendChild(pageBtn);
+            }
+            
+            // Last page
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) {
+                    const ellipsis = document.createElement('span');
+                    ellipsis.className = 'pagination-ellipsis';
+                    ellipsis.textContent = '...';
+                    paginationNumbers.appendChild(ellipsis);
+                }
+                
+                const lastPageBtn = document.createElement('button');
+                lastPageBtn.className = 'page-number';
+                lastPageBtn.textContent = totalPages;
+                lastPageBtn.addEventListener('click', () => goToPage(totalPages));
+                paginationNumbers.appendChild(lastPageBtn);
+            }
+        }
+
+        // Go to specific page
+        function goToPage(page) {
+            currentPage = page;
+            updatePagination();
+        }
+
+        // Display items for current page
+        function displayCurrentPageItems() {
+            const activeTab = document.querySelector('.directory-tab.active').getAttribute('data-tab');
+            const container = activeTab === 'employees' ? document.getElementById('employeeList') : document.getElementById('leadList');
+            
+            // Clear container
+            container.innerHTML = '';
+            
+            if (filteredItems.length === 0) {
+                const noResults = document.createElement('div');
+                noResults.className = 'no-results';
+                noResults.textContent = 'No items found';
+                container.appendChild(noResults);
+                return;
+            }
+            
+            // Calculate slice indices
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = Math.min(startIndex + itemsPerPage, filteredItems.length);
+            const currentPageItems = filteredItems.slice(startIndex, endIndex);
+            
+            // Create items
+            currentPageItems.forEach(item => {
+                if (activeTab === 'employees') {
+                    createEmployeeItem(item, container);
+                } else {
+                    createLeadItem(item, container);
+                }
+            });
+            
+            // Re-attach event listeners
+            if (activeTab === 'employees') {
+                setupEmployeeAssignButtons();
+            } else {
+                setupLeadViewButtons();
+            }
+        }
+
+        // Create employee item
+        function createEmployeeItem(employee, container) {
+            const item = document.createElement('div');
+            item.className = 'employee-item';
+            item.setAttribute('data-id', employee.id);
+            item.setAttribute('data-name', employee.name);
+            
+            item.innerHTML = `
+                <div class="employee-avatar">
+                    ${employee.name.slice(0, 1).toUpperCase()}
+                </div>
+                <div class="employee-details">
+                    <div class="employee-name">${employee.name}</div>
+                    <div class="employee-role">
+                        ${employee.department}${employee.designation ? ' - ' + employee.designation : ''}
+                    </div>
+                </div>
+                <button class="assign-btn" data-id="${employee.id}" data-name="${employee.name}" data-role="employee-assign">
+                    Assign
+                </button>
+            `;
+            
+            container.appendChild(item);
+        }
+
+        // Create lead item with priority display - Consistent with lead_form.html
+        // Create lead item with priority display - Consistent with lead_form.html
+// Create lead item with priority display - Consistent with lead_form.html
+function createLeadItem(lead, container) {
+    const item = document.createElement('div');
+    item.className = 'lead-item';
+    item.setAttribute('data-id', lead.id);
+    item.setAttribute('data-name', lead.name || lead.ownerName || '');
+    item.setAttribute('data-phone', lead.phone || lead.phoneNo || '');
+    item.setAttribute('data-ticket', lead.ticket_number || '');
+    item.setAttribute('data-priority', lead.priority || 'Medium');
+    
+    // Get display values
+    const displayName = lead.name || lead.ownerName || 'Unknown';
+    const displayPhone = lead.phone || lead.phoneNo || '';
+    const displayTicket = lead.ticket_number || '';
+    const displayStatus = lead.status || 'Active';
+    
+    // Priority badge with emoji indicators - Consistent with lead_form.html
+    let priorityBadge = '';
+    let priorityColor = '';
+    let priorityText = lead.priority || 'Medium';
+    
+    if (priorityText === 'High') {
+        priorityBadge = '🔴';
+        priorityColor = '#ff4444';
+    } else if (priorityText === 'Medium') {
+        priorityBadge = '🟡';
+        priorityColor = '#ffaa00';
+    } else if (priorityText === 'Low') {
+        priorityBadge = '🟢';
+        priorityColor = '#44ff44';
+    } else {
+        // Default to Medium if no priority set
+        priorityBadge = '🟡';
+        priorityColor = '#ffaa00';
+        priorityText = 'Medium';
+    }
+    
+    item.innerHTML = `
+        <div class="lead-avatar">
+            ${displayName.slice(0, 1).toUpperCase()}
+        </div>
+        <div class="lead-details">
+            <div class="lead-name">
+                <span style="font-size: 16px; margin-right: 5px;">${priorityBadge}</span>
+                ${displayName}
+            </div>
+            <div class="lead-phone">${displayPhone}</div>
+            <div class="lead-ticket">${displayTicket}</div>
+            <div class="lead-status" style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px;">
+                <span>Status: ${displayStatus}</span>
+                <span style="color: ${priorityColor}; font-weight: 600; font-size: 10px; padding: 2px 6px; border-radius: 10px;">
+                    ${priorityText}
+                </span>
+            </div>
+        </div>
+    `;
+    
+    container.appendChild(item);
+}
+
+        // Add event listeners to employee assign buttons
+        function setupEmployeeAssignButtons() {
+            const employeeAssignButtons = document.querySelectorAll('#employeeList .assign-btn[data-role="employee-assign"]');
+            employeeAssignButtons.forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const empId = this.getAttribute('data-id');
+                    const empName = this.getAttribute('data-name');
+
+                    // Fill the form fields with employee data
+                    document.getElementById('header-name').textContent = empName;
+                    document.getElementById('header-phone').textContent = '-';
+                    document.getElementById('header-ticket').textContent = '-';
+                    document.getElementById('header-priority').textContent = '-';
+                    
+                    // Update hidden fields
+                    document.getElementById('hiddenOwnerName').value = empName;
+                    document.getElementById('hiddenPhoneNo').value = '';
+                    document.getElementById('hiddenTicketNumber').value = '';
+                    document.getElementById('hiddenPriority').value = '';
+                    
+                    // Enable submit button
+                    document.getElementById('submitRequirementsBtn').disabled = false;
+                    
+                    showTemporaryMessage(`Employee "${empName}" assigned`, 'success');
+                });
+            });
+        }
+
+        // Add event listeners to lead items for click functionality
+        // Add event listeners to lead items for click functionality
+function setupLeadViewButtons() {
+    const leadItems = document.querySelectorAll('#leadList .lead-item');
+    leadItems.forEach(item => {
+        item.addEventListener('click', function(e) {
+            e.stopPropagation();
+            
+            // Remove previous selection
+            leadItems.forEach(i => i.classList.remove('selected'));
+            
+            // Add selection to current item
+            this.classList.add('selected');
+            
+            const leadOwnerName = this.getAttribute('data-name') || '-';
+            const leadPhoneNo = this.getAttribute('data-phone') || '-';
+            const leadTicket = this.getAttribute('data-ticket') || '-';
+            const leadPriority = this.getAttribute('data-priority') || '-';
+
+            
+            // Update header display
+            document.getElementById('header-name').textContent = leadOwnerName || '-';
+            document.getElementById('header-phone').textContent = leadPhoneNo || '-';
+            document.getElementById('header-ticket').textContent = leadTicket || '-';
+            document.getElementById('header-priority').textContent = leadPriority || '-';
+            
+            // Update hidden fields
+            document.getElementById('hiddenOwnerName').value = leadOwnerName || '';
+            document.getElementById('hiddenPhoneNo').value = leadPhoneNo || '';
+            document.getElementById('hiddenTicketNumber').value = leadTicket || '';
+            document.getElementById('hiddenPriority').value = leadPriority || '';
+            
+            // Enable submit button
+            document.getElementById('submitRequirementsBtn').disabled = false;
+            
+            showTemporaryMessage(`Lead "${leadOwnerName}" selected`, 'success');
+        });
+    });
+}
+        // Show notification function
+        function showTemporaryMessage(message, type = 'info') {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 15px 20px;
+                background: ${type === 'success' ? '#4CAF50' : '#2196F3'};
+                color: white;
+                border-radius: 5px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                z-index: 10000;
+                font-weight: 600;
+                transition: all 0.3s ease;
+            `;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            // Remove after 3 seconds
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                notification.style.transform = 'translateX(100px)';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 300);
+            }, 3000);
+        }
+
+        // Tab switching functionality - Consistent with lead_form.html
+        function setupDirectoryTabs() {
+            const tabs = document.querySelectorAll('.directory-tab');
+            const employeeList = document.getElementById('employeeList');
+            const leadList = document.getElementById('leadList');
+
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const targetTab = this.getAttribute('data-tab');
+
+                    // Update active tab
+                    tabs.forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+
+                    // Show/hide appropriate list
+                    if (targetTab === 'employees') {
+                        employeeList.classList.add('active');
+                        leadList.classList.remove('active');
+                        // Hide priority filter for employees tab
+                        document.getElementById('priorityFilterContainer').style.display = 'none';
+                    } else {
+                        employeeList.classList.remove('active');
+                        leadList.classList.add('active');
+                        // Show priority filter for leads tab
+                        document.getElementById('priorityFilterContainer').style.display = 'block';
+                    }
+
+                    // Reset search and pagination
+                    document.getElementById('directorySearch').value = '';
+                    document.getElementById('priorityFilter').value = 'all';
+                    currentPage = 1;
+                    initializePagination();
+                });
+            });
+        }
+
+        // Search functionality for directory
+        function setupDirectorySearch() {
+            const searchInput = document.getElementById('directorySearch');
+
+            searchInput.addEventListener('input', function() {
+                const priority = document.getElementById('priorityFilter').value;
+                filterDirectoryItemsByPriorityAndSearch(this.value.toLowerCase(), priority);
+            });
+        }
+
+        // Initialize directory functionality
+        setupDirectoryTabs();
+        setupDirectorySearch();
+        setupPriorityFilter();
+        initializePagination();
+        
+        // Pagination button event listeners
+        prevPageBtn.addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                updatePagination();
+            }
+        });
+        
+        nextPageBtn.addEventListener('click', () => {
+            if (currentPage < totalPages) {
+                currentPage++;
+                updatePagination();
+            }
+        });
+
+        // ===== Requirements table logic =====
+        const templateOptionsHtml = document.getElementById('item-options').innerHTML;
+        const tbody = document.getElementById('table-body');
+        const addBtn = document.getElementById('add-item-btn');
+        const grandEl = document.getElementById('grand-total');
+        const submitBtn = document.getElementById('submitRequirementsBtn');
+
+        function formatNumber(n) {
+            n = parseFloat(n) || 0;
+            return n.toFixed(2);
+        }
+
+        function createRow() {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td class="sl-no"></td>
+                <td>
+                    <select name="item_id[]" class="form-control item-select" required>
+                        <option value="">-- Select Item --</option>
+                        ${templateOptionsHtml}
+                    </select>
+                </td>
+               <td><input type="text" name="unit[]" class="item-unit" readonly placeholder="Unit"></td>
+                <td><input type="number" name="price[]" class="item-price" min="0" step="0.01" placeholder="0.00" required></td>
+                <td><input type="number" name="qty[]" class="item-qty" min="1" step="1" value="1" required></td>
+                <td class="item-total">0.00</td>
+                <td><button type="button" class="delete-row delete-btn"><i class="fas fa-trash"></i></button></td>
+            `;
+            attachRowEvents(tr);
+            tbody.appendChild(tr);
+            refreshSlNos();
+        }
+
+        function refreshSlNos() {
+            document.querySelectorAll('#table-body tr').forEach((row, idx) => {
+                const cell = row.querySelector('.sl-no');
+                if (cell) cell.textContent = idx + 1;
+            });
+        }
+
+         function recalcRow(row) {
+            const priceInput = row.querySelector('.item-price');
+            const qtyInput = row.querySelector('.item-qty');
+            const totalCell = row.querySelector('.item-total');
+
+            const price = parseFloat(priceInput.value || 0);
+            const qty = parseInt(qtyInput.value || 0) || 0;
+            const total = price * qty;
+
+            totalCell.textContent = formatNumber(total);
+            recalcGrandTotal();
+        }
+
+          function recalcGrandTotal() {
+            let grand = 0;
+            document.querySelectorAll('#table-body .item-total').forEach(cell => {
+                grand += parseFloat(cell.textContent || 0);
+            });
+            grandEl.textContent = formatNumber(grand);
+        }
+
+        function attachRowEvents(row) {
+            const itemSelect = row.querySelector('.item-select');
+            const unitInput = row.querySelector('.item-unit');
+            const priceInput = row.querySelector('.item-price');
+            const qtyInput = row.querySelector('.item-qty');
+            const deleteBtn = row.querySelector('.delete-row');
+
+            if (itemSelect) {
+                itemSelect.addEventListener('change', function () {
+                    const opt = this.selectedOptions[0];
+                    if (opt && opt.value !== '') {
+                        const unit = opt.dataset.unit || '';
+                        // data-price contains MRP (floatformat:2)
+                        const price = opt.dataset.price || '0.00';
+                        if (unitInput) unitInput.value = unit;
+                        if (priceInput) priceInput.value = parseFloat(price || 0).toFixed(2);
+                    } else {
+                        if (unitInput) unitInput.value = '';
+                        if (priceInput) priceInput.value = '';
+                    }
+                    recalcRow(row);
+                });
+            }
+
+            if (priceInput) priceInput.addEventListener('input', () => recalcRow(row));
+            if (qtyInput) qtyInput.addEventListener('input', () => recalcRow(row));
+
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', function () {
+                    row.remove();
+                    refreshSlNos();
+                    recalcGrandTotal();
+                    if (document.querySelectorAll('#table-body tr').length === 0) createRow();
+                });
+            }
+        }
+
+        // create initial row
+        createRow();
+
+        // add new row button
+        if (addBtn) {
+            addBtn.addEventListener('click', function () {
+                createRow();
+            });
+        }
+
+        // Form submission validation
+        document.getElementById('requirements-form').addEventListener('submit', function(e) {
+            const ownerName = document.getElementById('hiddenOwnerName').value;
+            if (!ownerName) {
+                e.preventDefault();
+                showTemporaryMessage('Please select a lead or employee first', 'error');
+                return;
+            }
+
+            const hasItems = document.querySelectorAll('#table-body tr').length > 0;
+            if (!hasItems) {
+                e.preventDefault();
+                showTemporaryMessage('Please add at least one requirement item', 'error');
+                return;
+            }
+
+            // Show loading state
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+            submitBtn.disabled = true;
+        });
+
+        console.log('Requirements page initialized with consistent priority system');
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% block content %}
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<div class="min-h-screen bg-gradient-to-br from-purple-200 via-blue-100 to-pink-200 md:p-6">
+    <div class="mx-auto bg-white bg-opacity-90 backdrop-blur rounded-2xl shadow-2xl md:p-8">
+        <h2 class="text-3xl font-bold text-center text-gray-800 mb-8">Edit Project</h2>
+        
+        <form method="POST" class="space-y-6">
+            {% csrf_token %}
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <input type="text" name="project_name" value="{{ project.project_name }}" required placeholder="Project Name" class="p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400">
+
+                <input type="text" name="languages" value="{{ project.languages }}" placeholder="Languages" class="p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400">
+
+                <input type="text" name="technologies" value="{{ project.technologies }}" placeholder="Technologies" class="p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400">
+
+                <input type="text" name="database_name" value="{{ project.database_name }}" placeholder="Database Name" class="p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400">
+
+                <input type="text" name="domain_name" value="{{ project.domain_name }}" placeholder="Domain Name" class="p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400">
+
+                <input type="text" name="domain_platform" value="{{ project.domain_platform }}" placeholder="Domain Platform" class="p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400">
+
+                <input type="url" name="github_link" value="{{ project.github_link }}" placeholder="GitHub Link" class="p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400">
+
+                <select name="assigned_person" class="p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400" required>
+                    <option value="">-- Select Assigned Person --</option>
+                    {% for employee in employees %}
+                        <option value="{{ employee.user.id }}" {% if project.assigned_person.user.id == employee.user.id %}selected{% endif %}>
+                            {{ employee.user.username }}
+                        </option>
+                    {% endfor %}
+                </select>
+
+                <input type="text" name="client" value="{{ project.client }}" placeholder="Client" class="p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400">
+
+                <select name="project_status" class="p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400" required>
+                    <option value="Active" {% if project.project_status == 'Active' %}selected{% endif %}>Active</option>
+                    <option value="On Hold" {% if project.project_status == 'On Hold' %}selected{% endif %}>On Hold</option>
+                    <option value="Cancel" {% if project.project_status == 'Cancel' %}selected{% endif %}>Cancel</option>
+                    <option value="In Progress" {% if project.project_status == 'In Progress' %}selected{% endif %}>In Progress</option>
+                    <option value="Inactive" {% if project.project_status == 'Inactive' %}selected{% endif %}>Inactive</option>
+                </select>
+
+                <input type="text" name="project_type" value="{{ project.project_type }}" placeholder="Project Type" class="p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400">
+
+                <input type="text" name="project_duration" value="{{ project.project_duration }}" placeholder="Project Duration" class="p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400">
+                <input type="date" name="deadline" value="{{ project.deadline|date:'Y-m-d' }}" class="p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400">
+            </div>
+
+            <div>
+                <label class="block font-medium text-gray-700 mb-2">Notes:</label>
+                {{ form.media }}
+                <textarea name="notes" id="id_notes" rows="4" class="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400">{{ project.notes }}</textarea>
+            </div>
+
+            <div class="text-center">
+                <button type="submit" class="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-300">
+                    <i class="fas fa-save mr-2"></i>Update Project
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- CKEditor initialization script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ckeditor/4.17.2/ckeditor.js"></script>
+<script>
+    CKEDITOR.replace('id_notes', {
+        toolbar: [
+            { name: 'basicstyles', items: ['Bold', 'Italic', 'Underline', 'Strike'] },
+            { name: 'paragraph', items: ['NumberedList', 'BulletedList'] },
+            { name: 'styles', items: ['Styles', 'Format'] }
+        ],
+        height: 200
+    });
+</script>
+{% endblock %}
