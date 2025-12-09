@@ -511,48 +511,53 @@ from django.db import models
 
 # models.py
 import uuid
-from django.db import models
-from django.utils import timezone
-
-# app5/models.py
-from django.db import models
-from django.utils import timezone
-from django.conf import settings
-
 from django.db import models, IntegrityError, transaction
-from django.conf import settings
 from django.utils import timezone
-import uuid
+
 
 class Lead(models.Model):
+
     ASSIGNMENT_CHOICES = [
         ('self_assigned', 'Self Assigned'),
         ('unassigned', 'Unassigned'),
     ]
+
     PRIORITY_CHOICES = [
         ('High', 'High'),
         ('Medium', 'Medium'),
         ('Low', 'Low'),
     ]
 
-    assignment_type = models.CharField(
-        max_length=20, choices=ASSIGNMENT_CHOICES, default='unassigned'
+    # ----------------------------
+    # CUSTOMER TYPE (TOGGLE)
+    # ----------------------------
+    customerType = models.CharField(
+        max_length=20,
+        default='Business',   # Business or Individual
+        help_text="Determines which input group to show"
     )
+
+    # ----------------------------
+    # COMMON FIELDS
+    # ----------------------------
     ticket_number = models.CharField(max_length=30, unique=True, blank=True)
     ownerName = models.CharField(max_length=100)
     phoneNo = models.CharField(max_length=15)
     email = models.EmailField(blank=True, null=True)
-    customerType = models.CharField(max_length=20, default='Business')
 
-    # Business fields
-    name = models.CharField(max_length=100, blank=True, null=True)
+    # =====================================================
+    # BUSINESS FIELDS
+    # =====================================================
+    name = models.CharField(max_length=100, blank=True, null=True)  # Business Name
     address = models.TextField(blank=True, null=True)
     place = models.CharField(max_length=100, blank=True, null=True)
     District = models.CharField(max_length=100, blank=True, null=True)
     State = models.CharField(max_length=100, blank=True, null=True)
     pinCode = models.CharField(max_length=10, blank=True, null=True)
 
-    # Individual fields
+    # =====================================================
+    # INDIVIDUAL FIELDS
+    # =====================================================
     firstName = models.CharField(max_length=100, blank=True, null=True)
     lastName = models.CharField(max_length=100, blank=True, null=True)
     individualAddress = models.TextField(blank=True, null=True)
@@ -561,9 +566,12 @@ class Lead(models.Model):
     individualState = models.CharField(max_length=100, blank=True, null=True)
     individualPinCode = models.CharField(max_length=10, blank=True, null=True)
 
-    # Business information
+    # =====================================================
+    # GENERAL LEAD INFO
+    # =====================================================
     status = models.CharField(max_length=20, default='Active')
-    priority = models.CharField( max_length=20,choices=PRIORITY_CHOICES,default='High',help_text="Lead priority level")
+    priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default='High')
+
     refFrom = models.CharField(max_length=100, blank=True, null=True)
     business = models.CharField(max_length=100, blank=True, null=True)
     campaign = models.CharField(max_length=255, blank=True, null=True)
@@ -573,61 +581,73 @@ class Lead(models.Model):
     details = models.TextField(blank=True, null=True)
     date = models.DateField(default=timezone.now)
 
-    # Assignment fields
-    
+    # =====================================================
+    # ASSIGNMENT INFO
+    # =====================================================
+    assignment_type = models.CharField(
+        max_length=20,
+        choices=ASSIGNMENT_CHOICES,
+        default='unassigned'
+    )
+
     assigned_to_name = models.CharField(max_length=150, blank=True, null=True)
     assigned_by_name = models.CharField(max_length=150, blank=True, null=True)
     assigned_date = models.DateField(null=True, blank=True)
     assigned_time = models.TimeField(null=True, blank=True)
 
+    # =====================================================
+    # META FIELDS
+    # =====================================================
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    # =====================================================
+    # AUTO TICKET NUMBER GENERATION
+    # =====================================================
     def save(self, *args, **kwargs):
-        """
-        Generate ticket if missing: TKT-YYYYMMDD-XXXX
-        Use retry loop to avoid unique constraint errors under concurrency.
-        Fall back to UUID suffix if retries exhausted.
-        """
         if not self.ticket_number:
             date_part = timezone.now().strftime('%Y%m%d')
-            max_attempts = 5
 
-            for attempt in range(max_attempts):
-                # compute sequential part based on how many leads exist today
-                today_count = Lead.objects.filter(created_at__date=timezone.now().date()).count()
+            for attempt in range(5):
+                today_count = Lead.objects.filter(
+                    created_at__date=timezone.now().date()
+                ).count()
                 seq = str(today_count + 1).zfill(4)
-                candidate = f"TKT-{date_part}-{seq}"
-                self.ticket_number = candidate
+                trial = f"TKT-{date_part}-{seq}"
+
+                self.ticket_number = trial
 
                 try:
-                    # Try to save within a transaction; IntegrityError means collision
                     with transaction.atomic():
                         super().save(*args, **kwargs)
-                    return  # saved successfully
+                    return
                 except IntegrityError:
-                    # collision — try again (recompute count)
-                    if attempt == max_attempts - 1:
-                        # last attempt failed — fall back to UUID-style ticket and save once
-                        fallback_suffix = uuid.uuid4().hex[:6].upper()
-                        self.ticket_number = f"TKT-{date_part}-{fallback_suffix}"
-                        with transaction.atomic():
-                            super().save(*args, **kwargs)
-                        return
-                    # otherwise loop and retry
+                    continue
+
+            # FINAL FALLBACK
+            fallback = uuid.uuid4().hex[:6].upper()
+            self.ticket_number = f"TKT-{date_part}-{fallback}"
+            with transaction.atomic():
+                super().save(*args, **kwargs)
 
         else:
-            # ticket already present (manual or editing) — normal save
             super().save(*args, **kwargs)
 
-    def __str__(self):
-        return f"{self.ticket_number} - {self.ownerName}"
-
+    # =====================================================
+    # SMART DISPLAY NAME FOR DIRECTORY
+    # =====================================================
     @property
     def display_name(self):
-        if self.customerType == 'Business':
+        if self.customerType == "Business":
             return self.name or self.ownerName
-        return f"{self.firstName or ''} {self.lastName or ''}".strip() or self.ownerName
+        else:
+            fullname = f"{self.firstName or ''} {self.lastName or ''}".strip()
+            return fullname or self.ownerName
+
+    def __str__(self):
+        return f"{self.ticket_number} - {self.display_name}"
+
+
 
 
 from django.db import models
@@ -695,6 +715,165 @@ class Reference(models.Model):
     def __str__(self):
         return self.ref_name
     
+
+
+    # Add these models to your app5/quotation models.py file
+
+from django.db import models
+from django.utils import timezone
+from purchase_order.models import Item
+
+class Quotation(models.Model):
+    STATUS_CHOICES = [
+        ('draft', 'Draft'),
+        ('sent', 'Sent'),
+        ('accepted', 'Accepted'),
+        ('rejected', 'Rejected'),
+        ('expired', 'Expired'),
+    ]
+    
+    # Quotation identification
+    quotation_number = models.CharField(max_length=50, unique=True)
+    
+    # Lead reference
+    lead = models.ForeignKey(
+        'Lead', 
+        on_delete=models.CASCADE, 
+        related_name='quotations',
+        null=True,
+        blank=True
+    )
+    
+    # Client information
+    client_name = models.CharField(max_length=200)
+    client_phone = models.CharField(max_length=20)
+    client_email = models.EmailField(blank=True, null=True)
+    company_name = models.CharField(max_length=200, blank=True, null=True)
+    
+    # Quotation details
+    quotation_date = models.DateField(default=timezone.now)
+    valid_until = models.DateField()
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
+    
+    # Financial details
+    subtotal = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    total_discount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    total_tax = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    grand_total = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    
+    # Additional information
+    notes = models.TextField(blank=True, null=True)
+    terms_conditions = models.TextField(blank=True, null=True)
+    
+    # Metadata
+    created_by = models.ForeignKey(
+        'app1.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='created_quotations'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Quotation'
+        verbose_name_plural = 'Quotations'
+    
+    def __str__(self):
+        return f"{self.quotation_number} - {self.client_name}"
+    
+    @property
+    def is_expired(self):
+        """Check if quotation has expired"""
+        return timezone.now().date() > self.valid_until
+    
+    def save(self, *args, **kwargs):
+        # Auto-generate quotation number if not provided
+        if not self.quotation_number:
+            from django.db.models import Max
+            last_quote = Quotation.objects.aggregate(Max('id'))['id__max'] or 0
+            self.quotation_number = f"QT-{timezone.now().strftime('%Y%m%d')}-{(last_quote + 1):04d}"
+        super().save(*args, **kwargs)
+
+
+class QuotationItem(models.Model):
+    quotation = models.ForeignKey(
+        Quotation,
+        on_delete=models.CASCADE,
+        related_name='items'
+    )
+    
+    # Item reference
+    item = models.ForeignKey(
+        'purchase_order.Item',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
+    item_name = models.CharField(max_length=200)  # Snapshot of item name
+    
+    # Item details
+    description = models.TextField(blank=True, null=True)
+    quantity = models.DecimalField(max_digits=10, decimal_places=2, default=1)
+    unit = models.CharField(max_length=50, default='pcs')
+    
+    # Pricing
+    entry_rate = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    sales_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    
+    # Discounts and taxes
+    discount_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    discount_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    tax_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    tax_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    
+    # Total
+    line_total = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    
+    # Additional info
+    hsn_code = models.CharField(max_length=20, blank=True, null=True)
+    notes = models.TextField(blank=True, null=True)
+    
+    # Order
+    order = models.PositiveIntegerField(default=0)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['order', 'id']
+        verbose_name = 'Quotation Item'
+        verbose_name_plural = 'Quotation Items'
+    
+    def __str__(self):
+        return f"{self.item_name} - Qty: {self.quantity}"
+    
+    def calculate_totals(self):
+        """Calculate all totals for this item"""
+        # Use sales_price as base, fallback to unit_price
+        base_price = self.sales_price if self.sales_price > 0 else self.unit_price
+        
+        # Calculate discount
+        self.discount_amount = (base_price * self.quantity) * (self.discount_percentage / 100)
+        
+        # Calculate amount after discount
+        amount_after_discount = (base_price * self.quantity) - self.discount_amount
+        
+        # Calculate tax
+        self.tax_amount = amount_after_discount * (self.tax_percentage / 100)
+        
+        # Calculate line total
+        self.line_total = amount_after_discount + self.tax_amount
+        
+        return self.line_total
+    
+    def save(self, *args, **kwargs):
+        # Auto-calculate totals before saving
+        self.calculate_totals()
+        super().save(*args, **kwargs)
 
     
 

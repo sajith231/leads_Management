@@ -88,6 +88,7 @@ urlpatterns = [
     path("lead-report/", views.lead_report_view, name="lead_report"),
     # app5/urls.py
    path('lead/<int:lead_id>/edit/', views.lead_edit, name='lead_edit'),  
+   path('lead/edit/<int:lead_id>/', views.lead_edit, name='lead_edit'),
    path('lead/delete/<int:lead_id>/', views.lead_delete, name='lead_delete'),
    path('api/lead/<int:lead_id>/', views.lead_detail_api, name='lead_detail_api'),
    path('requirements-list/', views.requirement_list, name='requirement_list'),
@@ -121,10 +122,15 @@ urlpatterns = [
     # QUOTATION
     path('quotation/', views.quotation_list_view, name='quotation_list'),   # List page
     path('quotation/create/', views.quotation_form_view, name='quotation_form'),  # Add new quotation
+    path("get-quotation-items/", views.get_quotation_items_api, name="get_quotation_items"),
+    path('api/get-quotation-items/', views.get_quotation_items_api, name='get_quotation_items'),
+    path('submit-quotation/', views.quotation_submit, name='quotation_submit'),
+    path('quotation/<int:quotation_id>/delete/', views.quotation_delete, name='quotation_delete'),
+    path('quotation/edit/<int:quotation_id>/', views.edit_quotation, name='quotation_edit'),
+    path('quotation/<int:pk>/update/', views.update_quotation, name='quotation_update'),
 
-
-
-     path('state/', views.state_list, name='state_master_list'),  # Changed to state_master_list
+    
+    path('state/', views.state_list, name='state_master_list'),  # Changed to state_master_list
     path('state/create/', views.state_master_create, name='state_master_create'),
     path('state/<int:id>/edit/', views.state_master_edit, name='state_master_edit'),
     path('state/<int:id>/delete/', views.state_master_delete, name='state_master_delete'),

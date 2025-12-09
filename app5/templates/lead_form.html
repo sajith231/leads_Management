@@ -1,3 +1,4 @@
+
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -1156,10 +1157,6 @@
             white-space: nowrap !important;
         }
 
-        .time-elapsed-badge i {
-            font-size: 8px !important;
-        }
-
         .time-elapsed-badge.time-recent {
             background: rgba(34, 197, 94, 0.15) !important;
             color: #16a34a !important;
@@ -1224,7 +1221,7 @@
         /* Campaign dropdown badge */
         .campaign-badge {
             display: inline-block;
-            background: #4a6fdc;
+            
             color: white;
             padding: 2px 6px;
             border-radius: 3px;
@@ -1365,6 +1362,135 @@
 
         .campaign-stats-summary i {
             margin-right: 3px;
+        }
+
+        /* Style for new firm option */
+        .select-option.new-firm {
+            color: #4CAF50;
+            font-weight: 600;
+            background-color: rgba(76, 175, 80, 0.1);
+            border-left: 3px solid #4CAF50;
+        }
+
+        .select-option.new-firm:hover {
+            background-color: rgba(76, 175, 80, 0.2);
+        }
+
+        .select-option.new-firm::before {
+            content: "✚ ";
+            font-weight: bold;
+            margin-right: 5px;
+        }
+
+        /* API Customer Tooltip Styles */
+        .api-customer-tooltip {
+            position: absolute;
+            background: white;
+            border: 1px solid #4a6fdc;
+            border-radius: 6px;
+            padding: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 10000;
+            max-width: 300px;
+            font-size: 12px;
+            pointer-events: none;
+        }
+
+        /* API indicator in dropdown */
+        .select-option .campaign-badge {
+           
+            color: white;
+            font-size: 10px;
+            padding: 1px 6px;
+            border-radius: 3px;
+            margin-left: 8px;
+        }
+
+        /* Firm source badge */
+        #firmSourceBadge {
+            margin-left: 5px;
+            font-size: 10px;
+            padding: 2px 6px;
+            
+            color: white;
+            border-radius: 3px;
+            vertical-align: middle;
+        }
+
+        /* API data source indicator */
+        .api-source-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: #f0f7ff;
+            border: 1px solid #4a6fdc;
+            border-radius: 4px;
+            padding: 2px 6px;
+            font-size: 10px;
+            color: #4a6fdc;
+            margin-left: 5px;
+        }
+
+        /* Hover effects for API options */
+        .select-option[data-is-api="true"]:hover {
+            background: #f0f7ff;
+            border-left: 3px solid #4a6fdc;
+        }
+
+        /* API customer details section */
+        #apiCustomerDetails {
+            border: 1px solid #4a6fdc;
+            background: #f8faff;
+        }
+
+        #apiCustomerDetails strong {
+            color: #4a6fdc;
+        }
+
+        /* First letter search styles */
+        .first-letter-search-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            margin-bottom: 8px;
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+            background: #f9f9f9;
+            max-height: 70px;
+            overflow-y: auto;
+        }
+
+        .letter-btn {
+            padding: 4px 8px;
+            
+            border-radius: 4px;
+            background: white;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            min-width: 24px;
+            text-align: center;
+        }
+
+        .letter-btn:hover {
+            background: #e3f2fd;
+            border-color: #4a6fdc;
+            color: #4a6fdc;
+        }
+
+       
+
+        .letter-btn.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: #f5f5f5;
+        }
+
+        .letter-count {
+            font-size: 9px;
+            color: #666;
+            margin-left: 2px;
         }
 
         @media (max-width: 1200px) {
@@ -1854,7 +1980,7 @@
 
                             </li>
                             <li class="nav-item">
-                                <a href="{% url 'app5:quotation_list' %}" class="nav-link">
+                                <a href="{% url 'app5:quotation_form' %}" class="nav-link">
                                     <i class="fas fa-briefcase"></i> Quotation
                                 </a>
                             </li>
@@ -1931,9 +2057,39 @@
                                     
                                     <!-- Business fields (shown by default) -->
                                     <div class="business-fields">
+                                        <!-- Searchable Firm Name Field with API Data -->
                                         <div class="compact-form-group">
-                                            <label for="name">Firm Name *</label>
-                                            <input type="text" id="name" name="name" required>
+                                            <label for="name">
+                                                Firm Name * 
+                                                <span id="firmSourceBadge" class="campaign-badge">
+                                                   
+                                                </span>
+                                            </label>
+                                            <div class="select-search-container" id="firmNameContainer">
+                                                <input type="text" class="select-search-input" id="nameSearch" 
+                                                       placeholder="Search from {{ api_data_count }} API customers or type new firm..." 
+                                                       title="Connected to customer API - {{ api_data_count }} records available">
+                                                <i class="fas fa-times select-clear-icon" id="firmNameClear"></i>
+                                                <i class="fas fa-chevron-down select-search-icon"></i>
+                                                <!-- First letter search buttons will be added here by JavaScript -->
+                                                <div class="select-options" id="firmNameOptions"></div>
+                                            </div>
+                                            <input type="text" id="name" name="name" style="display: none;">
+                                            
+                                            <!-- API Customer Details (hidden by default) -->
+                                            <div id="apiCustomerDetails" class="campaign-details-section" style="display: none; margin-top: 8px;">
+                                                <div class="campaign-detail-item">
+                                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                                                        <strong>Customer Details</strong>
+                                                        <button type="button" onclick="closeApiCustomerDetails()" style="background: none; border: none; color: #666; cursor: pointer;">
+                                                            <i class="fas fa-times"></i>
+                                                        </button>
+                                                    </div>
+                                                    <div id="apiCustomerInfo" style="font-size: 12px; line-height: 1.4;">
+                                                        <!-- Customer details will be populated here -->
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                         
                                         <div class="compact-form-group">
@@ -2082,7 +2238,7 @@
                                     <!-- CAMPAIGN DETAILS FIELD WITH DISPLAY -->
                                     <div class="compact-form-group">
     <label for="campaign">Campaign Details 
-        <span class="campaign-badge">{{ campaigns|length }} campaigns</span>
+        <span class="campaign-badge"></span>
     </label>
     
     <select id="campaign" name="campaign" class="form-control" onchange="displayCampaignDetails(this)">
@@ -2109,7 +2265,6 @@
         </small>
     {% endif %}
 </div>
-
 
 
 
@@ -2211,6 +2366,10 @@ document.addEventListener('DOMContentLoaded', function() {
     let isRefFromOpen = false;
     let currentRefFromIndex = -1;
     
+    // Firm Name searchable select Variables
+    let isFirmNameOpen = false;
+    let currentFirmNameIndex = -1;
+    
     // Create lookup maps for marketedBy and branch
     const marketedByMap = {
         {% for user in active_users %}
@@ -2224,6 +2383,15 @@ document.addEventListener('DOMContentLoaded', function() {
         {% endfor %}
     };
 
+    // Existing firms data (should come from backend)
+    // Existing firms from backend
+const existingFirms = [
+    {% for firm in existing_firms %}
+        "{{ firm|escapejs }}",
+    {% endfor %}
+];
+
+
     // Campaign data map with complete structure
     const campaignMap = {};
     {% for campaign in campaigns %}
@@ -2232,17 +2400,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 id: "{{ campaign.campaign_unique_id|escapejs }}",
                 name: "{{ campaign.campaign_name|escapejs }}",
                 software: "{{ campaign.software_name|escapejs|default:'' }}",
-                // status: "{{ campaign.status|escapejs|default:'draft' }}",
-                // fromDate: "{{ campaign.from_date|date:'d M, Y'|escapejs }}",
-                // toDate: "{{ campaign.to_date|date:'d M, Y'|escapejs }}",
-                // days: "{{ campaign.number_of_days|escapejs }}",
-                // location: "{{ campaign.location|escapejs|default:'Not specified' }}",
-                // amount: "{{ campaign.total_amount|escapejs }}",
-                // reach: "{{ campaign.total_reach|default:0|escapejs }}",
-                // impression: "{{ campaign.total_impression|default:0|escapejs }}",
-                // leads: "{{ campaign.total_leads|default:0|escapejs }}",
-                // fullName: "{{ campaign.campaign_unique_id|escapejs }} - {{ campaign.campaign_name|escapejs }}{% if campaign.software_name %} ({{ campaign.software_name|escapejs }}){% endif %}{% if campaign.status %} [{{ campaign.status|title|escapejs }}]{% endif %}",
-                // displayName: "{{ campaign.campaign_unique_id|escapejs }} - {{ campaign.campaign_name|escapejs }}"
+                status: "{{ campaign.status|escapejs|default:'draft' }}",
+                fromDate: "{{ campaign.from_date|date:'d M, Y'|escapejs }}",
+                toDate: "{{ campaign.to_date|date:'d M, Y'|escapejs }}",
+                days: "{{ campaign.number_of_days|escapejs }}",
+                location: "{{ campaign.location|escapejs|default:'Not specified' }}",
+                amount: "{{ campaign.total_amount|escapejs }}",
+                reach: "{{ campaign.total_reach|default:0|escapejs }}",
+                impression: "{{ campaign.total_impression|default:0|escapejs }}",
+                leads: "{{ campaign.total_leads|default:0|escapejs }}",
+                fullName: "{{ campaign.campaign_unique_id|escapejs }} - {{ campaign.campaign_name|escapejs }}{% if campaign.software_name %} ({{ campaign.software_name|escapejs }}){% endif %}{% if campaign.status %} [{{ campaign.status|title|escapejs }}]{% endif %}",
+                displayName: "{{ campaign.campaign_unique_id|escapejs }} - {{ campaign.campaign_name|escapejs }}"
             };
         {% endif %}
     {% endfor %}
@@ -2302,11 +2470,34 @@ document.addEventListener('DOMContentLoaded', function() {
         {% endfor %}
     ];
 
-    console.log('📊 Campaign Data Loaded:');
-    console.log('Total campaigns in map:', Object.keys(campaignMap).length);
-    console.log('Sample campaign:', Object.keys(campaignMap)[0] ? campaignMap[Object.keys(campaignMap)[0]] : 'No campaigns');
-    console.log('Total leads:', leads.length);
-    console.log('Total employees:', employees.length);
+    // ========== API CUSTOMER DATA FUNCTIONS ==========
+
+    // Store API customer data from Django context
+    const apiCustomerData = [
+        {% for customer in api_customer_data %}
+        {
+            code: "{{ customer.code|escapejs }}",
+            name: "{{ customer.name|escapejs }}",
+            address: "{{ customer.address|escapejs }}",
+            address3: "{{ customer.address3|escapejs }}",
+            branch: "{{ customer.branch|escapejs }}",
+            district: "{{ customer.district|escapejs }}",
+            state: "{{ customer.state|escapejs }}",
+            mobile: "{{ customer.mobile|escapejs }}",
+            software: "{{ customer.software|escapejs }}",
+            nature: "{{ customer.nature|escapejs }}",
+            rout: "{{ customer.rout|escapejs }}",
+            installationdate: "{{ customer.installationdate|escapejs }}"
+        }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ];
+
+    console.log('📡 API Customer Data Loaded:', apiCustomerData.length, 'customers');
+    console.log('📊 Total leads:', leads.length);
+    console.log('👥 Total employees:', employees.length);
+    console.log('🎯 Campaigns available:', Object.keys(campaignMap).length);
+    console.log('🏢 Existing firms:', existingFirms.length);
+    console.log('📡 API Customers:', apiCustomerData.length);
 
     // ========== DATE FUNCTIONS ==========
 
@@ -2420,6 +2611,611 @@ document.addEventListener('DOMContentLoaded', function() {
         setInterval(updateDirectoryDateDisplay, 60000);
     }
 
+    // ========== FIRST LETTER SEARCH FUNCTIONALITY ==========
+
+    /**
+     * Create first letter search buttons
+     */
+    function createFirstLetterSearchButtons() {
+        const firmNameOptions = document.getElementById('firmNameOptions');
+        if (!firmNameOptions) return;
+        
+        // Create container for letter buttons
+        const letterContainer = document.createElement('div');
+        letterContainer.className = 'first-letter-search-container';
+        letterContainer.id = 'firstLetterSearchContainer';
+        
+        // Get all unique first letters from combined firms
+        const allFirms = [...new Set([...existingFirms, ...apiCustomerData.map(c => c.name)])];
+        const letters = {};
+        
+        allFirms.forEach(firm => {
+            if (firm && firm.trim()) {
+                const firstLetter = firm.trim().charAt(0).toUpperCase();
+                if (!letters[firstLetter]) {
+                    letters[firstLetter] = 0;
+                }
+                letters[firstLetter]++;
+            }
+        });
+        
+        // Create A-Z buttons
+        const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+        
+        
+        
+        // Add "All" button
+        const allButton = document.createElement('button');
+        allButton.className = 'letter-btn active';
+        
+        allButton.title = 'Show all firms';
+        allButton.addEventListener('click', function() {
+            resetFirstLetterFilter();
+            setActiveLetterButton('ALL');
+        });
+        letterContainer.appendChild(allButton);
+        
+        // Insert before the options container
+        firmNameOptions.parentNode.insertBefore(letterContainer, firmNameOptions);
+    }
+    
+    /**
+     * Filter firms by first letter
+     */
+    function filterFirmsByFirstLetter(letter) {
+        const searchInput = document.getElementById('nameSearch');
+        searchInput.value = letter;
+        searchInput.focus();
+        
+        // Trigger input event to filter
+        const event = new Event('input', { bubbles: true });
+        searchInput.dispatchEvent(event);
+    }
+    
+    /**
+     * Reset first letter filter
+     */
+    function resetFirstLetterFilter() {
+        const searchInput = document.getElementById('nameSearch');
+        searchInput.value = '';
+        
+        // Trigger input event to show all
+        const event = new Event('input', { bubbles: true });
+        searchInput.dispatchEvent(event);
+    }
+    
+    /**
+     * Set active letter button
+     */
+    
+
+    // ========== API CUSTOMER SEARCH FUNCTIONS ==========
+
+    /**
+     * Initialize Firm Name search with API data
+     */
+    function initializeFirmNameSearch() {
+        const firmNameInput = document.getElementById('name');
+        const firmNameSearch = document.getElementById('nameSearch');
+        const firmNameOptions = document.getElementById('firmNameOptions');
+        const firmNameClear = document.getElementById('firmNameClear');
+        
+        if (!firmNameInput || !firmNameSearch || !firmNameOptions) return;
+
+        // Create first letter search buttons
+        createFirstLetterSearchButtons();
+
+        // Combine API firms with local firms
+        const allFirms = [...new Set([...existingFirms, ...apiCustomerData.map(c => c.name)])];
+        
+        // Create a map for quick lookup
+        const firmDataMap = {};
+        apiCustomerData.forEach(customer => {
+            firmDataMap[customer.name] = customer;
+        });
+
+        // Populate options
+        function populateFirmNameOptions(filter = '') {
+            firmNameOptions.innerHTML = '';
+            
+            // Filter options
+            let filteredOptions = allFirms.filter(firm => {
+                if (!firm) return false;
+                
+                // First letter filter - check if filter is a single letter
+                if (filter.length === 1 && /^[A-Za-z]$/.test(filter)) {
+                    return firm.trim().toLowerCase().startsWith(filter.toLowerCase());
+                }
+                
+                // Regular text search
+                return firm.toLowerCase().includes(filter.toLowerCase());
+            });
+            
+            // Sort: exact matches first, then by name
+            filteredOptions.sort((a, b) => {
+                const aExact = a.toLowerCase() === filter.toLowerCase();
+                const bExact = b.toLowerCase() === filter.toLowerCase();
+                if (aExact && !bExact) return -1;
+                if (!aExact && bExact) return 1;
+                return a.localeCompare(b);
+            });
+            
+            // Add API indicator and details
+            filteredOptions.forEach((firm, index) => {
+                const optionElement = document.createElement('div');
+                optionElement.className = 'select-option';
+                
+                // Check if firm is from API
+                const isFromAPI = firmDataMap[firm];
+                
+                // Get first letter for styling
+                const firstLetter = firm.charAt(0).toUpperCase();
+                
+                // Create option content with API indicator
+                let optionContent = `
+                    <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
+                        <div style="width: 24px; height: 24px; border-radius: 50%; background: #4a6fdc; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 11px;">
+                            ${firstLetter}
+                        </div>
+                        <div style="flex: 1; min-width: 0;">
+                `;
+                
+                optionContent += `<div style="font-weight: 600; margin-bottom: 2px;">${firm}</div>`;
+                
+                if (isFromAPI) {
+                    optionContent += `<div style="font-size: 11px; color: #666; display: flex; align-items: center; gap: 5px;">
+                        <i class="fas fa-database" style="color: #4a6fdc; font-size: 10px;"></i>
+                        <span>API Customer</span>
+                    </div>`;
+                }
+                
+                optionContent += `</div>`;
+                
+                if (isFromAPI) {
+                    optionContent += `<span class="campaign-badge" style=" font-size: 10px; padding: 1px 6px;">
+                        
+                    </span>`;
+                }
+                
+                optionContent += `</div>`;
+                
+                optionElement.innerHTML = optionContent;
+                optionElement.dataset.value = firm;
+                optionElement.dataset.index = index;
+                optionElement.dataset.isApi = isFromAPI ? 'true' : 'false';
+                optionElement.dataset.firstLetter = firstLetter;
+                
+                // Add click handler
+                optionElement.addEventListener('click', function() {
+                    selectFirmNameOption(this, false);
+                    
+                    // If this is an API customer, show details AND auto-fill
+                    if (isFromAPI) {
+                        showApiCustomerDetails(firmDataMap[firm]);
+                        autoFillFromApiCustomer(firmDataMap[firm]);
+                    } else {
+                        closeApiCustomerDetails();
+                    }
+                });
+                
+                // Add hover effect to show API details
+                if (isFromAPI) {
+                    optionElement.addEventListener('mouseenter', function() {
+                        const customer = firmDataMap[firm];
+                        showApiCustomerTooltip(this, customer);
+                    });
+                    
+                    optionElement.addEventListener('mouseleave', function() {
+                        hideApiCustomerTooltip();
+                    });
+                }
+                
+                firmNameOptions.appendChild(optionElement);
+            });
+            
+            // Add "Create new" option if filter doesn't match existing firms and filter is not empty
+            // if (filter && filter.trim() && !filteredOptions.some(f => f.toLowerCase() === filter.toLowerCase())) {
+            //     const newOption = document.createElement('div');
+            //     newOption.className = 'select-option new-firm';
+            //     newOption.innerHTML = `
+            //         <div style="display: flex; align-items: center; gap: 8px;">
+            //             <i class="fas fa-plus-circle" style="color: #4CAF50; font-size: 16px;"></i>
+            //             <div>
+            //                 <div style="font-weight: 600;">Create new firm</div>
+            //                 <div style="font-size: 12px; color: #666;">"${filter}"</div>
+            //             </div>
+            //         </div>
+            //     `;
+            //     newOption.dataset.value = filter;
+                
+            //     newOption.addEventListener('click', function() {
+            //         selectFirmNameOption(this, true);
+            //         closeApiCustomerDetails();
+            //         showNotification(`New firm "${filter}" will be created`, 'info');
+            //     });
+                
+            //     firmNameOptions.insertBefore(newOption, firmNameOptions.firstChild);
+            // }
+            
+            if (filteredOptions.length === 0 && !filter) {
+                const noResults = document.createElement('div');
+                noResults.className = 'no-results-option';
+                noResults.innerHTML = `
+                    <div style="text-align: center; padding: 10px;">
+                        <i class="fas fa-database" style="font-size: 20px; color: #ccc; margin-bottom: 5px;"></i>
+                        <div>No firms found</div>
+                        <small style="color: #999;">API returned {{ api_data_count }} customers</small>
+                    </div>
+                `;
+                firmNameOptions.appendChild(noResults);
+            }
+            
+            // Reset current index
+            currentFirmNameIndex = -1;
+        }
+        
+        // Show API customer details
+        function showApiCustomerDetails(customer) {
+            const detailsDiv = document.getElementById('apiCustomerDetails');
+            const infoDiv = document.getElementById('apiCustomerInfo');
+            
+            let detailsHTML = `
+                <div style="margin-bottom: 5px;">
+                    <strong><i class="fas fa-building"></i> ${customer.name}</strong>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px; font-size: 11px;">
+            `;
+            
+           
+            if (customer.mobile) detailsHTML += `<div><i class="fas fa-phone"></i> Mobile: ${customer.mobile}</div>`;
+            if (customer.branch) detailsHTML += `<div><i class="fas fa-code-branch"></i> Branch: ${customer.branch}</div>`;
+            
+            
+            detailsHTML += '</div>';
+            
+            infoDiv.innerHTML = detailsHTML;
+            detailsDiv.style.display = 'block';
+            
+            // Update firm source badge
+            const badge = document.getElementById('firmSourceBadge');
+            badge.innerHTML = ' ';
+            badge.style.background = '#4a6fdc';
+        }
+        
+        // Auto-fill form fields from API customer data
+        function autoFillFromApiCustomer(customer) {
+            console.log('🔍 Auto-filling form from API customer:', customer.name);
+            
+            // Fill address if empty
+            if (customer.address && customer.address.trim()) {
+                document.getElementById('address').value = customer.address.trim();
+            }
+            
+            // Fill place (from address3) if empty
+            if (customer.address3 && customer.address3.trim()) {
+                document.getElementById('place').value = customer.address3.trim();
+            }
+            
+            // Fill district if empty
+            if (customer.district && customer.district.trim()) {
+                document.getElementById('District').value = customer.district.trim();
+            }
+            
+            // Fill state if empty
+            if (customer.state && customer.state.trim()) {
+                document.getElementById('State').value = customer.state.trim();
+            }
+            
+            // Fill phone if empty
+            if (customer.mobile && customer.mobile.trim() && !document.getElementById('phoneNo').value) {
+                document.getElementById('phoneNo').value = customer.mobile.trim();
+            }
+            
+            // Fill business nature if empty
+            if (customer.nature && customer.nature.trim()) {
+                document.getElementById('business').value = customer.nature.trim();
+            }
+            
+            // Fill branch if empty - with exact matching
+            if (customer.branch && customer.branch.trim()) {
+                const branchSelect = document.getElementById('requirement');
+                if (branchSelect) {
+                    // First try exact match
+                    let found = false;
+                    for (let i = 0; i < branchSelect.options.length; i++) {
+                        if (branchSelect.options[i].text.toLowerCase() === customer.branch.trim().toLowerCase()) {
+                            branchSelect.selectedIndex = i;
+                            found = true;
+                            break;
+                        }
+                    }
+                    
+                    // If not found, try partial match
+                    if (!found) {
+                        for (let i = 0; i < branchSelect.options.length; i++) {
+                            if (branchSelect.options[i].text.toLowerCase().includes(customer.branch.trim().toLowerCase())) {
+                                branchSelect.selectedIndex = i;
+                                found = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Show notification
+            showNotification(`✅ Auto-filled details for: ${customer.name}`, 'success');
+            
+            // Log what was filled
+            console.log('Auto-filled fields for:', customer.name, {
+                address: customer.address,
+                place: customer.address3,
+                district: customer.district,
+                state: customer.state,
+                mobile: customer.mobile,
+                nature: customer.nature,
+                branch: customer.branch
+            });
+        }
+        
+        // Close API customer details
+        function closeApiCustomerDetails() {
+            const detailsDiv = document.getElementById('apiCustomerDetails');
+            detailsDiv.style.display = 'none';
+            
+            // Reset firm source badge
+            const badge = document.getElementById('firmSourceBadge');
+            badge.innerHTML = '<i class="fas fa-database"></i> API';
+            badge.style.background = '';
+        }
+        
+        // Tooltip for API customers
+        let apiCustomerTooltip = null;
+        
+        function showApiCustomerTooltip(element, customer) {
+            if (apiCustomerTooltip) {
+                apiCustomerTooltip.remove();
+            }
+            
+            apiCustomerTooltip = document.createElement('div');
+            apiCustomerTooltip.className = 'api-customer-tooltip';
+            apiCustomerTooltip.style.cssText = `
+                position: absolute;
+                background: white;
+                border: 1px solid #4a6fdc;
+                border-radius: 6px;
+                padding: 10px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                z-index: 10000;
+                max-width: 300px;
+                font-size: 12px;
+                pointer-events: none;
+            `;
+            
+            let tooltipHTML = `
+                <div style="color: #4a6fdc; font-weight: bold; margin-bottom: 5px;">
+                    
+                </div>
+                <div style="margin-bottom: 3px;"><strong>${customer.name}</strong></div>
+            `;
+            
+            if (customer.code) tooltipHTML += `<div><small>Code: ${customer.code}</small></div>`;
+            if (customer.branch) tooltipHTML += `<div><small>Branch: ${customer.branch}</small></div>`;
+            if (customer.district) tooltipHTML += `<div><small>Location: ${customer.district}, ${customer.state}</small></div>`;
+            
+            tooltipHTML += `<div style="margin-top: 5px; color: #666; font-style: italic;">
+                <small>Click to select and view full details</small>
+            </div>`;
+            
+            apiCustomerTooltip.innerHTML = tooltipHTML;
+            
+            const rect = element.getBoundingClientRect();
+            apiCustomerTooltip.style.top = `${rect.top - apiCustomerTooltip.offsetHeight - 5}px`;
+            apiCustomerTooltip.style.left = `${rect.left}px`;
+            
+            document.body.appendChild(apiCustomerTooltip);
+        }
+        
+        function hideApiCustomerTooltip() {
+            if (apiCustomerTooltip) {
+                apiCustomerTooltip.remove();
+                apiCustomerTooltip = null;
+            }
+        }
+        
+        // Select firm name option
+        function selectFirmNameOption(optionElement, isNew = false) {
+            const firmValue = optionElement.dataset.value;
+            firmNameSearch.value = firmValue;
+            firmNameInput.value = firmValue;
+            
+            // Remove selected class from all options
+            document.querySelectorAll('#firmNameOptions .select-option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            
+            // Add selected class to current option
+            optionElement.classList.add('selected');
+            
+            // Update clear button visibility
+            updateFirmNameClearButton();
+            
+            // Close dropdown
+            closeFirmNameDropdown();
+            
+            if (isNew) {
+                showNotification(`New firm "${firmValue}" will be created`, 'info');
+                closeApiCustomerDetails();
+            }
+            
+            // Log selection
+            console.log('Selected firm:', firmValue, 'From API:', optionElement.dataset.isApi === 'true');
+        }
+        
+        // Update clear button visibility
+        function updateFirmNameClearButton() {
+            if (firmNameSearch.value) {
+                firmNameClear.classList.add('active');
+            } else {
+                firmNameClear.classList.remove('active');
+            }
+        }
+        
+        // Open dropdown
+        function openFirmNameDropdown() {
+            firmNameOptions.classList.add('active');
+            firmNameSearch.classList.add('active');
+            firmNameSearch.readOnly = false;
+            firmNameSearch.focus();
+            isFirmNameOpen = true;
+            populateFirmNameOptions(firmNameSearch.value);
+        }
+        
+        // Close dropdown
+        function closeFirmNameDropdown() {
+            firmNameOptions.classList.remove('active');
+            firmNameSearch.classList.remove('active');
+            firmNameSearch.readOnly = true;
+            isFirmNameOpen = false;
+            currentFirmNameIndex = -1;
+            hideApiCustomerTooltip();
+        }
+        
+        // Clear selection
+        function clearFirmNameSelection() {
+            firmNameSearch.value = '';
+            firmNameInput.value = '';
+            updateFirmNameClearButton();
+            closeApiCustomerDetails();
+            
+            // Remove selected class from all options
+            document.querySelectorAll('#firmNameOptions .select-option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            
+            // Reset letter buttons to "ALL"
+            setActiveLetterButton('ALL');
+        }
+        
+        // Initial population
+        populateFirmNameOptions();
+        updateFirmNameClearButton();
+        
+        // Set placeholder with API data count
+        firmNameSearch.placeholder = `Search from ${apiCustomerData.length} API customers or type new firm...`;
+        
+        // Event listeners
+        firmNameSearch.addEventListener('click', function(e) {
+            e.stopPropagation();
+            openFirmNameDropdown();
+        });
+        
+        firmNameSearch.addEventListener('input', function() {
+            populateFirmNameOptions(this.value);
+            
+            // Update active letter button based on input
+            if (this.value.length === 1 && /^[A-Za-z]$/.test(this.value)) {
+                setActiveLetterButton(this.value.toUpperCase());
+            } else if (!this.value.trim()) {
+                setActiveLetterButton('ALL');
+            }
+        });
+        
+        // Keyboard navigation
+        firmNameSearch.addEventListener('keydown', function(e) {
+            const options = firmNameOptions.querySelectorAll('.select-option');
+            
+            switch(e.key) {
+                case 'ArrowDown':
+                    e.preventDefault();
+                    if (options.length > 0) {
+                        currentFirmNameIndex = (currentFirmNameIndex + 1) % options.length;
+                        options.forEach(opt => opt.classList.remove('selected'));
+                        if (currentFirmNameIndex >= 0 && options[currentFirmNameIndex]) {
+                            options[currentFirmNameIndex].classList.add('selected');
+                            options[currentFirmNameIndex].scrollIntoView({ block: 'nearest' });
+                        }
+                    }
+                    break;
+                    
+                case 'ArrowUp':
+                    e.preventDefault();
+                    if (options.length > 0) {
+                        currentFirmNameIndex = (currentFirmNameIndex - 1 + options.length) % options.length;
+                        options.forEach(opt => opt.classList.remove('selected'));
+                        if (currentFirmNameIndex >= 0 && options[currentFirmNameIndex]) {
+                            options[currentFirmNameIndex].classList.add('selected');
+                            options[currentFirmNameIndex].scrollIntoView({ block: 'nearest' });
+                        }
+                    }
+                    break;
+                    
+                case 'Enter':
+                    e.preventDefault();
+                    if (currentFirmNameIndex >= 0 && options[currentFirmNameIndex]) {
+                        const isNew = options[currentFirmNameIndex].classList.contains('new-firm');
+                        selectFirmNameOption(options[currentFirmNameIndex], isNew);
+                    } else if (this.value.trim()) {
+                        // Create new firm
+                        const newFirm = this.value.trim();
+                        firmNameInput.value = newFirm;
+                        firmNameSearch.value = newFirm;
+                        updateFirmNameClearButton();
+                        closeFirmNameDropdown();
+                        showNotification(`New firm "${newFirm}" will be created`, 'info');
+                        closeApiCustomerDetails();
+                    }
+                    break;
+                    
+                case 'Escape':
+                    closeFirmNameDropdown();
+                    break;
+                    
+                case 'Tab':
+                    closeFirmNameDropdown();
+                    break;
+            }
+        });
+        
+        firmNameClear.addEventListener('click', function(e) {
+            e.stopPropagation();
+            clearFirmNameSelection();
+        });
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('#firmNameContainer')) {
+                closeFirmNameDropdown();
+            }
+        });
+        
+        // Set initial value if exists
+        if (firmNameInput.value) {
+            firmNameSearch.value = firmNameInput.value;
+            updateFirmNameClearButton();
+            
+            // Check if initial value is from API
+            const initialCustomer = apiCustomerData.find(c => c.name === firmNameInput.value);
+            if (initialCustomer) {
+                showApiCustomerDetails(initialCustomer);
+            }
+        }
+    }
+    
+    // Global function to close API customer details
+    window.closeApiCustomerDetails = function() {
+        const detailsDiv = document.getElementById('apiCustomerDetails');
+        if (detailsDiv) {
+            detailsDiv.style.display = 'none';
+        }
+        
+        const badge = document.getElementById('firmSourceBadge');
+        if (badge) {
+            badge.innerHTML = '<i class=""></i>';
+            badge.style.background = '';
+        }
+    };
+
     // ========== CAMPAIGN DETAILS FUNCTIONS ==========
 
     /**
@@ -2429,7 +3225,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const box = document.getElementById("campaign-details-box");
         
         if (!select.value) {
-            box.style.display = "none";
+            if (box) box.style.display = "none";
             return;
         }
         
@@ -2438,7 +3234,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (!campaignData) {
             console.warn('Campaign data not found for ID:', select.value);
-            box.style.display = "none";
+            if (box) box.style.display = "none";
             return;
         }
         
@@ -2472,20 +3268,10 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById("c-leads").textContent = leads > 0 ? leads.toLocaleString('en-IN') : "-";
         
         // Show the details box
-        box.style.display = "block";
+        if (box) box.style.display = "block";
         
         // Log for debugging
         console.log('🎯 Selected Campaign:', campaignData);
-    }
-
-    /**
-     * Update display when loading existing lead data
-     */
-    function updateCampaignDisplayWhenLoadingLead() {
-        const campaignField = document.getElementById('campaign');
-        if (campaignField && campaignField.value) {
-            displayCampaignDetails(campaignField);
-        }
     }
 
     /**
@@ -2572,117 +3358,49 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    /**
-     * Update time elapsed for a single lead item (now shown below the date)
-     */
-    /**
- * Update time elapsed for a single lead item
- */
-function updateTimeElapsedForElement(leadElement) {
-    const timeElapsedElement = leadElement.querySelector('.lead-time-elapsed');
-    const createdDateStr = timeElapsedElement.getAttribute('data-created');
-    const elapsedTextElement = timeElapsedElement.querySelector('.elapsed-text');
-    
-    if (!createdDateStr || !elapsedTextElement) return;
-    
-    try {
-        const createdDate = new Date(createdDateStr);
-        const now = new Date();
-        const diffMs = now - createdDate;
-        
-        // Calculate time difference
-        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-        const diffHours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-        
-        // Format the elapsed time
-        let elapsedText = '';
-        let badgeClass = 'lead-time-elapsed';
-        
-        if (diffDays > 0) {
-            if (diffDays === 1) elapsedText = '1 day ago';
-            else if (diffDays < 7) elapsedText = `${diffDays} days ago`;
-            else if (diffDays < 30) elapsedText = `${Math.floor(diffDays / 7)} week${Math.floor(diffDays / 7) > 1 ? 's' : ''} ago`;
-            else if (diffDays < 365) elapsedText = `${Math.floor(diffDays / 30)} month${Math.floor(diffDays / 30) > 1 ? 's' : ''} ago`;
-            else elapsedText = `${Math.floor(diffDays / 365)} year${Math.floor(diffDays / 365) > 1 ? 's' : ''} ago`;
-            
-            // Color coding based on time
-            if (diffDays < 1) {
-                badgeClass += ' time-recent';
-            } else if (diffDays < 3) {
-                badgeClass += ' time-medium';
-            } else {
-                badgeClass += ' time-old';
-            }
-        } else if (diffHours > 0) {
-            if (diffHours === 1) elapsedText = '1 hour ago';
-            else elapsedText = `${diffHours} hours ago`;
-            badgeClass += ' time-recent';
-        } else if (diffMinutes > 0) {
-            if (diffMinutes === 1) elapsedText = '1 minute ago';
-            else elapsedText = `${diffMinutes} minutes ago`;
-            badgeClass += ' time-recent';
-        } else {
-            elapsedText = 'Just now';
-            badgeClass += ' time-recent';
-        }
-        
-        // Update the element
-        elapsedTextElement.textContent = elapsedText;
-        timeElapsedElement.className = badgeClass;
-        timeElapsedElement.style.display = 'flex';
-        
-    } catch (e) {
-        console.error('Error calculating time elapsed:', e);
-        elapsedTextElement.textContent = 'Time error';
-        timeElapsedElement.style.display = 'flex';
-    }
-}
-
     // ========== INITIALIZATION FUNCTIONS ==========
 
     /**
      * Initialize all functionality
      */
     function initializeApp() {
-    // -------------------------
-    // Initialize UI components
-    // -------------------------
-    initializeToggle();
-    setupDirectoryTabs();
-    setupDirectorySearch();
-    setupPriorityFilter();
-    initializePagination();
-    setupEventListeners();
-    initializeSearchableSelect();
-    initializeDateDisplay();
+        // -------------------------
+        // Initialize UI components
+        // -------------------------
+        initializeToggle();
+        setupDirectoryTabs();
+        setupDirectorySearch();
+        setupPriorityFilter();
+        initializePagination();
+        setupEventListeners();
+        initializeSearchableSelect();
+        initializeFirmNameSearch(); // Updated to include API data and first letter search
+        initializeDateDisplay();
 
-    // -------------------------
-    // Initialize Time Elapsed
-    // -------------------------
+        // -------------------------
+        // Initialize Time Elapsed
+        // -------------------------
+        // Run after slight delay to ensure DOM is loaded
+        setTimeout(() => {
+            updateAllTimeElapsedBadges();
+        }, 500);
 
-    // Run after slight delay to ensure DOM is loaded
-    setTimeout(() => {
-        updateAllTimeElapsedIndicators();
-    }, 500);
+        // Update every 1 minute
+        setInterval(updateAllTimeElapsedBadges, 60000);
 
-    // Update every 1 minute
-    setInterval(updateAllTimeElapsedIndicators, 60000);
-
-    // -------------------------
-    // Debug logs
-    // -------------------------
-    console.log('✅ Lead Management System initialized successfully');
-    console.log('📊 Total leads:', leads.length);
-    console.log('👥 Total employees:', employees.length);
-    console.log('🎯 Campaigns available:', Object.keys(campaignMap).length);
-    console.log('📅 Date display initialized');
-    console.log('⏱️ Time elapsed indicators enabled');
-
-    // Debug campaign dropdown issues
-    debugCampaignDropdown();
-}
-
+        // -------------------------
+        // Debug logs
+        // -------------------------
+        console.log('✅ Lead Management System initialized successfully');
+        console.log('📊 Total leads:', leads.length);
+        console.log('👥 Total employees:', employees.length);
+        console.log('🎯 Campaigns available:', Object.keys(campaignMap).length);
+        console.log('🏢 Total firms:', existingFirms.length + apiCustomerData.length);
+        console.log('📡 API Customers:', apiCustomerData.length);
+        console.log('🔤 First letter search enabled');
+        console.log('📅 Date display initialized');
+        console.log('⏱️ Time elapsed indicators enabled');
+    }
 
     /**
      * Initialize searchable select for Reference From field
@@ -2781,15 +3499,6 @@ function updateTimeElapsedForElement(leadElement) {
             refFromSearch.readOnly = true;
             isRefFromOpen = false;
             currentRefFromIndex = -1;
-        }
-        
-        // Toggle dropdown
-        function toggleRefFromDropdown() {
-            if (isRefFromOpen) {
-                closeRefFromDropdown();
-            } else {
-                openRefFromDropdown();
-            }
         }
         
         // Clear selection
@@ -2983,7 +3692,7 @@ function updateTimeElapsedForElement(leadElement) {
             selectedLead.classList.remove('selected');
         }
         
-        // Clear searchable select
+        // Clear searchable selects
         const refFromSearch = document.getElementById('refFromSearch');
         const refFromSelect = document.getElementById('refFrom');
         const refFromClear = document.getElementById('refFromClear');
@@ -2992,17 +3701,33 @@ function updateTimeElapsedForElement(leadElement) {
         if (refFromSelect) refFromSelect.selectedIndex = 0;
         if (refFromClear) refFromClear.classList.remove('active');
         
-        // Hide any dropdown
+        // Clear firm name searchable select
+        const firmNameSearch = document.getElementById('nameSearch');
+        const firmNameInput = document.getElementById('name');
+        const firmNameClear = document.getElementById('firmNameClear');
+        
+        if (firmNameSearch) firmNameSearch.value = '';
+        if (firmNameInput) firmNameInput.value = '';
+        if (firmNameClear) firmNameClear.classList.remove('active');
+        
+        // Close API customer details
+        closeApiCustomerDetails();
+        
+        // Hide any dropdowns
         const refFromOptions = document.getElementById('refFromOptions');
-        if (refFromOptions) {
-            refFromOptions.classList.remove('active');
-        }
+        const firmNameOptions = document.getElementById('firmNameOptions');
+        
+        if (refFromOptions) refFromOptions.classList.remove('active');
+        if (firmNameOptions) firmNameOptions.classList.remove('active');
         
         // Clear hidden assignment type field
         document.getElementById('assignmentType').value = '';
         
         // Clear campaign details display
         clearCampaignDetails();
+        
+        // Reset first letter buttons to "ALL"
+        setActiveLetterButton('ALL');
         
         // Show success message
         showNotification('Form has been cleared successfully', 'success');
@@ -3012,97 +3737,50 @@ function updateTimeElapsedForElement(leadElement) {
     }
 
     /**
- * Update all time elapsed indicators in real-time
- */
-function updateAllTimeElapsedIndicators() {
-    const timeElapsedElements = document.querySelectorAll('.lead-time-elapsed');
-    
-    timeElapsedElements.forEach(element => {
-        const createdDateStr = element.getAttribute('data-created');
-        const elapsedText = element.querySelector('.elapsed-text');
-        
-        if (!createdDateStr || !elapsedText) return;
-        
-        try {
-            const createdDate = new Date(createdDateStr);
-            const now = new Date();
-            const diffMs = now - createdDate;
-            
-            // Calculate time difference
-            const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-            const diffHours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-            
-            // Format the elapsed time
-            let elapsedText = '';
-            let badgeClass = 'time-elapsed-badge';
-            
-            if (diffDays > 0) {
-                if (diffDays === 1) elapsedText = '1 day ago';
-                else if (diffDays < 7) elapsedText = `${diffDays} days ago`;
-                else if (diffDays < 30) elapsedText = `${Math.floor(diffDays / 7)} week${Math.floor(diffDays / 7) > 1 ? 's' : ''} ago`;
-                else if (diffDays < 365) elapsedText = `${Math.floor(diffDays / 30)} month${Math.floor(diffDays / 30) > 1 ? 's' : ''} ago`;
-                else elapsedText = `${Math.floor(diffDays / 365)} year${Math.floor(diffDays / 365) > 1 ? 's' : ''} ago`;
-                
-                // Color coding based on time
-                if (diffDays < 2) {
-                    badgeClass += ' time-recent';
-                } else if (diffDays < 7) {
-                    badgeClass += ' time-medium';
-                } else {
-                    badgeClass += ' time-old';
-                }
-            } else if (diffHours > 0) {
-                if (diffHours === 1) elapsedText = '1 hour ago';
-                else elapsedText = `${diffHours} hours ago`;
-                badgeClass += ' time-recent';
-            } else if (diffMinutes > 0) {
-                if (diffMinutes === 1) elapsedText = '1 minute ago';
-                else elapsedText = `${diffMinutes} minutes ago`;
-                badgeClass += ' time-recent';
-            } else {
-                elapsedText = 'Just now';
-                badgeClass += ' time-recent';
-            }
-            
-            // Update the element
-            element.querySelector('.elapsed-text').textContent = elapsedText;
-            element.className = 'lead-time-elapsed ' + badgeClass;
-            element.style.display = 'flex';
-            
-        } catch (e) {
-            console.error('Error calculating time elapsed:', e);
-            element.querySelector('.elapsed-text').textContent = 'Time error';
-        }
-    });
-}
-
-    /**
      * Initialize customer type toggle functionality
      */
     function initializeToggle() {
-        if (customerTypeToggle.checked) {
-            // Business mode
+        const isBusinessMode = customerTypeToggle.checked;
+        
+        if (isBusinessMode) {
+            // Business mode - Show business fields, hide individual fields
             businessFields.style.display = 'block';
             individualFields.style.display = 'none';
             
+            // Set required fields for business mode
             document.querySelectorAll('.business-fields [required]').forEach(field => {
                 field.required = true;
             });
             document.querySelectorAll('.individual-fields [required]').forEach(field => {
                 field.required = false;
             });
+            
+            // Enable firm name search field
+            const firmNameSearch = document.getElementById('nameSearch');
+            if (firmNameSearch) {
+                firmNameSearch.readOnly = false;
+                firmNameSearch.placeholder = `Search from ${apiCustomerData.length} API customers or type new firm...`;
+            }
+            
         } else {
-            // Individual mode
+            // Individual mode - Show individual fields, hide business fields
             businessFields.style.display = 'none';
             individualFields.style.display = 'block';
             
+            // Set required fields for individual mode
             document.querySelectorAll('.business-fields [required]').forEach(field => {
                 field.required = false;
             });
             document.querySelectorAll('.individual-fields [required]').forEach(field => {
                 field.required = true;
             });
+            
+            // Close firm name dropdown if open
+            const firmNameOptions = document.getElementById('firmNameOptions');
+            if (firmNameOptions) firmNameOptions.classList.remove('active');
+            
+            // Close API customer details
+            closeApiCustomerDetails();
         }
     }
 
@@ -3146,14 +3824,48 @@ function updateAllTimeElapsedIndicators() {
 
         // Customer type specific validation
         if (isBusiness) {
-            const requiredBusiness = ['name', 'place', 'pinCode'];
-            requiredBusiness.forEach(fieldId => {
-                const field = document.getElementById(fieldId);
-                if (!field.value.trim()) {
-                    isValid = false;
-                    field.style.borderColor = 'red';
-                }
-            });
+            const firmName = document.getElementById('name').value.trim();
+            const firmNameSearch = document.getElementById('nameSearch').value.trim();
+            const place = document.getElementById('place');
+            const pinCode = document.getElementById('pinCode');
+            
+            // Validate firm name (either from search or hidden input)
+            if (!firmName && !firmNameSearch) {
+                isValid = false;
+                const firmNameSearchField = document.getElementById('nameSearch');
+                firmNameSearchField.style.borderColor = 'red';
+            }
+            
+            // Validate other required fields
+            if (!place.value.trim()) {
+                isValid = false;
+                place.style.borderColor = 'red';
+            }
+            
+            if (!pinCode.value.trim()) {
+                isValid = false;
+                pinCode.style.borderColor = 'red';
+            }
+        } else {
+            // Individual mode validation
+            const firstName = document.getElementById('firstName');
+            const individualPlace = document.getElementById('individualPlace');
+            const individualPinCode = document.getElementById('individualPinCode');
+            
+            if (!firstName.value.trim()) {
+                isValid = false;
+                firstName.style.borderColor = 'red';
+            }
+            
+            if (!individualPlace.value.trim()) {
+                isValid = false;
+                individualPlace.style.borderColor = 'red';
+            }
+            
+            if (!individualPinCode.value.trim()) {
+                isValid = false;
+                individualPinCode.style.borderColor = 'red';
+            }
         }
 
         return isValid;
@@ -3164,6 +3876,14 @@ function updateAllTimeElapsedIndicators() {
      */
     function handleFormSubmit(e) {
         e.preventDefault();
+
+        // Ensure firm name value is set correctly
+        const firmNameSearch = document.getElementById('nameSearch');
+        const firmNameInput = document.getElementById('name');
+        
+        if (firmNameSearch && firmNameSearch.value && !firmNameInput.value) {
+            firmNameInput.value = firmNameSearch.value;
+        }
 
         if (!validateForm()) {
             showNotification('Please fill in all required fields marked in red.', 'error');
@@ -3548,89 +4268,84 @@ function updateAllTimeElapsedIndicators() {
     /**
      * Create lead item element with date and time elapsed below it
      */
-    /**
- * Create lead item element with enhanced date display and time elapsed
- */
-function createLeadItem(lead, container) {
-    const item = document.createElement('div');
-    item.className = 'lead-item';
-    item.setAttribute('data-id', lead.id);
-    
-    // Priority configuration
-    const priorityConfig = getPriorityConfig(lead.priority || 'Medium');
-    
-    // Format ISO date for JavaScript
-    const createdDate = lead.createdAt || lead.date;
-    const isoDate = createdDate ? new Date(createdDate).toISOString() : '';
-    
-    // Get campaign display value
-    let campaignDisplay = lead.campaign_display || '';
-    if (!campaignDisplay && lead.campaign) {
-        campaignDisplay = getCampaignDisplayName(lead.campaign);
-    }
-    
-    // Format dates for display
-    const leadDateInfo = formatDateForDisplay(lead.date);
-    const createdDateInfo = formatDateForDisplay(lead.createdAt);
-    
-    item.innerHTML = `
-        <div class="lead-avatar">
-            ${(lead.ownerName || '').slice(0, 2).toUpperCase()}
-        </div>
-        <div class="lead-details">
-            <div class="lead-header">
-                <div class="lead-name-container">
-                    <span class="lead-priority-indicator">
-                        ${priorityConfig.emoji}
-                    </span>
-                    <span class="lead-name">${lead.ownerName || 'No Name'}</span>
-                    ${leadDateInfo.short ? `
-                    <span class="lead-date-full" title="Lead Date: ${leadDateInfo.tooltip}">
-                        <i class="far fa-calendar-check"></i>
-                        ${leadDateInfo.short}
-                    </span>` : ''}
+    function createLeadItem(lead, container) {
+        const item = document.createElement('div');
+        item.className = 'lead-item';
+        item.setAttribute('data-id', lead.id);
+        
+        // Priority configuration
+        const priorityConfig = getPriorityConfig(lead.priority || 'Medium');
+        
+        // Format ISO date for JavaScript
+        const createdDate = lead.createdAt || lead.date;
+        const isoDate = createdDate ? new Date(createdDate).toISOString() : '';
+        
+        // Get campaign display value
+        let campaignDisplay = lead.campaign_display || '';
+        if (!campaignDisplay && lead.campaign) {
+            campaignDisplay = getCampaignDisplayName(lead.campaign);
+        }
+        
+        // Format dates for display
+        const leadDateInfo = formatDateForDisplay(lead.date);
+        const createdDateInfo = formatDateForDisplay(lead.createdAt);
+        
+        item.innerHTML = `
+            <div class="lead-avatar">
+                ${(lead.ownerName || '').slice(0, 2).toUpperCase()}
+            </div>
+            <div class="lead-details">
+                <div class="lead-header">
+                    <div class="lead-name-container">
+                        <span class="lead-priority-indicator">
+                            ${priorityConfig.emoji}
+                        </span>
+                        <span class="lead-name">${lead.ownerName || 'No Name'}</span>
+                        ${leadDateInfo.short ? `
+                        <span class="lead-date-full" title="Lead Date: ${leadDateInfo.tooltip}">
+                            <i class="far fa-calendar-check"></i>
+                            ${leadDateInfo.short}
+                        </span>` : ''}
+                    </div>
+                    ${createdDateInfo.short ? `
+                    <div class="lead-date-compact" title="Created: ${createdDateInfo.tooltip}">
+                        <i class="far fa-calendar-alt"></i>
+                        ${createdDateInfo.short}
+                    </div>` : ''}
                 </div>
-                ${createdDateInfo.short ? `
-                <div class="lead-date-compact" title="Created: ${createdDateInfo.tooltip}">
-                    <i class="far fa-calendar-alt"></i>
-                    ${createdDateInfo.short}
+                
+                <!-- TIME ELAPSED BADGE -->
+                <div class="time-elapsed-badge" 
+                     data-created="${isoDate}"
+                     style="display: inline-flex; margin-top: 5px;">
+                    <i class="fas fa-clock"></i>
+                    <span class="elapsed-text">${lead.time_elapsed || 'Calculating...'}</span>
+                </div>
+                
+                <div class="lead-phone">${lead.phoneNo || 'No Phone'}</div>
+                <div class="lead-ticket">${lead.ticketNo || 'No Ticket'}</div>
+                ${lead.createdTime ? `
+                <div class="lead-datetime">
+                    <i class="far fa-clock"></i>
+                    Created at ${lead.createdTime}
+                </div>` : ''}
+                <div class="lead-info-row">
+                    <div class="lead-status">Status: ${lead.status || 'Unknown'}</div>
+                    <span style="color: ${priorityConfig.color}; font-weight: 600; font-size: 10px; padding: 2px 8px; border-radius: 10px; background: ${priorityConfig.color}15;">
+                        ${priorityConfig.text}
+                    </span>
+                </div>
+                ${campaignDisplay ? `
+                <div class="lead-campaign" title="${campaignDisplay}">
+                    <i class="fas fa-bullhorn" style="font-size: 9px;"></i>
+                    <span>${campaignDisplay.substring(0, 40)}${campaignDisplay.length > 40 ? '...' : ''}</span>
                 </div>` : ''}
             </div>
-            
-            <!-- TIME ELAPSED INDICATOR - Will be updated by JavaScript -->
-            <div class="lead-time-elapsed" 
-                 data-created="${isoDate}"
-                 style="display: none;">
-                <i class="fas fa-clock"></i>
-                <span class="elapsed-text">Calculating...</span>
-            </div>
-            
-            <div class="lead-phone">${lead.phoneNo || 'No Phone'}</div>
-            <div class="lead-ticket">${lead.ticketNo || 'No Ticket'}</div>
-            ${lead.createdTime ? `
-            <div class="lead-datetime">
-                <i class="far fa-clock"></i>
-                Created at ${lead.createdTime}
-            </div>` : ''}
-            <div class="lead-info-row">
-                <div class="lead-status">Status: ${lead.status || 'Unknown'}</div>
-                <span style="color: ${priorityConfig.color}; font-weight: 600; font-size: 10px; padding: 2px 8px; border-radius: 10px; background: ${priorityConfig.color}15;">
-                    ${priorityConfig.text}
-                </span>
-            </div>
-            ${campaignDisplay ? `
-            <div class="lead-campaign" title="${campaignDisplay}">
-                <i class="fas fa-bullhorn" style="font-size: 9px;"></i>
-                <span>${campaignDisplay.substring(0, 40)}${campaignDisplay.length > 40 ? '...' : ''}</span>
-            </div>` : ''}
-        </div>
-    `;
-    
-    container.appendChild(item);
-    
-    // Update time elapsed for this specific item
-    setTimeout(() => updateTimeElapsedForElement(item), 100);
-}
+        `;
+        
+        container.appendChild(item);
+    }
+
     /**
      * Get priority configuration
      */
@@ -3687,171 +4402,450 @@ function createLeadItem(lead, container) {
     /**
      * Add event listeners to lead items for click functionality
      */
-    function setupLeadViewButtons() {
-        const leadItems = document.querySelectorAll('#leadList .lead-item');
-        
-        leadItems.forEach(item => {
-            item.addEventListener('click', function(e) {
-                e.stopPropagation();
-                
-                // Remove previous selection
-                leadItems.forEach(i => i.classList.remove('selected'));
-                
-                // Add selection to current item
-                this.classList.add('selected');
-                
-                const leadId = this.getAttribute('data-id');
-                const lead = leads.find(l => l.id == leadId);
-                
-                if (lead) {
-                    populateFormWithLeadData(lead);
-                } else {
-                    console.error('Lead not found in leads array');
-                    showNotification('Error: Lead data not found', 'error');
-                }
-            });
+    /**
+ * Add event listeners to lead items for click functionality
+ */
+/**
+ * Add event listeners to lead items for click functionality
+ */
+function setupLeadViewButtons() {
+    const leadItems = document.querySelectorAll('#leadList .lead-item');
+    
+    leadItems.forEach(item => {
+        item.addEventListener('click', function(e) {
+            e.stopPropagation();
+            
+            // Remove previous selection
+            leadItems.forEach(i => i.classList.remove('selected'));
+            
+            // Add selection to current item
+            this.classList.add('selected');
+            
+            const leadId = this.getAttribute('data-id');
+            
+            // Redirect to edit page
+            // Choose one of these options:
+            
+            // Option 1: Direct URL (most reliable)
+            window.location.href = `/app5/lead/edit/${leadId}/`;
+            
+            // Option 2: If you need to be more flexible
+            // const basePath = window.location.pathname.split('/app5/')[0] || '';
+            // window.location.href = `${basePath}/app5/lead/edit/${leadId}/`;
         });
-    }
+    });
+}
 
     /**
      * Populate all form fields with lead data
      */
-    function populateFormWithLeadData(leadData) {
-        console.log('Loading lead data:', leadData);
-        
-        // Communication Details
-        document.getElementById('ownerName').value = leadData.ownerName || '';
-        document.getElementById('phoneNo').value = leadData.phoneNo || '';
-        document.getElementById('email').value = leadData.email || '';
-        document.getElementById('status').value = leadData.status || '';
-        document.getElementById('priority').value = leadData.priority || 'Medium';
-        
-        // Set customer type toggle based on customerType
-        const toggle = document.getElementById('customerTypeToggle');
-        if (leadData.customerType === 'Individual') {
-            toggle.checked = false; // Individual (toggle OFF)
-        } else {
-            toggle.checked = true; // Business (toggle ON - default)
-        }
-        
-        // Trigger the toggle initialization to show/hide correct fields
-        initializeToggle();
-        
-        // Wait for DOM to update, then populate fields
-        setTimeout(() => {
-            if (leadData.customerType === 'Business') {
-                // Populate Business fields
-                document.getElementById('name').value = leadData.name || '';
-                document.getElementById('address').value = leadData.address || '';
-                document.getElementById('place').value = leadData.place || '';
-                document.getElementById('District').value = leadData.District || '';
-                document.getElementById('State').value = leadData.State || '';
-                document.getElementById('pinCode').value = leadData.pinCode || '';
+    /**
+ * Populate all form fields with lead data - COMPLETE VERSION
+ */
+function populateFormWithLeadData(leadData) {
+    console.log('🚀 START: Loading complete lead data into form');
+    console.log('📋 Lead Data:', leadData);
+    
+    // ============================================
+    // SECTION 1: COMMUNICATION DETAILS
+    // ============================================
+    console.log('📱 SECTION 1: Populating Communication Details');
+    
+    // Owner Name
+    const ownerName = leadData.ownerName || '';
+    document.getElementById('ownerName').value = ownerName;
+    console.log('   👤 Owner Name:', ownerName);
+    
+    // Phone Number
+    const phoneNo = leadData.phoneNo || '';
+    document.getElementById('phoneNo').value = phoneNo;
+    console.log('   📞 Phone:', phoneNo);
+    
+    // Email
+    const email = leadData.email || '';
+    document.getElementById('email').value = email;
+    console.log('   📧 Email:', email);
+    
+    // Status
+    const status = leadData.status || '';
+    document.getElementById('status').value = status;
+    console.log('   🟢 Status:', status);
+    
+    // Priority
+    const priority = leadData.priority || 'Medium';
+    document.getElementById('priority').value = priority;
+    console.log('   ⚡ Priority:', priority);
+    
+    // ============================================
+    // SECTION 2: CUSTOMER TYPE TOGGLE
+    // ============================================
+    console.log('🔄 SECTION 2: Setting Customer Type Toggle');
+    
+    const toggle = document.getElementById('customerTypeToggle');
+    const customerType = leadData.customerType || 'Business';
+    
+    if (customerType === 'Individual') {
+        toggle.checked = false;
+        console.log('   👤 Customer Type: Individual (Toggle OFF)');
+    } else {
+        toggle.checked = true;
+        console.log('   🏢 Customer Type: Business (Toggle ON)');
+    }
+    
+    // Force toggle update immediately
+    initializeToggle();
+    
+    // ============================================
+    // SECTION 3: BASIC INFORMATION
+    // ============================================
+    console.log('🏢 SECTION 3: Populating Basic Information');
+    
+    // Wait a bit for DOM to update after toggle change
+    setTimeout(() => {
+        if (customerType === 'Business') {
+            // ==========================
+            // BUSINESS FIELDS
+            // ==========================
+            console.log('   📋 BUSINESS FIELDS ACTIVE');
+            
+            // Firm Name
+            const firmName = leadData.name || '';
+            document.getElementById('name').value = firmName;
+            document.getElementById('nameSearch').value = firmName;
+            
+            // Update firm name clear button
+            const firmNameClear = document.getElementById('firmNameClear');
+            if (firmNameClear && firmName) {
+                firmNameClear.classList.add('active');
+            }
+            console.log('     🏢 Firm Name:', firmName);
+            
+            // Address
+            const address = leadData.address || '';
+            document.getElementById('address').value = address;
+            console.log('     🏠 Address:', address);
+            
+            // Place
+            const place = leadData.place || '';
+            document.getElementById('place').value = place;
+            console.log('     📍 Place:', place);
+            
+            // District
+            const district = leadData.District || '';
+            document.getElementById('District').value = district;
+            console.log('     🗺️ District:', district);
+            
+            // State
+            const state = leadData.State || '';
+            document.getElementById('State').value = state;
+            console.log('     🌎 State:', state);
+            
+            // Pin Code
+            const pinCode = leadData.pinCode || '';
+            document.getElementById('pinCode').value = pinCode;
+            console.log('     📮 Pin Code:', pinCode);
+            
+            // Check if this is an API customer
+            const apiCustomer = apiCustomerData.find(c => c.name === firmName);
+            if (apiCustomer) {
+                console.log('     📡 Found API customer match - showing details');
+                showApiCustomerDetails(apiCustomer);
             } else {
-                // Populate Individual fields
-                document.getElementById('firstName').value = leadData.firstName || '';
-                document.getElementById('individualAddress').value = leadData.individualAddress || '';
-                document.getElementById('individualPlace').value = leadData.individualPlace || '';
-                document.getElementById('individualDistrict').value = leadData.individualDistrict || '';
-                document.getElementById('individualState').value = leadData.individualState || '';
-                document.getElementById('individualPinCode').value = leadData.individualPinCode || '';
+                console.log('     📝 Local customer (not in API)');
+                closeApiCustomerDetails();
             }
             
-            // Business Information - FIXED DATE FORMATTING
-            // Business Information - FIXED DATE FORMATTING
-const dateField = document.getElementById('date');
-if (leadData.date) {
-    let formattedDate = formatDateForInput(leadData.date);
-    dateField.value = formattedDate;
-    console.log('Setting date field:', formattedDate, 'from:', leadData.date);
-} else {
-    dateField.value = '';
-}
-
-// 🔥 AUTO-FILL CREATED DATE WHEN SELECTING ACTIVE LEAD
-const createdDateField = document.getElementById('created_date');
-
-if (createdDateField) {
-    if (leadData.createdAt) {
-        let formattedCreatedDate = formatDateForInput(leadData.createdAt);
-        createdDateField.value = formattedCreatedDate;
-        console.log("Created Date Set:", formattedCreatedDate);
-    } else {
-        createdDateField.value = "";
-    }
-}
-
-
+            // Update first letter button
+            if (firmName && firmName.trim()) {
+                const firstLetter = firmName.trim().charAt(0).toUpperCase();
+                setActiveLetterButton(firstLetter);
+            }
             
-            // Reference From - handle searchable select
-            if (leadData.refFrom) {
-                document.getElementById('refFrom').value = leadData.refFrom;
-                document.getElementById('refFromSearch').value = leadData.refFrom;
-                
-                // Update clear button
-                const refFromClear = document.getElementById('refFromClear');
-                if (refFromClear) {
-                    refFromClear.classList.add('active');
+        } else {
+            // ==========================
+            // INDIVIDUAL FIELDS
+            // ==========================
+            console.log('   📋 INDIVIDUAL FIELDS ACTIVE');
+            
+            // First Name
+            const firstName = leadData.firstName || '';
+            document.getElementById('firstName').value = firstName;
+            console.log('     👤 First Name:', firstName);
+            
+            // Address
+            const individualAddress = leadData.individualAddress || '';
+            document.getElementById('individualAddress').value = individualAddress;
+            console.log('     🏠 Address:', individualAddress);
+            
+            // Place
+            const individualPlace = leadData.individualPlace || '';
+            document.getElementById('individualPlace').value = individualPlace;
+            console.log('     📍 Place:', individualPlace);
+            
+            // District
+            const individualDistrict = leadData.individualDistrict || '';
+            document.getElementById('individualDistrict').value = individualDistrict;
+            console.log('     🗺️ District:', individualDistrict);
+            
+            // State
+            const individualState = leadData.individualState || '';
+            document.getElementById('individualState').value = individualState;
+            console.log('     🌎 State:', individualState);
+            
+            // Pin Code
+            const individualPinCode = leadData.individualPinCode || '';
+            document.getElementById('individualPinCode').value = individualPinCode;
+            console.log('     📮 Pin Code:', individualPinCode);
+        }
+        
+        // ============================================
+        // SECTION 4: BUSINESS INFORMATION
+        // ============================================
+        console.log('💼 SECTION 4: Populating Business Information');
+        
+        // 1. Date Field
+        const dateField = document.getElementById('date');
+        let leadDate = leadData.date || leadData.createdAt || '';
+        
+        if (leadDate) {
+            // Format date properly for input field (YYYY-MM-DD)
+            try {
+                const dateObj = new Date(leadDate);
+                const year = dateObj.getFullYear();
+                const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+                const day = String(dateObj.getDate()).padStart(2, '0');
+                const formattedDate = `${year}-${month}-${day}`;
+                dateField.value = formattedDate;
+                console.log('   📅 Date:', formattedDate);
+            } catch (e) {
+                dateField.value = '';
+                console.log('   ⚠️ Date error - could not parse:', leadDate);
+            }
+        } else {
+            dateField.value = '';
+            console.log('   ⚠️ No date available');
+        }
+        
+        // 2. Branch/Requirement Field - FIXED
+        console.log('   🏢 Branch/Requirement Processing...');
+        const branchSelect = document.getElementById('requirement');
+        const branchValue = leadData.requirement || '';
+        const branchName = leadData.branchName || '';
+        
+        if (branchSelect && (branchValue || branchName)) {
+            let found = false;
+            
+            // Try to find by value (ID)
+            if (branchValue) {
+                for (let i = 0; i < branchSelect.options.length; i++) {
+                    if (branchSelect.options[i].value === branchValue) {
+                        branchSelect.selectedIndex = i;
+                        found = true;
+                        console.log('     ✅ Found by ID/Value:', branchValue);
+                        break;
+                    }
                 }
             }
             
-            document.getElementById('business').value = leadData.business || '';
+            // If not found, try by text/name
+            if (!found && branchName) {
+                for (let i = 0; i < branchSelect.options.length; i++) {
+                    if (branchSelect.options[i].text.trim() === branchName.trim()) {
+                        branchSelect.selectedIndex = i;
+                        found = true;
+                        console.log('     ✅ Found by Name:', branchName);
+                        break;
+                    }
+                }
+            }
             
-            // Campaign Details - Handle properly
-            const campaignField = document.getElementById('campaign');
-            if (campaignField) {
-                console.log('Setting campaign field value:', leadData.campaign);
-                console.log('Campaign display:', leadData.campaign_display);
-                
-                // First, try to set the value directly
-                campaignField.value = leadData.campaign || "";
-                
-                // Trigger display of campaign details
+            // Last resort: set value directly
+            if (!found && branchValue) {
+                branchSelect.value = branchValue;
+                console.log('     ⚠️ Set value directly:', branchValue);
+            }
+            
+            if (!found) {
+                console.log('     ❌ Branch not found in dropdown');
+            }
+        } else {
+            console.log('     ⚠️ No branch data');
+        }
+        
+        // 3. Business Nature Field
+        const businessNature = leadData.business || '';
+        const businessSelect = document.getElementById('business');
+        
+        if (businessSelect && businessNature) {
+            let found = false;
+            for (let i = 0; i < businessSelect.options.length; i++) {
+                if (businessSelect.options[i].value === businessNature || 
+                    businessSelect.options[i].text === businessNature) {
+                    businessSelect.selectedIndex = i;
+                    found = true;
+                    console.log('     🏭 Business Nature:', businessNature);
+                    break;
+                }
+            }
+            if (!found && businessNature) {
+                businessSelect.value = businessNature;
+                console.log('     ⚠️ Business Nature set directly:', businessNature);
+            }
+        } else {
+            console.log('     ⚠️ No business nature data');
+        }
+        
+        // 4. Reference From Field
+        const refFrom = leadData.refFrom || '';
+        if (refFrom) {
+            document.getElementById('refFrom').value = refFrom;
+            document.getElementById('refFromSearch').value = refFrom;
+            
+            // Update clear button
+            const refFromClear = document.getElementById('refFromClear');
+            if (refFromClear) {
+                refFromClear.classList.add('active');
+            }
+            console.log('     📞 Reference From:', refFrom);
+        } else {
+            console.log('     ⚠️ No reference data');
+        }
+        
+        // 5. Marketed By Field - FIXED
+        console.log('   👤 Marketed By Processing...');
+        const marketedBySelect = document.getElementById('marketedBy');
+        const marketedById = leadData.marketedBy || '';
+        const marketedByName = leadData.marketedByName || '';
+        
+        if (marketedBySelect && (marketedById || marketedByName)) {
+            let found = false;
+            
+            // Try to find by value (ID)
+            if (marketedById) {
+                for (let i = 0; i < marketedBySelect.options.length; i++) {
+                    if (marketedBySelect.options[i].value === String(marketedById)) {
+                        marketedBySelect.selectedIndex = i;
+                        found = true;
+                        console.log('     ✅ Found by ID:', marketedById);
+                        break;
+                    }
+                }
+            }
+            
+            // If not found, try by text/name
+            if (!found && marketedByName) {
+                for (let i = 0; i < marketedBySelect.options.length; i++) {
+                    if (marketedBySelect.options[i].text.trim() === marketedByName.trim()) {
+                        marketedBySelect.selectedIndex = i;
+                        found = true;
+                        console.log('     ✅ Found by Name:', marketedByName);
+                        break;
+                    }
+                }
+            }
+            
+            // Last resort: set value directly
+            if (!found && marketedById) {
+                marketedBySelect.value = marketedById;
+                console.log('     ⚠️ Set value directly:', marketedById);
+            }
+            
+            if (!found) {
+                console.log('     ❌ Marketed By not found in dropdown');
+            }
+        } else {
+            console.log('     ⚠️ No marketed by data');
+        }
+        
+        // 6. Campaign Field - FIXED
+        console.log('   📢 Campaign Processing...');
+        const campaignField = document.getElementById('campaign');
+        const campaignValue = leadData.campaign || '';
+        const campaignDisplay = leadData.campaign_display || '';
+        
+        if (campaignField && campaignValue) {
+            let found = false;
+            
+            // Try exact match by value
+            for (let i = 0; i < campaignField.options.length; i++) {
+                if (campaignField.options[i].value === campaignValue) {
+                    campaignField.selectedIndex = i;
+                    found = true;
+                    console.log('     ✅ Found campaign by value:', campaignValue);
+                    break;
+                }
+            }
+            
+            // Try match by display text
+            if (!found && campaignDisplay) {
+                for (let i = 0; i < campaignField.options.length; i++) {
+                    if (campaignField.options[i].text.includes(campaignDisplay.substring(0, 20))) {
+                        campaignField.selectedIndex = i;
+                        found = true;
+                        console.log('     ✅ Found campaign by text match:', campaignDisplay);
+                        break;
+                    }
+                }
+            }
+            
+            // Last resort: set value directly
+            if (!found && campaignValue) {
+                campaignField.value = campaignValue;
+                console.log('     ⚠️ Set campaign value directly:', campaignValue);
+            }
+            
+            // Trigger campaign details display
+            if (found || campaignValue) {
                 setTimeout(() => {
                     displayCampaignDetails(campaignField);
                 }, 100);
             }
-            
-            // Marketed By - handle both ID and name
-            setSelectValue('marketedBy', leadData.marketedBy);
-            
-            // Consultant
-            document.getElementById('Consultant').value = leadData.Consultant || '';
-            
-            // Branch/Requirement
-            setSelectValue('requirement', leadData.requirement);
-            
-            // Details/Notes
-            document.getElementById('details').value = leadData.details || '';
-            
-            // Scroll to form
-            document.querySelector('.form-column').scrollIntoView({ 
-                behavior: 'smooth', 
-                block: 'start' 
-            });
-            
-            // Show success notification with date info
-            const priorityConfig = getPriorityConfig(leadData.priority || 'Medium');
-            let notificationMessage = `${priorityConfig.emoji} Loaded lead data for ${leadData.ownerName} (Priority: ${priorityConfig.text})`;
-            
-            // Add date info to notification if available
-            if (leadData.date) {
-                const leadDateInfo = formatDateForDisplay(leadData.date);
-                if (leadDateInfo.short) {
-                    notificationMessage += ` | Lead Date: ${leadDateInfo.short}`;
-                }
-            }
-            
-            // Add campaign info to notification if available
-            if (leadData.campaign_display || leadData.campaign) {
-                const campaignDisplay = leadData.campaign_display || getCampaignDisplayName(leadData.campaign);
-                notificationMessage += ` | Campaign: ${campaignDisplay.substring(0, 30)}${campaignDisplay.length > 30 ? '...' : ''}`;
-            }
-            
-            showNotification(notificationMessage, 'success');
-            
-        }, 100);
-    }
+        } else {
+            console.log('     ⚠️ No campaign data');
+        }
+        
+        // 7. Consultant Field
+        const consultant = leadData.Consultant || '';
+        document.getElementById('Consultant').value = consultant;
+        console.log('     👨‍💼 Consultant:', consultant);
+        
+        // 8. Details/Notes Field
+        const details = leadData.details || '';
+        document.getElementById('details').value = details;
+        console.log('     📝 Notes:', details.substring(0, 50) + (details.length > 50 ? '...' : ''));
+        
+        // ============================================
+        // SECTION 5: FINAL ACTIONS
+        // ============================================
+        console.log('🎯 SECTION 5: Final Actions');
+        
+        // Scroll to form for better UX
+        document.querySelector('.form-column').scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'start' 
+        });
+        
+        // Show success notification
+        const priorityConfig = getPriorityConfig(priority);
+        let notificationMessage = `${priorityConfig.emoji} Loaded: ${ownerName} (${customerType})`;
+        
+        if (customerType === 'Business' && firmName) {
+            notificationMessage += ` | ${firmName}`;
+        } else if (customerType === 'Individual' && firstName) {
+            notificationMessage += ` | ${firstName}`;
+        }
+        
+        if (businessNature) {
+            notificationMessage += ` | ${businessNature}`;
+        }
+        
+        showNotification(notificationMessage, 'success');
+        
+        console.log('✅ FORM POPULATION COMPLETE!');
+        console.log('='.repeat(80));
+        
+    }, 150); // Increased delay to ensure DOM updates
+}
 
     /**
      * Format date for HTML input (YYYY-MM-DD)
@@ -3971,40 +4965,6 @@ if (createdDateField) {
         });
     }
 
-    // ========== DEBUG FUNCTIONS ==========
-
-    /**
-     * Debug campaign dropdown
-     */
-    function debugCampaignDropdown() {
-        const campaignField = document.getElementById('campaign');
-        if (campaignField) {
-            console.group('🎯 Campaign Dropdown Debug');
-            console.log('Total options:', campaignField.options.length);
-            console.log('Campaign map entries:', Object.keys(campaignMap).length);
-            
-            // Log first 5 options
-            Array.from(campaignField.options).forEach((option, index) => {
-                if (index < 5 || option.value) {
-                    console.log(`Option ${index}: "${option.value}" -> "${option.text}"`);
-                }
-            });
-            
-            // Check campaignMap
-            const campaignKeys = Object.keys(campaignMap);
-            if (campaignKeys.length > 0) {
-                console.log('Campaign Map sample (first 3):', 
-                    campaignKeys.slice(0, 3).map(key => 
-                        `${key}: ${campaignMap[key].fullName}`
-                    )
-                );
-            } else {
-                console.log('⚠️ Campaign map is empty!');
-            }
-            console.groupEnd();
-        }
-    }
-
     // ========== INITIALIZE APPLICATION ==========
     
     initializeApp();
@@ -4017,7 +4977,7 @@ function displayCampaignDetails(selectElement) {
     
     if (!selectedOption.value) {
         // Hide details if no campaign selected
-        detailsBox.style.display = 'none';
+        if (detailsBox) detailsBox.style.display = 'none';
         return;
     }
     
@@ -4037,46 +4997,61 @@ function displayCampaignDetails(selectElement) {
         leads: selectedOption.getAttribute('data-leads')
     };
     
-    // Update the details display
-    document.getElementById('c-id').textContent = campaignData.id || '-';
-    document.getElementById('c-name').textContent = campaignData.name || '-';
-    document.getElementById('c-software').textContent = campaignData.software || '-';
+    // Update the details display if elements exist
+    const cId = document.getElementById('c-id');
+    const cName = document.getElementById('c-name');
+    const cSoftware = document.getElementById('c-software');
+    const cStatus = document.getElementById('c-status');
+    const cFrom = document.getElementById('c-from');
+    const cTo = document.getElementById('c-to');
+    const cDuration = document.getElementById('c-duration');
+    const cLocation = document.getElementById('c-location');
+    const cAmount = document.getElementById('c-amount');
+    const cReach = document.getElementById('c-reach');
+    const cImpression = document.getElementById('c-impression');
+    const cLeads = document.getElementById('c-leads');
+    
+    if (cId) cId.textContent = campaignData.id || '-';
+    if (cName) cName.textContent = campaignData.name || '-';
+    if (cSoftware) cSoftware.textContent = campaignData.software || '-';
     
     // Status with badge styling
-    const statusElement = document.getElementById('c-status');
-    const status = campaignData.status || 'draft';
-    statusElement.innerHTML = `<span class="status-badge status-${status}">${status.charAt(0).toUpperCase() + status.slice(1)}</span>`;
+    if (cStatus) {
+        const status = campaignData.status || 'draft';
+        cStatus.innerHTML = `<span class="status-badge status-${status}">${status.charAt(0).toUpperCase() + status.slice(1)}</span>`;
+    }
     
     // Date and duration info
-    document.getElementById('c-from').textContent = campaignData.fromDate || '-';
-    document.getElementById('c-to').textContent = campaignData.toDate || '-';
-    document.getElementById('c-duration').textContent = campaignData.days ? `${campaignData.days} days` : '-';
-    document.getElementById('c-location').textContent = campaignData.location || 'Not specified';
+    if (cFrom) cFrom.textContent = campaignData.fromDate || '-';
+    if (cTo) cTo.textContent = campaignData.toDate || '-';
+    if (cDuration) cDuration.textContent = campaignData.days ? `${campaignData.days} days` : '-';
+    if (cLocation) cLocation.textContent = campaignData.location || 'Not specified';
     
     // Financial and metrics
     const amount = parseFloat(campaignData.amount || 0);
-    document.getElementById('c-amount').textContent = amount > 0 ? `₹${amount.toLocaleString('en-IN')}` : '-';
+    if (cAmount) cAmount.textContent = amount > 0 ? `₹${amount.toLocaleString('en-IN')}` : '-';
     
     const reach = parseInt(campaignData.reach || 0);
-    document.getElementById('c-reach').textContent = reach > 0 ? reach.toLocaleString('en-IN') : '-';
+    if (cReach) cReach.textContent = reach > 0 ? reach.toLocaleString('en-IN') : '-';
     
     const impression = parseInt(campaignData.impression || 0);
-    document.getElementById('c-impression').textContent = impression > 0 ? impression.toLocaleString('en-IN') : '-';
+    if (cImpression) cImpression.textContent = impression > 0 ? impression.toLocaleString('en-IN') : '-';
     
     const leads = parseInt(campaignData.leads || 0);
-    document.getElementById('c-leads').textContent = leads > 0 ? leads.toLocaleString('en-IN') : '-';
+    if (cLeads) cLeads.textContent = leads > 0 ? leads.toLocaleString('en-IN') : '-';
     
     // Show the details box with animation
-    detailsBox.style.display = 'block';
+    if (detailsBox) detailsBox.style.display = 'block';
 }
 
 // Optional: Add close button functionality
 function closeCampaignDetails() {
     const detailsBox = document.getElementById('campaign-details-box');
-    detailsBox.style.display = 'none';
+    if (detailsBox) detailsBox.style.display = 'none';
 }
 
 });
+
 </script>
 </body>
 </html>

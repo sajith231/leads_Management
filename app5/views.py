@@ -3226,11 +3226,12 @@ from django.contrib.auth.decorators import login_required
 
 def lead_form_view(request):
     """
-    GET: show form
+    GET: show form with API data
     POST: create Lead with proper saving of marketedBy, consultant, branch, and
           support for firm-name toggle (existing firm select OR free-text name).
     """
     import logging
+    import requests  # Added for API calls
     from django.shortcuts import render, redirect, get_object_or_404
     from django.contrib import messages
     from django.contrib.auth import get_user_model
@@ -3348,14 +3349,14 @@ def lead_form_view(request):
                     'refFrom': lead.refFrom if lead.refFrom else '',
                     'business': lead.business if lead.business else '',
                     'campaign': lead.campaign if hasattr(lead, 'campaign') and lead.campaign else '',
-                    'campaign_display': campaign_display,  # ✅ ADD DISPLAY NAME
+                    'campaign_display': campaign_display,
                     'marketedBy': lead.marketedBy if lead.marketedBy else '',
                     'Consultant': lead.Consultant if lead.Consultant else '',
                     'requirement': lead.requirement if lead.requirement else '',
                     'details': lead.details if lead.details else '',
                     'date': lead.date.strftime('%Y-%m-%d') if lead.date else '',
                     'created_at': lead.created_at if hasattr(lead, 'created_at') else None,
-                    'time_elapsed': time_elapsed,  # ✅ ADD TIME ELAPSED FIELD
+                    'time_elapsed': time_elapsed,
                 }
                 active_leads_data.append(lead_dict)
             
@@ -3453,26 +3454,106 @@ def lead_form_view(request):
             logger.warning(f"Could not build active_users list: {e}")
             active_users = []
 
-    # Prepare existing firms for dropdown (used on GET and on re-render after failed POST)
+    # ✅ FETCH CUSTOMER DATA FROM API
     existing_firms = []
+    api_customer_data = []
+    
+    try:
+        # Fetch from API
+        api_url = "https://accmaster.imcbs.com/api/sync/rrc-clients/"
+        logger.info(f"Fetching customer data from API: {api_url}")
+        
+        response = requests.get(api_url, timeout=10)
+        
+        if response.status_code == 200:
+            api_data = response.json()
+            logger.info(f"✅ Successfully fetched {len(api_data)} customers from API")
+            
+            # Process API data for firm names dropdown
+            for customer in api_data:
+                firm_name = customer.get('name', '').strip()
+                
+                if firm_name:
+                    # Add to existing_firms for searchable select
+                    if firm_name not in existing_firms:
+                        existing_firms.append(firm_name)
+                    
+                    # Store full customer data for auto-fill
+                    api_customer_data.append({
+                        'code': customer.get('code', ''),
+                        'name': firm_name,
+                        'address': customer.get('address', ''),
+                        'address3': customer.get('address3', ''),
+                        'branch': customer.get('branch', ''),
+                        'district': customer.get('district', ''),
+                        'state': customer.get('state', ''),
+                        'mobile': customer.get('mobile', ''),
+                        'software': customer.get('software', ''),
+                        'nature': customer.get('nature', ''),
+                        'rout': customer.get('rout', ''),
+                        'installationdate': customer.get('installationdate', ''),
+                    })
+            
+            # Sort firms alphabetically
+            existing_firms.sort()
+            
+            logger.info(f"✅ Processed {len(existing_firms)} unique firm names from API")
+            
+        else:
+            logger.warning(f"⚠️ API returned status code: {response.status_code}")
+            messages.warning(request, f"Could not fetch customer data from API (Status: {response.status_code})")
+            
+    except requests.exceptions.Timeout:
+        logger.error("❌ API request timeout")
+        messages.warning(request, "API request timed out. Using local data only.")
+        
+    except requests.exceptions.RequestException as e:
+        logger.error(f"❌ API request failed: {e}")
+        messages.warning(request, "Could not connect to customer API. Using local data only.")
+        
+    except Exception as e:
+        logger.error(f"❌ Error processing API data: {e}", exc_info=True)
+        messages.warning(request, "Error processing customer data from API.")
+    
+    # ✅ FALLBACK: Add existing firms from local database
     try:
         if Lead:
-            existing_firms_qs = Lead.objects.values_list('name', flat=True).distinct().order_by('name')
-            # filter out empty / null
-            existing_firms = [n for n in existing_firms_qs if n]
+            local_firms = Lead.objects.filter(
+                customerType='Business',
+                name__isnull=False
+            ).exclude(name='').values_list('name', flat=True).distinct().order_by('name')
+            
+            for firm in local_firms:
+                firm_name = str(firm).strip()
+                if firm_name and firm_name not in existing_firms:
+                    existing_firms.append(firm_name)
+            
+            logger.info(f"✅ Added {len(local_firms)} firms from local database")
+            
     except Exception as e:
-        logger.debug(f"Could not fetch existing firms: {e}")
-        existing_firms = []
+        logger.debug(f"Could not fetch local firms: {e}")
+    
+    # ✅ ENSURE WE HAVE SAMPLE DATA IF BOTH SOURCES FAIL
+    if not existing_firms:
+        logger.warning("⚠️ No firms found from API or database, using sample data")
+        existing_firms = [
+            "ABC Corporation",
+            "XYZ Enterprises",
+            "Global Solutions Ltd",
+            "Tech Innovators Inc",
+            "Prime Services Co"
+        ]
+    
+    logger.info(f"📊 Final firm count: {len(existing_firms)}")
 
     if request.method == "POST":
         data = request.POST
 
         assignment_type = data.get("assignmentType", "unassigned")
-        # Customer type toggle logic kept as before (Business vs Individual)
-        customer_type = "Business" if data.get("customerTypeToggle") else "Individual"
+        customer_type = "Business" if data.get("customerTypeToggle") == 'on' else "Individual"
 
         # ✅ FIXED: Properly resolve marketedBy to user name
-        marketed_by_val = data.get("marketedBy")  # This gets the user ID from form or free text
+        marketed_by_val = data.get("marketedBy")
         marketed_by_name = None
 
         if marketed_by_val:
@@ -3510,25 +3591,18 @@ def lead_form_view(request):
                         else:
                             branch_name = requirement_val
                     except Exception:
-                        # if import fails or model not found, fall back to raw value
                         branch_name = requirement_val
                 else:
-                    # It's already a name
                     branch_name = requirement_val
             except Exception as e:
                 logger.warning(f"Error resolving department: {e}")
                 branch_name = requirement_val
 
         # -----------------------
-        # Firm name handling
+        # ✅ UPDATED: Firm name handling for searchable select
         # -----------------------
-        posted_existing_name = (data.get('existing_name') or '').strip()
-        posted_name_text = (data.get('name') or data.get('name_hidden') or '').strip()
-
-        if posted_existing_name:
-            final_name = posted_existing_name
-        else:
-            final_name = posted_name_text
+        posted_firm_name = data.get('name', '').strip()
+        final_name = posted_firm_name
 
         # ✅ Get campaign details (campaign unique ID)
         campaign_details = data.get("campaign", "").strip()
@@ -3539,31 +3613,39 @@ def lead_form_view(request):
             "phoneNo": data.get("phoneNo"),
             "email": data.get("email"),
             "customerType": customer_type,
-            "name": final_name if customer_type == "Business" else None,
-            "address": data.get("address") if customer_type == "Business" else None,
-            "place": data.get("place") if customer_type == "Business" else None,
-            "District": data.get("District") if customer_type == "Business" else None,
-            "State": data.get("State") if customer_type == "Business" else None,
-            "pinCode": data.get("pinCode") if customer_type == "Business" else None,
-            "firstName": data.get("firstName") if customer_type == "Individual" else None,
-            "lastName": data.get("lastName") if customer_type == "Individual" else None,
-            "individualAddress": data.get("individualAddress") if customer_type == "Individual" else None,
-            "individualPlace": data.get("individualPlace") if customer_type == "Individual" else None,
-            "individualDistrict": data.get("individualDistrict") if customer_type == "Individual" else None,
-            "individualState": data.get("individualState") if customer_type == "Individual" else None,
-            "individualPinCode": data.get("individualPinCode") if customer_type == "Individual" else None,
-            "date": data.get("date") or None,
             "status": data.get("status") or None,
             "priority": data.get("priority") or "Medium",
             "refFrom": data.get("refFrom"),
             "business": data.get("business"),
-            "campaign": campaign_details,  # ✅ Store campaign unique ID
+            "campaign": campaign_details,
             "details": data.get("details"),
             "marketedBy": marketed_by_name,
             "Consultant": consultant_name,
             "requirement": branch_name,
             "assignment_type": assignment_type,
+            "date": data.get("date") or None,
         }
+
+        # ✅ ADD FIRM/BUSINESS SPECIFIC FIELDS BASED ON CUSTOMER TYPE
+        if customer_type == "Business":
+            lead_kwargs.update({
+                "name": final_name,
+                "address": data.get("address"),
+                "place": data.get("place"),
+                "District": data.get("District"),
+                "State": data.get("State"),
+                "pinCode": data.get("pinCode"),
+            })
+        else:  # Individual
+            lead_kwargs.update({
+                "firstName": data.get("firstName"),
+                "lastName": data.get("lastName"),
+                "individualAddress": data.get("individualAddress"),
+                "individualPlace": data.get("individualPlace"),
+                "individualDistrict": data.get("individualDistrict"),
+                "individualState": data.get("individualState"),
+                "individualPinCode": data.get("individualPinCode"),
+            })
 
         # ✅ Handle assignment if self-assigned
         if assignment_type == "self_assigned":
@@ -3636,8 +3718,60 @@ def lead_form_view(request):
         except Exception as e:
             logger.error(f"Error saving lead: {e}", exc_info=True)
             messages.error(request, f"Error saving lead: {str(e)}")
+            
+            # On POST error, re-render with form data preserved
+            # Get context and render the form again
+            context = get_lead_form_context(existing_firms, active_leads_data, active_users)
+            # ✅ ADD API DATA TO CONTEXT FOR RE-RENDER
+            context['api_customer_data'] = api_customer_data
+            context['api_data_count'] = len(api_customer_data)
+            return render(request, "lead_form.html", context)
 
-    # GET: prepare dropdowns
+    # GET: prepare dropdowns and render form
+    context = get_lead_form_context(existing_firms, active_leads_data, active_users)
+    # ✅ ADD API CUSTOMER DATA TO CONTEXT
+    context['api_customer_data'] = api_customer_data
+    context['api_data_count'] = len(api_customer_data)
+    
+    return render(request, "lead_form.html", context)
+
+
+def get_lead_form_context(existing_firms, active_leads_data, active_users):
+    """
+    Helper function to prepare context for the lead form
+    """
+    # You should include the code from your get_lead_form_context function here
+    # For brevity, I'm showing a placeholder - make sure to include your actual implementation
+    
+    context = {
+        'existing_firms': existing_firms,
+        'active_leads_data': active_leads_data,
+        'active_users': active_users,
+        'today': timezone.now().date(),
+        # ... [include all other context variables from your implementation] ...
+    }
+    
+    return context
+
+
+def get_lead_form_context(existing_firms, active_leads_data, active_users):
+    """
+    Helper function to prepare context for the lead form
+    """
+    import logging
+    from django.utils import timezone
+    
+    logger = logging.getLogger(__name__)
+    
+    # If not provided, initialize empty
+    if existing_firms is None:
+        existing_firms = []
+    if active_leads_data is None:
+        active_leads_data = []
+    if active_users is None:
+        active_users = []
+    
+    # Prepare dropdowns
     try:
         from app1.models import District
         districts = District.objects.all().order_by('name')
@@ -3694,15 +3828,17 @@ def lead_form_view(request):
         'districts': districts,
         'active_users': active_users,
         'departments': departments,
-        'existing_firms': existing_firms,
+        'existing_firms': existing_firms,  # ✅ Pass existing firms for searchable select
         'active_leads_data': active_leads_data,  # ✅ Now includes priority and campaign_display
         'references': references, 
         'campaigns': campaigns,  # ✅ Use Campaigning model data
         'active_campaigns_count': active_campaigns_count,
         'completed_campaigns_count': completed_campaigns_count,
         'draft_campaigns_count': draft_campaigns_count,
+        'today': timezone.now().date(),  # ✅ Add today's date for default value
     }
-    return render(request, "lead_form.html", context)
+    
+    return context
 
 
 
@@ -3853,9 +3989,85 @@ def lead_detail_api(request, lead_id):
 # Lead edit (view + save)
 # -----------------------
 
+import requests
+import json
+from django.conf import settings
+from django.contrib import messages
+from django.shortcuts import render, redirect, get_object_or_404
+from django.utils import timezone
+import logging
+
+logger = logging.getLogger(__name__)
+
 def lead_edit(request, lead_id):
     lead = get_object_or_404(Lead, id=lead_id)
 
+    # ========== API INTEGRATION ==========
+    API_URL = "https://accmaster.imcbs.com/api/sync/rrc-clients/"
+    api_customer_data = []
+    api_data_count = 0
+    
+    try:
+        # You might need to add authentication headers
+        headers = {
+            'Content-Type': 'application/json',
+            # Add authentication headers if required
+            # 'Authorization': 'Bearer YOUR_TOKEN',
+        }
+        
+        # Make API request with timeout
+        response = requests.get(API_URL, headers=headers, timeout=10)
+        
+        if response.status_code == 200:
+            api_data = response.json()
+            
+            # Process API data based on its structure
+            if isinstance(api_data, list):
+                api_customer_data = api_data
+            elif isinstance(api_data, dict) and 'data' in api_data:
+                api_customer_data = api_data['data']
+            elif isinstance(api_data, dict) and 'clients' in api_data:
+                api_customer_data = api_data['clients']
+            else:
+                api_customer_data = [api_data] if api_data else []
+            
+            api_data_count = len(api_customer_data)
+            logger.info(f"Successfully fetched {api_data_count} customers from API")
+            
+        else:
+            logger.error(f"API request failed with status {response.status_code}")
+            messages.warning(request, f"Could not fetch customer data from API (Status: {response.status_code})")
+            
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Error connecting to API: {e}")
+        messages.warning(request, "Unable to connect to customer database API")
+    except json.JSONDecodeError as e:
+        logger.error(f"Error parsing API response: {e}")
+        messages.warning(request, "Error processing customer data from API")
+    except Exception as e:
+        logger.error(f"Unexpected error with API: {e}")
+        messages.warning(request, "Error fetching customer data")
+    
+    # Standardize API data structure
+    standardized_api_data = []
+    for customer in api_customer_data:
+        standardized_customer = {
+            'code': str(customer.get('code', customer.get('client_code', customer.get('id', '')))),
+            'name': customer.get('name', customer.get('client_name', customer.get('firm_name', ''))),
+            'address': customer.get('address', customer.get('address1', '')),
+            'address3': customer.get('address3', customer.get('address2', customer.get('location', ''))),
+            'branch': customer.get('branch', customer.get('branch_name', '')),
+            'district': customer.get('district', customer.get('district_name', '')),
+            'state': customer.get('state', customer.get('state_name', '')),
+            'mobile': customer.get('mobile', customer.get('phone', customer.get('contact_no', ''))),
+            'software': customer.get('software', customer.get('software_name', customer.get('product', ''))),
+            'nature': customer.get('nature', customer.get('business_nature', customer.get('industry', ''))),
+            'rout': customer.get('rout', customer.get('route', '')),
+            'installationdate': customer.get('installationdate', customer.get('install_date', customer.get('created_at', '')))
+        }
+        standardized_api_data.append(standardized_customer)
+    
+    # Continue with existing code for POST handling
     if request.method == 'POST':
         lead.ownerName = request.POST.get('ownerName')
         lead.phoneNo = request.POST.get('phoneNo')
@@ -3865,13 +4077,27 @@ def lead_edit(request, lead_id):
         lead.priority = request.POST.get('priority', 'Medium')
         lead.refFrom = request.POST.get('refFrom')
         lead.business = request.POST.get('business')
-        lead.marketedBy = request.POST.get('marketedBy')
+        
+        # Handle marketedBy - store as ID
+        marketed_by_value = request.POST.get('marketedBy')
+        if marketed_by_value and marketed_by_value.isdigit():
+            lead.marketedBy = int(marketed_by_value)
+        else:
+            lead.marketedBy = marketed_by_value
+            
         lead.Consultant = request.POST.get('Consultant')
-        lead.requirement = request.POST.get('requirement')
+        
+        # Handle requirement - store as ID
+        requirement_value = request.POST.get('requirement')
+        if requirement_value and requirement_value.isdigit():
+            lead.requirement = int(requirement_value)
+        else:
+            lead.requirement = requirement_value
+            
         lead.details = request.POST.get('details')
         lead.date = request.POST.get('date') or lead.date
         
-        # Handle campaign field - check if it exists in the model
+        # Handle campaign field
         if hasattr(lead, 'Campaign'):
             lead.Campaign = request.POST.get('Campaign')
         elif hasattr(lead, 'campaign'):
@@ -3917,69 +4143,165 @@ def lead_edit(request, lead_id):
     states = StateMaster.objects.all().order_by('name') if StateMaster is not None else []
     districts = District.objects.all().order_by('name') if District is not None else []
 
-    # Active users for dropdown
-    active_users = (
-        User.objects.filter(is_active=True)
-        .order_by('first_name', 'username')
-        .only('id', 'first_name', 'last_name', 'username')
-    )
+    # Get active users for dropdown
+    try:
+        user_fields = [f.name for f in User._meta.get_fields()]
+        
+        if 'status' in user_fields:
+            active_users = User.objects.filter(status='active').order_by('name')
+        elif 'is_active' in user_fields:
+            active_users = User.objects.filter(is_active=True).order_by('name')
+        else:
+            active_users = User.objects.all().order_by('name')
+            
+    except Exception as e:
+        logger.error(f"Error loading users: {e}")
+        active_users = []
 
     departments = Department.objects.filter(is_active=True).order_by('name') if Department is not None else []
     
-    # Get campaigns for dropdown - with error handling
+    # Get campaigns for dropdown
     try:
-        campaigns = Campaign.objects.all().order_by('name')
+        from campaign.models import Campaigning
+        campaigns = Campaigning.objects.filter(is_deleted=False).order_by('-campaign_id')
     except:
         campaigns = []
     
-    # Get references for dropdown - with error handling
+    # Get references for dropdown
     try:
-        references = ReferenceFrom.objects.all().order_by('ref_name')
+        from .models import Reference
+        references = Reference.objects.all().order_by('ref_name')
     except:
         references = []
     
     # Get active leads for directory
-    active_leads_data = Lead.objects.filter(status='Active').order_by('-date')[:50]  # Limit to 50 for performance
+    active_leads_data = Lead.objects.filter(status='Active').order_by('-date')[:50]
 
     # Get display names for better user experience
+    marketed_by_id = None
     marketed_by_name = None
+    
+    # First, try to get the ID from lead.marketedBy
     if lead.marketedBy:
         try:
-            # Handle both string and integer IDs
-            marketed_by_id = int(lead.marketedBy) if str(lead.marketedBy).isdigit() else lead.marketedBy
-            if isinstance(marketed_by_id, int):
-                marketed_by_user = User.objects.get(id=marketed_by_id)
-                marketed_by_name = f"{marketed_by_user.first_name} {marketed_by_user.last_name}".strip()
-                if not marketed_by_name.strip():
-                    marketed_by_name = marketed_by_user.username
+            # If marketedBy is already an integer ID
+            if isinstance(lead.marketedBy, int) or (isinstance(lead.marketedBy, str) and lead.marketedBy.isdigit()):
+                marketed_by_id = int(lead.marketedBy)
+                try:
+                    marketed_by_user = User.objects.get(id=marketed_by_id)
+                    marketed_by_name = marketed_by_user.name
+                except User.DoesNotExist:
+                    logger.error(f"User with ID {marketed_by_id} not found")
+                    marketed_by_name = str(lead.marketedBy)
             else:
-                # If it's already a name, use it directly
-                marketed_by_name = marketed_by_id
-        except (User.DoesNotExist, ValueError):
-            marketed_by_name = None
+                # If it's a string name, try to find the user
+                try:
+                    marketed_by_user = User.objects.filter(name=lead.marketedBy).first()
+                    if marketed_by_user:
+                        marketed_by_id = marketed_by_user.id
+                        marketed_by_name = marketed_by_user.name
+                    else:
+                        marketed_by_name = str(lead.marketedBy)
+                except:
+                    marketed_by_name = str(lead.marketedBy)
+        except (ValueError, Exception) as e:
+            logger.error(f"Error getting marketed by user: {e}")
+            marketed_by_name = str(lead.marketedBy)
 
+    branch_id = None
     branch_name = None
+    
+    # Get branch/requirement information
     if lead.requirement:
         try:
-            # Handle both string and integer IDs
-            branch_id = int(lead.requirement) if str(lead.requirement).isdigit() else lead.requirement
-            if isinstance(branch_id, int):
-                branch = Department.objects.get(id=branch_id)
-                branch_name = branch.name
+            # If requirement is already an integer ID
+            if isinstance(lead.requirement, int) or (isinstance(lead.requirement, str) and lead.requirement.isdigit()):
+                branch_id = int(lead.requirement)
+                try:
+                    branch = Department.objects.get(id=branch_id)
+                    branch_name = branch.name
+                except Department.DoesNotExist:
+                    logger.error(f"Department with ID {branch_id} not found")
+                    branch_name = str(lead.requirement)
             else:
-                # If it's already a name, use it directly
-                branch_name = branch_id
-        except (Department.DoesNotExist, ValueError):
-            branch_name = None
+                # If it's a string name, try to find the department
+                try:
+                    branch = Department.objects.filter(name=lead.requirement).first()
+                    if branch:
+                        branch_id = branch.id
+                        branch_name = branch.name
+                    else:
+                        branch_name = str(lead.requirement)
+                except:
+                    branch_name = str(lead.requirement)
+        except (ValueError, Exception) as e:
+            logger.error(f"Error getting branch: {e}")
+            branch_name = str(lead.requirement)
 
-    # Get campaign name - check both possible field names
+    # Get campaign name
     campaign_name = None
     if hasattr(lead, 'Campaign') and lead.Campaign:
         campaign_name = lead.Campaign
     elif hasattr(lead, 'campaign') and lead.campaign:
         campaign_name = lead.campaign
 
+    # Prepare lead_data dictionary for template
+    lead_data = {
+        'id': lead.id,
+        'ownerName': lead.ownerName,
+        'phoneNo': lead.phoneNo,
+        'email': lead.email,
+        'customerType': lead.customerType,
+        'status': lead.status,
+        'priority': lead.priority,
+        'refFrom': lead.refFrom,
+        'business': lead.business,
+        'Consultant': lead.Consultant,
+        'details': lead.details,
+        'date': lead.date,
+        'ticket_number': getattr(lead, 'ticket_number', lead.id),
+        
+        # Business fields
+        'name': lead.name,
+        'address': lead.address,
+        'place': lead.place,
+        'District': lead.District,
+        'State': lead.State,
+        'pinCode': lead.pinCode,
+        
+        # Individual fields
+        'firstName': lead.firstName,
+        'lastName': lead.lastName,
+        'individualAddress': lead.individualAddress,
+        'individualPlace': lead.individualPlace,
+        'individualDistrict': lead.individualDistrict,
+        'individualState': lead.individualState,
+        'individualPinCode': lead.individualPinCode,
+        
+        # Display fields
+        'marketed_by_name': marketed_by_name,
+        'branch_name': branch_name,
+        'campaign_display': campaign_name,
+        'campaign': campaign_name,
+        
+        # ID fields for select dropdowns (IMPORTANT FIX)
+        'marketedBy': str(marketed_by_id) if marketed_by_id else '',
+        'requirement': str(branch_id) if branch_id else '',
+    }
+    
+    # Get existing firms for searchable dropdown
+    existing_firms = Lead.objects.filter(
+        customerType='Business'
+    ).exclude(
+        name__isnull=True
+    ).exclude(
+        name=''
+    ).values_list(
+        'name', flat=True
+    ).distinct()
+
     context = {
+        'lead_data': lead_data,
         'lead': lead,
         'business_natures': business_natures,
         'states': states,
@@ -3992,8 +4314,15 @@ def lead_edit(request, lead_id):
         'marketed_by_name': marketed_by_name,
         'branch_name': branch_name,
         'campaign_name': campaign_name,
+        'today': timezone.now().date(),
+        'existing_firms': existing_firms,
+        'api_customer_data': standardized_api_data,
+        'api_data_count': api_data_count,
+        'section_counts': {},
     }
-    return render(request, 'lead_form_edit.html', context)
+    
+    return render(request, "lead_form_edit.html", context)
+
 
 from django.shortcuts import get_object_or_404, redirect
 from django.http import JsonResponse, HttpResponseNotAllowed
@@ -5636,15 +5965,908 @@ def event_form(request):
     return render(request, 'event_form.html')
 
 
-from django.shortcuts import render
+# Replace your existing quotation views with this complete version
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.db import transaction
+from django.contrib import messages
+from django.utils import timezone
+from django.core import serializers
+from decimal import Decimal
+import json
+import logging
+
+from purchase_order.models import Item, Department
+from .models import Lead, Quotation, QuotationItem
+from app1.models import User
+
+logger = logging.getLogger(__name__)
+
+
+# ============================================================================
+# QUOTATION LIST VIEW - Display form to create quotations
+# ============================================================================
+def quotation_list_view(request):
+    """
+    Display quotation form with active leads, employees, and items
+    """
+    # ✅ GET ACTIVE LEADS
+    active_leads = []
+    try:
+        leads_qs = Lead.objects.filter(status__iexact='Active').order_by('-created_at')[:50]
+        
+        for lead in leads_qs:
+            active_leads.append({
+                'id': lead.id,
+                'ownerName': lead.ownerName,
+                'phoneNo': lead.phoneNo,
+                'email': lead.email if lead.email else '',
+                'ticket_number': getattr(lead, 'ticket_number', f'TKT-{lead.id}'),
+                'status': lead.status,
+                'priority': getattr(lead, 'priority', 'Medium'),
+                'place': lead.place if lead.place else '',
+                'business': lead.business if lead.business else '',
+                'customerType': lead.customerType,
+            })
+        
+        logger.info(f"✅ Loaded {len(active_leads)} active leads for quotation")
+        
+    except Exception as e:
+        logger.error(f"❌ Error loading leads: {e}")
+        active_leads = []
+    
+    # ✅ GET ACTIVE EMPLOYEES/USERS
+    active_employees = []
+    try:
+        # Try to get users with status field
+        user_fields = [f.name for f in User._meta.get_fields()]
+        
+        if 'status' in user_fields:
+            users_qs = User.objects.filter(status='active').order_by('name')
+        elif 'is_active' in user_fields:
+            users_qs = User.objects.filter(is_active=True).order_by('name')
+        else:
+            users_qs = User.objects.all().order_by('name')
+        
+        for user in users_qs:
+            active_employees.append({
+                'id': user.id,
+                'name': getattr(user, 'name', f'User {user.id}'),
+                'department': getattr(user, 'department', ''),
+                'designation': getattr(user, 'designation', ''),
+                'phone': getattr(user, 'phone_number', '') or getattr(user, 'phone', ''),
+            })
+        
+        logger.info(f"✅ Loaded {len(active_employees)} active employees for quotation")
+        
+    except Exception as e:
+        logger.error(f"❌ Error loading employees: {e}")
+        active_employees = []
+    
+    # ✅ GET ITEMS FROM PURCHASE_ORDER
+    items = []
+    try:
+        items = Item.objects.filter(is_active=True).order_by('section', 'name')
+        logger.info(f"✅ Loaded {items.count()} items for quotation")
+    except Exception as e:
+        logger.error(f"❌ Error loading items: {e}")
+        items = []
+    
+    # ✅ GET DEPARTMENTS (if needed for filtering)
+    departments = []
+    try:
+        departments = Department.objects.filter(is_active=True).order_by('name')
+    except Exception as e:
+        logger.debug(f"No departments available: {e}")
+    
+    # Calculate counts
+    leads_count = len(active_leads)
+    employees_count = len(active_employees)
+    items_count = items.count() if hasattr(items, 'count') else len(items)
+    
+    context = {
+        'active_leads': active_leads,
+        'active_employees': active_employees,
+        'items': items,
+        'departments': departments,
+        'leads_count': leads_count,
+        'employees_count': employees_count,
+        'items_count': items_count,
+    }
+    
+    logger.info(f"📊 Quotation List Context: {leads_count} leads, {employees_count} employees, {items_count} items")
+    
+    return render(request, 'quotation_list.html', context)
+
+
+# ============================================================================
+# QUOTATION FORM VIEW - Display saved quotations
+# ============================================================================
+from django.db.models import Sum  # ADD THIS IMPORT
 
 def quotation_form_view(request):
-    # Your quotation form logic here
-    return render(request, 'quotation_form.html')
+    """
+    Display saved quotations in quotation_form.html
+    Shows all quotations with their items
+    """
+    try:
+        logger.info("🔍 Entering quotation_form_view")
+        
+        # Get all quotations with related data - FIXED JOIN
+        quotations = Quotation.objects.select_related(
+            'lead'  # Make sure this is correct foreign key name
+        ).prefetch_related(
+            'items'
+        ).order_by('-created_at')
+        
+        # DEBUG: Check if we're getting any data
+        logger.info(f"📊 Quotations QuerySet: {quotations}")
+        
+        # Force evaluation to see actual data
+        quotation_list = list(quotations)
+        logger.info(f"📊 Quotation list count: {len(quotation_list)}")
+        
+        # Log each quotation with lead info
+        for i, q in enumerate(quotation_list[:5]):
+            lead_info = f"{q.lead.ownerName}" if q.lead else "No Lead"
+            logger.info(f"  {i+1}. {q.quotation_number} - {lead_info} - ₹{q.grand_total} - Status: {q.status}")
+        
+        # Get active leads for the directory
+        active_leads = []
+        try:
+            leads_qs = Lead.objects.filter(
+                status__iexact='Active'
+            ).order_by('-created_at')[:50]
+            
+            for lead in leads_qs:
+                active_leads.append({
+                    'id': lead.id,
+                    'ownerName': lead.ownerName or '',
+                    'phoneNo': lead.phoneNo or '',
+                    'email': lead.email or '',
+                    'ticket_number': getattr(lead, 'ticket_number', f'TKT-{lead.id}'),
+                    'status': lead.status or 'Active',
+                    'priority': getattr(lead, 'priority', 'Medium'),
+                    'place': lead.place or '',
+                    'business': lead.business or '',
+                    'customerType': lead.customerType or '',
+                    'created_at': lead.created_at if hasattr(lead, 'created_at') else lead.date,
+                })
+            
+            logger.info(f"📋 Loaded {len(active_leads)} active leads")
+            
+        except Exception as e:
+            logger.error(f"❌ Error loading leads: {e}")
+            active_leads = []
+        
+        # Get active users
+        active_users = []
+        try:
+            user_fields = [f.name for f in User._meta.get_fields()]
+            
+            if 'status' in user_fields:
+                users_qs = User.objects.filter(status='active').order_by('name')
+            elif 'is_active' in user_fields:
+                users_qs = User.objects.filter(is_active=True).order_by('name')
+            else:
+                users_qs = User.objects.all().order_by('name')
+            
+            for user in users_qs:
+                active_users.append({
+                    'id': user.id,
+                    'name': getattr(user, 'name', f'User {user.id}'),
+                    'department': getattr(user, 'department', ''),
+                    'designation': getattr(user, 'designation', ''),
+                })
+        except Exception as e:
+            logger.error(f"❌ Error loading users: {e}")
+            active_users = []
+        
+        # Calculate statistics
+        total_quotations = len(quotation_list)
+        
+        # Make sure we're passing all necessary fields to template
+        context = {
+            'quotations': quotation_list,  # Pass the evaluated list
+            'leads': active_leads,
+            'active_users': active_users,
+            'total_quotations': total_quotations,
+            'leads_count': len(active_leads),
+        }
+        
+        logger.info(f"✅ Context prepared with {total_quotations} quotations")
+        
+        return render(request, 'quotation_form.html', context)
+        
+    except Exception as e:
+        logger.error(f"❌ Error in quotation_form_view: {e}", exc_info=True)
+        
+        # Return empty context but show error
+        return render(request, 'quotation_form.html', {
+            'quotations': [],
+            'leads': [],
+            'active_users': [],
+            'total_quotations': 0,
+            'leads_count': 0,
+            'error_message': f'Error loading quotations: {str(e)}'
+        })
 
-def quotation_list_view(request):
-    # Your view logic here
-    context = {
-        'quotations': [],  # Add your data here
-    }
-    return render(request, 'quotation_list.html', context)
+# ============================================================================
+# QUOTATION SUBMIT - Save quotation to database
+# ============================================================================
+
+import json
+import logging
+from decimal import Decimal
+from django.db import transaction
+from django.http import JsonResponse
+from django.utils import timezone
+from datetime import datetime, timedelta
+from app5.models import Lead, Quotation, QuotationItem
+from purchase_order.models import Item
+from app1.models import User
+
+logger = logging.getLogger(__name__)
+
+def quotation_submit(request):
+    """
+    Handle quotation submission from quotation_list.html
+    Save quotation and items to database
+    """
+    if request.method != 'POST':
+        logger.warning(f"❌ Invalid request method: {request.method}")
+        return JsonResponse({
+            'success': False,
+            'message': 'Invalid request method. Only POST requests are allowed.'
+        }, status=405)
+    
+    try:
+        # Parse JSON data
+        data = json.loads(request.body)
+        logger.info(f"📝 Received quotation submission request")
+        logger.debug(f"Raw data keys: {list(data.keys())}")
+        
+        # Extract main quotation data
+        lead_id = data.get('lead_id')
+        notes = data.get('notes', '').strip()
+        items_data = data.get('items', [])
+        
+        # Financial totals
+        subtotal = Decimal(str(data.get('subtotal', 0)))
+        total_discount = Decimal(str(data.get('total_discount', 0)))
+        total_tax = Decimal(str(data.get('total_tax', 0)))
+        grand_total = Decimal(str(data.get('grand_total', 0)))
+        
+        logger.debug(f"📊 Totals - Subtotal: {subtotal}, Discount: {total_discount}, Tax: {total_tax}, Grand Total: {grand_total}")
+        logger.debug(f"📦 Items count: {len(items_data)}")
+        
+        # ========== VALIDATION ==========
+        validation_errors = []
+        
+        # Validate lead
+        if not lead_id:
+            validation_errors.append('Please select a lead from the directory')
+        
+        # Validate items
+        if not items_data or len(items_data) == 0:
+            validation_errors.append('Please add at least one item to the quotation')
+        else:
+            # Validate each item
+            invalid_items = []
+            for idx, item in enumerate(items_data):
+                item_id = item.get('item_id')
+                item_name = item.get('item_name')
+                
+                if not item_id or not item_name:
+                    invalid_items.append(idx + 1)
+                
+                # Additional item validation
+                quantity = Decimal(str(item.get('quantity', 0)))
+                if quantity <= 0:
+                    validation_errors.append(f'Item {idx + 1}: Quantity must be greater than 0')
+                
+                sales_price = Decimal(str(item.get('sales_price', 0)))
+                unit_price = Decimal(str(item.get('unit_price', 0)))
+                if sales_price < 0 or unit_price < 0:
+                    validation_errors.append(f'Item {idx + 1}: Price cannot be negative')
+            
+            if invalid_items:
+                validation_errors.append(f'Please select an item for rows: {", ".join(map(str, invalid_items))}')
+        
+        # Validate totals
+        if grand_total <= 0:
+            validation_errors.append('Grand total must be greater than 0')
+        
+        # Return validation errors if any
+        if validation_errors:
+            logger.warning(f"❌ Validation errors: {validation_errors}")
+            return JsonResponse({
+                'success': False,
+                'message': '\n'.join(validation_errors),
+                'validation_errors': validation_errors
+            }, status=400)
+        
+        # ========== LEAD PROCESSING ==========
+        try:
+            lead = Lead.objects.get(id=lead_id)
+            logger.info(f"✅ Found lead: {lead.ticket_number} - {lead.ownerName}")
+        except Lead.DoesNotExist:
+            logger.error(f"❌ Lead {lead_id} not found")
+            return JsonResponse({
+                'success': False,
+                'message': f'Lead not found (ID: {lead_id})',
+                'lead_id': lead_id
+            }, status=404)
+        
+        # Get client information from lead
+        client_name = lead.ownerName or lead.display_name or "Unknown Client"
+        client_phone = lead.phoneNo or "N/A"
+        client_email = lead.email or None
+        
+        # Get company name from lead if business type
+        company_name = None
+        if lead.customerType == 'Business':
+            company_name = lead.name or lead.business or lead.ownerName
+        
+        logger.debug(f"👤 Client info - Name: {client_name}, Phone: {client_phone}, Email: {client_email}")
+        
+        # ========== USER AUTHENTICATION ==========
+        current_user = None
+        user_info = "Anonymous"
+        
+        if request.user and request.user.is_authenticated:
+            try:
+                # Try to get user by userid or name from the authenticated user
+                authenticated_username = request.user.username
+                
+                # Since your custom User model doesn't have username, try name
+                current_user = User.objects.filter(name=authenticated_username).first()
+                
+                if not current_user:
+                    # Try to get by userid
+                    current_user = User.objects.filter(userid=authenticated_username).first()
+                
+                if current_user:
+                    user_info = f"{current_user.name} (ID: {current_user.id})"
+                    
+            except Exception as e:
+                logger.warning(f"⚠️ Could not get user from request.user: {e}")
+                current_user = None
+        
+        # Fallback to session user ID
+        if not current_user and request.session.get('custom_user_id'):
+            try:
+                current_user = User.objects.get(id=request.session['custom_user_id'])
+                user_info = f"{current_user.name} (Session ID: {current_user.id})"
+            except User.DoesNotExist:
+                logger.warning(f"⚠️ Session user {request.session.get('custom_user_id')} not found")
+                current_user = None
+        
+        logger.info(f"👤 Current user: {user_info}")
+        
+        # ========== QUOTATION CREATION ==========
+        quotation_date = timezone.now().date()
+        valid_until = quotation_date + timedelta(days=30)  # Valid for 30 days
+        
+        # Generate quotation number
+        with transaction.atomic():
+            # Get last quotation number
+            from django.db.models import Max
+            last_quote = Quotation.objects.aggregate(Max('id'))['id__max'] or 0
+            
+            # Generate sequential quotation number
+            quotation_number = f"QT-{quotation_date.strftime('%Y%m%d')}-{(last_quote + 1):04d}"
+            
+            logger.info(f"🔢 Generated quotation number: {quotation_number}")
+            
+            # Create quotation
+            quotation = Quotation.objects.create(
+                lead=lead,
+                client_name=client_name,
+                client_phone=client_phone,
+                client_email=client_email,
+                company_name=company_name,
+                quotation_date=quotation_date,
+                valid_until=valid_until,
+                quotation_number=quotation_number,
+                notes=notes if notes else None,
+                subtotal=subtotal,
+                total_discount=total_discount,
+                total_tax=total_tax,
+                grand_total=grand_total,
+                status='draft',
+                created_by=current_user
+            )
+            
+            logger.info(f"✅ Created quotation record: {quotation.id} - {quotation.quotation_number}")
+            
+            # ========== QUOTATION ITEMS CREATION ==========
+            items_created = 0
+            total_line_total = Decimal('0')
+            item_errors = []
+            
+            for idx, item_data in enumerate(items_data):
+                try:
+                    item_id = item_data.get('item_id')
+                    item = None
+                    
+                    # Try to get item from purchase order
+                    if item_id:
+                        try:
+                            item = Item.objects.get(id=item_id)
+                            logger.debug(f"  🛒 Found PO item: {item.name} (ID: {item.id})")
+                        except Item.DoesNotExist:
+                            logger.warning(f"  ⚠️ Purchase order item {item_id} not found, using provided data")
+                    
+                    # Extract item data
+                    quantity = Decimal(str(item_data.get('quantity', 1)))
+                    sales_price = Decimal(str(item_data.get('sales_price', 0)))
+                    unit_price = Decimal(str(item_data.get('unit_price', 0)))
+                    discount_percentage = Decimal(str(item_data.get('discount', 0)))
+                    tax_percentage = Decimal(str(item_data.get('tax', 0)))
+                    line_total = Decimal(str(item_data.get('total', 0)))
+                    
+                    # Validate item data
+                    if quantity <= 0:
+                        raise ValueError(f"Invalid quantity: {quantity}")
+                    
+                    if line_total <= 0:
+                        logger.warning(f"  ⚠️ Item {idx+1} has zero or negative line total: {line_total}")
+                    
+                    # Calculate derived values
+                    base_price = sales_price if sales_price > 0 else unit_price
+                    discount_amount = (base_price * quantity) * (discount_percentage / 100)
+                    amount_after_discount = (base_price * quantity) - discount_amount
+                    tax_amount = amount_after_discount * (tax_percentage / 100)
+                    
+                    # Get item details
+                    item_name = item_data.get('item_name', '')
+                    if not item_name and item:
+                        item_name = item.name
+                    if not item_name:
+                        item_name = 'Unknown Item'
+                    
+                    description = item_data.get('description', '')
+                    if not description and item and item.description:
+                        description = item.description
+                    
+                    unit = item_data.get('unit', 'pcs')
+                    if not unit and item and item.unit_of_measure:
+                        unit = item.unit_of_measure
+                    
+                    hsn_code = item_data.get('hsn_code', '')
+                    if not hsn_code and item and item.hsn_code:
+                        hsn_code = item.hsn_code
+                    
+                    # Create quotation item
+                    quotation_item = QuotationItem.objects.create(
+                        quotation=quotation,
+                        item=item,
+                        item_name=item_name,
+                        description=description,
+                        quantity=quantity,
+                        unit=unit,
+                        entry_rate=Decimal(str(item_data.get('entry_rate', 0))),
+                        sales_price=sales_price,
+                        unit_price=unit_price,
+                        discount_percentage=discount_percentage,
+                        discount_amount=discount_amount,
+                        tax_percentage=tax_percentage,
+                        tax_amount=tax_amount,
+                        line_total=line_total,
+                        hsn_code=hsn_code,
+                        order=idx
+                    )
+                    
+                    items_created += 1
+                    total_line_total += line_total
+                    
+                    logger.debug(f"  📦 Created item {idx+1}: {quotation_item.item_name} "
+                                f"(Qty: {quantity}, Price: ₹{base_price}, Total: ₹{line_total})")
+                    
+                except Exception as e:
+                    logger.error(f"❌ Error creating item {idx+1}: {e}", exc_info=True)
+                    item_errors.append(f"Item {idx+1}: {str(e)}")
+                    raise  # Re-raise to trigger transaction rollback
+            
+            # Verify totals match
+            total_discrepancy = abs(total_line_total - grand_total)
+            if total_discrepancy > Decimal('0.01'):
+                logger.warning(f"⚠️ Line totals ({total_line_total}) don't match grand total ({grand_total}) "
+                              f"Difference: {total_discrepancy}")
+                
+                # Update quotation totals to match line totals
+                quotation.grand_total = total_line_total
+                quotation.subtotal = total_line_total - total_tax
+                quotation.save()
+                
+                logger.info(f"🔄 Updated quotation totals to match line items")
+        
+        # ========== POST-CREATION UPDATES ==========
+        # Update lead with quotation info
+        lead_updated = False
+        try:
+            if lead.details:
+                lead.details = f"Quotation created: {quotation_number} ({quotation_date})\n" + lead.details
+            else:
+                lead.details = f"Quotation created: {quotation_number} ({quotation_date})"
+            lead.save()
+            lead_updated = True
+            logger.debug(f"✅ Updated lead details with quotation info")
+        except Exception as e:
+            logger.warning(f"⚠️ Could not update lead details: {e}")
+        
+        # ========== SUCCESS RESPONSE ==========
+        response_data = {
+            'success': True,
+            'message': f'✅ Quotation {quotation.quotation_number} created successfully!',
+            'quotation': {
+                'id': quotation.id,
+                'quotation_number': quotation.quotation_number,
+                'date': quotation_date.strftime('%Y-%m-%d'),
+                'valid_until': valid_until.strftime('%Y-%m-%d'),
+                'status': 'draft',
+                'client_name': client_name,
+                'client_phone': client_phone,
+                'items_count': items_created,
+                'subtotal': float(subtotal),
+                'total_discount': float(total_discount),
+                'total_tax': float(total_tax),
+                'grand_total': float(grand_total),
+                'created_by': user_info,
+            },
+            'redirect_url': '/app5/quotation/form/',  # URL to quotation_form.html
+            'metadata': {
+                'lead_updated': lead_updated,
+                'items_processed': items_created,
+                'user': user_info,
+                'timestamp': timezone.now().isoformat()
+            }
+        }
+        
+        logger.info(f"🎉 Quotation {quotation.quotation_number} created successfully with {items_created} items")
+        logger.info(f"📊 Totals - Subtotal: ₹{subtotal}, Tax: ₹{total_tax}, Grand Total: ₹{grand_total}")
+        
+        return JsonResponse(response_data)
+        
+    except json.JSONDecodeError as e:
+        logger.error(f"❌ Invalid JSON data: {e}")
+        logger.debug(f"Request body: {request.body[:500]}...")  # Log first 500 chars
+        
+        return JsonResponse({
+            'success': False,
+            'message': 'Invalid JSON data. Please check your input.',
+            'error_detail': str(e)
+        }, status=400)
+    
+    except Lead.DoesNotExist as e:
+        logger.error(f"❌ Lead not found: {e}")
+        return JsonResponse({
+            'success': False,
+            'message': 'Lead not found. Please select a valid lead.',
+            'error_detail': str(e)
+        }, status=404)
+    
+    except Item.DoesNotExist as e:
+        logger.error(f"❌ Item not found: {e}")
+        return JsonResponse({
+            'success': False,
+            'message': 'One or more items not found in the system.',
+            'error_detail': str(e)
+        }, status=404)
+    
+    except transaction.TransactionManagementError as e:
+        logger.error(f"❌ Database transaction error: {e}")
+        return JsonResponse({
+            'success': False,
+            'message': 'Database transaction failed. Please try again.',
+            'error_detail': str(e)
+        }, status=500)
+    
+    except Exception as e:
+        logger.error(f"❌ Unexpected error creating quotation: {e}", exc_info=True)
+        
+        # More specific error message based on error type
+        error_message = f'Error creating quotation: {str(e)}'
+        
+        # Check for specific common errors
+        if "decimal" in str(e).lower():
+            error_message = "Invalid number format. Please check all price and quantity values."
+        elif "integrity" in str(e).lower() or "constraint" in str(e).lower():
+            error_message = "Database constraint violation. Please check your data."
+        elif "permission" in str(e).lower() or "access" in str(e).lower():
+            error_message = "Permission denied. You may not have access to create quotations."
+        
+        return JsonResponse({
+            'success': False,
+            'message': error_message,
+            'error_type': type(e).__name__,
+            'error_detail': str(e)
+        }, status=500)
+
+
+# ============================================================================
+# API ENDPOINTS
+# ============================================================================
+
+def get_quotation_items_api(request):
+    """API endpoint to get items for quotation form"""
+    try:
+        items = Item.objects.filter(is_active=True).order_by('name')
+        
+        items_data = []
+        for item in items:
+            items_data.append({
+                'id': item.id,
+                'name': item.name,
+                'unit_of_measure': item.unit_of_measure,
+                'mrp': float(item.mrp) if item.mrp else 0,
+                'purchase_price': float(item.purchase_price) if item.purchase_price else 0,
+                'cost': float(item.cost) if item.cost else 0,
+                'tax_percentage': float(item.tax_percentage) if item.tax_percentage else 0,
+                'hsn_code': item.hsn_code or '',
+                'description': item.description or '',
+                'section': item.section,
+                'department': item.department.name if item.department else 'N/A'
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'items': items_data
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+
+def quotation_detail_api(request, quotation_id):
+    """
+    API endpoint to get quotation details
+    """
+    try:
+        quotation = get_object_or_404(
+            Quotation.objects.prefetch_related('items'),
+            id=quotation_id
+        )
+        
+        # Build quotation data
+        quotation_data = {
+            'id': quotation.id,
+            'quotation_number': quotation.quotation_number,
+            'client_name': quotation.client_name,
+            'client_phone': quotation.client_phone,
+            'client_email': quotation.client_email or '',
+            'company_name': quotation.company_name or '',
+            'quotation_date': quotation.quotation_date.strftime('%Y-%m-%d'),
+            'valid_until': quotation.valid_until.strftime('%Y-%m-%d'),
+            'status': quotation.status,
+            'status_display': quotation.get_status_display(),
+            'subtotal': float(quotation.subtotal),
+            'total_discount': float(quotation.total_discount),
+            'total_tax': float(quotation.total_tax),
+            'grand_total': float(quotation.grand_total),
+            'notes': quotation.notes or '',
+            'created_at': quotation.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+            'items': []
+        }
+        
+        # Add lead info if available
+        if quotation.lead:
+            quotation_data['lead'] = {
+                'id': quotation.lead.id,
+                'ticket_number': quotation.lead.ticket_number,
+                'priority': quotation.lead.priority,
+            }
+        
+        # Add items
+        for item in quotation.items.all():
+            quotation_data['items'].append({
+                'id': item.id,
+                'item_name': item.item_name,
+                'description': item.description or '',
+                'quantity': float(item.quantity),
+                'unit': item.unit,
+                'entry_rate': float(item.entry_rate),
+                'sales_price': float(item.sales_price),
+                'unit_price': float(item.unit_price),
+                'discount_percentage': float(item.discount_percentage),
+                'tax_percentage': float(item.tax_percentage),
+                'line_total': float(item.line_total),
+                'hsn_code': item.hsn_code or '',
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'quotation': quotation_data
+        })
+        
+    except Quotation.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'message': 'Quotation not found'
+        }, status=404)
+    
+    except Exception as e:
+        logger.error(f"Error getting quotation details: {e}")
+        return JsonResponse({
+            'success': False,
+            'message': str(e)
+        }, status=500)
+
+
+@csrf_exempt
+def quotation_delete(request, quotation_id):
+    """
+    Delete a quotation
+    """
+    if request.method != 'DELETE':
+        return JsonResponse({
+            'success': False,
+            'message': 'Invalid request method. Use DELETE.'
+        }, status=405)
+    
+    try:
+        quotation = get_object_or_404(Quotation, id=quotation_id)
+        quotation_number = quotation.quotation_number
+        
+        # Delete quotation (items will be cascade deleted)
+        quotation.delete()
+        
+        logger.info(f"✅ Deleted quotation: {quotation_number}")
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'Quotation {quotation_number} deleted successfully'
+        })
+        
+    except Quotation.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'message': f'Quotation {quotation_id} not found'
+        }, status=404)
+        
+    except Exception as e:
+        logger.error(f"Error deleting quotation: {e}")
+        return JsonResponse({
+            'success': False,
+            'message': f'Error deleting quotation: {str(e)}'
+        }, status=500)
+
+
+@csrf_exempt
+def quotation_update_status(request, quotation_id):
+    """
+    Update quotation status
+    """
+    if request.method != 'POST':
+        return JsonResponse({
+            'success': False,
+            'message': 'Invalid request method'
+        }, status=405)
+    
+    try:
+        data = json.loads(request.body)
+        new_status = data.get('status')
+        
+        if not new_status:
+            return JsonResponse({
+                'success': False,
+                'message': 'Status is required'
+            }, status=400)
+        
+        quotation = get_object_or_404(Quotation, id=quotation_id)
+        old_status = quotation.status
+        quotation.status = new_status
+        quotation.save()
+        
+        logger.info(f"✅ Updated quotation {quotation.quotation_number} status: {old_status} → {new_status}")
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'Status updated to {new_status}',
+            'status': new_status
+        })
+        
+    except Exception as e:
+        logger.error(f"Error updating quotation status: {e}")
+        return JsonResponse({
+            'success': False,
+            'message': str(e)
+        }, status=500)
+    
+    # views.py
+def edit_quotation(request, quotation_id):
+    try:
+        quotation = Quotation.objects.get(id=quotation_id)
+        quotation_items = QuotationItem.objects.filter(quotation=quotation)
+        items = Item.objects.all()  # From purchase order app
+        leads = Lead.objects.filter(status='Active')
+        
+        context = {
+            'quotation': quotation,
+            'quotation_items': quotation_items,
+            'items': items,
+            'active_leads': leads,
+            'leads_count': leads.count(),
+        }
+        return render(request, 'quotation_edit.html', context)
+    except Quotation.DoesNotExist:
+        messages.error(request, 'Quotation not found')
+        return redirect('app5:quotation_list')
+    
+def update_quotation(request, pk):
+    """Update quotation via AJAX"""
+    try:
+        quotation = Quotation.objects.get(id=pk)
+        
+        # Parse JSON data
+        data = json.loads(request.body)
+        
+        # Update lead if changed
+        if 'lead_id' in data:
+            try:
+                lead = Lead.objects.get(id=data['lead_id'])
+                quotation.lead = lead
+            except Lead.DoesNotExist:
+                pass
+        
+        # Update notes
+        if 'notes' in data:
+            quotation.notes = data['notes']
+        
+        # Update totals
+        if 'subtotal' in data:
+            quotation.subtotal = data['subtotal']
+        if 'total_discount' in data:
+            quotation.total_discount = data['total_discount']
+        if 'total_tax' in data:
+            quotation.total_tax = data['total_tax']
+        if 'grand_total' in data:
+            quotation.grand_total = data['grand_total']
+        
+        # Handle items
+        if 'items' in data:
+            # Delete existing items
+            quotation.items.all().delete()
+            
+            # Add new items
+            for item_data in data['items']:
+                try:
+                    item = Item.objects.get(id=item_data['item_id'])
+                    QuotationItem.objects.create(
+                        quotation=quotation,
+                        item=item,
+                        quantity=item_data['quantity'],
+                        entry_rate=item_data['entry_rate'],
+                        sales_price=item_data['sales_price'],
+                        unit_price=item_data['unit_price'],
+                        discount=item_data['discount'],
+                        tax=item_data['tax'],
+                        total=item_data['total']
+                    )
+                except Item.DoesNotExist:
+                    continue
+        
+        # Save the quotation
+        quotation.save()
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Quotation updated successfully',
+            'quotation_id': quotation.id
+        })
+        
+    except Quotation.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'message': 'Quotation not found'
+        }, status=404)
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': f'Error updating quotation: {str(e)}'
+        }, status=500)
