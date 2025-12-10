@@ -5,10 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit Quotation</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Add Select2 CSS for better dropdowns -->
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <style>
-        /* Your existing styles remain the same... */
+        /* All your CSS styles remain exactly the same */
         * {
             margin: 0;
             padding: 0;
@@ -277,6 +276,7 @@
         }
         
         .items-table input, .items-table select {
+            text-align: right;
             width: 100%;
             padding: 8px 10px;
             border: 1px solid #ddd;
@@ -423,8 +423,6 @@
             font-size: 18px;
         }
         
-        
-        
         .header-section {
             background: #bfb8f7;
             border-radius: 10px;
@@ -488,7 +486,6 @@
             color: #4CAF50;
         }
         
-        /* Add styles for Select2 integration */
         .select2-container--default .select2-selection--single {
             border: 1px solid #ddd;
             border-radius: 4px;
@@ -504,7 +501,6 @@
             border-radius: 4px;
         }
         
-        /* Improve item dropdown display */
         .item-option {
             padding: 8px 12px;
             border-bottom: 1px solid #f0f0f0;
@@ -535,7 +531,6 @@
             margin-right: 5px;
         }
         
-        /* Directory Styles */
         .lead-directory-container {
             background: white;
             border-radius: 10px;
@@ -718,7 +713,6 @@
             font-size: 13px;
         }
         
-        /* Priority Filter Styles */
         .filter-container {
             padding: 10px 15px;
             background: #f8f9fa;
@@ -741,7 +735,6 @@
             border-radius: 8px;
         }
         
-        /* Lead Selection Info */
         .lead-selection-info {
             background: #e3f2fd;
             padding: 10px 15px;
@@ -762,7 +755,6 @@
             color: #333;
         }
         
-        /* Status Badge */
         .status-badge {
             display: inline-block;
             padding: 4px 12px;
@@ -792,7 +784,6 @@
             color: white;
         }
         
-        /* Form Section Styles */
         .client-info-section, .quotation-details {
             background: #f8f9ff;
             padding: 20px;
@@ -828,7 +819,6 @@
             border-left: 4px solid #e67e22;
         }
         
-        /* Additional Edit Page Styles */
         .quotation-meta {
             display: flex;
             justify-content: space-between;
@@ -867,7 +857,6 @@
             pointer-events: none;
         }
         
-        /* Percentage display styles */
         .percentage-display {
             font-size: 11px;
             color: #666;
@@ -970,9 +959,6 @@
             <!-- Right Column - Quotation Form -->
             <div class="form-column">
                 <div class="form-container">
-                    <!-- Back Button -->
-                    
-                    
                     <div class="form-header">
                         <h1>Edit Quotation</h1>
                         <p>Update the details below to modify the quotation</p>
@@ -981,9 +967,6 @@
                             <span class="status-badge status-{{ quotation.status|lower }}">{{ quotation.status }}</span>
                         </div>
                     </div>
-                    
-                    <!-- Quotation Meta Information -->
-                    
                     
                     <!-- Navigation Menu -->
                     <div class="form-navigation">
@@ -1057,7 +1040,6 @@
                                 </tr>
                             </thead>
                             <tbody id="items-body">
-                                <!-- Items will be populated from Django context -->
                                 {% for item in quotation_items %}
                                 <tr data-item-id="{{ item.id }}">
                                     <td>
@@ -1065,6 +1047,7 @@
                                             <option value="">-- Select Item --</option>
                                         </select>
                                         <input type="hidden" class="original-item-id" value="{{ item.item.id }}">
+                                        <input type="hidden" class="original-item-name" value="{{ item.item.name }}">
                                     </td>
                                     <td>
                                         <input type="number" class="item-qty" name="quantity[]" value="{{ item.quantity }}" min="0.01" step="0.01" onchange="calculateRow(this)" placeholder="Qty">
@@ -1148,28 +1131,30 @@
         let selectedLead = null;
         const quotationId = '{{ quotation.id }}';
         const quotationStatus = '{{ quotation.status }}';
+        const normalizedStatus = quotationStatus ? quotationStatus.charAt(0).toUpperCase() + quotationStatus.slice(1).toLowerCase() : 'Draft';
         
         // Check if quotation is editable based on status
         function checkEditableStatus() {
             const nonEditableStatuses = ['Approved', 'Converted', 'Cancelled'];
-            if (nonEditableStatuses.includes(quotationStatus)) {
+            if (nonEditableStatuses.includes(normalizedStatus)) {
                 // Disable form elements
                 document.getElementById('formBody').classList.add('form-disabled');
                 document.getElementById('saveBtn').disabled = true;
                 document.getElementById('saveBtn').innerHTML = '<i class="fas fa-lock"></i> Read Only';
                 
                 // Show message
-                showNotification(`Quotation is ${quotationStatus}. Editing is disabled.`, 'warning');
+                showNotification(`Quotation is ${normalizedStatus}. Editing is disabled.`, 'warning');
             }
         }
         
         // Function to handle lead selection from directory
         function handleLeadSelection(leadElement) {
             // Only allow lead change if quotation status allows editing
-            if (quotationStatus !== 'Draft' && quotationStatus !== 'Pending') {
-            showNotification(`Cannot change lead for ${quotationStatus} quotations`, 'warning');
-              return;
-             }
+            const nonEditableStatuses = ['Approved', 'Converted', 'Cancelled'];
+            if (nonEditableStatuses.includes(normalizedStatus)) {
+                showNotification(`Cannot change lead for ${normalizedStatus} quotations`, 'warning');
+                return;
+            }
             
             // Remove previous selection
             document.querySelectorAll('.lead-item').forEach(item => {
@@ -1312,11 +1297,15 @@
                 
                 // Add items in this section
                 itemsBySection[section].forEach(item => {
+                    const isSelected = selectedItemId && selectedItemId == item.id;
                     const option = $('<option>', {
                         value: item.id,
-                        text: item.name,
-                        selected: selectedItemId == item.id
+                        text: item.name
                     });
+                    
+                    if (isSelected) {
+                        option.attr('selected', true);
+                    }
                     
                     // Add data attributes
                     option.data('item-data', {
@@ -1345,6 +1334,13 @@
                 templateResult: formatItemDisplay,
                 templateSelection: formatItemSelection
             });
+            
+            // Trigger change event to load item details if an item is selected
+            if (selectedItemId) {
+                setTimeout(() => {
+                    $(selectElement).trigger('change');
+                }, 100);
+            }
         }
         
         // Format how items appear in dropdown
@@ -1407,16 +1403,17 @@
                 const currentEntryRate = parseFloat($(row).find('.entry-rate').val());
                 const currentTax = parseFloat($(row).find('.tax').val());
                 
-                if (currentSalesPrice === 0) {
+                // Only set defaults if the current value is 0 or empty
+                if (!currentSalesPrice || currentSalesPrice === 0) {
                     $(row).find('.sales-price').val(itemData.mrp.toFixed(2));
                 }
-                if (currentUnitPrice === 0) {
+                if (!currentUnitPrice || currentUnitPrice === 0) {
                     $(row).find('.unit-price').val(itemData.purchase_price.toFixed(2));
                 }
-                if (currentEntryRate === 0) {
+                if (!currentEntryRate || currentEntryRate === 0) {
                     $(row).find('.entry-rate').val(itemData.purchase_price.toFixed(2));
                 }
-                if (currentTax === 0) {
+                if (!currentTax || currentTax === 0) {
                     $(row).find('.tax').val(itemData.tax);
                 }
                 
@@ -1431,8 +1428,10 @@
         // Function to add new item row
         async function addNewItem() {
             // Check if quotation is editable
-            if (quotationStatus !== 'Draft' && quotationStatus !== 'Pending') {
-                showNotification(`Cannot add items to ${quotationStatus} quotations`, 'warning');
+            const nonEditableStatuses = ['Approved', 'Converted', 'Cancelled'];
+            
+            if (nonEditableStatuses.includes(normalizedStatus)) {
+                showNotification(`Cannot add items to ${normalizedStatus} quotations`, 'warning');
                 return;
             }
             
@@ -1490,8 +1489,10 @@
         // Function to delete row
         function deleteRow(button) {
             // Check if quotation is editable
-            if (quotationStatus !== 'Draft' && quotationStatus !== 'Pending') {
-                showNotification(`Cannot delete items from ${quotationStatus} quotations`, 'warning');
+            const nonEditableStatuses = ['Approved', 'Converted', 'Cancelled'];
+            
+            if (nonEditableStatuses.includes(normalizedStatus)) {
+                showNotification(`Cannot delete items from ${normalizedStatus} quotations`, 'warning');
                 return;
             }
             
@@ -1566,7 +1567,11 @@
         
         // Function to show notification
         function showNotification(message, type = 'info') {
+            // Remove any existing notifications
+            document.querySelectorAll('.custom-notification').forEach(el => el.remove());
+            
             const notification = document.createElement('div');
+            notification.className = 'custom-notification';
             notification.style.cssText = `
                 position: fixed;
                 top: 20px;
@@ -1579,8 +1584,17 @@
                 z-index: 10000;
                 font-weight: 600;
                 transition: all 0.3s ease;
+                display: flex;
+                align-items: center;
+                gap: 10px;
             `;
-            notification.innerHTML = message;
+            
+            let icon = 'info-circle';
+            if (type === 'success') icon = 'check-circle';
+            if (type === 'warning') icon = 'exclamation-circle';
+            if (type === 'error') icon = 'times-circle';
+            
+            notification.innerHTML = `<i class="fas fa-${icon}"></i> ${message}`;
             
             document.body.appendChild(notification);
             
@@ -1612,8 +1626,18 @@
             return cookieValue;
         }
         
-        // Function to update quotation
+        // MAIN SAVE FUNCTION - updateQuotation
         async function updateQuotation() {
+            console.log('updateQuotation() function called');
+            
+            // Check if quotation is editable
+            const nonEditableStatuses = ['Approved', 'Converted', 'Cancelled'];
+            
+            if (nonEditableStatuses.includes(normalizedStatus)) {
+                showNotification(`Cannot update ${normalizedStatus} quotations`, 'warning');
+                return;
+            }
+            
             // Check if there are items
             const itemRows = document.querySelectorAll('#items-body tr:visible');
             if (itemRows.length === 0) {
@@ -1623,9 +1647,13 @@
             
             // Validate all items have descriptions
             let allValid = true;
-            document.querySelectorAll('.item-desc').forEach(select => {
-                if (!select.value && $(select).closest('tr').is(':visible')) {
+            document.querySelectorAll('.item-desc').forEach((select, index) => {
+                const row = $(select).closest('tr');
+                if (!select.value && row.is(':visible')) {
                     allValid = false;
+                    row.css('border', '2px solid red');
+                } else {
+                    row.css('border', '');
                 }
             });
             
@@ -1637,14 +1665,14 @@
             // Prepare quotation data
             const quotationData = {
                 quotation_id: quotationId,
-                lead_id: selectedLead ? selectedLead.id : {{ quotation.lead.id }},
+                lead_id: selectedLead ? selectedLead.id : '{{ quotation.lead.id }}',
                 notes: document.getElementById('notes').value,
                 items: [],
                 deleted_items: [],
-                subtotal: parseFloat($('#subtotal').text().replace('₹', '')) || 0,
-                total_discount: parseFloat($('#total-discount').text().replace('₹', '')) || 0,
-                total_tax: parseFloat($('#total-tax').text().replace('₹', '')) || 0,
-                grand_total: parseFloat($('#grand-total').text().replace('₹', '')) || 0
+                subtotal: parseFloat($('#subtotal').text().replace('₹', '').replace(',', '')) || 0,
+                total_discount: parseFloat($('#total-discount').text().replace('₹', '').replace(',', '')) || 0,
+                total_tax: parseFloat($('#total-tax').text().replace('₹', '').replace(',', '')) || 0,
+                grand_total: parseFloat($('#grand-total').text().replace('₹', '').replace(',', '')) || 0
             };
             
             // Collect item data
@@ -1653,7 +1681,6 @@
                 const item = {
                     id: itemId || null,
                     item_id: $(this).find('.item-desc').val(),
-                    item_name: $(this).find('.item-desc option:selected').text(),
                     quantity: parseFloat($(this).find('.item-qty').val()) || 0,
                     entry_rate: parseFloat($(this).find('.entry-rate').val()) || 0,
                     sales_price: parseFloat($(this).find('.sales-price').val()) || 0,
@@ -1670,9 +1697,12 @@
                 quotationData.deleted_items.push($(this).val());
             });
             
+            console.log('Sending quotation data:', quotationData);
+            
             // Show loading
             const saveBtn = document.getElementById('saveBtn');
             const originalText = saveBtn.innerHTML;
+            const originalDisabled = saveBtn.disabled;
             saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
             saveBtn.disabled = true;
             
@@ -1680,17 +1710,26 @@
                 // Get CSRF token
                 const csrftoken = getCookie('csrftoken');
                 
-                // Submit to your Django backend
+                if (!csrftoken) {
+                    throw new Error('CSRF token not found. Please refresh the page.');
+                }
+                
+                // Submit to Django backend
                 const response = await fetch('{% url "app5:quotation_update" quotation.id %}', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRFToken': csrftoken
+                        'X-CSRFToken': csrftoken,
+                        'X-Requested-With': 'XMLHttpRequest'
                     },
                     body: JSON.stringify(quotationData)
                 });
                 
+                console.log('Response status:', response.status);
+                
+                // Parse response
                 const result = await response.json();
+                console.log('Response:', result);
                 
                 if (response.ok && result.success) {
                     showNotification('Quotation updated successfully!', 'success');
@@ -1701,21 +1740,13 @@
                     }, 1500);
                     
                 } else {
-                    showNotification(result.message || 'Error updating quotation', 'error');
+                    throw new Error(result.message || 'Error updating quotation');
                 }
             } catch (error) {
-                console.error('Error:', error);
-                showNotification('Network error occurred. Please try again.', 'error');
-            } finally {
+                console.error('Save error:', error);
+                showNotification(error.message || 'Error saving quotation. Please try again.', 'error');
                 saveBtn.innerHTML = originalText;
-                saveBtn.disabled = false;
-            }
-        }
-        
-        // Function to cancel edit
-        function cancelEdit() {
-            if (confirm('Are you sure you want to cancel? Any unsaved changes will be lost.')) {
-                window.location.href = '{% url "app5:quotation_list" %}';
+                saveBtn.disabled = originalDisabled;
             }
         }
         

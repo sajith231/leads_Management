@@ -4001,7 +4001,18 @@ logger = logging.getLogger(__name__)
 
 def lead_edit(request, lead_id):
     lead = get_object_or_404(Lead, id=lead_id)
-
+    
+    # ========== GET QUOTATION FOR THIS LEAD ==========
+    quotation = None
+    try:
+        # Try to get the quotation for this lead
+        quotation = Quotation.objects.filter(lead=lead).first()
+    except Quotation.DoesNotExist:
+        quotation = None
+    except Exception as e:
+        logger.error(f"Error getting quotation for lead {lead_id}: {e}")
+        quotation = None
+    
     # ========== API INTEGRATION ==========
     API_URL = "https://accmaster.imcbs.com/api/sync/rrc-clients/"
     api_customer_data = []
@@ -4067,7 +4078,7 @@ def lead_edit(request, lead_id):
         }
         standardized_api_data.append(standardized_customer)
     
-    # Continue with existing code for POST handling
+    # ========== POST REQUEST HANDLING ==========
     if request.method == 'POST':
         lead.ownerName = request.POST.get('ownerName')
         lead.phoneNo = request.POST.get('phoneNo')
@@ -4138,7 +4149,8 @@ def lead_edit(request, lead_id):
         messages.success(request, f"Lead updated successfully! Ticket Number: {getattr(lead, 'ticket_number', lead.id)}")
         return redirect('app5:lead_report')
 
-    # GET: prepare dropdowns for edit form
+    # ========== GET REQUEST PREPARATION ==========
+    # Get dropdown options
     business_natures = BusinessNature.objects.all().order_by('name') if BusinessNature is not None else []
     states = StateMaster.objects.all().order_by('name') if StateMaster is not None else []
     districts = District.objects.all().order_by('name') if District is not None else []
@@ -4177,7 +4189,7 @@ def lead_edit(request, lead_id):
     # Get active leads for directory
     active_leads_data = Lead.objects.filter(status='Active').order_by('-date')[:50]
 
-    # Get display names for better user experience
+    # ========== PREPARE DISPLAY DATA ==========
     marketed_by_id = None
     marketed_by_name = None
     
@@ -4300,9 +4312,11 @@ def lead_edit(request, lead_id):
         'name', flat=True
     ).distinct()
 
+    # ========== PREPARE CONTEXT ==========
     context = {
         'lead_data': lead_data,
         'lead': lead,
+        'quotation': quotation,  # Added this line - this is what was missing!
         'business_natures': business_natures,
         'states': states,
         'districts': districts,
@@ -6799,74 +6813,363 @@ def edit_quotation(request, quotation_id):
         return redirect('app5:quotation_list')
     
 def update_quotation(request, pk):
-    """Update quotation via AJAX"""
+    """
+    Update quotation via AJAX - FIXED VERSION
+    Properly handles form data and saves all changes
+    """
+    if request.method != 'POST':
+        return JsonResponse({
+            'success': False,
+            'message': 'Invalid request method. Use POST.'
+        }, status=405)
+    
     try:
-        quotation = Quotation.objects.get(id=pk)
+        # ========== PARSE REQUEST DATA ==========
+        try:
+            data = json.loads(request.body)
+            logger.info(f"📝 Updating quotation {pk}")
+            logger.debug(f"Received data: {data}")
+        except json.JSONDecodeError as e:
+            logger.error(f"❌ JSON decode error: {e}")
+            return JsonResponse({
+                'success': False,
+                'message': 'Invalid JSON data'
+            }, status=400)
         
-        # Parse JSON data
-        data = json.loads(request.body)
+        # ========== GET QUOTATION ==========
+        try:
+            quotation = Quotation.objects.select_related('lead').get(id=pk)
+            logger.info(f"✅ Found quotation: {quotation.quotation_number}")
+        except Quotation.DoesNotExist:
+            logger.error(f"❌ Quotation {pk} not found")
+            return JsonResponse({
+                'success': False,
+                'message': f'Quotation with ID {pk} not found'
+            }, status=404)
         
-        # Update lead if changed
-        if 'lead_id' in data:
-            try:
-                lead = Lead.objects.get(id=data['lead_id'])
-                quotation.lead = lead
-            except Lead.DoesNotExist:
-                pass
-        
-        # Update notes
-        if 'notes' in data:
-            quotation.notes = data['notes']
-        
-        # Update totals
-        if 'subtotal' in data:
-            quotation.subtotal = data['subtotal']
-        if 'total_discount' in data:
-            quotation.total_discount = data['total_discount']
-        if 'total_tax' in data:
-            quotation.total_tax = data['total_tax']
-        if 'grand_total' in data:
-            quotation.grand_total = data['grand_total']
-        
-        # Handle items
-        if 'items' in data:
-            # Delete existing items
-            quotation.items.all().delete()
-            
-            # Add new items
-            for item_data in data['items']:
+        # ========== START ATOMIC TRANSACTION ==========
+        with transaction.atomic():
+            # ---------- UPDATE LEAD (if changed) ----------
+            lead_id = data.get('lead_id')
+            if lead_id and str(lead_id) != str(quotation.lead.id if quotation.lead else None):
                 try:
-                    item = Item.objects.get(id=item_data['item_id'])
-                    QuotationItem.objects.create(
-                        quotation=quotation,
-                        item=item,
-                        quantity=item_data['quantity'],
-                        entry_rate=item_data['entry_rate'],
-                        sales_price=item_data['sales_price'],
-                        unit_price=item_data['unit_price'],
-                        discount=item_data['discount'],
-                        tax=item_data['tax'],
-                        total=item_data['total']
+                    new_lead = Lead.objects.get(id=lead_id)
+                    old_lead_name = quotation.lead.ownerName if quotation.lead else "Unknown"
+                    
+                    quotation.lead = new_lead
+                    quotation.client_name = new_lead.ownerName or ''
+                    quotation.client_phone = new_lead.phoneNo or ''
+                    quotation.client_email = new_lead.email or ''
+                    
+                    if new_lead.customerType == 'Business':
+                        quotation.company_name = new_lead.business or new_lead.name or ''
+                    
+                    logger.info(f"✅ Lead changed: {old_lead_name} → {new_lead.ownerName}")
+                except Lead.DoesNotExist:
+                    logger.warning(f"⚠️ Lead {lead_id} not found, keeping existing lead")
+                    return JsonResponse({
+                        'success': False,
+                        'message': f'Lead with ID {lead_id} not found'
+                    }, status=404)
+            
+            # ---------- UPDATE NOTES ----------
+            if 'notes' in data:
+                quotation.notes = data.get('notes', '').strip()
+                logger.debug("✅ Updated notes")
+            
+            # ---------- UPDATE STATUS ----------
+            new_status = data.get('status')
+            if new_status and new_status in ['draft', 'sent', 'accepted', 'expired']:
+                quotation.status = new_status
+                logger.info(f"✅ Status updated to: {new_status}")
+            
+            # ---------- HANDLE DELETED ITEMS ----------
+            deleted_items = data.get('deleted_items', [])
+            deleted_count = 0
+            
+            # Clean up deleted_items array
+            deleted_items = [str(item_id) for item_id in deleted_items if item_id not in [None, '', 'null', 'undefined']]
+            
+            for item_id in deleted_items:
+                try:
+                    item_id_int = int(item_id)
+                    quotation_item = QuotationItem.objects.get(
+                        id=item_id_int, 
+                        quotation=quotation
                     )
-                except Item.DoesNotExist:
+                    item_name = quotation_item.item_name
+                    quotation_item.delete()
+                    deleted_count += 1
+                    logger.info(f"🗑️ Deleted item: {item_name} (ID: {item_id})")
+                except (ValueError, TypeError):
+                    logger.warning(f"⚠️ Invalid item ID format: {item_id}")
                     continue
+                except QuotationItem.DoesNotExist:
+                    logger.warning(f"⚠️ Item {item_id} not found for deletion")
+                    continue
+            
+            if deleted_count > 0:
+                logger.info(f"✅ Deleted {deleted_count} item(s)")
+            
+            # ---------- PROCESS ITEMS ----------
+            items_data = data.get('items', [])
+            logger.info(f"📦 Processing {len(items_data)} items")
+            
+            # Track processed items
+            existing_item_ids = set(
+                QuotationItem.objects.filter(quotation=quotation)
+                .values_list('id', flat=True)
+            )
+            updated_item_ids = set()
+            created_count = 0
+            updated_count = 0
+            
+            # Process each item
+            for index, item_data in enumerate(items_data):
+                try:
+                    quotation_item_id = item_data.get('id')
+                    item_object_id = item_data.get('item_id')
+                    
+                    logger.debug(f"Item {index+1}: quotation_item_id={quotation_item_id}, item_object_id={item_object_id}")
+                    
+                    # ========== VALIDATION ==========
+                    if not item_object_id:
+                        logger.warning(f"⚠️ Skipping item {index+1}: No item_object_id")
+                        continue
+                    
+                    # Get the Item object
+                    try:
+                        item = Item.objects.get(id=item_object_id)
+                    except Item.DoesNotExist:
+                        logger.error(f"❌ Item {item_object_id} not found in purchase_order")
+                        continue
+                    
+                    # ========== EXTRACT VALUES ==========
+                    try:
+                        quantity = Decimal(str(item_data.get('quantity', 1)))
+                        entry_rate = Decimal(str(item_data.get('entry_rate', 0)))
+                        sales_price = Decimal(str(item_data.get('sales_price', 0)))
+                        unit_price = Decimal(str(item_data.get('unit_price', 0)))
+                        discount = Decimal(str(item_data.get('discount', 0)))
+                        tax = Decimal(str(item_data.get('tax', 0)))
+                        total = Decimal(str(item_data.get('total', 0)))
+                        
+                        # Validate values
+                        if quantity <= 0:
+                            logger.warning(f"⚠️ Invalid quantity for item {index+1}: {quantity}")
+                            continue
+                        
+                        if sales_price <= 0 and unit_price <= 0:
+                            logger.warning(f"⚠️ Both prices are 0 for item {index+1}, using MRP")
+                            sales_price = Decimal(str(item.mrp or 0))
+                        
+                    except (ValueError, TypeError, InvalidOperation) as e:
+                        logger.error(f"❌ Error parsing numbers for item {index+1}: {e}")
+                        continue
+                    
+                    # ========== CALCULATE ADDITIONAL FIELDS ==========
+                    base_price = sales_price if sales_price > 0 else unit_price
+                    discount_amount = (base_price * quantity) * (discount / 100) if discount > 0 else Decimal('0')
+                    amount_after_discount = (base_price * quantity) - discount_amount
+                    tax_amount = amount_after_discount * (tax / 100) if tax > 0 else Decimal('0')
+                    
+                    # Prepare item values
+                    item_values = {
+                        'item': item,
+                        'item_name': item.name,
+                        'description': item.description or '',
+                        'quantity': quantity,
+                        'unit': item.unit_of_measure,
+                        'entry_rate': entry_rate,
+                        'sales_price': sales_price,
+                        'unit_price': unit_price,
+                        'discount_percentage': discount,
+                        'tax_percentage': tax,
+                        'line_total': total,
+                        'discount_amount': discount_amount,
+                        'tax_amount': tax_amount,
+                        'hsn_code': item.hsn_code or '',
+                        'order': index
+                    }
+                    
+                    # ========== CREATE OR UPDATE ITEM ==========
+                    if quotation_item_id and str(quotation_item_id).isdigit():
+                        # UPDATE EXISTING ITEM
+                        try:
+                            quotation_item = QuotationItem.objects.get(
+                                id=int(quotation_item_id),
+                                quotation=quotation
+                            )
+                            
+                            # Update all fields
+                            for key, value in item_values.items():
+                                setattr(quotation_item, key, value)
+                            
+                            quotation_item.save()
+                            updated_item_ids.add(int(quotation_item_id))
+                            updated_count += 1
+                            
+                            logger.debug(f"✅ Updated item {index+1}: {item.name}")
+                            
+                        except QuotationItem.DoesNotExist:
+                            # Item was supposed to exist but doesn't - create new
+                            logger.warning(f"⚠️ QuotationItem {quotation_item_id} not found, creating new")
+                            quotation_item = QuotationItem.objects.create(
+                                quotation=quotation,
+                                **item_values
+                            )
+                            updated_item_ids.add(quotation_item.id)
+                            created_count += 1
+                            logger.info(f"✅ Created new item {index+1}: {item.name}")
+                    else:
+                        # CREATE NEW ITEM
+                        quotation_item = QuotationItem.objects.create(
+                            quotation=quotation,
+                            **item_values
+                        )
+                        updated_item_ids.add(quotation_item.id)
+                        created_count += 1
+                        logger.info(f"✅ Created new item {index+1}: {item.name}")
+                
+                except Exception as e:
+                    logger.error(f"❌ Error processing item {index+1}: {e}", exc_info=True)
+                    continue
+            
+            # ---------- DELETE ORPHANED ITEMS ----------
+            # Items that existed but aren't in the updated list
+            deleted_item_ids = set(int(x) for x in deleted_items if str(x).isdigit())
+            orphaned_items = existing_item_ids - updated_item_ids - deleted_item_ids
+            
+            if orphaned_items:
+                orphan_count = 0
+                for item_id in orphaned_items:
+                    try:
+                        orphan_item = QuotationItem.objects.get(id=item_id, quotation=quotation)
+                        orphan_name = orphan_item.item_name
+                        orphan_item.delete()
+                        orphan_count += 1
+                        logger.info(f"🗑️ Deleted orphaned item: {orphan_name} (ID: {item_id})")
+                    except QuotationItem.DoesNotExist:
+                        pass
+                
+                if orphan_count > 0:
+                    logger.info(f"✅ Deleted {orphan_count} orphaned item(s)")
+            
+            # ---------- RECALCULATE TOTALS ----------
+            subtotal = Decimal(str(data.get('subtotal', 0)))
+            total_discount = Decimal(str(data.get('total_discount', 0)))
+            total_tax = Decimal(str(data.get('total_tax', 0)))
+            grand_total = Decimal(str(data.get('grand_total', 0)))
+            
+            # If totals are 0, recalculate from items
+            if grand_total <= 0:
+                quotation_items = QuotationItem.objects.filter(quotation=quotation)
+                
+                if quotation_items.exists():
+                    subtotal = Decimal('0')
+                    total_discount = Decimal('0')
+                    total_tax = Decimal('0')
+                    
+                    for item in quotation_items:
+                        item_subtotal = item.line_total / (1 + item.tax_percentage/100) if item.tax_percentage else item.line_total
+                        subtotal += item_subtotal
+                        total_discount += item.discount_amount
+                        total_tax += item.tax_amount
+                    
+                    grand_total = subtotal + total_tax
+                    
+                    logger.info(f"💰 Recalculated totals - Subtotal: ₹{subtotal:.2f}, Tax: ₹{total_tax:.2f}, Grand Total: ₹{grand_total:.2f}")
+                else:
+                    subtotal = Decimal('0')
+                    total_discount = Decimal('0')
+                    total_tax = Decimal('0')
+                    grand_total = Decimal('0')
+                    logger.warning("⚠️ No items in quotation after update")
+            
+            # Update quotation totals
+            quotation.subtotal = subtotal
+            quotation.total_discount = total_discount
+            quotation.total_tax = total_tax
+            quotation.grand_total = grand_total
+            
+            # Save quotation
+            quotation.updated_at = timezone.now()
+            quotation.save()
+            
+            logger.info(f"✅ Quotation {quotation.quotation_number} updated successfully")
+            logger.info(f"📊 Summary - Created: {created_count}, Updated: {updated_count}, Deleted: {deleted_count}")
         
-        # Save the quotation
-        quotation.save()
-        
+        # ========== SUCCESS RESPONSE ==========
         return JsonResponse({
             'success': True,
-            'message': 'Quotation updated successfully',
-            'quotation_id': quotation.id
+            'message': '✅ Quotation updated successfully',
+            'quotation': {
+                'id': quotation.id,
+                'quotation_number': quotation.quotation_number,
+                'status': quotation.status,
+                'subtotal': float(quotation.subtotal),
+                'total_discount': float(quotation.total_discount),
+                'total_tax': float(quotation.total_tax),
+                'grand_total': float(quotation.grand_total),
+                'items_count': QuotationItem.objects.filter(quotation=quotation).count(),
+                'updated_at': quotation.updated_at.isoformat() if quotation.updated_at else timezone.now().isoformat()
+            },
+            'summary': {
+                'items_created': created_count,
+                'items_updated': updated_count,
+                'items_deleted': deleted_count + len(orphaned_items) if 'orphaned_items' in locals() else deleted_count
+            }
         })
         
-    except Quotation.DoesNotExist:
-        return JsonResponse({
-            'success': False,
-            'message': 'Quotation not found'
-        }, status=404)
     except Exception as e:
+        logger.error(f"❌ Error updating quotation {pk}: {e}", exc_info=True)
         return JsonResponse({
             'success': False,
-            'message': f'Error updating quotation: {str(e)}'
+            'message': f'Error updating quotation: {str(e)}',
+            'error_type': type(e).__name__
         }, status=500)
+
+
+
+def download_quotation(request, quotation_id):
+    quotation = get_object_or_404(Quotation, id=quotation_id)
+    
+    # Get all items for this quotation
+    items = quotation.items.all()
+    
+    # Initialize totals
+    subtotal = 0
+    total_tax = 0
+    grand_total = 0
+    
+    # Calculate item-wise totals
+    for item in items:
+        # Get unit price and quantity
+        unit_price = getattr(item, 'unit_price', 0) or 0
+        quantity = getattr(item, 'quantity', 0) or 0
+        
+        # Calculate item total (quantity * unit_price)
+        item_total = quantity * unit_price
+        
+        # Add to subtotal
+        subtotal += item_total
+        
+        # Calculate tax if applicable
+        if hasattr(item, 'tax_percentage'):
+            tax_percentage = getattr(item, 'tax_percentage', 0) or 0
+            item_tax = (item_total * tax_percentage) / 100
+            total_tax += item_tax
+    
+    # Calculate grand total (subtotal + tax)
+    grand_total = subtotal + total_tax
+    
+    # Create context with calculated values
+    context = {
+        'quotation': quotation,
+        'subtotal': subtotal,
+        'total_tax': total_tax,
+        'grand_total': grand_total,
+        'items': items,
+    }
+    
+    return render(request, 'quotation_download.html', context)

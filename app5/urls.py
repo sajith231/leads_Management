@@ -126,8 +126,10 @@ urlpatterns = [
     path('api/get-quotation-items/', views.get_quotation_items_api, name='get_quotation_items'),
     path('submit-quotation/', views.quotation_submit, name='quotation_submit'),
     path('quotation/<int:quotation_id>/delete/', views.quotation_delete, name='quotation_delete'),
+    path('quotation/<int:quotation_id>/edit/', views.edit_quotation, name='edit_quotation'),
     path('quotation/edit/<int:quotation_id>/', views.edit_quotation, name='quotation_edit'),
     path('quotation/<int:pk>/update/', views.update_quotation, name='quotation_update'),
+    path('quotation/download/<int:quotation_id>/', views.download_quotation, name='download_quotation'),
 
     
     path('state/', views.state_list, name='state_master_list'),  # Changed to state_master_list

@@ -638,14 +638,14 @@
             text-align: left;
             font-weight: 600;
             font-size: 15px;
-            border: none;
+            border:1px solid #060606 ;
             position: sticky;
             top: 0;
         }
         
         .quotations-table td {
             padding: 16px 15px;
-            border-bottom: 1px solid #eee;
+            border: 1px solid #020202;
             font-size: 14px;
             vertical-align: middle;
             transition: background-color 0.2s;
@@ -673,11 +673,11 @@
             text-align: center;
         }
         
-        .status-draft {
+        /* .status-draft {
             background: linear-gradient(135deg, #FFF3CD, #FFE8A5);
             color: #856404;
             border: 1px solid #FFD966;
-        }
+        } */
         
         .status-sent {
             background: linear-gradient(135deg, #A3E4D7, #76D7C4);
@@ -711,17 +711,17 @@
         
         .client-phone {
             font-size: 13px;
-            color: #666;
+            color: #090909;
         }
         
         .client-email {
             font-size: 12px;
-            color: #888;
+            color: #0a0a0a;
         }
         
         .amount {
             font-weight: 700;
-            color: #2E7D32;
+            color: #030303;
             font-size: 15px;
         }
         
@@ -1419,7 +1419,7 @@
                         <label for="statusFilter">Status:</label>
                         <select id="statusFilter" onchange="filterQuotations()">
                             <option value="all">All Status</option>
-                            <option value="draft">Draft</option>
+                            <!-- <option value="draft">Draft</option> -->
                             <option value="sent">Sent</option>
                             <option value="accepted">Accepted</option>
                             <option value="expired">Expired</option>
@@ -1450,7 +1450,7 @@
                         <table class="quotations-table">
                             <thead>
                                 <tr>
-                                    <th width="80">ID</th>
+                                    <th width="80">Sl.No</th>
                                     <th width="120">Date</th>
                                     <th width="150">Client</th>
                                    
@@ -1469,7 +1469,7 @@
                                         data-quotation-number="{{ quotation.quotation_number }}"
                                         data-client-name="{{ quotation.client_name|default:'Unknown Client' }}"
                                         data-amount="₹{{ quotation.grand_total|floatformat:2 }}">
-                                        <td>{{ quotation.id }}</td>
+                                        <td>{{ forloop.counter }}</td>
                                         <td>{{ quotation.created_at|date:"Y-m-d" }}</td>
                                         <td>
                                             <div class="client-info">
@@ -1500,9 +1500,9 @@
                                         <td class="amount">₹{{ quotation.grand_total|floatformat:2 }}</td>
                                         <td>
                                             <div class="action-cell">
-                                                <button class="btn-action btn-view" onclick="viewQuotation('{{ quotation.id }}')" title="View">
+                                                <!-- <button class="btn-action btn-view" onclick="viewQuotation('{{ quotation.id }}')" title="View">
                                                     <i class="fas fa-eye"></i>
-                                                </button>
+                                                </button> -->
                                                 <button class="btn-action btn-edit" onclick="editQuotation('{{ quotation.id }}')" title="Edit">
                                                     <i class="fas fa-edit"></i>
                                                 </button>
