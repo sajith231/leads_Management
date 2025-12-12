@@ -1,4 +1,3 @@
-
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,6 +8,207 @@
     body { background: #f0f2f5; min-height: 100vh; }
     .container { max-width: 1600px; width: 100%; margin: 0 auto; padding: 20px; }
     .main-content { display: flex; gap: 20px; align-items: stretch; width: 100%; min-height: 80vh; }
+    
+    /* Directory Column */
+    .directory-column { flex: 0 0 320px; width: 320px; display: flex; flex-direction: column; }
+    .lead-directory-container { background: white; border-radius: 10px; box-shadow: 0 3px 10px rgba(0,0,0,0.08); overflow: hidden; height: 100%; display: flex; flex-direction: column; }
+    .directory-header { background: #4a6fdc; color: white; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; }
+    .directory-header h2 { font-size: 16px; font-weight: 600; }
+    .directory-info { font-size: 12px; opacity: 0.9; }
+    .directory-tabs { display: flex; background: #f8f9fa; border-bottom: 1px solid #e9ecef; }
+    .directory-tab { flex: 1; padding: 10px 12px; text-align: center; background: transparent; border: none; font-weight: 600; font-size: 13px; color: #6c757d; cursor: pointer; transition: all 0.3s; border-bottom: 3px solid transparent; }
+    .directory-tab.active { color: #4a6fdc; border-bottom-color: #4a6fdc; background: white; }
+    .directory-tab:hover { background: #e9ecef; }
+    .search-container { padding: 12px 15px; background: #f8f9fa; border-bottom: 1px solid #e9ecef; }
+    .search-box { position: relative; width: 100%; }
+    .search-box input { padding: 8px 12px 8px 35px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; width: 100%; background: white; }
+    .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #6c757d; font-size: 13px; }
+    .employee-list, .lead-list { flex: 1; overflow-y: auto; padding: 8px 0; display: none; }
+    .employee-list.active, .lead-list.active { display: block; }
+    
+    /* Lead Item Styles */
+    .lead-item {
+        display: flex;
+        align-items: center;
+        padding: 12px 15px;
+        border-bottom: 1px solid #f0f0f0;
+        transition: all 0.2s;
+        cursor: pointer;
+        position: relative;
+    }
+    .lead-item.selected {
+        background: #e3f2fd;
+        border-left: 4px solid #2575fc;
+    }
+    .lead-item:hover {
+        background: #f8f9fa;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    .current-lead-item {
+        background: linear-gradient(135deg, #e3f2fd, #bbdefb) !important;
+        border-left: 4px solid #2196f3 !important;
+        box-shadow: 0 2px 8px rgba(33, 150, 243, 0.2) !important;
+    }
+    
+    .current-lead-item .lead-avatar {
+        background: #2196f3 !important;
+        box-shadow: 0 0 0 2px white, 0 0 0 4px #2196f3;
+    }
+    
+    .current-lead-badge {
+        background: #2196f3;
+        color: white;
+        font-size: 9px;
+        padding: 2px 6px;
+        border-radius: 10px;
+        font-weight: 600;
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        gap: 3px;
+    }
+    
+    /* Active lead indicator in header */
+    .active-lead-header {
+        background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+        border-radius: 8px;
+        padding: 10px 15px;
+        margin: 10px 0 20px 0;
+        border-left: 4px solid #2196f3;
+    }
+    
+    .active-lead-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 5px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .active-lead-details {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        font-size: 12px;
+    }
+    
+    .active-lead-detail {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        color: #666;
+    }
+    
+    .active-lead-value {
+        font-weight: 600;
+        color: #333;
+    }
+    
+    .lead-item.clickable {
+        cursor: pointer;
+    }
+    .lead-item.editable:hover {
+        background: linear-gradient(135deg, #f8f9ff, #e8f0ff);
+    }
+    .edit-lead-indicator {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        background: #4CAF50;
+        color: white;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10px;
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+    .lead-item:hover .edit-lead-indicator {
+        opacity: 1;
+    }
+    .lead-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: #28a745;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 12px;
+        margin-right: 12px;
+        flex-shrink: 0;
+    }
+    .lead-details {
+        flex: 1;
+        min-width: 0;
+    }
+    .lead-name {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 2px;
+        font-size: 13px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .lead-info {
+        font-size: 12px;
+        color: #6c757d;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .lead-phone {
+        font-size: 11px;
+        color: #495057;
+        margin-top: 1px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .lead-ticket {
+        font-size: 10px;
+        color: #6c757d;
+        background: #f8f9fa;
+        border-radius: 4px;
+        display: inline-block;
+        margin-top: 2px;
+        padding: 2px 6px;
+        font-weight: 600;
+    }
+    .lead-status {
+        font-size: 10px;
+        color: #28a745;
+        font-weight: 600;
+        margin-top: 2px;
+    }
+    
+    /* Filters */
+    .filter-container { padding: 10px 15px; background: #f8f9fa; border-bottom: 1px solid #ddd; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    .filter-group { display: flex; align-items: center; gap: 8px; }
+    .filter-label { font-size: 13px; font-weight: 600; white-space: nowrap; }
+    .filter-select { padding: 6px; border-radius: 8px; min-width: 120px; }
+    .status-filter-group { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+    
+    /* No results */
+    .no-results { padding: 20px 15px; text-align: center; color: #6c757d; font-size: 13px; }
+    
+    /* Form Column */
     .form-column { flex: 1; min-width: 0; display: flex; flex-direction: column; }
     .form-container { background-color:#dcd9f3; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.15); overflow: hidden; width: 100%; flex: 1; display: flex; flex-direction: column; }
     .form-header { background:#a095f6; color:black; padding: 15px 20px; text-align: center; }
@@ -53,12 +253,12 @@
     .reset-btn:hover { background-color: #5a6268; }
     .back-btn { background-color: #007bff; color: white; text-decoration: none; display: flex; align-items: center; justify-content: center; }
     .back-btn:hover { background-color: #0056b3; }
-
+    
     /* Message styles */
     .success-message { background-color: #d4edda; color: #155724; padding: 12px; border-radius: 6px; margin-bottom: 20px; border: 1px solid #c3e6cb; }
     .error-message { background-color: #f8d7da; color: #721c24; padding: 12px; border-radius: 6px; margin-bottom: 20px; border: 1px solid #f5c6cb; }
     .warning-message { background-color: #fff3cd; color: #856404; padding: 12px; border-radius: 6px; margin-bottom: 20px; border: 1px solid #ffeaa7; }
-
+    
     /* Edit mode indicator */
     .edit-mode-indicator {
         background: linear-gradient(135deg, #f8d7da, #fff3cd);
@@ -70,7 +270,7 @@
         font-size: 14px;
         font-weight: 600;
     }
-
+    
     /* Loading spinner */
     .loading-spinner {
         display: inline-block;
@@ -83,11 +283,31 @@
         margin-right: 8px;
     }
     
+    .btn-refresh {
+        background:#45a049;
+        color: white;
+        border: none;
+        padding: 12px 20px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+    }
+    
+    .btn-refresh:hover {
+        background:#45a049;
+        transform: translateY(-2px);
+    }
+    
     @keyframes spin {
         0% { transform: rotate(0deg); }
         100% { transform: rotate(360deg); }
     }
-
+    
     /* Lead info panel */
     .lead-info-panel {
         background: linear-gradient(135deg, #e3f2fd, #bbdefb);
@@ -133,19 +353,53 @@
     .priority-high { background-color: #ff4444; color: white; }
     .priority-medium { background-color: #ffaa00; color: white; }
     .priority-low { background-color: #44ff44; color: #333; }
-
-    /* Section info */
-    .section-info {
-        background: #f8f9fa;
-        border-radius: 6px;
-        padding: 10px 15px;
-        margin-bottom: 15px;
-        border-left: 4px solid #28a745;
-        font-size: 13px;
+    
+    /* Current lead highlight */
+    .current-lead-item {
+        background: linear-gradient(135deg, #e3f2fd, #bbdefb) !important;
+        border-left: 4px solid #2196f3 !important;
     }
-
+    
+    /* Pagination */
+    .directory-pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 12px 15px;
+        background: #f8f9fa;
+        border-top: 1px solid #e9ecef;
+        gap: 10px;
+    }
+    .pagination-info {
+        font-size: 12px;
+        color: #6c757d;
+        margin: 0 10px;
+    }
+    .pagination-btn {
+        padding: 6px 12px;
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.2s;
+        color: #4a6fdc;
+    }
+    .pagination-btn:hover:not(:disabled) {
+        background: #4a6fdc;
+        color: white;
+        border-color: #4a6fdc;
+    }
+    .pagination-btn:disabled {
+        background: #f8f9fa;
+        color: #6c757d;
+        cursor: not-allowed;
+    }
+    
     @media (max-width: 1200px) {
         .main-content { flex-direction: column; }
+        .directory-column { flex: 0 0 auto; width: 100%; }
+        .lead-directory-container { height: auto; max-height: 400px; }
     }
     
     @media (max-width: 768px) {
@@ -156,13 +410,196 @@
         .nav-item { min-width: 100%; }
         .btn-group { flex-direction: column; }
         .lead-info-grid { grid-template-columns: 1fr; }
+        .directory-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+        .filter-container { flex-direction: column; align-items: stretch; }
+        .status-filter-group { margin-left: 0; }
     }
 </style>
 </head>
 <body>
 <div class="container">
     <div class="main-content">
-        <!-- Requirements Form -->
+        <!-- Left Column - Lead Directory -->
+        <div class="directory-column">
+            <div class="lead-directory-container">
+                <div class="directory-header">
+                    <h2>Lead Directory</h2>
+                    <div class="directory-info">
+                        <span id="activeTabCount">{{ leads_count }}</span> active leads
+                    </div>
+                </div>
+                
+                <!-- Directory Tabs -->
+                <div class="directory-tabs">
+                    <button class="directory-tab active" data-tab="leads">
+                        <i class="fas fa-users"></i> Leads
+                    </button>
+                    <button class="directory-tab" data-tab="employees">
+                        <i class="fas fa-user-tie"></i> Employees
+                    </button>
+                </div>
+                
+                <div class="search-container">
+                    <div class="search-box">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" id="directorySearch" placeholder="Search by Name/Phone/Ticket...">
+                    </div>
+                </div>
+
+                <!-- Filters -->
+                <div class="filter-container" id="leadFilters" style="display: block;">
+                    <div class="filter-group">
+                        <span class="filter-label">Priority:</span>
+                        <select id="priorityFilter" class="filter-select">
+                            <option value="all">All</option>
+                            <option value="High">🔴 High</option>
+                            <option value="Medium">🟡 Medium</option>
+                            <option value="Low">🟢 Low</option>
+                        </select>
+                    </div>
+                    
+                    <div class="status-filter-group">
+                        <span class="filter-label">Status:</span>
+                        <select id="statusFilter" class="filter-select">
+                            <option value="all">All</option>
+                            <option value="Active">Active</option>
+                            <option value="Follow Up">Follow Up</option>
+                            <option value="Quoted">Quoted</option>
+                            <option value="Closed">Closed</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Lead List -->
+                <div class="lead-list active" id="leadList">
+                    {% if active_leads %}
+                        {% for lead in active_leads %}
+                        <div class="lead-item clickable editable {% if lead.id == current_lead_id %}current-lead-item{% endif %}" 
+                             data-id="{{ lead.id }}" 
+                             data-name="{{ lead.ownerName }}" 
+                             data-phone="{{ lead.phoneNo }}" 
+                             data-ticket="{{ lead.ticket_number }}"
+                             data-priority="{{ lead.priority }}"
+                             data-status="{{ lead.status }}"
+                             data-requirements-count="{{ lead.requirements_count }}"
+                             onclick="redirectToLeadPage({{ lead.id }})">
+                            
+                            <!-- Edit Indicator -->
+                            <div class="edit-lead-indicator" title="Click to edit requirements">
+                                <i class="fas fa-edit" style="font-size: 10px;"></i>
+                            </div>
+                            
+                            <!-- Priority Indicator -->
+                            <div class="lead-avatar" style="background: {% if lead.priority == 'High' %}#dc3545{% elif lead.priority == 'Medium' %}#ffc107{% else %}#28a745{% endif %}">
+                                {{ lead.ownerName|slice:":1"|upper }}
+                            </div>
+
+                            <div class="lead-details">
+                                <!-- Name with Ticket -->
+                                <div class="lead-name">
+                                    {{ lead.ownerName }}
+                                    {% if lead.ticket_number %}
+                                    <span class="lead-ticket">#{{ lead.ticket_number }}</span>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Phone -->
+                                {% if lead.phoneNo %}
+                                <div class="lead-phone">
+                                    <i class="fas fa-phone-alt" style="font-size: 9px;"></i> {{ lead.phoneNo }}
+                                </div>
+                                {% endif %}
+                                
+                                <!-- Company/Place -->
+                                {% if lead.company or lead.place %}
+                                <div class="lead-info">
+                                    {% if lead.company %}{{ lead.company }}{% endif %}
+                                    {% if lead.place %}{% if lead.company %} - {% endif %}{{ lead.place }}{% endif %}
+                                </div>
+                                {% endif %}
+                                
+                                <!-- Status & Priority -->
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px;">
+                                    <span style="color: {% if lead.status == 'Active' %}#28a745{% elif lead.status == 'Follow Up' %}#17a2b8{% elif lead.status == 'Quoted' %}#ffc107{% elif lead.status == 'Closed' %}#6c757d{% else %}#6c757d{% endif %}; font-size: 10px; font-weight: 600;">
+                                        {{ lead.status }}
+                                    </span>
+                                    <span style="color: {% if lead.priority == 'High' %}#dc3545{% elif lead.priority == 'Medium' %}#ffc107{% else %}#28a745{% endif %}; font-weight:600; font-size: 10px; padding: 2px 6px; border-radius: 10px; background: rgba(0,0,0,0.05);">
+                                        {{ lead.priority }}
+                                    </span>
+                                </div>
+                                
+                                <!-- Requirements Count -->
+                                {% if lead.requirements_count and lead.requirements_count > 0 %}
+                                <div style="margin-top: 3px; font-size: 10px; color: #28a745; font-weight: 600; display: flex; align-items: center; gap: 4px;">
+                                    <i class="fas fa-clipboard-list" style="font-size: 9px;"></i> 
+                                    {{ lead.requirements_count }} item(s)
+                                    <span style="font-size: 9px; color: #6c757d; margin-left: 4px;">
+                                        <i class="fas fa-external-link-alt"></i> Click to edit
+                                    </span>
+                                </div>
+                                {% else %}
+                                <div style="margin-top: 3px; font-size: 10px; color: #6c757d; display: flex; align-items: center; gap: 4px;">
+                                    <i class="fas fa-plus-circle" style="font-size: 9px;"></i> 
+                                    No requirements yet
+                                    <span style="font-size: 9px; color: #007bff; margin-left: 4px;">
+                                        <i class="fas fa-external-link-alt"></i> Click to add
+                                    </span>
+                                </div>
+                                {% endif %}
+                                
+                                <!-- Current Indicator -->
+                                {% if lead.id == current_lead_id %}
+                                <div style="margin-top: 3px; font-size: 10px; color: #2196f3; font-weight: 600; display: flex; align-items: center; gap: 4px;">
+                                    <i class="fas fa-star" style="font-size: 9px;"></i> 
+                                    Currently Editing
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="no-results">
+                            <i class="fas fa-user-slash" style="font-size: 24px; margin-bottom: 10px; color: #6c757d;"></i>
+                            <p>No active leads found</p>
+                            <p style="font-size: 11px; margin-top: 5px;">Create leads in the Lead Form first</p>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Employee List (hidden by default) -->
+                <div class="employee-list" id="employeeList">
+                    {% if active_users %}
+                        {% for u in active_users %}
+                        <div class="lead-item" data-id="{{ u.id }}" data-name="{{ u.name }}" data-phone="{{ u.phone }}">
+                            <div class="lead-avatar">
+                                {{ u.name|slice:":1"|upper }}
+                            </div>
+
+                            <div class="lead-details">
+                                <div class="lead-name">{{ u.name }}</div>
+                                <div class="lead-info">
+                                    {% if u.designation %}{{ u.designation }}{% endif %}
+                                    {% if u.department %}{% if u.designation %}, {% endif %}{{ u.department }}{% endif %}
+                                </div>
+                                {% if u.phone %}
+                                <div class="lead-phone">
+                                    <i class="fas fa-phone-alt" style="font-size: 9px;"></i> {{ u.phone }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="no-results">
+                            <i class="fas fa-user-tie" style="font-size: 24px; margin-bottom: 10px; color: #6c757d;"></i>
+                            <p>No active employees found</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column - Requirements Form -->
         <div class="form-column">
             <div class="form-container">
                 <div class="form-header">
@@ -209,39 +646,20 @@
                         {% endfor %}
                     {% endif %}
                     
-                    <!-- Edit Mode Indicator -->
-                    <div class="edit-mode-indicator">
-                        <i class="fas fa-edit"></i>
-                        Editing requirements for {{ lead.ownerName|default:lead.name|default:"Lead" }}
-                        {% if requirements|length > 0 %} ({{ requirements|length }} item(s) found){% endif %}
-                    </div>
-                    
                     <!-- Lead Information Panel -->
                     <div class="lead-info-panel">
                         <div class="lead-info-grid">
                             <div class="info-item">
                                 <span class="info-label"><i class="fas fa-user"></i> Lead Name</span>
-                                <span class="info-value">{{ lead.ownerName|default:lead.name|default:"Unknown" }}</span>
+                                <span class="info-value">{{ lead_data.ownerName|default:"Unknown" }}</span>
                             </div>
                             <div class="info-item">
                                 <span class="info-label"><i class="fas fa-phone"></i> Phone No</span>
-                                <span class="info-value">{{ lead.phoneNo|default:lead.phone|default:"-" }}</span>
+                                <span class="info-value">{{ lead_data.phoneNo|default:"-" }}</span>
                             </div>
                             <div class="info-item">
                                 <span class="info-label"><i class="fas fa-ticket-alt"></i> Ticket No</span>
-                                <span class="info-value">{{ lead.ticket_number|default:"-" }}</span>
-                            </div>
-                            <div class="info-item">
-                                <span class="info-label"><i class="fas fa-flag"></i> Priority</span>
-                                <span class="info-value">
-                                    <span class="priority-badge priority-{{ lead.priority|default:"medium"|lower }}">
-                                        {{ lead.priority|default:"Medium" }}
-                                    </span>
-                                </span>
-                            </div>
-                            <div class="info-item">
-                                <span class="info-label"><i class="fas fa-calendar"></i> Created Date</span>
-                                <span class="info-value">{{ lead.created_date|date:"d M Y"|default:"-" }}</span>
+                                <span class="info-value">{{ lead_data.ticket_number|default:"-" }}</span>
                             </div>
                             <div class="info-item">
                                 <span class="info-label"><i class="fas fa-clipboard-list"></i> Total Items</span>
@@ -250,23 +668,8 @@
                         </div>
                     </div>
                     
-                    <!-- Section Information -->
-                    {% if section_summary %}
-                    <div class="section-info">
-                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                            <div style="font-weight: 600; color: #333;">
-                                <i class="fas fa-filter"></i> Section Summary:
-                            </div>
-                            <div style="display: flex; gap: 15px; flex-wrap: wrap;">
-                                {% for section, count in section_summary.items %}
-                                    <span style="font-size: 12px;">
-                                        {{ section }}: <span style="background: #e3f2fd; padding: 2px 8px; border-radius: 10px; font-weight: 600;">{{ count }}</span>
-                                    </span>
-                                {% endfor %}
-                            </div>
-                        </div>
-                    </div>
-                    {% endif %}
+                    <!-- Edit Mode Indicator -->
+                    
                     
                     <!-- ===== Requirements Section ===== -->
                     <div class="requirements-section" id="requirements-section">
@@ -332,15 +735,9 @@
                                 <button type="submit" class="submit-btn" id="submitRequirementsBtn">
                                     <i class="fas fa-save"></i> Update Requirements
                                 </button>
-                                <button type="button" class="reset-btn" id="resetFormBtn">
-                                    <i class="fas fa-undo"></i> Reset Changes
+                                <button class="btn-refresh" onclick="window.location.href='{% url 'app5:lead_report' %}'">
+                                    <i class="fas fa-sync-alt"></i> Back to Reports
                                 </button>
-                                <a href="{% url 'app5:requirement_form' %}" class="back-btn">
-                                    <i class="fas fa-arrow-left"></i> Back to Requirements
-                                </a>
-                                <a href="{% url 'app5:lead_report' %}" class="back-btn" style="background-color: #28a745;">
-                                    <i class="fas fa-list"></i> View Reports
-                                </a>
                             </div>
                         </form>
                     </div>
@@ -352,15 +749,127 @@
 </div>
 
 <script>
+    // Directory functionality
+    function setupDirectory() {
+        // Tab switching
+        const tabs = document.querySelectorAll('.directory-tab');
+        const leadList = document.getElementById('leadList');
+        const employeeList = document.getElementById('employeeList');
+        
+        tabs.forEach(tab => {
+            tab.addEventListener('click', function() {
+                const tabName = this.getAttribute('data-tab');
+                
+                // Update active tab
+                tabs.forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Show/hide lists
+                if (tabName === 'leads') {
+                    leadList.classList.add('active');
+                    employeeList.classList.remove('active');
+                    document.getElementById('leadFilters').style.display = 'block';
+                } else {
+                    leadList.classList.remove('active');
+                    employeeList.classList.add('active');
+                    document.getElementById('leadFilters').style.display = 'none';
+                }
+            });
+        });
+        
+        // Search and filter functionality
+        const searchInput = document.getElementById('directorySearch');
+        const priorityFilter = document.getElementById('priorityFilter');
+        const statusFilter = document.getElementById('statusFilter');
+        
+        function filterLeads() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const priorityValue = priorityFilter.value;
+            const statusValue = statusFilter.value;
+            
+            const leadItems = document.querySelectorAll('#leadList .lead-item');
+            
+            leadItems.forEach(item => {
+                const name = item.getAttribute('data-name').toLowerCase();
+                const phone = item.getAttribute('data-phone').toLowerCase();
+                const ticket = item.getAttribute('data-ticket').toLowerCase();
+                const priority = item.getAttribute('data-priority');
+                const status = item.getAttribute('data-status');
+                
+                // Combine search fields
+                const matchesSearch = !searchTerm || 
+                                     name.includes(searchTerm) || 
+                                     phone.includes(searchTerm) || 
+                                     ticket.includes(searchTerm);
+                
+                // Match priority (if not "all")
+                const matchesPriority = priorityValue === 'all' || priority === priorityValue;
+                
+                // Match status (if not "all")
+                const matchesStatus = statusValue === 'all' || status === statusValue;
+                
+                // Show/hide based on all filters
+                if (matchesSearch && matchesPriority && matchesStatus) {
+                    item.style.display = 'flex';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+        
+        if (searchInput) searchInput.addEventListener('input', filterLeads);
+        if (priorityFilter) priorityFilter.addEventListener('change', filterLeads);
+        if (statusFilter) statusFilter.addEventListener('change', filterLeads);
+    }
+    
+    // Redirect function
+    function redirectToLeadPage(leadId, event) {
+        if (event) {
+            event.stopPropagation();
+        }
+        
+        if (!leadId) {
+            console.error('Lead ID not found!');
+            return;
+        }
+        
+        // Check if we're already on this lead's edit page
+        const currentLeadId = {{ current_lead_id|default:0 }};
+        if (leadId == currentLeadId) {
+            return; // Already on this page
+        }
+        
+        // Construct the edit URL
+        const editUrl = `{% url 'app5:edit_requirement' 0 %}`.replace('0', leadId);
+        
+        // Show confirmation if there are unsaved changes
+        if (hasUnsavedChanges()) {
+            if (confirm('You have unsaved changes. Are you sure you want to navigate away?')) {
+                window.location.href = editUrl;
+            }
+        } else {
+            window.location.href = editUrl;
+        }
+    }
+    
+    // Check for unsaved changes
+    function hasUnsavedChanges() {
+        // Implement your logic to check for unsaved changes
+        return false; // For now, return false
+    }
+    
+    // Requirements table functionality
     document.addEventListener('DOMContentLoaded', function() {
+        // Setup directory
+        setupDirectory();
+        
         // ===== Requirements table logic =====
         const tbody = document.getElementById('table-body');
         const addBtn = document.getElementById('add-item-btn');
         const grandEl = document.getElementById('grand-total');
         const submitBtn = document.getElementById('submitRequirementsBtn');
-        const resetBtn = document.getElementById('resetFormBtn');
         
-        // Store original data for reset functionality
+        // Store original data
         let originalRequirements = [];
         let allItemOptions = [];
 
@@ -656,47 +1165,6 @@
             document.getElementById('hiddenRequirementIds').value = requirementIds.join(',');
         }
 
-        // Reset form to original state
-        function resetForm() {
-            if (confirm('Are you sure you want to reset all changes? This will restore the original requirements.')) {
-                loadRequirements();
-                showTemporaryMessage('Changes reset to original state', 'success');
-            }
-        }
-
-        // Show temporary notification
-        function showTemporaryMessage(message, type = 'info') {
-            // Create notification element
-            const notification = document.createElement('div');
-            notification.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                padding: 15px 20px;
-                background: ${type === 'success' ? '#4CAF50' : type === 'error' ? '#f44336' : '#2196F3'};
-                color: white;
-                border-radius: 5px;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                z-index: 10000;
-                font-weight: 600;
-                transition: all 0.3s ease;
-            `;
-            notification.textContent = message;
-            
-            document.body.appendChild(notification);
-            
-            // Remove after 3 seconds
-            setTimeout(() => {
-                notification.style.opacity = '0';
-                notification.style.transform = 'translateX(100px)';
-                setTimeout(() => {
-                    if (notification.parentNode) {
-                        notification.parentNode.removeChild(notification);
-                    }
-                }, 300);
-            }, 3000);
-        }
-
         // Initialize the page
         function initializePage() {
             // Load item options
@@ -713,11 +1181,6 @@
                     refreshSlNos();
                     updateRequirementIds();
                 });
-            }
-            
-            // Reset form button
-            if (resetBtn) {
-                resetBtn.addEventListener('click', resetForm);
             }
             
             // Form submission validation
@@ -738,13 +1201,13 @@
 
                 if (!hasItems) {
                     e.preventDefault();
-                    showTemporaryMessage('Please add at least one requirement item', 'error');
+                    alert('Please add at least one requirement item');
                     return;
                 }
 
                 if (!allValid) {
                     e.preventDefault();
-                    showTemporaryMessage('Please select an item for all rows', 'error');
+                    alert('Please select an item for all rows');
                     return;
                 }
                 
@@ -754,16 +1217,6 @@
                 // Show loading state
                 submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
                 submitBtn.disabled = true;
-                resetBtn.disabled = true;
-                
-                showTemporaryMessage('Saving changes...', 'info');
-            });
-            
-            // Update requirement IDs when rows are deleted
-            tbody.addEventListener('DOMNodeRemoved', function() {
-                setTimeout(() => {
-                    updateRequirementIds();
-                }, 100);
             });
             
             console.log('Edit page initialized with {{ requirements|length }} existing requirements');
