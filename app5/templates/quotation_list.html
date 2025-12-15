@@ -3,15 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quotation Management System</title>
+    <title>Quotation Form</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Add Select2 CSS for better dropdowns -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <style>
+        /* Your existing styles remain the same... */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
+        
         body {
             background: #f0f2f5;
             min-height: 100vh;
@@ -39,340 +43,50 @@
             flex-direction: column;
         }
         
-        .content-column {
+        .form-column {
             flex: 1;
             min-width: 0;
             display: flex;
             flex-direction: column;
         }
         
-        
-        .header-section {
-            background: #bfb8f7;
+        .form-container {
+            background-color: #dcd9f3;
             border-radius: 10px;
-            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
-            padding: 20px;
-            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+            overflow: hidden;
+            width: 100%;
+            flex: 1;
             display: flex;
-            justify-content: space-between;
-            align-items: center;
+            flex-direction: column;
         }
         
-        .header-section h1 {
-            color: #2c3e50;
+        .form-header {
+            background: #a095f6;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .form-header h1 {
             font-size: 28px;
+            margin-bottom: 5px;
             font-weight: 700;
         }
         
-        .header-actions {
-            display: flex;
-            gap: 15px;
-        }
-        
-        .btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 6px;
+        .form-header p {
             font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .btn-primary {
-            background: linear-gradient(135deg, #4CAF50, #45a049);
-            color: white;
-            box-shadow: 0 3px 8px rgba(37, 117, 252, 0.3);
-        }
-        
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(37, 117, 252, 0.4);
-        }
-        
-        .btn-secondary {
-            background: #4CAF50;
-            color: white;
-        }
-        
-        .btn-secondary:hover {
-            background: #5a6268;
-        }
-        
-        .btn-submit,.btn-download {
-    background-color: #28a745; 
-    color: white;
-    border: none;
-    padding: 12px 24px;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 16px;
-    font-weight: 500;
-    transition: background-color 0.3s ease;
-    display: inline-block; /* Important for text-align center to work */
-}
-
-.btn-submit:hover,.btn-download:hover {
-    background-color: #28a745; /* Darker blue on hover */
-}
-
-.btn-submit:active,.btn-download:active {
-    background-color: #28a745; /* Even darker when clicked */
-}
-
-/* Center the button in its container */
-.button-container {
-    text-align: center;
-    margin: 20px 0;
-}
-        
-        .data-section {
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
-            overflow: hidden;
-        }
-        
-        .table-container {
-            overflow-x: auto;
-        }
-        
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        
-        .data-table th {
-            background: #ffe9cc;
-            color: rgb(12, 12, 12);
-            border: 2px solid #f8861b;
-            padding: 15px 12px;
-            text-align: left;
-            font-weight:bold;
-            font-size: 14px;
-            position: sticky;
-            top: 0;
-        }
-        
-        .data-table td {
-            padding: 12px;
-            background-color: #ffe9cc;
-            border: 2px solid #f8861b;
-            font-size: 14px;
-        }
-        
-        .data-table tr:nth-child(even) {
-            background-color: #f8f9fa;
-        }
-        
-        .data-table tr:hover {
-            background-color: #e9ecef;
-        }
-        
-        .status-badge {
-            padding: 5px 10px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-            display: inline-block;
-        }
-        
-        .status-active {
-            background: #d4edda;
-            color: #155724;
-        }
-        
-        .status-pending {
-            background: #fff3cd;
-            color: #856404;
-        }
-        
-        .status-completed {
-            background: #d1ecf1;
-            color: #0c5460;
-        }
-        
-        .status-cancelled {
-            background: #f8d7da;
-            color: #721c24;
-        }
-        
-        .action-buttons {
-            display: flex;
-            gap: 8px;
-        }
-        
-        .action-btn {
-            padding: 6px 10px;
-            border: none;
-            border-radius: 4px;
-            font-size: 12px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        
-        .btn-view {
-            background: #17a2b8;
-            color: white;
-        }
-        
-        .btn-edit {
-            background: #ffc107;
-            color: #212529;
-        }
-        
-        .btn-delete {
-            background: #dc3545;
-            color: white;
-        }
-        
-        .btn-download {
-            background: #28a745;
-            color: white;
-        }
-        
-        .action-btn:hover {
             opacity: 0.9;
-            transform: translateY(-1px);
         }
         
-        .pagination {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 15px;
-            background: #f8f9fa;
-            border-top: 1px solid #e9ecef;
-            gap: 10px;
-        }
-        
-        .pagination-info {
-            font-size: 14px;
-            color: #6c757d;
-            margin: 0 10px;
-        }
-        
-        .pagination-btn {
-            padding: 8px 12px;
-            background: white;
-            border: 1px solid #dee2e6;
-            border-radius: 4px;
-            font-size: 14px;
-            cursor: pointer;
-            transition: all 0.2s;
-            color: #4a6fdc;
-        }
-        
-        .pagination-btn:hover:not(:disabled) {
-            background: #4a6fdc;
-            color: white;
-            border-color: #4a6fdc;
-        }
-        
-        .pagination-btn:disabled {
-            background: #f8f9fa;
-            color: #6c757d;
-            cursor: not-allowed;
-        }
-
-
-        /* Add this to your existing CSS */
-.btn-back {
-    padding: 8px 14px !important;
-    font-size: 12px !important;
-    border: none;
-    border-radius: 3px;
-    cursor: pointer;
-    transition: all 0.3s;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    background: #4CAF50;
-    color: white;
-    text-decoration: none;
-    height: fit-content;
-    width: fit-content;
-}
-
-.btn-back:hover {
-    background: #4CAF50;
-    transform: translateY(-1px);
-}
-
-.btn-back i {
-    font-size: 10px !important;
-}
-        
-        .pagination-numbers {
-            display: flex;
-            gap: 5px;
-        }
-        
-        .page-number {
-            padding: 8px 12px;
-            background: white;
-            border: 1px solid #dee2e6;
-            border-radius: 4px;
-            font-size: 14px;
-            cursor: pointer;
-            transition: all 0.2s;
-            color: #495057;
-        }
-        
-        .page-number.active {
-            background: #4a6fdc;
-            color: white;
-            border-color: #4a6fdc;
-        }
-        
-        .page-number:hover:not(.active) {
-            background: #e9ecef;
-        }
-        
-        .search-container {
-            padding: 15px 20px;
-            background: #f8f9fa;
-            border-bottom: 1px solid #e9ecef;
-            display: flex;
-            gap: 15px;
-        }
-        
-        .search-box {
-            position: relative;
-            flex: 1;
-        }
-        
-        .search-box input {
-            padding: 10px 15px 10px 40px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            font-size: 14px;
-            width: 100%;
-            background: white;
-        }
-        
-        .search-icon {
-            position: absolute;
-            left: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #6c757d;
-            font-size: 14px;
-        }
-        
-        /* Navigation Styles */
         .form-navigation {
             display: flex;
             justify-content: center;
-            margin-bottom: 20px;
+            margin: 20px 0;
             background: white;
             border-radius: 10px;
             padding: 10px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            width: 100%;
         }
         
         .nav-menu {
@@ -422,11 +136,386 @@
             font-size: 16px;
         }
         
+        .form-body {
+            padding: 20px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            justify-content: flex-end;
+            padding: 15px;
+            border-radius: 8px;
+           
+        }
+        
+        .btn-add {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+        
+        .btn-add:hover {
+            background: linear-gradient(135deg, #218838, #1ea085);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(40, 167, 69, 0.4);
+        }
+        
+        .btn-add i {
+            font-size: 14px;
+        }
+        
+        .btn-submit {
+            background: linear-gradient(135deg, #17a2b8, #138496);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(23, 162, 184, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+        
+        .btn-submit:hover {
+            background: linear-gradient(135deg, #138496, #117a8b);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(23, 162, 184, 0.4);
+        }
+        
+        .btn-submit i {
+            font-size: 14px;
+        }
+        
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        }
+        
+        .items-table th {
+            background: linear-gradient(135deg, #f8861b, #f8861b);
+            color: white;
+            padding: 15px 12px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 14px;
+            border: none;
+        }
+        
+        .items-table td {
+            padding: 12px;
+            border-bottom: 1px solid #f8861b;
+            background-color: #ffe9cc;
+        }
+        
+        .items-table tr:nth-child(even) td {
+            background-color: #f8f9ff;
+        }
+        
+        .items-table tr:hover td {
+            background-color: #e3f2fd;
+        }
+        
+        .items-table input, .items-table select {
+            width: 100%;
+            padding: 8px 10px;
+            text-align: right;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        .items-table input:focus, .items-table select:focus {
+            border-color: #4a6fdc;
+            outline: none;
+        }
+        
+        .btn-delete {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 14px;
+        }
+        
+        .btn-delete:hover {
+            background: linear-gradient(135deg, #c0392b, #a93226);
+            transform: translateY(-2px);
+        }
+        
+        .btn-delete i {
+            font-size: 12px;
+        }
+        
+        .totals-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-top: 20px;
+        }
+        
+        .notes-section {
+            background: linear-gradient(135deg, #fffaf0, #fff5e6);
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 5px solid #e67e22;
+            box-shadow: 0 4px 12px rgba(230, 126, 34, 0.1);
+        }
+        
+        .notes-section label {
+            color: #2c3e50;
+            font-weight: 600;
+            margin-bottom: 10px;
+            display: block;
+            font-size: 16px;
+        }
+        
+        textarea {
+            width: 100%;
+            padding: 15px;
+            border: 1px solid #ffddb3;
+            border-radius: 6px;
+            min-height: 120px;
+            font-size: 15px;
+            background-color: white;
+            transition: border-color 0.3s;
+            resize: vertical;
+        }
+        
+        textarea:focus {
+            border-color: #e67e22;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(230, 126, 34, 0.2);
+        }
+        
+        .totals-box {
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+        }
+        
+        .totals-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 16px;
+        }
+        
+        .grand-total {
+            font-size: 22px;
+            font-weight: bold;
+            color: white;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 2px solid rgba(255, 255, 255, 0.3);
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            padding: 25px;
+            background: linear-gradient(135deg, #34495e, #2c3e50);
+            color: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .footer p {
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        
+        .footer p:first-child {
+            font-weight: 600;
+            font-size: 18px;
+        }
+        
+        .btn-back {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: #4CAF50;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            text-decoration: none;
+        }
+        
+        .btn-back:hover {
+            background: #45a049;
+        }
+
+       .btn-refresh {
+            background:#45a049;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+        
+        .btn-refresh:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+        
+        
+        
+        .header-section {
+            background: #bfb8f7;
+            border-radius: 10px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+            padding: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+        }
+        
+        .header-section h1 {
+            color: #2c3e50;
+            font-size: 28px;
+            font-weight: 700;
+        }
+        
+        @media (max-width: 768px) {
+            .totals-section {
+                grid-template-columns: 1fr;
+            }
+            
+            .action-buttons {
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+            
+            .items-table {
+                display: block;
+                overflow-x: auto;
+            }
+            
+            .main-content {
+                flex-direction: column;
+            }
+            
+            .directory-column {
+                width: 100%;
+                flex: none;
+            }
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+        
+        .loading i {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: #4CAF50;
+        }
+        
+        /* Add styles for Select2 integration */
+        .select2-container--default .select2-selection--single {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            height: 38px;
+        }
+        
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 36px;
+        }
+        
+        .select2-dropdown {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        /* Improve item dropdown display */
+        .item-option {
+            padding: 8px 12px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .item-option:last-child {
+            border-bottom: none;
+        }
+        
+        .item-name {
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .item-details {
+            font-size: 12px;
+            color: #666;
+            margin-top: 3px;
+        }
+        
+        .item-section {
+            display: inline-block;
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 11px;
+            margin-right: 5px;
+        }
+        
         /* Directory Styles */
         .lead-directory-container {
             background: white;
             border-radius: 10px;
-            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
             overflow: hidden;
             height: 100%;
             display: flex;
@@ -482,18 +571,18 @@
             background: #e9ecef;
         }
         
-        .directory-search-container {
+        .search-container {
             padding: 12px 15px;
             background: #f8f9fa;
             border-bottom: 1px solid #e9ecef;
         }
         
-        .directory-search-box {
+        .search-box {
             position: relative;
             width: 100%;
         }
         
-        .directory-search-box input {
+        .search-box input {
             padding: 8px 12px 8px 35px;
             border: 1px solid #ddd;
             border-radius: 8px;
@@ -502,7 +591,7 @@
             background: white;
         }
         
-        .directory-search-icon {
+        .search-icon {
             position: absolute;
             left: 12px;
             top: 50%;
@@ -511,18 +600,13 @@
             font-size: 13px;
         }
         
-        .employee-list, .lead-list {
+        .lead-list {
             flex: 1;
             overflow-y: auto;
             padding: 8px 0;
-            display: none;
         }
         
-        .employee-list.active, .lead-list.active {
-            display: block;
-        }
-        
-        .employee-item, .lead-item {
+        .lead-item {
             display: flex;
             align-items: center;
             padding: 12px 15px;
@@ -530,21 +614,21 @@
             transition: background 0.2s;
             cursor: pointer;
         }
-
+        
         .lead-item.selected {
             background: #e3f2fd;
             border-left: 4px solid #2575fc;
         }
         
-        .employee-item:hover, .lead-item:hover {
+        .lead-item:hover {
             background: #f8f9fa;
         }
         
-        .employee-avatar, .lead-avatar {
+        .lead-avatar {
             width: 32px;
             height: 32px;
             border-radius: 50%;
-            background: #4a6fdc;
+            background: #28a745;
             color: white;
             display: flex;
             align-items: center;
@@ -555,16 +639,12 @@
             flex-shrink: 0;
         }
         
-        .lead-avatar {
-            background: #28a745;
-        }
-        
-        .employee-details, .lead-details {
+        .lead-details {
             flex: 1;
             min-width: 0;
         }
         
-        .employee-name, .lead-name {
+        .lead-name {
             font-weight: 600;
             color: #333;
             margin-bottom: 2px;
@@ -574,7 +654,7 @@
             text-overflow: ellipsis;
         }
         
-        .employee-role, .lead-info {
+        .lead-info {
             font-size: 12px;
             color: #6c757d;
             white-space: nowrap;
@@ -595,7 +675,6 @@
             font-size: 10px;
             color: #6c757d;
             background: #f8f9fa;
-            padding: 2px 5px;
             border-radius: 4px;
             display: inline-block;
             margin-top: 2px;
@@ -608,26 +687,6 @@
             margin-top: 2px;
         }
         
-        .assign-btn {
-            padding: 5px 10px;
-            background: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            font-size: 11px;
-            cursor: pointer;
-            transition: all 0.2s;
-            flex-shrink: 0;
-        }
-        
-        .assign-btn:hover {
-            background: #45a049;
-        }
-        
-        .assign-btn.assigned {
-            background: #6c757d;
-        }
-        
         .no-results {
             padding: 20px 15px;
             text-align: center;
@@ -635,636 +694,292 @@
             font-size: 13px;
         }
         
-        .directory-pagination {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 12px 15px;
+        /* Priority Filter Styles */
+        .filter-container {
+            padding: 10px 15px;
             background: #f8f9fa;
-            border-top: 1px solid #e9ecef;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .filter-group {
+            display: flex;
+            align-items: center;
             gap: 10px;
         }
         
-        .directory-pagination-info {
-            font-size: 12px;
-            color: #6c757d;
-            margin: 0 10px;
-        }
-        
-        .directory-pagination-btn {
-            padding: 6px 12px;
-            background: white;
-            border: 1px solid #dee2e6;
-            border-radius: 4px;
-            font-size: 12px;
-            cursor: pointer;
-            transition: all 0.2s;
-            color: #4a6fdc;
-        }
-        
-        .directory-pagination-btn:hover:not(:disabled) {
-            background: #4a6fdc;
-            color: white;
-            border-color: #4a6fdc;
-        }
-        
-        .directory-pagination-btn:disabled {
-            background: #f8f9fa;
-            color: #6c757d;
-            cursor: not-allowed;
-        }
-        
-        .directory-pagination-numbers {
-            display: flex;
-            gap: 5px;
-        }
-        
-        .directory-page-number {
-            padding: 6px 10px;
-            background: white;
-            border: 1px solid #dee2e6;
-            border-radius: 4px;
-            font-size: 12px;
-            cursor: pointer;
-            transition: all 0.2s;
-            color: #495057;
-        }
-        
-        .directory-page-number.active {
-            background: #4a6fdc;
-            color: white;
-            border-color: #4a6fdc;
-        }
-        
-        .directory-page-number:hover:not(.active) {
-            background: #e9ecef;
-        }
-        
-        /* Form Header Styles */
-        .form-header {
-            background: #a095f6;
-            color: black;
-            padding: 15px 20px;
-            text-align: center;
-        }
-        
-        .form-header h1 {
-            font-size: 22px;
-            margin-bottom: 5px;
-            font-weight: 700;
-        }
-        
-        .form-header p {
+        .filter-label {
             font-size: 13px;
-            opacity: 0.9;
-        }
-        
-        .form-header-actions {
-            display: flex;
-            gap: 10px;
-        }
-        
-        .form-header-btn {
-            padding: 8px 15px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
             font-weight: 600;
-            transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            gap: 5px;
         }
         
-        .form-header-btn-secondary {
-            background: rgba(255,255,255,0.2);
-            color: black;
+        .filter-select {
+            padding: 6px;
+            border-radius: 8px;
         }
         
-        .form-header-btn-secondary:hover {
-            background: rgba(255,255,255,0.3);
-        }
-        
-        .form-header-btn-primary {
-            background: white;
-            color: #4a6fdc;
-        }
-        
-        .form-header-btn-primary:hover {
-            background: #f8f9fa;
-            transform: translateY(-2px);
-        }
-
-        /* Quotation Form Styles */
-        .form-container {
-            background-color: #f7f7f8;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
-            overflow: hidden;
-            width: 100%;
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .form-body {
-            padding: 20px;
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .form-group {
+        /* Lead Selection Info */
+        .lead-selection-info {
+            background: #e3f2fd;
+            padding: 10px 15px;
             margin-bottom: 15px;
+            border-radius: 6px;
+            border-left: 4px solid #2196f3;
         }
-
-        .form-group label {
+        
+        .lead-selection-info h4 {
+            margin: 0 0 5px 0;
+            color: #1976d2;
+            font-size: 14px;
+        }
+        
+        .lead-selection-info p {
+            margin: 0;
+            font-size: 13px;
+            color: #333;
+        }
+        
+        /* Form Section Styles */
+        .client-info-section, .quotation-details {
+            background: #f8f9ff;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .client-info-section h3, .quotation-details h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        
+        .client-info-section label, .quotation-details label {
             display: block;
             margin-bottom: 5px;
             font-weight: 600;
-            color: #2c3e50;
+            color: #444;
+            font-size: 14px;
         }
-
-        .form-group input,
-        .form-group textarea {
+        
+        .client-info-section input, .quotation-details input {
             width: 100%;
             padding: 10px;
             border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 16px;
-        }
-
-        .items-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 20px;
-        }
-
-        .items-table th {
-            background-color: #f8861b;
-            color: white;
-            padding: 12px 15px;
-            text-align: left;
-        }
-
-        .items-table td {
-            padding: 8px;
-            border: 1px solid #f8861b;
-        }
-
-        .items-table input {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-
-        .totals-section {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-top: 20px;
-        }
-
-        .notes-section {
-            margin-top: 30px;
-        }
-
-        .totals-box {
-            background-color: #f8f9fa;
-            padding: 20px;
             border-radius: 6px;
-            border-left: 4px solid #3498db;
-        }
-
-        .totals-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 10px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #eee;
-        }
-
-        .grand-total {
-            font-size: 20px;
-            font-weight: bold;
-            color: #2c3e50;
-            margin-top: 10px;
-            padding-top: 10px;
-            border-top: 2px solid #3498db;
-        }
-
-        .footer {
-            margin-top: 30px;
-            text-align: center;
-            color: #7f8c8d;
             font-size: 14px;
         }
-
-        .btn-add {
-            padding: 10px 15px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: background-color 0.3s;
-            background-color: #28a745;
-            color: white;
-        }
-
-        .btn-add:hover {
-            background-color: #28a745;
-        }
-
-        /* Form Container Styles */
-        .form-container .header {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 30px;
-            border-bottom: 2px solid #3498db;
-            padding-bottom: 20px;
-        }
-
-        .form-container .company-info h1 {
-            margin: 0;
-            color: #2c3e50;
-        }
-
-        .form-container .quotation-info {
-            text-align: right;
-        }
-
-        .form-container .quotation-info h2 {
-            margin: 0;
-            color: #3498db;
-        }
-
-        .form-container .client-info {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        @media (max-width: 1200px) {
-            .main-content {
-                flex-direction: column;
-            }
-            
-            .directory-column {
-                flex: 0 0 auto;
-                width: 100%;
-            }
-            
-            .lead-directory-container {
-                height: auto;
-                max-height: 400px;
-            }
-
-            .totals-section {
-                grid-template-columns: 1fr;
-            }
-
-            .client-info {
-                grid-template-columns: 1fr;
-            }
-        }
         
-        @media (max-width: 992px) {
-            .nav-menu {
-                flex-wrap: wrap;
-            }
-            
-            .nav-item {
-                flex: 1 0 33.333%;
-                margin-bottom: 5px;
-            }
-        }
-        
-        @media (max-width: 768px) {
-            .header-section {
-                flex-direction: column;
-                gap: 15px;
-                align-items: flex-start;
-            }
-            
-            .header-actions {
-                width: 100%;
-                justify-content: space-between;
-            }
-            
-            .action-buttons {
-                flex-direction: column;
-            }
-            
-            .pagination {
-                flex-wrap: wrap;
-                gap: 8px;
-            }
-            
-            .pagination-numbers {
-                order: 3;
-                width: 100%;
-                justify-content: center;
-                margin-top: 8px;
-            }
-            
-            .nav-item {
-                flex: 1 0 50%;
-            }
-            
-            .directory-header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 10px;
-            }
-            
-            .employee-item, .lead-item {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 10px;
-            }
-            
-            .assign-btn {
-                align-self: flex-end;
-            }
-            
-            .form-header {
-                flex-direction: column;
-                gap: 15px;
-                align-items: flex-start;
-            }
-            
-            .form-header-actions {
-                width: 100%;
-                justify-content: space-between;
-            }
-
-            .form-container .header {
-                flex-direction: column;
-                gap: 20px;
-            }
-
-            .form-container .quotation-info {
-                text-align: left;
-            }
-
-            .items-table {
-                font-size: 12px;
-            }
-
-            .items-table th,
-            .items-table td {
-                padding: 6px 8px;
-            }
-        }
-        
-        @media (max-width: 576px) {
-            body {
-                padding: 10px;
-            }
-            
-            .header-section h1 {
-                font-size: 24px;
-            }
-            
-            .btn {
-                padding: 8px 15px;
-                font-size: 13px;
-            }
-            
-            .search-container {
-                flex-direction: column;
-            }
-            
-            .pagination {
-                flex-direction: column;
-                gap: 8px;
-            }
-            
-            .pagination-numbers {
-                order: 0;
-                width: 100%;
-                justify-content: center;
-            }
-            
-            .pagination-info {
-                order: 1;
-            }
-            
-            .pagination-buttons {
-                order: 2;
-                display: flex;
-                gap: 8px;
-            }
-            
-            .nav-item {
-                flex: 1 0 100%;
-            }
-            
-            .nav-link {
-                padding: 15px;
-                font-size: 15px;
-            }
-            
-            .directory-pagination {
-                flex-direction: column;
-                gap: 8px;
-            }
-            
-            .directory-pagination-numbers {
-                order: 0;
-                width: 100%;
-                justify-content: center;
-            }
-            
-            .directory-pagination-info {
-                order: 1;
-            }
-            
-            .directory-pagination-buttons {
-                order: 2;
-                display: flex;
-                gap: 8px;
-            }
-            
-            .form-header-btn {
-                padding: 8px 12px;
-                font-size: 13px;
-            }
-
-            .items-table {
-                display: block;
-                overflow-x: auto;
-            }
+        .quotation-details {
+            background: #fffaf0;
+            border-left: 4px solid #e67e22;
         }
     </style>
 </head>
 <body>
-    <!-- Your existing HTML content remains the same -->
     <div class="container">
         <div class="main-content">
             <!-- Left Column - Lead Directory -->
             <div class="directory-column">
                 <div class="lead-directory-container">
                     <div class="directory-header">
-                        <h2>Lead Management</h2>
-                        <div class="directory-info">Showing <span id="activeTabCount">8</span> active leads</div>
+                        <h2>Lead Directory</h2>
+                        <div class="directory-info">Showing <span id="activeTabCount">{{ leads_count }}</span> leads</div>
                     </div>
                     
-                    <!-- Directory Tabs -->
-                    <div class="directory-tabs">
-                        <button class="directory-tab active" data-tab="leads">Active Leads</button>
-                        <button class="directory-tab" data-tab="employees">Employees</button>
-                    </div>
-                    
-                    <div class="directory-search-container">
-                        <div class="directory-search-box">
-                            <i class="fas fa-search directory-search-icon"></i>
+                    <!-- Search Box -->
+                    <div class="search-container">
+                        <div class="search-box">
+                            <i class="fas fa-search search-icon"></i>
                             <input type="text" id="directorySearch" placeholder="Search by Name/Phone/Ticket...">
                         </div>
                     </div>
-                    
-                    <!-- Lead List (shown by default) -->
-                    <div class="lead-list active" id="leadList">
-                        <!-- Lead items will be populated by JavaScript -->
+
+                    <!-- Priority Filter -->
+                    <div class="filter-container" id="priorityFilterContainer">
+                        <div class="filter-group">
+                            <span class="filter-label">Priority:</span>
+                            <select id="priorityFilter" class="filter-select">
+                                <option value="all">All Priorities</option>
+                                <option value="High">🔴 High</option>
+                                <option value="Medium">🟡 Medium</option>
+                                <option value="Low">🟢 Low</option>
+                            </select>
+                        </div>
                     </div>
                     
-                    <!-- Employee List (hidden by default) -->
-                    <div class="employee-list" id="employeeList">
-                        <!-- Employee items will be populated by JavaScript -->
-                    </div>
-                    
-                    <!-- Pagination -->
-                    <div class="directory-pagination" id="directoryPagination">
-                        <div class="directory-pagination-buttons">
-                            <button class="directory-pagination-btn" id="prevDirectoryPage" disabled>
-                                <i class="fas fa-chevron-left"></i> Prev
-                            </button>
-                        </div>
-                        
-                        <div class="directory-pagination-numbers" id="directoryPaginationNumbers">
-                            <!-- Page numbers will be generated here -->
-                        </div>
-                        
-                        <div class="directory-pagination-info" id="directoryPaginationInfo">
-                            Page 1 of 1
-                        </div>
-                        
-                        <div class="directory-pagination-buttons">
-                            <button class="directory-pagination-btn" id="nextDirectoryPage" disabled>
-                                Next <i class="fas fa-chevron-right"></i>
-                            </button>
-                        </div>
+                    <!-- Lead List -->
+                    <div class="lead-list" id="leadList">
+                        {% if active_leads %}
+                            {% for lead in active_leads %}
+                            <div class="lead-item" data-id="{{ lead.id }}" 
+                                 data-name="{{ lead.ownerName|default:'' }}" 
+                                 data-phone="{{ lead.phoneNo|default:'' }}" 
+                                 data-email="{{ lead.email|default:'' }}"
+                                 data-ticket="{{ lead.ticket_number|default:'' }}"
+                                 data-priority="{{ lead.priority|default:'Medium' }}"
+                                 data-place="{{ lead.place|default:'' }}"
+                                 data-business="{{ lead.business|default:'' }}">
+                                <div class="lead-avatar">
+                                    {{ lead.ownerName|default:"L"|slice:":2"|upper }}
+                                </div>
+
+                                <div class="lead-details">
+                                    <div class="lead-name">
+                                        <span style="font-size: 16px; margin-right: 5px;">
+                                            {% if lead.priority == 'High' %}🔴
+                                            {% elif lead.priority == 'Medium' %}🟡
+                                            {% elif lead.priority == 'Low' %}🟢
+                                            {% else %}⚪{% endif %}
+                                        </span>
+                                        {{ lead.ownerName|default:"Unknown" }}
+                                    </div>
+                                    <div class="lead-phone">{{ lead.phoneNo|default:"No Phone" }}</div>
+                                    <div class="lead-ticket">{{ lead.ticket_number|default:"No Ticket" }}</div>
+                                    {% if lead.place %}
+                                    <div class="lead-info" style="font-size: 11px; color: #666; margin-top: 2px;">
+                                        📍 {{ lead.place }}
+                                    </div>
+                                    {% endif %}
+                                    <div class="lead-status" style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px;">
+                                        <span>Status: {{ lead.status|default:"Active" }}</span>
+                                        <span style="color: {% if lead.priority == 'High' %}#ff4444{% elif lead.priority == 'Medium' %}#ffaa00{% elif lead.priority == 'Low' %}#44ff44{% else %}#ffaa00{% endif %}; font-weight:bold; font-size: 10px; padding: 2px 6px; border-radius: 10px;">
+                                            {{ lead.priority|default:"Medium" }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="no-results">
+                                <i class="fas fa-inbox" style="font-size: 24px; color: #ccc; margin-bottom: 10px;"></i>
+                                <div>No active leads found</div>
+                            </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
             
-            <!-- Right Column - Quotation Content -->
-        <div class="content-column">
-            <div class="form-container">
-                <div class="form-header">
-                     <!-- Replace the existing back button code with this -->
-<a href="{% url 'app5:lead_report' %}" class="btn-back">
-    <i class="fas fa-arrow-left"></i> Back
-</a>
+            <!-- Right Column - Quotation Form -->
+            <div class="form-column">
+                <div class="form-container">
+                    <!-- Back Button -->
                     
-                   <h1>Create New Quotation</h1>
-                   <p>Fill in the details below to create a professional quotation</p>
-                </div>
-                <!-- Navigation Menu -->
-                <div class="form-navigation">
-                    <ul class="nav-menu">
-                        <li class="nav-item">
-                            <a href="{% url 'app5:lead' %}" class="nav-link">
-                                <i class="fas fa-phone-alt"></i>
-                                Lead Form
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{% url 'app5:requirements_list' %}" class="nav-link">
-                                <i class="fas fa-clipboard-list"></i>
-                                Requirements
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{% url 'app5:event_form' %}" class="nav-link">
-                                <i class="fas fa-briefcase"></i>
-                                Event
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{% url 'app5:quotation_list' %}" class="nav-link active">
-                                <i class="fas fa-file-invoice"></i>
-                                Quotation
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-                
-                <!-- Header Section -->
-               <div class="header-section">
-    <h1><i class="fas fa-file-invoice"></i> Quotation Management</h1>
-    <div class="header-actions">
-      
-        <!-- <button class="btn btn-primary" id="newQuotationBtn">
-            <i class="fas fa-plus"></i> New Quotation
-        </button> -->
-    </div>
-</div>
-                
-                <!-- Data Section -->
-                <div class="data-section">
-                    <div class="search-container">
-                        <div class="search-box">
-                            <i class="fas fa-search search-icon"></i>
-                            <input type="text" id="tableSearch" placeholder="Search quotations by quote number, client, date, or amount...">
-                        </div>
-                        <button class="btn btn-secondary" id="refreshBtn">
-                            <i class="fas fa-sync-alt"></i> Refresh
-                        </button>
-                         <button class="btn btn-primary" id="newQuotationBtn">
-            <i class="fas fa-plus"></i> New Quotation
-        </button> 
+                    
+                    <div class="form-header">
+                        <h1>Create New Quotation</h1>
+                        <p>Fill in the details below to create a professional quotation</p>
                     </div>
                     
-                    <div class="table-container">
-                        <table class="data-table">
+                    <!-- Navigation Menu -->
+                    <div class="form-navigation">
+                        <ul class="nav-menu">
+                            <li class="nav-item">
+                                <a href="{% url 'app5:lead' %}" class="nav-link">
+                                    <i class="fas fa-phone-alt"></i>
+                                    Lead Form
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{% url 'app5:requirements_list' %}" class="nav-link">
+                                    <i class="fas fa-clipboard-list"></i>
+                                    Requirements
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{% url 'app5:event_form' %}" class="nav-link">
+                                    <i class="fas fa-briefcase"></i>
+                                    Event
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{% url 'app5:quotation_form' %}" class="nav-link active">
+                                    <i class="fas fa-file-invoice"></i>
+                                    Quotation
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <div class="form-body">
+                        <!-- Selected Lead Information -->
+                        <div class="lead-selection-info" id="leadSelectionInfo" style="display: none;">
+                            <h4><i class="fas fa-user-check"></i> Selected Lead</h4>
+                            <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+                                <div><strong>Name:</strong> <span id="selected-lead-name">-</span></div>
+                                <div><strong>Phone:</strong> <span id="selected-lead-phone">-</span></div>
+                                <div><strong>Ticket:</strong> <span id="selected-lead-ticket">-</span></div>
+                                <div><strong>Priority:</strong> <span id="selected-lead-priority">-</span></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Removed: Client Information Form -->
+                        
+                        <!-- Removed: Quotation Details Form -->
+                        
+                        <!-- Action Buttons -->
+                        <div class="action-buttons">
+                            <button type="button" class="btn-add" onclick="addNewItem()">
+                                <i class="fas fa-plus-circle"></i> Add Item
+                            </button>
+                            <button type="button" class="btn-submit" onclick="submitQuotation()">
+                                <i class="fas fa-paper-plane"></i> Submit Quotation
+                            </button>
+                            <button class="btn-refresh" onclick="window.location.href='{% url 'app5:lead_report' %}'">
+                    <i class="fas fa-sync-alt"></i>
+                    Back
+                </button>
+                        </div>
+                        
+                        <!-- Items Table -->
+                        <table class="items-table">
                             <thead>
                                 <tr>
-                                    <th>Ticket No</th>
-                                    <th>Client Name</th>
-                                    <th>Date</th>
-                                    <th>Amount</th>
-                                    <th>Valid Until</th>
-                                    <th>Actions</th>
+                                    <th width="25%">Item Description</th>
+                                    <th width="8%">Qty</th>
+                                    <th width="10%">Entry Rate (₹)</th>
+                                    <th width="10%">Sales Price (₹)</th>
+                                    <th width="10%">Unit Price (₹)</th>
+                                    <th width="8%">Discount (%)</th>
+                                    <th width="8%">Tax (%)</th>
+                                    <th width="12%">Total (₹)</th>
+                                    <th width="9%">Action</th>
                                 </tr>
                             </thead>
-                            <tbody id="quotationsTableBody">
-                                <!-- Data will be populated by JavaScript -->
+                            <tbody id="items-body">
+                                <!-- Items will be added here dynamically -->
                             </tbody>
                         </table>
-                    </div>
-                    
-                    <div class="pagination" id="tablePagination">
-                        <div class="pagination-buttons">
-                            <button class="pagination-btn" id="prevPage" disabled>
-                                <i class="fas fa-chevron-left"></i> Prev
-                            </button>
+                        
+                        <!-- Totals Section -->
+                        <div class="totals-section">
+                            <div class="notes-section">
+                                <label for="notes">Notes & Terms</label>
+                                <textarea id="notes" name="notes" placeholder="Add any additional notes or terms here..."></textarea>
+                            </div>
+                            <div class="totals-box">
+                                <div class="totals-row">
+                                    <span>Subtotal:</span>
+                                    <span id="subtotal">₹0.00</span>
+                                </div>
+                                <div class="totals-row">
+                                    <span>Total Discount:</span>
+                                    <span id="total-discount">₹0.00</span>
+                                </div>
+                                <div class="totals-row">
+                                    <span>Total Tax:</span>
+                                    <span id="total-tax">₹0.00</span>
+                                </div>
+                                <div class="grand-total">
+                                    <span>Grand Total:</span>
+                                    <span id="grand-total">₹0.00</span>
+                                </div>
+                            </div>
                         </div>
                         
-                        <div class="pagination-numbers" id="paginationNumbers">
-                            <!-- Page numbers will be generated here -->
-                        </div>
-                        
-                        <div class="pagination-info" id="paginationInfo">
-                            Page 1 of 1
-                        </div>
-                        
-                        <div class="pagination-buttons">
-                            <button class="pagination-btn" id="nextPage" disabled>
-                                Next <i class="fas fa-chevron-right"></i>
-                            </button>
+                        <!-- Footer -->
+                        <div class="footer">
+                            <p>Thank you for your business!</p>
+                            <p>This quotation is valid until the date specified above.</p>
                         </div>
                     </div>
                 </div>
@@ -1272,1018 +987,595 @@
         </div>
     </div>
 
+    <!-- Add Select2 JS -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
     <script>
-        // Your existing JavaScript code remains the same
-        document.addEventListener('DOMContentLoaded', function() {
-            // Sample data for directory
-            const leads = [
-                {
-                    id: 1,
-                    ownerName: "John Smith",
-                    phoneNo: "+1 (555) 123-4567",
-                    ticketNo: "TKT-001",
-                    status: "Active"
-                },
-                {
-                    id: 2,
-                    ownerName: "Sarah Johnson",
-                    phoneNo: "+1 (555) 234-5678",
-                    ticketNo: "TKT-002",
-                    status: "Active"
-                },
-                {
-                    id: 3,
-                    ownerName: "Michael Brown",
-                    phoneNo: "+1 (555) 345-6789",
-                    ticketNo: "TKT-003",
-                    status: "Pending"
-                },
-                {
-                    id: 4,
-                    ownerName: "Emily Davis",
-                    phoneNo: "+1 (555) 456-7890",
-                    ticketNo: "TKT-004",
-                    status: "Active"
-                },
-                {
-                    id: 5,
-                    ownerName: "Robert Wilson",
-                    phoneNo: "+1 (555) 567-8901",
-                    ticketNo: "TKT-005",
-                    status: "Completed"
-                },
-                {
-                    id: 6,
-                    ownerName: "Jennifer Lee",
-                    phoneNo: "+1 (555) 678-9012",
-                    ticketNo: "TKT-006",
-                    status: "Active"
-                },
-                {
-                    id: 7,
-                    ownerName: "David Miller",
-                    phoneNo: "+1 (555) 789-0123",
-                    ticketNo: "TKT-007",
-                    status: "Active"
-                },
-                {
-                    id: 8,
-                    ownerName: "Lisa Anderson",
-                    phoneNo: "+1 (555) 890-1234",
-                    ticketNo: "TKT-008",
-                    status: "Pending"
-                }
-            ];
+        // Global variable to store items from Purchase Order app
+        let purchaseOrderItems = [];
+        let selectedLead = null;
+        
+        // Function to handle lead selection from directory
+        function handleLeadSelection(leadElement) {
+            // Remove previous selection
+            document.querySelectorAll('.lead-item').forEach(item => {
+                item.classList.remove('selected');
+            });
             
-            const employees = [
-                {
-                    id: 1,
-                    name: "Alex Johnson",
-                    department: "Sales",
-                    designation: "Manager"
-                },
-                {
-                    id: 2,
-                    name: "Maria Garcia",
-                    department: "Marketing",
-                    designation: "Specialist"
-                },
-                {
-                    id: 3,
-                    name: "James Wilson",
-                    department: "Sales",
-                    designation: "Executive"
-                },
-                {
-                    id: 4,
-                    name: "Sophia Chen",
-                    department: "Support",
-                    designation: "Technician"
-                },
-                {
-                    id: 5,
-                    name: "Daniel Kim",
-                    department: "Sales",
-                    designation: "Executive"
-                }
-            ];
+            // Add selection to current item
+            leadElement.classList.add('selected');
             
-            // Directory functionality
-            const directoryTabs = document.querySelectorAll('.directory-tab');
-            const employeeList = document.getElementById('employeeList');
-            const leadList = document.getElementById('leadList');
-            const directorySearch = document.getElementById('directorySearch');
-            const activeTabCount = document.getElementById('activeTabCount');
+            // Store selected lead data
+            selectedLead = {
+                id: leadElement.getAttribute('data-id'),
+                name: leadElement.getAttribute('data-name'),
+                phone: leadElement.getAttribute('data-phone'),
+                ticket: leadElement.getAttribute('data-ticket'),
+                priority: leadElement.getAttribute('data-priority')
+            };
             
-            // Directory pagination elements
-            const prevDirectoryPageBtn = document.getElementById('prevDirectoryPage');
-            const nextDirectoryPageBtn = document.getElementById('nextDirectoryPage');
-            const directoryPaginationNumbers = document.getElementById('directoryPaginationNumbers');
-            const directoryPaginationInfo = document.getElementById('directoryPaginationInfo');
+            // Show lead selection info
+            document.getElementById('leadSelectionInfo').style.display = 'block';
             
-            // Directory pagination configuration
-            const directoryItemsPerPage = 5;
-            let directoryCurrentPage = 1;
-            let directoryTotalPages = 1;
-            let directoryCurrentItems = [];
-            let directoryFilteredItems = [];
+            // Update lead selection info display
+            document.getElementById('selected-lead-name').textContent = selectedLead.name;
+            document.getElementById('selected-lead-phone').textContent = selectedLead.phone;
+            document.getElementById('selected-lead-ticket').textContent = selectedLead.ticket;
+            document.getElementById('selected-lead-priority').textContent = selectedLead.priority;
             
-            // Initialize directory
-            function initializeDirectory() {
-                setupDirectoryTabs();
-                setupDirectorySearch();
-                initializeDirectoryPagination();
-            }
+            // Show notification
+            showNotification(`Lead "${selectedLead.name}" selected`, 'success');
+        }
+        
+        // Function to filter leads based on search and priority
+        function filterLeads() {
+            const searchTerm = document.getElementById('directorySearch').value.toLowerCase();
+            const priorityFilter = document.getElementById('priorityFilter').value;
             
-            // Setup directory tabs
-            function setupDirectoryTabs() {
-                directoryTabs.forEach(tab => {
-                    tab.addEventListener('click', function() {
-                        const targetTab = this.getAttribute('data-tab');
-                        
-                        // Update active tab
-                        directoryTabs.forEach(t => t.classList.remove('active'));
-                        this.classList.add('active');
-                        
-                        // Show/hide appropriate list
-                        if (targetTab === 'employees') {
-                            employeeList.classList.add('active');
-                            leadList.classList.remove('active');
-                        } else {
-                            employeeList.classList.remove('active');
-                            leadList.classList.add('active');
-                        }
-                        
-                        // Reset search and pagination
-                        directorySearch.value = '';
-                        directoryCurrentPage = 1;
-                        initializeDirectoryPagination();
-                    });
-                });
-            }
+            const leadItems = document.querySelectorAll('.lead-item');
+            let visibleCount = 0;
             
-            // Setup directory search
-            function setupDirectorySearch() {
-                directorySearch.addEventListener('input', function() {
-                    filterDirectoryItems(this.value.toLowerCase());
-                });
-            }
-            
-            // Filter directory items based on search term
-            function filterDirectoryItems(searchTerm) {
-                const activeTab = document.querySelector('.directory-tab.active').getAttribute('data-tab');
+            leadItems.forEach(item => {
+                const name = item.getAttribute('data-name').toLowerCase();
+                const phone = item.getAttribute('data-phone').toLowerCase();
+                const ticket = item.getAttribute('data-ticket').toLowerCase();
+                const priority = item.getAttribute('data-priority');
                 
-                if (activeTab === 'employees') {
-                    directoryCurrentItems = employees;
+                // Check search term
+                const matchesSearch = !searchTerm || 
+                    name.includes(searchTerm) || 
+                    phone.includes(searchTerm) || 
+                    ticket.includes(searchTerm);
+                
+                // Check priority filter
+                const matchesPriority = priorityFilter === 'all' || priority === priorityFilter;
+                
+                // Show/hide based on filters
+                if (matchesSearch && matchesPriority) {
+                    item.style.display = 'flex';
+                    visibleCount++;
                 } else {
-                    directoryCurrentItems = leads;
+                    item.style.display = 'none';
                 }
-                
-                if (!searchTerm) {
-                    directoryFilteredItems = [...directoryCurrentItems];
-                } else {
-                    directoryFilteredItems = directoryCurrentItems.filter(item => {
-                        let textContent = '';
-                        
-                        if (activeTab === 'employees') {
-                            textContent = (
-                                item.name.toLowerCase() + ' ' + 
-                                item.department.toLowerCase() + ' ' + 
-                                (item.designation || '').toLowerCase()
-                            );
-                        } else {
-                            textContent = (
-                                item.ownerName.toLowerCase() + ' ' + 
-                                item.phoneNo.toLowerCase() + ' ' + 
-                                item.ticketNo.toLowerCase()
-                            );
-                        }
-                        
-                        return textContent.includes(searchTerm);
-                    });
-                }
-                
-                directoryCurrentPage = 1;
-                updateDirectoryPagination();
-            }
+            });
             
-            // Initialize directory pagination
-            function initializeDirectoryPagination() {
-                const activeTab = document.querySelector('.directory-tab.active').getAttribute('data-tab');
-                if (activeTab === 'employees') {
-                    directoryCurrentItems = employees;
-                } else {
-                    directoryCurrentItems = leads;
-                }
-                
-                directoryFilteredItems = [...directoryCurrentItems];
-                updateDirectoryPagination();
-            }
+            // Update count display
+            document.getElementById('activeTabCount').textContent = visibleCount;
             
-            // Update directory pagination
-            function updateDirectoryPagination() {
-                directoryTotalPages = Math.ceil(directoryFilteredItems.length / directoryItemsPerPage);
-                
-                // Ensure current page is within bounds
-                if (directoryCurrentPage > directoryTotalPages) {
-                    directoryCurrentPage = directoryTotalPages || 1;
-                }
-                
-                // Update pagination buttons
-                prevDirectoryPageBtn.disabled = directoryCurrentPage === 1;
-                nextDirectoryPageBtn.disabled = directoryCurrentPage === directoryTotalPages;
-                
-                // Update pagination info
-                const startItem = (directoryCurrentPage - 1) * directoryItemsPerPage + 1;
-                const endItem = Math.min(directoryCurrentPage * directoryItemsPerPage, directoryFilteredItems.length);
-                directoryPaginationInfo.textContent = `Page ${directoryCurrentPage} of ${directoryTotalPages} (${directoryFilteredItems.length} items)`;
-                
-                // Generate page numbers
-                generateDirectoryPageNumbers();
-                
-                // Display current page items
-                displayDirectoryCurrentPageItems();
-                
-                // Update active tab count
-                activeTabCount.textContent = directoryFilteredItems.length;
-            }
-            
-            // Generate directory page number buttons
-            function generateDirectoryPageNumbers() {
-                directoryPaginationNumbers.innerHTML = '';
-                
-                // Show max 5 page numbers
-                let startPage = Math.max(1, directoryCurrentPage - 2);
-                let endPage = Math.min(directoryTotalPages, startPage + 4);
-                
-                // Adjust start page if we're near the end
-                if (endPage - startPage < 4) {
-                    startPage = Math.max(1, endPage - 4);
-                }
-                
-                // First page
-                if (startPage > 1) {
-                    const firstPageBtn = document.createElement('button');
-                    firstPageBtn.className = 'directory-page-number';
-                    firstPageBtn.textContent = '1';
-                    firstPageBtn.addEventListener('click', () => goToDirectoryPage(1));
-                    directoryPaginationNumbers.appendChild(firstPageBtn);
-                    
-                    if (startPage > 2) {
-                        const ellipsis = document.createElement('span');
-                        ellipsis.className = 'pagination-ellipsis';
-                        ellipsis.textContent = '...';
-                        directoryPaginationNumbers.appendChild(ellipsis);
-                    }
-                }
-                
-                // Page numbers
-                for (let i = startPage; i <= endPage; i++) {
-                    const pageBtn = document.createElement('button');
-                    pageBtn.className = `directory-page-number ${i === directoryCurrentPage ? 'active' : ''}`;
-                    pageBtn.textContent = i;
-                    pageBtn.addEventListener('click', () => goToDirectoryPage(i));
-                    directoryPaginationNumbers.appendChild(pageBtn);
-                }
-                
-                // Last page
-                if (endPage < directoryTotalPages) {
-                    if (endPage < directoryTotalPages - 1) {
-                        const ellipsis = document.createElement('span');
-                        ellipsis.className = 'pagination-ellipsis';
-                        ellipsis.textContent = '...';
-                        directoryPaginationNumbers.appendChild(ellipsis);
-                    }
-                    
-                    const lastPageBtn = document.createElement('button');
-                    lastPageBtn.className = 'directory-page-number';
-                    lastPageBtn.textContent = directoryTotalPages;
-                    lastPageBtn.addEventListener('click', () => goToDirectoryPage(directoryTotalPages));
-                    directoryPaginationNumbers.appendChild(lastPageBtn);
-                }
-            }
-            
-            // Go to specific directory page
-            function goToDirectoryPage(page) {
-                directoryCurrentPage = page;
-                updateDirectoryPagination();
-            }
-            
-            // Display directory items for current page
-            function displayDirectoryCurrentPageItems() {
-                const activeTab = document.querySelector('.directory-tab.active').getAttribute('data-tab');
-                const container = activeTab === 'employees' ? document.getElementById('employeeList') : document.getElementById('leadList');
-                
-                // Clear container
-                container.innerHTML = '';
-                
-                if (directoryFilteredItems.length === 0) {
+            // Show no results message if needed
+            const noResultsElement = document.querySelector('.no-results');
+            if (visibleCount === 0) {
+                if (!noResultsElement) {
+                    const leadList = document.getElementById('leadList');
                     const noResults = document.createElement('div');
                     noResults.className = 'no-results';
-                    noResults.textContent = 'No items found';
-                    container.appendChild(noResults);
-                    return;
+                    noResults.textContent = 'No leads found matching your criteria';
+                    leadList.appendChild(noResults);
                 }
+            } else if (noResultsElement) {
+                noResultsElement.remove();
+            }
+        }
+        
+        // Function to load items from Purchase Order app
+        async function loadItemsFromPurchaseOrderApp() {
+            try {
+                console.log('Loading items from Purchase Order app...');
                 
-                // Calculate slice indices
-                const startIndex = (directoryCurrentPage - 1) * directoryItemsPerPage;
-                const endIndex = Math.min(startIndex + directoryItemsPerPage, directoryFilteredItems.length);
-                const currentPageItems = directoryFilteredItems.slice(startIndex, endIndex);
+                // Method 1: Direct API call to your Purchase Order app
+                const response = await fetch('/po/api/get-items/'); // You need to create this endpoint
                 
-                // Create items
-                currentPageItems.forEach(item => {
-                    if (activeTab === 'employees') {
-                        createDirectoryEmployeeItem(item, container);
-                    } else {
-                        createDirectoryLeadItem(item, container);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success && data.items) {
+                        purchaseOrderItems = data.items;
+                        console.log(`Loaded ${purchaseOrderItems.length} items from Purchase Order app`);
                     }
-                });
-            }
-            
-            // Create directory employee item
-            function createDirectoryEmployeeItem(employee, container) {
-                const item = document.createElement('div');
-                item.className = 'employee-item';
-                item.setAttribute('data-id', employee.id);
-                item.setAttribute('data-name', employee.name);
-                
-                item.innerHTML = `
-                    <div class="employee-avatar">
-                        ${employee.name.slice(0, 2).toUpperCase()}
-                    </div>
-                    <div class="employee-details">
-                        <div class="employee-name">${employee.name}</div>
-                        <div class="employee-role">
-                            ${employee.department}${employee.designation ? ' - ' + employee.designation : ''}
-                        </div>
-                    </div>
-                    <button class="assign-btn" data-id="${employee.id}" data-name="${employee.name}" data-role="employee-assign">
-                        Assign
-                    </button>
-                `;
-                
-                container.appendChild(item);
-            }
-            
-            // Create directory lead item
-            function createDirectoryLeadItem(lead, container) {
-                const item = document.createElement('div');
-                item.className = 'lead-item';
-                item.setAttribute('data-id', lead.id);
-                
-                item.innerHTML = `
-                    <div class="lead-avatar">
-                        ${(lead.ownerName || '').slice(0, 2).toUpperCase()}
-                    </div>
-                    <div class="lead-details">
-                        <div class="lead-name">${lead.ownerName}</div>
-                        <div class="lead-phone">${lead.phoneNo}</div>
-                        <div class="lead-ticket">${lead.ticketNo}</div>
-                        <div class="lead-status">Status: ${lead.status}</div>
-                    </div>
-                `;
-                
-                container.appendChild(item);
-            }
-            
-            // Directory pagination button event listeners
-            prevDirectoryPageBtn.addEventListener('click', () => {
-                if (directoryCurrentPage > 1) {
-                    directoryCurrentPage--;
-                    updateDirectoryPagination();
+                } else {
+                    // Fallback: Use items from context if passed from Django view
+                    {% if items %}
+                        purchaseOrderItems = [
+                            {% for item in items %}
+                            {
+                                id: {{ item.id }},
+                                name: "{{ item.name|escapejs }}",
+                                description: "{{ item.description|default:''|escapejs }}",
+                                unit_of_measure: "{{ item.unit_of_measure|escapejs }}",
+                                mrp: {{ item.mrp|default:0 }},
+                                purchase_price: {{ item.purchase_price|default:0 }},
+                                cost: {{ item.cost|default:0 }},
+                                tax_percentage: {{ item.tax_percentage|default:0 }},
+                                hsn_code: "{{ item.hsn_code|default:''|escapejs }}",
+                                section: "{{ item.section|escapejs }}",
+                                department: "{{ item.department.name|default:'N/A'|escapejs }}",
+                                is_active: {{ item.is_active|yesno:"true,false" }}
+                            }{% if not forloop.last %},{% endif %}
+                            {% endfor %}
+                        ];
+                        console.log(`Loaded ${purchaseOrderItems.length} items from Django context`);
+                    {% endif %}
                 }
+                
+                return purchaseOrderItems;
+            } catch (error) {
+                console.error('Error loading items from Purchase Order app:', error);
+                return [];
+            }
+        }
+        
+        // Function to populate item dropdown with enhanced display
+        function populateItemDropdown(selectElement) {
+            // Clear existing options
+            $(selectElement).empty();
+            
+            // Add default option
+            $(selectElement).append($('<option>', {
+                value: '',
+                text: '-- Select Item --'
+            }));
+            
+            // Group items by section
+            const itemsBySection = {};
+            purchaseOrderItems.forEach(item => {
+                if (!itemsBySection[item.section]) {
+                    itemsBySection[item.section] = [];
+                }
+                itemsBySection[item.section].push(item);
             });
             
-            nextDirectoryPageBtn.addEventListener('click', () => {
-                if (directoryCurrentPage < directoryTotalPages) {
-                    directoryCurrentPage++;
-                    updateDirectoryPagination();
-                }
-            });
-            
-            // Initialize directory
-            initializeDirectory();
-            
-            // Sample data for quotations - in a real application, this would come from your backend
-            const quotations = [
-                {
-                    id: 1,
-                    quoteNumber: "QT-2023-001",
-                    clientName: "ABC Corporation",
-                    date: "2023-10-15",
-                    amount: 12500.00,
-                    status: "active",
-                    validUntil: "2023-11-15"
-                },
-                {
-                    id: 2,
-                    quoteNumber: "QT-2023-002",
-                    clientName: "XYZ Ltd",
-                    date: "2023-10-18",
-                    amount: 8500.00,
-                    status: "pending",
-                    validUntil: "2023-11-18"
-                },
-                {
-                    id: 3,
-                    quoteNumber: "QT-2023-003",
-                    clientName: "Global Tech",
-                    date: "2023-10-20",
-                    amount: 22000.00,
-                    status: "completed",
-                    validUntil: "2023-11-20"
-                },
-                {
-                    id: 4,
-                    quoteNumber: "QT-2023-004",
-                    clientName: "Innovate Solutions",
-                    date: "2023-10-22",
-                    amount: 7500.00,
-                    status: "active",
-                    validUntil: "2023-11-22"
-                },
-                {
-                    id: 5,
-                    quoteNumber: "QT-2023-005",
-                    clientName: "Tech Masters Inc",
-                    date: "2023-10-25",
-                    amount: 15000.00,
-                    status: "cancelled",
-                    validUntil: "2023-11-25"
-                },
-                {
-                    id: 6,
-                    quoteNumber: "QT-2023-006",
-                    clientName: "Data Systems Co",
-                    date: "2023-10-28",
-                    amount: 9800.00,
-                    status: "active",
-                    validUntil: "2023-11-28"
-                },
-                {
-                    id: 7,
-                    quoteNumber: "QT-2023-007",
-                    clientName: "Web Solutions Ltd",
-                    date: "2023-11-01",
-                    amount: 12000.00,
-                    status: "pending",
-                    validUntil: "2023-12-01"
-                },
-                {
-                    id: 8,
-                    quoteNumber: "QT-2023-008",
-                    clientName: "Cloud Services Inc",
-                    date: "2023-11-05",
-                    amount: 18500.00,
-                    status: "completed",
-                    validUntil: "2023-12-05"
-                },
-                {
-                    id: 9,
-                    quoteNumber: "QT-2023-009",
-                    clientName: "Mobile Apps Co",
-                    date: "2023-11-08",
-                    amount: 9500.00,
-                    status: "active",
-                    validUntil: "2023-12-08"
-                },
-                {
-                    id: 10,
-                    quoteNumber: "QT-2023-010",
-                    clientName: "Digital Marketing Pro",
-                    date: "2023-11-12",
-                    amount: 6500.00,
-                    status: "pending",
-                    validUntil: "2023-12-12"
-                }
-            ];
-            
-            // Pagination elements
-            const prevPageBtn = document.getElementById('prevPage');
-            const nextPageBtn = document.getElementById('nextPage');
-            const paginationNumbers = document.getElementById('paginationNumbers');
-            const paginationInfo = document.getElementById('paginationInfo');
-            const tableBody = document.getElementById('quotationsTableBody');
-            const searchInput = document.getElementById('tableSearch');
-            
-            // Refresh button
-            const refreshBtn = document.getElementById('refreshBtn');
-            
-            // Pagination configuration
-            const itemsPerPage = 5;
-            let currentPage = 1;
-            let totalPages = 1;
-            let filteredQuotations = [...quotations];
-            
-            // Initialize the table
-            function initializeTable() {
-                updatePagination();
-                displayCurrentPageItems();
-            }
-            
-            // Update pagination
-            function updatePagination() {
-                totalPages = Math.ceil(filteredQuotations.length / itemsPerPage);
+            // Add items grouped by section
+            Object.keys(itemsBySection).forEach(section => {
+                // Add section as option group
+                $(selectElement).append($('<optgroup>', {
+                    label: section
+                }));
                 
-                // Ensure current page is within bounds
-                if (currentPage > totalPages) {
-                    currentPage = totalPages || 1;
-                }
-                
-                // Update pagination buttons
-                prevPageBtn.disabled = currentPage === 1;
-                nextPageBtn.disabled = currentPage === totalPages;
-                
-                // Update pagination info
-                const startItem = (currentPage - 1) * itemsPerPage + 1;
-                const endItem = Math.min(currentPage * itemsPerPage, filteredQuotations.length);
-                paginationInfo.textContent = `Page ${currentPage} of ${totalPages} (${filteredQuotations.length} items)`;
-                
-                // Generate page numbers
-                generatePageNumbers();
-            }
-            
-            // Generate page number buttons
-            function generatePageNumbers() {
-                paginationNumbers.innerHTML = '';
-                
-                // Show max 5 page numbers
-                let startPage = Math.max(1, currentPage - 2);
-                let endPage = Math.min(totalPages, startPage + 4);
-                
-                // Adjust start page if we're near the end
-                if (endPage - startPage < 4) {
-                    startPage = Math.max(1, endPage - 4);
-                }
-                
-                // First page
-                if (startPage > 1) {
-                    const firstPageBtn = document.createElement('button');
-                    firstPageBtn.className = 'page-number';
-                    firstPageBtn.textContent = '1';
-                    firstPageBtn.addEventListener('click', () => goToPage(1));
-                    paginationNumbers.appendChild(firstPageBtn);
-                    
-                    if (startPage > 2) {
-                        const ellipsis = document.createElement('span');
-                        ellipsis.className = 'pagination-ellipsis';
-                        ellipsis.textContent = '...';
-                        paginationNumbers.appendChild(ellipsis);
-                    }
-                }
-                
-                // Page numbers
-                for (let i = startPage; i <= endPage; i++) {
-                    const pageBtn = document.createElement('button');
-                    pageBtn.className = `page-number ${i === currentPage ? 'active' : ''}`;
-                    pageBtn.textContent = i;
-                    pageBtn.addEventListener('click', () => goToPage(i));
-                    paginationNumbers.appendChild(pageBtn);
-                }
-                
-                // Last page
-                if (endPage < totalPages) {
-                    if (endPage < totalPages - 1) {
-                        const ellipsis = document.createElement('span');
-                        ellipsis.className = 'pagination-ellipsis';
-                        ellipsis.textContent = '...';
-                        paginationNumbers.appendChild(ellipsis);
-                    }
-                    
-                    const lastPageBtn = document.createElement('button');
-                    lastPageBtn.className = 'page-number';
-                    lastPageBtn.textContent = totalPages;
-                    lastPageBtn.addEventListener('click', () => goToPage(totalPages));
-                    paginationNumbers.appendChild(lastPageBtn);
-                }
-            }
-            
-            // Go to specific page
-            function goToPage(page) {
-                currentPage = page;
-                updatePagination();
-                displayCurrentPageItems();
-            }
-            
-            // Display items for current page
-            function displayCurrentPageItems() {
-                // Clear table body
-                tableBody.innerHTML = '';
-                
-                if (filteredQuotations.length === 0) {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td colspan="6" style="text-align: center; padding: 20px; color: #6c757d;">
-                            No quotations found matching your criteria
-                        </td>
-                    `;
-                    tableBody.appendChild(row);
-                    return;
-                }
-                
-                // Calculate slice indices
-                const startIndex = (currentPage - 1) * itemsPerPage;
-                const endIndex = Math.min(startIndex + itemsPerPage, filteredQuotations.length);
-                const currentPageItems = filteredQuotations.slice(startIndex, endIndex);
-                
-                // Create table rows
-                currentPageItems.forEach(quotation => {
-                    const row = document.createElement('tr');
-                    
-                    // Format date
-                    const formatDate = (dateString) => {
-                        const date = new Date(dateString);
-                        return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
-                    };
-                    
-                    // Format currency
-                    const formatCurrency = (amount) => {
-                        return new Intl.NumberFormat('en-US', {
-                            style: 'currency',
-                            currency: 'USD'
-                        }).format(amount);
-                    };
-                    
-                    row.innerHTML = `
-                        <td>${quotation.quoteNumber}</td>
-                        <td>${quotation.clientName}</td>
-                        <td>${formatDate(quotation.date)}</td>
-                        <td>${formatCurrency(quotation.amount)}</td>
-                        <td>${formatDate(quotation.validUntil)}</td>
-                        <td>
-                            <div class="action-buttons">
-                                <button class="action-btn btn-view" title="View">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                                <button class="action-btn btn-edit" title="Edit">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button class="action-btn btn-download" title="Download">
-                                    <i class="fas fa-download"></i>
-                                </button>
-                                <button class="action-btn btn-delete" title="Delete">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </div>
-                        </td>
-                    `;
-                    
-                    tableBody.appendChild(row);
-                });
-            }
-            
-            // Search functionality
-            searchInput.addEventListener('input', function() {
-                const searchTerm = this.value.toLowerCase();
-                
-                filteredQuotations = quotations.filter(quotation => {
-                    const searchText = (
-                        quotation.quoteNumber.toLowerCase() + ' ' + 
-                        quotation.clientName.toLowerCase() + ' ' + 
-                        quotation.date.toLowerCase() + ' ' + 
-                        quotation.amount.toString().toLowerCase()
-                    );
-                    
-                    return searchText.includes(searchTerm);
-                });
-                
-                currentPage = 1;
-                updatePagination();
-                displayCurrentPageItems();
-            });
-            
-            // Refresh button
-            refreshBtn.addEventListener('click', function() {
-                // In a real application, this would reload data from the server
-                filteredQuotations = [...quotations];
-                currentPage = 1;
-                updatePagination();
-                displayCurrentPageItems();
-                
-                // Show a notification
-                showNotification('Data refreshed successfully', 'success');
-            });
-            
-            // Show notification function
-            function showNotification(message, type = 'info') {
-                // Create notification element
-                const notification = document.createElement('div');
-                notification.style.cssText = `
-                    position: fixed;
-                    top: 20px;
-                    right: 20px;
-                    padding: 15px 20px;
-                    background: ${type === 'success' ? '#4CAF50' : '#2196F3'};
-                    color: white;
-                    border-radius: 5px;
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                    z-index: 10000;
-                    font-weight: 600;
-                    transition: all 0.3s ease;
-                `;
-                notification.textContent = message;
-                
-                document.body.appendChild(notification);
-                
-                // Remove after 3 seconds
-                setTimeout(() => {
-                    notification.style.opacity = '0';
-                    notification.style.transform = 'translateX(100px)';
-                    setTimeout(() => {
-                        if (notification.parentNode) {
-                            notification.parentNode.removeChild(notification);
-                        }
-                    }, 300);
-                }, 3000);
-            }
-            
-            // Initialize on page load
-            initializeTable();
-            
-            // Pagination button event listeners
-            prevPageBtn.addEventListener('click', () => {
-                if (currentPage > 1) {
-                    currentPage--;
-                    updatePagination();
-                    displayCurrentPageItems();
-                }
-            });
-            
-            nextPageBtn.addEventListener('click', () => {
-                if (currentPage < totalPages) {
-                    currentPage++;
-                    updatePagination();
-                    displayCurrentPageItems();
-                }
-            });
-            
-            // New Quotation Button functionality
-            const newQuotationBtn = document.getElementById('newQuotationBtn');
-            newQuotationBtn.addEventListener('click', function() {
-                // In a real application, this would navigate to the quotation form page
-                // For this demo, we'll show an alert and simulate navigation
-                showNotification('Redirecting to Quotation Form...', 'success');
-                
-                // Simulate navigation after a short delay
-                setTimeout(() => {
-                    // In a real application, you would use:
-                    // window.location.href = 'quotation_form.html';
-                    
-                    // For this demo, we'll just show the form in the same page
-                    // by toggling between list and form views
-                    toggleQuotationView('form');
-                }, 1500);
-            });
-            
-            // Toggle between list and form views (for demo purposes)
-            function toggleQuotationView(view) {
-                if (view === 'form') {
-                    // Hide list elements
-                    document.querySelector('.data-section').style.display = 'none';
-                    
-                    // Show form elements
-                    const formHTML = `
-                        <div class="form-container" style="background-color:white; border-radius: 10px; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15); overflow: hidden; width: 100%; flex: 1; display: flex; flex-direction: column;">
-                            <!-- Form Header -->
-                            
-                            
-                            <div class="form-body" style="padding: 20px; flex: 1; display: flex; flex-direction: column;">
-                                <div class="header" style="display: flex; justify-content: space-between; margin-bottom: 10px; border-bottom: 2px solid white; padding-bottom: 20px;">
-                                    
-                                    <div class="quotation-info" style="text-align: right;">
-                                       
-                                       
-                                        <p><strong></strong> <span id="quote-date"></span></p>
-                                        <p><strong></strong> <span id="valid-until"></span></p>
-                                    </div>
-                                </div>
-
-                                
-
-                                <div class="action-buttons" style="display: flex; gap: 10px; margin-bottom: 20px;">
-                                    <button class="btn-add" onclick="addNewItem()" style="padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; transition: background-color 0.3s; background-color: #28a745; color: white;">Add New Item</button>
-                                    
-                                </div>
-
-                                <table class="items-table" style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
-                                    <thead>
-                                        <tr>
-                                            <th style="background-color: #cb6404; color: white; padding: 12px 15px; text-align: left;">Item Description</th>
-                                            <th style="background-color: #cb6404; color: white; padding: 12px 15px; text-align: left;">Qty</th>
-                                            <th style="background-color: #cb6404; color: white; padding: 12px 15px; text-align: left;">Entry Rate</th>
-                                            <th style="background-color: #cb6404; color: white; padding: 12px 15px; text-align: left;">Sales Price</th>
-                                            <th style="background-color: #cb6404; color: white; padding: 12px 15px; text-align: left;">Unit Price</th>
-                                            <th style="background-color: #cb6404; color: white; padding: 12px 15px; text-align: left;">Discount (%)</th>
-                                            <th style="background-color: #cb6404; color: white; padding: 12px 15px; text-align: left;">Tax (%)</th>
-                                            <th style="background-color: #cb6404; color: white; padding: 12px 15px; text-align: left;">Total</th>
-                                            <th style="background-color: #cb6404; color: white; padding: 12px 15px; text-align: left;">Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="items-body">
-                                        <!-- Items will be added here dynamically -->
-                                    </tbody>
-                                </table>
-
-                                <div class="totals-section" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
-                                    <div class="notes-section" style="margin-top: 30px;">
-                                        <label for="notes" style="display: block; margin-bottom: 5px; font-weight:bold; color:black;">Notes</label>
-                                        <textarea id="notes" placeholder="Add any additional notes or terms here..." style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; min-height: 100px;"></textarea>
-                                    </div>
-                                    <div class="totals-box" style="background-color: #f8f9fa; padding: 20px; border-radius: 6px; border-left: 4px solid #3498db;">
-                                        <div class="totals-row" style="display: flex; justify-content: space-between; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #eee;">
-                                            <span>Subtotal:</span>
-                                            <span id="subtotal">$0.00</span>
-                                        </div>
-                                        <div class="totals-row" style="display: flex; justify-content: space-between; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #eee;">
-                                            <span>Total Discount:</span>
-                                            <span id="total-discount">$0.00</span>
-                                        </div>
-                                        <div class="totals-row" style="display: flex; justify-content: space-between; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #eee;">
-                                            <span>Total Tax:</span>
-                                            <span id="total-tax">$0.00</span>
-                                        </div>
-                                        <div class="grand-total" style="font-size: 20px; font-weight: bold; color: #2c3e50; margin-top: 10px; padding-top: 10px; border-top: 2px solid #3498db;">
-                                            <span>Grand Total:</span>
-                                            <span id="grand-total">$0.00</span>
-                                        </div>
-
-                                        
-                                    </div>
-                                    <div class="button-container">
-                                        <button class="btn-submit" onclick="submitQuotation()">
-                                           <i class="fas fa-paper-plane"></i> Submit
-                                         </button>
-                                         <button class="btn-download" title="Download">
-                                    <i class="fas fa-download"></i> Download
-                                </button>
-                                    </div>
-                                </div>
-
-                                <div class="footer" style="margin-top: 30px; text-align: center; color: #7f8c8d; font-size: 14px;">
-                                    <p>Thank you for your business!</p>
-                                    <p>This quotation is valid until the date specified above.</p>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                    
-                    // Create form container
-                    const formContainer = document.createElement('div');
-                    formContainer.id = 'quotationFormContainer';
-                    formContainer.innerHTML = formHTML;
-                    
-                    // Add form to content column
-                    const contentColumn = document.querySelector('.content-column');
-                    contentColumn.appendChild(formContainer);
-                    
-                    // Add back button
-                    const backButton = document.createElement('button');
-                    // backButton.className = 'btn btn-secondary';
-                    // backButton.innerHTML = '<i class="fas fa-arrow-left"></i> Back to List';
-                    // backButton.style.marginBottom = '20px';
-                    backButton.addEventListener('click', function() {
-                        toggleQuotationView('list');
+                // Add items in this section
+                itemsBySection[section].forEach(item => {
+                    const option = $('<option>', {
+                        value: item.id,
+                        text: item.name
                     });
                     
-                    contentColumn.insertBefore(backButton, formContainer);
+                    // Add data attributes
+                    option.data('item-data', {
+                        id: item.id,
+                        name: item.name,
+                        description: item.description,
+                        unit: item.unit_of_measure,
+                        mrp: item.mrp,
+                        purchase_price: item.purchase_price,
+                        cost: item.cost,
+                        tax: item.tax_percentage,
+                        hsn_code: item.hsn_code,
+                        section: item.section,
+                        department: item.department
+                    });
                     
-                    // Initialize form functionality
-                    initializeQuotationForm();
-                } else {
-                    // Show list elements
-                    document.querySelector('.data-section').style.display = 'block';
-                    
-                    // Remove form elements
-                    const formContainer = document.getElementById('quotationFormContainer');
-                    if (formContainer) {
-                        formContainer.remove();
+                    $(selectElement).find('optgroup[label="' + section + '"]').append(option);
+                });
+            });
+            
+            // Initialize Select2 with custom template
+            $(selectElement).select2({
+                placeholder: "",
+                allowClear: true,
+                width: '100%',
+                templateResult: formatItemDisplay,
+                templateSelection: formatItemSelection
+            });
+        }
+        
+        // Format how items appear in dropdown
+        function formatItemDisplay(item) {
+            if (!item.id) {
+                return item.text;
+            }
+            
+            const itemData = $(item.element).data('item-data');
+            if (!itemData) return item.text;
+            
+            const $container = $('<div class="item-option">');
+            const $name = $('<div class="item-name">').text(itemData.name);
+            const $details = $('<div class="item-details">');
+            
+            // Add section badge
+            $details.append($('<span class="item-section">').text(itemData.section));
+            
+            // Add unit
+            $details.append($('<span>').text(` ${itemData.unit} | `));
+            
+            // Add department if available
+            if (itemData.department && itemData.department !== 'N/A') {
+                $details.append($('<span>').text(`Dept: ${itemData.department} | `));
+            }
+            
+            // Add MRP
+            $details.append($('<span>').text(`MRP: ₹${itemData.mrp.toFixed(2)}`));
+            
+            $container.append($name);
+            $container.append($details);
+            
+            return $container;
+        }
+        
+        // Format how selected item appears
+        function formatItemSelection(item) {
+            if (!item.id) {
+                return item.text;
+            }
+            
+            const itemData = $(item.element).data('item-data');
+            if (!itemData) return item.text;
+            
+            return `${itemData.name} (${itemData.unit})`;
+        }
+        
+        // Function to load item details when selected
+        function loadItemDetails(selectElement) {
+            const $select = $(selectElement);
+            const selectedOption = $select.find('option:selected');
+            const itemData = selectedOption.data('item-data');
+            
+            if (itemData) {
+                const row = $select.closest('tr');
+                
+                // Set default values
+                $(row).find('.sales-price').val(itemData.mrp.toFixed(2));
+                $(row).find('.unit-price').val(itemData.purchase_price.toFixed(2));
+                $(row).find('.entry-rate').val(itemData.purchase_price.toFixed(2));
+                $(row).find('.tax').val(itemData.tax);
+                
+                // Set quantity placeholder with unit
+                $(row).find('.item-qty').attr('placeholder', `Qty in ${itemData.unit}`);
+                
+                // Calculate row total
+                calculateRow($select[0]);
+            }
+        }
+        
+        // Function to add new item row
+        async function addNewItem() {
+            // Check if lead is selected
+            if (!selectedLead) {
+                showNotification('Please select a lead from the directory first', 'warning');
+                return;
+            }
+            
+            const tbody = document.getElementById('items-body');
+            const row = document.createElement('tr');
+            
+            row.innerHTML = `
+                <td>
+                    <select class="item-desc" name="item_id[]" onchange="loadItemDetails(this)" required>
+                        <option value="">-- Select Item --</option>
+                    </select>
+                </td>
+                <td>
+                    <input type="number" class="item-qty" name="quantity[]" value="1" min="0.01" step="0.01" onchange="calculateRow(this)" placeholder="Qty">
+                </td>
+                <td>
+                    <input type="number" class="entry-rate" name="entry_rate[]" value="0.00" step="0.01" onchange="calculateRow(this)" placeholder="0.00">
+                </td>
+                <td>
+                    <input type="number" class="sales-price" name="sales_price[]" value="0.00" step="0.01" onchange="calculateRow(this)" placeholder="0.00">
+                </td>
+                <td>
+                    <input type="number" class="unit-price" name="unit_price[]" value="0.00" step="0.01" onchange="calculateRow(this)" placeholder="0.00">
+                </td>
+                <td>
+                    <input type="number" class="discount" name="discount[]" value="0" min="0" max="100" step="0.01" onchange="calculateRow(this)" placeholder="0">
+                </td>
+                <td>
+                    <input type="number" class="tax" name="tax[]" value="0" min="0" max="100" step="0.01" onchange="calculateRow(this)" placeholder="0">
+                </td>
+                <td>
+                    <span class="row-total">₹0.00</span>
+                    <input type="hidden" class="row-total-value" value="0">
+                </td>
+                <td>
+                    <button class="btn-delete" onclick="deleteRow(this)" type="button">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </td>
+            `;
+            
+            tbody.appendChild(row);
+            
+            // Populate the dropdown with items
+            populateItemDropdown(row.querySelector('.item-desc'));
+            
+            // Calculate initial row total
+            calculateRow(row.querySelector('.item-qty'));
+            updateTotals();
+        }
+        
+        // Function to delete row
+        function deleteRow(button) {
+            const row = $(button).closest('tr');
+            row.remove();
+            updateTotals();
+        }
+        
+        // Function to calculate row total
+        function calculateRow(input) {
+            const row = $(input).closest('tr');
+            const qty = parseFloat(row.find('.item-qty').val()) || 0;
+            const entryRate = parseFloat(row.find('.entry-rate').val()) || 0;
+            const salesPrice = parseFloat(row.find('.sales-price').val()) || 0;
+            const unitPrice = parseFloat(row.find('.unit-price').val()) || 0;
+            const discount = parseFloat(row.find('.discount').val()) || 0;
+            const tax = parseFloat(row.find('.tax').val()) || 0;
+            
+            const basePrice = salesPrice > 0 ? salesPrice : unitPrice;
+            const discountedPrice = basePrice * (1 - discount / 100);
+            const totalBeforeTax = qty * discountedPrice;
+            const totalAfterTax = totalBeforeTax * (1 + tax / 100);
+            
+            row.find('.row-total').text('₹' + totalAfterTax.toFixed(2));
+            row.find('.row-total-value').val(totalAfterTax.toFixed(2));
+            
+            updateTotals();
+        }
+        
+        // Function to update all totals
+        function updateTotals() {
+            let subtotal = 0;
+            let totalDiscount = 0;
+            let totalTax = 0;
+            
+            $('#items-body tr').each(function() {
+                const rowTotal = parseFloat($(this).find('.row-total-value').val()) || 0;
+                const qty = parseFloat($(this).find('.item-qty').val()) || 0;
+                const basePrice = parseFloat($(this).find('.sales-price').val()) || 
+                                 parseFloat($(this).find('.unit-price').val()) || 0;
+                const discount = parseFloat($(this).find('.discount').val()) || 0;
+                const tax = parseFloat($(this).find('.tax').val()) || 0;
+                
+                subtotal += rowTotal / (1 + tax / 100);
+                totalDiscount += (basePrice * qty) * (discount / 100);
+                totalTax += (rowTotal / (1 + tax / 100)) * (tax / 100);
+            });
+            
+            $('#subtotal').text('₹' + subtotal.toFixed(2));
+            $('#total-discount').text('₹' + totalDiscount.toFixed(2));
+            $('#total-tax').text('₹' + totalTax.toFixed(2));
+            $('#grand-total').text('₹' + (subtotal + totalTax).toFixed(2));
+        }
+        
+        // Function to show notification
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 15px 20px;
+                background: ${type === 'success' ? '#4CAF50' : type === 'warning' ? '#ff9800' : type === 'error' ? '#f44336' : '#2196F3'};
+                color: white;
+                border-radius: 5px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                z-index: 10000;
+                font-weight: 600;
+                transition: all 0.3s ease;
+            `;
+            notification.innerHTML = message;
+            
+            document.body.appendChild(notification);
+            
+            // Remove after 3 seconds
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                notification.style.transform = 'translateX(100px)';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
                     }
-                    
-                    // Remove back button
-                    const backButton = document.querySelector('.btn-secondary[i*="arrow-left"]');
-                    if (backButton && backButton.parentNode) {
-                        backButton.parentNode.removeChild(backButton);
+                }, 300);
+            }, 3000);
+        }
+        
+        // Function to get CSRF token from cookie
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
                     }
                 }
             }
+            return cookieValue;
+        }
+        
+        // Function to submit quotation
+        // Function to submit quotation
+async function submitQuotation() {
+    // Check if lead is selected
+    if (!selectedLead) {
+        showNotification('Please select a lead from the directory first', 'warning');
+        return;
+    }
+    
+    // Check if there are items
+    const itemRows = document.querySelectorAll('#items-body tr');
+    if (itemRows.length === 0) {
+        showNotification('Please add at least one item to the quotation', 'warning');
+        return;
+    }
+    
+    // Validate all items have descriptions
+    let allValid = true;
+    document.querySelectorAll('.item-desc').forEach(select => {
+        if (!select.value) {
+            allValid = false;
+        }
+    });
+    
+    if (!allValid) {
+        showNotification('Please select an item for all rows', 'warning');
+        return;
+    }
+    
+    // Prepare quotation data
+    const quotationData = {
+        lead_id: selectedLead.id,
+        notes: document.getElementById('notes').value,
+        items: [],
+        subtotal: parseFloat($('#subtotal').text().replace('₹', '')) || 0,
+        total_discount: parseFloat($('#total-discount').text().replace('₹', '')) || 0,
+        total_tax: parseFloat($('#total-tax').text().replace('₹', '')) || 0,
+        grand_total: parseFloat($('#grand-total').text().replace('₹', '')) || 0,
+        valid_until: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] // 30 days from now
+    };
+    
+    // Collect item data
+    $('#items-body tr').each(function() {
+        const item = {
+            item_id: $(this).find('.item-desc').val(),
+            item_name: $(this).find('.item-desc option:selected').text(),
+            quantity: parseFloat($(this).find('.item-qty').val()) || 0,
+            entry_rate: parseFloat($(this).find('.entry-rate').val()) || 0,
+            sales_price: parseFloat($(this).find('.sales-price').val()) || 0,
+            unit_price: parseFloat($(this).find('.unit-price').val()) || 0,
+            discount: parseFloat($(this).find('.discount').val()) || 0,
+            tax: parseFloat($(this).find('.tax').val()) || 0,
+            total: parseFloat($(this).find('.row-total-value').val()) || 0
+        };
+        quotationData.items.push(item);
+    });
+    
+    // Show loading
+    const submitBtn = document.querySelector('.btn-submit');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+    submitBtn.disabled = true;
+    
+    try {
+        // Get CSRF token
+        const csrftoken = getCookie('csrftoken');
+        
+        // Submit to your Django backend
+        const response = await fetch('{% url "app5:quotation_submit" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken
+            },
+            body: JSON.stringify(quotationData)
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok && result.success) {
+            showNotification('Quotation submitted successfully!', 'success');
             
-            // Initialize quotation form functionality
-            function initializeQuotationForm() {
-                // Set current date
-                
-                
-                // Set valid until date (30 days from now)
-                const validUntil = new Date();
-                validUntil.setDate(validUntil.getDate() + 30);
-                
-
-                // Initialize with one empty item
-                addNewItem();
-            }
+            // Option 1: Redirect to quotation form page after a short delay
+            setTimeout(() => {
+                window.location.href = '{% url "app5:quotation_form" %}';
+            }, 1500);
             
-            // Add new item to quotation form
-            function addNewItem() {
-                const tbody = document.getElementById('items-body');
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td><input type="text" class="item-desc" placeholder="Item description" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;"></td>
-                    <td><input type="number" class="item-qty" value="1" min="1" onchange="calculateRow(this)" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;"></td>
-                    <td><input type="number" class="entry-rate" value="0.00" step="0.01" onchange="calculateRow(this)" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;"></td>
-                    <td><input type="number" class="sales-price" value="0.00" step="0.01" onchange="calculateRow(this)" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;"></td>
-                    <td><input type="number" class="unit-price" value="0.00" step="0.01" onchange="calculateRow(this)" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;"></td>
-                    <td><input type="number" class="discount" value="0" min="0" max="100" onchange="calculateRow(this)" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;"></td>
-                    <td><input type="number" class="tax" value="0" min="0" max="100" onchange="calculateRow(this)" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;"></td>
-                    <td><span class="row-total">$0.00</span></td>
-                    <td><button class="btn-delete" onclick="deleteRow(this)" style="padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; transition: background-color 0.3s; background-color: #e74c3c; color: white;">Delete</button></td>
-                `;
-                tbody.appendChild(row);
-                calculateRow(row.querySelector('.item-qty'));
-                updateTotals();
-            }
+            // Option 2: If you want to show download link AND redirect
+            // showNotification('Quotation saved! Redirecting to quotations page...', 'success');
+            // setTimeout(() => {
+            //     window.location.href = '{% url "app5:quotation_form" %}';
+            // }, 2000);
             
-            // Delete row from quotation form
-            function deleteRow(button) {
-                const row = button.closest('tr');
-                row.remove();
-                updateTotals();
-            }
+        } else {
+            showNotification(result.message || 'Error submitting quotation', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showNotification('Network error occurred. Please try again.', 'error');
+    } finally {
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+    }
+}
+        
+        // Function to download quotation PDF
+        function downloadQuotation(quotationId) {
+            window.open('/quotation/download/' + quotationId + '/', '_blank');
+        }
+        
+        // Function to reset form after successful submission
+        function resetForm() {
+            // Clear form fields
+            document.getElementById('notes').value = '';
             
-            // Calculate row totals in quotation form
-            function calculateRow(input) {
-                const row = input.closest('tr');
-                const qty = parseFloat(row.querySelector('.item-qty').value) || 0;
-                const entryRate = parseFloat(row.querySelector('.entry-rate').value) || 0;
-                const salesPrice = parseFloat(row.querySelector('.sales-price').value) || 0;
-                const unitPrice = parseFloat(row.querySelector('.unit-price').value) || 0;
-                const discount = parseFloat(row.querySelector('.discount').value) || 0;
-                const tax = parseFloat(row.querySelector('.tax').value) || 0;
-                
-                // Calculate the base price (using sales price if available, otherwise unit price)
-                const basePrice = salesPrice > 0 ? salesPrice : unitPrice;
-                
-                // Apply discount
-                const discountedPrice = basePrice * (1 - discount / 100);
-                
-                // Calculate total before tax
-                const totalBeforeTax = qty * discountedPrice;
-                
-                // Apply tax
-                const totalAfterTax = totalBeforeTax * (1 + tax / 100);
-                
-                // Update row total
-                row.querySelector('.row-total').textContent = '$' + totalAfterTax.toFixed(2);
-                
-                updateTotals();
-            }
+            // Clear items table
+            document.getElementById('items-body').innerHTML = '';
             
-            // Update totals in quotation form
-            function updateTotals() {
-                let subtotal = 0;
-                let totalDiscount = 0;
-                let totalTax = 0;
-                
-                const rows = document.querySelectorAll('#items-body tr');
-                rows.forEach(row => {
-                    const rowTotal = parseFloat(row.querySelector('.row-total').textContent.replace('$', '')) || 0;
-                    const qty = parseFloat(row.querySelector('.item-qty').value) || 0;
-                    const basePrice = parseFloat(row.querySelector('.sales-price').value) || 
-                                     parseFloat(row.querySelector('.unit-price').value) || 0;
-                    const discount = parseFloat(row.querySelector('.discount').value) || 0;
-                    const tax = parseFloat(row.querySelector('.tax').value) || 0;
-                    
-                    subtotal += rowTotal / (1 + tax / 100);
-                    totalDiscount += (basePrice * qty) * (discount / 100);
-                    totalTax += (rowTotal / (1 + tax / 100)) * (tax / 100);
+            // Reset totals
+            $('#subtotal').text('₹0.00');
+            $('#total-discount').text('₹0.00');
+            $('#total-tax').text('₹0.00');
+            $('#grand-total').text('₹0.00');
+            
+            // Clear lead selection
+            if (selectedLead) {
+                document.querySelectorAll('.lead-item').forEach(item => {
+                    item.classList.remove('selected');
                 });
-                
-                document.getElementById('subtotal').textContent = '$' + subtotal.toFixed(2);
-                document.getElementById('total-discount').textContent = '$' + totalDiscount.toFixed(2);
-                document.getElementById('total-tax').textContent = '$' + totalTax.toFixed(2);
-                document.getElementById('grand-total').textContent = '$' + (subtotal + totalTax).toFixed(2);
+                selectedLead = null;
+                document.getElementById('leadSelectionInfo').style.display = 'none';
             }
             
-            // Save as draft function
-            function saveAsDraft() {
-                showNotification('Quotation saved as draft successfully', 'success');
-                // In a real application, you would save the form data to your backend
-            }
+            showNotification('Form reset. You can create a new quotation.', 'info');
+        }
+        
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('Initializing quotation form with Purchase Order items...');
             
-            // Submit quotation function
-            function submitQuotation() {
-                showNotification('Quotation submitted successfully', 'success');
-                // In a real application, you would submit the form data to your backend
-                // and potentially navigate back to the list view
+            // Set up lead directory event listeners
+            document.querySelectorAll('.lead-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    handleLeadSelection(this);
+                });
+            });
+            
+            // Set up search functionality
+            document.getElementById('directorySearch').addEventListener('input', filterLeads);
+            
+            // Set up priority filter
+            document.getElementById('priorityFilter').addEventListener('change', filterLeads);
+            
+            // Load items from Purchase Order app
+            await loadItemsFromPurchaseOrderApp();
+            
+            console.log('Quotation form initialized with directory functionality');
+            
+            // Add initial item row
+            if (purchaseOrderItems.length > 0) {
                 setTimeout(() => {
-                    toggleQuotationView('list');
-                }, 2000);
+                    showNotification('Ready to create quotation. Select a lead and add items.', 'info');
+                }, 1000);
             }
-            
-            // Make functions available globally for inline event handlers
-            window.addNewItem = addNewItem;
-            window.deleteRow = deleteRow;
-            window.calculateRow = calculateRow;
-            window.saveAsDraft = saveAsDraft;
-            window.submitQuotation = submitQuotation;
         });
     </script>
 </body>

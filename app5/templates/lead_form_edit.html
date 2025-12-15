@@ -1,11 +1,12 @@
+{% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edit Lead - Lead Management System</title>
+    <title>Edit Lead - Compact Customer Information Form</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        /* Include all CSS from previous file - it's the same */
         * {
             margin: 0;
             padding: 0;
@@ -64,6 +65,7 @@
             color:black;
             padding: 15px 20px;
             text-align: center;
+            position: relative;
         }
         
         .form-header h1 {
@@ -556,23 +558,72 @@
             flex-direction: column;
         }
         
+        /* UPDATED DIRECTORY HEADER - Left/Right Alignment */
         .directory-header {
             background: #4a6fdc;
             color: white;
             padding: 12px 15px;
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            align-items: flex-start;
         }
         
-        .directory-header h2 {
+        .directory-left {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            text-align: left;
+        }
+        
+        .directory-left h2 {
             font-size: 16px;
             font-weight: 600;
+            margin-bottom: 4px;
         }
         
-        .directory-info {
+        .directory-date {
+            font-size: 13px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.9);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .directory-date i {
             font-size: 12px;
+        }
+        
+        .directory-right {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            text-align: right;
+        }
+        
+        .directory-info-row {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 4px;
+        }
+        
+        .directory-count {
+            font-size: 13px;
+            font-weight: 500;
             opacity: 0.9;
+        }
+        
+        .directory-today {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.8);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .directory-today i {
+            font-size: 11px;
         }
         
         .directory-tabs {
@@ -605,10 +656,20 @@
             background: #e9ecef;
         }
         
-        .search-container {
-            padding: 12px 15px;
+        /* UPDATED SEARCH AND FILTER CONTAINER - Left/Right Layout */
+        .directory-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
             background: #f8f9fa;
             border-bottom: 1px solid #e9ecef;
+            gap: 10px;
+        }
+        
+        .directory-search-container {
+            flex: 1;
+            min-width: 0;
         }
         
         .search-box {
@@ -632,6 +693,30 @@
             transform: translateY(-50%);
             color: #6c757d;
             font-size: 13px;
+        }
+        
+        .directory-filter-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+        
+        .filter-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #495057;
+            white-space: nowrap;
+        }
+        
+        .filter-select {
+            padding: 6px 8px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 13px;
+            background: white;
+            cursor: pointer;
+            min-width: 120px;
         }
         
         .employee-list, .lead-list {
@@ -718,7 +803,7 @@
             font-size: 10px;
             color: #6c757d;
             background: #f8f9fa;
-            padding: 2px 5px;
+           
             border-radius: 4px;
             display: inline-block;
             margin-top: 2px;
@@ -976,6 +1061,562 @@
             text-align: center;
         }
         
+        /* Enhanced Lead Date Display Styles */
+        .lead-date-full {
+            font-size: 10px;
+            color: #6c757d;
+            background: #f8f9fa;
+            padding: 2px 8px;
+            border-radius: 10px;
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            margin-left: 5px;
+            font-weight: 500;
+        }
+        
+        .lead-date-full i {
+            font-size: 9px;
+            color: #6c757d;
+        }
+        
+        .lead-date-compact {
+            font-size: 10px;
+            color: #6c757d;
+            background: #f8f9fa;
+            padding: 2px 6px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            margin-left: auto;
+            font-weight: 500;
+        }
+        
+        .lead-datetime {
+            font-size: 9px;
+            color: #888;
+            margin-top: 1px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .lead-datetime i {
+            font-size: 8px;
+        }
+        
+        .lead-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            width: 100%;
+            margin-bottom: 8px;
+        }
+        
+        .lead-name-container {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .lead-priority-indicator {
+            font-size: 12px;
+            margin-right: 3px;
+        }
+        
+        .lead-info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 3px;
+            width: 100%;
+        }
+        
+        /* ========== DATE AND TIME ELAPSED LAYOUT ========== */
+
+        .date-time-container {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 3px;
+            min-width: 80px;
+        }
+
+        /* Time elapsed badge - placed below the date */
+        .time-elapsed-badge {
+            font-size: 9px !important;
+            font-weight: 600 !important;
+            padding: 2px 6px !important;
+            border-radius: 10px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 4px !important;
+            background: rgba(0, 0, 0, 0.05) !important;
+            color: #666 !important;
+            white-space: nowrap !important;
+        }
+
+        .time-elapsed-badge.time-recent {
+            background: rgba(34, 197, 94, 0.15) !important;
+            color: #16a34a !important;
+        }
+
+        .time-elapsed-badge.time-medium {
+            background: rgba(245, 158, 11, 0.15) !important;
+            color: #d97706 !important;
+        }
+
+        .time-elapsed-badge.time-old {
+            background: rgba(239, 68, 68, 0.15) !important;
+            color: #dc2626 !important;
+        }
+        
+        /* Campaign tooltip */
+        .lead-campaign {
+            position: relative;
+            cursor: help;
+            font-size: 11px;
+            color: #666;
+            margin-top: 2px;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            font-style: italic;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .lead-campaign:hover::after {
+            content: attr(title);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            white-space: nowrap;
+            z-index: 1000;
+            margin-bottom: 5px;
+            max-width: 300px;
+            word-wrap: break-word;
+        }
+        
+        .lead-campaign:hover::before {
+            content: '';
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 5px solid transparent;
+            border-top-color: #333;
+            margin-bottom: -5px;
+            z-index: 1000;
+        }
+        
+        /* Campaign dropdown badge */
+        .campaign-badge {
+            display: inline-block;
+            
+            
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            margin-left: 5px;
+            font-weight: 600;
+        }
+        
+        /* Campaign Details Styles */
+        .campaign-details-section {
+            animation: slideDown 0.3s ease-out;
+            margin-top: 10px;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .campaign-detail-item {
+            padding: 8px;
+            background: white;
+            border-radius: 6px;
+            border: 1px solid #e8e8e8;
+        }
+
+        .campaign-detail-item span {
+            word-break: break-word;
+        }
+
+        /* Status Badges for Campaigns */
+        .status-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-active {
+            background: #e8f5e9;
+            color: #4caf50;
+        }
+
+        .status-draft {
+            background: #e3f2fd;
+            color: #2196f3;
+        }
+
+        .status-completed {
+            background: #f3e5f5;
+            color: #9c27b0;
+        }
+
+        .campaign-stats-summary {
+            margin-top: 5px;
+            font-size: 11px;
+            color: #666;
+        }
+
+        .campaign-stats-summary span {
+            margin-right: 10px;
+        }
+
+        .campaign-stats-summary i {
+            margin-right: 3px;
+        }
+        
+        /* Campaign details mobile */
+        .campaign-details-section {
+            animation: slideDown 0.3s ease-out;
+            margin-top: 10px;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .campaign-detail-item {
+            padding: 8px;
+            background: white;
+            border-radius: 6px;
+            border: 1px solid #e8e8e8;
+        }
+
+        .campaign-detail-item span {
+            word-break: break-word;
+        }
+
+        /* Status Badges */
+        .status-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-active {
+            background: #e8f5e9;
+            color: #4caf50;
+        }
+
+        .status-draft {
+            background: #e3f2fd;
+            color: #2196f3;
+        }
+
+        .status-completed {
+            background: #f3e5f5;
+            color: #9c27b0;
+        }
+
+        .campaign-stats-summary {
+            margin-top: 5px;
+            font-size: 11px;
+            color: #666;
+        }
+
+        .campaign-stats-summary span {
+            margin-right: 10px;
+        }
+
+        .campaign-stats-summary i {
+            margin-right: 3px;
+        }
+
+        /* Style for new firm option */
+        .select-option.new-firm {
+            color: #4CAF50;
+            font-weight: 600;
+            background-color: rgba(76, 175, 80, 0.1);
+            border-left: 3px solid #4CAF50;
+        }
+
+        .select-option.new-firm:hover {
+            background-color: rgba(76, 175, 80, 0.2);
+        }
+
+        .select-option.new-firm::before {
+            content: "✚ ";
+            font-weight: bold;
+            margin-right: 5px;
+        }
+
+        /* API Customer Tooltip Styles */
+        .api-customer-tooltip {
+            position: absolute;
+            background: white;
+            border: 1px solid #4a6fdc;
+            border-radius: 6px;
+            padding: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 10000;
+            max-width: 300px;
+            font-size: 12px;
+            pointer-events: none;
+        }
+
+        /* API indicator in dropdown */
+        .select-option .campaign-badge {
+            background: #f8f9fa;
+            color: white;
+            font-size: 10px;
+            padding: 1px 6px;
+            border-radius: 3px;
+            margin-left: 8px;
+        }
+
+        /* Firm source badge */
+        #firmSourceBadge {
+            margin-left: 5px;
+            font-size: 10px;
+            padding: 2px 6px;
+            background: #f5f6f7;
+            color: white;
+            border-radius: 3px;
+            vertical-align: middle;
+        }
+
+        /* API data source indicator */
+        .api-source-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: #f0f7ff;
+            border: 1px solid #4a6fdc;
+            border-radius: 4px;
+            padding: 2px 6px;
+            font-size: 10px;
+            color: #4a6fdc;
+            margin-left: 5px;
+        }
+
+        /* Hover effects for API options */
+        .select-option[data-is-api="true"]:hover {
+            background: #f0f7ff;
+            border-left: 3px solid #4a6fdc;
+        }
+
+        /* API customer details section */
+        #apiCustomerDetails {
+            border: 1px solid #4a6fdc;
+            background: #f8faff;
+        }
+
+        #apiCustomerDetails strong {
+            color: #4a6fdc;
+        }
+
+       
+        
+
+        .lead-info-display {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .lead-info-row-display {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+
+        .lead-info-item {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .lead-info-label {
+            font-size: 12px;
+            color: #6c757d;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .lead-info-value {
+            font-size: 14px;
+            color: #333;
+            font-weight: 500;
+            padding: 5px 10px;
+            background: white;
+            border-radius: 4px;
+            border: 1px solid #e9ecef;
+        }
+
+        .history-btn {
+            background: linear-gradient(135deg, #6c757d, #495057);
+            color: white;
+        }
+
+        .history-btn:hover {
+            background: linear-gradient(135deg, #495057, #6c757d);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        /* API Status Indicator */
+        .api-status {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .api-status .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .api-status.connected .status-indicator {
+            background: #4CAF50;
+            animation: pulse 2s infinite;
+        }
+
+        .api-status.disconnected .status-indicator {
+            background: #f44336;
+        }
+
+        .api-status.loading .status-indicator {
+            background: #FFC107;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        /* API Customer Highlight */
+        .api-customer-highlight {
+            background: linear-gradient(90deg, rgba(74, 111, 220, 0.1), transparent);
+            border-left: 3px solid #4a6fdc;
+        }
+
+        /* Auto-fill Notification */
+        .auto-fill-notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: white;
+            border: 2px solid #4CAF50;
+            border-radius: 8px;
+            padding: 15px 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            z-index: 10000;
+            max-width: 400px;
+            animation: slideUp 0.3s ease-out;
+            display: none;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .auto-fill-notification .close-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: none;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 0;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* API Refresh Button */
+        .api-refresh-btn {
+            position: absolute;
+            right: 40px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #4a6fdc;
+            cursor: pointer;
+            font-size: 12px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .api-refresh-btn:hover {
+            background: rgba(74, 111, 220, 0.1);
+        }
+
+        .api-refresh-btn.loading {
+            animation: spin 1s linear infinite;
+        }
+
         @media (max-width: 1200px) {
             .single-line-sections {
                 flex-direction: column;
@@ -1083,6 +1724,26 @@
                 gap: 10px;
             }
             
+            .directory-left, .directory-right {
+                width: 100%;
+                align-items: flex-start;
+                text-align: left;
+            }
+            
+            .directory-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .directory-search-container {
+                width: 100%;
+            }
+            
+            .directory-filter-container {
+                width: 100%;
+                justify-content: space-between;
+            }
+            
             .employee-item, .lead-item {
                 flex-direction: column;
                 align-items: flex-start;
@@ -1103,6 +1764,57 @@
             
             .status-inline select {
                 width: 120px;
+            }
+            
+            /* Lead details mobile adjustments */
+            .lead-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 5px;
+            }
+            
+            .lead-date-full {
+                align-self: flex-start;
+                margin-left: 0;
+                margin-top: 5px;
+            }
+            
+            .lead-date-compact {
+                margin-left: 0;
+                margin-top: 5px;
+            }
+            
+            /* Date time container mobile */
+            .date-time-container {
+                align-items: flex-start;
+                margin-top: 5px;
+            }
+            
+            /* Campaign tooltip mobile */
+            .lead-campaign:hover::after {
+                font-size: 11px;
+                padding: 6px 8px;
+                max-width: 250px;
+            }
+
+            /* Campaign details mobile */
+            .campaign-details-section {
+                padding: 10px;
+            }
+            
+            /* Time elapsed mobile */
+            .time-elapsed-badge {
+                font-size: 8px;
+                padding: 2px 4px;
+            }
+
+            /* API status mobile */
+            .api-status {
+                position: relative;
+                top: 0;
+                right: 0;
+                margin-top: 10px;
+                justify-content: center;
             }
         }
         
@@ -1178,6 +1890,26 @@
                 display: flex;
                 gap: 8px;
             }
+            
+            /* Campaign tooltip small mobile */
+            .lead-campaign:hover::after {
+                font-size: 10px;
+                padding: 4px 6px;
+                max-width: 200px;
+            }
+
+            /* Campaign details small mobile */
+            .campaign-stats-summary {
+                display: flex;
+                flex-direction: column;
+                gap: 5px;
+            }
+            
+            /* Time elapsed small mobile */
+            .time-elapsed-badge {
+                font-size: 8px;
+                padding: 2px 4px;
+            }
         }
     </style>
 </head>
@@ -1187,9 +1919,24 @@
             <!-- Left Column - Lead Directory -->
             <div class="directory-column">
                 <div class="lead-directory-container">
+                    <!-- UPDATED DIRECTORY HEADER - Left/Right Alignment -->
                     <div class="directory-header">
-                        <h2>Lead Management</h2>
-                        <div class="directory-info">Showing <span id="activeTabCount">{{ active_leads_data|length }}</span> active leads</div>
+                        <div class="directory-left">
+                            <h2>Lead Management</h2>
+                            <div class="directory-date" id="currentDate">
+                                <i class="far fa-calendar-alt"></i>
+                                Loading date...
+                            </div>
+                        </div>
+                        <div class="directory-right">
+                            <div class="directory-info-row">
+                                <div class="directory-count">Leads: <span id="activeTabCount">{{ active_leads_data|length }}</span></div>
+                                <div class="directory-today" id="todayDate">
+                                    <i class="far fa-clock"></i>
+                                    Loading time...
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     
                     <!-- Directory Tabs -->
@@ -1198,49 +1945,92 @@
                         <button class="directory-tab" data-tab="employees">Employees</button>
                     </div>
                     
-                   <div class="search-container">
-    <div class="search-box">
-        <i class="fas fa-search search-icon"></i>
-        <input type="text" id="directorySearch" placeholder="Search by Name/Phone/Ticket...">
-    </div>
-</div>
-
-<!-- ADD PRIORITY FILTER HERE -->
-<div class="filter-container" id="priorityFilterContainer" style="padding: 10px 15px; background: #f8f9fa; border-bottom: 1px solid #ddd;">
-    <div class="filter-group" style="display: flex; align-items: center; gap: 10px;">
-        <span class="filter-label" style="font-size: 13px; font-weight: 600;">Priority:</span>
-        <select id="priorityFilter" class="filter-select" style="padding: 6px; border-radius: 8px;">
-            <option value="all">All Priorities</option>
-            <option value="High">🔴 High</option>
-            <option value="Medium">🟡 Medium</option>
-            <option value="Low">🟢 Low</option>
-        </select>
-    </div>
-</div>
-
+                    <!-- UPDATED SEARCH AND FILTER - Combined in one row -->
+                    <div class="directory-controls">
+                        <div class="directory-search-container">
+                            <div class="search-box">
+                                <i class="fas fa-search search-icon"></i>
+                                <input type="text" id="directorySearch" placeholder="Search leads...">
+                            </div>
+                        </div>
+                        <div class="directory-filter-container">
+                            <span class="filter-label">Priority:</span>
+                            <select id="priorityFilter" class="filter-select">
+                                <option value="all">All</option>
+                                <option value="High">🔴 High</option>
+                                <option value="Medium">🟡 Medium</option>
+                                <option value="Low">🟢 Low</option>
+                            </select>
+                        </div>
+                    </div>
                     
                     <!-- Lead List (shown by default) -->
                     <div class="lead-list active" id="leadList">
                         {% if active_leads_data %}
                             {% for lead in active_leads_data %}
-                            <div class="lead-item" data-id="{{ lead.id }}">
+                            <div class="lead-item" data-id="{{ lead.id }}" {% if lead.id == lead_data.id %}class="selected"{% endif %}>
                                 <div class="lead-avatar">
                                     {{ lead.ownerName|default:""|slice:":2"|upper }}
                                 </div>
 
                                 <div class="lead-details">
-                                    <div class="lead-name">{{ lead.ownerName }}</div>
+                                    <div class="lead-header">
+                                        <div class="lead-name-container">
+                                            <span class="lead-priority-indicator">
+                                                {% if lead.priority == "High" %}🔴
+                                                {% elif lead.priority == "Medium" %}🟡
+                                                {% elif lead.priority == "Low" %}🟢
+                                                {% else %}⚪{% endif %}
+                                            </span>
+                                            <span class="lead-name">{{ lead.ownerName }}</span>
+                                        </div>
+                                        
+                                        <!-- FIXED: DATE AND TIME ELAPSED CONTAINER -->
+                                        <div class="date-time-container">
+                                            <!-- Lead Date -->
+                                            {% if lead.date %}
+                                            <div class="lead-date-compact" title="Lead Date: {{ lead.date|date:'l, d F Y' }}">
+                                                <i class="far fa-calendar-check"></i>
+                                                {{ lead.date|date:"d M" }}
+                                            </div>
+                                            {% endif %}
+                                            
+                                            <!-- TIME ELAPSED BADGE - Place it right below the date -->
+                                            <div class="time-elapsed-badge" 
+                                                 data-created="{{ lead.created_at|date:'c'|default:lead.date|date:'c' }}"
+                                                 style="display: inline-flex;">
+                                                <i class="fas fa-clock"></i>
+                                                <span class="elapsed-text">Calculating...</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Created Date and Time -->
+                                    {% if lead.created_at %}
+                                    <div class="lead-datetime">
+                                        <i class="far fa-calendar-alt"></i>
+                                        Created {{ lead.created_at|date:"d M Y" }} at {{ lead.created_at|time:"H:i" }}
+                                    </div>
+                                    {% elif lead.date %}
+                                    <div class="lead-datetime">
+                                        <i class="far fa-calendar-alt"></i>
+                                        {{ lead.date|date:"d M Y" }}
+                                    </div>
+                                    {% endif %}
+                                    
                                     <div class="lead-phone">{{ lead.phoneNo }}</div>
                                     <div class="lead-ticket">{{ lead.ticket_number }}</div>
-                                    <div class="lead-status">Status: {{ lead.status }}</div>
-                                    {% if lead.priority %}
-                                    <div class="lead-priority" style="font-size: 10px; color: 
-                                        {% if lead.priority == 'High' %}#ff4444
-                                        {% elif lead.priority == 'Medium' %}#ffaa00
-                                        {% else %}#22c55e
-                                        {% endif %}; 
-                                        font-weight: 600; margin-top: 2px;">
-                                        Priority: {{ lead.priority }}
+                                    
+                                    <div class="lead-info-row">
+                                        <div class="lead-status">Status: {{ lead.status }}</div>
+                                        <span style="color: {% if lead.priority == 'High' %}#ff4444{% elif lead.priority == 'Medium' %}#ffaa00{% else %}#22c55e{% endif %}; font-weight: 600; font-size: 10px; padding: 2px 8px; border-radius: 10px; background: {% if lead.priority == 'High' %}#ff444415{% elif lead.priority == 'Medium' %}#ffaa0015{% else %}#22c55e15{% endif %};">
+                                            {{ lead.priority|default:"Medium" }}
+                                        </span>
+                                    </div>
+                                    {% if lead.campaign_display %}
+                                    <div class="lead-campaign" title="{{ lead.campaign_display }}">
+                                        <i class="fas fa-bullhorn" style="font-size: 9px;"></i>
+                                        <span>{{ lead.campaign_display|truncatechars:40 }}</span>
                                     </div>
                                     {% endif %}
                                 </div>
@@ -1306,8 +2096,18 @@
             <div class="form-column">
                 <div class="form-container">
                     <div class="form-header">
-                        <h1>Edit Lead Information</h1>
-                        <p>Update the lead details as needed</p>
+                        <h1>Edit Lead Form</h1>
+                        <p>Edit the lead information below</p>
+                        
+                        <!-- API Status Indicator -->
+                        <div id="apiStatus" class="api-status {% if api_data_count > 0 %}connected{% else %}disconnected{% endif %}">
+                            <span class="status-indicator"></span>
+                            <span class="api-count">{{ api_data_count }}</span>
+                            <span class="api-label">API Customers</span>
+                            <button id="apiRefreshBtn" class="api-refresh-btn" title="Refresh API data">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                        </div>
                     </div>
                     
                     <!-- Navigation Menu -->
@@ -1315,21 +2115,21 @@
                         <ul class="nav-menu">
                             <li class="nav-item">
                                 <a href="#communication-details" class="nav-link active">
-                                    <i class="fas fa-edit"></i>
+                                    <i class="fas fa-phone-alt"></i>
                                     Edit Lead
                                 </a>
                             </li>
-                           <li class="nav-item">
+                            <li class="nav-item">
                                 <a href="{% url 'app5:requirements_list' %}" class="nav-link">
-                                <i class="fas fa-clipboard-list"></i>
-                                 Requirements
-                                 </a>
+                                    <i class="fas fa-clipboard-list"></i>
+                                    Requirements
+                                </a>
                             </li>
                             <li class="nav-item">
-                               <a href="{% url 'app5:event_form' %}" class="nav-link">
-                               <i class="fas fa-briefcase"></i>
-                               Event
-                             </a>
+                                <a href="{% url 'app5:event_form' %}" class="nav-link">
+                                    <i class="fas fa-briefcase"></i>
+                                    Event
+                                </a>
                             </li>
                             <li class="nav-item">
                                 <a href="{% url 'app5:quotation_list' %}" class="nav-link">
@@ -1340,8 +2140,10 @@
                     </div>
                     
                     <div class="form-body">
-                        <form id="customerForm" method="POST" action="{% url 'app5:lead_edit' lead.id %}">
+                        <form id="customerForm" method="POST" action="{% url 'app5:lead_edit' lead_id=lead_data.id|default:0 %}">
                             {% csrf_token %}
+                            <input type="hidden" name="lead_id" value="{{ lead_data.id|default:0 }}">
+                            <input type="hidden" name="ticket_number" value="{{ lead_data.ticket_number|default:'' }}">
                             
                             <!-- Communication Details Section -->
                             <div class="form-section" id="communication-details">
@@ -1353,16 +2155,16 @@
                                     <div class="status-inline">
                                         <select id="status" name="status" class="status-select" required>
                                             <option value="">Status</option>
-                                            <option value="Active" {% if lead.status == 'Active' %}selected{% endif %}>🟢Active</option>
-                                            <option value="Inactive" {% if lead.status == 'Inactive' %}selected{% endif %}>🔴Inactive</option>
-                                            <option value="Installed" {% if lead.status == 'Installed' %}selected{% endif %}>🟡 Installed</option>
+                                            <option value="Active" {% if lead_data.status == "Active" %}selected{% endif %}>🟢Active</option>
+                                            <option value="Inactive" {% if lead_data.status == "Inactive" %}selected{% endif %}>🔴Inactive</option>
+                                            <option value="Installed" {% if lead_data.status == "Installed" %}selected{% endif %}>🟡 Installed</option>
                                         </select>
 
                                         <select id="priority" name="priority" class="status-select" required>
                                         <option value="">Priority</option>
-                                        <option value="High" {% if lead.priority == 'High' %}selected{% endif %}>🔴 High</option>
-                                        <option value="Medium" {% if lead.priority == 'Medium' %}selected{% endif %}>🟡 Medium</option>
-                                        <option value="Low" {% if lead.priority == 'Low' %}selected{% endif %}>🟢  Low</option>
+                                        <option value="High" {% if lead_data.priority == "High" %}selected{% endif %}>🔴 High</option>
+                                        <option value="Medium" {% if lead_data.priority == "Medium" or not lead_data.priority %}selected{% endif %}>🟡 Medium</option>
+                                        <option value="Low" {% if lead_data.priority == "Low" %}selected{% endif %}>🟢  Low</option>
                                         </select>
                                     </div>
                                 </div>
@@ -1370,17 +2172,17 @@
                                 <div class="form-row">
                                     <div class="form-group">
                                         <label for="ownerName">Owner Name *</label>
-                                       <input type="text" id="ownerName" name="ownerName" placeholder="Enter owner name" value="{{ lead.ownerName }}" required>
+                                       <input type="text" id="ownerName" name="ownerName" placeholder="Enter owner name" value="{{ lead_data.ownerName|default:'' }}" required>
                                     </div>
                                     
                                     <div class="form-group">
                                         <label for="phoneNo">Phone Number *</label>
-                                         <input type="tel" id="phoneNo" name="phoneNo" placeholder="Enter phone number" value="{{ lead.phoneNo }}" required>
+                                         <input type="tel" id="phoneNo" name="phoneNo" placeholder="Enter phone number" value="{{ lead_data.phoneNo|default:'' }}" required>
                                     </div>
                                     
                                     <div class="form-group">
                                         <label for="email">Email Address</label>
-                                         <input type="email" id="email" name="email" placeholder="Enter Email Address" value="{{ lead.email }}">
+                                         <input type="email" id="email" name="email" placeholder="Enter Email Address" value="{{ lead_data.email|default:'' }}">
                                     </div>
                                 </div>
                             </div>
@@ -1399,7 +2201,8 @@
                                             <div class="toggle-container">
                                                 <span class="toggle-label">New</span>
                                                 <label class="toggle-switch">
-                                                    <input type="checkbox" id="customerTypeToggle" {% if lead.customerType == 'Business' %}checked{% endif %}>
+                                                    <input type="checkbox" id="customerTypeToggle" name="customerTypeToggle" 
+                                                           {% if lead_data.customerType != "Individual" %}checked{% endif %}>
                                                     <span class="toggle-slider"></span>
                                                 </label>
                                                 <span class="toggle-label">Exist</span>
@@ -1408,20 +2211,51 @@
                                     </div>
                                     
                                     <!-- Business fields (shown by default) -->
-                                    <div class="business-fields">
+                                    <div class="business-fields" {% if lead_data.customerType == "Individual" %}style="display: none;"{% endif %}>
+                                        <!-- Searchable Firm Name Field with API Data -->
                                         <div class="compact-form-group">
-                                            <label for="name">Firm Name *</label>
-                                            <input type="text" id="name" name="name" value="{{ lead.name }}" required>
+                                            <label for="name">
+                                                Firm Name * 
+                                                <span id="firmSourceBadge" class="campaign-badge">
+                                                    <i class="fas fa-database"></i> 
+                                                </span>
+                                            </label>
+                                            <div class="select-search-container" id="firmNameContainer">
+                                                <input type="text" class="select-search-input" id="nameSearch" 
+                                                       placeholder="Search from {{ api_data_count }} API customers or type new firm..." 
+                                                       title="Connected to customer API - {{ api_data_count }} records available"
+                                                       value="{% if lead_data.customerType != 'Individual' %}{{ lead_data.name|default:'' }}{% endif %}">
+                                                <i class="fas fa-times select-clear-icon" id="firmNameClear"></i>
+                                                <i class="fas fa-chevron-down select-search-icon"></i>
+                                                <div class="select-options" id="firmNameOptions"></div>
+                                            </div>
+                                            <input type="text" id="name" name="name" style="display: none;" 
+                                                   value="{% if lead_data.customerType != 'Individual' %}{{ lead_data.name|default:'' }}{% endif %}">
+                                            
+                                            <!-- API Customer Details (hidden by default) -->
+                                            <div id="apiCustomerDetails" class="campaign-details-section" style="display: none; margin-top: 8px;">
+                                                <div class="campaign-detail-item">
+                                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                                                        <strong>API Customer Details</strong>
+                                                        <button type="button" onclick="closeApiCustomerDetails()" style="background: none; border: none; color: #666; cursor: pointer;">
+                                                            <i class="fas fa-times"></i>
+                                                        </button>
+                                                    </div>
+                                                    <div id="apiCustomerInfo" style="font-size: 12px; line-height: 1.4;">
+                                                        <!-- Customer details will be populated here -->
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                         
                                         <div class="compact-form-group">
                                             <label for="address">Address</label>
-                                            <input type="text" id="address" name="address" value="{{ lead.address }}">
+                                            <input type="text" id="address" name="address" value="{{ lead_data.address|default:'' }}">
                                         </div>
                                         
                                         <div class="compact-form-group">
                                             <label for="place">Place *</label>
-                                            <input type="text" id="place" name="place" value="{{ lead.place }}" required>
+                                            <input type="text" id="place" name="place" value="{{ lead_data.place|default:'' }}" required>
                                         </div>
                                         
                                         <div class="compact-form-group">
@@ -1429,7 +2263,7 @@
                                             <select id="District" name="District">
                                                 <option value="">Select District</option>
                                                 {% for district in districts %}
-                                                <option value="{{ district.name }}" {% if lead.District == district.name %}selected{% endif %}>{{ district.name }}</option>
+                                                <option value="{{ district.name }}" {% if lead_data.District == district.name %}selected{% endif %}>{{ district.name }}</option>
                                                 {% endfor %}
                                             </select>
                                         </div>
@@ -1439,32 +2273,32 @@
                                             <select id="State" name="State">
                                                 <option value="">Select State</option>
                                                 {% for state in states %}
-                                                <option value="{{ state.name }}" {% if lead.State == state.name %}selected{% endif %}>{{ state.name }}</option>
+                                                <option value="{{ state.name }}" {% if lead_data.State == state.name %}selected{% endif %}>{{ state.name }}</option>
                                                 {% endfor %}
                                             </select>
                                         </div>
                                         
                                         <div class="compact-form-group">
                                             <label for="pinCode">Pin Code *</label>
-                                            <input type="text" id="pinCode" name="pinCode" value="{{ lead.pinCode }}" required>
+                                            <input type="text" id="pinCode" name="pinCode" value="{{ lead_data.pinCode|default:'' }}" required>
                                         </div>
                                     </div>
                                     
                                     <!-- Individual fields (hidden by default) -->
-                                    <div class="individual-fields">
+                                    <div class="individual-fields" {% if lead_data.customerType == "Individual" %}style="display: block;"{% endif %}>
                                         <div class="compact-form-group">
                                             <label for="firstName">Firm Name *</label>
-                                            <input type="text" id="firstName" name="firstName" value="{{ lead.firstName }}">
+                                            <input type="text" id="firstName" name="firstName" value="{{ lead_data.firstName|default:'' }}">
                                         </div>
                                         
                                         <div class="compact-form-group">
                                             <label for="individualAddress">Address</label>
-                                            <input type="text" id="individualAddress" name="individualAddress" value="{{ lead.individualAddress }}">
+                                            <input type="text" id="individualAddress" name="individualAddress" value="{{ lead_data.individualAddress|default:'' }}">
                                         </div>
                                         
                                         <div class="compact-form-group">
                                             <label for="individualPlace">Place *</label>
-                                            <input type="text" id="individualPlace" name="individualPlace" value="{{ lead.individualPlace }}">
+                                            <input type="text" id="individualPlace" name="individualPlace" value="{{ lead_data.individualPlace|default:'' }}">
                                         </div>
                                         
                                         <div class="compact-form-group">
@@ -1472,7 +2306,7 @@
                                             <select id="individualDistrict" name="individualDistrict">
                                                 <option value="">Select District</option>
                                                 {% for district in districts %}
-                                                <option value="{{ district.name }}" {% if lead.individualDistrict == district.name %}selected{% endif %}>{{ district.name }}</option>
+                                                <option value="{{ district.name }}" {% if lead_data.individualDistrict == district.name %}selected{% endif %}>{{ district.name }}</option>
                                                 {% endfor %}
                                             </select>
                                         </div>
@@ -1482,14 +2316,14 @@
                                             <select id="individualState" name="individualState">
                                                 <option value="">Select State</option>
                                                 {% for state in states %}
-                                                <option value="{{ state.name }}" {% if lead.individualState == state.name %}selected{% endif %}>{{ state.name }}</option>
+                                                <option value="{{ state.name }}" {% if lead_data.individualState == state.name %}selected{% endif %}>{{ state.name }}</option>
                                                 {% endfor %}
                                             </select>
                                         </div>
                                         
                                         <div class="compact-form-group">
                                             <label for="individualPinCode">Pin Code *</label>
-                                            <input type="text" id="individualPinCode" name="individualPinCode" value="{{ lead.individualPinCode }}">
+                                            <input type="text" id="individualPinCode" name="individualPinCode" value="{{ lead_data.individualPinCode|default:'' }}">
                                         </div>
                                     </div>
                                 </div>
@@ -1504,30 +2338,30 @@
                                         <div class="header-controls">
                                             <div class="date-field-compact">
                                                 <label for="date">Date</label>
-                                                <input type="date" id="date" name="date" value="{{ lead.date|date:'Y-m-d' }}">
+                                                <input type="date" id="date" name="date" value="{{ lead_data.date|date:'Y-m-d'|default:today|date:'Y-m-d' }}">
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div class="compact-form-group">
-                                        <label for="requirement">Branch</label>
-                                        <select id="requirement" name="requirement">
-                                            <option value="">Select Branch</option>
-                                            {% for department in departments %}
-                                            <option value="{{ department.id }}" 
-                                                {% if lead.requirement == department.id or lead.branch_name == department.name %}selected{% endif %}>
-                                                {{ department.name }}
-                                            </option>
-                                            {% endfor %}
-                                        </select>
-                                    </div>
+                                     <div class="compact-form-group">
+    <label for="requirement">Branch</label>
+    <select id="requirement" name="requirement">
+        <option value="">Select Branch</option>
+        {% for department in departments %}
+        <option value="{{ department.id }}" 
+                {% if lead_data.requirement == department.id|stringformat:"s" or lead_data.requirement == department.id %}selected{% endif %}>
+            {{ department.name }}
+        </option>
+        {% endfor %}
+    </select>
+</div>
 
                                     <div class="compact-form-group">
                                         <label for="business">Business Nature</label>
                                         <select id="business" name="business">
                                             <option value="">Select Business Nature</option>
                                             {% for nature in business_natures %}
-                                            <option value="{{ nature.name }}" {% if lead.business == nature.name %}selected{% endif %}>{{ nature.name }}</option>
+                                            <option value="{{ nature.name }}" {% if lead_data.business == nature.name %}selected{% endif %}>{{ nature.name }}</option>
                                             {% endfor %}
                                         </select>
                                     </div>
@@ -1536,7 +2370,10 @@
                                     <div class="compact-form-group">
                                         <label for="refFrom">Reference From</label>
                                         <div class="select-search-container" id="refFromContainer">
-                                            <input type="text" class="select-search-input" id="refFromSearch" placeholder="Search or select reference..." readonly value="{{ lead.refFrom }}">
+                                            <input type="text" class="select-search-input" id="refFromSearch" 
+                                                   placeholder="Search or select reference..." 
+                                                   readonly
+                                                   value="{{ lead_data.refFrom|default:'' }}">
                                             <i class="fas fa-times select-clear-icon" id="refFromClear"></i>
                                             <i class="fas fa-chevron-down select-search-icon"></i>
                                             <div class="select-options" id="refFromOptions"></div>
@@ -1544,7 +2381,7 @@
                                         <select id="refFrom" name="refFrom" style="display: none;">
                                             <option value="">Select Reference</option>
                                             {% for ref in references %}
-                                            <option value="{{ ref.ref_name }}" {% if lead.refFrom == ref.ref_name %}selected{% endif %}>{{ ref.ref_name }}</option>
+                                            <option value="{{ ref.ref_name }}" {% if lead_data.refFrom == ref.ref_name %}selected{% endif %}>{{ ref.ref_name }}</option>
                                             {% empty %}
                                             {% endfor %}
                                         </select>
@@ -1556,53 +2393,51 @@
         <option value="">-- Select Active User --</option>
         {% for user in active_users %}
             <option value="{{ user.id }}" 
-                {% if lead.marketedBy == user.id|stringformat:"s" or lead.marketedBy == user.id %}selected{% endif %}>
-                {% if user.first_name or user.last_name %}
-                    {{ user.first_name }} {{ user.last_name }}
-                {% else %}
-                    {{ user.username }}
-                {% endif %}
+                    {% if lead_data.marketedBy == user.id|stringformat:"s" or lead_data.marketedBy == user.id %}selected{% endif %}>
+                {{ user.name }}
             </option>
         {% endfor %}
     </select>
-    {% if marketed_by_name %}
-    <small style="color: #666; font-size: 11px; margin-top: 2px; display: block;">
-        Current: {{ marketed_by_name }}
-    </small>
-    {% endif %}
 </div>
                                     
-                                    <!-- Campaign Details Field -->
+                                    <!-- CAMPAIGN DETAILS FIELD WITH DISPLAY -->
                                     <div class="compact-form-group">
-    <label for="campaign">Campaign Details</label>
-    {% if campaigns %}
-        <select id="campaign" name="Campaign">
-            <option value="">Select Campaign</option>
-            {% for campaign in campaigns %}
-                <option value="{{ campaign.name }}" 
-                    {% if campaign_name == campaign.name %}selected{% endif %}>
-                    {{ campaign.name }}
-                </option>
-            {% endfor %}
-        </select>
-    {% else %}
-        <input type="text" id="campaign" name="Campaign" placeholder="Enter campaign details" value="{{ campaign_name }}">
-    {% endif %}
-    {% if campaign_name %}
-    <small style="color: #666; font-size: 11px; margin-top: 2px; display: block;">
-        Current: {{ campaign_name }}
-    </small>
-    {% endif %}
-</div>
+                                        <label for="campaign">Campaign Details 
+                                            <span class="campaign-badge"></span>
+                                        </label>
+                                        
+                                        <select id="campaign" name="campaign" class="form-control" onchange="displayCampaignDetails(this)">
+                                            <option value="">-- Select Campaign --</option>
+                                            {% for campaign in campaigns %}
+                                                <option value="{{ campaign.campaign_unique_id }}"
+                                                        data-id="{{ campaign.campaign_unique_id }}"
+                                                        data-name="{{ campaign.campaign_name }}"
+                                                        data-software="{{ campaign.software_name }}"
+                                                        data-leads="{{ campaign.total_leads|default:0 }}"
+                                                        {% if lead_data.campaign == campaign.campaign_unique_id %}selected{% endif %}>
+                                                    {{ campaign.campaign_unique_id }} - {{ campaign.campaign_name }}
+                                                    {% if campaign.software_name %} ({{ campaign.software_name }}){% endif %}
+                                                </option>
+                                            {% empty %}
+                                                <option value="">No campaigns available</option>
+                                            {% endfor %}
+                                        </select>
+                                        
+                                        {% if campaigns %}
+                                            <small class="text-muted" style="display: block; margin-top: 4px;">
+                                                Select from {{ campaigns|length }} available campaigns
+                                            </small>
+                                        {% endif %}
+                                    </div>
                                     
                                     <div class="compact-form-group">
                                         <label for="Consultant">Consultant</label>
-                                        <input type="text" id="Consultant" name="Consultant" placeholder="Enter consultant name" value="{{ lead.Consultant }}">
+                                        <input type="text" id="Consultant" name="Consultant" placeholder="Enter consultant name" value="{{ lead_data.Consultant }}">
                                     </div>
                                     
                                     <div class="compact-form-group">
                                         <label for="details">Notes</label>
-                                        <textarea id="details" name="details" placeholder="Enter details" rows="3">{{ lead.details }}</textarea>
+                                        <input type="text" id="details" name="details" placeholder="Enter details" value="{{ lead_data.details }}">
                                     </div>
                                 </div>
                             </div>
@@ -1616,13 +2451,10 @@
                                     <i class="fas fa-save"></i>
                                     &nbsp; Update Lead
                                 </button>
-                                <!-- <button type="button" class="clear-btn" id="clearFormBtn">
-                                    <i class="fas fa-eraser"></i>
-                                    &nbsp; Reset Changes
-                                </button> -->
+                                
                                 <button type="button" class="reset-btn" onclick="window.location.href='{% url 'app5:lead_report' %}'">
                                     <i class="fas fa-arrow-left"></i>
-                                    &nbsp; Back to Leads
+                                    &nbsp; Back to List
                                 </button>
                             </div>
                         </form>
@@ -1636,11 +2468,11 @@
     <div id="updateModal" class="modal">
         <div class="modal-content">
             <h3>Confirm Update</h3>
-            <p>Are you sure you want to update this lead?</p>
+            <p>Are you sure you want to update this lead? This will create a history record.</p>
             
             <div class="modal-buttons">
                 <button type="button" id="confirmUpdateBtn" class="modal-btn self-assign-btn">
-                    <i class="fas fa-check"></i> Yes, Update
+                    <i class="fas fa-check"></i> Confirm Update
                 </button>
                 <button type="button" id="cancelUpdateBtn" class="modal-btn unassign-btn">
                     <i class="fas fa-times"></i> Cancel
@@ -1649,997 +2481,1976 @@
         </div>
     </div>
 
-  <script>
-document.addEventListener('DOMContentLoaded', function() {
-    
-    // Set today's date as default if no date is set
-    const dateField = document.getElementById('date');
-    if (!dateField.value) {
-        const today = new Date().toISOString().split('T')[0];
-        dateField.value = today;
-    }
-    
-    // Toggle functionality for Individual/Business
-    const customerTypeToggle = document.getElementById('customerTypeToggle');
-    const businessFields = document.querySelector('.business-fields');
-    const individualFields = document.querySelector('.individual-fields');
-    
-    // Modal elements
-    const updateModal = document.getElementById('updateModal');
-    const confirmUpdateBtn = document.getElementById('confirmUpdateBtn');
-    const cancelUpdateBtn = document.getElementById('cancelUpdateBtn');
-    
-    // Pagination elements
-    const prevPageBtn = document.getElementById('prevPage');
-    const nextPageBtn = document.getElementById('nextPage');
-    const paginationNumbers = document.getElementById('paginationNumbers');
-    const paginationInfo = document.getElementById('paginationInfo');
-    
-    // Clear button element
-    const clearFormBtn = document.getElementById('clearFormBtn');
-    
-    // Pagination configuration
-    const itemsPerPage = 10;
-    let currentPage = 1;
-    let totalPages = 1;
-    let currentItems = [];
-    let filteredItems = [];
-    
-    // Searchable Select Variables
-    let isRefFromOpen = false;
-    let currentRefFromIndex = -1;
-    
-    // Create lookup maps for marketedBy and branch
-    const marketedByMap = {
-        {% for user in active_users %}
-        "{{ user.id }}": "{{ user.name|escapejs }}",
-        {% endfor %}
-    };
+    <!-- Auto-fill Notification -->
+    <div id="autoFillNotification" class="auto-fill-notification">
+        <button class="close-btn" onclick="closeAutoFillNotification()">
+            <i class="fas fa-times"></i>
+        </button>
+        <div id="autoFillMessage"></div>
+    </div>
 
-    const branchMap = {
-        {% for department in departments %}
-        "{{ department.id }}": "{{ department.name|escapejs }}",
-        {% endfor %}
-    };
-
-    const campaignMap = {
-        {% for campaign in campaigns %}
-        "{{ campaign.name|escapejs }}": "{{ campaign.name|escapejs }}",
-        {% endfor %}
-    };
-
-    // Lead data - created on server side via template earlier (active_leads_data)
-    const leads = [
-        {% for lead in active_leads_data %}
-        {
-            id: {{ lead.id }},
-            ownerName: "{{ lead.ownerName|escapejs }}",
-            phoneNo: "{{ lead.phoneNo|escapejs }}",
-            email: "{{ lead.email|escapejs }}",
-            ticketNo: "{{ lead.ticket_number|escapejs }}",
-            date: "{{ lead.date|date:'Y-m-d'|escapejs }}",
-            status: "{{ lead.status|escapejs }}",
-            priority: "{{ lead.priority|default:'Medium'|escapejs }}",
-            customerType: "{{ lead.customerType|escapejs }}",
-            name: "{{ lead.name|escapejs }}",
-            address: "{{ lead.address|escapejs }}",
-            place: "{{ lead.place|escapejs }}",
-            District: "{{ lead.District|escapejs }}",
-            State: "{{ lead.State|escapejs }}",
-            pinCode: "{{ lead.pinCode|escapejs }}",
-            firstName: "{{ lead.firstName|escapejs }}",
-            individualAddress: "{{ lead.individualAddress|escapejs }}",
-            individualPlace: "{{ lead.individualPlace|escapejs }}",
-            individualDistrict: "{{ lead.individualDistrict|escapejs }}",
-            individualState: "{{ lead.individualState|escapejs }}",
-            individualPinCode: "{{ lead.individualPinCode|escapejs }}",
-            refFrom: "{{ lead.refFrom|escapejs }}",
-            business: "{{ lead.business|escapejs }}",
-            campaign: "{{ lead.campaign|default:''|escapejs }}",
-            marketedBy: "{{ lead.marketedBy|escapejs }}",
-            Consultant: "{{ lead.Consultant|escapejs }}",
-            requirement: "{{ lead.requirement|escapejs }}",
-            details: "{{ lead.details|escapejs }}",
-            // Add the actual names for display
-            marketedByName: "{{ lead.marketed_by_name|default:lead.marketedBy|escapejs }}",
-            branchName: "{{ lead.branch_name|default:lead.requirement|escapejs }}",
-            campaignName: "{{ lead.campaign_name|default:lead.campaign|default:''|escapejs }}"
-        }{% if not forloop.last %},{% endif %}
-        {% endfor %}
-    ];
-
-    // Employee data
-    const employees = [
-        {% for u in active_users %}
-        {
-            id: {{ u.id }},
-            name: "{{ u.name|escapejs }}",
-            department: "{{ u.department|escapejs }}",
-            designation: "{{ u.designation|escapejs }}"
-        }{% if not forloop.last %},{% endif %}
-        {% endfor %}
-    ];
-
-    // ========== INITIALIZATION FUNCTIONS ==========
-
-    /**
-     * Initialize all functionality
-     */
-    function initializeApp() {
-        initializeToggle();
-        setupDirectoryTabs();
-        setupDirectorySearch();
-        setupPriorityFilter();
-        initializePagination();
-        setupEventListeners();
-        initializeSearchableSelect();
-        
-        // Highlight current lead in directory
-        highlightCurrentLead();
-        
-        console.log('✅ Lead Edit System initialized successfully');
-        console.log('📊 Total leads:', leads.length);
-        console.log('👥 Total employees:', employees.length);
-        console.log('🎯 Campaigns available:', Object.keys(campaignMap).length);
-        
-        // Debug information
-        console.log('🔧 Current lead data:', {
-            id: "{{ lead.id }}",
-            branch: "{{ lead.requirement }}",
-            branchName: "{{ lead.branch_name }}",
-            marketedBy: "{{ lead.marketedBy }}",
-            marketedByName: "{{ lead.marketed_by_name }}",
-            campaign: "{{ lead.campaign }}",
-            campaignName: "{{ lead.campaign_name }}"
-        });
-    }
-
-    /**
-     * Highlight the current lead being edited in the directory
-     */
-    function highlightCurrentLead() {
-        const currentLeadId = "{{ lead.id }}";
-        if (currentLeadId) {
-            const leadItem = document.querySelector(`.lead-item[data-id="${currentLeadId}"]`);
-            if (leadItem) {
-                leadItem.classList.add('selected');
-                leadItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set today's date as default if not already set
+            const today = new Date().toISOString().split('T')[0];
+            const dateField = document.getElementById('date');
+            if (dateField && !dateField.value) {
+                dateField.value = today;
             }
-        }
-    }
-
-    /**
-     * Initialize searchable select for Reference From field
-     */
-    function initializeSearchableSelect() {
-        const refFromSelect = document.getElementById('refFrom');
-        const refFromSearch = document.getElementById('refFromSearch');
-        const refFromOptions = document.getElementById('refFromOptions');
-        const refFromClear = document.getElementById('refFromClear');
-        
-        if (!refFromSelect || !refFromSearch || !refFromOptions) return;
-
-        // Get all options from original select
-        const originalOptions = Array.from(refFromSelect.options);
-        
-        // Populate options
-        function populateOptions(filter = '') {
-            refFromOptions.innerHTML = '';
             
-            const filteredOptions = originalOptions.filter(option => 
-                option.text.toLowerCase().includes(filter.toLowerCase())
-            );
+            // Toggle functionality for Individual/Business
+            const customerTypeToggle = document.getElementById('customerTypeToggle');
+            const businessFields = document.querySelector('.business-fields');
+            const individualFields = document.querySelector('.individual-fields');
             
-            filteredOptions.forEach((option, index) => {
-                if (option.value === '') return; // Skip empty option
+            // Modal elements
+            const updateModal = document.getElementById('updateModal');
+            const confirmUpdateBtn = document.getElementById('confirmUpdateBtn');
+            const cancelUpdateBtn = document.getElementById('cancelUpdateBtn');
+            const assignmentTypeField = document.getElementById('assignmentType');
+            
+            // Pagination elements
+            const prevPageBtn = document.getElementById('prevPage');
+            const nextPageBtn = document.getElementById('nextPage');
+            const paginationNumbers = document.getElementById('paginationNumbers');
+            const paginationInfo = document.getElementById('paginationInfo');
+            
+            // API elements
+            const apiStatus = document.getElementById('apiStatus');
+            const apiRefreshBtn = document.getElementById('apiRefreshBtn');
+            const apiCountElement = document.querySelector('.api-count');
+            const autoFillNotification = document.getElementById('autoFillNotification');
+            const autoFillMessage = document.getElementById('autoFillMessage');
+            
+            // Pagination configuration
+            const itemsPerPage = 10;
+            let currentPage = 1;
+            let totalPages = 1;
+            let currentItems = [];
+            let filteredItems = [];
+            
+            // Searchable Select Variables
+            let isRefFromOpen = false;
+            let currentRefFromIndex = -1;
+            
+            // Firm Name searchable select Variables
+            let isFirmNameOpen = false;
+            let currentFirmNameIndex = -1;
+            
+            // API Customer Tooltip
+            let apiCustomerTooltip = null;
+            
+            // Create lookup maps for marketedBy and branch
+            const marketedByMap = {
+                {% for user in active_users %}
+                "{{ user.id }}": "{{ user.name|escapejs }}",
+                {% endfor %}
+            };
+
+            const branchMap = {
+                {% for department in departments %}
+                "{{ department.id }}": "{{ department.name|escapejs }}",
+                {% endfor %}
+            };
+
+            // Existing firms data
+            const existingFirms = [
+                {% for firm in existing_firms %}
+                "{{ firm|escapejs }}",
+                {% empty %}
+                "ABC Corporation",
+                "XYZ Enterprises",
+                "Global Solutions Ltd",
+                "Tech Innovators Inc",
+                "Prime Services Co",
+                "Sunrise Industries",
+                "Oceanic Enterprises",
+                "Mountain View Inc",
+                "Valley Tech Solutions",
+                "City Manufacturing Ltd"
+                {% endfor %}
+            ];
+
+            // Campaign data map with complete structure
+            const campaignMap = {};
+            {% for campaign in campaigns %}
+                {% if campaign.campaign_unique_id %}
+                    campaignMap["{{ campaign.campaign_unique_id|escapejs }}"] = {
+                        id: "{{ campaign.campaign_unique_id|escapejs }}",
+                        name: "{{ campaign.campaign_name|escapejs }}",
+                        software: "{{ campaign.software_name|escapejs|default:'' }}",
+                        leads: "{{ campaign.total_leads|default:0|escapejs }}"
+                    };
+                {% endif %}
+            {% endfor %}
+
+            // Lead data
+            const leads = [
+                {% for lead in active_leads_data %}
+                {
+                    id: {{ lead.id }},
+                    ownerName: "{{ lead.ownerName|escapejs }}",
+                    phoneNo: "{{ lead.phoneNo|escapejs }}",
+                    email: "{{ lead.email|escapejs }}",
+                    ticketNo: "{{ lead.ticket_number|escapejs }}",
+                    date: "{{ lead.date|date:'Y-m-d'|escapejs }}",
+                    createdAt: "{{ lead.created_at|date:'Y-m-d'|escapejs }}",
+                    createdTime: "{{ lead.created_at|time:'H:i'|escapejs }}",
+                    status: "{{ lead.status|escapejs }}",
+                    priority: "{{ lead.priority|default:'Medium'|escapejs }}",
+                    customerType: "{{ lead.customerType|escapejs }}",
+                    name: "{{ lead.name|escapejs }}",
+                    address: "{{ lead.address|escapejs }}",
+                    place: "{{ lead.place|escapejs }}",
+                    District: "{{ lead.District|escapejs }}",
+                    State: "{{ lead.State|escapejs }}",
+                    pinCode: "{{ lead.pinCode|escapejs }}",
+                    firstName: "{{ lead.firstName|escapejs }}",
+                    individualAddress: "{{ lead.individualAddress|escapejs }}",
+                    individualPlace: "{{ lead.individualPlace|escapejs }}",
+                    individualDistrict: "{{ lead.individualDistrict|escapejs }}",
+                    individualState: "{{ lead.individualState|escapejs }}",
+                    individualPinCode: "{{ lead.individualPinCode|escapejs }}",
+                    refFrom: "{{ lead.refFrom|escapejs }}",
+                    business: "{{ lead.business|escapejs }}",
+                    campaign: "{{ lead.campaign|default:''|escapejs }}",
+                    campaign_display: "{{ lead.campaign_display|default:''|escapejs }}",
+                    marketedBy: "{{ lead.marketedBy|escapejs }}",
+                    Consultant: "{{ lead.Consultant|escapejs }}",
+                    requirement: "{{ lead.requirement|escapejs }}",
+                    details: "{{ lead.details|escapejs }}",
+                    marketedByName: "{{ lead.marketed_by_name|default:lead.marketedBy|escapejs }}",
+                    branchName: "{{ lead.branch_name|default:lead.requirement|escapejs }}",
+                    campaignName: "{{ lead.campaign_display|default:lead.campaign|default:''|escapejs }}"
+                }{% if not forloop.last %},{% endif %}
+                {% endfor %}
+            ];
+
+            // Employee data
+            const employees = [
+                {% for u in active_users %}
+                {
+                    id: {{ u.id }},
+                    name: "{{ u.name|escapejs }}",
+                    department: "{{ u.department|escapejs }}",
+                    designation: "{{ u.designation|escapejs }}"
+                }{% if not forloop.last %},{% endif %}
+                {% endfor %}
+            ];
+
+            // API Customer Data - With robust error handling
+            let apiCustomerData = [];
+            try {
+                apiCustomerData = [
+                    {% for customer in api_customer_data %}
+                    {
+                        code: "{{ customer.code|escapejs }}",
+                        name: "{{ customer.name|escapejs }}",
+                        address: "{{ customer.address|escapejs }}",
+                        address3: "{{ customer.address3|escapejs }}",
+                        branch: "{{ customer.branch|escapejs }}",
+                        district: "{{ customer.district|escapejs }}",
+                        state: "{{ customer.state|escapejs }}",
+                        mobile: "{{ customer.mobile|escapejs }}",
+                        software: "{{ customer.software|escapejs }}",
+                        nature: "{{ customer.nature|escapejs }}",
+                        rout: "{{ customer.rout|escapejs }}",
+                        installationdate: "{{ customer.installationdate|escapejs }}"
+                    }{% if not forloop.last %},{% endif %}
+                    {% endfor %}
+                ];
+            } catch (error) {
+                console.error('Error loading API customer data:', error);
+                apiCustomerData = [];
+            }
+
+            console.log('📡 Edit Mode - Lead ID: {{ lead_data.id }}');
+            console.log('📊 Total leads:', leads.length);
+            console.log('👥 Total employees:', employees.length);
+            console.log('🎯 Campaigns available:', Object.keys(campaignMap).length);
+            console.log('🏢 Existing firms:', existingFirms.length);
+            console.log('📡 API Customers:', apiCustomerData.length);
+
+            // Update API status display
+            function updateApiStatus() {
+                if (apiCustomerData.length > 0) {
+                    apiStatus.className = 'api-status connected';
+                    apiCountElement.textContent = apiCustomerData.length;
+                } else {
+                    apiStatus.className = 'api-status disconnected';
+                    apiCountElement.textContent = '0';
+                }
+            }
+
+            // Debug: Check if current lead exists in leads array
+            const currentLeadId = {{ lead_data.id }};
+            console.log('Current lead ID:', currentLeadId);
+            console.log('Is current lead in leads array?', leads.some(l => l.id == currentLeadId));
+
+            // Initialize API status
+            updateApiStatus();
+
+            // ========== DATE FUNCTIONS ==========
+
+            function formatDateForDisplay(dateString) {
+                if (!dateString) return { short: '', full: '', tooltip: '' };
                 
-                const optionElement = document.createElement('div');
-                optionElement.className = 'select-option';
-                optionElement.textContent = option.text;
-                optionElement.dataset.value = option.value;
-                optionElement.dataset.index = index;
+                try {
+                    const dateObj = new Date(dateString);
+                    if (isNaN(dateObj.getTime())) {
+                        return {
+                            short: dateString,
+                            full: dateString,
+                            tooltip: dateString
+                        };
+                    }
+                    
+                    const short = dateObj.toLocaleDateString('en-GB', {
+                        day: '2-digit',
+                        month: 'short'
+                    });
+                    
+                    const full = dateObj.toLocaleDateString('en-GB', {
+                        day: '2-digit',
+                        month: 'long',
+                        year: 'numeric'
+                    });
+                    
+                    const tooltip = dateObj.toLocaleDateString('en-GB', {
+                        weekday: 'long',
+                        day: '2-digit',
+                        month: 'long',
+                        year: 'numeric'
+                    });
+                    
+                    const time = dateObj.toLocaleTimeString('en-GB', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: true
+                    });
+                    
+                    return {
+                        short: short,
+                        full: full,
+                        tooltip: tooltip,
+                        time: time,
+                        dateObj: dateObj
+                    };
+                } catch (e) {
+                    return {
+                        short: dateString,
+                        full: dateString,
+                        tooltip: dateString
+                    };
+                }
+            }
+            
+            function updateDirectoryDateDisplay() {
+                const now = new Date();
                 
-                optionElement.addEventListener('click', function() {
-                    selectRefFromOption(this);
+                const currentDateDisplay = now.toLocaleDateString('en-GB', {
+                    weekday: 'short',
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric'
                 });
                 
-                refFromOptions.appendChild(optionElement);
-            });
-            
-            if (filteredOptions.length === 0) {
-                const noResults = document.createElement('div');
-                noResults.className = 'no-results-option';
-                noResults.textContent = 'No references found';
-                refFromOptions.appendChild(noResults);
-            }
-            
-            // Reset current index
-            currentRefFromIndex = -1;
-        }
-        
-        // Select reference option
-        function selectRefFromOption(optionElement) {
-            refFromSearch.value = optionElement.textContent;
-            refFromSelect.value = optionElement.dataset.value;
-            
-            // Remove selected class from all options
-            document.querySelectorAll('#refFromOptions .select-option').forEach(opt => {
-                opt.classList.remove('selected');
-            });
-            
-            // Add selected class to current option
-            optionElement.classList.add('selected');
-            
-            // Update clear button visibility
-            updateClearButton();
-            
-            // Close dropdown
-            closeRefFromDropdown();
-        }
-        
-        // Update clear button visibility
-        function updateClearButton() {
-            if (refFromSearch.value) {
-                refFromClear.classList.add('active');
-            } else {
-                refFromClear.classList.remove('active');
-            }
-        }
-        
-        // Open dropdown
-        function openRefFromDropdown() {
-            refFromOptions.classList.add('active');
-            refFromSearch.classList.add('active');
-            refFromSearch.readOnly = false;
-            refFromSearch.focus();
-            isRefFromOpen = true;
-            populateOptions(refFromSearch.value);
-        }
-        
-        // Close dropdown
-        function closeRefFromDropdown() {
-            refFromOptions.classList.remove('active');
-            refFromSearch.classList.remove('active');
-            refFromSearch.readOnly = true;
-            isRefFromOpen = false;
-            currentRefFromIndex = -1;
-        }
-        
-        // Clear selection
-        function clearRefFromSelection() {
-            refFromSearch.value = '';
-            refFromSelect.value = '';
-            updateClearButton();
-            
-            // Remove selected class from all options
-            document.querySelectorAll('#refFromOptions .select-option').forEach(opt => {
-                opt.classList.remove('selected');
-            });
-        }
-        
-        // Initial population
-        populateOptions();
-        updateClearButton();
-        
-        // Event listeners
-        refFromSearch.addEventListener('click', function(e) {
-            e.stopPropagation();
-            openRefFromDropdown();
-        });
-        
-        refFromSearch.addEventListener('input', function() {
-            populateOptions(this.value);
-        });
-        
-        refFromSearch.addEventListener('keydown', function(e) {
-            const options = refFromOptions.querySelectorAll('.select-option');
-            
-            switch(e.key) {
-                case 'ArrowDown':
-                    e.preventDefault();
-                    if (options.length > 0) {
-                        currentRefFromIndex = (currentRefFromIndex + 1) % options.length;
-                        options.forEach(opt => opt.classList.remove('selected'));
-                        options[currentRefFromIndex].classList.add('selected');
-                        options[currentRefFromIndex].scrollIntoView({ block: 'nearest' });
-                    }
-                    break;
-                    
-                case 'ArrowUp':
-                    e.preventDefault();
-                    if (options.length > 0) {
-                        currentRefFromIndex = (currentRefFromIndex - 1 + options.length) % options.length;
-                        options.forEach(opt => opt.classList.remove('selected'));
-                        options[currentRefFromIndex].classList.add('selected');
-                        options[currentRefFromIndex].scrollIntoView({ block: 'nearest' });
-                    }
-                    break;
-                    
-                case 'Enter':
-                    e.preventDefault();
-                    if (currentRefFromIndex >= 0 && options[currentRefFromIndex]) {
-                        selectRefFromOption(options[currentRefFromIndex]);
-                    }
-                    break;
-                    
-                case 'Escape':
-                    closeRefFromDropdown();
-                    break;
-                    
-                case 'Tab':
-                    closeRefFromDropdown();
-                    break;
-            }
-        });
-        
-        refFromClear.addEventListener('click', function(e) {
-            e.stopPropagation();
-            clearRefFromSelection();
-        });
-        
-        // Close dropdown when clicking outside
-        document.addEventListener('click', function(e) {
-            if (!e.target.closest('#refFromContainer')) {
-                closeRefFromDropdown();
-            }
-        });
-        
-        // Set initial value if exists
-        if (refFromSelect.value) {
-            const selectedOption = originalOptions.find(opt => opt.value === refFromSelect.value);
-            if (selectedOption) {
-                refFromSearch.value = selectedOption.text;
-                updateClearButton();
-            }
-        }
-    }
-
-    /**
-     * Set up all event listeners
-     */
-    function setupEventListeners() {
-        // Clear form functionality
-        clearFormBtn.addEventListener('click', handleResetForm);
-        
-        // Pagination button event listeners
-        prevPageBtn.addEventListener('click', goToPreviousPage);
-        nextPageBtn.addEventListener('click', goToNextPage);
-        
-        // Customer type toggle
-        customerTypeToggle.addEventListener('change', initializeToggle);
-        
-        // Update modal handlers
-        confirmUpdateBtn.addEventListener('click', handleConfirmUpdate);
-        cancelUpdateBtn.addEventListener('click', hideUpdateModal);
-        updateModal.addEventListener('click', handleModalClickOutside);
-        
-        // Form submission
-        const form = document.getElementById('customerForm');
-        form.addEventListener('submit', handleFormSubmit);
-        
-        // Real-time validation
-        document.querySelectorAll('input[required], select[required]').forEach(field => {
-            field.addEventListener('blur', handleFieldValidation);
-        });
-    }
-
-    // ========== FORM MANAGEMENT ==========
-
-    /**
-     * Handle reset form button click
-     */
-    function handleResetForm() {
-        if (confirm('Are you sure you want to reset all changes?')) {
-            resetForm();
-        }
-    }
-
-    /**
-     * Reset form to original values
-     */
-    function resetForm() {
-        // Reload the page to reset all form values
-        window.location.reload();
-    }
-
-    /**
-     * Initialize customer type toggle functionality
-     */
-    function initializeToggle() {
-        if (customerTypeToggle.checked) {
-            // Business mode
-            businessFields.style.display = 'block';
-            individualFields.style.display = 'none';
-            
-            document.querySelectorAll('.business-fields [required]').forEach(field => {
-                field.required = true;
-            });
-            document.querySelectorAll('.individual-fields [required]').forEach(field => {
-                field.required = false;
-            });
-        } else {
-            // Individual mode
-            businessFields.style.display = 'none';
-            individualFields.style.display = 'block';
-            
-            document.querySelectorAll('.business-fields [required]').forEach(field => {
-                field.required = false;
-            });
-            document.querySelectorAll('.individual-fields [required]').forEach(field => {
-                field.required = true;
-            });
-        }
-    }
-
-    // ========== VALIDATION & SUBMISSION ==========
-
-    /**
-     * Handle form field validation on blur
-     */
-    function handleFieldValidation() {
-        if (!this.value.trim() && this.hasAttribute('required')) {
-            this.style.borderColor = 'red';
-        } else {
-            this.style.borderColor = '#ddd';
-        }
-    }
-
-    /**
-     * Validate form before submission
-     */
-    function validateForm() {
-        let isValid = true;
-        const isBusiness = customerTypeToggle.checked;
-
-        // Clear previous error styles
-        document.querySelectorAll('input, select').forEach(field => {
-            field.style.borderColor = '#ddd';
-        });
-
-        // Basic validation - Communication Details
-        const requiredBasic = ['ownerName', 'phoneNo', 'status', 'priority'];
-        requiredBasic.forEach(fieldId => {
-            const field = document.getElementById(fieldId);
-            if (!field.value.trim()) {
-                isValid = false;
-                field.style.borderColor = 'red';
-                if (isValid) { // Only scroll to first error
-                    field.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                const timeDisplay = now.toLocaleTimeString('en-GB', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true
+                });
+                
+                const todayDisplay = now.toLocaleDateString('en-GB', {
+                    day: '2-digit',
+                    month: 'short'
+                });
+                
+                const currentDateElement = document.getElementById('currentDate');
+                const todayDateElement = document.getElementById('todayDate');
+                
+                if (currentDateElement) {
+                    currentDateElement.innerHTML = `<i class="far fa-calendar-alt"></i> ${currentDateDisplay}`;
+                }
+                
+                if (todayDateElement) {
+                    todayDateElement.innerHTML = `<i class="far fa-clock"></i> ${todayDisplay} ${timeDisplay}`;
                 }
             }
-        });
+            
+            function initializeDateDisplay() {
+                updateDirectoryDateDisplay();
+                setInterval(updateDirectoryDateDisplay, 60000);
+            }
 
-        // Customer type specific validation
-        if (isBusiness) {
-            const requiredBusiness = ['name', 'place', 'pinCode'];
-            requiredBusiness.forEach(fieldId => {
-                const field = document.getElementById(fieldId);
-                if (!field.value.trim()) {
-                    isValid = false;
-                    field.style.borderColor = 'red';
+            // ========== TIME ELAPSED FUNCTIONS ==========
+
+            function updateAllTimeElapsedBadges() {
+                const timeElapsedBadges = document.querySelectorAll('.time-elapsed-badge');
+                const now = new Date();
+                
+                timeElapsedBadges.forEach(badge => {
+                    const createdDateStr = badge.getAttribute('data-created');
+                    const elapsedText = badge.querySelector('.elapsed-text');
+                    
+                    if (!createdDateStr || !elapsedText) return;
+                    
+                    try {
+                        const createdDate = new Date(createdDateStr);
+                        
+                        // Check if date is valid
+                        if (isNaN(createdDate.getTime())) {
+                            elapsedText.textContent = 'Invalid date';
+                            badge.className = 'time-elapsed-badge time-old';
+                            return;
+                        }
+                        
+                        const diffMs = now - createdDate;
+                        const diffSeconds = Math.floor(diffMs / 1000);
+                        const diffMinutes = Math.floor(diffSeconds / 60);
+                        const diffHours = Math.floor(diffMinutes / 60);
+                        const diffDays = Math.floor(diffHours / 24);
+                        
+                        let elapsedTextValue = '';
+                        let badgeClass = 'time-elapsed-badge';
+                        
+                        // Determine time elapsed and badge class
+                        if (diffDays > 0) {
+                            if (diffDays === 1) elapsedTextValue = '1 day ago';
+                            else if (diffDays < 7) elapsedTextValue = `${diffDays} days ago`;
+                            else if (diffDays < 30) elapsedTextValue = `${Math.floor(diffDays / 7)} week${Math.floor(diffDays / 7) > 1 ? 's' : ''} ago`;
+                            else if (diffDays < 365) elapsedTextValue = `${Math.floor(diffDays / 30)} month${Math.floor(diffDays / 30) > 1 ? 's' : ''} ago`;
+                            else elapsedTextValue = `${Math.floor(diffDays / 365)} year${Math.floor(diffDays / 365) > 1 ? 's' : ''} ago`;
+                            
+                            // Color coding based on age
+                            if (diffDays < 1) {
+                                badgeClass += ' time-recent';
+                            } else if (diffDays < 3) {
+                                badgeClass += ' time-medium';
+                            } else {
+                                badgeClass += ' time-old';
+                            }
+                        } else if (diffHours > 0) {
+                            if (diffHours === 1) elapsedTextValue = '1 hour ago';
+                            else elapsedTextValue = `${diffHours} hours ago`;
+                            badgeClass += ' time-recent';
+                        } else if (diffMinutes > 0) {
+                            if (diffMinutes === 1) elapsedTextValue = '1 minute ago';
+                            else if (diffMinutes < 60) elapsedTextValue = `${diffMinutes} minutes ago`;
+                            else elapsedTextValue = '1 hour ago';
+                            badgeClass += ' time-recent';
+                        } else if (diffSeconds > 30) {
+                            elapsedTextValue = `${diffSeconds} seconds ago`;
+                            badgeClass += ' time-recent';
+                        } else {
+                            elapsedTextValue = 'Just now';
+                            badgeClass += ' time-recent';
+                        }
+                        
+                        elapsedText.textContent = elapsedTextValue;
+                        badge.className = badgeClass;
+                        badge.style.display = 'inline-flex';
+                        
+                    } catch (e) {
+                        console.error('Error calculating time elapsed:', e);
+                        elapsedText.textContent = 'Date error';
+                        badge.className = 'time-elapsed-badge time-old';
+                        badge.style.display = 'inline-flex';
+                    }
+                });
+            }
+
+            // ========== API CUSTOMER SEARCH FUNCTIONS ==========
+
+            function initializeFirmNameSearch() {
+                const firmNameInput = document.getElementById('name');
+                const firmNameSearch = document.getElementById('nameSearch');
+                const firmNameOptions = document.getElementById('firmNameOptions');
+                const firmNameClear = document.getElementById('firmNameClear');
+                
+                if (!firmNameInput || !firmNameSearch || !firmNameOptions) return;
+
+                const allFirms = [...new Set([...existingFirms, ...apiCustomerData.map(c => c.name)])];
+                
+                const firmDataMap = {};
+                apiCustomerData.forEach(customer => {
+                    firmDataMap[customer.name] = customer;
+                });
+
+                function populateFirmNameOptions(filter = '') {
+                    firmNameOptions.innerHTML = '';
+                    
+                    let filteredOptions = allFirms.filter(firm => 
+                        firm && firm.toLowerCase().includes(filter.toLowerCase())
+                    );
+                    
+                    filteredOptions.sort((a, b) => {
+                        const aExact = a.toLowerCase() === filter.toLowerCase();
+                        const bExact = b.toLowerCase() === filter.toLowerCase();
+                        if (aExact && !bExact) return -1;
+                        if (!aExact && bExact) return 1;
+                        return a.localeCompare(b);
+                    });
+                    
+                    filteredOptions.forEach((firm, index) => {
+                        const optionElement = document.createElement('div');
+                        optionElement.className = 'select-option';
+                        
+                        const isFromAPI = firmDataMap[firm];
+                        
+                        let optionContent = firm;
+                        if (isFromAPI) {
+                            optionContent = `
+                                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                                    <span>
+                                        <i class="fas fa-database" style="color: #4a6fdc; font-size: 11px; margin-right: 5px;"></i>
+                                        ${firm}
+                                    </span>
+                                    <span class="campaign-badge" style="background:white; font-size: 10px; padding: 1px 6px;">
+                                        API
+                                    </span>
+                                </div>
+                            `;
+                        }
+                        
+                        optionElement.innerHTML = optionContent;
+                        optionElement.dataset.value = firm;
+                        optionElement.dataset.index = index;
+                        optionElement.dataset.isApi = isFromAPI ? 'true' : 'false';
+                        
+                        optionElement.addEventListener('click', function() {
+                            selectFirmNameOption(this, false);
+                            
+                            if (isFromAPI) {
+                                showApiCustomerDetails(firmDataMap[firm]);
+                                autoFillFromApiCustomer(firmDataMap[firm]);
+                            } else {
+                                closeApiCustomerDetails();
+                            }
+                        });
+                        
+                        if (isFromAPI) {
+                            optionElement.addEventListener('mouseenter', function() {
+                                const customer = firmDataMap[firm];
+                                showApiCustomerTooltip(this, customer);
+                            });
+                            
+                            optionElement.addEventListener('mouseleave', function() {
+                                hideApiCustomerTooltip();
+                            });
+                        }
+                        
+                        firmNameOptions.appendChild(optionElement);
+                    });
+                    
+                    if (filter && !filteredOptions.some(f => f.toLowerCase() === filter.toLowerCase())) {
+                        const newOption = document.createElement('div');
+                        newOption.className = 'select-option new-firm';
+                        newOption.innerHTML = `
+                            <div style="display: flex; align-items: center;">
+                                <i class="fas fa-plus-circle" style="color: #4CAF50; margin-right: 8px;"></i>
+                                <div>
+                                    <strong>Create new firm:</strong><br>
+                                    <span style="font-size: 12px; color: #666;">"${filter}"</span>
+                                </div>
+                            </div>
+                        `;
+                        newOption.dataset.value = filter;
+                        
+                        newOption.addEventListener('click', function() {
+                            selectFirmNameOption(this, true);
+                            closeApiCustomerDetails();
+                            showAutoFillNotification(`New firm "${filter}" will be created`, 'info');
+                        });
+                        
+                        firmNameOptions.insertBefore(newOption, firmNameOptions.firstChild);
+                    }
+                    
+                    if (filteredOptions.length === 0 && !filter) {
+                        const noResults = document.createElement('div');
+                        noResults.className = 'no-results-option';
+                        noResults.innerHTML = `
+                            <div style="text-align: center; padding: 10px;">
+                                <i class="fas fa-database" style="font-size: 20px; color: #ccc; margin-bottom: 5px;"></i>
+                                <div>No firms found</div>
+                                <small style="color: #999;">API returned ${apiCustomerData.length} customers</small>
+                            </div>
+                        `;
+                        firmNameOptions.appendChild(noResults);
+                    }
+                    
+                    currentFirmNameIndex = -1;
                 }
-            });
-        }
+                
+                function showApiCustomerDetails(customer) {
+                    const detailsDiv = document.getElementById('apiCustomerDetails');
+                    const infoDiv = document.getElementById('apiCustomerInfo');
+                    
+                    let detailsHTML = `
+                        <div style="margin-bottom: 5px;">
+                            <strong><i class="fas fa-building"></i> ${customer.name}</strong>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px; font-size: 11px;">
+                    `;
+                    
+                   
+                    if (customer.mobile) detailsHTML += `<div><i class="fas fa-phone"></i> Mobile: ${customer.mobile}</div>`;
+                    if (customer.branch) detailsHTML += `<div><i class="fas fa-code-branch"></i> Branch: ${customer.branch}</div>`;
+                    
+                    
+                    detailsHTML += '</div>';
+                    
+                    infoDiv.innerHTML = detailsHTML;
+                    detailsDiv.style.display = 'block';
+                    
+                    const badge = document.getElementById('firmSourceBadge');
+                    badge.innerHTML = '<i class="fas fa-database"></i>';
+                    badge.style.background = '#4a6fdc';
+                }
+                
+                function autoFillFromApiCustomer(customer) {
+                    console.log('🔍 Auto-filling form from API customer:', customer.name);
+                    
+                    const fieldMappings = {
+                        'address': customer.address,
+                        'address3': customer.address3,
+                        'place': customer.address3 || customer.address,
+                        'District': customer.district,
+                        'State': customer.state,
+                        'phoneNo': customer.mobile || customer.phoneNo || '',
+                        'business': customer.nature,
+                        'software': customer.software,
+                        'branch': customer.branch,
+                    };
+                    
+                    let filledCount = 0;
+                    
+                    Object.entries(fieldMappings).forEach(([fieldId, value]) => {
+                        if (value && value.trim()) {
+                            const field = document.getElementById(fieldId);
+                            if (field) {
+                                const oldValue = field.value;
+                                field.value = value.trim();
+                                
+                                // Only count if value actually changed
+                                if (oldValue !== field.value) {
+                                    filledCount++;
+                                }
+                                
+                                field.dispatchEvent(new Event('change', { bubbles: true }));
+                                
+                                if (field.tagName === 'SELECT') {
+                                    for (let option of field.options) {
+                                        if (option.value.toLowerCase() === value.trim().toLowerCase() || 
+                                            option.text.toLowerCase() === value.trim().toLowerCase()) {
+                                            option.selected = true;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                    
+                    // Handle business nature
+                    if (customer.nature && customer.nature.trim()) {
+                        const businessField = document.getElementById('business');
+                        if (businessField) {
+                            let found = false;
+                            for (let option of businessField.options) {
+                                if (option.value.toLowerCase() === customer.nature.trim().toLowerCase()) {
+                                    option.selected = true;
+                                    found = true;
+                                    filledCount++;
+                                    break;
+                                }
+                            }
+                            
+                            if (!found) {
+                                for (let option of businessField.options) {
+                                    if (option.text.toLowerCase().includes(customer.nature.trim().toLowerCase())) {
+                                        option.selected = true;
+                                        found = true;
+                                        filledCount++;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Handle branch
+                    if (customer.branch && customer.branch.trim()) {
+                        const requirementField = document.getElementById('requirement');
+                        if (requirementField) {
+                            for (let option of requirementField.options) {
+                                if (option.text.toLowerCase().includes(customer.branch.trim().toLowerCase())) {
+                                    option.selected = true;
+                                    filledCount++;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Handle state
+                    if (customer.state && customer.state.trim()) {
+                        const stateField = document.getElementById('State');
+                        if (stateField) {
+                            for (let option of stateField.options) {
+                                if (option.value.toLowerCase() === customer.state.trim().toLowerCase() || 
+                                    option.text.toLowerCase() === customer.state.trim().toLowerCase()) {
+                                    option.selected = true;
+                                    filledCount++;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Handle district
+                    if (customer.district && customer.district.trim()) {
+                        const districtField = document.getElementById('District');
+                        if (districtField) {
+                            for (let option of districtField.options) {
+                                if (option.value.toLowerCase() === customer.district.trim().toLowerCase() || 
+                                    option.text.toLowerCase() === customer.district.trim().toLowerCase()) {
+                                    option.selected = true;
+                                    filledCount++;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Handle software/consultant
+                    if (customer.software && customer.software.trim()) {
+                        const consultantField = document.getElementById('Consultant');
+                        if (consultantField) {
+                            consultantField.value = customer.software.trim();
+                            filledCount++;
+                        }
+                        
+                        const campaignField = document.getElementById('campaign');
+                        if (campaignField) {
+                            for (let option of campaignField.options) {
+                                if (option.text.toLowerCase().includes(customer.software.trim().toLowerCase())) {
+                                    option.selected = true;
+                                    displayCampaignDetails(campaignField);
+                                    filledCount++;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Handle installation date
+                    if (customer.installationdate) {
+                        const dateField = document.getElementById('date');
+                        if (dateField) {
+                            try {
+                                const date = new Date(customer.installationdate);
+                                if (!isNaN(date.getTime())) {
+                                    const formattedDate = date.toISOString().split('T')[0];
+                                    if (dateField.value !== formattedDate) {
+                                        dateField.value = formattedDate;
+                                        filledCount++;
+                                    }
+                                }
+                            } catch (e) {
+                                console.log('Could not parse installation date:', customer.installationdate);
+                            }
+                        }
+                    }
+                    
+                    highlightFilledFields();
+                    
+                    if (filledCount > 0) {
+                        showAutoFillNotification(`✅ Auto-filled ${filledCount} fields from API customer: ${customer.name}`, 'success');
+                    } else {
+                        showAutoFillNotification(`ℹ️ All fields already filled for: ${customer.name}`, 'info');
+                    }
+                    
+                    console.log(`📝 Auto-filled ${filledCount} fields for ${customer.name}`);
+                }
+                
+                function highlightFilledFields() {
+                    const highlighted = document.querySelectorAll('input, select');
+                    highlighted.forEach(field => {
+                        if (field.value && field.value.trim()) {
+                            field.style.borderColor = '#4CAF50';
+                            field.style.backgroundColor = '#f0fff0';
+                            
+                            setTimeout(() => {
+                                field.style.borderColor = '';
+                                field.style.backgroundColor = '';
+                            }, 3000);
+                        }
+                    });
+                }
+                
+                function closeApiCustomerDetails() {
+                    const detailsDiv = document.getElementById('apiCustomerDetails');
+                    detailsDiv.style.display = 'none';
+                    
+                    const badge = document.getElementById('firmSourceBadge');
+                    badge.innerHTML = '<i class="fas fa-database"></i> ';
+                    badge.style.background = '';
+                }
+                
+                function showApiCustomerTooltip(element, customer) {
+                    if (apiCustomerTooltip) {
+                        apiCustomerTooltip.remove();
+                    }
+                    
+                    apiCustomerTooltip = document.createElement('div');
+                    apiCustomerTooltip.className = 'api-customer-tooltip';
+                    apiCustomerTooltip.style.cssText = `
+                        position: absolute;
+                        background: white;
+                        border: 1px solid #4a6fdc;
+                        border-radius: 6px;
+                        padding: 10px;
+                        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                        z-index: 10000;
+                        max-width: 300px;
+                        font-size: 12px;
+                        pointer-events: none;
+                    `;
+                    
+                    let tooltipHTML = `
+                        <div style="color: #4a6fdc; font-weight: bold; margin-bottom: 5px;">
+                            <i class="fas fa-database"></i> API Customer
+                        </div>
+                        <div style="margin-bottom: 3px;"><strong>${customer.name}</strong></div>
+                    `;
+                    
+                    if (customer.code) tooltipHTML += `<div><small>Code: ${customer.code}</small></div>`;
+                    if (customer.branch) tooltipHTML += `<div><small>Branch: ${customer.branch}</small></div>`;
+                    if (customer.district) tooltipHTML += `<div><small>Location: ${customer.district}, ${customer.state}</small></div>`;
+                    
+                    tooltipHTML += `<div style="margin-top: 5px; color: #666; font-style: italic;">
+                        <small>Click to select and view full details</small>
+                    </div>`;
+                    
+                    apiCustomerTooltip.innerHTML = tooltipHTML;
+                    
+                    const rect = element.getBoundingClientRect();
+                    apiCustomerTooltip.style.top = `${rect.top - apiCustomerTooltip.offsetHeight - 5}px`;
+                    apiCustomerTooltip.style.left = `${rect.left}px`;
+                    
+                    document.body.appendChild(apiCustomerTooltip);
+                }
+                
+                function hideApiCustomerTooltip() {
+                    if (apiCustomerTooltip) {
+                        apiCustomerTooltip.remove();
+                        apiCustomerTooltip = null;
+                    }
+                }
+                
+                function selectFirmNameOption(optionElement, isNew = false) {
+                    const firmValue = optionElement.dataset.value;
+                    firmNameSearch.value = firmValue;
+                    firmNameInput.value = firmValue;
+                    
+                    document.querySelectorAll('#firmNameOptions .select-option').forEach(opt => {
+                        opt.classList.remove('selected');
+                    });
+                    
+                    optionElement.classList.add('selected');
+                    
+                    updateFirmNameClearButton();
+                    
+                    closeFirmNameDropdown();
+                    
+                    if (isNew) {
+                        showAutoFillNotification(`New firm "${firmValue}" will be created`, 'info');
+                        closeApiCustomerDetails();
+                    }
+                    
+                    console.log('Selected firm:', firmValue, 'From API:', optionElement.dataset.isApi === 'true');
+                }
+                
+                function updateFirmNameClearButton() {
+                    if (firmNameSearch.value) {
+                        firmNameClear.classList.add('active');
+                    } else {
+                        firmNameClear.classList.remove('active');
+                    }
+                }
+                
+                function openFirmNameDropdown() {
+                    firmNameOptions.classList.add('active');
+                    firmNameSearch.classList.add('active');
+                    firmNameSearch.readOnly = false;
+                    firmNameSearch.focus();
+                    isFirmNameOpen = true;
+                    populateFirmNameOptions(firmNameSearch.value);
+                }
+                
+                function closeFirmNameDropdown() {
+                    firmNameOptions.classList.remove('active');
+                    firmNameSearch.classList.remove('active');
+                    firmNameSearch.readOnly = true;
+                    isFirmNameOpen = false;
+                    currentFirmNameIndex = -1;
+                    hideApiCustomerTooltip();
+                }
+                
+                function clearFirmNameSelection() {
+                    firmNameSearch.value = '';
+                    firmNameInput.value = '';
+                    updateFirmNameClearButton();
+                    closeApiCustomerDetails();
+                    
+                    document.querySelectorAll('#firmNameOptions .select-option').forEach(opt => {
+                        opt.classList.remove('selected');
+                    });
+                }
+                
+                populateFirmNameOptions();
+                updateFirmNameClearButton();
+                
+                firmNameSearch.placeholder = `Search from ${apiCustomerData.length} API customers or type new firm...`;
+                
+                firmNameSearch.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    openFirmNameDropdown();
+                });
+                
+                firmNameSearch.addEventListener('input', function() {
+                    populateFirmNameOptions(this.value);
+                });
+                
+                firmNameSearch.addEventListener('keydown', function(e) {
+                    const options = firmNameOptions.querySelectorAll('.select-option');
+                    
+                    switch(e.key) {
+                        case 'ArrowDown':
+                            e.preventDefault();
+                            if (options.length > 0) {
+                                currentFirmNameIndex = (currentFirmNameIndex + 1) % options.length;
+                                options.forEach(opt => opt.classList.remove('selected'));
+                                if (currentFirmNameIndex >= 0 && options[currentFirmNameIndex]) {
+                                    options[currentFirmNameIndex].classList.add('selected');
+                                    options[currentFirmNameIndex].scrollIntoView({ block: 'nearest' });
+                                }
+                            }
+                            break;
+                            
+                        case 'ArrowUp':
+                            e.preventDefault();
+                            if (options.length > 0) {
+                                currentFirmNameIndex = (currentFirmNameIndex - 1 + options.length) % options.length;
+                                options.forEach(opt => opt.classList.remove('selected'));
+                                if (currentFirmNameIndex >= 0 && options[currentFirmNameIndex]) {
+                                    options[currentFirmNameIndex].classList.add('selected');
+                                    options[currentFirmNameIndex].scrollIntoView({ block: 'nearest' });
+                                }
+                            }
+                            break;
+                            
+                        case 'Enter':
+                            e.preventDefault();
+                            if (currentFirmNameIndex >= 0 && options[currentFirmNameIndex]) {
+                                const isNew = options[currentFirmNameIndex].classList.contains('new-firm');
+                                selectFirmNameOption(options[currentFirmNameIndex], isNew);
+                            } else if (this.value.trim()) {
+                                const newFirm = this.value.trim();
+                                firmNameInput.value = newFirm;
+                                firmNameSearch.value = newFirm;
+                                updateFirmNameClearButton();
+                                closeFirmNameDropdown();
+                                showAutoFillNotification(`New firm "${newFirm}" will be created`, 'info');
+                                closeApiCustomerDetails();
+                            }
+                            break;
+                            
+                        case 'Escape':
+                            closeFirmNameDropdown();
+                            break;
+                            
+                        case 'Tab':
+                            closeFirmNameDropdown();
+                            break;
+                    }
+                });
+                
+                firmNameClear.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    clearFirmNameSelection();
+                });
+                
+                document.addEventListener('click', function(e) {
+                    if (!e.target.closest('#firmNameContainer')) {
+                        closeFirmNameDropdown();
+                    }
+                });
+                
+                if (firmNameInput.value) {
+                    firmNameSearch.value = firmNameInput.value;
+                    updateFirmNameClearButton();
+                    
+                    const initialCustomer = apiCustomerData.find(c => c.name === firmNameInput.value);
+                    if (initialCustomer) {
+                        showApiCustomerDetails(initialCustomer);
+                    }
+                }
+            }
+            
+            window.closeApiCustomerDetails = function() {
+                const detailsDiv = document.getElementById('apiCustomerDetails');
+                if (detailsDiv) {
+                    detailsDiv.style.display = 'none';
+                }
+                
+                const badge = document.getElementById('firmSourceBadge');
+                if (badge) {
+                    badge.innerHTML = '<i class="fas fa-database"></i> ';
+                    badge.style.background = '';
+                }
+            };
 
-        return isValid;
-    }
+            // ========== API REFRESH FUNCTION ==========
 
-    /**
-     * Handle form submission
-     */
-    function handleFormSubmit(e) {
-        e.preventDefault();
+            async function refreshApiData() {
+                try {
+                    apiRefreshBtn.classList.add('loading');
+                    apiStatus.className = 'api-status loading';
+                    
+                    // Show loading message
+                    const apiLabel = document.querySelector('.api-label');
+                    if (apiLabel) {
+                        const originalText = apiLabel.textContent;
+                        apiLabel.textContent = 'Loading...';
+                        
+                        setTimeout(() => {
+                            // Simulate API refresh (in real implementation, this would be an AJAX call)
+                            console.log('Refreshing API data...');
+                            
+                            // Update status
+                            apiStatus.className = 'api-status connected';
+                            apiCountElement.textContent = apiCustomerData.length;
+                            apiLabel.textContent = 'API Customers';
+                            
+                            apiRefreshBtn.classList.remove('loading');
+                            
+                            showAutoFillNotification('API customer data refreshed successfully', 'success');
+                            
+                        }, 1500);
+                    }
+                    
+                } catch (error) {
+                    console.error('Error refreshing API data:', error);
+                    apiStatus.className = 'api-status disconnected';
+                    apiRefreshBtn.classList.remove('loading');
+                    showAutoFillNotification('Error refreshing API data', 'error');
+                }
+            }
 
-        if (!validateForm()) {
-            showNotification('Please fill in all required fields marked in red.', 'error');
-            return;
-        }
+            // ========== AUTO-FILL NOTIFICATION FUNCTIONS ==========
 
-        showUpdateModal();
-    }
-
-    /**
-     * Submit the form to server
-     */
-    function submitForm() {
-        const submitBtn = document.querySelector('.submit-btn');
-        const originalText = submitBtn.innerHTML;
-
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> &nbsp; Updating...';
-        submitBtn.disabled = true;
-
-        // Submit the form
-        document.getElementById('customerForm').submit();
-
-        // Re-enable button after 5 seconds in case submission fails
-        setTimeout(() => {
-            submitBtn.innerHTML = originalText;
-            submitBtn.disabled = false;
-        }, 5000);
-    }
-
-    // ========== UPDATE MODAL ==========
-
-    /**
-     * Show update confirmation modal
-     */
-    function showUpdateModal() {
-        updateModal.style.display = 'flex';
-    }
-
-    /**
-     * Hide update modal
-     */
-    function hideUpdateModal() {
-        updateModal.style.display = 'none';
-    }
-
-    /**
-     * Handle confirm update
-     */
-    function handleConfirmUpdate() {
-        hideUpdateModal();
-        submitForm();
-    }
-
-    /**
-     * Handle modal click outside
-     */
-    function handleModalClickOutside(e) {
-        if (e.target === updateModal) {
-            hideUpdateModal();
-        }
-    }
-
-    // ========== DIRECTORY & PAGINATION ==========
-
-    /**
-     * Set up directory tabs
-     */
-    function setupDirectoryTabs() {
-        const tabs = document.querySelectorAll('.directory-tab');
-        const employeeList = document.getElementById('employeeList');
-        const leadList = document.getElementById('leadList');
-
-        tabs.forEach(tab => {
-            tab.addEventListener('click', function() {
-                const targetTab = this.getAttribute('data-tab');
-
-                // Update active tab
-                tabs.forEach(t => t.classList.remove('active'));
-                this.classList.add('active');
-
-                // Show/hide appropriate list
-                if (targetTab === 'employees') {
-                    employeeList.classList.add('active');
-                    leadList.classList.remove('active');
-                    document.getElementById('priorityFilterContainer').style.display = 'none';
+            function showAutoFillNotification(message, type = 'info') {
+                autoFillMessage.textContent = message;
+                autoFillNotification.style.display = 'block';
+                
+                // Set color based on type
+                if (type === 'success') {
+                    autoFillNotification.style.borderColor = '#4CAF50';
+                    autoFillNotification.style.background = '#f0fff0';
+                } else if (type === 'error') {
+                    autoFillNotification.style.borderColor = '#f44336';
+                    autoFillNotification.style.background = '#fff0f0';
                 } else {
-                    employeeList.classList.remove('active');
-                    leadList.classList.add('active');
-                    document.getElementById('priorityFilterContainer').style.display = 'block';
+                    autoFillNotification.style.borderColor = '#2196F3';
+                    autoFillNotification.style.background = '#f0f8ff';
+                }
+                
+                // Auto-hide after 5 seconds
+                setTimeout(() => {
+                    closeAutoFillNotification();
+                }, 5000);
+            }
+
+            function closeAutoFillNotification() {
+                autoFillNotification.style.display = 'none';
+            }
+
+            window.closeAutoFillNotification = closeAutoFillNotification;
+
+            // ========== CAMPAIGN DETAILS FUNCTIONS ==========
+
+            function displayCampaignDetails(select) {
+                const box = document.getElementById("campaign-details-box");
+                
+                if (!select.value) {
+                    if (box) box.style.display = "none";
+                    return;
+                }
+                
+                const opt = select.options[select.selectedIndex];
+                const campaignData = campaignMap[select.value];
+                
+                if (!campaignData) {
+                    console.warn('Campaign data not found for ID:', select.value);
+                    if (box) box.style.display = "none";
+                    return;
+                }
+                
+                // Update all detail fields if they exist
+                const cId = document.getElementById("c-id");
+                const cName = document.getElementById("c-name");
+                const cSoftware = document.getElementById("c-software");
+                const cStatus = document.getElementById("c-status");
+                
+                if (cId) cId.textContent = campaignData.id || '-';
+                if (cName) cName.textContent = campaignData.name || '-';
+                if (cSoftware) cSoftware.textContent = campaignData.software || '-';
+                
+                if (cStatus) {
+                    const status = campaignData.status || 'draft';
+                    cStatus.innerHTML = `<span class="status-badge status-${status}">${status.charAt(0).toUpperCase() + status.slice(1)}</span>`;
+                }
+                
+                if (box) box.style.display = "block";
+                
+                console.log('🎯 Selected Campaign:', campaignData);
+            }
+
+            function clearCampaignDetails() {
+                const box = document.getElementById("campaign-details-box");
+                if (box) {
+                    box.style.display = "none";
+                }
+                
+                document.querySelectorAll('#campaign-details-box span[id^="c-"]').forEach(span => {
+                    span.textContent = "-";
+                });
+            }
+
+            // ========== INITIALIZATION FUNCTIONS ==========
+
+            function initializeApp() {
+                initializeToggle();
+                setupDirectoryTabs();
+                setupDirectorySearch();
+                setupPriorityFilter();
+                initializePagination();
+                setupEventListeners();
+                initializeSearchableSelect();
+                initializeFirmNameSearch();
+                initializeDateDisplay();
+                
+                // Setup API refresh button
+                if (apiRefreshBtn) {
+                    apiRefreshBtn.addEventListener('click', refreshApiData);
                 }
 
-                document.getElementById('directorySearch').value = '';
-                document.getElementById('priorityFilter').value = 'all';
-                currentPage = 1;
-                initializePagination();
-            });
-        });
-    }
+                setTimeout(() => {
+                    updateAllTimeElapsedBadges();
+                }, 500);
 
-    /**
-     * Set up directory search functionality
-     */
-    function setupDirectorySearch() {
-        const searchInput = document.getElementById('directorySearch');
-        searchInput.addEventListener('input', function() {
-            const priority = document.getElementById('priorityFilter').value;
-            filterDirectoryItemsByPriorityAndSearch(this.value.toLowerCase(), priority);
-        });
-    }
+                setInterval(updateAllTimeElapsedBadges, 60000);
 
-    /**
-     * Set up priority filter functionality
-     */
-    function setupPriorityFilter() {
-        const priorityFilter = document.getElementById('priorityFilter');
-        
-        priorityFilter.addEventListener('change', function() {
-            filterDirectoryItemsByPriorityAndSearch(
-                document.getElementById('directorySearch').value.toLowerCase(),
-                this.value
-            );
-        });
-    }
+                console.log('✅ Lead Edit System initialized successfully');
+                console.log('📊 Editing Lead ID:', {{ lead_data.id }});
+            }
 
-    /**
-     * Combined filter function for search and priority
-     */
-    function filterDirectoryItemsByPriorityAndSearch(searchTerm, priority) {
-        const activeTab = document.querySelector('.directory-tab.active').getAttribute('data-tab');
-        
-        if (activeTab === 'employees') {
-            currentItems = employees;
-        } else {
-            currentItems = leads;
-        }
-        
-        // Apply search filter
-        if (!searchTerm) {
-            filteredItems = [...currentItems];
-        } else {
-            filteredItems = currentItems.filter(item => {
-                let textContent = '';
+            function initializeSearchableSelect() {
+                const refFromSelect = document.getElementById('refFrom');
+                const refFromSearch = document.getElementById('refFromSearch');
+                const refFromOptions = document.getElementById('refFromOptions');
+                const refFromClear = document.getElementById('refFromClear');
+                
+                if (!refFromSelect || !refFromSearch || !refFromOptions) return;
+
+                const originalOptions = Array.from(refFromSelect.options);
+                
+                function populateOptions(filter = '') {
+                    refFromOptions.innerHTML = '';
+                    
+                    const filteredOptions = originalOptions.filter(option => 
+                        option.text.toLowerCase().includes(filter.toLowerCase())
+                    );
+                    
+                    filteredOptions.forEach((option, index) => {
+                        if (option.value === '') return;
+                        
+                        const optionElement = document.createElement('div');
+                        optionElement.className = 'select-option';
+                        optionElement.textContent = option.text;
+                        optionElement.dataset.value = option.value;
+                        optionElement.dataset.index = index;
+                        
+                        optionElement.addEventListener('click', function() {
+                            selectRefFromOption(this);
+                        });
+                        
+                        refFromOptions.appendChild(optionElement);
+                    });
+                    
+                    if (filteredOptions.length === 0) {
+                        const noResults = document.createElement('div');
+                        noResults.className = 'no-results-option';
+                        noResults.textContent = 'No references found';
+                        refFromOptions.appendChild(noResults);
+                    }
+                    
+                    currentRefFromIndex = -1;
+                }
+                
+                function selectRefFromOption(optionElement) {
+                    refFromSearch.value = optionElement.textContent;
+                    refFromSelect.value = optionElement.dataset.value;
+                    
+                    document.querySelectorAll('#refFromOptions .select-option').forEach(opt => {
+                        opt.classList.remove('selected');
+                    });
+                    
+                    optionElement.classList.add('selected');
+                    
+                    updateClearButton();
+                    
+                    closeRefFromDropdown();
+                    
+                    console.log('Selected reference:', optionElement.textContent, 'Value:', optionElement.dataset.value);
+                }
+                
+                function updateClearButton() {
+                    if (refFromSearch.value) {
+                        refFromClear.classList.add('active');
+                    } else {
+                        refFromClear.classList.remove('active');
+                    }
+                }
+                
+                function openRefFromDropdown() {
+                    refFromOptions.classList.add('active');
+                    refFromSearch.classList.add('active');
+                    refFromSearch.readOnly = false;
+                    refFromSearch.focus();
+                    isRefFromOpen = true;
+                    populateOptions(refFromSearch.value);
+                }
+                
+                function closeRefFromDropdown() {
+                    refFromOptions.classList.remove('active');
+                    refFromSearch.classList.remove('active');
+                    refFromSearch.readOnly = true;
+                    isRefFromOpen = false;
+                    currentRefFromIndex = -1;
+                }
+                
+                function clearRefFromSelection() {
+                    refFromSearch.value = '';
+                    refFromSelect.value = '';
+                    updateClearButton();
+                    
+                    document.querySelectorAll('#refFromOptions .select-option').forEach(opt => {
+                        opt.classList.remove('selected');
+                    });
+                }
+                
+                populateOptions();
+                updateClearButton();
+                
+                refFromSearch.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    openRefFromDropdown();
+                });
+                
+                refFromSearch.addEventListener('input', function() {
+                    populateOptions(this.value);
+                });
+                
+                refFromSearch.addEventListener('keydown', function(e) {
+                    const options = refFromOptions.querySelectorAll('.select-option');
+                    
+                    switch(e.key) {
+                        case 'ArrowDown':
+                            e.preventDefault();
+                            if (options.length > 0) {
+                                currentRefFromIndex = (currentRefFromIndex + 1) % options.length;
+                                options.forEach(opt => opt.classList.remove('selected'));
+                                options[currentRefFromIndex].classList.add('selected');
+                                options[currentRefFromIndex].scrollIntoView({ block: 'nearest' });
+                            }
+                            break;
+                            
+                        case 'ArrowUp':
+                            e.preventDefault();
+                            if (options.length > 0) {
+                                currentRefFromIndex = (currentRefFromIndex - 1 + options.length) % options.length;
+                                options.forEach(opt => opt.classList.remove('selected'));
+                                options[currentRefFromIndex].classList.add('selected');
+                                options[currentRefFromIndex].scrollIntoView({ block: 'nearest' });
+                            }
+                            break;
+                            
+                        case 'Enter':
+                            e.preventDefault();
+                            if (currentRefFromIndex >= 0 && options[currentRefFromIndex]) {
+                                selectRefFromOption(options[currentRefFromIndex]);
+                            }
+                            break;
+                            
+                        case 'Escape':
+                            closeRefFromDropdown();
+                            break;
+                            
+                        case 'Tab':
+                            closeRefFromDropdown();
+                            break;
+                    }
+                });
+                
+                refFromClear.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    clearRefFromSelection();
+                });
+                
+                document.addEventListener('click', function(e) {
+                    if (!e.target.closest('#refFromContainer')) {
+                        closeRefFromDropdown();
+                    }
+                });
+                
+                if (refFromSelect.value) {
+                    const selectedOption = originalOptions.find(opt => opt.value === refFromSelect.value);
+                    if (selectedOption) {
+                        refFromSearch.value = selectedOption.text;
+                        updateClearButton();
+                    }
+                }
+            }
+
+            function setupEventListeners() {
+                prevPageBtn.addEventListener('click', goToPreviousPage);
+                nextPageBtn.addEventListener('click', goToNextPage);
+                
+                customerTypeToggle.addEventListener('change', initializeToggle);
+                
+                confirmUpdateBtn.addEventListener('click', handleConfirmUpdate);
+                cancelUpdateBtn.addEventListener('click', hideUpdateModal);
+                updateModal.addEventListener('click', handleModalClickOutside);
+                
+                const form = document.getElementById('customerForm');
+                form.addEventListener('submit', handleFormSubmit);
+                
+                document.querySelectorAll('input[required], select[required]').forEach(field => {
+                    field.addEventListener('blur', handleFieldValidation);
+                });
+                
+                setupNavigationMenu();
+            }
+
+            // ========== FORM MANAGEMENT ==========
+
+            function initializeToggle() {
+                const isBusinessMode = customerTypeToggle.checked;
+                
+                if (isBusinessMode) {
+                    businessFields.style.display = 'block';
+                    individualFields.style.display = 'none';
+                    
+                    document.querySelectorAll('.business-fields [required]').forEach(field => {
+                        field.required = true;
+                    });
+                    document.querySelectorAll('.individual-fields [required]').forEach(field => {
+                        field.required = false;
+                    });
+                    
+                    const firmNameSearch = document.getElementById('nameSearch');
+                    if (firmNameSearch) {
+                        firmNameSearch.readOnly = false;
+                        firmNameSearch.placeholder = `Search from ${apiCustomerData.length} API customers or type new firm...`;
+                    }
+                    
+                } else {
+                    businessFields.style.display = 'none';
+                    individualFields.style.display = 'block';
+                    
+                    document.querySelectorAll('.business-fields [required]').forEach(field => {
+                        field.required = false;
+                    });
+                    document.querySelectorAll('.individual-fields [required]').forEach(field => {
+                        field.required = true;
+                    });
+                    
+                    const firmNameOptions = document.getElementById('firmNameOptions');
+                    if (firmNameOptions) firmNameOptions.classList.remove('active');
+                    
+                    closeApiCustomerDetails();
+                }
+            }
+
+            // ========== VALIDATION & SUBMISSION ==========
+
+            function handleFieldValidation() {
+                if (!this.value.trim() && this.hasAttribute('required')) {
+                    this.style.borderColor = 'red';
+                } else {
+                    this.style.borderColor = '#ddd';
+                }
+            }
+
+            function validateForm() {
+                let isValid = true;
+                const isBusiness = customerTypeToggle.checked;
+
+                document.querySelectorAll('input, select').forEach(field => {
+                    field.style.borderColor = '#ddd';
+                });
+
+                const requiredBasic = ['ownerName', 'phoneNo', 'status', 'priority'];
+                requiredBasic.forEach(fieldId => {
+                    const field = document.getElementById(fieldId);
+                    if (!field.value.trim()) {
+                        isValid = false;
+                        field.style.borderColor = 'red';
+                        if (isValid) {
+                            field.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                    }
+                });
+
+                if (isBusiness) {
+                    const firmName = document.getElementById('name').value.trim();
+                    const firmNameSearch = document.getElementById('nameSearch').value.trim();
+                    const place = document.getElementById('place');
+                    const pinCode = document.getElementById('pinCode');
+                    
+                    if (!firmName && !firmNameSearch) {
+                        isValid = false;
+                        const firmNameSearchField = document.getElementById('nameSearch');
+                        firmNameSearchField.style.borderColor = 'red';
+                    }
+                    
+                    if (!place.value.trim()) {
+                        isValid = false;
+                        place.style.borderColor = 'red';
+                    }
+                    
+                    if (!pinCode.value.trim()) {
+                        isValid = false;
+                        pinCode.style.borderColor = 'red';
+                    }
+                } else {
+                    const firstName = document.getElementById('firstName');
+                    const individualPlace = document.getElementById('individualPlace');
+                    const individualPinCode = document.getElementById('individualPinCode');
+                    
+                    if (!firstName.value.trim()) {
+                        isValid = false;
+                        firstName.style.borderColor = 'red';
+                    }
+                    
+                    if (!individualPlace.value.trim()) {
+                        isValid = false;
+                        individualPlace.style.borderColor = 'red';
+                    }
+                    
+                    if (!individualPinCode.value.trim()) {
+                        isValid = false;
+                        individualPinCode.style.borderColor = 'red';
+                    }
+                }
+
+                return isValid;
+            }
+
+            function handleFormSubmit(e) {
+                e.preventDefault();
+
+                const firmNameSearch = document.getElementById('nameSearch');
+                const firmNameInput = document.getElementById('name');
+                
+                if (firmNameSearch && firmNameSearch.value && !firmNameInput.value) {
+                    firmNameInput.value = firmNameSearch.value;
+                }
+
+                if (!validateForm()) {
+                    showAutoFillNotification('Please fill in all required fields marked in red.', 'error');
+                    return;
+                }
+
+                showUpdateModal();
+            }
+
+            function showUpdateModal() {
+                updateModal.style.display = 'flex';
+            }
+
+            function hideUpdateModal() {
+                updateModal.style.display = 'none';
+            }
+
+            function handleConfirmUpdate() {
+                // Submit the form
+                document.getElementById('customerForm').submit();
+            }
+
+            function handleModalClickOutside(e) {
+                if (e.target === updateModal) {
+                    hideUpdateModal();
+                }
+            }
+
+            // ========== DIRECTORY & PAGINATION ==========
+
+            function setupDirectoryTabs() {
+                const tabs = document.querySelectorAll('.directory-tab');
+                const employeeList = document.getElementById('employeeList');
+                const leadList = document.getElementById('leadList');
+
+                tabs.forEach(tab => {
+                    tab.addEventListener('click', function() {
+                        const targetTab = this.getAttribute('data-tab');
+
+                        tabs.forEach(t => t.classList.remove('active'));
+                        this.classList.add('active');
+
+                        if (targetTab === 'employees') {
+                            employeeList.classList.add('active');
+                            leadList.classList.remove('active');
+                            document.querySelector('.directory-filter-container').style.display = 'none';
+                        } else {
+                            employeeList.classList.remove('active');
+                            leadList.classList.add('active');
+                            document.querySelector('.directory-filter-container').style.display = 'flex';
+                        }
+
+                        document.getElementById('directorySearch').value = '';
+                        document.getElementById('priorityFilter').value = 'all';
+                        currentPage = 1;
+                        initializePagination();
+                    });
+                });
+            }
+
+            function setupDirectorySearch() {
+                const searchInput = document.getElementById('directorySearch');
+                searchInput.addEventListener('input', function() {
+                    const priority = document.getElementById('priorityFilter').value;
+                    filterDirectoryItemsByPriorityAndSearch(this.value.toLowerCase(), priority);
+                });
+            }
+
+            function setupPriorityFilter() {
+                const priorityFilter = document.getElementById('priorityFilter');
+                
+                priorityFilter.addEventListener('change', function() {
+                    filterDirectoryItemsByPriorityAndSearch(
+                        document.getElementById('directorySearch').value.toLowerCase(),
+                        this.value
+                    );
+                });
+            }
+
+            function filterDirectoryItemsByPriorityAndSearch(searchTerm, priority) {
+                const activeTab = document.querySelector('.directory-tab.active').getAttribute('data-tab');
                 
                 if (activeTab === 'employees') {
-                    textContent = (
-                        item.name.toLowerCase() + ' ' + 
-                        item.department.toLowerCase() + ' ' + 
-                        (item.designation || '').toLowerCase()
-                    );
+                    currentItems = employees;
                 } else {
-                    textContent = (
-                        item.ownerName.toLowerCase() + ' ' + 
-                        item.phoneNo.toLowerCase() + ' ' + 
-                        item.ticketNo.toLowerCase() + ' ' +
-                        (item.priority || '').toLowerCase() + ' ' +
-                        (item.campaign || '').toLowerCase()
-                    );
+                    currentItems = leads;
                 }
                 
-                return textContent.includes(searchTerm);
-            });
-        }
-        
-        // Apply priority filter (only for leads tab)
-        if (activeTab === 'leads' && priority !== 'all') {
-            filteredItems = filteredItems.filter(item => item.priority === priority);
-        }
-        
-        currentPage = 1;
-        updatePagination();
-    }
-
-    /**
-     * Initialize pagination
-     */
-    function initializePagination() {
-        const activeTab = document.querySelector('.directory-tab.active').getAttribute('data-tab');
-        if (activeTab === 'employees') {
-            currentItems = employees;
-        } else {
-            currentItems = leads;
-        }
-        
-        filteredItems = [...currentItems];
-        updatePagination();
-    }
-
-    /**
-     * Update pagination display
-     */
-    function updatePagination() {
-        totalPages = Math.ceil(filteredItems.length / itemsPerPage);
-        
-        // Ensure current page is within bounds
-        if (currentPage > totalPages) {
-            currentPage = totalPages || 1;
-        }
-        
-        // Update pagination buttons
-        prevPageBtn.disabled = currentPage === 1;
-        nextPageBtn.disabled = currentPage === totalPages;
-        
-        // Update pagination info
-        const startItem = (currentPage - 1) * itemsPerPage + 1;
-        const endItem = Math.min(currentPage * itemsPerPage, filteredItems.length);
-        paginationInfo.textContent = `Page ${currentPage} of ${totalPages} (${filteredItems.length} items)`;
-        
-        // Generate page numbers
-        generatePageNumbers();
-        
-        // Display current page items
-        displayCurrentPageItems();
-        
-        // Update active tab count
-        document.getElementById('activeTabCount').textContent = filteredItems.length;
-    }
-
-    /**
-     * Generate page number buttons
-     */
-    function generatePageNumbers() {
-        paginationNumbers.innerHTML = '';
-        
-        // Show max 5 page numbers
-        let startPage = Math.max(1, currentPage - 2);
-        let endPage = Math.min(totalPages, startPage + 4);
-        
-        // Adjust start page if we're near the end
-        if (endPage - startPage < 4) {
-            startPage = Math.max(1, endPage - 4);
-        }
-        
-        // First page
-        if (startPage > 1) {
-            const firstPageBtn = document.createElement('button');
-            firstPageBtn.className = 'page-number';
-            firstPageBtn.textContent = '1';
-            firstPageBtn.addEventListener('click', () => goToPage(1));
-            paginationNumbers.appendChild(firstPageBtn);
-            
-            if (startPage > 2) {
-                const ellipsis = document.createElement('span');
-                ellipsis.className = 'pagination-ellipsis';
-                ellipsis.textContent = '...';
-                paginationNumbers.appendChild(ellipsis);
-            }
-        }
-        
-        // Page numbers
-        for (let i = startPage; i <= endPage; i++) {
-            const pageBtn = document.createElement('button');
-            pageBtn.className = `page-number ${i === currentPage ? 'active' : ''}`;
-            pageBtn.textContent = i;
-            pageBtn.addEventListener('click', () => goToPage(i));
-            paginationNumbers.appendChild(pageBtn);
-        }
-        
-        // Last page
-        if (endPage < totalPages) {
-            if (endPage < totalPages - 1) {
-                const ellipsis = document.createElement('span');
-                ellipsis.className = 'pagination-ellipsis';
-                ellipsis.textContent = '...';
-                paginationNumbers.appendChild(ellipsis);
-            }
-            
-            const lastPageBtn = document.createElement('button');
-            lastPageBtn.className = 'page-number';
-            lastPageBtn.textContent = totalPages;
-            lastPageBtn.addEventListener('click', () => goToPage(totalPages));
-            paginationNumbers.appendChild(lastPageBtn);
-        }
-    }
-
-    /**
-     * Go to specific page
-     */
-    function goToPage(page) {
-        currentPage = page;
-        updatePagination();
-    }
-
-    /**
-     * Go to previous page
-     */
-    function goToPreviousPage() {
-        if (currentPage > 1) {
-            currentPage--;
-            updatePagination();
-        }
-    }
-
-    /**
-     * Go to next page
-     */
-    function goToNextPage() {
-        if (currentPage < totalPages) {
-            currentPage++;
-            updatePagination();
-        }
-    }
-
-    /**
-     * Display items for current page
-     */
-    function displayCurrentPageItems() {
-        const activeTab = document.querySelector('.directory-tab.active').getAttribute('data-tab');
-        const container = activeTab === 'employees' ? document.getElementById('employeeList') : document.getElementById('leadList');
-        
-        // Clear container
-        container.innerHTML = '';
-        
-        if (filteredItems.length === 0) {
-            const noResults = document.createElement('div');
-            noResults.className = 'no-results';
-            noResults.textContent = 'No items found';
-            container.appendChild(noResults);
-            return;
-        }
-        
-        // Calculate slice indices
-        const startIndex = (currentPage - 1) * itemsPerPage;
-        const endIndex = Math.min(startIndex + itemsPerPage, filteredItems.length);
-        const currentPageItems = filteredItems.slice(startIndex, endIndex);
-        
-        // Create items
-        currentPageItems.forEach(item => {
-            if (activeTab === 'employees') {
-                createEmployeeItem(item, container);
-            } else {
-                createLeadItem(item, container);
-            }
-        });
-        
-        // Re-attach event listeners
-        if (activeTab === 'employees') {
-            setupEmployeeAssignButtons();
-        } else {
-            setupLeadViewButtons();
-        }
-        
-        // Re-highlight current lead after pagination
-        highlightCurrentLead();
-    }
-
-    /**
-     * Create employee item element
-     */
-    function createEmployeeItem(employee, container) {
-        const item = document.createElement('div');
-        item.className = 'employee-item';
-        item.setAttribute('data-id', employee.id);
-        item.setAttribute('data-name', employee.name);
-        
-        item.innerHTML = `
-            <div class="employee-avatar">
-                ${employee.name.slice(0, 2).toUpperCase()}
-            </div>
-            <div class="employee-details">
-                <div class="employee-name">${employee.name}</div>
-                <div class="employee-role">
-                    ${employee.department}${employee.designation ? ' - ' + employee.designation : ''}
-                </div>
-            </div>
-            <button class="assign-btn" data-id="${employee.id}" data-name="${employee.name}" data-role="employee-assign">
-                Assign
-            </button>
-        `;
-        
-        container.appendChild(item);
-    }
-
-    /**
-     * Create lead item element with priority display
-     */
-    function createLeadItem(lead, container) {
-        const item = document.createElement('div');
-        item.className = 'lead-item';
-        item.setAttribute('data-id', lead.id);
-        
-        // Priority badge with emoji indicators
-        const priorityConfig = getPriorityConfig(lead.priority || 'Medium');
-        
-        // Get campaign display value - prefer campaignName, fallback to campaign
-        const campaignDisplay = lead.campaignName || lead.campaign || '';
-        
-        item.innerHTML = `
-            <div class="lead-avatar">
-                ${(lead.ownerName || '').slice(0, 2).toUpperCase()}
-            </div>
-            <div class="lead-details">
-                <div class="lead-name">
-                    <span style="font-size: 16px; margin-right: 5px;">${priorityConfig.emoji}</span>
-                    ${lead.ownerName}
-                </div>
-                <div class="lead-phone">${lead.phoneNo}</div>
-                <div class="lead-ticket">${lead.ticketNo}</div>
-                <div class="lead-status" style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px;">
-                    <span>Status: ${lead.status}</span>
-                    <span style="color: ${priorityConfig.color}; font-weight: 600; font-size: 10px; padding: 2px 6px; border-radius: 10px;">
-                        ${priorityConfig.text}
-                    </span>
-                </div>
-                ${campaignDisplay ? `<div class="lead-campaign" style="font-size: 11px; color: #666; margin-top: 3px; font-style: italic;"><i class="fas fa-bullhorn" style="margin-right: 3px;"></i>Campaign: ${campaignDisplay}</div>` : ''}
-            </div>
-        `;
-        
-        container.appendChild(item);
-    }
-
-    /**
-     * Get priority configuration
-     */
-    function getPriorityConfig(priority) {
-        const configs = {
-            'High': { emoji: '🔴', color: '#ff4444', text: 'High' },
-            'Medium': { emoji: '🟡', color: '#ffaa00', text: 'Medium' },
-            'Low': { emoji: '🟢', color: '#22c55e', text: 'Low' }
-        };
-        
-        return configs[priority] || configs['Medium'];
-    }
-
-    /**
-     * Add event listeners to employee assign buttons
-     */
-    function setupEmployeeAssignButtons() {
-        const employeeAssignButtons = document.querySelectorAll('#employeeList .assign-btn[data-role="employee-assign"]');
-        employeeAssignButtons.forEach(btn => {
-            btn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                const empId = this.getAttribute('data-id');
-                const empName = this.getAttribute('data-name');
-                const url = "{% url 'app5:lead_assign_list' %}";
-                window.location.href = url;
-            });
-        });
-    }
-
-    /**
-     * Add event listeners to lead items for click functionality
-     */
-    function setupLeadViewButtons() {
-        const leadItems = document.querySelectorAll('#leadList .lead-item');
-        
-        leadItems.forEach(item => {
-            item.addEventListener('click', function(e) {
-                e.stopPropagation();
-                
-                // Remove previous selection
-                leadItems.forEach(i => i.classList.remove('selected'));
-                
-                // Add selection to current item
-                this.classList.add('selected');
-                
-                const leadId = this.getAttribute('data-id');
-                const lead = leads.find(l => l.id == leadId);
-                
-                if (lead) {
-                    // Redirect to edit page for this lead
-                    window.location.href = `/app5/lead/${leadId}/edit/`;
+                if (!searchTerm) {
+                    filteredItems = [...currentItems];
                 } else {
-                    console.error('Lead not found in leads array');
-                    showNotification('Error: Lead data not found', 'error');
+                    filteredItems = currentItems.filter(item => {
+                        let textContent = '';
+                        
+                        if (activeTab === 'employees') {
+                            textContent = (
+                                item.name.toLowerCase() + ' ' + 
+                                item.department.toLowerCase() + ' ' + 
+                                (item.designation || '').toLowerCase()
+                            );
+                        } else {
+                            textContent = (
+                                item.ownerName.toLowerCase() + ' ' + 
+                                item.phoneNo.toLowerCase() + ' ' + 
+                                item.ticketNo.toLowerCase() + ' ' +
+                                (item.priority || '').toLowerCase() + ' ' +
+                                (item.campaign || '').toLowerCase() + ' ' +
+                                (item.campaign_display || '').toLowerCase() + ' ' +
+                                (item.date || '').toLowerCase()
+                            );
+                        }
+                        
+                        return textContent.includes(searchTerm);
+                    });
                 }
-            });
+                
+                if (activeTab === 'leads' && priority !== 'all') {
+                    filteredItems = filteredItems.filter(item => item.priority === priority);
+                }
+                
+                currentPage = 1;
+                updatePagination();
+            }
+
+            function initializePagination() {
+                const activeTab = document.querySelector('.directory-tab.active').getAttribute('data-tab');
+                if (activeTab === 'employees') {
+                    currentItems = employees;
+                } else {
+                    currentItems = leads;
+                }
+                
+                filteredItems = [...currentItems];
+                updatePagination();
+            }
+
+            function updatePagination() {
+                totalPages = Math.ceil(filteredItems.length / itemsPerPage);
+                
+                if (currentPage > totalPages) {
+                    currentPage = totalPages || 1;
+                }
+                
+                prevPageBtn.disabled = currentPage === 1;
+                nextPageBtn.disabled = currentPage === totalPages;
+                
+                const startItem = (currentPage - 1) * itemsPerPage + 1;
+                const endItem = Math.min(currentPage * itemsPerPage, filteredItems.length);
+                paginationInfo.textContent = `Page ${currentPage} of ${totalPages} (${filteredItems.length} items)`;
+                
+                generatePageNumbers();
+                
+                displayCurrentPageItems();
+                
+                document.getElementById('activeTabCount').textContent = filteredItems.length;
+            }
+
+            function generatePageNumbers() {
+                paginationNumbers.innerHTML = '';
+                
+                let startPage = Math.max(1, currentPage - 2);
+                let endPage = Math.min(totalPages, startPage + 4);
+                
+                if (endPage - startPage < 4) {
+                    startPage = Math.max(1, endPage - 4);
+                }
+                
+                if (startPage > 1) {
+                    const firstPageBtn = document.createElement('button');
+                    firstPageBtn.className = 'page-number';
+                    firstPageBtn.textContent = '1';
+                    firstPageBtn.addEventListener('click', () => goToPage(1));
+                    paginationNumbers.appendChild(firstPageBtn);
+                    
+                    if (startPage > 2) {
+                        const ellipsis = document.createElement('span');
+                        ellipsis.className = 'pagination-ellipsis';
+                        ellipsis.textContent = '...';
+                        paginationNumbers.appendChild(ellipsis);
+                    }
+                }
+                
+                for (let i = startPage; i <= endPage; i++) {
+                    const pageBtn = document.createElement('button');
+                    pageBtn.className = `page-number ${i === currentPage ? 'active' : ''}`;
+                    pageBtn.textContent = i;
+                    pageBtn.addEventListener('click', () => goToPage(i));
+                    paginationNumbers.appendChild(pageBtn);
+                }
+                
+                if (endPage < totalPages) {
+                    if (endPage < totalPages - 1) {
+                        const ellipsis = document.createElement('span');
+                        ellipsis.className = 'pagination-ellipsis';
+                        ellipsis.textContent = '...';
+                        paginationNumbers.appendChild(ellipsis);
+                    }
+                    
+                    const lastPageBtn = document.createElement('button');
+                    lastPageBtn.className = 'page-number';
+                    lastPageBtn.textContent = totalPages;
+                    lastPageBtn.addEventListener('click', () => goToPage(totalPages));
+                    paginationNumbers.appendChild(lastPageBtn);
+                }
+            }
+
+            function goToPage(page) {
+                currentPage = page;
+                updatePagination();
+            }
+
+            function goToPreviousPage() {
+                if (currentPage > 1) {
+                    currentPage--;
+                    updatePagination();
+                }
+            }
+
+            function goToNextPage() {
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    updatePagination();
+                }
+            }
+
+            function displayCurrentPageItems() {
+                const activeTab = document.querySelector('.directory-tab.active').getAttribute('data-tab');
+                const container = activeTab === 'employees' ? document.getElementById('employeeList') : document.getElementById('leadList');
+                
+                container.innerHTML = '';
+                
+                if (filteredItems.length === 0) {
+                    const noResults = document.createElement('div');
+                    noResults.className = 'no-results';
+                    noResults.textContent = 'No items found';
+                    container.appendChild(noResults);
+                    return;
+                }
+                
+                const startIndex = (currentPage - 1) * itemsPerPage;
+                const endIndex = Math.min(startIndex + itemsPerPage, filteredItems.length);
+                const currentPageItems = filteredItems.slice(startIndex, endIndex);
+                
+                currentPageItems.forEach(item => {
+                    if (activeTab === 'employees') {
+                        createEmployeeItem(item, container);
+                    } else {
+                        createLeadItem(item, container);
+                    }
+                });
+                
+                if (activeTab === 'employees') {
+                    setupEmployeeAssignButtons();
+                } else {
+                    setupLeadViewButtons();
+                }
+            }
+
+            function createEmployeeItem(employee, container) {
+                const item = document.createElement('div');
+                item.className = 'employee-item';
+                item.setAttribute('data-id', employee.id);
+                item.setAttribute('data-name', employee.name);
+                
+                item.innerHTML = `
+                    <div class="employee-avatar">
+                        ${employee.name.slice(0, 2).toUpperCase()}
+                    </div>
+                    <div class="employee-details">
+                        <div class="employee-name">${employee.name}</div>
+                        <div class="employee-role">
+                            ${employee.department}${employee.designation ? ' - ' + employee.designation : ''}
+                        </div>
+                    </div>
+                    <button class="assign-btn" data-id="${employee.id}" data-name="${employee.name}" data-role="employee-assign">
+                        Assign
+                    </button>
+                `;
+                
+                container.appendChild(item);
+            }
+
+            function createLeadItem(lead, container) {
+                const item = document.createElement('div');
+                item.className = 'lead-item';
+                item.setAttribute('data-id', lead.id);
+                
+                const priorityConfig = getPriorityConfig(lead.priority || 'Medium');
+                
+                const createdDate = lead.createdAt || lead.date;
+                const isoDate = createdDate ? new Date(createdDate).toISOString() : '';
+                
+                let campaignDisplay = lead.campaign_display || '';
+                if (!campaignDisplay && lead.campaign) {
+                    campaignDisplay = getCampaignDisplayName(lead.campaign);
+                }
+                
+                const leadDateInfo = formatDateForDisplay(lead.date);
+                const createdDateInfo = formatDateForDisplay(lead.createdAt);
+                
+                item.innerHTML = `
+                    <div class="lead-avatar">
+                        ${(lead.ownerName || '').slice(0, 2).toUpperCase()}
+                    </div>
+                    <div class="lead-details">
+                        <div class="lead-header">
+                            <div class="lead-name-container">
+                                <span class="lead-priority-indicator">
+                                    ${priorityConfig.emoji}
+                                </span>
+                                <span class="lead-name">${lead.ownerName || 'No Name'}</span>
+                                ${leadDateInfo.short ? `
+                                <span class="lead-date-full" title="Lead Date: ${leadDateInfo.tooltip}">
+                                    <i class="far fa-calendar-check"></i>
+                                    ${leadDateInfo.short}
+                                </span>` : ''}
+                            </div>
+                            ${createdDateInfo.short ? `
+                            <div class="lead-date-compact" title="Created: ${createdDateInfo.tooltip}">
+                                <i class="far fa-calendar-alt"></i>
+                                ${createdDateInfo.short}
+                            </div>` : ''}
+                        </div>
+                        
+                        <div class="time-elapsed-badge" 
+                             data-created="${isoDate}"
+                             style="display: inline-flex; margin-top: 5px;">
+                            <i class="fas fa-clock"></i>
+                            <span class="elapsed-text">${lead.time_elapsed || 'Calculating...'}</span>
+                        </div>
+                        
+                        <div class="lead-phone">${lead.phoneNo || 'No Phone'}</div>
+                        <div class="lead-ticket">${lead.ticketNo || 'No Ticket'}</div>
+                        ${lead.createdTime ? `
+                        <div class="lead-datetime">
+                            <i class="far fa-clock"></i>
+                            Created at ${lead.createdTime}
+                        </div>` : ''}
+                        <div class="lead-info-row">
+                            <div class="lead-status">Status: ${lead.status || 'Unknown'}</div>
+                            <span style="color: ${priorityConfig.color}; font-weight: 600; font-size: 10px; padding: 2px 8px; border-radius: 10px; background: ${priorityConfig.color}15;">
+                                ${priorityConfig.text}
+                            </span>
+                        </div>
+                        ${campaignDisplay ? `
+                        <div class="lead-campaign" title="${campaignDisplay}">
+                            <i class="fas fa-bullhorn" style="font-size: 9px;"></i>
+                            <span>${campaignDisplay.substring(0, 40)}${campaignDisplay.length > 40 ? '...' : ''}</span>
+                        </div>` : ''}
+                    </div>
+                `;
+                
+                container.appendChild(item);
+            }
+
+            function getPriorityConfig(priority) {
+                const configs = {
+                    'High': { emoji: '🔴', color: '#ff4444', text: 'High' },
+                    'Medium': { emoji: '🟡', color: '#ffaa00', text: 'Medium' },
+                    'Low': { emoji: '🟢', color: '#22c55e', text: 'Low' }
+                };
+                
+                return configs[priority] || configs['Medium'];
+            }
+
+            function getCampaignDisplayName(campaignId) {
+                if (!campaignId) return '';
+                
+                if (campaignMap[campaignId]) {
+                    return campaignMap[campaignId].fullName || campaignMap[campaignId].displayName || campaignId;
+                }
+                
+                const campaignField = document.getElementById('campaign');
+                if (campaignField) {
+                    for (let option of campaignField.options) {
+                        if (option.value === campaignId) {
+                            return option.text;
+                        }
+                    }
+                }
+                
+                return campaignId;
+            }
+
+            function setupEmployeeAssignButtons() {
+                const employeeAssignButtons = document.querySelectorAll('#employeeList .assign-btn[data-role="employee-assign"]');
+                employeeAssignButtons.forEach(btn => {
+                    btn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        const empId = this.getAttribute('data-id');
+                        const empName = this.getAttribute('data-name');
+                        const url = "{% url 'app5:lead_assign_list' %}";
+                        window.location.href = url;
+                    });
+                });
+            }
+
+            function setupLeadViewButtons() {
+                const leadItems = document.querySelectorAll('#leadList .lead-item');
+                
+                leadItems.forEach(item => {
+                    item.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        
+                        leadItems.forEach(i => i.classList.remove('selected'));
+                        
+                        this.classList.add('selected');
+                        
+                        const leadId = this.getAttribute('data-id');
+                        
+                        // Ensure leadId is valid
+                        if (!leadId || isNaN(leadId)) {
+                            console.error('Invalid lead ID:', leadId);
+                            showAutoFillNotification('Error: Invalid lead ID', 'error');
+                            return;
+                        }
+                        
+                        const lead = leads.find(l => l.id == leadId);
+                        
+                        if (lead) {
+                            // FIXED: Use simple URL construction to avoid Django template tag issues
+                            handleLoadLeadForEdit(lead);
+                        } else {
+                            console.error('Lead not found in leads array');
+                            showAutoFillNotification('Error: Lead data not found', 'error');
+                        }
+                    });
+                });
+            }
+
+            // FIXED FUNCTION: Handle loading lead for edit
+            function handleLoadLeadForEdit(leadData) {
+                console.log('Loading lead data for edit:', leadData);
+                
+                // Validate lead data
+                if (!leadData || typeof leadData !== 'object') {
+                    console.error('Invalid lead data object');
+                    showAutoFillNotification('Error: Invalid lead data', 'error');
+                    return;
+                }
+                
+                if (!leadData.id || isNaN(parseInt(leadData.id))) {
+                    console.error('Invalid lead ID:', leadData.id);
+                    showAutoFillNotification('Error: Invalid lead ID', 'error');
+                    return;
+                }
+                
+                if (!leadData.ownerName) {
+                    console.error('Missing owner name');
+                    showAutoFillNotification('Error: Missing owner name', 'error');
+                    return;
+                }
+                
+                // Ask for confirmation before loading new lead
+                const confirmMessage = `Load lead data for "${leadData.ownerName}" (ID: ${leadData.id})? Current unsaved changes will be lost.`;
+                
+                if (confirm(confirmMessage)) {
+                    try {
+                        // Simple URL construction - avoids Django template tag issues
+                        const editUrl = `/app5/lead/${leadData.id}/edit/`;
+                        console.log('Redirecting to edit URL:', editUrl);
+                        window.location.href = editUrl;
+                        
+                    } catch (error) {
+                        console.error('Error generating edit URL:', error);
+                        showAutoFillNotification('Error: Could not redirect to edit page', 'error');
+                    }
+                }
+            }
+
+            function formatDateForInput(dateString) {
+                if (!dateString) return '';
+                
+                try {
+                    if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+                        return dateString;
+                    }
+                    
+                    let dateObj;
+                    
+                    if (typeof dateString === 'string' && dateString.includes('T')) {
+                        dateObj = new Date(dateString);
+                    } else {
+                        dateObj = new Date(dateString);
+                    }
+                    
+                    if (isNaN(dateObj.getTime())) {
+                        console.warn('Invalid date format:', dateString);
+                        return '';
+                    }
+                    
+                    const year = dateObj.getFullYear();
+                    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+                    const day = String(dateObj.getDate()).padStart(2, '0');
+                    
+                    return `${year}-${month}-${day}`;
+                } catch (error) {
+                    console.error('Error formatting date:', error, dateString);
+                    return '';
+                }
+            }
+
+            function setSelectValue(selectId, value) {
+                const select = document.getElementById(selectId);
+                if (!select || !value) return;
+                
+                let valueFound = false;
+                
+                for (let i = 0; i < select.options.length; i++) {
+                    const option = select.options[i];
+                    if (option.value === value || option.text === value) {
+                        option.selected = true;
+                        valueFound = true;
+                        break;
+                    }
+                }
+                
+                if (!valueFound) {
+                    select.value = value;
+                }
+            }
+
+            // ========== NAVIGATION ==========
+
+            function setupNavigationMenu() {
+                const navLinks = document.querySelectorAll('.nav-link');
+                navLinks.forEach(link => {
+                    link.addEventListener('click', function(e) {
+                        if (this.getAttribute('href').startsWith('#')) {
+                            e.preventDefault();
+                            navLinks.forEach(l => l.classList.remove('active'));
+                            this.classList.add('active');
+                        }
+                    });
+                });
+            }
+
+            // ========== INITIALIZE APPLICATION ==========
+            
+            initializeApp();
+
+            function displayCampaignDetails(selectElement) {
+                const selectedOption = selectElement.options[selectElement.selectedIndex];
+                const detailsBox = document.getElementById('campaign-details-box');
+                
+                if (!selectedOption.value) {
+                    if (detailsBox) detailsBox.style.display = 'none';
+                    return;
+                }
+                
+                const campaignData = campaignMap[selectElement.value];
+                
+                if (!campaignData) {
+                    console.warn('Campaign data not found for ID:', selectElement.value);
+                    if (detailsBox) detailsBox.style.display = "none";
+                    return;
+                }
+                
+                const cId = document.getElementById("c-id");
+                const cName = document.getElementById("c-name");
+                const cSoftware = document.getElementById("c-software");
+                const cStatus = document.getElementById("c-status");
+                
+                if (cId) cId.textContent = campaignData.id || '-';
+                if (cName) cName.textContent = campaignData.name || '-';
+                if (cSoftware) cSoftware.textContent = campaignData.software || '-';
+                
+                if (cStatus) {
+                    const status = campaignData.status || 'draft';
+                    cStatus.innerHTML = `<span class="status-badge status-${status}">${status.charAt(0).toUpperCase() + status.slice(1)}</span>`;
+                }
+                
+                if (detailsBox) detailsBox.style.display = 'block';
+            }
+
+            function closeCampaignDetails() {
+                const detailsBox = document.getElementById('campaign-details-box');
+                if (detailsBox) detailsBox.style.display = 'none';
+            }
+
         });
-    }
 
-    // ========== NOTIFICATION SYSTEM ==========
-
-    /**
-     * Show notification to user
-     */
-    function showNotification(message, type = 'info') {
-        const notification = document.createElement('div');
-        notification.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 15px 20px;
-            background: ${type === 'success' ? '#4CAF50' : type === 'error' ? '#f44336' : '#2196F3'};
-            color: white;
-            border-radius: 5px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            z-index: 10000;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            max-width: 400px;
-            word-wrap: break-word;
-        `;
-        notification.textContent = message;
-        
-        document.body.appendChild(notification);
-        
-        setTimeout(() => {
-            notification.style.opacity = '0';
-            notification.style.transform = 'translateX(100px)';
-            setTimeout(() => {
-                if (notification.parentNode) {
-                    notification.parentNode.removeChild(notification);
-                }
-            }, 300);
-        }, 3000);
-    }
-
-    // ========== INITIALIZE APPLICATION ==========
-    
-    initializeApp();
-
-});
-</script>
+    </script>
 </body>
 </html>
