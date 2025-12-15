@@ -304,7 +304,13 @@ def item_edit(request, pk):
                     ItemImage.objects.create(item=item, image=img)
 
             messages.success(request, "Item updated successfully.")
-            return redirect('purchase_order:item_list')
+            
+            # ✅ Redirect back to the page they came from
+            next_url = request.GET.get('next')
+            if next_url:
+                return redirect(next_url)
+            else:
+                return redirect('purchase_order:item_list')
 
         except Exception as e:
             messages.error(request, f"Error updating item: {str(e)}")
@@ -328,7 +334,13 @@ def item_delete(request, pk):
         else:
             item.delete()
             messages.success(request, 'Item deleted successfully!')
-        return redirect('purchase_order:item_list')
+        
+        # ✅ Redirect back to the page they came from
+        next_url = request.GET.get('next')
+        if next_url:
+            return redirect(next_url)
+        else:
+            return redirect('purchase_order:item_list')
     
     return render(request, 'purchase_order/item_confirm_delete.html', {'item': item})
 
