@@ -4350,34 +4350,74 @@ logger = logging.getLogger(__name__)
 @require_POST
 def lead_delete(request, lead_id):
     """
-    Delete a Lead by ID.
+    Delete a Lead by ID and all associated RequirementItems.
     Works for both normal form POST and AJAX (fetch/XHR) requests.
     """
     try:
         logger.debug("Delete request received for lead ID: %s", lead_id)
         lead = get_object_or_404(Lead, id=lead_id)
         ticket_number = getattr(lead, "ticket_number", str(lead.id))
-        lead.delete()
-        logger.info("Lead %s (ID %s) deleted successfully", ticket_number, lead_id)
+        owner_name = lead.ownerName
+        
+        # 🔥 USE ATOMIC TRANSACTION TO ENSURE COMPLETE DELETION
+        with transaction.atomic():
+            # ✅ DELETE ALL ASSOCIATED REQUIREMENTS FIRST
+            # Method 1: Delete by foreign key relationship
+            deleted_by_fk = RequirementItem.objects.filter(lead=lead).delete()
+            logger.info(f"Deleted {deleted_by_fk[0]} requirements via FK relationship")
+            
+            # Method 2: Delete by ticket_number (backup cleanup)
+            deleted_by_ticket = RequirementItem.objects.filter(
+                ticket_number=ticket_number
+            ).delete()
+            logger.info(f"Deleted {deleted_by_ticket[0]} requirements via ticket_number")
+            
+            # Method 3: Delete by owner name and phone (final cleanup for orphaned records)
+            deleted_by_contact = RequirementItem.objects.filter(
+                owner_name=owner_name,
+                phone_no=lead.phoneNo
+            ).delete()
+            logger.info(f"Deleted {deleted_by_contact[0]} requirements via contact info")
+            
+            # ✅ NOW DELETE THE LEAD
+            lead.delete()
+            logger.info("Lead %s (ID %s) deleted successfully", ticket_number, lead_id)
+        
+        # Calculate total requirements deleted
+        total_requirements_deleted = (
+            deleted_by_fk[0] + 
+            deleted_by_ticket[0] + 
+            deleted_by_contact[0]
+        )
 
-        # Message for UI (non-AJAX request)
-        messages.success(request, f"Lead with Ticket Number {ticket_number} deleted successfully!")
+        success_message = f"✅ Lead {ticket_number} deleted successfully!"
+        if total_requirements_deleted > 0:
+            success_message += f" ({total_requirements_deleted} requirement(s) also removed)"
+        
+        messages.success(request, success_message)
 
         # If AJAX, return JSON
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-            return JsonResponse({"success": True, "message": f"Lead {ticket_number} deleted."})
+            return JsonResponse({
+                "success": True, 
+                "message": success_message,
+                "requirements_deleted": total_requirements_deleted
+            })
 
         # Fallback for normal POST
         return redirect('app5:lead_report')
 
     except Exception as e:
         logger.exception("Error deleting lead ID %s: %s", lead_id, e)
+        
+        error_message = f"Error deleting lead: {str(e)}"
+        
         # AJAX -> JSON error
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-            return JsonResponse({"success": False, "error": str(e)}, status=500)
+            return JsonResponse({"success": False, "error": error_message}, status=500)
 
         # Non-AJAX fallback
-        messages.error(request, f"Error deleting lead: {e}")
+        messages.error(request, error_message)
         return redirect('app5:lead_report')
 
 
@@ -5368,69 +5408,60 @@ def requirement_list(request):
     # ------------------------------
     # Load existing requirements map
     # ------------------------------
+    # ------------------------------
+# Load existing requirements map (KEYED BY LEAD ID)
+# ------------------------------
+    # ------------------------------
+    # Load existing requirements map (KEYED BY LEAD ID)
+    # ------------------------------
     lead_requirements_map = {}
     try:
-        from .models import RequirementItem
-        
-        # Get all requirements
-        requirements = RequirementItem.objects.all().select_related('item')
-        
+        from .models import RequirementItem, Lead
+
+        requirements = RequirementItem.objects.select_related('item').all()
+
         for req in requirements:
-            # Try multiple ways to identify the lead
             ticket = getattr(req, 'ticket_number', None)
-            owner_name = getattr(req, 'owner_name', None)
-            phone_no = getattr(req, 'phone_no', None)
-            
-            # Primary key: ticket_number
-            if ticket:
-                if ticket not in lead_requirements_map:
-                    lead_requirements_map[ticket] = []
-            # Fallback: owner_name + phone_no combination
-            elif owner_name and phone_no:
-                combo_key = f"{owner_name}|{phone_no}"
-                if combo_key not in lead_requirements_map:
-                    lead_requirements_map[combo_key] = []
-                ticket = combo_key
-            else:
+            if not ticket:
                 continue
-            
-            # Get section
+
+            lead = Lead.objects.filter(ticket_number=ticket).first()
+            if not lead:
+                continue
+
+            lead_id = lead.id
+            lead_requirements_map.setdefault(lead_id, [])
+
+            # Section resolve
             section_value = 'GENERAL'
             if req.item and hasattr(req.item, 'section'):
                 section_value = str(req.item.section).upper().strip()
-            elif hasattr(req, 'section') and req.section:
-                section_value = str(req.section).upper().strip()
-            
-            # Standardize section
+
             if 'HARDWARE' in section_value:
                 section_value = 'HARDWARE'
             elif 'SOFTWARE' in section_value:
                 section_value = 'SOFTWARE'
             elif 'PAPER' in section_value or 'ROLL' in section_value:
                 section_value = 'PAPER_ROLLS'
-            elif 'GENERAL' in section_value:
-                section_value = 'GENERAL'
-            
-            lead_requirements_map[ticket].append({
+
+            lead_requirements_map[lead_id].append({
                 'id': req.id,
                 'item_id': req.item.id if req.item else None,
-                'item_name': req.item.name if req.item else req.item_name,
+                'item_name': req.item.name if req.item else '',
                 'section': section_value,
-                'quantity': int(req.quantity) if req.quantity else 1,
-                'price': float(req.price) if req.price else 0.00,
+                'quantity': int(req.quantity or 1),
+                'price': float(req.price or 0),
                 'unit': req.unit or '',
-                'total': float(req.total) if req.total else 0.00,
-                'notes': getattr(req, 'notes', '') or '',
-                'created_at': req.created_at.strftime('%Y-%m-%d %H:%M') if hasattr(req, 'created_at') and req.created_at else '',
+                'total': float(req.total or 0),
             })
-            
-        logger.info(f"✅ Loaded requirements for {len(lead_requirements_map)} tickets")
-        
+
+        logger.info(f"✅ Loaded requirements for {len(lead_requirements_map)} leads")
+
     except Exception as e:
         logger.warning(f"Could not load requirements: {e}")
 
     # ------------------------------
-    # CONTEXT
+    # CONTEXT  ✅ MUST BE INSIDE FUNCTION
     # ------------------------------
     context = {
         "items": items_list,
@@ -5453,20 +5484,16 @@ def requirement_list(request):
     logger.info(f"Users: {len(active_users_list)}")
     logger.info(f"Leads: {len(active_leads_list)}")
     logger.info(f"Items: {len(items_list)}")
-    
-    if active_leads_list:
-        logger.info("\nSample Leads (first 5):")
-        for i, lead in enumerate(active_leads_list[:5], 1):
-            logger.info(f"  {i}. Ticket: {lead['ticket_number']} - {lead['ownerName']} ({lead['phoneNo']})")
-    
-    if items_list:
-        logger.info("\nSample Items (first 3):")
-        for i, item in enumerate(items_list[:3], 1):
-            logger.info(f"  {i}. {item['name']} - Section: {item['section']}")
-    
     logger.info("=" * 60)
-    
+
     return render(request, "requirement_list.html", context)
+
+
+    
+
+
+
+
 
 
 
@@ -5703,7 +5730,7 @@ def edit_requirement(request, lead_id):
         phone_value = getattr(lead, 'phoneNo', None) or getattr(lead, 'phone_no', None) or getattr(lead, 'phone', None) or getattr(lead, 'phone_number', None) or "-"
         
         # Get owner name
-        owner_name = getattr(lead, 'ownerName', None) or getattr(lead, 'owner_name', None) or getattr(lead, 'name', None) or "Unknown"
+        owner_name = getattr(lead, 'ownerName', None) or getattr(lead, 'owner_name', None) or getattr(lead, 'firstName', None) or getattr(lead, 'name', None) or "Unknown"
         
         # Get ticket number
         ticket_number = getattr(lead, 'ticket_number', None) or getattr(lead, 'ticketNumber', None) or getattr(lead, 'ticket', None) or "-"
@@ -5715,6 +5742,52 @@ def edit_requirement(request, lead_id):
         
         requirements_count = requirements.count()
         logger.info(f"Found {requirements_count} existing requirements")
+        
+        # ===== GET ACTIVE LEADS FOR DIRECTORY =====
+        # Fetch all leads (you might want to filter by status or date)
+        # Since there's no is_active field, fetch all leads and limit to recent ones
+        active_leads = Lead.objects.all().order_by('-created_at', '-date')[:50]
+        
+        # If you have a status field, you can filter like:
+        # active_leads = Lead.objects.filter(status__in=['Active', 'Follow Up']).order_by('-created_at')[:50]
+        
+        # Enhance each lead with requirements count
+        for lead_item in active_leads:
+            # Get ticket number for this lead
+            lead_ticket = getattr(lead_item, 'ticket_number', None) or getattr(lead_item, 'ticketNumber', None) or getattr(lead_item, 'ticket', None)
+            
+            if lead_ticket:
+                lead_item.requirements_count = RequirementItem.objects.filter(
+                    ticket_number=lead_ticket
+                ).count()
+            else:
+                lead_item.requirements_count = 0
+            
+            # Ensure all required attributes exist
+            if not hasattr(lead_item, 'ownerName'):
+                lead_item.ownerName = getattr(lead_item, 'owner_name', None) or getattr(lead_item, 'firstName', None) or getattr(lead_item, 'name', None) or "Unknown"
+            
+            if not hasattr(lead_item, 'phoneNo'):
+                lead_item.phoneNo = getattr(lead_item, 'phone_no', None) or getattr(lead_item, 'phone', None) or getattr(lead_item, 'phone_number', None) or ""
+            
+            if not hasattr(lead_item, 'priority'):
+                lead_item.priority = getattr(lead_item, 'priority', 'Medium')
+            
+            if not hasattr(lead_item, 'status'):
+                lead_item.status = getattr(lead_item, 'status', 'Active')
+            
+            if not hasattr(lead_item, 'company'):
+                lead_item.company = getattr(lead_item, 'company', '') or getattr(lead_item, 'business', '')
+            
+            if not hasattr(lead_item, 'place'):
+                lead_item.place = getattr(lead_item, 'place', '') or getattr(lead_item, 'District', '') or getattr(lead_item, 'State', '')
+        
+        # Get active users for employee directory
+        try:
+            from django.contrib.auth.models import User
+            active_users = User.objects.filter(is_active=True).order_by('username')[:20]
+        except:
+            active_users = []
         
         # Calculate section summary
         section_summary = {}
@@ -5786,10 +5859,11 @@ def edit_requirement(request, lead_id):
             'phoneNo': phone_value,
             'ticket_number': ticket_number,
             'priority': getattr(lead, 'priority', 'Medium'),
-            'created_date': getattr(lead, 'created_date', None),
+            'created_date': getattr(lead, 'created_at', None) or getattr(lead, 'date', None),
             'email': getattr(lead, 'email', ''),
-            'company': getattr(lead, 'company', ''),
-            'place': getattr(lead, 'place', ''),
+            'company': getattr(lead, 'company', '') or getattr(lead, 'business', ''),
+            'place': getattr(lead, 'place', '') or getattr(lead, 'District', '') or getattr(lead, 'State', ''),
+            'status': getattr(lead, 'status', 'Active'),
         }
         
         context = {
@@ -5802,6 +5876,10 @@ def edit_requirement(request, lead_id):
             'items': items,
             'items_json': items_json,
             'lead_id': lead_id,
+            'current_lead_id': lead_id,  # For highlighting current lead
+            'active_leads': active_leads,  # For directory
+            'active_users': active_users,  # For employee directory
+            'leads_count': active_leads.count(),  # For showing count
         }
         
         return render(request, 'requirement_edit.html', context)

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quotation Download</title>
+    <title>Quotation with Branch Details</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -114,7 +114,7 @@
             box-shadow: 0 6px 15px rgba(149, 165, 166, 0.3);
         }
 
-        /* Quotation Container */
+        /* Main Quotation Container */
         .quotation-container {
             background: white;
             border-radius: 10px;
@@ -123,7 +123,110 @@
             margin-bottom: 30px;
         }
 
-        /* Header */
+        /* Cover Page Styling */
+        .cover-page {
+            min-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 60px 40px;
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cover-page::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M0,0 L100,0 L100,100 Z" fill="rgba(255,255,255,0.05)"/></svg>');
+            opacity: 0.1;
+        }
+
+        .branch-logo-container {
+            margin-bottom: 40px;
+        }
+
+        .branch-logo {
+            width: 120px;
+            height: 120px;
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 48px;
+            margin: 0 auto 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .cover-title {
+            font-size: 42px;
+            font-weight: 800;
+            margin-bottom: 20px;
+            color: #ecf0f1;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .cover-subtitle {
+            font-size: 24px;
+            font-weight: 300;
+            margin-bottom: 40px;
+            opacity: 0.9;
+            max-width: 600px;
+        }
+
+        .branch-details {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 30px;
+            margin: 30px auto;
+            max-width: 500px;
+            text-align: left;
+        }
+
+        .branch-row {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .branch-row:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .branch-label {
+            font-weight: 600;
+            width: 150px;
+            opacity: 0.9;
+            color: #bdc3c7;
+        }
+
+        .branch-value {
+            flex: 1;
+            font-weight: 500;
+        }
+
+        .cover-footer {
+            margin-top: 50px;
+            font-size: 16px;
+            opacity: 0.8;
+        }
+
+        /* Quotation Header */
         .quotation-header {
             background: linear-gradient(135deg, #2c3e50, #34495e);
             color: white;
@@ -238,18 +341,18 @@
         }
 
         .items-table th {
-            background: #0d0d0e;
+            background: #2c3e50;
             padding: 15px;
-            text-align: left;
+            text-align: center;
             font-weight: 600;
             color: #f9f9fa;
-            border: 2px solid #dee2e6;
+            border: 1px solid #dee2e6;
             font-size: 15px;
         }
 
         .items-table td {
             padding: 15px;
-            border: 1px solid #060606;
+            border: 1px solid #dee2e6;
             vertical-align: top;
         }
 
@@ -276,7 +379,7 @@
             text-align: center;
         }
 
-        /* Totals Section - FIXED */
+        /* Totals Section */
         .totals-section {
             padding: 0 30px 30px;
             display: flex;
@@ -312,7 +415,6 @@
             font-size: 15px;
         }
 
-        /* Grand Total Row - Special Styling */
         .grand-total-row {
             background: linear-gradient(135deg, #2c3e50, #34495e);
             border-top: 2px solid #34495e !important;
@@ -326,6 +428,56 @@
             padding: 15px 20px;
         }
 
+        /* Terms & Conditions Section */
+        .terms-section {
+            padding: 30px;
+            background: #f8f9fa;
+            border-top: 1px solid #eee;
+            margin-top: 20px;
+        }
+
+        .terms-box {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .terms-box h4 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 20px;
+        }
+
+        .terms-content {
+            line-height: 1.8;
+            color: #555;
+        }
+
+        .terms-list {
+            list-style-type: none;
+            padding-left: 0;
+        }
+
+        .terms-list li {
+            margin-bottom: 15px;
+            padding-left: 30px;
+            position: relative;
+        }
+
+        .terms-list li:before {
+            content: "•";
+            color: #3498db;
+            font-weight: bold;
+            font-size: 20px;
+            position: absolute;
+            left: 0;
+            top: 0;
+        }
+
         /* Notes Section */
         .notes-section {
             padding: 30px;
@@ -336,7 +488,6 @@
             background: #f8f9fa;
             padding: 20px;
             border-radius: 8px;
-            
         }
 
         .notes-box h4 {
@@ -360,6 +511,50 @@
             font-size: 13px;
             border-top: 1px solid #eee;
             background: white;
+        }
+
+        /* Signature Section */
+        .signature-section {
+            padding: 40px 30px;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 30px;
+            border-top: 2px dashed #ddd;
+            margin-top: 30px;
+        }
+
+        .signature-box {
+            flex: 1;
+            min-width: 250px;
+            text-align: center;
+        }
+
+        .signature-line {
+            width: 80%;
+            height: 1px;
+            background: #333;
+            margin: 40px auto 10px;
+        }
+
+        .signature-label {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-top: 10px;
+        }
+
+        .signature-details {
+            font-size: 14px;
+            color: #7f8c8d;
+            margin-top: 5px;
+        }
+
+        /* Page break for printing */
+        .page-break {
+            page-break-before: always;
+            border-top: 1px dashed #ddd;
+            margin-top: 20px;
+            padding-top: 20px;
         }
 
         /* Print-specific styles */
@@ -388,6 +583,18 @@
                 display: none !important;
             }
 
+            .cover-page {
+                min-height: 90vh;
+                page-break-after: always;
+            }
+
+            .page-break {
+                page-break-before: always;
+                border-top: none;
+                margin-top: 0;
+                padding-top: 0;
+            }
+
             table {
                 page-break-inside: auto;
             }
@@ -414,6 +621,18 @@
                 justify-content: center;
             }
 
+            .cover-title {
+                font-size: 32px;
+            }
+
+            .cover-subtitle {
+                font-size: 18px;
+            }
+
+            .branch-details {
+                padding: 20px;
+            }
+
             .quotation-header {
                 flex-direction: column;
                 text-align: center;
@@ -435,6 +654,11 @@
             .totals-section {
                 justify-content: flex-start;
             }
+
+            .signature-section {
+                flex-direction: column;
+                text-align: center;
+            }
         }
 
         @media (max-width: 480px) {
@@ -451,6 +675,19 @@
             .controls-right {
                 flex-direction: column;
             }
+
+            .cover-title {
+                font-size: 24px;
+            }
+
+            .branch-row {
+                flex-direction: column;
+            }
+
+            .branch-label {
+                width: 100%;
+                margin-bottom: 5px;
+            }
         }
     </style>
 </head>
@@ -459,7 +696,7 @@
         <!-- Print Controls -->
         <div class="print-controls">
             <div class="controls-left">
-                <h1><i class="fas fa-file-invoice-dollar"></i> Quotation Details</h1>
+                <h1><i class="fas fa-file-invoice-dollar"></i> Quotation with Branch Details</h1>
                 <div class="quotation-id">Quotation #: <strong>{{ quotation.quotation_number }}</strong></div>
             </div>
             <div class="controls-right">
@@ -475,8 +712,59 @@
             </div>
         </div>
 
-        <!-- Quotation Container -->
+        <!-- Main Quotation Container -->
         <div class="quotation-container">
+            <!-- Cover Page -->
+            <div class="cover-page">
+                <div class="branch-logo-container">
+                    <div class="branch-logo">
+                        <i class="fas fa-code-branch"></i>
+                    </div>
+                    <h3>{{ quotation.branch.name|default:"MAIN BRANCH" }}</h3>
+                </div>
+                
+                <h1 class="cover-title">QUOTATION</h1>
+                <div class="cover-subtitle">
+                    Prepared for {{ quotation.customer_name|default:"VALUED CLIENT" }}
+                </div>
+
+                <div class="branch-details">
+                    <div class="branch-row">
+                        <span class="branch-label">Branch Name:</span>
+                        <span class="branch-value">{{ quotation.branch.name|default:"Main Office" }}</span>
+                    </div>
+                    <div class="branch-row">
+                        <span class="branch-label">Branch Code:</span>
+                        <span class="branch-value">{{ quotation.branch.code|default:"BR-001" }}</span>
+                    </div>
+                    <div class="branch-row">
+                        <span class="branch-label">Branch Manager:</span>
+                        <span class="branch-value">{{ quotation.branch.manager|default:"John Doe" }}</span>
+                    </div>
+                    <div class="branch-row">
+                        <span class="branch-label">Branch Address:</span>
+                        <span class="branch-value">{{ quotation.branch.address|default:"123 Business Street, City, State 12345" }}</span>
+                    </div>
+                    <div class="branch-row">
+                        <span class="branch-label">Contact:</span>
+                        <span class="branch-value">{{ quotation.branch.phone|default:"+1 (123) 456-7890" }}</span>
+                    </div>
+                    <div class="branch-row">
+                        <span class="branch-label">Email:</span>
+                        <span class="branch-value">{{ quotation.branch.email|default:"branch@company.com" }}</span>
+                    </div>
+                </div>
+
+                <div class="cover-footer">
+                    <p>Quotation ID: <strong>{{ quotation.quotation_number }}</strong></p>
+                    <p>Date: <strong>{{ quotation.created_at|date:"F d, Y" }}</strong></p>
+                    <p>Valid Until: <strong>{{ quotation.valid_until|date:"F d, Y" }}</strong></p>
+                </div>
+            </div>
+
+            <!-- Quotation Details (Page 2) -->
+            <div class="page-break"></div>
+            
             <!-- Header -->
             <div class="quotation-header">
                 <div class="company-info">
@@ -494,6 +782,7 @@
                         <p><i class="fas fa-phone"></i> +1 (123) 456-7890</p>
                         <p><i class="fas fa-envelope"></i> info@company.com</p>
                         <p><i class="fas fa-globe"></i> www.company.com</p>
+                        <p><i class="fas fa-code-branch"></i> Branch: {{ quotation.branch.name|default:"Main Office" }}</p>
                     </div>
                 </div>
                 
@@ -512,54 +801,80 @@
                             <span class="meta-label">Valid Until:</span>
                             <span class="meta-value">{{ quotation.valid_until|date:"F d, Y" }}</span>
                         </div>
+                        <div class="meta-row">
+                            <span class="meta-label">Branch:</span>
+                            <span class="meta-value">{{ quotation.branch.name|default:"Main Office" }}</span>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Items Table -->
-            <!-- Items Table -->
-<div class="items-section">
-    <h3 class="section-title"><i class="fas fa-list-alt"></i> Items</h3>
-    <table class="items-table">
-        <thead>
-            <tr>
-                <th width="50">Sl.No</th>
-                <th>Description</th>
-                <th width="100" class="text-center">Quantity</th>
-                <th width="120" class="text-right">Sale Price</th>
-                <th width="120" class="text-right">Unit Price</th>
-                <th width="120" class="text-right">Tax %</th>
-                <th width="120" class="text-right">Tax Amount</th>
-                <th width="120" class="text-right">Amount</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for item in quotation.items.all %}
-            <tr>
-                <td>{{ forloop.counter }}</td>
-                <td>
-                    <div class="item-name">{{ item.item_name }}</div>
-                    {% if item.description %}
-                    <div class="item-description">{{ item.description }}</div>
-                    {% endif %}
-                </td>
-                <td class="text-center">{{ item.quantity }}</td>
-                <td class="text-right">₹{{ item.sales_price|floatformat:2 }}</td>
-                <td class="text-right">₹{{ item.unit_price|floatformat:2 }}</td>
-                <td class="text-right">{{ item.tax_percentage|floatformat:2 }}%</td>
-                <td class="text-right">₹{{ item.tax_amount|floatformat:2 }}</td>
-                <td class="text-right">₹{{ item.sales_price|floatformat:2 }}</td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="8" class="text-center">No items added to this quotation</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
+            <!-- Customer Information -->
+            <div class="items-section">
+                <h3 class="section-title"><i class="fas fa-user-tie"></i> Customer Information</h3>
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+                        <div>
+                            <strong>Customer Name:</strong><br>
+                            {{ quotation.customer_name|default:"Not Specified" }}
+                        </div>
+                        <div>
+                            <strong>Customer Email:</strong><br>
+                            {{ quotation.customer_email|default:"Not Specified" }}
+                        </div>
+                        <div>
+                            <strong>Customer Phone:</strong><br>
+                            {{ quotation.customer_phone|default:"Not Specified" }}
+                        </div>
+                        <div>
+                            <strong>Customer Address:</strong><br>
+                            {{ quotation.customer_address|default:"Not Specified" }}
+                        </div>
+                    </div>
+                </div>
 
-            <!-- Totals Section - FIXED -->
+                <!-- Items Table -->
+                <h3 class="section-title"><i class="fas fa-list-alt"></i> Items</h3>
+                <table class="items-table">
+                    <thead>
+                        <tr>
+                            <th width="50">Sl.No</th>
+                            <th>Description</th>
+                            <th width="100" class="text-center">Quantity</th>
+                            <th width="120" class="text-right">Sale Price</th>
+                            <th width="120" class="text-right">Unit Price</th>
+                            <th width="120" class="text-right">Tax %</th>
+                            <th width="120" class="text-right">Tax Amount</th>
+                            <th width="120" class="text-right">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in quotation.items.all %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>
+                                <div class="item-name">{{ item.item_name }}</div>
+                                {% if item.description %}
+                                <div class="item-description">{{ item.description }}</div>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">{{ item.quantity }}</td>
+                            <td class="text-right">₹{{ item.sales_price|floatformat:2 }}</td>
+                            <td class="text-right">₹{{ item.unit_price|floatformat:2 }}</td>
+                            <td class="text-right">{{ item.tax_percentage|floatformat:2 }}%</td>
+                            <td class="text-right">₹{{ item.tax_amount|floatformat:2 }}</td>
+                            <td class="text-right">₹{{ item.sales_price|floatformat:2 }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center">No items added to this quotation</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Totals Section -->
             <div class="totals-section">
                 <table class="totals-table">
                     <tr>
@@ -599,9 +914,61 @@
             </div>
             {% endif %}
 
+            <!-- Terms & Conditions Section -->
+            <div class="terms-section">
+                <div class="terms-box">
+                    <h4><i class="fas fa-file-contract"></i> Terms & Conditions</h4>
+                    <div class="terms-content">
+                        <ul class="terms-list">
+                            <li>This quotation is valid for 30 days from the date of issue.</li>
+                            <li>Prices are subject to change without prior notice.</li>
+                            <li>Payment terms: 50% advance with order confirmation, balance before delivery.</li>
+                            <li>Delivery time: 15-20 working days from the date of order confirmation.</li>
+                            <li>All taxes as applicable will be extra.</li>
+                            <li>Goods once sold will not be taken back or exchanged.</li>
+                            <li>Jurisdiction for all disputes will be at the branch location mentioned above.</li>
+                            <li>We reserve the right to cancel any order without any prior notice.</li>
+                            <li>Installation and training charges are not included unless specified.</li>
+                            <li>Warranty: 1 year from the date of installation.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Signature Section -->
+            <div class="signature-section">
+                <div class="signature-box">
+                    <div class="signature-line"></div>
+                    <div class="signature-label">Customer's Signature</div>
+                    <div class="signature-details">
+                        Name: ________________________<br>
+                        Date: ________________________
+                    </div>
+                </div>
+                <div class="signature-box">
+                    <div class="signature-line"></div>
+                    <div class="signature-label">Authorized Signatory</div>
+                    <div class="signature-details">
+                        For: YOUR COMPANY NAME<br>
+                        Name: ________________________<br>
+                        Designation: ________________________<br>
+                        Date: ________________________
+                    </div>
+                </div>
+                <div class="signature-box">
+                    <div class="signature-line"></div>
+                    <div class="signature-label">Branch Manager</div>
+                    <div class="signature-details">
+                        Branch: {{ quotation.branch.name|default:"Main Office" }}<br>
+                        Name: ________________________<br>
+                        Date: ________________________
+                    </div>
+                </div>
+            </div>
+
             <div class="footer-info">
-                <p>Thank you for your business! For any queries, please contact us at info@company.com or call +1 (123) 456-7890</p>
-                <p>This is a computer-generated quotation and does not require a physical signature</p>
+                <p>Thank you for your business! For any queries, please contact the branch at {{ quotation.branch.email|default:"info@company.com" }} or call {{ quotation.branch.phone|default:"+1 (123) 456-7890" }}</p>
+                <p>This is a computer-generated quotation and does not require a physical signature until acceptance</p>
             </div>
         </div>
     </div>
@@ -631,6 +998,18 @@
             if (e.key === 'Escape') {
                 window.history.back();
             }
+        });
+
+        // Auto-format currency values on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const currencyElements = document.querySelectorAll('.totals-value');
+            currencyElements.forEach(function(element) {
+                const text = element.textContent;
+                if (text.includes('₹')) {
+                    const amount = text.replace('₹', '').trim();
+                    element.textContent = formatCurrency(amount);
+                }
+            });
         });
     </script>
 </body>

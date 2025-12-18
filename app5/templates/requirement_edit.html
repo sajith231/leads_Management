@@ -35,55 +35,77 @@
         transition: all 0.2s;
         cursor: pointer;
         position: relative;
+        border-left: 4px solid transparent;
     }
-    .lead-item.selected {
-        background: #e3f2fd;
-        border-left: 4px solid #2575fc;
-    }
+    
+    /* Hover effect for all leads */
     .lead-item:hover {
-        background: #f8f9fa;
+        background: linear-gradient(135deg, #f8f9ff, #e8f0ff);
         transform: translateY(-1px);
         box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        border-left: 4px solid #4a6fdc;
     }
-
-    .current-lead-item {
+    
+    /* Current/Active lead item styling - ONLY ONE */
+    .lead-item.current-lead-item {
         background: linear-gradient(135deg, #e3f2fd, #bbdefb) !important;
         border-left: 4px solid #2196f3 !important;
         box-shadow: 0 2px 8px rgba(33, 150, 243, 0.2) !important;
+        position: relative;
+        overflow: hidden;
     }
     
-    .current-lead-item .lead-avatar {
+    /* Glow effect for current lead */
+    .lead-item.current-lead-item::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, #2196f3, #42a5f5, #2196f3);
+        animation: pulse-glow 2s infinite;
+    }
+    
+    .lead-item.current-lead-item .lead-avatar {
         background: #2196f3 !important;
         box-shadow: 0 0 0 2px white, 0 0 0 4px #2196f3;
+        transform: scale(1.1);
+        transition: transform 0.3s;
     }
     
+    /* Current lead badge */
     .current-lead-badge {
-        background: #2196f3;
+        background: linear-gradient(135deg, #2196f3, #1976d2);
         color: white;
         font-size: 9px;
-        padding: 2px 6px;
-        border-radius: 10px;
-        font-weight: 600;
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-weight: 700;
         margin-left: auto;
         display: flex;
         align-items: center;
-        gap: 3px;
+        gap: 4px;
+        box-shadow: 0 2px 4px rgba(33, 150, 243, 0.3);
+        animation: badge-pulse 1.5s infinite;
     }
     
     /* Active lead indicator in header */
     .active-lead-header {
         background: linear-gradient(135deg, #e3f2fd, #bbdefb);
         border-radius: 8px;
-        padding: 10px 15px;
-        margin: 10px 0 20px 0;
+        padding: 12px 15px;
+        margin: 10px 15px;
         border-left: 4px solid #2196f3;
+        border-right: 4px solid #2196f3;
+        box-shadow: 0 2px 8px rgba(33, 150, 243, 0.15);
     }
     
     .active-lead-title {
         font-size: 14px;
-        font-weight: 600;
+        font-weight: 700;
         color: #333;
-        margin-bottom: 5px;
+        margin-bottom: 8px;
         display: flex;
         align-items: center;
         gap: 8px;
@@ -104,16 +126,14 @@
     }
     
     .active-lead-value {
-        font-weight: 600;
+        font-weight: 700;
         color: #333;
     }
     
     .lead-item.clickable {
         cursor: pointer;
     }
-    .lead-item.editable:hover {
-        background: linear-gradient(135deg, #f8f9ff, #e8f0ff);
-    }
+    
     .edit-lead-indicator {
         position: absolute;
         top: 8px;
@@ -129,10 +149,19 @@
         font-size: 10px;
         opacity: 0;
         transition: opacity 0.3s;
+        z-index: 2;
     }
+    
     .lead-item:hover .edit-lead-indicator {
         opacity: 1;
     }
+    
+    .lead-item.current-lead-item .edit-lead-indicator {
+        background: #ff9800;
+        opacity: 1;
+        transform: scale(1.1);
+    }
+    
     .lead-avatar {
         width: 32px;
         height: 32px;
@@ -146,11 +175,14 @@
         font-size: 12px;
         margin-right: 12px;
         flex-shrink: 0;
+        transition: all 0.3s;
     }
+    
     .lead-details {
         flex: 1;
         min-width: 0;
     }
+    
     .lead-name {
         font-weight: 600;
         color: #333;
@@ -163,6 +195,7 @@
         align-items: center;
         gap: 8px;
     }
+    
     .lead-info {
         font-size: 12px;
         color: #6c757d;
@@ -170,6 +203,7 @@
         overflow: hidden;
         text-overflow: ellipsis;
     }
+    
     .lead-phone {
         font-size: 11px;
         color: #495057;
@@ -181,6 +215,7 @@
         align-items: center;
         gap: 4px;
     }
+    
     .lead-ticket {
         font-size: 10px;
         color: #6c757d;
@@ -191,11 +226,18 @@
         padding: 2px 6px;
         font-weight: 600;
     }
-    .lead-status {
-        font-size: 10px;
-        color: #28a745;
-        font-weight: 600;
-        margin-top: 2px;
+    
+    /* Animations */
+    @keyframes pulse-glow {
+        0% { opacity: 0.7; }
+        50% { opacity: 1; }
+        100% { opacity: 0.7; }
+    }
+    
+    @keyframes badge-pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
     }
     
     /* Filters */
@@ -354,12 +396,6 @@
     .priority-medium { background-color: #ffaa00; color: white; }
     .priority-low { background-color: #44ff44; color: #333; }
     
-    /* Current lead highlight */
-    .current-lead-item {
-        background: linear-gradient(135deg, #e3f2fd, #bbdefb) !important;
-        border-left: 4px solid #2196f3 !important;
-    }
-    
     /* Pagination */
     .directory-pagination {
         display: flex;
@@ -425,7 +461,7 @@
                 <div class="directory-header">
                     <h2>Lead Directory</h2>
                     <div class="directory-info">
-                        <span id="activeTabCount">{{ leads_count }}</span> active leads
+                        <span id="activeTabCount">{{ leads_count }}</span> leads
                     </div>
                 </div>
                 
@@ -470,19 +506,44 @@
                     </div>
                 </div>
                 
+                <!-- Active Lead Indicator -->
+                {% if lead_data %}
+                <div class="active-lead-header">
+                    <div class="active-lead-title">
+                        <i class="fas fa-star" style="color:#2196f3;"></i>
+                        <span style="font-weight: 700;">Currently Editing:</span>
+                    </div>
+                    <div class="active-lead-details">
+                        <div class="active-lead-detail">
+                            <i class="fas fa-user"></i>
+                            <span class="active-lead-value">{{ lead_data.ownerName }}</span>
+                        </div>
+                        <div class="active-lead-detail">
+                            <i class="fas fa-ticket-alt"></i>
+                            <span class="active-lead-value">#{{ lead_data.ticket_number }}</span>
+                        </div>
+                        <div class="active-lead-detail">
+                            <i class="fas fa-clipboard-list"></i>
+                            <span class="active-lead-value">{{ requirements|length }} item(s)</span>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
                 <!-- Lead List -->
                 <div class="lead-list active" id="leadList">
                     {% if active_leads %}
-                        {% for lead in active_leads %}
-                        <div class="lead-item clickable editable {% if lead.id == current_lead_id %}current-lead-item{% endif %}" 
-                             data-id="{{ lead.id }}" 
-                             data-name="{{ lead.ownerName }}" 
-                             data-phone="{{ lead.phoneNo }}" 
-                             data-ticket="{{ lead.ticket_number }}"
-                             data-priority="{{ lead.priority }}"
-                             data-status="{{ lead.status }}"
-                             data-requirements-count="{{ lead.requirements_count }}"
-                             onclick="redirectToLeadPage({{ lead.id }})">
+                        {% for lead_item in active_leads %}
+                        {% with lead_ticket=lead_item.ticket_number|default:"-" %}
+                        <div class="lead-item clickable editable {% if lead_item.id == current_lead_id %}current-lead-item{% endif %}" 
+                             data-id="{{ lead_item.id }}" 
+                             data-name="{{ lead_item.ownerName|default:lead_item.firstName|default:'Unknown' }}" 
+                             data-phone="{{ lead_item.phoneNo|default:'' }}" 
+                             data-ticket="{{ lead_ticket }}"
+                             data-priority="{{ lead_item.priority|default:'Medium' }}"
+                             data-status="{{ lead_item.status|default:'Active' }}"
+                             data-requirements-count="{{ lead_item.requirements_count|default:0 }}"
+                             onclick="redirectToLeadPage({{ lead_item.id }}, event)">
                             
                             <!-- Edit Indicator -->
                             <div class="edit-lead-indicator" title="Click to edit requirements">
@@ -490,49 +551,62 @@
                             </div>
                             
                             <!-- Priority Indicator -->
-                            <div class="lead-avatar" style="background: {% if lead.priority == 'High' %}#dc3545{% elif lead.priority == 'Medium' %}#ffc107{% else %}#28a745{% endif %}">
-                                {{ lead.ownerName|slice:":1"|upper }}
+                            <div class="lead-avatar" style="background: {% if lead_item.priority == 'High' %}#dc3545{% elif lead_item.priority == 'Medium' %}#ffc107{% else %}#28a745{% endif %}">
+                                {{ lead_item.ownerName|default:lead_item.firstName|default:'U'|slice:":1"|upper }}
                             </div>
 
                             <div class="lead-details">
                                 <!-- Name with Ticket -->
                                 <div class="lead-name">
-                                    {{ lead.ownerName }}
-                                    {% if lead.ticket_number %}
-                                    <span class="lead-ticket">#{{ lead.ticket_number }}</span>
+                                    {{ lead_item.ownerName|default:lead_item.firstName|default:'Unknown' }}
+                                    {% if lead_ticket and lead_ticket != "-" %}
+                                    <span class="lead-ticket">#{{ lead_ticket }}</span>
+                                    {% endif %}
+                                    
+                                    <!-- CURRENT LEAD BADGE - Only for current lead -->
+                                    {% if lead_item.id == current_lead_id %}
+                                    <div class="current-lead-badge">
+                                        <i class="fas fa-star" style="font-size: 8px;"></i>
+                                        EDITING
+                                    </div>
                                     {% endif %}
                                 </div>
                                 
                                 <!-- Phone -->
-                                {% if lead.phoneNo %}
+                                {% with phone=lead_item.phoneNo|default:'' %}
+                                {% if phone %}
                                 <div class="lead-phone">
-                                    <i class="fas fa-phone-alt" style="font-size: 9px;"></i> {{ lead.phoneNo }}
+                                    <i class="fas fa-phone-alt" style="font-size: 9px;"></i> {{ phone }}
                                 </div>
                                 {% endif %}
+                                {% endwith %}
                                 
                                 <!-- Company/Place -->
-                                {% if lead.company or lead.place %}
+                                {% with company=lead_item.company|default:lead_item.business|default:'' place=lead_item.place|default:lead_item.District|default:lead_item.State|default:'' %}
+                                {% if company or place %}
                                 <div class="lead-info">
-                                    {% if lead.company %}{{ lead.company }}{% endif %}
-                                    {% if lead.place %}{% if lead.company %} - {% endif %}{{ lead.place }}{% endif %}
+                                    {% if company %}{{ company }}{% endif %}
+                                    {% if place %}{% if company %} - {% endif %}{{ place }}{% endif %}
                                 </div>
                                 {% endif %}
+                                {% endwith %}
                                 
                                 <!-- Status & Priority -->
                                 <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px;">
-                                    <span style="color: {% if lead.status == 'Active' %}#28a745{% elif lead.status == 'Follow Up' %}#17a2b8{% elif lead.status == 'Quoted' %}#ffc107{% elif lead.status == 'Closed' %}#6c757d{% else %}#6c757d{% endif %}; font-size: 10px; font-weight: 600;">
-                                        {{ lead.status }}
+                                    <span style="color: {% if lead_item.status == 'Active' %}#28a745{% elif lead_item.status == 'Follow Up' %}#17a2b8{% elif lead_item.status == 'Quoted' %}#ffc107{% elif lead_item.status == 'Closed' %}#6c757d{% else %}#6c757d{% endif %}; font-size: 10px; font-weight: 600;">
+                                        {{ lead_item.status|default:'Active' }}
                                     </span>
-                                    <span style="color: {% if lead.priority == 'High' %}#dc3545{% elif lead.priority == 'Medium' %}#ffc107{% else %}#28a745{% endif %}; font-weight:600; font-size: 10px; padding: 2px 6px; border-radius: 10px; background: rgba(0,0,0,0.05);">
-                                        {{ lead.priority }}
+                                    <span style="color: {% if lead_item.priority == 'High' %}#dc3545{% elif lead_item.priority == 'Medium' %}#ffc107{% else %}#28a745{% endif %}; font-weight:600; font-size: 10px; padding: 2px 6px; border-radius: 10px; background: rgba(0,0,0,0.05);">
+                                        {{ lead_item.priority|default:'Medium' }}
                                     </span>
                                 </div>
                                 
                                 <!-- Requirements Count -->
-                                {% if lead.requirements_count and lead.requirements_count > 0 %}
+                                {% with req_count=lead_item.requirements_count|default:0 %}
+                                {% if req_count > 0 %}
                                 <div style="margin-top: 3px; font-size: 10px; color: #28a745; font-weight: 600; display: flex; align-items: center; gap: 4px;">
                                     <i class="fas fa-clipboard-list" style="font-size: 9px;"></i> 
-                                    {{ lead.requirements_count }} item(s)
+                                    {{ req_count }} item(s)
                                     <span style="font-size: 9px; color: #6c757d; margin-left: 4px;">
                                         <i class="fas fa-external-link-alt"></i> Click to edit
                                     </span>
@@ -546,21 +620,23 @@
                                     </span>
                                 </div>
                                 {% endif %}
+                                {% endwith %}
                                 
                                 <!-- Current Indicator -->
-                                {% if lead.id == current_lead_id %}
-                                <div style="margin-top: 3px; font-size: 10px; color: #2196f3; font-weight: 600; display: flex; align-items: center; gap: 4px;">
-                                    <i class="fas fa-star" style="font-size: 9px;"></i> 
-                                    Currently Editing
+                                {% if lead_item.id == current_lead_id %}
+                                <div style="margin-top: 3px; font-size: 10px; color: #2196f3; font-weight: 700; display: flex; align-items: center; gap: 4px; animation: pulse-glow 2s infinite;">
+                                    <i class="fas fa-pen" style="font-size: 9px;"></i> 
+                                    Currently Editing This Lead
                                 </div>
                                 {% endif %}
                             </div>
                         </div>
+                        {% endwith %}
                         {% endfor %}
                     {% else %}
                         <div class="no-results">
                             <i class="fas fa-user-slash" style="font-size: 24px; margin-bottom: 10px; color: #6c757d;"></i>
-                            <p>No active leads found</p>
+                            <p>No leads found</p>
                             <p style="font-size: 11px; margin-top: 5px;">Create leads in the Lead Form first</p>
                         </div>
                     {% endif %}
@@ -570,22 +646,19 @@
                 <div class="employee-list" id="employeeList">
                     {% if active_users %}
                         {% for u in active_users %}
-                        <div class="lead-item" data-id="{{ u.id }}" data-name="{{ u.name }}" data-phone="{{ u.phone }}">
+                        <div class="lead-item" data-id="{{ u.id }}" data-name="{{ u.get_full_name|default:u.username }}" data-phone="">
                             <div class="lead-avatar">
-                                {{ u.name|slice:":1"|upper }}
+                                {{ u.get_full_name|default:u.username|slice:":1"|upper }}
                             </div>
 
                             <div class="lead-details">
-                                <div class="lead-name">{{ u.name }}</div>
+                                <div class="lead-name">{{ u.get_full_name|default:u.username }}</div>
                                 <div class="lead-info">
-                                    {% if u.designation %}{{ u.designation }}{% endif %}
-                                    {% if u.department %}{% if u.designation %}, {% endif %}{{ u.department }}{% endif %}
+                                    {% if u.email %}{{ u.email }}{% endif %}
                                 </div>
-                                {% if u.phone %}
-                                <div class="lead-phone">
-                                    <i class="fas fa-phone-alt" style="font-size: 9px;"></i> {{ u.phone }}
+                                <div style="margin-top: 3px; font-size: 10px; color: #6c757d; font-weight: 600;">
+                                    Staff Member
                                 </div>
-                                {% endif %}
                             </div>
                         </div>
                         {% endfor %}
@@ -668,9 +741,6 @@
                         </div>
                     </div>
                     
-                    <!-- Edit Mode Indicator -->
-                    
-                    
                     <!-- ===== Requirements Section ===== -->
                     <div class="requirements-section" id="requirements-section">
                         <div class="section-header">
@@ -749,7 +819,9 @@
 </div>
 
 <script>
-    // Directory functionality
+    // =====================================================
+    // ENHANCED DIRECTORY FUNCTIONALITY
+    // =====================================================
     function setupDirectory() {
         // Tab switching
         const tabs = document.querySelectorAll('.directory-tab');
@@ -820,12 +892,43 @@
         if (searchInput) searchInput.addEventListener('input', filterLeads);
         if (priorityFilter) priorityFilter.addEventListener('change', filterLeads);
         if (statusFilter) statusFilter.addEventListener('change', filterLeads);
+        
+        // Initialize highlighting for current lead
+        highlightCurrentLead();
     }
     
-    // Redirect function
+    // =====================================================
+    // HIGHLIGHT CURRENT LEAD ONLY
+    // =====================================================
+    function highlightCurrentLead() {
+        const currentLeadId = {{ current_lead_id|default:0 }};
+        
+        // Remove current-lead-item class from all leads
+        document.querySelectorAll('.lead-item').forEach(item => {
+            item.classList.remove('current-lead-item');
+        });
+        
+        // Add current-lead-item class only to current lead
+        if (currentLeadId) {
+            const currentLeadItem = document.querySelector(`.lead-item[data-id="${currentLeadId}"]`);
+            if (currentLeadItem) {
+                currentLeadItem.classList.add('current-lead-item');
+                
+                // Scroll current lead into view
+                setTimeout(() => {
+                    currentLeadItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 500);
+            }
+        }
+    }
+    
+    // =====================================================
+    // REDIRECT FUNCTION
+    // =====================================================
     function redirectToLeadPage(leadId, event) {
         if (event) {
             event.stopPropagation();
+            event.preventDefault();
         }
         
         if (!leadId) {
@@ -836,7 +939,9 @@
         // Check if we're already on this lead's edit page
         const currentLeadId = {{ current_lead_id|default:0 }};
         if (leadId == currentLeadId) {
-            return; // Already on this page
+            // Already on this page, just ensure it's highlighted
+            highlightCurrentLead();
+            return;
         }
         
         // Construct the edit URL
@@ -852,18 +957,46 @@
         }
     }
     
-    // Check for unsaved changes
+    // =====================================================
+    // CHECK FOR UNSAVED CHANGES
+    // =====================================================
     function hasUnsavedChanges() {
-        // Implement your logic to check for unsaved changes
-        return false; // For now, return false
+        // Check if any requirement values have been modified
+        const originalCount = {{ requirements|length|default:0 }};
+        const currentCount = document.querySelectorAll('#table-body tr').length;
+        
+        if (originalCount !== currentCount) {
+            return true;
+        }
+        
+        // Check if any values have changed
+        let hasChanges = false;
+        document.querySelectorAll('#table-body tr').forEach((row, index) => {
+            const priceInput = row.querySelector('.item-price');
+            const qtyInput = row.querySelector('.item-qty');
+            const itemSelect = row.querySelector('.item-select');
+            
+            // Check if values differ from original
+            if (priceInput && qtyInput && itemSelect) {
+                // You would need to compare with original values here
+                // For now, just check if any values are different from default
+                if (priceInput.value !== '' || qtyInput.value !== '1' || itemSelect.value !== '') {
+                    hasChanges = true;
+                }
+            }
+        });
+        
+        return hasChanges;
     }
     
-    // Requirements table functionality
+    // =====================================================
+    // REQUIREMENTS TABLE FUNCTIONALITY
+    // =====================================================
     document.addEventListener('DOMContentLoaded', function() {
         // Setup directory
         setupDirectory();
         
-        // ===== Requirements table logic =====
+        // Requirements table logic
         const tbody = document.getElementById('table-body');
         const addBtn = document.getElementById('add-item-btn');
         const grandEl = document.getElementById('grand-total');
@@ -1094,9 +1227,12 @@
             qtyInput.addEventListener('input', () => recalcRow(row));
 
             deleteBtn.addEventListener('click', function () {
-                row.remove();
-                refreshSlNos();
-                recalcGrandTotal();
+                if (confirm('Are you sure you want to delete this item?')) {
+                    row.remove();
+                    refreshSlNos();
+                    recalcGrandTotal();
+                    updateRequirementIds();
+                }
             });
         }
 
@@ -1136,13 +1272,42 @@
             // Clear table
             tbody.innerHTML = '';
             
+            // Track used item IDs to prevent duplicates
+            const usedItemIds = new Set();
+            
             {% if requirements %}
-                originalRequirements = JSON.parse('{{ requirements_json|safe }}' || '[]');
-                
-                // Create rows for each requirement
-                originalRequirements.forEach((req, index) => {
-                    createRow(req);
-                });
+                try {
+                    const requirementsData = {{ requirements_json|safe }};
+                    console.log('Total requirements found:', requirementsData.length);
+                    
+                    // Filter out duplicates based on item_id
+                    const uniqueRequirements = requirementsData.filter((req, index, self) => {
+                        if (!req.item_id) return true; // Keep if no item_id
+                        const isDuplicate = usedItemIds.has(req.item_id);
+                        if (!isDuplicate) {
+                            usedItemIds.add(req.item_id);
+                        }
+                        return !isDuplicate;
+                    });
+                    
+                    console.log('Unique requirements:', uniqueRequirements.length);
+                    
+                    // Create rows for each unique requirement
+                    uniqueRequirements.forEach((req, index) => {
+                        if (req && (req.item_id || req.item_name)) {
+                            createRow(req);
+                        }
+                    });
+                    
+                    // If no valid requirements, create empty row
+                    if (uniqueRequirements.length === 0) {
+                        createRow();
+                    }
+                } catch (error) {
+                    console.error('Error loading requirements:', error);
+                    // Create one empty row as fallback
+                    createRow();
+                }
             {% else %}
                 // Create one empty row if no requirements exist
                 createRow();
@@ -1226,5 +1391,102 @@
         initializePage();
     });
 </script>
+
+<script>
+// =====================================================
+// SIMPLIFIED SMART NAVIGATION
+// =====================================================
+(function() {
+    'use strict';
+    
+    console.log('🚀 Initializing Lead Navigation...');
+    
+    // Highlight current lead on load
+    function highlightCurrentLead() {
+        const currentLeadId = {{ current_lead_id|default:0 }};
+        console.log('Current lead ID:', currentLeadId);
+        
+        if (currentLeadId) {
+            const currentLeadItem = document.querySelector(`.lead-item[data-id="${currentLeadId}"]`);
+            if (currentLeadItem) {
+                // Remove from all
+                document.querySelectorAll('.lead-item').forEach(item => {
+                    item.classList.remove('current-lead-item');
+                });
+                
+                // Add to current
+                currentLeadItem.classList.add('current-lead-item');
+                
+                // Scroll into view
+                setTimeout(() => {
+                    currentLeadItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 300);
+                
+                console.log('✅ Current lead highlighted:', currentLeadItem.getAttribute('data-name'));
+            }
+        }
+    }
+    
+    // Enhance lead items with proper navigation
+    function enhanceLeadItems() {
+        const leadItems = document.querySelectorAll('.lead-item[data-id].clickable');
+        
+        leadItems.forEach(item => {
+            item.addEventListener('click', function(e) {
+                // Don't interfere with button clicks
+                if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
+                    return;
+                }
+                
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const leadId = this.getAttribute('data-id');
+                const currentLeadId = {{ current_lead_id|default:0 }};
+                
+                // If clicking on current lead, do nothing
+                if (parseInt(leadId) === parseInt(currentLeadId)) {
+                    return;
+                }
+                
+                // Construct URL
+                const editUrl = `{% url 'app5:edit_requirement' 0 %}`.replace('0', leadId);
+                
+                // Check for unsaved changes
+                const hasChanges = false; // Implement your own hasUnsavedChanges() if needed
+                
+                if (hasChanges) {
+                    if (confirm('You have unsaved changes. Navigate away?')) {
+                        window.location.href = editUrl;
+                    }
+                } else {
+                    window.location.href = editUrl;
+                }
+            });
+        });
+        
+        console.log(`✅ Enhanced ${leadItems.length} lead items`);
+    }
+    
+    // Initialize when DOM is ready
+    function init() {
+        highlightCurrentLead();
+        enhanceLeadItems();
+        
+        // Add a visual indicator to the page title
+        const currentLeadName = "{{ lead_data.ownerName|default:'Lead' }}";
+        document.title = `Editing: ${currentLeadName} - Edit Requirements`;
+        
+        console.log('✅ Lead navigation initialized');
+    }
+    
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+})();
+</script>
+
 </body>
 </html>

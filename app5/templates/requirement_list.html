@@ -346,6 +346,43 @@
             padding: 2px 6px;
             font-weight: 600;
         }
+
+        /* Selected lead highlighting */
+        .lead-item.selected {
+            background: linear-gradient(135deg, #e3f2fd, #bbdefb) !important;
+            border-left: 5px solid #2575fc !important;
+            transform: translateX(5px);
+            box-shadow: 0 4px 15px rgba(37, 117, 252, 0.3) !important;
+            transition: all 0.3s ease;
+        }
+
+        .lead-item.selected .lead-name {
+            color: #1565c0;
+            font-weight: 700;
+        }
+
+        .lead-item.selected .lead-avatar {
+            background: linear-gradient(135deg, #2575fc, #6a11cb);
+            color: white;
+            font-weight: bold;
+        }
+
+        .lead-item.selected::before {
+            content: "✓";
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            background: #4CAF50;
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+        }
         .lead-status {
             font-size: 10px;
             color: #28a745;
@@ -623,8 +660,7 @@
                              data-requirements-count="{{ lead.requirements_count }}"
                              data-email="{{ lead.email|default:'' }}"
                              data-company="{{ lead.company|default:'' }}"
-                             data-place="{{ lead.place|default:'' }}"
-                             onclick="redirectToEditPage({{ lead.id }})">
+                             data-place="{{ lead.place|default:'' }}">
                             
                             <!-- Edit Indicator -->
                             <div class="edit-lead-indicator" title="Click to edit requirements">
@@ -688,9 +724,6 @@
                                     </span>
                                 </div>
                                 {% endif %}
-                                
-                                <!-- Quick Action Buttons -->
-                                
                             </div>
                         </div>
                         {% endfor %}
@@ -824,22 +857,23 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a href="#requirements-section" class="nav-link active">
+                            <a href="#" class="nav-link" id="smartRequirementsBtn">
                                 <i class="fas fa-clipboard-list"></i>
                                 Requirements
+                                <span id="requirementsBtnBadge" style="font-size: 10px; margin-left: 5px;"></span>
                             </a>
                         </li>
                         <li class="nav-item">
-                             <a href="{% url 'app5:event_form' %}" class="nav-link">
-                             <i class="fas fa-briefcase"></i>
-                             Event
+                            <a href="{% url 'app5:event_form' %}" class="nav-link">
+                                <i class="fas fa-calendar"></i>
+                                Event
                             </a>
                         </li>
                         <li class="nav-item">
-                           <a href="{% url 'app5:quotation_form' %}" class="nav-link">
-                          <i class="fas fa-file-invoice"></i>
-                           Quotation
-                         </a>
+                            <a href="{% url 'app5:quotation_form' %}" class="nav-link">
+                                <i class="fas fa-file-invoice-dollar"></i>
+                                Quotation
+                            </a>
                         </li>
                     </ul>
                 </div>
@@ -853,6 +887,17 @@
                         {% endfor %}
                     {% endif %}
                     
+                    <!-- Lead Selection Hint -->
+                    <div class="lead-selection-hint" id="leadSelectionHint">
+                        <i class="fas fa-info-circle"></i>
+                        <div>
+                            <strong>Select a lead from the directory</strong>
+                            <p style="margin-top: 5px; font-size: 12px; opacity: 0.9;">
+                                Click on any lead in the left panel to select it. The form will be auto-populated with lead details.
+                            </p>
+                        </div>
+                    </div>
+                    
                     <!-- ===== Communication Details Section ===== -->
                     <div class="form-section" id="communication-details">
                         <div class="section-title">
@@ -864,10 +909,9 @@
                             <div class="status-inline">
                                 <select id="status" name="status" class="status-select" required>
                                     <option value="">Select Status</option>
-                                    <option value="">Status</option>
-                                            <option value="Active">🟢Active</option>
-                                            <option value="Inactive">🔴Inactive</option>
-                                            <option value="Installed">🟡 Installed</option>
+                                    <option value="Active">🟢 Active</option>
+                                    <option value="Inactive">🔴 Inactive</option>
+                                    <option value="Installed">🟡 Installed</option>
                                 </select>
 
                                 <select id="priority" name="priority" class="status-select" required>
@@ -896,7 +940,11 @@
                                              data-phone="{{ lead.phoneNo }}"
                                              data-priority="{{ lead.priority }}"
                                              data-status="{{ lead.status }}"
-                                             data-requirements-count="{{ lead.requirements_count }}">
+                                             data-requirements-count="{{ lead.requirements_count }}"
+                                             data-lead-id="{{ lead.id }}"
+                                             data-email="{{ lead.email|default:'' }}"
+                                             data-company="{{ lead.company|default:'' }}"
+                                             data-place="{{ lead.place|default:'' }}">
                                             <div class="ticket-details">
                                                 <div class="ticket-number">
                                                     {{ lead.ticket_number }}
@@ -944,9 +992,6 @@
                     </div>
                     <!-- ===== end Communication Details Section ===== -->
                     
-                    <!-- Lead Selection Hint -->
-                    
-                    
                     <!-- ===== Requirements Section ===== -->
                     <div class="requirements-section" id="requirements-section">
                         <div class="section-header">
@@ -974,6 +1019,7 @@
                             <input type="hidden" name="email" id="hiddenEmail">
                             <input type="hidden" name="company" id="hiddenCompany">
                             <input type="hidden" name="place" id="hiddenPlace">
+                            <input type="hidden" name="lead_id" id="hiddenLeadId">
 
                             <!-- Item Options Template -->
                             <template id="item-options">
@@ -1038,6 +1084,10 @@
 </div>
 
 <script>
+    // =====================================================
+    // SMART REQUIREMENTS NAVIGATION SYSTEM
+    // =====================================================
+    
     // Global variables
     let leadRequirementsMap = {{ lead_requirements_map|safe }};
     let currentLeadTicket = null;
@@ -1045,103 +1095,84 @@
     let existingRequirementIds = [];
     let selectedLeadId = null;
     let activeLeads = {{ active_leads_json|safe }};
+    const tbody = document.getElementById('table-body');
+    const grandEl = document.getElementById('grand-total');
 
-    // ===== REDIRECTION FUNCTIONS =====
+    // =====================================================
+    // UTILITY FUNCTIONS
+    // =====================================================
     
-    // Function to redirect to edit page
-    function redirectToEditPage(leadId, event) {
-        if (event) {
-            event.stopPropagation(); // Prevent event bubbling
-        }
-        
-        if (!leadId) {
-            console.error('Lead ID not found!');
-            showNotification('Error: Lead ID not found', 'error');
-            return;
-        }
-        
-        // Construct the edit URL
-        const editUrl = `{% url 'app5:edit_requirement' 0 %}`.replace('0', leadId);
-        
-        // Show loading notification
-        showNotification(`Redirecting to edit page for Lead ${leadId}...`, 'info');
-        
-        // Redirect after a short delay
-        setTimeout(() => {
-            window.location.href = editUrl;
-        }, 500);
-    }
-    
-    // Function to view lead details (optional)
-    function viewLeadDetails(leadId, event) {
-        if (event) {
-            event.stopPropagation();
-        }
-        
-        // You can implement view functionality here
-        // For now, just show a notification
-        showNotification(`Viewing details for Lead ${leadId}`, 'info');
-        
-        // Or redirect to a view page
-        // window.location.href = `/view-lead/${leadId}/`;
-    }
-    
-    // ===== DIRECTORY LEAD SELECTION =====
-    function setupDirectoryLeadSelection() {
-        const leadItems = document.querySelectorAll('#leadList .lead-item');
-        
-        leadItems.forEach(item => {
-            // Add click handler for the entire item (excluding buttons)
-            item.addEventListener('click', function(e) {
-                // Don't redirect if clicking on buttons
-                if (e.target.tagName === 'BUTTON' || 
-                    e.target.closest('button') || 
-                    e.target.classList.contains('edit-btn') ||
-                    e.target.classList.contains('view-btn')) {
-                    return;
-                }
-                
-                // Get lead ID
-                const leadId = this.getAttribute('data-id');
-                
-                if (!leadId) {
-                    console.error('Lead ID not found!');
-                    return;
-                }
-                
-                // Redirect to edit page
-                redirectToEditPage(leadId, e);
-            });
-        });
+    function formatNumber(n) {
+        n = parseFloat(n) || 0;
+        return n.toFixed(2);
     }
 
-    // ===== NOTIFICATION FUNCTION =====
     function showNotification(message, type = 'info') {
+        const colors = {
+            success: '#4CAF50',
+            error: '#f44336',
+            warning: '#ff9800',
+            info: '#2196F3'
+        };
+        
+        const icons = {
+            success: 'check-circle',
+            error: 'exclamation-circle',
+            warning: 'exclamation-triangle',
+            info: 'info-circle'
+        };
+        
+        // Remove existing notification
+        const existing = document.querySelector('.smart-notification');
+        if (existing) existing.remove();
+        
         const notification = document.createElement('div');
+        notification.className = 'smart-notification';
         notification.style.cssText = `
             position: fixed;
             top: 20px;
             right: 20px;
             padding: 15px 20px;
-            background: ${type === 'success' ? '#4CAF50' : type === 'error' ? '#f44336' : '#2196F3'};
+            background: ${colors[type]};
             color: white;
-            border-radius: 5px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
             z-index: 10000;
             font-weight: 600;
-            transition: all 0.3s ease;
+            font-size: 14px;
             display: flex;
             align-items: center;
             gap: 10px;
+            animation: slideInRight 0.3s ease-out;
         `;
+        
         notification.innerHTML = `
-            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
-            ${message}
+            <i class="fas fa-${icons[type]}"></i>
+            <span>${message}</span>
         `;
+        
+        // Add animation styles if not already added
+        if (!document.getElementById('smart-notification-styles')) {
+            const style = document.createElement('style');
+            style.id = 'smart-notification-styles';
+            style.textContent = `
+                @keyframes slideInRight {
+                    from {
+                        opacity: 0;
+                        transform: translateX(100px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateX(0);
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+        }
         
         document.body.appendChild(notification);
         
-        // Remove after 3 seconds
+        // Auto-remove after 3 seconds
         setTimeout(() => {
             notification.style.opacity = '0';
             notification.style.transform = 'translateX(100px)';
@@ -1153,90 +1184,142 @@
         }, 3000);
     }
 
-    // ===== TICKET SELECT DROPDOWN FUNCTIONS =====
-    function setupTicketSelectDropdown() {
-        const dropdown = document.getElementById('ticketSelectDropdown');
-        const optionsContainer = document.getElementById('ticketSelectOptions');
-        const selectedText = document.getElementById('selectedTicketText');
-        const options = document.querySelectorAll('.ticket-option');
+    // =====================================================
+    // LEAD SELECTION AND SMART NAVIGATION
+    // =====================================================
+    
+    function setupLeadSelection() {
+        const leadItems = document.querySelectorAll('.lead-item.clickable');
         
-        if (!dropdown || !optionsContainer) return;
-        
-        // Toggle dropdown
-        dropdown.addEventListener('click', function(e) {
-            e.stopPropagation();
-            dropdown.classList.toggle('active');
-            optionsContainer.classList.toggle('active');
-        });
-        
-        // Close dropdown when clicking outside
-        document.addEventListener('click', function(e) {
-            if (!dropdown.contains(e.target) && !optionsContainer.contains(e.target)) {
-                dropdown.classList.remove('active');
-                optionsContainer.classList.remove('active');
-            }
-        });
-        
-        // Handle option selection
-        options.forEach(option => {
-            option.addEventListener('click', function() {
-                const ticket = this.getAttribute('data-ticket');
-                const name = this.getAttribute('data-name');
-                const phone = this.getAttribute('data-phone');
-                const priority = this.getAttribute('data-priority');
-                const status = this.getAttribute('data-status');
-                const requirementsCount = this.getAttribute('data-requirements-count') || 0;
+        leadItems.forEach(item => {
+            // Clone to remove any existing listeners
+            const newItem = item.cloneNode(true);
+            item.parentNode.replaceChild(newItem, item);
+            
+            newItem.addEventListener('click', function(e) {
+                // Don't interfere with button clicks
+                if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
+                    return;
+                }
                 
-                // Update selected text
-                selectedText.textContent = `${ticket} - ${name}`;
+                e.preventDefault();
+                e.stopPropagation();
                 
-                // Remove selected class from all options
-                options.forEach(opt => opt.classList.remove('selected'));
-                // Add selected class to clicked option
+                const leadId = this.getAttribute('data-id');
+                const leadName = this.getAttribute('data-name') || 'Unknown';
+                const requirementsCount = parseInt(this.getAttribute('data-requirements-count') || 0);
+                
+                console.log(`Lead clicked: ${leadId}, Requirements: ${requirementsCount}`);
+                
+                // Gather lead data from attributes
+                const leadData = {
+                    id: leadId,
+                    ownerName: leadName,
+                    phoneNo: this.getAttribute('data-phone') || '',
+                    ticket_number: this.getAttribute('data-ticket') || '',
+                    priority: this.getAttribute('data-priority') || '',
+                    status: this.getAttribute('data-status') || '',
+                    email: this.getAttribute('data-email') || '',
+                    company: this.getAttribute('data-company') || '',
+                    place: this.getAttribute('data-place') || '',
+                    requirements_count: requirementsCount
+                };
+                
+                // Save to localStorage
+                localStorage.setItem('smartLeadData', JSON.stringify(leadData));
+                
+                // Highlight selected lead
+                document.querySelectorAll('.lead-item').forEach(i => {
+                    i.classList.remove('selected');
+                });
                 this.classList.add('selected');
                 
-                // Update form fields
-                document.getElementById('ticket_number').value = ticket;
-                document.getElementById('ownerName').value = name;
-                document.getElementById('phoneNo').value = phone;
-                
-                // Update status and priority dropdowns
-                document.getElementById('status').value = status;
-                document.getElementById('priority').value = priority;
-                
-                // Update hidden fields
-                document.getElementById('hiddenTicketNumber').value = ticket;
-                document.getElementById('hiddenOwnerName').value = name;
-                document.getElementById('hiddenPhoneNo').value = phone;
-                document.getElementById('hiddenStatus').value = status;
-                document.getElementById('hiddenPriority').value = priority;
-                
-                // Update the selected lead info box
-                updateSelectedLeadInfoBox(ticket, name, phone, priority, status, requirementsCount);
-                
-                // Hide the lead selection hint
-                const leadSelectionHint = document.getElementById('leadSelectionHint');
-                if (leadSelectionHint) {
-                    leadSelectionHint.style.display = 'none';
+                // SMART NAVIGATION DECISION
+                if (requirementsCount > 0) {
+                    // Has requirements → Navigate to edit page
+                    const editUrl = '{% url "app5:edit_requirement" 0 %}'.replace('0', leadId);
+                    console.log(`Has ${requirementsCount} requirements, navigating to EDIT page`);
+                    
+                    // Show notification
+                    showNotification(`Opening edit page for ${leadName} (${requirementsCount} items)...`, 'info');
+                    
+                    // Add visual feedback
+                    this.style.transform = 'scale(0.95)';
+                    this.style.opacity = '0.7';
+                    
+                    // Navigate after short delay
+                    setTimeout(() => {
+                        window.location.href = editUrl;
+                    }, 500);
+                } else {
+                    // No requirements → Stay on list page, populate form
+                    console.log(`No requirements for ${leadName}, populating form`);
+                    
+                    // Populate the form fields
+                    populateFormWithLeadData(leadData);
+                    
+                    // Show notification
+                    showNotification(`Ready to add requirements for ${leadName}`, 'success');
+                    
+                    // Update navigation button badge
+                    updateRequirementsButtonBadge(requirementsCount);
                 }
-                
-                // Enable the submit button
-                const submitBtn = document.getElementById('submitRequirementsBtn');
-                if (submitBtn) {
-                    submitBtn.disabled = false;
-                }
-                
-                // Close dropdown
-                dropdown.classList.remove('active');
-                optionsContainer.classList.remove('active');
-                
-                // Show notification
-                showNotification(`Selected ticket: ${ticket}`, 'success');
-                
-                // Check for existing requirements
-                checkExistingRequirements(ticket);
             });
         });
+        
+        console.log(`✅ Setup lead selection for ${leadItems.length} leads`);
+    }
+
+    function populateFormWithLeadData(leadData) {
+        // Populate communication details
+        document.getElementById('ticket_number').value = leadData.ticket_number || '';
+        document.getElementById('ownerName').value = leadData.ownerName || '';
+        document.getElementById('phoneNo').value = leadData.phoneNo || '';
+        document.getElementById('status').value = leadData.status || '';
+        document.getElementById('priority').value = leadData.priority || '';
+        
+        // Populate hidden fields
+        document.getElementById('hiddenTicketNumber').value = leadData.ticket_number || '';
+        document.getElementById('hiddenOwnerName').value = leadData.ownerName || '';
+        document.getElementById('hiddenPhoneNo').value = leadData.phoneNo || '';
+        document.getElementById('hiddenStatus').value = leadData.status || '';
+        document.getElementById('hiddenPriority').value = leadData.priority || '';
+        document.getElementById('hiddenEmail').value = leadData.email || '';
+        document.getElementById('hiddenCompany').value = leadData.company || '';
+        document.getElementById('hiddenPlace').value = leadData.place || '';
+        document.getElementById('hiddenLeadId').value = leadData.id || '';
+        
+        // Update selected ticket dropdown
+        const selectedText = document.getElementById('selectedTicketText');
+        if (selectedText && leadData.ticket_number) {
+            selectedText.textContent = `${leadData.ticket_number} - ${leadData.ownerName}`;
+        }
+        
+        // Update selected lead info box
+        updateSelectedLeadInfoBox(
+            leadData.ticket_number,
+            leadData.ownerName,
+            leadData.phoneNo,
+            leadData.priority,
+            leadData.status,
+            leadData.requirements_count || 0
+        );
+        
+        // Enable submit button
+        const submitBtn = document.getElementById('submitRequirementsBtn');
+        if (submitBtn) {
+            submitBtn.disabled = false;
+        }
+        
+        // Hide lead selection hint
+        const leadSelectionHint = document.getElementById('leadSelectionHint');
+        if (leadSelectionHint) {
+            leadSelectionHint.style.display = 'none';
+        }
+        
+        // Clear any existing requirements from table
+        clearRequirementsTable();
+        createRow();
     }
 
     function updateSelectedLeadInfoBox(ticket, name, phone, priority, status, itemsCount) {
@@ -1260,174 +1343,174 @@
         }
     }
 
-    function checkExistingRequirements(ticketNumber) {
-        // Find lead by ticket number
-        const lead = activeLeads.find(l => l.ticket_number === ticketNumber);
-        if (!lead) return;
-        
-        // Check if lead has existing requirements in the map
-        const existingRequirements = leadRequirementsMap[lead.id] || [];
-        
-        if (existingRequirements && existingRequirements.length > 0) {
-            // Show existing requirements
-            showExistingRequirements(existingRequirements);
-            
-            // Show notification
-            showNotification(`Found ${existingRequirements.length} existing requirement(s) for this lead`, 'warning');
-        } else {
-            // Clear the table
-            clearRequirementsTable();
-            createRow();
-            
-            // Update items count badge
-            updateItemsCountBadge();
+    function updateRequirementsButtonBadge(count) {
+        const badge = document.getElementById('requirementsBtnBadge');
+        if (badge) {
+            if (count > 0) {
+                badge.textContent = `(${count})`;
+                badge.style.color = '#28a745';
+            } else {
+                badge.textContent = '';
+            }
         }
     }
 
-    function showExistingRequirements(requirements) {
-        // Clear current table
-        clearRequirementsTable();
+    // =====================================================
+    // TICKET DROPDOWN FUNCTIONALITY
+    // =====================================================
+    
+    function setupTicketSelectDropdown() {
+    const dropdown = document.getElementById('ticketSelectDropdown');
+    const optionsContainer = document.getElementById('ticketSelectOptions');
+    const selectedText = document.getElementById('selectedTicketText');
+    const allOptions = document.querySelectorAll('.ticket-option');
+    
+    if (!dropdown || !optionsContainer) return;
+    
+    // Function to refresh ticket options - showing only those with no requirements
+    function refreshTicketOptions() {
+        // Clear all existing options
+        optionsContainer.innerHTML = '';
         
-        // Add existing requirements to table
-        existingRequirementIds = [];
+        let visibleCount = 0;
         
-        requirements.forEach((req, index) => {
-            const row = createRow();
+        // Filter: Show only tickets with requirements_count = 0 (no requirements yet)
+        allOptions.forEach(option => {
+            const requirementsCount = parseInt(option.getAttribute('data-requirements-count') || 0);
             
-            // Fill the row with existing data
-            const sectionSelect = row.querySelector('.section-select');
-            const itemSelect = row.querySelector('.item-select');
-            const unitInput = row.querySelector('.item-unit');
-            const priceInput = row.querySelector('.item-price');
-            const qtyInput = row.querySelector('.item-qty');
-            
-            if (sectionSelect && req.section) {
-                sectionSelect.value = req.section;
-                
-                // Trigger section change to filter items
-                sectionSelect.dispatchEvent(new Event('change'));
-                
-                // Small delay to ensure items are loaded
-                setTimeout(() => {
-                    if (itemSelect && req.item_id) {
-                        itemSelect.value = req.item_id;
-                        
-                        // Trigger item change to autofill unit and price
-                        itemSelect.dispatchEvent(new Event('change'));
-                        
-                        // Small delay to ensure item data is loaded
-                        setTimeout(() => {
-                            if (priceInput && req.price) {
-                                priceInput.value = parseFloat(req.price).toFixed(2);
-                            }
-                            
-                            if (qtyInput && req.quantity) {
-                                qtyInput.value = req.quantity;
-                            }
-                            
-                            // Recalculate row
-                            recalcRow(row);
-                            
-                            // Store requirement ID
-                            existingRequirementIds.push(req.id);
-                        }, 100);
-                    }
-                }, 100);
+            // Only show tickets with NO requirements
+            if (requirementsCount === 0) {
+                // Clone the option
+                const newOption = option.cloneNode(true);
+                optionsContainer.appendChild(newOption);
+                visibleCount++;
             }
         });
         
-        // Update hidden field with requirement IDs
-        document.getElementById('hiddenRequirementIds').value = existingRequirementIds.join(',');
-        
-        // Update items count
-        updateItemsCountBadge();
-        
-        // Show edit mode indicator
-        showEditModeIndicator(requirements.length);
-    }
-
-    function showEditModeIndicator(itemCount) {
-        // Remove any existing indicator
-        const existingIndicator = document.querySelector('.edit-mode-indicator');
-        if (existingIndicator) {
-            existingIndicator.remove();
+        // If no tickets without requirements, show a message
+        if (visibleCount === 0) {
+            const noOptionsDiv = document.createElement('div');
+            noOptionsDiv.className = 'ticket-option';
+            noOptionsDiv.style.pointerEvents = 'none';
+            noOptionsDiv.innerHTML = `
+                <div class="ticket-details">
+                    <div class="ticket-number" style="color: #666; font-style: italic;">
+                        No tickets available
+                    </div>
+                    <div class="ticket-owner" style="font-size: 11px;">
+                        All tickets already have requirements
+                    </div>
+                </div>
+            `;
+            optionsContainer.appendChild(noOptionsDiv);
         }
         
-        // Create new indicator
-        const indicator = document.createElement('div');
-        indicator.className = 'edit-mode-indicator';
-        indicator.innerHTML = `
-            <i class="fas fa-edit"></i>
-            <div>
-                <strong>Edit Mode</strong>
-                <p style="margin-top: 5px; font-size: 12px; opacity: 0.9;">
-                    You are editing ${itemCount} existing requirement(s). Changes will update the existing records.
-                </p>
-            </div>
-        `;
-        
-        // Insert after the lead selection hint
-        const leadSelectionHint = document.getElementById('leadSelectionHint');
-        if (leadSelectionHint) {
-            leadSelectionHint.parentNode.insertBefore(indicator, leadSelectionHint.nextSibling);
+        // Update dropdown text to indicate filtered view
+        if (visibleCount > 0) {
+            selectedText.textContent = `Select ticket (${visibleCount} without requirements)`;
+        } else {
+            selectedText.textContent = 'No tickets available';
+            dropdown.style.opacity = '0.7';
+            dropdown.style.cursor = 'not-allowed';
         }
-    }
-
-    // ===== SEARCH AND FILTERS =====
-    function setupSearchAndFilters() {
-        const searchInput = document.getElementById('directorySearch');
-        const priorityFilter = document.getElementById('priorityFilter');
-        const statusFilter = document.getElementById('statusFilter');
-        const leadItems = document.querySelectorAll('#leadList .lead-item');
         
-        function filterItems() {
-            const searchTerm = searchInput.value.toLowerCase();
-            const priorityValue = priorityFilter.value;
-            const statusValue = statusFilter.value;
-            
-            leadItems.forEach(item => {
-                const name = item.getAttribute('data-name').toLowerCase();
-                const phone = item.getAttribute('data-phone').toLowerCase();
-                const ticket = item.getAttribute('data-ticket').toLowerCase();
-                const priority = item.getAttribute('data-priority');
-                const status = item.getAttribute('data-status');
+        // Re-attach event listeners to the new options
+        attachTicketOptionEvents();
+    }
+    
+    // Function to attach event listeners to ticket options
+    function attachTicketOptionEvents() {
+        const options = document.querySelectorAll('.ticket-option:not([style*="pointer-events: none"])');
+        
+        options.forEach(option => {
+            option.addEventListener('click', function() {
+                const ticket = this.getAttribute('data-ticket');
+                const name = this.getAttribute('data-name');
+                const phone = this.getAttribute('data-phone');
+                const priority = this.getAttribute('data-priority');
+                const status = this.getAttribute('data-status');
+                const requirementsCount = this.getAttribute('data-requirements-count') || 0;
+                const leadId = this.getAttribute('data-lead-id');
+                const email = this.getAttribute('data-email') || '';
+                const company = this.getAttribute('data-company') || '';
+                const place = this.getAttribute('data-place') || '';
                 
-                // Combine search fields
-                const matchesSearch = !searchTerm || 
-                                     name.includes(searchTerm) || 
-                                     phone.includes(searchTerm) || 
-                                     ticket.includes(searchTerm);
+                // Update selected text
+                selectedText.textContent = `${ticket} - ${name}`;
                 
-                // Match priority (if not "all")
-                const matchesPriority = priorityValue === 'all' || priority === priorityValue;
+                // Remove selected class from all options
+                options.forEach(opt => opt.classList.remove('selected'));
+                // Add selected class to clicked option
+                this.classList.add('selected');
                 
-                // Match status (if not "all")
-                const matchesStatus = statusValue === 'all' || status === statusValue;
+                // Create lead data object
+                const leadData = {
+                    id: leadId,
+                    ownerName: name,
+                    phoneNo: phone,
+                    ticket_number: ticket,
+                    priority: priority,
+                    status: status,
+                    email: email,
+                    company: company,
+                    place: place,
+                    requirements_count: parseInt(requirementsCount)
+                };
                 
-                // Show/hide based on all filters
-                if (matchesSearch && matchesPriority && matchesStatus) {
-                    item.style.display = 'flex';
-                } else {
-                    item.style.display = 'none';
-                }
+                // Save to localStorage
+                localStorage.setItem('smartLeadData', JSON.stringify(leadData));
+                
+                // Populate form with lead data
+                populateFormWithLeadData(leadData);
+                
+                // Close dropdown
+                dropdown.classList.remove('active');
+                optionsContainer.classList.remove('active');
+                
+                // Show notification
+                showNotification(`Selected: ${name} (Ticket: ${ticket})`, 'success');
+                
+                // Update navigation button
+                updateRequirementsButtonBadge(requirementsCount);
             });
+        });
+    }
+    
+    // Toggle dropdown
+    dropdown.addEventListener('click', function(e) {
+        e.stopPropagation();
+        
+        // Don't open if no tickets available
+        const availableTickets = Array.from(allOptions).filter(opt => {
+            const reqCount = parseInt(opt.getAttribute('data-requirements-count') || 0);
+            return reqCount === 0;
+        });
+        
+        if (availableTickets.length === 0) {
+            showNotification('All tickets already have requirements. Please select a lead from the directory or create a new lead.', 'info');
+            return;
         }
         
-        // Add event listeners
-        if (searchInput) searchInput.addEventListener('input', filterItems);
-        if (priorityFilter) priorityFilter.addEventListener('change', filterItems);
-        if (statusFilter) statusFilter.addEventListener('change', filterItems);
-    }
+        dropdown.classList.toggle('active');
+        optionsContainer.classList.toggle('active');
+    });
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!dropdown.contains(e.target) && !optionsContainer.contains(e.target)) {
+            dropdown.classList.remove('active');
+            optionsContainer.classList.remove('active');
+        }
+    });
+    
+    // Initialize the filtered dropdown
+    refreshTicketOptions();
+}
 
-    // ===== REQUIREMENTS TABLE FUNCTIONS =====
-    const tbody = document.getElementById('table-body');
-    const grandEl = document.getElementById('grand-total');
-
-    function formatNumber(n) {
-        n = parseFloat(n) || 0;
-        return n.toFixed(2);
-    }
-
+    // =====================================================
+    // REQUIREMENTS TABLE FUNCTIONS
+    // =====================================================
+    
     function createRow() {
         const tr = document.createElement('tr');
         tr.innerHTML = `
@@ -1629,6 +1712,23 @@
         }
     }
 
+    function clearRequirementsTable() {
+        if (tbody) {
+            tbody.innerHTML = '';
+        }
+        existingRequirementIds = [];
+        const hiddenIds = document.getElementById('hiddenRequirementIds');
+        if (hiddenIds) {
+            hiddenIds.value = '';
+        }
+        recalcGrandTotal();
+        updateItemsCountBadge();
+    }
+
+    // =====================================================
+    // FORM MANAGEMENT
+    // =====================================================
+    
     function clearForm() {
         // Clear the form
         clearRequirementsTable();
@@ -1640,6 +1740,10 @@
         document.getElementById('hiddenPriority').value = '';
         document.getElementById('hiddenStatus').value = '';
         document.getElementById('hiddenRequirementIds').value = '';
+        document.getElementById('hiddenEmail').value = '';
+        document.getElementById('hiddenCompany').value = '';
+        document.getElementById('hiddenPlace').value = '';
+        document.getElementById('hiddenLeadId').value = '';
         
         // Clear visible fields
         document.getElementById('ticket_number').value = '';
@@ -1678,17 +1782,13 @@
             submitBtn.disabled = true;
         }
         
-        // Remove edit mode indicator
-        const editIndicator = document.querySelector('.edit-mode-indicator');
-        if (editIndicator) {
-            editIndicator.remove();
-        }
+        // Clear selection from leads
+        document.querySelectorAll('.lead-item').forEach(item => {
+            item.classList.remove('selected');
+        });
         
-        // Remove existing requirements info
-        const existingReqInfo = document.querySelector('.existing-requirements-info');
-        if (existingReqInfo) {
-            existingReqInfo.remove();
-        }
+        // Clear localStorage
+        localStorage.removeItem('smartLeadData');
         
         // Create initial row
         createRow();
@@ -1696,33 +1796,173 @@
         showNotification('Form cleared', 'info');
     }
 
-    function clearRequirementsTable() {
-        if (tbody) {
-            tbody.innerHTML = '';
+    // =====================================================
+    // SEARCH AND FILTERS
+    // =====================================================
+    
+    function setupSearchAndFilters() {
+        const searchInput = document.getElementById('directorySearch');
+        const priorityFilter = document.getElementById('priorityFilter');
+        const statusFilter = document.getElementById('statusFilter');
+        const leadItems = document.querySelectorAll('#leadList .lead-item');
+        
+        function filterItems() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const priorityValue = priorityFilter.value;
+            const statusValue = statusFilter.value;
+            
+            leadItems.forEach(item => {
+                const name = item.getAttribute('data-name').toLowerCase();
+                const phone = item.getAttribute('data-phone').toLowerCase();
+                const ticket = item.getAttribute('data-ticket').toLowerCase();
+                const priority = item.getAttribute('data-priority');
+                const status = item.getAttribute('data-status');
+                
+                // Combine search fields
+                const matchesSearch = !searchTerm || 
+                                     name.includes(searchTerm) || 
+                                     phone.includes(searchTerm) || 
+                                     ticket.includes(searchTerm);
+                
+                // Match priority (if not "all")
+                const matchesPriority = priorityValue === 'all' || priority === priorityValue;
+                
+                // Match status (if not "all")
+                const matchesStatus = statusValue === 'all' || status === statusValue;
+                
+                // Show/hide based on all filters
+                if (matchesSearch && matchesPriority && matchesStatus) {
+                    item.style.display = 'flex';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
         }
-        existingRequirementIds = [];
-        const hiddenIds = document.getElementById('hiddenRequirementIds');
-        if (hiddenIds) {
-            hiddenIds.value = '';
-        }
-        recalcGrandTotal();
-        updateItemsCountBadge();
+        
+        // Add event listeners
+        if (searchInput) searchInput.addEventListener('input', filterItems);
+        if (priorityFilter) priorityFilter.addEventListener('change', filterItems);
+        if (statusFilter) statusFilter.addEventListener('change', filterItems);
     }
 
-    // ===== INITIALIZATION =====
+    // =====================================================
+    // AUTO-LOAD FUNCTIONALITY
+    // =====================================================
+    
+    function autoLoadLead() {
+        // Check URL for lead_id parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlLeadId = urlParams.get('lead_id');
+        
+        if (urlLeadId) {
+            console.log('🔄 Loading from URL parameter:', urlLeadId);
+            const leadItem = document.querySelector(`.lead-item[data-id="${urlLeadId}"]`);
+            
+            if (leadItem) {
+                setTimeout(() => {
+                    leadItem.click();
+                    leadItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 300);
+                return true;
+            }
+        }
+        
+        // Check localStorage for saved lead
+        const storedLeadStr = localStorage.getItem('smartLeadData');
+        if (storedLeadStr) {
+            try {
+                const leadData = JSON.parse(storedLeadStr);
+                console.log('💾 Loading from storage:', leadData.ownerName);
+                
+                // Find and highlight the lead item
+                const leadItem = document.querySelector(`.lead-item[data-id="${leadData.id}"]`);
+                if (leadItem) {
+                    leadItem.classList.add('selected');
+                    
+                    // Populate form if on list page
+                    if (leadData.requirements_count === 0) {
+                        populateFormWithLeadData(leadData);
+                    }
+                }
+                return true;
+            } catch (error) {
+                console.error('Error loading from localStorage:', error);
+            }
+        }
+        
+        return false;
+    }
+
+    // =====================================================
+    // NAVIGATION MENU ENHANCEMENT
+    // =====================================================
+    
+    function setupNavigationMenu() {
+        const requirementsBtn = document.getElementById('smartRequirementsBtn');
+        
+        if (requirementsBtn) {
+            requirementsBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                // Get saved lead data
+                const leadDataStr = localStorage.getItem('smartLeadData');
+                
+                if (!leadDataStr) {
+                    showNotification('Please select a lead first', 'warning');
+                    return;
+                }
+                
+                try {
+                    const leadData = JSON.parse(leadDataStr);
+                    
+                    if (!leadData.id) {
+                        showNotification('Invalid lead data', 'error');
+                        return;
+                    }
+                    
+                    const requirementsCount = leadData.requirements_count || 0;
+                    
+                    if (requirementsCount > 0) {
+                        // Navigate to edit page
+                        const editUrl = '{% url "app5:edit_requirement" 0 %}'.replace('0', leadData.id);
+                        window.location.href = editUrl;
+                    } else {
+                        // Already on list page, just ensure form is populated
+                        const leadItem = document.querySelector(`.lead-item[data-id="${leadData.id}"]`);
+                        if (leadItem) {
+                            leadItem.click();
+                        }
+                        
+                        // Scroll to form
+                        document.getElementById('requirements-section').scrollIntoView({ 
+                            behavior: 'smooth' 
+                        });
+                    }
+                } catch (error) {
+                    showNotification('Error loading lead data', 'error');
+                }
+            });
+        }
+    }
+
+    // =====================================================
+    // INITIALIZATION
+    // =====================================================
+    
     document.addEventListener('DOMContentLoaded', function() {
         console.log('✅ Requirement List Page Loaded');
-        console.log('Leads Data:', activeLeads);
-        console.log('Requirements Map:', leadRequirementsMap);
         
         // Setup directory functionality
-        setupDirectoryLeadSelection();
+        setupLeadSelection();
         
-        // Setup ticket dropdown (if you want to keep it)
+        // Setup ticket dropdown
         setupTicketSelectDropdown();
         
         // Setup search and filters
         setupSearchAndFilters();
+        
+        // Setup navigation menu
+        setupNavigationMenu();
         
         // Initialize requirements table
         createRow();
@@ -1748,7 +1988,7 @@
                 const ownerName = document.getElementById('hiddenOwnerName').value;
                 if (!ownerName) {
                     e.preventDefault();
-                    showNotification('Please select a ticket first', 'error');
+                    showNotification('Please select a lead first', 'error');
                     return;
                 }
 
@@ -1764,6 +2004,9 @@
                 document.querySelectorAll('.item-select').forEach(select => {
                     if (!select.value) {
                         allValid = false;
+                        select.style.borderColor = '#ff4444';
+                    } else {
+                        select.style.borderColor = '';
                     }
                 });
 
@@ -1775,29 +2018,29 @@
 
                 // Show loading state
                 const submitBtn = document.getElementById('submitRequirementsBtn');
+                const clearBtn = document.getElementById('clearFormBtn');
                 const originalText = submitBtn.innerHTML;
                 submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
                 submitBtn.disabled = true;
-                
-                // Also disable the clear form button during submission
-                clearFormBtn.disabled = true;
+                clearBtn.disabled = true;
                 
                 // Re-enable after 5 seconds if still on page (in case of error)
                 setTimeout(() => {
                     submitBtn.innerHTML = originalText;
                     submitBtn.disabled = false;
-                    clearFormBtn.disabled = false;
+                    clearBtn.disabled = false;
                 }, 5000);
             });
         }
         
-        console.log('✅ Requirements page initialized successfully with click-to-edit functionality');
+        // Auto-load lead if specified
+        autoLoadLead();
+        
+        console.log('✅ Requirements page initialized successfully with smart navigation');
     });
 
     // Export functions to global scope
     window.clearLeadSelection = clearForm;
-    window.redirectToEditPage = redirectToEditPage;
-    window.viewLeadDetails = viewLeadDetails;
 </script>
 </body>
 </html>

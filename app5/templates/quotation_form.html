@@ -123,6 +123,104 @@
             flex-direction: column;
         }
         
+        /* ========================================
+           CURRENT/ACTIVE LEAD HIGHLIGHTING (Matching requirement_edit style)
+           ======================================== */
+        .lead-item.current-lead-item {
+            background: linear-gradient(135deg, #e3f2fd, #bbdefb) !important;
+            border-left: 4px solid #2196f3 !important;
+            box-shadow: 0 2px 8px rgba(33, 150, 243, 0.2) !important;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        /* Glow effect for current lead */
+        .lead-item.current-lead-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #2196f3, #42a5f5, #2196f3);
+            animation: pulse-glow 2s infinite;
+        }
+        
+        .lead-item.current-lead-item .lead-avatar {
+            background: #2196f3 !important;
+            box-shadow: 0 0 0 2px white, 0 0 0 4px #2196f3;
+            transform: scale(1.1);
+            transition: transform 0.3s;
+        }
+        
+        /* Current lead badge */
+        .current-lead-badge {
+            background: linear-gradient(135deg, #2196f3, #1976d2);
+            color: white;
+            font-size: 9px;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-weight: 700;
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            box-shadow: 0 2px 4px rgba(33, 150, 243, 0.3);
+            animation: badge-pulse 1.5s infinite;
+        }
+        
+        /* Hover effect for all leads */
+        .lead-item:hover {
+            background: linear-gradient(135deg, #f8f9ff, #e8f0ff);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            border-left: 4px solid #4a6fdc;
+        }
+        
+        /* Edit indicator */
+        .edit-lead-indicator {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: #4CAF50;
+            color: white;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 2;
+        }
+        
+        .lead-item:hover .edit-lead-indicator {
+            opacity: 1;
+        }
+        
+        .lead-item.current-lead-item .edit-lead-indicator {
+            background: #ff9800;
+            opacity: 1;
+            transform: scale(1.1);
+        }
+        
+        /* Animations */
+        @keyframes pulse-glow {
+            0% { opacity: 0.7; }
+            50% { opacity: 1; }
+            100% { opacity: 0.7; }
+        }
+        
+        @keyframes badge-pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
         /* ========== ENHANCED DIRECTORY STYLES ========== */
         .lead-directory-container {
             background: white;
@@ -313,11 +411,8 @@
             border-bottom: 1px solid #f0f0f0;
             transition: all 0.2s;
             cursor: pointer;
-        }
-
-        .lead-item.selected {
-            background: linear-gradient(135deg, #e3f2fd, #d1e7ff);
-            border-left: 4px solid #2575fc;
+            position: relative;
+            border-left: 4px solid transparent;
         }
         
         .lead-item:hover, .employee-item:hover {
@@ -339,6 +434,7 @@
             font-size: 14px;
             margin-right: 12px;
             flex-shrink: 0;
+            transition: all 0.3s;
         }
         
         .lead-avatar {
@@ -362,6 +458,9 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
         
         .employee-role, .lead-info {
@@ -379,6 +478,9 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            display: flex;
+            align-items: center;
+            gap: 4px;
         }
         
         .lead-ticket {
@@ -867,6 +969,187 @@
             transform: translateY(-2px);
         }
         
+        /* Branch Selection Modal */
+        .branch-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 10001;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .branch-modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+            max-width: 500px;
+            width: 90%;
+            animation: modalSlideIn 0.3s ease-out;
+        }
+        
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .branch-modal-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .branch-modal-header i {
+            color: #2196F3;
+            font-size: 24px;
+        }
+        
+        .branch-modal-header h3 {
+            color: #333;
+            font-size: 22px;
+            margin: 0;
+        }
+        
+        .branch-modal-body {
+            margin-bottom: 25px;
+        }
+        
+        .branch-modal-body p {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        
+        .branch-modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #f0f0f0;
+        }
+        
+        .branch-modal-btn {
+            padding: 10px 25px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .branch-modal-btn-cancel {
+            background: #f8f9fa;
+            color: #495057;
+            border: 1px solid #dee2e6;
+        }
+        
+        .branch-modal-btn-cancel:hover {
+            background: #e9ecef;
+        }
+        
+        .branch-modal-btn-download {
+            background: linear-gradient(135deg, #2196F3, #1976D2);
+            color: white;
+        }
+        
+        .branch-modal-btn-download:hover {
+            background: linear-gradient(135deg, #1976D2, #1565C0);
+            transform: translateY(-2px);
+        }
+        
+        /* Branch Selection Grid */
+        .branch-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .branch-card {
+            background: #f8f9fa;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 20px 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .branch-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border-color: #2196F3;
+            background: #f0f7ff;
+        }
+        
+        .branch-card.selected {
+            border-color: #2196F3;
+            background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+            box-shadow: 0 5px 15px rgba(33, 150, 243, 0.2);
+        }
+        
+        .branch-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #2196F3, #1976D2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+        
+        .branch-icon i {
+            color: white;
+            font-size: 24px;
+        }
+        
+        .branch-name {
+            font-weight: 700;
+            color: #333;
+            font-size: 16px;
+        }
+        
+        .branch-address {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+            line-height: 1.4;
+        }
+        
+        .branch-check {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            color: #2196F3;
+            font-size: 18px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .branch-card.selected .branch-check {
+            opacity: 1;
+        }
+        
         /* Selected Lead Info */
         .selected-lead-info {
             background: linear-gradient(135deg, #e3f2fd, #bbdefb);
@@ -874,7 +1157,7 @@
             border-radius: 10px;
             margin-bottom: 20px;
             border-left: 5px solid #2196F3;
-            display: flex;
+            display: none;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
@@ -1133,6 +1416,14 @@
             .modal-btn {
                 width: 100%;
             }
+            
+            .branch-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .branch-modal-content {
+                padding: 20px;
+            }
         }
         
         @media (max-width: 576px) {
@@ -1165,6 +1456,266 @@
                 display: none;
             }
         }
+
+        /* Show All Button */
+        .btn-show-all {
+            background: linear-gradient(135deg, #6c757d, #495057);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+        }
+
+        .btn-show-all:hover {
+            background: linear-gradient(135deg, #495057, #343a40);
+            transform: translateY(-2px);
+        }
+
+         .branch-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 10001;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .branch-modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+            max-width: 850px;
+            width: 90%;
+            animation: modalSlideIn 0.3s ease-out;
+        }
+        
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .branch-modal-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .branch-modal-header i {
+            color: #2196F3;
+            font-size: 24px;
+        }
+        
+        .branch-modal-header h3 {
+            color: #333;
+            font-size: 22px;
+            margin: 0;
+        }
+        
+        .branch-modal-body {
+            margin-bottom: 25px;
+        }
+        
+        .branch-modal-body p {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        
+        .branch-modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #f0f0f0;
+        }
+        
+        .branch-modal-btn {
+            padding: 10px 25px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .branch-modal-btn-cancel {
+            background: #f8f9fa;
+            color: #495057;
+            border: 1px solid #dee2e6;
+        }
+        
+        .branch-modal-btn-cancel:hover {
+            background: #e9ecef;
+        }
+        
+        .branch-modal-btn-download {
+            background: linear-gradient(135deg, #2196F3, #1976D2);
+            color: white;
+        }
+        
+        .branch-modal-btn-download:hover {
+            background: linear-gradient(135deg, #1976D2, #1565C0);
+            transform: translateY(-2px);
+        }
+        
+        /* Branch Selection Grid - 3 columns layout */
+        .branch-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-top: 15px;
+        }
+        
+        .branch-card {
+            background: #f8f9fa;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 20px 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            position: relative;
+            min-height: 180px;
+        }
+        
+        .branch-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border-color: #2196F3;
+            background: #f0f7ff;
+        }
+        
+        .branch-card.selected {
+            border-color: #2196F3;
+            background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+            box-shadow: 0 5px 15px rgba(33, 150, 243, 0.2);
+        }
+        
+        .branch-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #2196F3, #1976D2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+        
+        .branch-icon i {
+            color: white;
+            font-size: 24px;
+        }
+        
+        .branch-name {
+            font-weight: 700;
+            color: #333;
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+        
+        .branch-address {
+            font-size: 12px;
+            color: #666;
+            line-height: 1.4;
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+        }
+        
+        .branch-check {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            color: #2196F3;
+            font-size: 18px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .branch-card.selected .branch-check {
+            opacity: 1;
+        }
+        
+        /* Responsive adjustments for branch modal */
+        @media (max-width: 992px) {
+            .branch-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 15px;
+            }
+            
+            .branch-modal-content {
+                max-width: 700px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .branch-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+            
+            .branch-modal-content {
+                padding: 20px;
+                max-width: 500px;
+            }
+            
+            .branch-card {
+                min-height: 160px;
+                padding: 15px 10px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .branch-modal-content {
+                width: 95%;
+                padding: 15px;
+            }
+            
+            .branch-modal-header {
+                flex-direction: column;
+                text-align: center;
+                gap: 10px;
+            }
+            
+            .branch-modal-header h3 {
+                font-size: 18px;
+            }
+            
+            .branch-modal-footer {
+                flex-direction: column;
+            }
+            
+            .branch-modal-btn {
+                width: 100%;
+            }
+        }
     </style>
 </head>
 <body>
@@ -1188,6 +1739,35 @@
         </div>
     </div>
 
+    <!-- Branch Selection Modal -->
+    <div class="branch-modal" id="branchModal">
+        <div class="branch-modal-content">
+            <div class="branch-modal-header">
+                <i class="fas fa-building"></i>
+                <h3 id="branchModalTitle">Select Branch</h3>
+            </div>
+            <div class="branch-modal-body">
+                <p>Please select the branch for which you want to download the quotation:</p>
+                
+                <div class="branch-grid" id="branchGrid">
+                    <!-- Branch cards will be dynamically added here -->
+                    <!-- Layout: 3 branches per row, 2 rows total -->
+                </div>
+                
+                <div class="branch-modal-footer">
+                    <button class="branch-modal-btn branch-modal-btn-cancel" onclick="closeBranchModal()">Cancel</button>
+                    <button class="branch-modal-btn branch-modal-btn-download" id="branchDownloadBtn" onclick="downloadWithSelectedBranch()" disabled>
+                        <i class="fas fa-download"></i>
+                        Download PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden field to store selected lead ID -->
+    <input type="hidden" id="selectedLeadId" value="">
+
     <div class="container">
         <!-- Header Section -->
         <div class="header-section">
@@ -1196,7 +1776,7 @@
                 <p>View and manage all your submitted quotations</p>
                 <div style="margin-top: 10px; font-size: 14px; opacity: 0.9;">
                     {% if quotations|length > 0 %}
-                    Showing {{ quotations|length }} quotations | Total: ₹{{ total_amount|default:"0.00" }}
+                    Showing <span id="headerQuotationCount">{{ quotations|length }}</span> quotations | Total: ₹<span id="headerTotalAmount">{{ total_amount|default:"0.00" }}</span>
                     {% else %}
                     No quotations found
                     {% endif %}
@@ -1274,6 +1854,11 @@
                                  data-place="{{ lead.place|default:'' }}"
                                  data-business="{{ lead.business|default:'' }}"
                                  data-created="{{ lead.created_at|date:'c'|default:'' }}">
+                                <!-- Edit indicator -->
+                                <div class="edit-lead-indicator" title="Click to view quotations">
+                                    <i class="fas fa-file-invoice" style="font-size: 10px;"></i>
+                                </div>
+                                
                                 <div class="lead-avatar">
                                     {{ lead.ownerName|default:"L"|slice:":2"|upper }}
                                 </div>
@@ -1384,42 +1969,12 @@
             
             <!-- Right Column - Quotations Table -->
             <div class="quotations-column">
-                <!-- Selected Lead Information -->
-                <div class="selected-lead-info" id="selectedLeadInfo" style="display: none;">
-                    <div>
-                        <h3><i class="fas fa-user-check"></i> Selected Lead</h3>
-                        <div class="lead-details-grid">
-                            <div class="detail-item">
-                                <span class="detail-label">Name:</span>
-                                <span class="detail-value" id="selected-lead-name">-</span>
-                            </div>
-                            <div class="detail-item">
-                                <span class="detail-label">Phone:</span>
-                                <span class="detail-value" id="selected-lead-phone">-</span>
-                            </div>
-                            <div class="detail-item">
-                                <span class="detail-label">Ticket:</span>
-                                <span class="detail-value" id="selected-lead-ticket">-</span>
-                            </div>
-                            <div class="detail-item">
-                                <span class="detail-label">Priority:</span>
-                                <span class="detail-value" id="selected-lead-priority">-</span>
-                            </div>
-                        </div>
-                    </div>
-                    <button class="btn-add-new" onclick="viewQuotationsForLead()">
-                        <i class="fas fa-eye"></i>
-                        View Quotations
-                    </button>
-                </div>
-                
                 <!-- Table Filters -->
                 <div class="table-filters">
                     <div class="filter-group">
                         <label for="statusFilter">Status:</label>
                         <select id="statusFilter" onchange="filterQuotations()">
                             <option value="all">All Status</option>
-                            <!-- <option value="draft">Draft</option> -->
                             <option value="sent">Sent</option>
                             <option value="accepted">Accepted</option>
                             <option value="expired">Expired</option>
@@ -1453,8 +2008,6 @@
                                     <th width="80">Sl.No</th>
                                     <th width="120">Date</th>
                                     <th width="150">Client</th>
-                                   
-                                    
                                     <th width="80">Items</th>
                                     <th width="120">Subtotal</th>
                                     <th width="120">Tax</th>
@@ -1466,6 +2019,8 @@
                                 {% if quotations %}
                                     {% for quotation in quotations %}
                                     <tr data-quotation-id="{{ quotation.id }}" 
+                                        data-lead-id="{{ quotation.lead.id|default:'' }}"
+                                        data-lead-ticket="{{ quotation.lead.ticket_number|default:'' }}"
                                         data-quotation-number="{{ quotation.quotation_number }}"
                                         data-client-name="{{ quotation.client_name|default:'Unknown Client' }}"
                                         data-amount="₹{{ quotation.grand_total|floatformat:2 }}">
@@ -1500,13 +2055,10 @@
                                         <td class="amount">₹{{ quotation.grand_total|floatformat:2 }}</td>
                                         <td>
                                             <div class="action-cell">
-                                                <!-- <button class="btn-action btn-view" onclick="viewQuotation('{{ quotation.id }}')" title="View">
-                                                    <i class="fas fa-eye"></i>
-                                                </button> -->
                                                 <button class="btn-action btn-edit" onclick="editQuotation('{{ quotation.id }}')" title="Edit">
                                                     <i class="fas fa-edit"></i>
                                                 </button>
-                                                <button class="btn-action btn-download" onclick="downloadQuotation('{{ quotation.id }}')" title="Download PDF">
+                                                <button class="btn-action btn-download" onclick="showBranchSelection('{{ quotation.id }}', '{{ quotation.quotation_number }}')" title="Download PDF">
                                                     <i class="fas fa-download"></i>
                                                 </button>
                                                 <button class="btn-action btn-delete" onclick="showDeleteConfirmation('{{ quotation.id }}', '{{ quotation.client_name|default:"Unknown Client"|escapejs }}', '₹{{ quotation.grand_total|floatformat:2 }}')" title="Delete">
@@ -1540,6 +2092,415 @@
     </div>
 
     <script>
+        // ========== BRANCH SELECTION FUNCTIONALITY ==========
+        let selectedQuotationId = null;
+        let selectedBranchId = null;
+        
+        // Branch data - 6 branches total, will display 3 per row (2 rows)
+        const branches = [
+            { id: 1, name: "Main Branch", address: "123 Main Street, City Center, Mumbai 400001", icon: "fas fa-building" },
+            { id: 2, name: "North Branch", address: "456 North Avenue, Industrial Zone, Delhi 110001", icon: "fas fa-warehouse" },
+            { id: 3, name: "South Branch", address: "789 South Road, Commercial Area, Bangalore 560001", icon: "fas fa-store" },
+            { id: 4, name: "East Branch", address: "321 East Boulevard, Tech Park, Hyderabad 500001", icon: "fas fa-industry" },
+            { id: 5, name: "West Branch", address: "654 West Street, Business District, Pune 411001", icon: "fas fa-landmark" },
+            { id: 6, name: "Central Branch", address: "987 Central Plaza, Financial District, Chennai 600001", icon: "fas fa-city" }
+        ];
+        
+        function showBranchSelection(quotationId, quotationNumber) {
+            selectedQuotationId = quotationId;
+            selectedBranchId = null;
+            
+            // Update modal title with quotation number
+            document.getElementById('branchModalTitle').innerHTML = `<i class="fas fa-building"></i> Select Branch for Quotation #${quotationNumber}`;
+            
+            // Clear previous branch grid
+            const branchGrid = document.getElementById('branchGrid');
+            branchGrid.innerHTML = '';
+            
+            // Add branch cards - will create 6 cards in 2 rows of 3
+            branches.forEach((branch, index) => {
+                const branchCard = document.createElement('div');
+                branchCard.className = 'branch-card';
+                branchCard.dataset.branchId = branch.id;
+                
+                branchCard.innerHTML = `
+                    <div class="branch-icon">
+                        <i class="${branch.icon}"></i>
+                    </div>
+                    <div class="branch-check">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="branch-name">${branch.name}</div>
+                    <div class="branch-address">${branch.address}</div>
+                `;
+                
+                branchCard.addEventListener('click', () => selectBranch(branch.id, branchCard));
+                branchGrid.appendChild(branchCard);
+                
+                // Add visual separator after every 3rd card (optional)
+                if ((index + 1) % 3 === 0 && index < branches.length - 1) {
+                    // You could add a visual separator if needed
+                }
+            });
+            
+            // Reset download button
+            const downloadBtn = document.getElementById('branchDownloadBtn');
+            downloadBtn.disabled = true;
+            downloadBtn.innerHTML = '<i class="fas fa-download"></i> Download PDF';
+            
+            // Show modal
+            document.getElementById('branchModal').style.display = 'flex';
+        }
+        
+        function selectBranch(branchId, branchCard) {
+            // Remove selected class from all branch cards
+            document.querySelectorAll('.branch-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            
+            // Add selected class to clicked branch card
+            branchCard.classList.add('selected');
+            selectedBranchId = branchId;
+            
+            // Enable download button
+            const downloadBtn = document.getElementById('branchDownloadBtn');
+            downloadBtn.disabled = false;
+            downloadBtn.innerHTML = `<i class="fas fa-download"></i> Download from ${branchCard.querySelector('.branch-name').textContent}`;
+            
+            // Show notification
+            showNotification(`Selected: ${branchCard.querySelector('.branch-name').textContent}`, 'info');
+        }
+        
+        function downloadWithSelectedBranch() {
+    if (!selectedQuotationId || !selectedBranchId) {
+        showNotification('Please select a branch first', 'warning');
+        return;
+    }
+    
+    const selectedBranch = branches.find(b => b.id === selectedBranchId);
+    
+    // Show loading
+    const downloadBtn = document.getElementById('branchDownloadBtn');
+    const originalText = downloadBtn.innerHTML;
+    downloadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Preparing...';
+    downloadBtn.disabled = true;
+    
+    // Close modal first
+    closeBranchModal();
+    
+    // Navigate to the quotation download page with branch parameter
+    const downloadUrl = `/app5/quotation/download/${selectedQuotationId}/?branch_id=${selectedBranchId}`;
+    window.location.href = downloadUrl;
+    
+    // Reset button (in case navigation fails or is slow)
+    setTimeout(() => {
+        downloadBtn.innerHTML = originalText;
+        downloadBtn.disabled = false;
+    }, 3000);
+}
+        
+        function closeBranchModal() {
+            document.getElementById('branchModal').style.display = 'none';
+            selectedQuotationId = null;
+            selectedBranchId = null;
+        }
+        
+        // ========== LEAD SELECTION AND QUOTATION FILTERING ==========
+        let selectedLead = null;
+        let allQuotations = [];
+        let filteredQuotations = [];
+
+        // Save lead to localStorage
+        function saveLeadToStorage(leadData) {
+            try {
+                localStorage.setItem('selectedLeadData', JSON.stringify(leadData));
+                console.log('✅ Lead saved to storage:', leadData.ownerName);
+                return true;
+            } catch (error) {
+                console.error('❌ Error saving lead:', error);
+                return false;
+            }
+        }
+        
+        // Get lead from localStorage
+        function getLeadFromStorage() {
+            try {
+                const data = localStorage.getItem('selectedLeadData');
+                return data ? JSON.parse(data) : null;
+            } catch (error) {
+                console.error('❌ Error reading lead:', error);
+                return null;
+            }
+        }
+        
+        // Restore selected lead on page load
+        function restoreSelectedLead() {
+            const storedLead = getLeadFromStorage();
+            const urlParams = new URLSearchParams(window.location.search);
+            const leadIdFromUrl = urlParams.get('lead_id');
+            
+            let leadIdToSelect = null;
+            
+            // Priority: URL parameter > localStorage > nothing
+            if (leadIdFromUrl) {
+                leadIdToSelect = leadIdFromUrl;
+            } else if (storedLead && storedLead.id) {
+                leadIdToSelect = storedLead.id;
+            }
+            
+            if (leadIdToSelect) {
+                setTimeout(() => {
+                    const leadItem = document.querySelector(`.lead-item[data-id="${leadIdToSelect}"]`);
+                    if (leadItem) {
+                        // Simulate click to select the lead
+                        leadItem.click();
+                        leadItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }, 300);
+            }
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Quotations page loaded');
+            
+            // Store all quotations data
+            const rows = document.querySelectorAll('#quotations-body tr[data-quotation-id]');
+            allQuotations = Array.from(rows).map(row => ({
+                element: row,
+                leadId: row.getAttribute('data-lead-id'),
+                leadTicket: row.getAttribute('data-lead-ticket'),
+                clientName: row.getAttribute('data-client-name'),
+                amount: parseFloat(row.getAttribute('data-amount').replace('₹', '').replace(',', '')) || 0
+            }));
+            
+            // Set up lead selection
+            setupLeadSelection();
+            
+            // Restore previously selected lead
+            restoreSelectedLead();
+            
+            // Initialize date display
+            initializeDateDisplay();
+            
+            // Set up modal event listeners
+            setupModalListeners();
+            
+            // Set up branch modal listeners
+            document.getElementById('branchModal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeBranchModal();
+                }
+            });
+            
+            // Close modals with Escape key
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    closeModal();
+                    closeBranchModal();
+                }
+            });
+            
+            // Check if there's a lead ID in URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const leadIdFromUrl = urlParams.get('lead_id');
+            if (leadIdFromUrl) {
+                setTimeout(() => {
+                    const leadItem = document.querySelector(`.lead-item[data-id="${leadIdFromUrl}"]`);
+                    if (leadItem) {
+                        leadItem.click();
+                        leadItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }, 500);
+            }
+        });
+
+        function setupLeadSelection() {
+            document.querySelectorAll('.lead-item').forEach(item => {
+                item.addEventListener('click', function(e) {
+                    if (e.defaultPrevented) return;
+                    
+                    const leadId = this.getAttribute('data-id');
+                    if (!leadId) return;
+                    
+                    console.log('🎯 Lead clicked:', leadId);
+                    
+                    // Remove current-lead-item class from all leads
+                    document.querySelectorAll('.lead-item').forEach(i => {
+                        i.classList.remove('current-lead-item');
+                        
+                        // Remove any existing current lead badge
+                        const existingBadge = i.querySelector('.current-lead-badge');
+                        if (existingBadge) {
+                            existingBadge.remove();
+                        }
+                    });
+                    
+                    // Add current-lead-item class to clicked lead
+                    this.classList.add('current-lead-item');
+                    
+                    // Add current lead badge
+                    const leadNameElement = this.querySelector('.lead-name');
+                    if (leadNameElement && !leadNameElement.querySelector('.current-lead-badge')) {
+                        const badge = document.createElement('div');
+                        badge.className = 'current-lead-badge';
+                        badge.innerHTML = '<i class="fas fa-star" style="font-size: 8px;"></i>SELECTED';
+                        leadNameElement.appendChild(badge);
+                    }
+                    
+                    // Get lead data
+                    const leadData = {
+                        id: leadId,
+                        ownerName: this.querySelector('.lead-name')?.textContent?.replace('SELECTED', '').trim() || '',
+                        phoneNo: this.querySelector('.lead-phone')?.textContent || '',
+                        ticket_number: this.querySelector('.lead-ticket')?.textContent || '',
+                        priority: this.getAttribute('data-priority') || ''
+                    };
+                    
+                    // Store selected lead
+                    selectedLead = leadData;
+                    
+                    // Show selected lead info
+                    showSelectedLeadInfo(leadData);
+                    
+                    // Filter quotations by this lead
+                    filterQuotationsByLead(leadId);
+                    
+                    // Save to localStorage for persistence
+                    saveLeadToStorage(leadData);
+                });
+            });
+        }
+
+        function showSelectedLeadInfo(leadData) {
+            const infoDiv = document.getElementById('selectedLeadInfo');
+            const nameSpan = document.getElementById('selected-lead-name');
+            const phoneSpan = document.getElementById('selected-lead-phone');
+            const ticketSpan = document.getElementById('selected-lead-ticket');
+            const prioritySpan = document.getElementById('selected-lead-priority');
+            
+            if (infoDiv && nameSpan && phoneSpan && ticketSpan && prioritySpan) {
+                nameSpan.textContent = leadData.ownerName || '-';
+                phoneSpan.textContent = leadData.phoneNo || '-';
+                ticketSpan.textContent = leadData.ticket_number || '-';
+                prioritySpan.textContent = leadData.priority || '-';
+                infoDiv.style.display = 'flex';
+            }
+        }
+
+        function filterQuotationsByLead(leadId) {
+            const tbody = document.getElementById('quotations-body');
+            const leadItem = document.querySelector(`.lead-item[data-id="${leadId}"]`);
+            const leadTicket = leadItem?.getAttribute('data-ticket') || '';
+            const leadName = leadItem?.querySelector('.lead-name')?.textContent?.replace('SELECTED', '').trim() || 'Selected lead';
+            
+            let visibleCount = 0;
+            let totalAmount = 0;
+            
+            // Remove any existing "no quotations" message
+            const existingMessage = tbody.querySelector('.no-quotations-message');
+            if (existingMessage) {
+                existingMessage.remove();
+            }
+            
+            // Filter quotations
+            allQuotations.forEach(quotation => {
+                const row = quotation.element;
+                const shouldShow = quotation.leadId === leadId || 
+                                  quotation.leadTicket === leadTicket;
+                
+                if (shouldShow) {
+                    row.style.display = '';
+                    visibleCount++;
+                    totalAmount += quotation.amount;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+            
+            // Update counts
+            updateQuotationCounts(visibleCount, totalAmount);
+            
+            // Show message if no quotations found
+            if (visibleCount === 0) {
+                showNoQuotationsMessage(leadId, leadName);
+            }
+        }
+
+        function showNoQuotationsMessage(leadId, leadName) {
+            const tbody = document.getElementById('quotations-body');
+            
+            // Add new message
+            const messageRow = document.createElement('tr');
+            messageRow.className = 'no-quotations-message';
+            messageRow.innerHTML = `
+                <td colspan="10">
+                    <div class="empty-state">
+                        <i class="fas fa-file-invoice"></i>
+                        <h3>No Quotations Found for ${leadName}</h3>
+                        <p>This lead doesn't have any quotations yet.</p>
+                        <a href="{% url 'app5:quotation_list' %}?lead_id=${leadId}" class="btn-add-new">
+                            <i class="fas fa-plus-circle"></i>
+                            Create First Quotation for ${leadName}
+                        </a>
+                    </div>
+                </td>
+            `;
+            
+            tbody.appendChild(messageRow);
+        }
+
+        function showAllQuotations() {
+            // Show all quotations
+            allQuotations.forEach(quotation => {
+                quotation.element.style.display = '';
+            });
+            
+            // Remove any "no quotations" message
+            const existingMessage = document.querySelector('.no-quotations-message');
+            if (existingMessage) {
+                existingMessage.remove();
+            }
+            
+            // Hide selected lead info
+            document.getElementById('selectedLeadInfo').style.display = 'none';
+            
+            // Remove current-lead-item class and badge from all leads
+            document.querySelectorAll('.lead-item').forEach(item => {
+                item.classList.remove('current-lead-item');
+                const badge = item.querySelector('.current-lead-badge');
+                if (badge) {
+                    badge.remove();
+                }
+            });
+            
+            // Clear selected lead
+            selectedLead = null;
+            
+            // Clear localStorage
+            localStorage.removeItem('selectedLeadData');
+            
+            // Update counts with all quotations
+            updateQuotationCounts(allQuotations.length, 
+                allQuotations.reduce((sum, q) => sum + q.amount, 0));
+        }
+
+        function viewQuotationsForLead() {
+            if (!selectedLead) {
+                showNotification('Please select a lead first', 'warning');
+                return;
+            }
+            // Already showing filtered quotations, just ensure they're visible
+            filterQuotationsByLead(selectedLead.id);
+        }
+
+        function updateQuotationCounts(count, total) {
+            document.getElementById('quotationCount').textContent = count;
+            document.getElementById('totalAmount').textContent = `Total: ₹${total.toFixed(2)}`;
+            document.getElementById('headerQuotationCount').textContent = count;
+            document.getElementById('headerTotalAmount').textContent = total.toFixed(2);
+        }
+
         // ========== DELETE FUNCTIONALITY ==========
         let quotationToDelete = null;
         
@@ -1624,24 +2585,34 @@
             if (response.ok && data.success) {
                 showNotification(data.message || 'Quotation deleted successfully', 'success');
                 
-                // Remove the row from table
+                // Remove the row from table and from allQuotations array
                 const row = document.querySelector(`tr[data-quotation-id="${quotationToDelete}"]`);
                 if (row) {
+                    // Remove from allQuotations array
+                    allQuotations = allQuotations.filter(q => q.element !== row);
+                    
+                    // Fade out and remove
                     row.style.opacity = '0.5';
                     row.style.backgroundColor = '#ffebee';
                     
-                    // Fade out and remove
                     setTimeout(() => {
                         row.remove();
                         
                         // Update counts
-                        updateQuotationCounts();
+                        if (selectedLead) {
+                            // If showing filtered view, recalculate
+                            filterQuotationsByLead(selectedLead.id);
+                        } else {
+                            // If showing all, update with remaining
+                            updateQuotationCounts(allQuotations.length, 
+                                allQuotations.reduce((sum, q) => sum + q.amount, 0));
+                        }
                         
                         // Check if table is now empty
-                        const remainingRows = document.querySelectorAll('#quotations-body tr:not(.empty-state)');
+                        const remainingRows = document.querySelectorAll('#quotations-body tr:not(.no-quotations-message)');
                         if (remainingRows.length === 0) {
-                            // Reload to show empty state
-                            setTimeout(() => location.reload(), 1000);
+                            // Show empty state
+                            showEmptyState();
                         }
                     }, 500);
                 }
@@ -1650,7 +2621,26 @@
                 console.error('Delete error:', data);
             }
         }
-        
+
+        function showEmptyState() {
+            const tbody = document.getElementById('quotations-body');
+            const messageRow = document.createElement('tr');
+            messageRow.innerHTML = `
+                <td colspan="10">
+                    <div class="empty-state">
+                        <i class="fas fa-file-invoice"></i>
+                        <h3>No Quotations Found</h3>
+                        <p>You haven't created any quotations yet. Start by creating your first quotation.</p>
+                        <a href="{% url 'app5:quotation_list' %}" class="btn-add-new">
+                            <i class="fas fa-plus-circle"></i>
+                            Create First Quotation
+                        </a>
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(messageRow);
+        }
+
         // ========== UTILITY FUNCTIONS ==========
         function getCookie(name) {
             let cookieValue = null;
@@ -1666,21 +2656,16 @@
             }
             return cookieValue;
         }
-        
-        function updateQuotationCounts() {
-            const rows = document.querySelectorAll('#quotations-body tr:not(.empty-state)');
-            let totalAmount = 0;
-            
-            rows.forEach(row => {
-                const amountText = row.cells[8].textContent.replace('₹', '').replace(',', '');
-                const amount = parseFloat(amountText) || 0;
-                totalAmount += amount;
+
+        function setupModalListeners() {
+            // Close modal when clicking outside
+            document.getElementById('confirmationModal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeModal();
+                }
             });
-            
-            document.getElementById('quotationCount').textContent = rows.length;
-            document.getElementById('totalAmount').textContent = `Total: ₹${totalAmount.toFixed(2)}`;
         }
-        
+
         // ========== NOTIFICATION SYSTEM ==========
         function showNotification(message, type = 'info') {
             const notification = document.createElement('div');
@@ -1737,63 +2722,8 @@
             }
         `;
         document.head.appendChild(style);
-        
-        // ========== URL TEST FUNCTION ==========
-        // Add this to test if your URLs are working
-        async function testDeleteUrl() {
-            const csrftoken = getCookie('csrftoken');
-            try {
-                // Test different URL patterns
-                const testUrls = [
-                    '/app5/quotation/delete/1/',  // Pattern 1
-                    '/app5/quotation/1/delete/',  // Pattern 2
-                    '/quotations/delete/1/',      // Pattern 3
-                    '/quotations/1/delete/'       // Pattern 4
-                ];
-                
-                for (const url of testUrls) {
-                    console.log(`Testing URL: ${url}`);
-                    const response = await fetch(url, {
-                        method: 'GET',  // Just testing if URL exists
-                        headers: {
-                            'X-CSRFToken': csrftoken
-                        }
-                    });
-                    console.log(`URL ${url} status: ${response.status}`);
-                }
-            } catch (error) {
-                console.error('URL test error:', error);
-            }
-        }
-        
-        // ========== INITIALIZATION ==========
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('Quotations page loaded');
-            
-            // Test URLs (uncomment to debug)
-            // testDeleteUrl();
-            
-            // Close modal when clicking outside
-            document.getElementById('confirmationModal').addEventListener('click', function(e) {
-                if (e.target === this) {
-                    closeModal();
-                }
-            });
-            
-            // Close modal with Escape key
-            document.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape') {
-                    closeModal();
-                }
-            });
-        });
-        
-        // ========== OTHER FUNCTIONS (from your original template) ==========
-        let selectedLead = null;
-        let currentLeads = [];
-        let currentQuotations = [];
-        
-        // Initialize date display
+
+        // ========== DATE AND TIME FUNCTIONS ==========
         function updateDirectoryDateDisplay() {
             const now = new Date();
             const currentDateDisplay = now.toLocaleDateString('en-GB', {
@@ -1816,11 +2746,8 @@
             updateDirectoryDateDisplay();
             setInterval(updateDirectoryDateDisplay, 60000);
         }
-        
-        // Initialize when page loads
-        initializeDateDisplay();
-        
-        // View, Edit, Download functions
+
+        // ========== QUOTATION ACTIONS ==========
         function viewQuotation(quotationId) {
             showNotification(`Loading quotation ${quotationId}...`, 'info');
             window.open(`/app5/quotation/view/${quotationId}/`, '_blank');
@@ -1831,26 +2758,110 @@
             window.location.href = `/app5/quotation/edit/${quotationId}/`;
         }
         
-        function downloadQuotation(quotationId) {
-            showNotification(`Downloading quotation ${quotationId} as PDF...`, 'info');
-            window.open(`/app5/quotation/download/${quotationId}/`, '_blank');
-        }
-        
-        function refreshQuotationsTable() {
-            location.reload();
-        }
-        
-        function viewQuotationsForLead() {
-            if (!selectedLead) {
-                showNotification('Please select a lead first', 'warning');
-                return;
-            }
-            // ... existing code for filtering by lead ...
-        }
-        
+        // ========== FILTER FUNCTIONS ==========
         function filterQuotations() {
-            // ... existing filter code ...
+            // This function can be expanded to filter by status and date range
+            const statusFilter = document.getElementById('statusFilter').value;
+            const dateFilter = document.getElementById('dateFilter').value;
+            
+            // For now, just show notification that filtering is available
+            if (statusFilter !== 'all' || dateFilter !== 'all') {
+                showNotification('Filtering by status/date is available', 'info');
+            }
         }
+
+        // ========== NAVIGATION SYSTEM ==========
+        (function() {
+            'use strict';
+            
+            const CONFIG = {
+                STORAGE_KEY: 'selectedLeadData',
+                LEAD_ID_PARAM: 'lead_id',
+                AUTO_LOAD_DELAY: 300
+            };
+            
+            function getLeadIdFromURL() {
+                const urlParams = new URLSearchParams(window.location.search);
+                return urlParams.get(CONFIG.LEAD_ID_PARAM);
+            }
+            
+            function enhanceNavigationLinks(leadId) {
+                if (!leadId) return;
+                
+                document.querySelectorAll('.nav-link[href*="requirements"], .nav-link[href*="quotation"], .nav-link[href*="event"]').forEach(link => {
+                    const href = link.getAttribute('href');
+                    if (href && !href.includes('#') && !href.includes('lead_id=')) {
+                        const separator = href.includes('?') ? '&' : '?';
+                        link.setAttribute('href', `${href}${separator}lead_id=${leadId}`);
+                        console.log('🔗 Link updated:', link.textContent.trim());
+                    }
+                });
+            }
+            
+            function autoLoadLead() {
+                const urlLeadId = getLeadIdFromURL();
+                
+                if (urlLeadId) {
+                    console.log('🔄 Loading from URL:', urlLeadId);
+                    const leadItem = document.querySelector(`.lead-item[data-id="${urlLeadId}"]`);
+                    if (leadItem) {
+                        setTimeout(() => {
+                            leadItem.click();
+                            leadItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }, CONFIG.AUTO_LOAD_DELAY);
+                        return;
+                    }
+                }
+                
+                const storedLead = getLeadFromStorage();
+                if (storedLead && storedLead.id) {
+                    console.log('🔄 Loading from storage:', storedLead.ownerName);
+                    const leadItem = document.querySelector(`.lead-item[data-id="${storedLead.id}"]`);
+                    if (leadItem) {
+                        setTimeout(() => {
+                            leadItem.click();
+                        }, CONFIG.AUTO_LOAD_DELAY);
+                    } else {
+                        console.log('📋 Lead not in directory, using stored data');
+                        enhanceNavigationLinks(storedLead.id);
+                    }
+                }
+            }
+            
+            function init() {
+                console.log('🚀 Navigation System Starting...');
+                
+                const path = window.location.pathname;
+                if (path.includes('lead') || path.includes('form') || 
+                    path.includes('requirement') || path.includes('quotation')) {
+                    autoLoadLead();
+                }
+                
+                console.log('✅ Navigation System Ready');
+            }
+            
+            window.clearLeadSelection = function() {
+                try {
+                    localStorage.removeItem(CONFIG.STORAGE_KEY);
+                    document.querySelectorAll('.lead-item').forEach(item => {
+                        item.classList.remove('current-lead-item');
+                        const badge = item.querySelector('.current-lead-badge');
+                        if (badge) {
+                            badge.remove();
+                        }
+                    });
+                    console.log('🧹 Lead selection cleared');
+                } catch (error) {
+                    console.error('Error clearing selection:', error);
+                }
+            };
+            
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', init);
+            } else {
+                init();
+            }
+            
+        })();
     </script>
 </body>
-</html>

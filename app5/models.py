@@ -655,6 +655,7 @@ from django.db import models
 class RequirementItem(models.Model):
     # Basic item information
     item_name = models.CharField(max_length=200, verbose_name="Item Name")
+    lead = models.ForeignKey(Lead, on_delete=models.CASCADE, related_name='requirements')
     
     # Customer/owner information
     ticket_number = models.CharField(max_length=50, blank=True, null=True, verbose_name="Ticket Number")

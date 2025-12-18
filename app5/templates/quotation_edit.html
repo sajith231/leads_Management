@@ -1758,24 +1758,24 @@ function testSave() {
         console.log('Response:', result);
         
         if (response.ok && result.success) {
-            showNotification('Quotation updated successfully!', 'success');
-            
-            // Update UI if needed
-            if (result.quotation_number) {
-                $('.quotation-id').html(
-                    `Quotation #: ${result.quotation_number} ` +
-                    `<span class="status-badge status-${result.status.toLowerCase()}">${result.status}</span>`
-                );
-            }
-            
-            // Reload page after 1.5 seconds
-            setTimeout(() => {
-                window.location.reload();
-            }, 1500);
-            
-        } else {
-            throw new Error(result.message || 'Update failed');
+    showNotification('Quotation updated successfully! Redirecting...', 'success');
+    
+    // Wait 1.5 seconds then redirect
+    setTimeout(() => {
+        // Try multiple possible URLs
+        try {
+            // First try Django URL
+            window.location.href = '{% url "app5:quotation_form" %}';
+        } catch (error) {
+            console.log('Django URL failed, trying direct path');
+            // Fallback to direct path
+            window.location.href = '/app5/quotation/form/';
         }
+    }, 1500);
+    
+} else {
+    throw new Error(result.message || 'Error updating quotation');
+}
     } catch (error) {
         console.error('Error:', error);
         showNotification(error.message || 'Failed to save quotation', 'error');
