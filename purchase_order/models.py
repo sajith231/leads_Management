@@ -403,6 +403,14 @@ class Item(models.Model):
         default=Decimal('0.00'),  # ADD THIS
         verbose_name="Cost Price"
     )
+
+    notes = models.TextField(
+        blank=True,
+        default='',
+        verbose_name="Notes",
+        help_text="Additional notes or remarks about this item"
+    )
+    
     hsn_code = models.CharField(max_length=50, blank=True, null=True, verbose_name="HSN Code")
     
     # Keep old unit_price if you want backward compatibility

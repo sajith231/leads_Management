@@ -64,7 +64,6 @@
             </span>
             {% if items.paginator.num_pages > 1 %}
             <div class="custom-pagination">
-
                 {% if items.has_previous %}
                     <a href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ items.previous_page_number }}" class="page-link">«</a>
                 {% endif %}
@@ -82,7 +81,6 @@
                 {% if items.has_next %}
                     <a href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ items.next_page_number }}" class="page-link">»</a>
                 {% endif %}
-
             </div>
             {% endif %}
 
@@ -117,6 +115,7 @@
                     data-item-purchase="{{ item.purchase_price|floatformat:2 }}"
                     data-item-cost="{{ item.cost|floatformat:2 }}"
                     data-item-active="{{ item.is_active }}"
+                    data-item-notes="{{ item.notes|default:'No notes available.' }}"
                     data-item-edit-url="{% url 'purchase_order:item_edit' item.pk %}?next={{ request.get_full_path|urlencode }}"
                     onclick="showItemDetail(this)">
                     <div class="item-avatar">
@@ -170,11 +169,11 @@
                     <button class="tab-btn" data-tab="pricing">
                         <i class="fas fa-tags"></i> Pricing Details
                     </button>
-                    {% comment %} <button class="tab-btn" data-tab="stock">
-                        <i class="fas fa-warehouse"></i> Stock Details
-                    </button> {% endcomment %}
                     <button class="tab-btn" data-tab="images">
                         <i class="fas fa-images"></i> Images
+                    </button>
+                    <button class="tab-btn" data-tab="notes">
+                        <i class="fas fa-sticky-note"></i> Notes
                     </button>
                 </div>
 
@@ -244,18 +243,6 @@
                     </div>
                 </div>
 
-                <!-- Tab Content: Stock Details -->
-                {% comment %} <div class="tab-content" data-content="stock">
-                    <div class="info-section">
-                        <h3><i class="fas fa-warehouse"></i> Stock Information</h3>
-                        <div class="empty-state">
-                            <i class="fas fa-box-open"></i>
-                            <p>Stock details will be displayed here.</p>
-                            <small>This section can be customized to show inventory levels, reorder points, and stock movement history.</small>
-                        </div>
-                    </div>
-                </div> {% endcomment %}
-
                 <!-- Tab Content: Images -->
                 <div class="tab-content" data-content="images">
                     <div class="info-section">
@@ -277,11 +264,69 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Tab Content: Notes -->
+                <div class="tab-content" data-content="notes">
+                    <div class="info-section">
+                        <h3><i class="fas fa-sticky-note"></i> Item Notes</h3>
+                        <div class="notes-container">
+                            <div class="notes-display" id="detailNotes">
+                                {{ items.0.notes|default:"No notes available for this item." }}
+                            </div>
+                            <button class="btn-edit-notes" onclick="openNotesEditor()">
+                                <i class="fas fa-edit"></i> Edit Notes
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
             {% else %}
-                
+                <div class="no-data-panel">
+                    <i class="fas fa-box-open"></i>
+                    <h3>No Items Found</h3>
+                    <p>No items match your search criteria.</p>
+                    <button class="btn-add-new" onclick="window.location.href='{% url 'purchase_order:item_add' %}'">
+                        <i class="fas fa-plus"></i> Add Your First Item
+                    </button>
+                </div>
             {% endif %}
-        </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Notes Editor Modal -->
+<div id="notesModal" class="modal">
+    <div class="modal-content modal-large">
+        <div class="modal-header">
+            <i class="fas fa-sticky-note"></i>
+            <h2>Edit Item Notes</h2>
+        </div>
+        <form id="notesForm" method="POST" action="">
+            {% csrf_token %}
+            <div class="modal-body">
+                <div class="form-group full-width">
+                    <label for="notesTextarea">Notes</label>
+                    <textarea 
+                        id="notesTextarea" 
+                        name="notes" 
+                        rows="10"
+                        class="form-control"
+                        placeholder="Enter notes, remarks, or any additional information about this item..."
+                    ></textarea>
+                    <small class="help-text">
+                        Use this space to add important details, specifications, vendor information, or any other relevant notes.
+                    </small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeNotesModal()">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Save Notes
+                </button>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -435,33 +480,6 @@ body {
     gap: 10px;
 }
 
-.pagination-mini {
-    display: flex;
-    gap: 5px;
-}
-
-.page-btn {
-    padding: 6px 12px;
-    border: 1px solid #e0e0e0;
-    background: white;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    font-size: 13px;
-}
-
-.page-btn:hover {
-    background: #354b67;
-    color: white;
-    border-color: #354b67;
-}
-
-.page-btn.active {
-    background: #354b67;
-    color: white;
-    border-color: #354b67;
-}
-
 .clear-filters-btn {
     padding: 8px 16px;
     background: #525151ff;
@@ -542,7 +560,7 @@ body {
 .item-avatar {
     width: 40px;
     height: 40px;
-    background: #354b67;;
+    background: #354b67;
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -561,9 +579,9 @@ body {
     font-weight: 600;
     font-size: 14px;
     color: #333;
-    white-space: normal;   /* allows wrapping */
-    overflow: visible;     /* show full text */
-    text-overflow: unset;  /* disable ellipsis */
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
     line-height: 1.3;
 }
 
@@ -598,7 +616,7 @@ body {
 .item-avatar-large {
     width: 80px;
     height: 80px;
-    background:#354b67;;
+    background:#354b67;
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -794,7 +812,7 @@ body {
 /* Pricing Grid */
 .pricing-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmin(200px, 1fr));
     gap: 20px;
 }
 
@@ -818,6 +836,47 @@ body {
 .pricing-value {
     font-size: 28px;
     font-weight: 700;
+}
+
+/* Notes Container */
+.notes-container {
+    background: #f9f9f9;
+    padding: 25px;
+    border-radius: 8px;
+    border-left: 4px solid #354b67;
+}
+
+.notes-display {
+    min-height: 150px;
+    margin-bottom: 20px;
+    padding: 15px;
+    background: white;
+    border-radius: 6px;
+    line-height: 1.6;
+    color: #333;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.btn-edit-notes {
+    background: #354b67;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    font-size: 14px;
+}
+
+.btn-edit-notes:hover {
+    background: #2c3e50;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(52, 73, 94, 0.3);
 }
 
 /* Empty State */
@@ -879,11 +938,6 @@ body {
     height: 100%;
     background-color: rgba(0, 0, 0, 0.5);
     animation: fadeIn 0.3s;
-    pointer-events: none;
-}
-
-.modal.show {
-    pointer-events: auto;
 }
 
 .modal-content {
@@ -897,9 +951,13 @@ body {
     animation: slideIn 0.3s;
 }
 
+.modal-large {
+    max-width: 700px;
+}
+
 .modal-header {
     padding: 25px 30px;
-    background: linear-gradient(135deg, #f44336, #d32f2f);
+    background: linear-gradient(135deg, #354b67, #2c3e50);
     color: white;
     border-radius: 12px 12px 0 0;
     display: flex;
@@ -937,6 +995,48 @@ body {
     font-style: italic;
 }
 
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group.full-width {
+    width: 100%;
+}
+
+.form-group label {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+
+.form-control {
+    padding: 12px 15px;
+    border: 2px solid #e9ecef;
+    border-radius: 6px;
+    font-size: 15px;
+    transition: all 0.3s ease;
+    font-family: inherit;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #354b67;
+    box-shadow: 0 0 0 3px rgba(53, 75, 103, 0.1);
+}
+
+textarea.form-control {
+    resize: vertical;
+    min-height: 200px;
+}
+
+.help-text {
+    font-size: 12px;
+    color: #7f8c8d;
+    margin-top: 5px;
+}
+
 .modal-footer {
     padding: 20px 30px;
     background: #f9f9f9;
@@ -946,31 +1046,39 @@ body {
     gap: 10px;
 }
 
-.btn-secondary {
-    background: #95a5a6;
-    color: white;
+.btn {
     padding: 10px 20px;
     border: none;
     border-radius: 6px;
     cursor: pointer;
     font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+}
+
+.btn-secondary {
+    background: #95a5a6;
+    color: white;
 }
 
 .btn-secondary:hover {
     background: #7f8c8d;
 }
 
+.btn-primary {
+    background: #354b67;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #2c3e50;
+}
+
 .btn-danger {
     background: #f44336;
     color: white;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 8px;
 }
 
 .btn-danger:hover {
@@ -986,6 +1094,78 @@ body {
         transform: translateY(0);
         opacity: 1;
     }
+}
+
+/* Image Grid */
+.image-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.image-thumb {
+    width: 90px;
+    height: 90px;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #f0f0f0;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+.image-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* Pagination */
+.custom-pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    margin-top: 15px;
+}
+
+.page-link {
+    padding: 8px 14px;
+    border-radius: 6px;
+    background: #fff;
+    border: 1px solid #ccc;
+    color: #333;
+    text-decoration: none;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.page-link:hover {
+    background: #e9efff;
+    border-color: #3498db;
+}
+
+.page-link.active {
+    background: #3498db;
+    color: #fff !important;
+}
+
+/* Scrollbar Styling */
+.sidebar-directory::-webkit-scrollbar {
+    width: 6px;
+}
+
+.sidebar-directory::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.sidebar-directory::-webkit-scrollbar-thumb {
+    background: #354b67;
+    border-radius: 10px;
+}
+
+.sidebar-directory::-webkit-scrollbar-thumb:hover {
+    background: #2c3e50;
 }
 
 /* Responsive Design */
@@ -1061,77 +1241,6 @@ body {
         margin: 20% auto;
     }
 }
-
-/* Scrollbar Styling */
-.sidebar-directory::-webkit-scrollbar {
-    width: 6px;
-}
-
-.sidebar-directory::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 10px;
-}
-
-.sidebar-directory::-webkit-scrollbar-thumb {
-    background: #354b67;
-    border-radius: 10px;
-}
-
-.sidebar-directory::-webkit-scrollbar-thumb:hover {
-    background: #354b67;
-}
-
-.image-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-}
-
-.image-thumb {
-    width: 90px;
-    height: 90px;
-    border-radius: 10px;
-    overflow: hidden;
-    background: #f0f0f0;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-}
-
-.image-thumb img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-}
-
-.custom-pagination {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 8px;
-    margin-top: 15px;
-}
-
-.page-link {
-    padding: 8px 14px;
-    border-radius: 6px;
-    background: #fff;
-    border: 1px solid #ccc;
-    color: #333;
-    text-decoration: none;
-    cursor: pointer;
-    transition: 0.2s;
-}
-
-.page-link:hover {
-    background: #e9efff;
-    border-color: #3498db;
-}
-
-.page-link.active {
-    background: #3498db;
-    color: #fff !important;
-}
-
 </style>
 
 <script>
@@ -1142,7 +1251,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const sectionSelect = document.getElementById('sectionSelect');
     const statusSelect = document.getElementById('statusSelect');
 
-    // Function to build URL with filters
     function buildFilterURL(resetPage = true) {
         const params = new URLSearchParams(window.location.search);
         
@@ -1151,18 +1259,15 @@ document.addEventListener('DOMContentLoaded', function () {
         const section = sectionSelect.value;
         const status = statusSelect.value;
         
-        // Clear filter params
         params.delete('search');
         params.delete('department');
         params.delete('section');
         params.delete('status');
         
-        // Reset to page 1 when filters change
         if (resetPage) {
             params.delete('page');
         }
         
-        // Add active filters
         if (search) params.set('search', search);
         if (department && department !== 'all') params.set('department', department);
         if (section && section !== 'all') params.set('section', section);
@@ -1171,12 +1276,10 @@ document.addEventListener('DOMContentLoaded', function () {
         return '?' + params.toString();
     }
 
-    // Apply filters
     function applyFilters() {
         window.location.href = buildFilterURL(true);
     }
 
-    // Search with debounce (500ms delay)
     let searchTimeout;
     if (searchInput) {
         searchInput.addEventListener('keyup', function() {
@@ -1185,15 +1288,12 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Instant filter on dropdown change
     if (departmentSelect) departmentSelect.addEventListener('change', applyFilters);
     if (sectionSelect) sectionSelect.addEventListener('change', applyFilters);
     if (statusSelect) statusSelect.addEventListener('change', applyFilters);
 });
 
-// ================= CLEAR FILTERS =================
 function clearFilters() {
-    // Clear all filters, keep only base URL
     window.location.href = window.location.pathname;
 }
 
@@ -1206,13 +1306,32 @@ function confirmDelete(itemId, itemName) {
     document.getElementById('deleteForm').action = `/po/items/${itemId}/delete/?next=${currentUrl}`;
     
     modal.style.display = 'block';
-    setTimeout(() => modal.classList.add('show'), 10);
 }
 
 function closeModal() {
     const modal = document.getElementById('deleteModal');
-    modal.classList.remove('show');
-    setTimeout(() => modal.style.display = 'none', 300);
+    modal.style.display = 'none';
+}
+
+// ================= NOTES MODAL =================
+let currentItemId = null;
+
+function openNotesEditor() {
+    const itemId = document.getElementById('detailItemId').textContent.replace('Item ID: ', '');
+    const currentNotes = document.getElementById('detailNotes').textContent;
+    
+    currentItemId = itemId;
+    document.getElementById('notesTextarea').value = currentNotes === 'No notes available for this item.' ? '' : currentNotes;
+    document.getElementById('notesForm').action = `/po/items/${itemId}/update-notes/`;
+    
+    const modal = document.getElementById('notesModal');
+    modal.style.display = 'block';
+}
+
+function closeNotesModal() {
+    const modal = document.getElementById('notesModal');
+    modal.style.display = 'none';
+    currentItemId = null;
 }
 
 // ================= TAB SWITCHING =================
@@ -1238,7 +1357,6 @@ function showItemDetail(element) {
         .forEach(item => item.classList.remove('active'));
     element.classList.add('active');
 
-    // Get attributes
     const itemId = element.dataset.itemId;
     const itemName = element.dataset.itemName;
     const itemUnit = element.dataset.itemUnit;
@@ -1250,11 +1368,11 @@ function showItemDetail(element) {
     const itemPurchase = element.dataset.itemPurchase;
     const itemCost = element.dataset.itemCost;
     const itemActive = element.dataset.itemActive === "True";
+    const itemNotes = element.dataset.itemNotes;
     const itemEditUrl = element.dataset.itemEditUrl;
     const itemImage = element.dataset.itemImage;
     const itemImages = element.dataset.itemImages || "";
 
-    // Update Item Details
     document.getElementById('detailItemName').textContent = itemName;
     document.getElementById('detailItemId').textContent = 'Item ID: ' + itemId;
 
@@ -1270,18 +1388,16 @@ function showItemDetail(element) {
     document.getElementById('detailMrp').textContent = "₹" + itemMrp;
     document.getElementById('detailPurchase').textContent = "₹" + itemPurchase;
     document.getElementById('detailCost').textContent = "₹" + itemCost;
+    document.getElementById('detailNotes').textContent = itemNotes;
 
-    // Buttons update
     document.getElementById('editItemBtn').onclick = () => window.location.href = itemEditUrl;
     document.getElementById('deleteItemBtn').onclick = () => confirmDelete(itemId, itemName);
 
-    // ================= UPDATE MAIN IMAGE =================
     const imageContainer = document.getElementById('detailImageContainer');
     imageContainer.innerHTML = itemImage
         ? `<img src="${itemImage}" style="width:80px;height:80px;border-radius:10px;object-fit:cover;">`
         : `<i class="fas fa-cube"></i>`;
 
-    // ================= UPDATE IMAGE GALLERY TAB =================
     const gallery = document.getElementById('imageGallery');
     if (gallery) {
         const urls = itemImages ? itemImages.split('|').filter(Boolean) : [];
@@ -1301,9 +1417,15 @@ function showItemDetail(element) {
 // ================= CLOSE MODAL ON OUTSIDE CLICK =================
 window.addEventListener('click', function(e) {
     if (e.target.id === "deleteModal") closeModal();
-}, false);
+    if (e.target.id === "notesModal") closeNotesModal();
+});
 
-document.addEventListener("keydown", e => e.key === "Escape" && closeModal());
+document.addEventListener("keydown", e => {
+    if (e.key === "Escape") {
+        closeModal();
+        closeNotesModal();
+    }
+});
 
 // ================= Initialize default selected item =================
 document.addEventListener('DOMContentLoaded', function () {
