@@ -1,0 +1,279 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div style="padding: 20px; min-height: 100vh; background: #f5f6fa;">
+
+    <!-- Header -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:30px;">
+        <div>
+            <a href="{% url 'software_update' %}"
+               style="display:inline-flex;align-items:center;gap:8px;padding:10px 20px;background:#6c757d;color:#fff;
+                      border-radius:6px;text-decoration:none;font-weight:600;">
+                <i class="fas fa-arrow-left"></i> Back to List
+            </a>
+            <h2 style="margin-top:15px;color:#2c3e50;">
+                <i class="fas fa-info-circle" style="color:#3498db;"></i>
+                Update Details
+            </h2>
+        </div>
+    </div>
+
+    <!-- Card -->
+    <div style="background:#fff;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.1);overflow:hidden;">
+
+       
+        <div style="padding:30px;display:grid;gap:25px;">
+
+            <!-- Client -->
+            <div style="background:#f8f9fa;padding:20px;border-left:4px solid #3498db;border-radius:4px;">
+                <h4 style="margin-top:0;"><i class="fas fa-user"></i> Client Information</h4>
+                <p style="margin:8px 0;"><strong>Name:</strong> {{ complaint.client_name }}</p>
+                <p style="margin:8px 0;"><strong>Branch:</strong> {{ complaint.branch }}</p>
+            </div>
+
+            <!-- Requested By -->
+            <div style="background:#e8f5e9;padding:20px;border-left:4px solid #4caf50;border-radius:4px;">
+                <h4 style="margin-top:0;"><i class="fas fa-user-circle"></i> Requested By</h4>
+                {% if complaint.requested_by %}
+                <div style="display: flex; align-items: center; gap: 12px; margin:8px 0;">
+                    <i class="fas fa-user-circle" style="color: #667eea; font-size: 24px;"></i>
+                    <div>
+                        <p style="margin:0; font-weight:600; color:#2c3e50;">
+                            {{ complaint.requested_by.get_full_name|default:complaint.requested_by.username }}
+                        </p>
+                        <p style="margin:4px 0 0 0; font-size:13px; color:#7f8c8d;">
+                            {{ complaint.requested_by.username }}
+                        </p>
+                    </div>
+                </div>
+                {% else %}
+                <p style="margin:8px 0; color:#95a5a6; font-style:italic;">
+                    <i class="fas fa-info-circle"></i> Not specified
+                </p>
+                {% endif %}
+            </div>
+
+            <!-- Software -->
+            <div style="background:#f8f9fa;padding:20px;border-left:4px solid #9b59b6;border-radius:4px;">
+                <h4 style="margin-top:0;"><i class="fas fa-laptop-code"></i> Software</h4>
+                <p style="margin:8px 0;">{{ complaint.get_software_display|default:complaint.software }}</p>
+            </div>
+
+            <!-- Description -->
+            <div style="background:#fff8e1;padding:20px;border-left:4px solid #ffc107;border-radius:4px;">
+                <h4 style="margin-top:0;"><i class="fas fa-file-alt"></i> Updations In</h4>
+                <p style="white-space:pre-wrap;margin:8px 0;">{{ complaint.description }}</p>
+            </div>
+
+            <!-- Voice Note -->
+            {% if complaint.voice_note %}
+            <div style="background:#e8f5e9;padding:20px;border-left:4px solid #4caf50;border-radius:4px;">
+                <h4 style="margin-top:0;"><i class="fas fa-microphone"></i> Voice Note</h4>
+                <audio controls style="width:100%;max-width:600px;">
+                    <source src="{{ MEDIA_URL }}{{ complaint.voice_note }}" type="audio/wav">
+                    <source src="{{ MEDIA_URL }}{{ complaint.voice_note }}" type="audio/mpeg">
+                    Your browser does not support the audio element.
+                </audio>
+                <div style="margin-top:10px;">
+                    <a href="{{ MEDIA_URL }}{{ complaint.voice_note }}" 
+                       download
+                       style="display:inline-block;padding:8px 16px;background:#4caf50;color:white;
+                              text-decoration:none;border-radius:4px;font-size:13px;font-weight:600;">
+                        <i class="fas fa-download"></i> Download Voice Note
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Images Section -->
+            {% if image_list and image_list|length > 0 %}
+            <div style="background:#e3f2fd;padding:20px;border-left:4px solid #2196f3;border-radius:4px;">
+                <h4 style="margin-top:0;">
+                    <i class="fas fa-images"></i> Attached Images 
+                    <span style="font-size:14px;color:#666;font-weight:normal;">({{ image_list|length }} image{{ image_list|length|pluralize }})</span>
+                </h4>
+
+                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:20px;margin-top:15px;">
+                    {% for img in image_list %}
+                    <div style="position:relative;border:2px solid #e0e0e0;border-radius:8px;overflow:hidden;
+                                background:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.1);transition:transform 0.2s,box-shadow 0.2s;"
+                         onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 4px 16px rgba(0,0,0,0.15)';"
+                         onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)';">
+                        
+                        <!-- Image Number Badge -->
+                        <div style="position:absolute;top:10px;left:10px;background:rgba(33,150,243,0.9);
+                                    color:white;padding:4px 10px;border-radius:4px;font-weight:600;font-size:12px;z-index:1;">
+                            #{{ forloop.counter }}
+                        </div>
+                        
+                        <!-- Image -->
+                        <img src="{{ MEDIA_URL }}{{ img }}"
+                             alt="Image {{ forloop.counter }}"
+                             style="width:100%;height:250px;object-fit:cover;cursor:pointer;display:block;"
+                             onclick="openImageModal('{{ MEDIA_URL }}{{ img }}', {{ forloop.counter }})"
+                             onerror="handleImageError(this, '{{ img }}')">
+                        
+                        <!-- View Action -->
+                        <div style="padding:10px;background:#f8f9fa;display:flex;justify-content:center;">
+                            <a href="{{ MEDIA_URL }}{{ img }}" 
+                               target="_blank"
+                               style="flex:1;padding:6px 12px;background:#2196f3;color:white;text-decoration:none;
+                                      border-radius:4px;text-align:center;font-size:13px;font-weight:600;
+                                      transition:background 0.2s;"
+                               onmouseover="this.style.background='#1976d2'"
+                               onmouseout="this.style.background='#2196f3'">
+                                <i class="fas fa-external-link-alt"></i> View
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% else %}
+            <div style="background:#f8f9fa;padding:20px;border-left:4px solid #95a5a6;border-radius:4px;">
+                <h4 style="margin-top:0;"><i class="fas fa-images"></i> Attached Images</h4>
+                <p style="color:#7f8c8d;margin:0;"><i class="fas fa-info-circle"></i> No images attached</p>
+            </div>
+            {% endif %}
+
+            <!-- Status - UPDATED COLORS -->
+            <div style="background:#f8f9fa;padding:20px;border-left:4px solid #e74c3c;border-radius:4px;">
+                <h4 style="margin-top:0;"><i class="fas fa-flag"></i> Status</h4>
+                <p style="margin:8px 0;">
+                    <span style="display:inline-block;padding:6px 16px;border-radius:20px;font-weight:600;font-size:13px;
+                        {% if complaint.status == 'Pending' %}
+                            background:#fff3cd;color:#856404;border:2px solid #ffc107;
+                        {% elif complaint.status == 'In Review' %}
+                            background:#e2e3ff;color:#3d3dbf;border:2px solid #6f42c1;
+                        {% elif complaint.status == 'Under Development' %}
+                            background:#cfe2ff;color:#084298;border:2px solid #0d6efd;
+                        {% elif complaint.status == 'Completed' %}
+                            background:#d1e7dd;color:#0f5132;border:2px solid #198754;
+                        {% else %}
+                            background:#e2e3e5;color:#41464b;border:2px solid #6c757d;
+                        {% endif %}">
+                        {{ complaint.status }}
+                    </span>
+                </p>
+                {% if complaint.updated_at %}
+                <p style="margin:8px 0;"><small style="color:#666;"><i class="fas fa-clock"></i> Last Updated: {{ complaint.updated_at|date:"d M Y, h:i A" }}</small></p>
+                {% endif %}
+            </div>
+
+        </div>
+
+        <!-- Footer -->
+        <div style="padding:20px;background:#f8f9fa;border-top:1px solid #ddd;display:flex;gap:10px;justify-content:space-between;align-items:center;">
+            <a href="{% url 'software_update' %}"
+               style="padding:10px 20px;background:#6c757d;color:#fff;border-radius:6px;text-decoration:none;font-weight:600;">
+                <i class="fas fa-arrow-left"></i> Back
+            </a>
+
+            <div style="display:flex;gap:10px;">
+                <form method="POST" action="{% url 'software_delete' complaint.id %}"
+                      onsubmit="return confirm('Are you sure you want to delete this complaint and all its attachments?');"
+                      style="margin:0;">
+                    {% csrf_token %}
+                    <button type="submit"
+                            style="padding:10px 20px;background:#dc3545;color:#fff;border:none;border-radius:6px;
+                                   cursor:pointer;font-weight:600;">
+                        <i class="fas fa-trash"></i> Delete
+                    </button>
+                </form>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Image Modal -->
+<div id="imageModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;
+                            background:rgba(0,0,0,0.9);z-index:9999;align-items:center;justify-content:center;"
+     onclick="closeImageModal()">
+    <div style="position:relative;max-width:90%;max-height:90%;text-align:center;" onclick="event.stopPropagation()">
+        <span style="position:absolute;top:-40px;right:0;color:white;font-size:40px;cursor:pointer;
+                     font-weight:bold;transition:color 0.2s;"
+              onclick="closeImageModal()"
+              onmouseover="this.style.color='#f44336'"
+              onmouseout="this.style.color='white'">
+            &times;
+        </span>
+        <img id="modalImage" src="" style="max-width:100%;max-height:90vh;border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,0.5);">
+        <div style="color:white;margin-top:15px;font-size:18px;font-weight:600;">
+            Image <span id="modalImageNumber"></span>
+        </div>
+    </div>
+</div>
+
+<script>
+function openImageModal(imageSrc, imageNumber) {
+    document.getElementById('imageModal').style.display = 'flex';
+    document.getElementById('modalImage').src = imageSrc;
+    document.getElementById('modalImageNumber').textContent = '#' + imageNumber;
+    document.body.style.overflow = 'hidden';
+}
+
+function closeImageModal() {
+    document.getElementById('imageModal').style.display = 'none';
+    document.body.style.overflow = 'auto';
+}
+
+function handleImageError(img, imgPath) {
+    console.error('Failed to load image:', imgPath);
+    
+    // Try alternative paths
+    const altPaths = [
+        '{{ MEDIA_URL }}' + imgPath,
+        '/media/' + imgPath,
+        imgPath
+    ];
+    
+    let currentAttempt = 0;
+    
+    img.onerror = function() {
+        currentAttempt++;
+        if (currentAttempt < altPaths.length) {
+            console.log('Trying alternative path:', altPaths[currentAttempt]);
+            img.src = altPaths[currentAttempt];
+        } else {
+            // All attempts failed, show error placeholder
+            img.parentElement.innerHTML = `
+                <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;
+                            height:250px;background:#f5f5f5;color:#999;">
+                    <i class="fas fa-exclamation-triangle" style="font-size:48px;margin-bottom:10px;"></i>
+                    <p style="margin:0;font-size:14px;">Image not found</p>
+                    <p style="margin:5px 0 0 0;font-size:12px;color:#bbb;">${imgPath}</p>
+                </div>
+            `;
+        }
+    };
+    
+    // Start trying alternative paths
+    img.src = altPaths[0];
+}
+
+// Close modal with Escape key
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        closeImageModal();
+    }
+});
+
+// Debug: Log image paths on page load
+window.addEventListener('DOMContentLoaded', function() {
+    console.log('=== Image Debug Info ===');
+    console.log('MEDIA_URL:', '{{ MEDIA_URL }}');
+    {% if image_list %}
+    console.log('Image list:');
+    {% for img in image_list %}
+    console.log('  {{ forloop.counter }}:', '{{ img }}');
+    {% endfor %}
+    {% else %}
+    console.log('No images in list');
+    {% endif %}
+    console.log('======================');
+});
+</script>
+
+{% endblock %}

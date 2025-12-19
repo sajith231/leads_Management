@@ -51,6 +51,7 @@ urlpatterns = [
     path('cancel_requestes/', include('Cancel_Requestes.urls')),
     path('vehicle/', include('vehicle_challan.urls')),
     path('public_folder/', include('public_folder.urls')),
+    path('software_update/', include('software_update.urls')),
 
 
 
