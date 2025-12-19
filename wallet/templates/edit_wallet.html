@@ -89,6 +89,9 @@
     .existing-file a:hover { text-decoration:underline; }
     
     .current-image-preview { max-width:100%; max-height:200px; border-radius:6px; border:1px solid #bae6fd; margin-top:6px; }
+    
+    .dynamic-fields { display: none; }
+    .file-upload-section { display: block; }
 </style>
 
 <div class="page-center">
@@ -132,11 +135,18 @@
         <label class="form-label" for="upload_type">Upload Type <span class="required">*</span></label>
         <select id="upload_type" name="upload_type" required>
           <option value="">Select upload type</option>
-          <option value="bank" {% if wallet.upload_type == 'bank' %}selected{% endif %}>Bank/Details wallet</option>
+          <option value="bank" {% if wallet.upload_type == 'bank' %}selected{% endif %}>Bank/ACC-Details QR</option>
           <option value="qr" {% if wallet.upload_type == 'qr' %}selected{% endif %}>QR</option>
           <option value="document" {% if wallet.upload_type == 'document' %}selected{% endif %}>Documentation Image</option>
           <option value="pdf" {% if wallet.upload_type == 'pdf' %}selected{% endif %}>PDF Document</option>
-          <option value="other" {% if wallet.upload_type == 'other' %}selected{% endif %}>Address Book</option>
+          <option value="other" {% if wallet.upload_type == 'other' %}selected{% endif %}>Address Card</option>
+          <option value="ofdocs_imc_dev" {% if wallet.upload_type == 'ofdocs_imc_dev' %}selected{% endif %}>Ofdocs - IMC DEV</option>
+          <option value="ofdocs_imc_ho" {% if wallet.upload_type == 'ofdocs_imc_ho' %}selected{% endif %}>Ofdocs - IMC HO</option>
+          <option value="ofdocs_imc_mukkam" {% if wallet.upload_type == 'ofdocs_imc_mukkam' %}selected{% endif %}>Ofdocs - IMC Mukkam</option>
+          <option value="ofdocs_sysmac" {% if wallet.upload_type == 'ofdocs_sysmac' %}selected{% endif %}>Ofdocs - Sysmac</option>
+          <option value="ofdocs_sysmac_info" {% if wallet.upload_type == 'ofdocs_sysmac_info' %}selected{% endif %}>Ofdocs - Sysmac Info</option>
+          <option value="ofdocs_sysmac_old" {% if wallet.upload_type == 'ofdocs_sysmac_old' %}selected{% endif %}>Ofdocs - Sysmac Old</option>
+          <option value="vehicle_data" {% if wallet.upload_type == 'vehicle_data' %}selected{% endif %}>Vehicle Data</option>
         </select>
         <div class="info-text">Select the category for this wallet item</div>
       </div>
@@ -145,7 +155,7 @@
       <div id="typeSpecificFields">
 
         <!-- Bank Fields -->
-        <div id="bankFields" class="dynamic-fields" style="display:none;">
+        <div id="bankFields" class="dynamic-fields">
           <div class="field-group">
             <div class="field-group-title"><i class="fas fa-university"></i> Bank Account Details</div>
 
@@ -172,7 +182,7 @@
         </div>
 
         <!-- QR Fields -->
-        <div id="qrFields" class="dynamic-fields" style="display:none;">
+        <div id="qrFields" class="dynamic-fields">
           <div class="field-group">
             <div class="field-group-title"><i class="fas fa-qrcode"></i> QR Details</div>
             <div class="form-row">
@@ -183,7 +193,7 @@
         </div>
 
         <!-- PDF Fields -->
-        <div id="pdfSpecificFields" class="dynamic-fields" style="display:none;">
+        <div id="pdfSpecificFields" class="dynamic-fields">
           <div class="field-group">
             <div class="field-group-title"><i class="fas fa-file-pdf"></i> PDF Details</div>
             <div class="form-row">
@@ -194,12 +204,12 @@
         </div>
 
         <!-- Address Book -->
-        <div id="otherFields" class="dynamic-fields" style="display:none;">
+        <div id="otherFields" class="dynamic-fields">
           <div class="field-group">
             <div class="field-group-title"><i class="fas fa-address-book"></i> Address Book</div>
             <div class="form-row">
-              <label class="form-label" for="other_name">Name</label>
-              <input id="other_name" name="other_name" type="text" value="{{ wallet.other_name }}">
+              <label class="form-label" for="other_name">Name <span class="required">*</span></label>
+              <input id="other_name" name="other_name" type="text" value="{{ wallet.other_name }}" {% if wallet.upload_type == 'other' %}required{% endif %}>
             </div>
           </div>
         </div>
@@ -207,6 +217,9 @@
         <!-- File Upload Section -->
         <div class="file-upload-section">
           <div class="section-title"><i class="fas fa-cloud-upload-alt"></i> File Upload</div>
+          <div class="info-text highlight" style="margin-bottom:12px;">
+            <i class="fas fa-info-circle"></i> At least one file (Image OR PDF) must be present
+          </div>
 
           <!-- IMAGE -->
           <div class="form-row">
@@ -217,15 +230,18 @@
                 <i class="fas fa-check-circle"></i>
                 <span>Current Image: <strong>{{ wallet.image.name|slice:"14:" }}</strong></span>
               </div>
-              <img src="{{ wallet.image.url }}" class="current-image-preview">
+              <img src="{{ wallet.image.url }}" class="current-image-preview" alt="Current image">
+              <input type="hidden" id="hasExistingImage" value="true">
             {% else %}
               <div style="font-size:12px;color:#999;">No image uploaded</div>
+              <input type="hidden" id="hasExistingImage" value="false">
             {% endif %}
 
-            <input id="wallet_image" name="wallet_image" type="file" accept="image/png, image/jpeg">
+            <input id="wallet_image" name="wallet_image" type="file" accept="image/png, image/jpeg, image/jpg">
+            <div class="info-text">Supported formats: JPG, JPEG, PNG (Max 5MB)</div>
 
             <div id="imagePreview" class="image-preview-container">
-              <img id="previewImg" class="image-preview">
+              <img id="previewImg" class="image-preview" alt="New image preview">
             </div>
           </div>
 
@@ -238,11 +254,14 @@
                 <i class="fas fa-file-pdf"></i>
                 <span>Current PDF: <a href="{{ wallet.pdf_file.url }}" target="_blank"><strong>{{ wallet.pdf_file.name|slice:"13:" }}</strong></a></span>
               </div>
+              <input type="hidden" id="hasExistingPdf" value="true">
             {% else %}
               <div style="font-size:12px;color:#999;">No PDF uploaded</div>
+              <input type="hidden" id="hasExistingPdf" value="false">
             {% endif %}
 
             <input id="wallet_pdf" name="wallet_pdf" type="file" accept="application/pdf">
+            <div class="info-text">Supported format: PDF (Max 10MB)</div>
 
             <div id="pdfPreview" class="pdf-preview-container">
               <div class="pdf-preview-info">
@@ -253,25 +272,25 @@
                 </div>
               </div>
             </div>
-
           </div>
         </div>
-
       </div>
 
       <div class="form-row">
-        <label class="form-label" for="visibility_priority">Visibility Priority</label>
+        <label class="form-label" for="visibility_priority">Visibility Priority <span class="required">*</span></label>
         <select id="visibility_priority" name="visibility_priority" required>
           <option value="">Select</option>
           <option value="superadmin" {% if wallet.visibility_priority == 'superadmin' %}selected{% endif %}>Super Admin</option>
           <option value="admin" {% if wallet.visibility_priority == 'admin' %}selected{% endif %}>Admin</option>
           <option value="user" {% if wallet.visibility_priority == 'user' %}selected{% endif %}>User</option>
         </select>
+        <div class="info-text">Who can view this wallet item</div>
       </div>
 
       <div class="form-row">
-        <label class="form-label" for="description">Description</label>
-        <textarea id="description" name="description" rows="4">{{ wallet.description }}</textarea>
+        <label class="form-label" for="description">Description <span class="required" id="descRequired">{% if wallet.upload_type == 'other' %}*{% endif %}</span></label>
+        <textarea id="description" name="description" rows="4" {% if wallet.upload_type == 'other' %}required{% endif %}>{{ wallet.description }}</textarea>
+        <div class="info-text">Add any additional details about this wallet item</div>
       </div>
 
       <div class="form-row">
@@ -280,51 +299,107 @@
     </form>
 
     <div style="text-align:center;margin-top:12px;">
-      <a href="{% url 'wallet_list' %}" class="btn-back"><i class="fas fa-arrow-left"></i> Back</a>
+      <a href="{% url 'wallet_list' %}" class="btn-back"><i class="fas fa-arrow-left"></i> Back to Wallet List</a>
     </div>
 
   </div>
 </div>
 
 <script>
-  // FIXED — Proper Django syntax
-  const hasExistingImage = {% if wallet.image %}true{% else %}false{% endif %};
-  const hasExistingPdf = {% if wallet.pdf_file %}true{% else %}false{% endif %};
-
+  // Get current values
   const uploadTypeEl = document.getElementById('upload_type');
   const walletImage = document.getElementById('wallet_image');
   const walletPdf = document.getElementById('wallet_pdf');
+  const hasExistingImage = document.getElementById('hasExistingImage').value === 'true';
+  const hasExistingPdf = document.getElementById('hasExistingPdf').value === 'true';
 
+  // Hide all dynamic fields
   function hideAllDynamicFields() {
     document.querySelectorAll('.dynamic-fields').forEach(el => el.style.display = 'none');
   }
 
+  // Show specific fields based on upload type
   function showFieldsForType(type) {
     hideAllDynamicFields();
-    if (type === 'bank') document.getElementById('bankFields').style.display = 'block';
-    if (type === 'qr') document.getElementById('qrFields').style.display = 'block';
-    if (type === 'pdf') document.getElementById('pdfSpecificFields').style.display = 'block';
-    if (type === 'other') document.getElementById('otherFields').style.display = 'block';
+    
+    if (type === 'bank') {
+      document.getElementById('bankFields').style.display = 'block';
+    } else if (type === 'qr') {
+      document.getElementById('qrFields').style.display = 'block';
+    } else if (type === 'pdf') {
+      document.getElementById('pdfSpecificFields').style.display = 'block';
+    } else if (type === 'other') {
+      document.getElementById('otherFields').style.display = 'block';
+    }
+    // Other types show no specific fields
   }
 
-  if (uploadTypeEl.value) showFieldsForType(uploadTypeEl.value);
+  // Handle upload type change
+  function handleUploadTypeChange() {
+    const type = uploadTypeEl.value;
+    
+    if (!type) {
+      document.getElementById('typeSpecificFields').style.display = 'none';
+      return;
+    }
+    
+    document.getElementById('typeSpecificFields').style.display = 'block';
+    showFieldsForType(type);
+    
+    // Handle required fields
+    const descriptionEl = document.getElementById('description');
+    const descRequired = document.getElementById('descRequired');
+    const otherNameEl = document.getElementById('other_name');
+    
+    if (type === 'other') {
+      descriptionEl.setAttribute('required', 'required');
+      descRequired.style.display = 'inline';
+      if (otherNameEl) otherNameEl.setAttribute('required', 'required');
+    } else {
+      descriptionEl.removeAttribute('required');
+      descRequired.style.display = 'none';
+      if (otherNameEl) otherNameEl.removeAttribute('required');
+    }
+  }
 
-  uploadTypeEl.addEventListener('change', function () {
-    showFieldsForType(this.value);
-  });
+  // Initialize on page load
+  if (uploadTypeEl.value) {
+    document.getElementById('typeSpecificFields').style.display = 'block';
+    showFieldsForType(uploadTypeEl.value);
+  }
+  
+  uploadTypeEl.addEventListener('change', handleUploadTypeChange);
 
   // Image preview
-  walletImage.addEventListener('change', e => {
-    const file = e.target.files[0];
+  walletImage.addEventListener('change', function(e) {
+    const file = e.target.files && e.target.files[0];
     const img = document.getElementById('previewImg');
     const container = document.getElementById('imagePreview');
 
     if (!file) {
-      container.style.display = 'none'; img.src = ''; return;
+      container.style.display = 'none';
+      img.src = '';
+      return;
     }
 
+    // Validate file type
+    const allowed = ['image/jpeg', 'image/jpg', 'image/png'];
+    if (!allowed.includes(file.type)) {
+      alert('Only JPG, JPEG, and PNG images are allowed.');
+      walletImage.value = '';
+      return;
+    }
+
+    // Validate file size
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image file size should not exceed 5MB.');
+      walletImage.value = '';
+      return;
+    }
+
+    // Show preview
     const reader = new FileReader();
-    reader.onload = ev => {
+    reader.onload = function(ev) {
       img.src = ev.target.result;
       container.style.display = 'block';
     };
@@ -332,8 +407,8 @@
   });
 
   // PDF preview
-  walletPdf.addEventListener('change', e => {
-    const file = e.target.files[0];
+  walletPdf.addEventListener('change', function(e) {
+    const file = e.target.files && e.target.files[0];
     const container = document.getElementById('pdfPreview');
     const fileName = document.getElementById('pdfFileName');
     const fileSize = document.getElementById('pdfFileSize');
@@ -343,24 +418,82 @@
       return;
     }
 
+    // Validate file type
+    if (file.type !== 'application/pdf') {
+      alert('Only PDF files are allowed.');
+      walletPdf.value = '';
+      return;
+    }
+
+    // Validate file size
+    if (file.size > 10 * 1024 * 1024) {
+      alert('PDF file size should not exceed 10MB.');
+      walletPdf.value = '';
+      return;
+    }
+
+    // Show preview info
     fileName.textContent = file.name;
-    fileSize.textContent = (file.size / (1024*1024)).toFixed(2) + " MB";
+    
+    let size = file.size;
+    let sizeStr = '';
+    if (size < 1024) {
+      sizeStr = size + ' B';
+    } else if (size < 1024 * 1024) {
+      sizeStr = (size / 1024).toFixed(1) + ' KB';
+    } else {
+      sizeStr = (size / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+    fileSize.textContent = sizeStr;
+    
     container.style.display = 'block';
   });
 
-  // Validation for file requirement
+  // IFSC code uppercase
+  const ifscEl = document.getElementById('ifsc_code');
+  if (ifscEl) {
+    ifscEl.addEventListener('input', function() {
+      this.value = this.value.toUpperCase();
+    });
+  }
+
+  // Form validation - ensure at least one file is present
   document.getElementById('walletForm').addEventListener('submit', function(e) {
     const newImg = walletImage.files.length > 0;
     const newPdf = walletPdf.files.length > 0;
-
     const finalImg = hasExistingImage || newImg;
     const finalPdf = hasExistingPdf || newPdf;
 
     if (!finalImg && !finalPdf) {
       e.preventDefault();
-      alert("At least one file (Image or PDF) must remain.");
+      alert('At least one file (Image OR PDF) must be present. Please upload a file.');
+      return false;
+    }
+
+    // Additional validation for Address Book
+    if (uploadTypeEl.value === 'other') {
+      const otherName = document.getElementById('other_name').value.trim();
+      const description = document.getElementById('description').value.trim();
+      
+      if (!otherName || !description) {
+        e.preventDefault();
+        alert('Address Book requires both Name and Description.');
+        return false;
+      }
     }
   });
-</script>
 
+  // Close alert messages
+  document.querySelectorAll('.alert .close-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const alert = this.closest('.alert');
+      if (!alert) return;
+      alert.style.transition = 'opacity .18s ease, height .18s ease, margin .18s ease';
+      alert.style.opacity = '0';
+      alert.style.height = '0';
+      alert.style.margin = '0';
+      setTimeout(() => alert.remove(), 200);
+    });
+  });
+</script>
 {% endblock %}

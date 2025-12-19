@@ -54,6 +54,13 @@ def wallet_list(request):
     document_wallets = wallets.filter(upload_type='document')
     pdf_wallets = wallets.filter(upload_type='pdf')
     other_wallets = wallets.filter(upload_type='other')
+    ofdocs_imc_dev_wallets = wallets.filter(upload_type='ofdocs_imc_dev')
+    ofdocs_imc_ho_wallets = wallets.filter(upload_type='ofdocs_imc_ho')
+    ofdocs_imc_mukkam_wallets = wallets.filter(upload_type='ofdocs_imc_mukkam')
+    ofdocs_sysmac_wallets = wallets.filter(upload_type='ofdocs_sysmac')
+    ofdocs_sysmac_info_wallets = wallets.filter(upload_type='ofdocs_sysmac_info')
+    ofdocs_sysmac_old_wallets = wallets.filter(upload_type='ofdocs_sysmac_old')
+    vehicle_data_wallets = wallets.filter(upload_type='vehicle_data')
 
     context = {
         'wallets': wallets,
@@ -62,6 +69,13 @@ def wallet_list(request):
         'document_wallets': document_wallets,
         'pdf_wallets': pdf_wallets,
         'other_wallets': other_wallets,
+        'ofdocs_imc_dev_wallets': ofdocs_imc_dev_wallets,
+        'ofdocs_imc_ho_wallets': ofdocs_imc_ho_wallets,
+        'ofdocs_imc_mukkam_wallets': ofdocs_imc_mukkam_wallets,
+        'ofdocs_sysmac_wallets': ofdocs_sysmac_wallets,
+        'ofdocs_sysmac_info_wallets': ofdocs_sysmac_info_wallets,
+        'ofdocs_sysmac_old_wallets': ofdocs_sysmac_old_wallets,
+        'vehicle_data_wallets': vehicle_data_wallets,
     }
 
     return render(request, 'wallet_list.html', context)
@@ -81,7 +95,9 @@ def add_wallet(request):
             return render(request, 'add_wallet.html')
 
         # Validate upload_type is in allowed choices
-        valid_types = ['bank', 'qr', 'document', 'pdf', 'other']
+        valid_types = ['bank', 'qr', 'document', 'pdf', 'other', 'ofdocs_imc_dev', 
+                       'ofdocs_imc_ho', 'ofdocs_imc_mukkam', 'ofdocs_sysmac', 
+                       'ofdocs_sysmac_info', 'ofdocs_sysmac_old', 'vehicle_data']
         if upload_type not in valid_types:
             messages.error(request, f'Invalid upload type. Must be one of: {", ".join(valid_types)}')
             return render(request, 'add_wallet.html')
@@ -148,6 +164,7 @@ def add_wallet(request):
             wallet.pdf_name = request.POST.get('pdf_name', '')
         elif upload_type == 'other':
             wallet.other_name = request.POST.get('other_name', '')
+        # New types (ofdocs_*, vehicle_data) don't have specific fields - they just use common file uploads
 
         # Set created_by if user is authenticated
         if request.user.is_authenticated:
@@ -161,9 +178,10 @@ def add_wallet(request):
 
 
 def edit_wallet(request, wallet_id):
-    """Edit existing wallet with permission guard (admin OR owner)."""
+    """Edit existing wallet with permission guard (admin OR owner) - Enhanced version."""
     wallet = get_object_or_404(Wallet, id=wallet_id)
 
+    # Permission check
     allowed = False
     if is_admin_user(request):
         allowed = True
@@ -183,29 +201,33 @@ def edit_wallet(request, wallet_id):
         return redirect('wallet_list')
 
     if request.method == 'POST':
-        title = request.POST.get('title')
-        upload_type = request.POST.get('upload_type')
-        visibility_priority = request.POST.get('visibility_priority')
-        description = request.POST.get('description', '')
+        # Get form data
+        title = request.POST.get('title', '').strip()
+        upload_type = request.POST.get('upload_type', '').strip()
+        visibility_priority = request.POST.get('visibility_priority', '').strip()
+        description = request.POST.get('description', '').strip()
 
+        # Validate required fields
         if not title or not upload_type or not visibility_priority:
             messages.error(request, 'Please fill all required fields.')
             return render(request, 'edit_wallet.html', {'wallet': wallet})
 
         # Validate upload_type
-        valid_types = ['bank', 'qr', 'document', 'pdf', 'other']
+        valid_types = ['bank', 'qr', 'document', 'pdf', 'other', 'ofdocs_imc_dev', 
+                       'ofdocs_imc_ho', 'ofdocs_imc_mukkam', 'ofdocs_sysmac', 
+                       'ofdocs_sysmac_info', 'ofdocs_sysmac_old', 'vehicle_data']
         if upload_type not in valid_types:
             messages.error(request, f'Invalid upload type. Must be one of: {", ".join(valid_types)}')
             return render(request, 'edit_wallet.html', {'wallet': wallet})
 
-        # Validate Address Book requirements
+        # Validate specific requirements
         if upload_type == 'other':
             other_name = request.POST.get('other_name', '').strip()
             if not other_name or not description:
                 messages.error(request, 'Address Book requires both name and description.')
                 return render(request, 'edit_wallet.html', {'wallet': wallet})
 
-        # Get new files if provided (common fields for all types)
+        # Get new files if provided
         new_image = request.FILES.get('wallet_image')
         new_pdf = request.FILES.get('wallet_pdf')
 
@@ -244,47 +266,27 @@ def edit_wallet(request, wallet_id):
         wallet.visibility_priority = visibility_priority
         wallet.description = description
 
-        # Update type-specific fields and clear others
+        # Clear all type-specific fields first
+        wallet.account_holder_name = ''
+        wallet.account_number = ''
+        wallet.ifsc_code = ''
+        wallet.bank_address = ''
+        wallet.qr_name = ''
+        wallet.pdf_name = ''
+        wallet.other_name = ''
+
+        # Update type-specific fields based on upload_type
         if upload_type == 'bank':
-            wallet.account_holder_name = request.POST.get('account_holder_name', '')
-            wallet.account_number = request.POST.get('account_number', '')
-            wallet.ifsc_code = request.POST.get('ifsc_code', '').upper()
-            wallet.bank_address = request.POST.get('bank_address', '')
-            wallet.qr_name = ''
-            wallet.pdf_name = ''
-            wallet.other_name = ''
+            wallet.account_holder_name = request.POST.get('account_holder_name', '').strip()
+            wallet.account_number = request.POST.get('account_number', '').strip()
+            wallet.ifsc_code = request.POST.get('ifsc_code', '').strip().upper()
+            wallet.bank_address = request.POST.get('bank_address', '').strip()
         elif upload_type == 'qr':
-            wallet.qr_name = request.POST.get('qr_name', '')
-            wallet.account_holder_name = ''
-            wallet.account_number = ''
-            wallet.ifsc_code = ''
-            wallet.bank_address = ''
-            wallet.pdf_name = ''
-            wallet.other_name = ''
-        elif upload_type == 'document':
-            wallet.account_holder_name = ''
-            wallet.account_number = ''
-            wallet.ifsc_code = ''
-            wallet.bank_address = ''
-            wallet.qr_name = ''
-            wallet.pdf_name = ''
-            wallet.other_name = ''
+            wallet.qr_name = request.POST.get('qr_name', '').strip()
         elif upload_type == 'pdf':
-            wallet.pdf_name = request.POST.get('pdf_name', '')
-            wallet.account_holder_name = ''
-            wallet.account_number = ''
-            wallet.ifsc_code = ''
-            wallet.bank_address = ''
-            wallet.qr_name = ''
-            wallet.other_name = ''
+            wallet.pdf_name = request.POST.get('pdf_name', '').strip()
         elif upload_type == 'other':
-            wallet.other_name = request.POST.get('other_name', '')
-            wallet.account_holder_name = ''
-            wallet.account_number = ''
-            wallet.ifsc_code = ''
-            wallet.bank_address = ''
-            wallet.qr_name = ''
-            wallet.pdf_name = ''
+            wallet.other_name = request.POST.get('other_name', '').strip()
 
         # Update image if new one provided
         if new_image:
@@ -312,7 +314,14 @@ def edit_wallet(request, wallet_id):
         messages.success(request, 'Wallet item updated successfully!')
         return redirect('wallet_list')
 
-    return render(request, 'edit_wallet.html', {'wallet': wallet})
+    # GET request - show form with current data
+    context = {
+        'wallet': wallet,
+        # Pass current file status for JavaScript
+        'has_image': bool(wallet.image),
+        'has_pdf': bool(wallet.pdf_file),
+    }
+    return render(request, 'edit_wallet.html', context)
 
 
 def delete_wallet(request, wallet_id):
@@ -506,7 +515,7 @@ def wallet_whatsapp_share(request, wallet_id):
     image_ok = True  # Mark as success since link is in the text message
 
     # 3️⃣ PDF MESSAGE - Use download link
-    pdf_ok = False
+    pdf_ok = False  
     if wallet.pdf_file:
         try:
             # Use the download endpoint URL
@@ -535,6 +544,7 @@ def wallet_whatsapp_share(request, wallet_id):
             "text_sent": text_ok,
             "image_sent": image_ok,
             "pdf_sent": pdf_ok,
+
             "message": "Wallet details sent successfully!"
         })
     else:
@@ -542,3 +552,6 @@ def wallet_whatsapp_share(request, wallet_id):
             "success": False,
             "error": "Nothing could be delivered – check server logs and verify URLs are publicly accessible"
         }, status=500)
+
+
+  

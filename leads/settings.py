@@ -87,6 +87,7 @@ INSTALLED_APPS = [
     'vehicle_challan',
     'campaign',
     'public_folder',
+    'software_update',
 ]
 
 
@@ -170,7 +171,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'leading_management',
         'USER': 'postgres',
-        'PASSWORD': 'info@imc',
+        'PASSWORD': 'sajith@2003',
         'HOST': 'localhost',
         'PORT': '5432',
     }

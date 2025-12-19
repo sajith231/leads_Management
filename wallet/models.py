@@ -8,6 +8,13 @@ class Wallet(models.Model):
         ('document', 'Documentation Image'),
         ('pdf', 'PDF Document'),
         ('other', 'Address Book'),
+        ('ofdocs_imc_dev', 'Ofdocs - IMC DEV'),
+        ('ofdocs_imc_ho', 'Ofdocs - IMC HO'),
+        ('ofdocs_imc_mukkam', 'Ofdocs - IMC Mukkam'),
+        ('ofdocs_sysmac', 'Ofdocs - Sysmac'),
+        ('ofdocs_sysmac_info', 'Ofdocs - Sysmac Info'),
+        ('ofdocs_sysmac_old', 'Ofdocs - Sysmac Old'),
+        ('vehicle_data', 'Vehicle Data'),
     ]
     
     VISIBILITY_CHOICES = [

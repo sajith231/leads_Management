@@ -340,16 +340,42 @@ def fuel_management(request):
 
     return render(request, 'fuel_management.html', {'page_obj': page_obj})
 
+import requests
+
+# Add this function at the top of your views.py (after imports)
+def get_clients_from_api():
+    """Fetch clients from the API"""
+    try:
+        response = requests.get('https://accmaster.imcbs.com/api/sync/rrc-clients/', timeout=10)
+        if response.status_code == 200:
+            clients_data = response.json()
+            clients = []
+            if isinstance(clients_data, list):
+                for client in clients_data:
+                    # Adjust these keys based on your actual API response
+                    client_name = client.get('name') or client.get('client_name') or client.get('clientName')
+                    if client_name:
+                        clients.append(client_name)
+            return clients
+        else:
+            return []
+    except Exception as e:
+        print(f"Error fetching clients: {e}")
+        return []
+
+
+# Update your fuel_enter view
 @login_required
 def fuel_enter(request):
-    """
-    Start a trip and return to the listing.
-    """
+    """Start a trip and return to the listing."""
+    clients = get_clients_from_api()  # Add this line
+    
     if request.method == 'POST':
         try:
             vehicle = get_object_or_404(Vehicle, id=request.POST['vehicle'])
             user = request.user
             purpose = request.POST.get('purpose', '').strip()
+            client_name = request.POST.get('client_name', '').strip()  # Add this line
             
             FuelEntry.objects.create(
                 vehicle=vehicle,
@@ -357,6 +383,7 @@ def fuel_enter(request):
                 date=request.POST['date'],
                 start_time=request.POST['start_time'],
                 purpose=purpose,
+                client_name=client_name,  # Add this line
                 trip_from="Trip Started",
                 trip_to="In Progress",
                 fuel_cost=request.POST.get('fuel_cost', 0) or 0,
@@ -371,7 +398,7 @@ def fuel_enter(request):
             return redirect('fuel_enter')
 
     vehicles = Vehicle.objects.all()
-    return render(request, 'fuel_entre.html', {'vehicles': vehicles})
+    return render(request, 'fuel_entre.html', {'vehicles': vehicles, 'clients': clients}) 
 
 @login_required
 def fuel_complete_trip(request, entry_id):
@@ -402,6 +429,7 @@ def fuel_complete_trip(request, entry_id):
 def fuel_edit(request, entry_id):
     """Edit existing fuel entry with all trip details."""
     fuel_entry = get_object_or_404(FuelEntry, id=entry_id)
+    clients = get_clients_from_api()  # Add this line
 
     if request.method == 'POST':
         try:
@@ -435,6 +463,9 @@ def fuel_edit(request, entry_id):
 
             purpose = request.POST.get('purpose', '').strip()
             fuel_entry.purpose = purpose
+            
+            client_name = request.POST.get('client_name', '').strip()  # Add this line
+            fuel_entry.client_name = client_name  # Add this line
 
             odo_start = request.POST.get('odo_start_reading')
             if odo_start:
@@ -478,10 +509,12 @@ def fuel_edit(request, entry_id):
     vehicles = Vehicle.objects.all()
     users = User.objects.filter(is_active=True)
 
+    # Update this return line
     return render(request, 'fuel_edit.html', {
         'entry': fuel_entry,
         'vehicles': vehicles,
-        'users': users
+        'users': users,
+        'clients': clients  # Add this line
     })
 
 

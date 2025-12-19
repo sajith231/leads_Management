@@ -64,7 +64,7 @@
   th:nth-child(2), td:nth-child(2){width:200px}
   th:nth-child(3), td:nth-child(3){width:120px}
   th:nth-child(4), td:nth-child(4){width:150px}
-  th:nth-child(5), td:nth-child(5){width:200px}
+  th:nth-child(5), td:nth-child(5){width:250px}
   th:nth-child(6), td:nth-child(6){width:110px}
   th:nth-child(7), td:nth-child(7){width:100px}
   th:nth-child(8), td:nth-child(8){width:100px}
@@ -80,7 +80,9 @@
   .action-buttons form{display:inline-block;margin:0}
   
   .no-traveler{color:#95a5a6;font-style:italic}
-  .purpose-cell{max-width:200px;white-space:normal;word-wrap:break-word}
+  .client-purpose-cell{max-width:250px;white-space:normal;word-wrap:break-word;line-height:1.4}
+  .client-name{font-weight:600;color:#2c3e50;margin-bottom:4px}
+  .purpose-text{color:#6c757d;font-size:.9em;font-style:italic}
 </style>
 
 <div class="fuel-management-container">
@@ -141,7 +143,7 @@
               <th>Status / Action</th>
               <th>Vehicle</th>
               <th>Traveled By</th>
-              <th>Purpose</th>
+              <th>Client & Purpose</th>
               <th>Date</th>
               <th>Start Time</th>
               <th>End Time</th>
@@ -174,15 +176,18 @@
                 {% if entry.travelled_by %}
                   {{ entry.travelled_by.username }}
                 {% else %}
-                  <span class="no-traveler">–</span>
+                  <span class="no-traveler">—</span>
                 {% endif %}
               </td>
 
-              <td class="purpose-cell">
-                {% if entry.purpose %}
-                  {{ entry.purpose }}
+              <td class="client-purpose-cell">
+                {% if entry.client_name %}
+                  <div class="client-name">{{ entry.client_name }}</div>
                 {% else %}
-                  <span class="no-traveler">–</span>
+                  <div class="client-name no-traveler">—</div>
+                {% endif %}
+                {% if entry.purpose %}
+                  <div class="purpose-text">{{ entry.purpose }}</div>
                 {% endif %}
               </td>
 

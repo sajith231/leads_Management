@@ -84,6 +84,7 @@ class FuelEntry(models.Model):
 
     start_time = models.TimeField(null=True, blank=True, help_text="Trip start time")
     end_time = models.TimeField(null=True, blank=True, help_text="Trip end time")
+    client_name = models.CharField(max_length=255, blank=True, null=True)
 
     trip_from = models.CharField(
         max_length=100,

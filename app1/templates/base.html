@@ -596,6 +596,13 @@
   Wallet
 </a>
 {% endif %}
+
+{% if 'software_update' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+<a href="{% url 'software_update' %}">
+ <i class="fas fa-sync-alt" style="margin-right: 5px;"></i>
+  Software Updation
+</a>
+{% endif %}
 </div>
 {% endif %}
 
@@ -1109,6 +1116,12 @@
 <a href="{% url 'wallet_list' %}">
   <i class="fas fa-wallet" style="margin-right: 5px;"></i>
   Wallet
+</a>
+{% endif %}
+{% if 'software_update' in allowed_menus or request.session.user_level == 'admin' or user.is_superuser %}
+<a href="{% url 'software_update' %}">
+  <i class="fas fa-sync-alt" style="margin-right: 5px;"></i>
+  Software Updation
 </a>
 {% endif %}
 </div>

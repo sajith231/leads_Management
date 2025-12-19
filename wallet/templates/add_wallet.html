@@ -125,11 +125,18 @@
         <label class="form-label" for="upload_type">Upload Type <span class="required">*</span></label>
         <select id="upload_type" name="upload_type" required>
           <option value="">Select upload type</option>
-          <option value="bank">Bank/Details wallet</option>
-          <option value="qr">QR</option>
+          <option value="bank">Bank/Details QR</option>
+          <option value="qr">QR image</option>
           <option value="document">Documentation Image wallet</option>
           <option value="pdf">PDF Document Wallet</option>
-          <option value="other">Address Book wallet</option>
+          <option value="other">Address Card</option>
+          <option value="ofdocs_imc_dev">Ofdocs - IMC DEV</option>
+          <option value="ofdocs_imc_ho">Ofdocs - IMC HO</option>
+          <option value="ofdocs_imc_mukkam">Ofdocs - IMC Mukkam</option>
+          <option value="ofdocs_sysmac">Ofdocs - Sysmac</option>
+          <option value="ofdocs_sysmac_info">Ofdocs - Sysmac Info</option>
+          <option value="ofdocs_sysmac_old">Ofdocs - Sysmac Old</option>
+          <option value="vehicle_data">Vehicle Data</option>
         </select>
         <div class="info-text">Select the category for this wallet item</div>
       </div>
@@ -190,7 +197,7 @@
         <!-- Address Book Fields -->
         <div id="otherFields" class="dynamic-fields" style="display:none;">
           <div class="field-group">
-            <div class="field-group-title"><i class="fas fa-address-book"></i> Address Book Details</div>
+            <div class="field-group-title"><i class="fas fa-address-book"></i> Address card</div>
             <div class="form-row">
               <label class="form-label" for="other_name">Name <span class="required">*</span></label>
               <input id="other_name" name="other_name" type="text" placeholder="Enter contact name">
@@ -303,7 +310,7 @@
     } else if (type === 'other') {
       document.getElementById('otherFields').style.display = 'block';
     }
-    // 'document' type has no specific fields, just file uploads
+    // All other types (document, ofdocs_*, vehicle_data) have no specific fields, just file uploads
   }
 
   // Handle upload type change
