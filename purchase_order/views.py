@@ -13,6 +13,9 @@ from django.core.paginator import EmptyPage, PageNotAnInteger
 from django.db.models import ProtectedError
 import requests
 
+from django.views.decorators.http import require_http_methods  # ✅ ADD THIS
+from django.urls import reverse 
+
 def send_whatsapp_message(recipient, message):
     """Send WhatsApp message via dxing.in API."""
     try:
@@ -228,19 +231,41 @@ def item_list(request):
 
     return render(request, 'purchase_order/item_list.html', context)
 
+# Add this new view to your views.py
+
+from django.views.decorators.http import require_http_methods
+from django.http import JsonResponse
+
+@require_http_methods(["POST"])
+def item_update_notes(request, pk):
+    """Update item notes via AJAX"""
+    item = get_object_or_404(Item, pk=pk)
+    
+    if request.method == 'POST':
+        notes = request.POST.get('notes', '').strip()
+        item.notes = notes
+        item.updated_by = request.user.username if request.user.is_authenticated else 'Admin'
+        item.save()
+        
+        messages.success(request, f'Notes updated successfully for {item.name}!')
+        
+        # Redirect back to item list with current filters
+        next_url = request.GET.get('next', reverse('purchase_order:item_list'))
+        return redirect(next_url)
+    
+    return redirect('purchase_order:item_list')
+
 # Update your item_add and item_edit views in views.py
 
 def item_add(request):
     """Create new item"""
     if request.method == 'POST':
         try:
-            # Get department if provided
             department_id = request.POST.get('department')
             department = None
             if department_id:
                 department = get_object_or_404(Department, pk=department_id)
 
-            # Create item first
             item = Item.objects.create(
                 name=request.POST.get('name'),
                 description=request.POST.get('description', ''),
@@ -252,12 +277,12 @@ def item_add(request):
                 purchase_price=Decimal(request.POST.get('purchase_price', '0.00')),
                 cost=Decimal(request.POST.get('cost', '0.00')),
                 hsn_code=request.POST.get('hsn_code', ''),
+                notes=request.POST.get('notes', ''),  # ✅ ADD THIS LINE
                 is_active=True,
                 created_by=request.user.username if request.user.is_authenticated else 'Admin',
                 updated_by=request.user.username if request.user.is_authenticated else 'Admin',
             )
 
-            # ===== SAVE IMAGES =====
             if request.FILES.getlist('images'):
                 for img in request.FILES.getlist('images'):
                     ItemImage.objects.create(item=item, image=img)
@@ -274,6 +299,8 @@ def item_add(request):
         'action': 'Add',
         'departments': departments
     })
+
+# Update your item_edit view in views.py
 
 def item_edit(request, pk):
     """Update existing item"""
@@ -294,18 +321,17 @@ def item_edit(request, pk):
             item.purchase_price = Decimal(request.POST.get('purchase_price', '0.00'))
             item.cost = Decimal(request.POST.get('cost', '0.00'))
             item.hsn_code = request.POST.get('hsn_code', '')
+            item.notes = request.POST.get('notes', '')  # ✅ ADD THIS LINE
             item.is_active = request.POST.get('status') == "True"
             item.updated_by = request.user.username if request.user.is_authenticated else 'Admin'
             item.save()
 
-            # ===== SAVE NEW IMAGES =====
             if request.FILES.getlist('images'):
                 for img in request.FILES.getlist('images'):
                     ItemImage.objects.create(item=item, image=img)
 
             messages.success(request, "Item updated successfully.")
             
-            # ✅ Redirect back to the page they came from
             next_url = request.GET.get('next')
             if next_url:
                 return redirect(next_url)

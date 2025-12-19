@@ -50,4 +50,7 @@ urlpatterns = [
 
     # Bulk ZIP download for multiple POs
     path('po/bulk-download/', views.bulk_download_pdfs, name='bulk_download_pdfs'),
+
+    path('items/<int:pk>/update-notes/', views.item_update_notes, name='item_update_notes'),
+
 ]
