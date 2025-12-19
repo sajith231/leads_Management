@@ -342,6 +342,7 @@ class Item(models.Model):
         ('HARDWARE', 'Hardware Items'),
         ('SOFTWARE', 'Software Items'),
         ('PAPER_ROLLS', 'Paper Rolls'),
+        ('ASSETS', 'Assets'),
     ]
     section = models.CharField(max_length=50, choices=SECTION_CHOICES, default='GENERAL')
 
