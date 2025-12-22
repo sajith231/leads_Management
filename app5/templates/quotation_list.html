@@ -812,6 +812,53 @@
             background: #fffaf0;
             border-left: 4px solid #e67e22;
         }
+        
+        /* Section dropdown styles */
+        .item-section.select2-container--default .select2-selection--single {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            height: 38px;
+            background-color: #f8f9fa;
+        }
+        
+        .item-section.select2-container--default .select2-selection--single .select2-selection__rendered {
+            color: #333;
+            font-weight: 500;
+            line-height: 38px;
+        }
+        
+        .item-section.select2-container--default.select2-container--focus .select2-selection--single {
+            border-color: #4a6fdc;
+        }
+        
+        .section-tag {
+            display: inline-block;
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+            margin-right: 5px;
+        }
+        
+        .select2-results__option .section-tag {
+            margin-right: 8px;
+        }
+        
+        .select2-results__option[aria-selected="true"] {
+            background-color: #e3f2fd;
+        }
+        
+        .select2-results__option--highlighted[aria-selected] {
+            background-color: #4a6fdc;
+            color: white;
+        }
+        
+        .select2-results__option--highlighted[aria-selected] .section-tag {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -976,6 +1023,7 @@
                         <table class="items-table">
                             <thead>
                                 <tr>
+                                    <th width="12%">Section</th>
                                     <th width="25%">Item Description</th>
                                     <th width="8%">Qty</th>
                                     <th width="10%">Entry Rate (₹)</th>
@@ -984,7 +1032,7 @@
                                     <th width="8%">Discount (%)</th>
                                     <th width="8%">Tax (%)</th>
                                     <th width="12%">Total (₹)</th>
-                                    <th width="9%">Action</th>
+                                    <th width="7%">Action</th>
                                 </tr>
                             </thead>
                             <tbody id="items-body">
@@ -1166,64 +1214,117 @@
             }
         }
         
-        // Function to populate item dropdown with enhanced display
-        function populateItemDropdown(selectElement) {
+        // Function to get unique sections from all items
+        function getAvailableSections() {
+            const sections = new Set();
+            purchaseOrderItems.forEach(item => {
+                if (item.section) {
+                    sections.add(item.section);
+                }
+            });
+            return Array.from(sections).sort();
+        }
+        
+        // Function to update section dropdown options
+        function updateSectionDropdown(dropdown) {
+            const sections = getAvailableSections();
+            const $dropdown = $(dropdown);
+            
             // Clear existing options
-            $(selectElement).empty();
+            $dropdown.empty();
             
             // Add default option
-            $(selectElement).append($('<option>', {
+            $dropdown.append($('<option>', {
+                value: '',
+                text: '-- Select Section --'
+            }));
+            
+            // Add all available sections
+            sections.forEach(section => {
+                $dropdown.append($('<option>', {
+                    value: section,
+                    text: section
+                }));
+            });
+            
+            // Initialize Select2 for section dropdown
+            $dropdown.select2({
+                placeholder: "Select Section",
+                allowClear: true,
+                width: '100%'
+            });
+        }
+        
+        // Function to update item dropdown based on selected section
+        function updateItemOptions(sectionSelect) {
+            const $sectionSelect = $(sectionSelect);
+            const row = $sectionSelect.closest('tr');
+            const itemSelect = row.find('.item-desc');
+            const selectedSection = $sectionSelect.val();
+            
+            // Clear existing options
+            itemSelect.empty();
+            itemSelect.append($('<option>', {
                 value: '',
                 text: '-- Select Item --'
             }));
             
-            // Group items by section
-            const itemsBySection = {};
-            purchaseOrderItems.forEach(item => {
-                if (!itemsBySection[item.section]) {
-                    itemsBySection[item.section] = [];
-                }
-                itemsBySection[item.section].push(item);
-            });
-            
-            // Add items grouped by section
-            Object.keys(itemsBySection).forEach(section => {
-                // Add section as option group
-                $(selectElement).append($('<optgroup>', {
-                    label: section
-                }));
-                
-                // Add items in this section
-                itemsBySection[section].forEach(item => {
-                    const option = $('<option>', {
-                        value: item.id,
-                        text: item.name
-                    });
-                    
-                    // Add data attributes
-                    option.data('item-data', {
-                        id: item.id,
-                        name: item.name,
-                        description: item.description,
-                        unit: item.unit_of_measure,
-                        mrp: item.mrp,
-                        purchase_price: item.purchase_price,
-                        cost: item.cost,
-                        tax: item.tax_percentage,
-                        hsn_code: item.hsn_code,
-                        section: item.section,
-                        department: item.department
-                    });
-                    
-                    $(selectElement).find('optgroup[label="' + section + '"]').append(option);
+            if (!selectedSection) {
+                // Disable the item dropdown if no section selected
+                itemSelect.select2({
+                    placeholder: "Select Item",
+                    allowClear: true,
+                    width: '100%',
+                    disabled: true
                 });
+                return;
+            }
+            
+            // Filter items by selected section
+            const filteredItems = purchaseOrderItems.filter(item => item.section === selectedSection);
+            
+            if (filteredItems.length === 0) {
+                // No items in this section
+                itemSelect.select2({
+                    placeholder: "No items in this section",
+                    allowClear: true,
+                    width: '100%',
+                    disabled: false
+                });
+                return;
+            }
+            
+            // Add filtered items to dropdown
+            filteredItems.forEach(item => {
+                const option = $('<option>', {
+                    value: item.id,
+                    text: item.name
+                });
+                
+                // Add data attributes
+                option.data('item-data', {
+                    id: item.id,
+                    name: item.name,
+                    description: item.description,
+                    unit: item.unit_of_measure,
+                    mrp: item.mrp,
+                    purchase_price: item.purchase_price,
+                    cost: item.cost,
+                    tax: item.tax_percentage,
+                    hsn_code: item.hsn_code,
+                    section: item.section,
+                    department: item.department
+                });
+                
+                itemSelect.append(option);
             });
             
-            // Initialize Select2 with custom template
-            $(selectElement).select2({
-                placeholder: "",
+            // Enable and initialize Select2
+            itemSelect.select2({
+                placeholder: "Select Item",
                 allowClear: true,
                 width: '100%',
+                disabled: false,
                 templateResult: formatItemDisplay,
                 templateSelection: formatItemSelection
             });
@@ -1243,7 +1344,9 @@
             const $details = $('<div class="item-details">');
             
             // Add section badge
-            $details.append($('<span class="item-section">').text(itemData.section));
+            if (itemData.section) {
+                $details.append($('<span class="section-tag">').text(itemData.section));
+            }
             
             // Add unit
             $details.append($('<span>').text(` ${itemData.unit} | `));
@@ -1297,6 +1400,16 @@
             }
         }
         
+        // Function to initialize empty item dropdown
+        function initializeItemDropdown(selectElement) {
+            $(selectElement).select2({
+                placeholder: "Select Item",
+                allowClear: true,
+                width: '100%',
+                disabled: true
+            });
+        }
+        
         // Function to add new item row
         async function addNewItem() {
             // Check if lead is selected
@@ -1309,6 +1422,13 @@
             const row = document.createElement('tr');
             
             row.innerHTML = `
+                <!-- SECTION FIRST -->
+                <td>
+                    <select class="item-section" name="section[]" onchange="updateItemOptions(this)">
+                        <option value="">-- Select Section --</option>
+                    </select>
+                </td>
+                <!-- ITEM DESCRIPTION SECOND -->
                 <td>
                     <select class="item-desc" name="item_id[]" onchange="loadItemDetails(this)" required>
                         <option value="">-- Select Item --</option>
@@ -1345,8 +1465,11 @@
             
             tbody.appendChild(row);
             
-            // Populate the dropdown with items
-            populateItemDropdown(row.querySelector('.item-desc'));
+            // Populate the section dropdown first
+            updateSectionDropdown(row.querySelector('.item-section'));
+            
+            // Initialize item dropdown (will be disabled until section is selected)
+            initializeItemDropdown(row.querySelector('.item-desc'));
             
             // Calculate initial row total
             calculateRow(row.querySelector('.item-qty'));
@@ -1455,109 +1578,103 @@
         }
         
         // Function to submit quotation
-        // Function to submit quotation
-async function submitQuotation() {
-    // Check if lead is selected
-    if (!selectedLead) {
-        showNotification('Please select a lead from the directory first', 'warning');
-        return;
-    }
-    
-    // Check if there are items
-    const itemRows = document.querySelectorAll('#items-body tr');
-    if (itemRows.length === 0) {
-        showNotification('Please add at least one item to the quotation', 'warning');
-        return;
-    }
-    
-    // Validate all items have descriptions
-    let allValid = true;
-    document.querySelectorAll('.item-desc').forEach(select => {
-        if (!select.value) {
-            allValid = false;
+        async function submitQuotation() {
+            // Check if lead is selected
+            if (!selectedLead) {
+                showNotification('Please select a lead from the directory first', 'warning');
+                return;
+            }
+            
+            // Check if there are items
+            const itemRows = document.querySelectorAll('#items-body tr');
+            if (itemRows.length === 0) {
+                showNotification('Please add at least one item to the quotation', 'warning');
+                return;
+            }
+            
+            // Validate all items have descriptions
+            let allValid = true;
+            document.querySelectorAll('.item-desc').forEach(select => {
+                if (!select.value) {
+                    allValid = false;
+                }
+            });
+            
+            if (!allValid) {
+                showNotification('Please select an item for all rows', 'warning');
+                return;
+            }
+            
+            // Prepare quotation data
+            const quotationData = {
+                lead_id: selectedLead.id,
+                notes: document.getElementById('notes').value,
+                items: [],
+                subtotal: parseFloat($('#subtotal').text().replace('₹', '')) || 0,
+                total_discount: parseFloat($('#total-discount').text().replace('₹', '')) || 0,
+                total_tax: parseFloat($('#total-tax').text().replace('₹', '')) || 0,
+                grand_total: parseFloat($('#grand-total').text().replace('₹', '')) || 0,
+                valid_until: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] // 30 days from now
+            };
+            
+            // Collect item data
+            $('#items-body tr').each(function() {
+                const item = {
+                    item_id: $(this).find('.item-desc').val(),
+                    item_name: $(this).find('.item-desc option:selected').text(),
+                    section: $(this).find('.item-section').val() || '',
+                    quantity: parseFloat($(this).find('.item-qty').val()) || 0,
+                    entry_rate: parseFloat($(this).find('.entry-rate').val()) || 0,
+                    sales_price: parseFloat($(this).find('.sales-price').val()) || 0,
+                    unit_price: parseFloat($(this).find('.unit-price').val()) || 0,
+                    discount: parseFloat($(this).find('.discount').val()) || 0,
+                    tax: parseFloat($(this).find('.tax').val()) || 0,
+                    total: parseFloat($(this).find('.row-total-value').val()) || 0
+                };
+                quotationData.items.push(item);
+            });
+            
+            // Show loading
+            const submitBtn = document.querySelector('.btn-submit');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+            submitBtn.disabled = true;
+            
+            try {
+                // Get CSRF token
+                const csrftoken = getCookie('csrftoken');
+                
+                // Submit to your Django backend
+                const response = await fetch('{% url "app5:quotation_submit" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken
+                    },
+                    body: JSON.stringify(quotationData)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    showNotification('Quotation submitted successfully!', 'success');
+                    
+                    // Option 1: Redirect to quotation form page after a short delay
+                    setTimeout(() => {
+                        window.location.href = '{% url "app5:quotation_form" %}';
+                    }, 1500);
+                    
+                } else {
+                    showNotification(result.message || 'Error submitting quotation', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showNotification('Network error occurred. Please try again.', 'error');
+            } finally {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
         }
-    });
-    
-    if (!allValid) {
-        showNotification('Please select an item for all rows', 'warning');
-        return;
-    }
-    
-    // Prepare quotation data
-    const quotationData = {
-        lead_id: selectedLead.id,
-        notes: document.getElementById('notes').value,
-        items: [],
-        subtotal: parseFloat($('#subtotal').text().replace('₹', '')) || 0,
-        total_discount: parseFloat($('#total-discount').text().replace('₹', '')) || 0,
-        total_tax: parseFloat($('#total-tax').text().replace('₹', '')) || 0,
-        grand_total: parseFloat($('#grand-total').text().replace('₹', '')) || 0,
-        valid_until: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] // 30 days from now
-    };
-    
-    // Collect item data
-    $('#items-body tr').each(function() {
-        const item = {
-            item_id: $(this).find('.item-desc').val(),
-            item_name: $(this).find('.item-desc option:selected').text(),
-            quantity: parseFloat($(this).find('.item-qty').val()) || 0,
-            entry_rate: parseFloat($(this).find('.entry-rate').val()) || 0,
-            sales_price: parseFloat($(this).find('.sales-price').val()) || 0,
-            unit_price: parseFloat($(this).find('.unit-price').val()) || 0,
-            discount: parseFloat($(this).find('.discount').val()) || 0,
-            tax: parseFloat($(this).find('.tax').val()) || 0,
-            total: parseFloat($(this).find('.row-total-value').val()) || 0
-        };
-        quotationData.items.push(item);
-    });
-    
-    // Show loading
-    const submitBtn = document.querySelector('.btn-submit');
-    const originalText = submitBtn.innerHTML;
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
-    submitBtn.disabled = true;
-    
-    try {
-        // Get CSRF token
-        const csrftoken = getCookie('csrftoken');
-        
-        // Submit to your Django backend
-        const response = await fetch('{% url "app5:quotation_submit" %}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': csrftoken
-            },
-            body: JSON.stringify(quotationData)
-        });
-        
-        const result = await response.json();
-        
-        if (response.ok && result.success) {
-            showNotification('Quotation submitted successfully!', 'success');
-            
-            // Option 1: Redirect to quotation form page after a short delay
-            setTimeout(() => {
-                window.location.href = '{% url "app5:quotation_form" %}';
-            }, 1500);
-            
-            // Option 2: If you want to show download link AND redirect
-            // showNotification('Quotation saved! Redirecting to quotations page...', 'success');
-            // setTimeout(() => {
-            //     window.location.href = '{% url "app5:quotation_form" %}';
-            // }, 2000);
-            
-        } else {
-            showNotification(result.message || 'Error submitting quotation', 'error');
-        }
-    } catch (error) {
-        console.error('Error:', error);
-        showNotification('Network error occurred. Please try again.', 'error');
-    } finally {
-        submitBtn.innerHTML = originalText;
-        submitBtn.disabled = false;
-    }
-}
         
         // Function to download quotation PDF
         function downloadQuotation(quotationId) {

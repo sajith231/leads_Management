@@ -2179,24 +2179,22 @@
     
     const selectedBranch = branches.find(b => b.id === selectedBranchId);
     
-    // Show loading
-    const downloadBtn = document.getElementById('branchDownloadBtn');
-    const originalText = downloadBtn.innerHTML;
-    downloadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Preparing...';
-    downloadBtn.disabled = true;
+    // Create a new window/tab
+    const downloadWindow = window.open('/app5/quotation/download/' + selectedQuotationId + '/', '_blank');
     
-    // Close modal first
+    // Store branch data in localStorage for the new page to access
+    localStorage.setItem('selectedBranchData', JSON.stringify({
+        id: selectedBranchId,
+        name: selectedBranch.name,
+        address: selectedBranch.address,
+        // Add other branch properties you need
+    }));
+    
+    // Close modal
     closeBranchModal();
     
-    // Navigate to the quotation download page with branch parameter
-    const downloadUrl = `/app5/quotation/download/${selectedQuotationId}/?branch_id=${selectedBranchId}`;
-    window.location.href = downloadUrl;
-    
-    // Reset button (in case navigation fails or is slow)
-    setTimeout(() => {
-        downloadBtn.innerHTML = originalText;
-        downloadBtn.disabled = false;
-    }, 3000);
+    // Show notification
+    showNotification(`Downloading from ${selectedBranch.name}...`, 'success');
 }
         
         function closeBranchModal() {
@@ -2259,6 +2257,211 @@
                 }, 300);
             }
         }
+
+
+        // Add this function to quotation_form.html
+function restoreSelectedLeadFromStorage() {
+    try {
+        // Check if localStorage has saved lead data
+        const savedLeadData = localStorage.getItem('selectedLeadData');
+        const savedLeadId = localStorage.getItem('selectedLeadId');
+        const savedTimestamp = localStorage.getItem('selectedLeadTimestamp');
+        
+        if (!savedLeadData || !savedLeadId) {
+            console.log('ℹ️ No saved lead found in storage');
+            return null;
+        }
+        
+        // Check if data is recent (within 1 hour)
+        const now = Date.now();
+        const timestamp = parseInt(savedTimestamp) || 0;
+        const oneHour = 60 * 60 * 1000; // 1 hour in milliseconds
+        
+        if (now - timestamp > oneHour) {
+            console.log('ℹ️ Saved lead data is too old, ignoring');
+            localStorage.removeItem('selectedLeadData');
+            localStorage.removeItem('selectedLeadId');
+            localStorage.removeItem('selectedLeadTimestamp');
+            return null;
+        }
+        
+        const leadData = JSON.parse(savedLeadData);
+        console.log('🔄 Restoring lead from storage:', leadData.name);
+        
+        // Find the lead item in the directory
+        const leadItem = document.querySelector(`.lead-item[data-id="${savedLeadId}"]`);
+        
+        if (leadItem) {
+            // Click the lead item to select it
+            leadItem.click();
+            
+            // Scroll into view
+            setTimeout(() => {
+                leadItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 100);
+            
+            // Highlight it
+            highlightLeadAsSelected(leadItem);
+            
+            return leadData;
+        } else {
+            console.log('⚠️ Lead not found in directory:', savedLeadId);
+            return null;
+        }
+        
+    } catch (error) {
+        console.error('❌ Error restoring lead from storage:', error);
+        return null;
+    }
+}
+
+// Function to highlight a lead as selected
+function highlightLeadAsSelected(leadItem) {
+    // Remove current-lead-item class from all leads
+    document.querySelectorAll('.lead-item').forEach(item => {
+        item.classList.remove('current-lead-item');
+        const existingBadge = item.querySelector('.current-lead-badge');
+        if (existingBadge) {
+            existingBadge.remove();
+        }
+    });
+    
+    // Add current-lead-item class to selected lead
+    leadItem.classList.add('current-lead-item');
+    
+    // Add current lead badge
+    const leadNameElement = leadItem.querySelector('.lead-name');
+    if (leadNameElement && !leadNameElement.querySelector('.current-lead-badge')) {
+        const badge = document.createElement('div');
+        badge.className = 'current-lead-badge';
+        badge.innerHTML = '<i class="fas fa-star" style="font-size: 8px;"></i>SELECTED';
+        leadNameElement.appendChild(badge);
+    }
+}
+
+// Update the initialization in DOMContentLoaded
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Quotations page loaded');
+    
+    // Store all quotations data
+    const rows = document.querySelectorAll('#quotations-body tr[data-quotation-id]');
+    allQuotations = Array.from(rows).map(row => ({
+        element: row,
+        leadId: row.getAttribute('data-lead-id'),
+        leadTicket: row.getAttribute('data-lead-ticket'),
+        clientName: row.getAttribute('data-client-name'),
+        amount: parseFloat(row.getAttribute('data-amount').replace('₹', '').replace(',', '')) || 0
+    }));
+    
+    // Set up lead selection
+    setupLeadSelection();
+    
+    // Try to restore selected lead from storage
+    const restoredLead = restoreSelectedLeadFromStorage();
+    
+    // If URL has lead_id parameter, use that instead
+    const urlParams = new URLSearchParams(window.location.search);
+    const leadIdFromUrl = urlParams.get('lead_id');
+    
+    if (leadIdFromUrl) {
+        setTimeout(() => {
+            const leadItem = document.querySelector(`.lead-item[data-id="${leadIdFromUrl}"]`);
+            if (leadItem) {
+                leadItem.click();
+                leadItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }, 300);
+    } else if (restoredLead) {
+        // Lead restored from storage
+        console.log('✅ Lead restored from storage:', restoredLead.name);
+    }
+    
+    // Initialize date display
+    initializeDateDisplay();
+    
+    // Set up modal event listeners
+    setupModalListeners();
+    
+    // ... rest of existing code ...
+});
+
+// Add this to both pages (requirement_edit.html and quotation_form.html)
+function enhanceNavigationLinks() {
+    // Get current selected lead ID
+    const selectedLeadId = getSelectedLeadId();
+    if (!selectedLeadId) return;
+    
+    // Update all relevant navigation links
+    document.querySelectorAll('a[href*="quotation"], a[href*="requirement"], a[href*="event"]').forEach(link => {
+        const href = link.getAttribute('href');
+        if (href && !href.includes('#') && !href.includes('lead_id=')) {
+            const separator = href.includes('?') ? '&' : '?';
+            link.setAttribute('href', `${href}${separator}lead_id=${selectedLeadId}`);
+        }
+    });
+}
+
+function getSelectedLeadId() {
+    // First check if there's a current lead item
+    const currentLeadItem = document.querySelector('.lead-item.current-lead-item');
+    if (currentLeadItem) {
+        return currentLeadItem.getAttribute('data-id');
+    }
+    
+    // Then check localStorage
+    try {
+        return localStorage.getItem('selectedLeadId');
+    } catch (error) {
+        console.error('Error getting lead ID from storage:', error);
+        return null;
+    }
+}
+
+// Call this function after page loads
+document.addEventListener('DOMContentLoaded', function() {
+    // ... existing initialization code ...
+    
+    // Enhance navigation links
+    enhanceNavigationLinks();
+    
+    // Also update links when a new lead is selected
+    document.querySelectorAll('.lead-item').forEach(item => {
+        item.addEventListener('click', function() {
+            setTimeout(enhanceNavigationLinks, 100);
+        });
+    });
+});
+
+// Add to both pages
+function syncLeadSelection(leadId, leadName) {
+    // Save to localStorage
+    const leadData = {
+        id: leadId,
+        name: leadName,
+        timestamp: Date.now()
+    };
+    
+    try {
+        localStorage.setItem('selectedLeadData', JSON.stringify(leadData));
+        localStorage.setItem('selectedLeadId', leadId);
+        localStorage.setItem('selectedLeadTimestamp', Date.now().toString());
+        console.log(`✅ Lead "${leadName}" synced to storage`);
+    } catch (error) {
+        console.error('❌ Error syncing lead:', error);
+    }
+}
+
+// Clear lead selection when needed (e.g., when clicking "Show All" or logging out)
+function clearLeadSelection() {
+    try {
+        localStorage.removeItem('selectedLeadData');
+        localStorage.removeItem('selectedLeadId');
+        localStorage.removeItem('selectedLeadTimestamp');
+        console.log('🧹 Lead selection cleared from storage');
+    } catch (error) {
+        console.error('Error clearing lead selection:', error);
+    }
+}
 
         // Initialize when page loads
         document.addEventListener('DOMContentLoaded', function() {

@@ -194,11 +194,24 @@ def jobcard_create(request):
         
         messages.success(request, success_message)
         return redirect('app5:jobcard_list')
+    
 
     # âœ… GET Request - USE PURCHASE_ORDER ITEMS
     try:
-        # Get items from purchase_order app
-        purchase_items = PurchaseItem.objects.filter(is_active=True).order_by('name')
+        # Get items from purchase_order app with section field
+        from purchase_order.models import Item as POItem
+        purchase_items = POItem.objects.filter(is_active=True).order_by('section', 'name')
+        
+        # Group items by section for the template
+        items_by_section = {}
+        for item in purchase_items:
+            section = item.section or 'GENERAL'
+            if section not in items_by_section:
+                items_by_section[section] = []
+            items_by_section[section].append(item)
+        
+        logger.info(f"✅ Loaded {purchase_items.count()} items from purchase_order")
+        using_po_items = True
         
         # Get departments for filtering (optional)
         departments = Department.objects.filter(is_active=True).order_by('name')
@@ -207,8 +220,10 @@ def jobcard_create(request):
         logger.error(f"Error loading purchase items: {e}")
         # Fallback to app5 items if purchase_order is not available
         from .models import Item as App5Item
-        purchase_items = App5Item.objects.filter(is_active=True).order_by('name')
+        purchase_items = App5Item.objects.all().order_by('name')
+        items_by_section = {'GENERAL': list(purchase_items)}
         departments = []
+        using_po_items = False
     
     # Get suppliers from purchase_order
     try:
@@ -235,7 +250,7 @@ def jobcard_create(request):
         logger.warning("Error fetching customer data: %s", e)
 
     return render(request, 'jobcard_form.html', {
-        'items': purchase_items,  # âœ… Using purchase_order items
+        'items_by_section': items_by_section,  # âœ… Using purchase_order items
         'departments': departments,  # âœ… Optional: for filtering
         'customer_data': customer_data,
         'suppliers': suppliers,
@@ -311,36 +326,79 @@ def jobcard_edit(request, pk):
         jobcard.phone = request.POST.get("phone", "").strip()
         jobcard.status = request.POST.get("status", "logged")
 
+        # Get form data for items
+        device_categories = request.POST.getlist("device_category[]")
         items = request.POST.getlist("items[]")
         serials = request.POST.getlist("serials[]")
         configs = request.POST.getlist("configs[]")
-
+        
+        # New fields from create form
+        warranties = request.POST.getlist("warranty[]")
+        take_to_offices = request.POST.getlist("take_to_office[]")
+        suppliers = request.POST.getlist("supplier[]")
+        ticket_nos = request.POST.getlist("warranty_ticket_no[]")
+        warranty_customers = request.POST.getlist("warranty_customer_name[]")
+        warranty_items = request.POST.getlist("warranty_item_name[]")
+        
         items_data = []
 
         for idx, item_name in enumerate(items):
             if not item_name.strip():
                 continue
 
+            # Get device category for this item
+            device_category = device_categories[idx] if idx < len(device_categories) else ""
+            
+            # Get warranty and office values
+            warranty_value = warranties[idx] if idx < len(warranties) else "no"
+            take_to_office_value = take_to_offices[idx] if idx < len(take_to_offices) else "no"
+            
             item_entry = {
+                "device_category": device_category,
                 "item": item_name,
                 "serial": serials[idx] if idx < len(serials) else "",
                 "config": configs[idx] if idx < len(configs) else "",
+                "warranty": warranty_value,
+                "take_to_office": take_to_office_value,
                 "complaints": []
             }
 
+            # Add warranty details if applicable
+            if warranty_value == 'yes':
+                item_entry["warranty_details"] = {
+                    "supplier": suppliers[idx] if idx < len(suppliers) else "",
+                    "ticket_no": ticket_nos[idx] if idx < len(ticket_nos) else "",
+                    "customer_name": warranty_customers[idx] if idx < len(warranty_customers) else jobcard.customer,
+                    "item_name": warranty_items[idx] if idx < len(warranty_items) else item_name,
+                }
+            else:
+                item_entry["warranty_details"] = None
+
+            # Get complaint data
+            complaint_ids = request.POST.getlist(f"complaint_ids-{idx}[]")
             complaint_descriptions = request.POST.getlist(f"complaints-{idx}[]")
             complaint_notes = request.POST.getlist(f"complaint_notes-{idx}[]")
+            
+            # Handle existing images to keep
+            keep_images = request.POST.getlist("keep_images[]")
+            
+            # Delete images marked for removal
+            JobCardImage.objects.filter(jobcard=jobcard, item_index=idx).exclude(id__in=keep_images).delete()
 
             for c_idx, description in enumerate(complaint_descriptions):
                 if not description.strip():
                     continue
+                    
+                complaint_id = complaint_ids[c_idx] if c_idx < len(complaint_ids) else ""
+                
                 complaint_entry = {
+                    "id": complaint_id,
                     "description": description,
                     "notes": complaint_notes[c_idx] if c_idx < len(complaint_notes) else "",
                     "images": []
                 }
 
-                # handle newly uploaded images
+                # Handle newly uploaded images for this complaint
                 new_images = request.FILES.getlist(f"new_images-{idx}[]")
                 for image in new_images:
                     img_obj = JobCardImage.objects.create(
@@ -349,7 +407,25 @@ def jobcard_edit(request, pk):
                         item_index=idx,
                         complaint_index=c_idx
                     )
-                    complaint_entry["images"].append(img_obj.image.url)
+                    complaint_entry["images"].append({
+                        "id": img_obj.id,
+                        "url": img_obj.image.url,
+                        "name": img_obj.image.name
+                    })
+
+                # Add existing images for this complaint
+                existing_images = JobCardImage.objects.filter(
+                    jobcard=jobcard, 
+                    item_index=idx, 
+                    complaint_index=c_idx,
+                    id__in=keep_images
+                )
+                for img_obj in existing_images:
+                    complaint_entry["images"].append({
+                        "id": img_obj.id,
+                        "url": img_obj.image.url,
+                        "name": img_obj.image.name
+                    })
 
                 item_entry["complaints"].append(complaint_entry)
 
@@ -362,13 +438,75 @@ def jobcard_edit(request, pk):
         return redirect("app5:jobcard_edit", pk=jobcard.pk)
 
     # --- GET: Show form ---
-    # prepare structured items for template
+    # Try to get items from purchase_order app (same as create view)
+    try:
+        # Get items from purchase_order app with section field
+        from purchase_order.models import Item as POItem
+        purchase_items = POItem.objects.filter(is_active=True).order_by('section', 'name')
+        
+        # Group items by section for the template
+        items_by_section = {}
+        for item in purchase_items:
+            section = item.section or 'GENERAL'
+            if section not in items_by_section:
+                items_by_section[section] = []
+            items_by_section[section].append(item)
+        
+        logger.info(f"✅ Edit form: Loaded {purchase_items.count()} items from purchase_order")
+        using_po_items = True
+        
+    except Exception as e:
+        logger.error(f"Error loading purchase items for edit: {e}")
+        # Fallback if purchase_order is not available
+        items_by_section = {
+            "GENERAL": [{"name": "General Item 1"}, {"name": "General Item 2"}],
+            "HARDWARE": [{"name": "Mouse"}, {"name": "Keyboard"}, {"name": "Monitor"}],
+            "SOFTWARE": [{"name": "Windows OS"}, {"name": "MS Office"}],
+            "PAPER_ROLLS": [{"name": "Thermal Paper Roll"}],
+        }
+    
+    # Get suppliers from purchase_order (same as create view)
+    try:
+        from purchase_order.models import Supplier as POSupplier
+        suppliers = POSupplier.objects.filter(is_active=True).order_by('name')
+    except ImportError:
+        from .models import Supplier
+        suppliers = Supplier.objects.filter(is_active=True).order_by('name')
+    
+    # Get hardware complaints
+    hardware_complaints = Complaint.objects.filter(complaint_type='hardware').order_by('description')
+    
+    # Get customer data from API (same as create view)
+    customer_data = []
+    try:
+        api_url = "https://accmaster.imcbs.com/api/sync/rrc-clients/"
+        response = requests.get(api_url, timeout=10)
+        if response.status_code == 200:
+            customer_data = response.json()
+            for customer in customer_data:
+                customer['address'] = customer.get('address', '')
+                customer['phone_number'] = customer.get('mobile', '')
+                customer['branch'] = customer.get('branch', '')
+    except Exception as e:
+        logger.warning("Error fetching customer data: %s", e)
+
+    # Prepare structured items for template
     structured_items = []
     for idx, item in enumerate(jobcard.items_data or []):
+        # Determine device_category from existing data or default to empty
+        device_category = item.get("device_category", "")
+        
+        # Get warranty details
+        warranty_details = item.get("warranty_details", {})
+        
         structured_items.append({
             "name": item.get("item", ""),
+            "device_category": device_category,
             "serial": item.get("serial", ""),
             "config": item.get("config", ""),
+            "warranty": item.get("warranty", "no"),
+            "take_to_office": item.get("take_to_office", "no"),
+            "warranty_details": warranty_details,
             "complaints": [
                 {
                     "id": f"{idx}-{c_idx}",
@@ -386,6 +524,10 @@ def jobcard_edit(request, pk):
     context = {
         "jobcard": jobcard,
         "items": structured_items,
+        "items_by_section": items_by_section,
+        "suppliers": suppliers,
+        "hardware_complaints": hardware_complaints,
+        "customer_data": customer_data,
     }
     return render(request, "jobcard_edit.html", context)
 
@@ -7545,6 +7687,70 @@ def update_quotation(request, pk):
 def download_quotation(request, quotation_id):
     quotation = get_object_or_404(Quotation, id=quotation_id)
     
+    # Get branch from request parameter
+    branch_id = request.GET.get('branch_id')
+    branch = None
+    
+    # Define branch data (you can move this to a database model or settings)
+    BRANCHES_DATA = {
+        1: {
+            'name': 'Main Branch',
+            'code': 'BR-001',
+            'manager': 'John Doe',
+            'address': '123 Business Street, City, State 12345',
+            'phone': '+1 (123) 456-7890',
+            'email': 'main@company.com'
+        },
+        2: {
+            'name': 'North Branch',
+            'code': 'BR-002',
+            'manager': 'Jane Smith',
+            'address': '456 North Avenue, Industrial Zone, Delhi 110001',
+            'phone': '+1 (234) 567-8901',
+            'email': 'north@company.com'
+        },
+        3: {
+            'name': 'South Branch',
+            'code': 'BR-003',
+            'manager': 'Robert Johnson',
+            'address': '789 South Road, Commercial Area, Bangalore 560001',
+            'phone': '+1 (345) 678-9012',
+            'email': 'south@company.com'
+        },
+        4: {
+            'name': 'East Branch',
+            'code': 'BR-004',
+            'manager': 'Maria Garcia',
+            'address': '321 East Boulevard, Tech Park, Hyderabad 500001',
+            'phone': '+1 (456) 789-0123',
+            'email': 'east@company.com'
+        },
+        5: {
+            'name': 'West Branch',
+            'code': 'BR-005',
+            'manager': 'David Lee',
+            'address': '654 West Street, Business District, Pune 411001',
+            'phone': '+1 (567) 890-1234',
+            'email': 'west@company.com'
+        },
+        6: {
+            'name': 'Central Branch',
+            'code': 'BR-006',
+            'manager': 'Sarah Williams',
+            'address': '987 Central Plaza, Financial District, Chennai 600001',
+            'phone': '+1 (678) 901-2345',
+            'email': 'central@company.com'
+        }
+    }
+    
+    # Get selected branch or default to Main Branch
+    if branch_id and branch_id.isdigit():
+        branch = BRANCHES_DATA.get(int(branch_id))
+    
+    # If no branch selected or invalid branch_id, use default
+    if not branch:
+        branch = BRANCHES_DATA.get(1)  # Default to Main Branch
+    
     # Get all items for this quotation
     items = quotation.items.all()
     
@@ -7555,12 +7761,12 @@ def download_quotation(request, quotation_id):
     
     # Calculate item-wise totals
     for item in items:
-        # Get unit price and quantity
-        unit_price = getattr(item, 'unit_price', 0) or 0
-        quantity = getattr(item, 'quantity', 0) or 0
+        # Get sale price and quantity (use sales_price as per your template)
+        sale_price = getattr(item, 'sales_price', 0) or 0
+        quantity = getattr(item, 'quantity', 1) or 1
         
-        # Calculate item total (quantity * unit_price)
-        item_total = quantity * unit_price
+        # Calculate item total (quantity * sale_price)
+        item_total = quantity * sale_price
         
         # Add to subtotal
         subtotal += item_total
@@ -7571,16 +7777,41 @@ def download_quotation(request, quotation_id):
             item_tax = (item_total * tax_percentage) / 100
             total_tax += item_tax
     
-    # Calculate grand total (subtotal + tax)
-    grand_total = subtotal + total_tax
+    # Calculate discount if exists
+    discount_amount = getattr(quotation, 'discount_amount', 0) or 0
+    
+    # Calculate shipping charges if exists
+    shipping_charges = getattr(quotation, 'shipping_charges', 0) or 0
+    
+    # Calculate grand total (subtotal + tax - discount + shipping)
+    grand_total = subtotal + total_tax - discount_amount + shipping_charges
+    
+    # Format currency values
+    def format_currency(value):
+        return f"₹{value:,.2f}"
     
     # Create context with calculated values
     context = {
         'quotation': quotation,
-        'subtotal': subtotal,
-        'total_tax': total_tax,
-        'grand_total': grand_total,
+        'branch': branch,  # Pass selected branch to template
         'items': items,
+        
+        # Calculated values with formatting
+        'subtotal': format_currency(subtotal),
+        'subtotal_raw': subtotal,  # Keep raw for calculations if needed
+        'total_tax': format_currency(total_tax),
+        'total_tax_raw': total_tax,
+        'discount_amount': format_currency(discount_amount),
+        'discount_amount_raw': discount_amount,
+        'shipping_charges': format_currency(shipping_charges) if shipping_charges > 0 else None,
+        'shipping_charges_raw': shipping_charges,
+        'grand_total': format_currency(grand_total),
+        'grand_total_raw': grand_total,
+        
+        # Additional useful data
+        'item_count': items.count(),
+        'today': timezone.now().date(),
+        'valid_until': getattr(quotation, 'valid_until', None) or (timezone.now() + timezone.timedelta(days=30)).date(),
     }
     
     return render(request, 'quotation_download.html', context)

@@ -1000,6 +1000,37 @@
             }
         });
 
+
+        // Add this to quotation_download.html script section
+document.addEventListener('DOMContentLoaded', function() {
+    // Try to get branch data from localStorage
+    const branchData = localStorage.getItem('selectedBranchData');
+    if (branchData) {
+        const branch = JSON.parse(branchData);
+        
+        // Update the branch information on the page
+        const branchElements = {
+            'branch.name': branch.name,
+            'branch.address': branch.address,
+            'branch.code': branch.code || 'BR-' + branch.id.toString().padStart(3, '0'),
+            'branch.manager': branch.manager || 'Branch Manager',
+            'branch.phone': branch.phone || '+1 (123) 456-7890',
+            'branch.email': branch.email || 'branch@company.com'
+        };
+        
+        // Update elements if they exist (you might need to add IDs to your elements)
+        Object.keys(branchElements).forEach(key => {
+            const element = document.querySelector(`[data-branch="${key}"]`);
+            if (element) {
+                element.textContent = branchElements[key];
+            }
+        });
+        
+        // Clear the stored data after use
+        localStorage.removeItem('selectedBranchData');
+    }
+});
+
         // Auto-format currency values on page load
         document.addEventListener('DOMContentLoaded', function() {
             const currencyElements = document.querySelectorAll('.totals-value');

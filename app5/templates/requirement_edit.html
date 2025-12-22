@@ -926,36 +926,86 @@
     // REDIRECT FUNCTION
     // =====================================================
     function redirectToLeadPage(leadId, event) {
-        if (event) {
-            event.stopPropagation();
-            event.preventDefault();
-        }
-        
-        if (!leadId) {
-            console.error('Lead ID not found!');
-            return;
-        }
-        
-        // Check if we're already on this lead's edit page
-        const currentLeadId = {{ current_lead_id|default:0 }};
-        if (leadId == currentLeadId) {
-            // Already on this page, just ensure it's highlighted
-            highlightCurrentLead();
-            return;
-        }
-        
-        // Construct the edit URL
-        const editUrl = `{% url 'app5:edit_requirement' 0 %}`.replace('0', leadId);
-        
-        // Show confirmation if there are unsaved changes
-        if (hasUnsavedChanges()) {
-            if (confirm('You have unsaved changes. Are you sure you want to navigate away?')) {
-                window.location.href = editUrl;
-            }
-        } else {
+    if (event) {
+        event.stopPropagation();
+        event.preventDefault();
+    }
+    
+    if (!leadId) {
+        console.error('Lead ID not found!');
+        return;
+    }
+    
+    // Save lead to localStorage BEFORE redirecting
+    saveSelectedLeadToStorage(leadId);
+    
+    // Check if we're already on this lead's edit page
+    const currentLeadId = {{ current_lead_id|default:0 }};
+    if (leadId == currentLeadId) {
+        highlightCurrentLead();
+        return;
+    }
+    
+    // Construct the edit URL
+    const editUrl = `{% url 'app5:edit_requirement' 0 %}`.replace('0', leadId);
+    
+    // Show confirmation if there are unsaved changes
+    if (hasUnsavedChanges()) {
+        if (confirm('You have unsaved changes. Are you sure you want to navigate away?')) {
             window.location.href = editUrl;
         }
+    } else {
+        window.location.href = editUrl;
     }
+}
+
+
+// Add this to both pages (requirement_edit.html and quotation_form.html)
+function enhanceNavigationLinks() {
+    // Get current selected lead ID
+    const selectedLeadId = getSelectedLeadId();
+    if (!selectedLeadId) return;
+    
+    // Update all relevant navigation links
+    document.querySelectorAll('a[href*="quotation"], a[href*="requirement"], a[href*="event"]').forEach(link => {
+        const href = link.getAttribute('href');
+        if (href && !href.includes('#') && !href.includes('lead_id=')) {
+            const separator = href.includes('?') ? '&' : '?';
+            link.setAttribute('href', `${href}${separator}lead_id=${selectedLeadId}`);
+        }
+    });
+}
+
+function getSelectedLeadId() {
+    // First check if there's a current lead item
+    const currentLeadItem = document.querySelector('.lead-item.current-lead-item');
+    if (currentLeadItem) {
+        return currentLeadItem.getAttribute('data-id');
+    }
+    
+    // Then check localStorage
+    try {
+        return localStorage.getItem('selectedLeadId');
+    } catch (error) {
+        console.error('Error getting lead ID from storage:', error);
+        return null;
+    }
+}
+
+// Call this function after page loads
+document.addEventListener('DOMContentLoaded', function() {
+    // ... existing initialization code ...
+    
+    // Enhance navigation links
+    enhanceNavigationLinks();
+    
+    // Also update links when a new lead is selected
+    document.querySelectorAll('.lead-item').forEach(item => {
+        item.addEventListener('click', function() {
+            setTimeout(enhanceNavigationLinks, 100);
+        });
+    });
+});
     
     // =====================================================
     // CHECK FOR UNSAVED CHANGES
@@ -1467,6 +1517,64 @@
         
         console.log(`✅ Enhanced ${leadItems.length} lead items`);
     }
+
+    // Add this function to requirement_edit.html (inside <script> tags or in a separate script)
+function saveSelectedLeadToStorage(leadId) {
+    if (!leadId) return;
+    
+    // Get lead data from the clicked lead item
+    const leadItem = document.querySelector(`.lead-item[data-id="${leadId}"]`);
+    if (!leadItem) return;
+    
+    const leadData = {
+        id: leadId,
+        name: leadItem.getAttribute('data-name') || '',
+        phone: leadItem.getAttribute('data-phone') || '',
+        ticket: leadItem.getAttribute('data-ticket') || '',
+        priority: leadItem.getAttribute('data-priority') || '',
+        status: leadItem.getAttribute('data-status') || '',
+        requirementsCount: leadItem.getAttribute('data-requirements-count') || '0'
+    };
+    
+    // Save to localStorage
+    try {
+        localStorage.setItem('selectedLeadData', JSON.stringify(leadData));
+        localStorage.setItem('selectedLeadId', leadId);
+        localStorage.setItem('selectedLeadTimestamp', Date.now().toString());
+        
+        console.log('✅ Lead saved to storage:', leadData.name);
+        showLeadSavedNotification(leadData.name);
+    } catch (error) {
+        console.error('❌ Error saving lead to storage:', error);
+    }
+}
+
+// Show notification when lead is saved
+function showLeadSavedNotification(leadName) {
+    // Create a temporary notification
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 12px 20px;
+        background: linear-gradient(135deg, #4CAF50, #45a049);
+        color: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+        z-index: 10000;
+        font-weight: 600;
+        animation: slideIn 0.3s ease;
+    `;
+    notification.innerHTML = `<i class="fas fa-check-circle"></i> Selected: ${leadName}`;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.opacity = '0';
+        setTimeout(() => notification.remove(), 300);
+    }, 2000);
+}
     
     // Initialize when DOM is ready
     function init() {
@@ -1486,6 +1594,8 @@
         init();
     }
 })();
+
+
 </script>
 
 </body>
